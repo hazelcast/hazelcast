@@ -65,9 +65,6 @@ public class Master extends Operation implements NonMemberOperation, NoReply, No
     public String toString() {
         return "Master " + address;
     }
-//    public void process() {
-//        node.clusterManager.handleMaster(this);
-//    }
 
     public void run() {
         ClusterImpl cm = (ClusterImpl) getService();

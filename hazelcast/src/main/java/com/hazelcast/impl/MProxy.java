@@ -30,6 +30,8 @@ public interface MProxy extends IMap, IRemoveAwareProxy, IGetAwareProxy {
 
     boolean containsEntry(Object key, Object value);
 
+    boolean putFromLoad(Object key, Object value);
+
     boolean putMulti(Object key, Object value);
 
     boolean removeMulti(Object key, Object value);

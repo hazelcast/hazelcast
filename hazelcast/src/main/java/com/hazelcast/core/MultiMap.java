@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.monitor.LocalMapStats;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -419,4 +420,19 @@ public interface MultiMap<K, V> extends Instance {
      * returns immediately.
      */
     void unlockMap();
+
+    /**
+     * Returns LocalMultiMapStats for this map.
+     * LocalMultiMapStats is the statistics for the local portion of this
+     * distributed multi map and contains information such as ownedEntryCount
+     * backupEntryCount, lastUpdateTime, lockedEntryCount.
+     * <p/>
+     * Since this stats are only for the local portion of this multi map, if you
+     * need the cluster-wide MultiMapStats then you need to get the LocalMapStats
+     * from all members of the cluster and combine them.
+     *
+     * @return this multimap's local statistics.
+     */
+    LocalMapStats getLocalMultiMapStats();
+
 }

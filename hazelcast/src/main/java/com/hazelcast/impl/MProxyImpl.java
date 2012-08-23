@@ -117,6 +117,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
         return false;
     }
 
+    public boolean putFromLoad(final Object key, final Object value) {
+        return false;
+    }
+
     public boolean putMulti(final Object key, final Object value) {
         return false;
     }

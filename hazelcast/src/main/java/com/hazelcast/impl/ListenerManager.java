@@ -409,11 +409,11 @@ public class ListenerManager {
                 switch (entryEventType) {
                     case ADDED:
                         itemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED,
-                                event.getKeyData(), serializerRegistry));
+                                event.getKeyData(), event.getMember(), serializerRegistry));
                         break;
                     case REMOVED:
                         itemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED,
-                                event.getKeyData(), serializerRegistry));
+                                event.getKeyData(), event.getMember(), serializerRegistry));
                         break;
                 }
                 break;
@@ -427,11 +427,11 @@ public class ListenerManager {
                 switch (entryEventType) {
                     case ADDED:
                         queueItemListener.itemAdded(new DataAwareItemEvent(listenerItem.name, ItemEventType.ADDED,
-                                event.getNewValueData(), serializerRegistry));
+                                event.getNewValueData(), event.getMember(), serializerRegistry));
                         break;
                     case REMOVED:
                         queueItemListener.itemRemoved(new DataAwareItemEvent(listenerItem.name, ItemEventType.REMOVED,
-                                event.getNewValueData(), serializerRegistry));
+                                event.getNewValueData(), event.getMember(), serializerRegistry));
                         break;
                 }
                 break;

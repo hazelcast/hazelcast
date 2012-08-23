@@ -21,6 +21,8 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.impl.spi.Operation;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
@@ -51,10 +53,19 @@ public class MembersUpdateCall extends Operation implements NonBlockingOperation
     }
 
     public void run() {
-        Node node = getNodeService().getNode();
-        node.getClusterImpl().setMasterTime(masterTime);
-        node.clusterImpl.updateMembers(getMemberInfos());
-        getResponseHandler().sendResponse(Boolean.TRUE);
+        final Node node = getNodeService().getNode();
+        final Connection conn = getConnection();
+        final Address masterAddress = conn != null ? conn.getEndPoint() : null;
+        final boolean accept = conn == null ||  // which means this is a local call.
+                               (masterAddress != null && masterAddress.equals(node.getMasterAddress()));
+
+        if (accept) {
+            node.getClusterImpl().setMasterTime(masterTime);
+            node.clusterImpl.updateMembers(getMemberInfos());
+            getResponseHandler().sendResponse(Boolean.TRUE);
+        } else {
+            getResponseHandler().sendResponse(Boolean.FALSE);
+        }
     }
 
     public void addMemberInfo(MemberInfo memberInfo) {

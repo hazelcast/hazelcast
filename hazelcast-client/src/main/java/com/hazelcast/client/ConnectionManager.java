@@ -42,6 +42,7 @@ public class ConnectionManager implements MembershipListener {
     private volatile Connection currentConnection;
     private final AtomicInteger connectionIdGenerator = new AtomicInteger(-1);
     private final List<InetSocketAddress> clusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
+    private final List<InetSocketAddress> initialClusterMembers = new CopyOnWriteArrayList<InetSocketAddress>();
     private final ILogger logger = Logger.getLogger(getClass().getName());
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
@@ -59,8 +60,10 @@ public class ConnectionManager implements MembershipListener {
         this.client = client;
         this.lifecycleService = lifecycleService;
         this.clusterMembers.addAll(config.getAddressList());
+        this.initialClusterMembers.addAll(config.getAddressList());
         if (config.isShuffle()) {
             Collections.shuffle(this.clusterMembers);
+            Collections.shuffle(this.initialClusterMembers);
         }
     }
 
@@ -257,7 +260,11 @@ public class ConnectionManager implements MembershipListener {
     private Connection searchForAvailableConnection() {
         Connection connection = null;
         popAndPush(clusterMembers);
+        if(clusterMembers.isEmpty()){
+            clusterMembers.addAll(initialClusterMembers);
+        }
         int counter = clusterMembers.size();
+
         while (counter > 0) {
             try {
                 connection = getNextConnection();
@@ -282,6 +289,7 @@ public class ConnectionManager implements MembershipListener {
         Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getAddress(),
                                                                                            address.getPort());
         clusterMembers.addAll(addresses);
+        initialClusterMembers.addAll(addresses);
     }
 
     public void memberRemoved(MembershipEvent membershipEvent) {

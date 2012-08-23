@@ -87,8 +87,11 @@ public class ConfigXmlGenerator {
         }
         final NetworkConfig netCfg = config.getNetworkConfig();
         xml.append("<network>");
-        xml.append("<port auto-increment=\"").append(config.isPortAutoIncrement()).append("\">")
-                .append(config.getPort()).append("</port>");
+        if (netCfg.getPublicAddress() != null) {
+            xml.append("<public-address>").append(netCfg.getPublicAddress()).append("</public-address>");
+        }
+        xml.append("<port auto-increment=\"").append(config.getNetworkConfig().isPortAutoIncrement()).append("\">")
+                .append(config.getNetworkConfig().getPort()).append("</port>");
         final Join join = netCfg.getJoin();
         xml.append("<join>");
         final MulticastConfig mcast = join.getMulticastConfig();

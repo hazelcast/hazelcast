@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,15 +80,13 @@ public class WanTargetClusterConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(MessageFormat.format("<target-cluster group-name={0} group-password={1}>\n", groupName, groupPassword));
-        sb.append("\t<replication-impl>" + replicationImpl + "</replication-impl>\n");
-        sb.append("\t<end-points>\n");
-        for (String endpoint : lsEndpoints) {
-            sb.append("\t\t<address>" + endpoint + "</address>\n");
-        }
-        sb.append("\t</end-points>\n");
-        sb.append("</target-cluster>\n");
+        final StringBuilder sb = new StringBuilder();
+        sb.append("WanTargetClusterConfig");
+        sb.append("{groupName='").append(groupName).append('\'');
+        sb.append(", replicationImpl='").append(replicationImpl).append('\'');
+        sb.append(", replicationImplObject=").append(replicationImplObject);
+        sb.append(", endpoints=").append(lsEndpoints);
+        sb.append('}');
         return sb.toString();
     }
 }

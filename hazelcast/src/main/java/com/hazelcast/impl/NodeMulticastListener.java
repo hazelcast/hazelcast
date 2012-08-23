@@ -17,12 +17,15 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.JoinInfo;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
 import java.util.Set;
+import java.util.logging.Level;
 
 public class NodeMulticastListener implements MulticastListener {
+
     final Node node;
     final Set<String> trustedInterfaces;
 
@@ -43,30 +46,51 @@ public class NodeMulticastListener implements MulticastListener {
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
-                    if (node.isMaster() && node.isActive() && node.joined()) {
+                    if (node.isActive() && node.joined()) {
                         if (joinInfo.isRequest()) {
-                            node.multicastService.send(joinInfo.copy(false, node.address,
-                                    node.getClusterImpl().getMembers().size()));
-                        }
-                    } else {
-                        if (!node.joined() && !joinInfo.isRequest()) {
-                            if (node.masterAddress == null) {
-                                final String masterHost = joinInfo.address.getHost();
-                                if (trustedInterfaces.isEmpty() ||
-                                        AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
-                                    node.masterAddress = new Address(joinInfo.address);
-                                }
+                            if (node.isMaster()) {
+                                node.multicastService.send(joinInfo.copy(false, node.address,
+                                        node.getClusterImpl().getMembers().size()));
+                            } else if (isMasterNode(joinInfo.address) && !checkMasterUuid(joinInfo.getUuid())) {
+                                node.getLogger("NodeMulticastListener").log(Level.WARNING,
+                                        "New join request has been received from current master. "
+                                        + "Removing " + node.getMasterAddress());
+                                node.clusterImpl.removeAddress(node.getMasterAddress());
                             }
-                        } else if (joinInfo.isRequest()) {
-                            Joiner joiner = node.getJoiner();
-                            if (joiner instanceof MulticastJoiner) {
-                                MulticastJoiner mjoiner = (MulticastJoiner) joiner;
-                                mjoiner.onReceivedJoinInfo(joinInfo);
+                        } else {
+                            if (!node.joined() && !joinInfo.isRequest()) {
+                                if (node.masterAddress == null) {
+                                    final String masterHost = joinInfo.address.getHost();
+                                    if (trustedInterfaces.isEmpty() ||
+                                        AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
+                                        node.masterAddress = new Address(joinInfo.address);
+                                    }
+                                }
+                            } else if (joinInfo.isRequest()) {
+                                Joiner joiner = node.getJoiner();
+                                if (joiner instanceof MulticastJoiner) {
+                                    MulticastJoiner mjoiner = (MulticastJoiner) joiner;
+                                    mjoiner.onReceivedJoinInfo(joinInfo);
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private boolean isMasterNode(Address address) {
+        return address.equals(node.getMasterAddress());
+    }
+
+    private boolean checkMasterUuid(String uuid) {
+        final Member masterMember = getMasterMember(node.getClusterImpl().getMembers());
+        return masterMember == null || masterMember.getUuid().equals(uuid);
+    }
+
+    private Member getMasterMember(final Set<Member> members) {
+        if (members == null || members.isEmpty()) return null;
+        return members.iterator().next();
     }
 }

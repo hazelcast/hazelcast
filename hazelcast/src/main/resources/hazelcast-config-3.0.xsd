@@ -146,6 +146,7 @@
     <xs:element name="network">
         <xs:complexType>
             <xs:sequence>
+                <xs:element ref="public-address" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="port" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="join" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="interfaces" minOccurs="0" maxOccurs="1"/>
@@ -247,6 +248,11 @@
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>
+    </xs:element>
+    <xs:element name="public-address">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
     </xs:element>
     <xs:element name="password" default="drowssap">
         <xs:annotation>

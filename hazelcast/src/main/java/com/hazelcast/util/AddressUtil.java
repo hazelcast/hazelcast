@@ -232,7 +232,48 @@ public final class AddressUtil {
         if (parts.length != 4) {
             throw new InvalidAddressException(address);
         }
+        for (String part : parts) {
+            if (!isValidIpAddressPart(part, false)) {
+                throw new InvalidAddressException(address);
+            }
+        }
         matcher.setAddress(parts);
+    }
+
+    private static boolean isValidIpAddressPart(String part, boolean ipv6) {
+        if (part.length() == 1 && "*".equals(part)) {
+            return true;
+        }
+        final int rangeIndex = part.indexOf('-');
+        if (rangeIndex > -1 &&
+                (rangeIndex != part.lastIndexOf('-') || rangeIndex == part.length() - 1)) {
+            return false;
+        }
+        final String[] subParts;
+        if (rangeIndex > -1) {
+            subParts = part.split("\\-");
+        } else {
+            subParts = new String[]{part};
+        }
+        for (String subPart : subParts) {
+            try {
+                final int num;
+                if (ipv6) {
+                    num = Integer.parseInt(subPart, 16);
+                    if (num > 65535) {
+                        return false;
+                    }
+                } else {
+                    num = Integer.parseInt(subPart);
+                    if (num > 255) {
+                        return false;
+                    }
+                }
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void parseIpv6(AddressMatcher matcher, String address) {
@@ -269,7 +310,13 @@ public final class AddressUtil {
         if (ipString.size() != 8) {
             throw new InvalidAddressException(address);
         }
-        matcher.setAddress(ipString.toArray(new String[0]));
+        final String[] addressParts = ipString.toArray(new String[ipString.size()]);
+        for (String part : addressParts) {
+            if (!isValidIpAddressPart(part, true)) {
+                throw new InvalidAddressException(address);
+            }
+        }
+        matcher.setAddress(addressParts);
     }
 
     // ----------------- UTILITY CLASSES ------------------

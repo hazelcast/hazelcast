@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-public class DuplicateInstanceNameException extends RuntimeException {
+public class DuplicateInstanceNameException extends HazelcastException {
 
     public DuplicateInstanceNameException() {
         super();

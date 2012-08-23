@@ -27,13 +27,13 @@ import java.io.IOException;
 
 public class MigrationNotification extends AbstractOperation implements NoReply, NonBlockingOperation {
     MigratingPartition migratingPartition;
-    boolean started;
+    MigrationStatus status;
 
     public MigrationNotification() {
     }
 
-    public MigrationNotification(boolean started, MigratingPartition migratingPartition) {
-        this.started = started;
+    public MigrationNotification(MigrationStatus status, MigratingPartition migratingPartition) {
+        this.status = status;
         this.migratingPartition = migratingPartition;
     }
 
@@ -42,7 +42,7 @@ public class MigrationNotification extends AbstractOperation implements NoReply,
         Address to = migratingPartition.getToAddress();
         int partitionId = migratingPartition.getPartitionId();
         getNodeService().getNode()
-                .partitionManager.fireMigrationEvent(started, partitionId, from, to);
+                .partitionManager.fireMigrationEvent(status, partitionId, from, to);
     }
 
     @Override
@@ -50,13 +50,13 @@ public class MigrationNotification extends AbstractOperation implements NoReply,
         super.readInternal(in);
         migratingPartition = new MigratingPartition();
         migratingPartition.readData(in);
-        started = in.readBoolean();
+        status = MigrationStatus.get(in.readByte());
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         migratingPartition.writeData(out);
-        out.writeBoolean(started);
+        out.writeByte(status.getCode());
     }
 }

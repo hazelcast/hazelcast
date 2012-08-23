@@ -22,26 +22,59 @@ import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 public class Bind extends Master implements NonMemberOperation, NoReply, NonBlockingOperation {
+
+    private Address targetAddress;
+    private boolean replyBack = false;
 
     public Bind() {
     }
 
     public Bind(Address localAddress) {
         super(localAddress);
+        this.targetAddress = null;
+    }
+
+    public Bind(Address localAddress, final Address targetAddress, final boolean replyBack) {
+        super(localAddress);
+        this.targetAddress = targetAddress;
+        this.replyBack = replyBack;
+    }
+
+    @Override
+    public void run() {
+        NodeService ns = getNodeService();
+        ns.getNode().getConnectionManager().bind(getConnection(), address, targetAddress, replyBack);
+    }
+
+    @Override
+    public void readInternal(final DataInput in) throws IOException {
+        super.readInternal(in);
+        boolean hasTarget = in.readBoolean();
+        if (hasTarget) {
+            targetAddress = new Address();
+            targetAddress.readData(in);
+        }
+        replyBack = in.readBoolean();
+    }
+
+    @Override
+    public void writeInternal(final DataOutput out) throws IOException {
+        super.writeInternal(out);
+        boolean hasTarget = targetAddress != null;
+        out.writeBoolean(hasTarget);
+        if (hasTarget) {
+            targetAddress.writeData(out);
+        }
+        out.writeBoolean(replyBack);
     }
 
     @Override
     public String toString() {
         return "Bind " + address;
-    }
-//    public void process() {
-//        getNode().connectionManager.bind(address, getConnection(), true);
-//    }
-
-    @Override
-    public void run() {
-        NodeService ns = getNodeService();
-        ns.getNode().getConnectionManager().bind(address, getConnection(), true);
     }
 }

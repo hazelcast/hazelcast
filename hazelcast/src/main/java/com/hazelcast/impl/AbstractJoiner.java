@@ -30,23 +30,22 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public abstract class AbstractJoiner implements Joiner {
-    private final long joinStartTime = Clock.currentTimeMillis();
+    private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
+    private final AtomicInteger tryCount = new AtomicInteger(0);
     protected final Config config;
     protected final Node node;
-    protected volatile ILogger logger;
-    private final AtomicInteger tryCount = new AtomicInteger(0);
+    protected final ILogger logger;
     protected final SystemLogService systemLogService;
     protected Address targetAddress;
 
     public AbstractJoiner(Node node) {
         this.node = node;
         this.systemLogService = node.getSystemLogService();
-        if (node.loggingService != null) {
-            this.logger = node.loggingService.getLogger(this.getClass().getName());
-        }
+        this.logger = node.loggingService.getLogger(this.getClass().getName());
         this.config = node.config;
     }
 
@@ -90,7 +89,7 @@ public abstract class AbstractJoiner implements Joiner {
                 }
             }
             if (!node.joined() || !allConnected) {
-                if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
+                if (Clock.currentTimeMillis() - getStartTime() < maxJoinMillis) {
                     logger.log(Level.WARNING, "Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
                     logger.log(Level.WARNING, "Rebooting after 10 seconds.");
                     try {
@@ -109,13 +108,13 @@ public abstract class AbstractJoiner implements Joiner {
             }
         }
 
-        tryCount.set(0);
         if (node.getClusterImpl().getSize() == 1) {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
             sb.append(node.clusterImpl);
             logger.log(Level.INFO, sb.toString());
         }
+
     }
 
     protected void failedJoiningToMaster(boolean multicast, int tryCount) {
@@ -190,14 +189,18 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void connectAndSendJoinRequest(Collection<Address> colPossibleAddresses) {
-        if (node.getFailedConnections().size() > 0)
-            for (Address possibleAddress : colPossibleAddresses) {
-                final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
-                if (conn != null) {
-                    logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                    node.clusterImpl.sendJoinRequest(possibleAddress, true);
-                }
+        for (Address possibleAddress : colPossibleAddresses) {
+            final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
+            if (conn != null) {
+                logger.log(Level.FINEST, "sending join request for " + possibleAddress);
+                node.clusterImpl.sendJoinRequest(possibleAddress, true);
             }
+        }
+    }
+
+    public void reset() {
+        joinStartTime.set(Clock.currentTimeMillis());
+        tryCount.set(0);
     }
 
     protected void sendClusterMergeToOthers(final Address targetAddress) {
@@ -210,9 +213,9 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     public final long getStartTime() {
-        return joinStartTime;
+        return joinStartTime.get();
     }
-    
+
     public void setTargetAddress(Address targetAddress) {
         this.targetAddress = targetAddress;
     }

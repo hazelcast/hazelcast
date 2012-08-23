@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 
@@ -27,9 +28,9 @@ public class DataAwareItemEvent extends ItemEvent {
     final Data itemData;
     private final transient SerializerRegistry serializerRegistry;
 
-    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data itemData,
+    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data itemData, Member member,
                               SerializerRegistry serializerRegistry) {
-        super(name, itemEventType, null);
+        super(name, itemEventType, null, member);
         this.itemData = itemData;
         this.serializerRegistry = serializerRegistry;
     }

@@ -23,8 +23,15 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ResourceAdapterImpl implements ResourceAdapter {
+    private final static AtomicInteger idGen = new AtomicInteger();
+    private transient final int id;
+
+    public ResourceAdapterImpl() {
+        id = idGen.incrementAndGet();
+    }
 
     public void endpointActivation(MessageEndpointFactory arg0, ActivationSpec arg1)
             throws ResourceException {
@@ -41,5 +48,18 @@ public class ResourceAdapterImpl implements ResourceAdapter {
     }
 
     public void stop() {
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null || !(obj instanceof ResourceAdapterImpl)) {
+            return false;
+        }
+        return ((ResourceAdapterImpl)obj).id == id;
     }
 }

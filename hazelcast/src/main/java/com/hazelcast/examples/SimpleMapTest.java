@@ -18,6 +18,7 @@ package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
 
@@ -96,8 +97,8 @@ public class SimpleMapTest {
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.execute(new Runnable() {
                 public void run() {
-                    try {
-                        while (true) {
+                    while (true) {
+                        try {
                             int key = (int) (Math.random() * ENTRY_COUNT);
                             int operation = ((int) (Math.random() * 100));
                             if (operation < GET_PERCENTAGE) {
@@ -107,8 +108,8 @@ public class SimpleMapTest {
                             } else {
                                 map.remove(String.valueOf(key));
                             }
+                        } catch (Exception ignored) {
                         }
-                    } catch (Exception ignored) {
                     }
                 }
             });

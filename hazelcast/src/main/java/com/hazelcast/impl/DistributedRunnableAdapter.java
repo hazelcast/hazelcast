@@ -20,4 +20,6 @@ public interface DistributedRunnableAdapter<V> {
     V getResult();
 
     Runnable getRunnable();
+
+    void setRunnable(Runnable runnable);
 }

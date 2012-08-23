@@ -22,6 +22,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.base.SystemLogService;
@@ -48,7 +49,7 @@ public class NodeIOService implements IOService {
     }
 
     public void onOutOfMemory(OutOfMemoryError oom) {
-        node.onOutOfMemory(oom);
+        OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
     }
 
     public void handleInterruptedException(Thread thread, RuntimeException e) {
@@ -143,11 +144,11 @@ public class NodeIOService implements IOService {
     }
 
     public boolean isReuseSocketAddress() {
-        return node.getConfig().isReuseAddress();
+        return node.getConfig().getNetworkConfig().isReuseAddress();
     }
 
     public int getSocketPort() {
-        return node.getConfig().getPort();
+        return node.getConfig().getNetworkConfig().getPort();
     }
 
     public boolean isSocketBindAny() {
@@ -155,7 +156,7 @@ public class NodeIOService implements IOService {
     }
 
     public boolean isSocketPortAutoIncrement() {
-        return node.getConfig().isPortAutoIncrement();
+        return node.getConfig().getNetworkConfig().isPortAutoIncrement();
     }
 
     public int getSocketReceiveBufferSize() {
@@ -210,12 +211,16 @@ public class NodeIOService implements IOService {
     }
 
     public void onShutdown() {
-//        node.clusterImpl.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
         try {
+//            node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
             // wait a little
-            Thread.sleep(100);
-        } catch (InterruptedException ignored) {
+//            Thread.sleep(100);
+        } catch (Throwable ignored) {
         }
+    }
+
+    public void executeAsync(final Runnable runnable) {
+        node.nodeService.getExecutorService().execute(runnable);
     }
 }
 

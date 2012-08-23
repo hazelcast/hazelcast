@@ -28,12 +28,74 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.3</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>Changed <link xlink:href="#hazelcast.max.operation.timeout">
+                    <code>hazelcast.max.operation.timeout</code></link> unit from <emphasis>seconds</emphasis>
+                     to <emphasis>milliseconds</emphasis>.</para>
+            </listitem>
+            <listitem>
+                <para>Added <link xlink:href="#hazelcast.max.concurrent.operation.limit">
+                    <code>hazelcast.max.concurrent.operation.limit</code></link> parameter to be able to limit
+                    number of concurrent operations can be submitted to Hazelcast.</para>
+            </listitem>
+            <listitem>
+                <para>
+                    Added <link xlink:href="#hazelcast.backup.redo.enabled">
+                        <code>hazelcast.backup.redo.enabled</code></link> parameter to enable/disable redo for
+                    backup operations.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <code>MigrationListener</code> has now an additional method to receive failed migration events;
+                    <code>void migrationFailed(MigrationEvent migrationEvent)</code>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <code>ItemEvent</code> has now an additional method returning <literal>Member</literal> firing
+                    that event; <code>public Member getMember()</code>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Improved out of memory (OOM) error detection and handling. Now it is possible to register custom hook
+                    when <code>OutOfMemoryError</code> is thrown.
+                    See <code>Hazelcast.setOutOfMemoryHandler(OutOfMemoryHandler)</code> and <code>OutOfMemoryHandler</code>
+                    javadocs for additional details.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Fixed some issues related to domain name handling and networking/join.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    During cluster merge after a network split-brain, merging side will now fire <code>MERGING</code>
+                    and <code>MERGED</code> before and after <code>RESTARTING</code> and <code>RESTARTED</code>
+                    <code>LifecycleEvent</code>s.
+                </para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=12&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>167, 182, 188, 209, 217, 218, 220, 222, 223, 225, 226, 227, 228, 229,
+                    230, 233, 234, 235, 237, 241, 243, 244, 247, 250</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.2</emphasis>
         <itemizedlist>
             <listitem>
                 <para>Improved redo logs and added max call/operation timeout. See configuration properties
-                <code>hazelcast.max.operation.timeout</code> and <code>hazelcast.redo.giveup.threshold</code>
-                    in <link xlink:href="#ConfigurationProperties">ConfigurationProperties</link> page.</para>
+                    <link xlink:href="#hazelcast.max.operation.timeout"><code>hazelcast.max.operation.timeout</code></link>
+                    and <link xlink:href="#hazelcast.redo.giveup.threshold"><code>hazelcast.redo.giveup.threshold</code></link>
+                    </para>
             </listitem>
             <listitem>
                 <para>Improved domain name handling; Hazelcast will use defined addresses/domain-names in

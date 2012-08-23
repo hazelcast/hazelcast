@@ -37,6 +37,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 /**
@@ -297,5 +299,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         node.shutdown(false, true);
         serializerRegistry.destroy();
         HazelcastInstanceFactory.remove(this);
+    }
+
+    public void restartToMerge() {
+        lifecycleService.fireLifecycleEvent(MERGING);
+        lifecycleService.restart();
+        lifecycleService.fireLifecycleEvent(MERGED);
     }
 }

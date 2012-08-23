@@ -76,4 +76,17 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
     public String toString() {
         return "hazelcast.ManagedConnectionFactoryImpl [" + id + "]";
     }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null || !(obj instanceof ManagedConnectionFactoryImpl)) {
+            return false;
+        }
+        return ((ManagedConnectionFactoryImpl)obj).id == id;
+    }
 }

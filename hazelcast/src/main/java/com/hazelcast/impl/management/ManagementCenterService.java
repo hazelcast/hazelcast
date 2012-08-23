@@ -24,6 +24,7 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.impl.HazelcastInstanceImpl;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.impl.ascii.rest.HttpCommand;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Edge;
 import com.hazelcast.impl.management.DetectDeadlockRequest.Vertex;
@@ -93,8 +94,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
-        updateIntervalMs = (managementCenterConfig != null && managementCenterConfig.getUpdateInterval() > 0)
-                           ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
+        updateIntervalMs = (managementCenterConfig.getUpdateInterval() > 0)
+                ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
 
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
@@ -105,9 +106,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (webServerUrl != null) {
                 taskPoller.start();
                 stateSender.start();
-                logger.log(Level.INFO, "Hazelcast Management Center is listening from " + webServerUrl);
+                logger.log(Level.INFO, "Hazelcast will connect to Management Center on address: " + webServerUrl);
             } else {
-                logger.log(Level.WARNING, "Hazelcast Management Center Web server url is null!");
+                logger.log(Level.WARNING, "Hazelcast Management Center web-server URL is null!");
             }
         }
     }
@@ -161,7 +162,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 executorService.execute(task);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Web server url cannot be assigned to the newly joined member", e);
+            logger.log(Level.WARNING, "Web server url cannot be send to the newly joined member", e);
         }
     }
 
@@ -173,12 +174,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     public void changeWebServerUrl(String newUrl) {
         if (newUrl == null)
             return;
-        this.webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
-        if(!running.get()) {
+        webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
+        if (!running.get()) {
             start();
         }
         urlChanged = true;
-        logger.log(Level.INFO, "Web server url has been changed. Management Center is now listening from " + webServerUrl);
+        logger.log(Level.INFO, "Web server URL has been changed. " +
+                               "Hazelcast will connect to Management Center on address: " + webServerUrl);
     }
 
     private void interruptThread(Thread t) {
@@ -259,6 +261,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     Thread.sleep(updateIntervalMs);
                 }
             } catch (Throwable throwable) {
+                if (throwable instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
+                }
                 logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
                 shutdown();
             }
@@ -334,6 +339,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     Thread.sleep(700 + rand.nextInt(300));
                 }
             } catch (Throwable throwable) {
+                if (throwable instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
+                }
                 logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
             }
         }
@@ -363,6 +371,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 //        memberState.putThroughputStats(executorManager.getThroughputMap());
 
         createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
+        createMemState(memberState, proxyObjects.iterator(), InstanceType.MULTIMAP);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.TOPIC);
         createRuntimeProps(memberState);
@@ -469,6 +478,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
         Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getProxies());
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
+        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MULTIMAP);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.TOPIC);
         // uncomment when client changes are made

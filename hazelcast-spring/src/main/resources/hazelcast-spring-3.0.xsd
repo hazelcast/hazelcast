@@ -305,6 +305,7 @@
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
             <xs:element name="asymmetric-encryption" type="asymmetric-encryption" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
+        <xs:attribute name="public-address" type="xs:string" use="optional"/>
         <xs:attribute name="port" type="xs:string" use="required"/>
         <xs:attribute name="port-auto-increment" type="xs:string" use="optional" default="true"/>
     </xs:complexType>
@@ -340,7 +341,7 @@
         <xs:attribute name="access-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="secret-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="region" type="xs:string" use="optional" default=""/>
-        <xs:attribute name="hostHeader" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="host-header" type="xs:string" use="optional" default=""/>
         <xs:attribute name="security-group-name" type="xs:string" use="optional" default=""/>
         <xs:attribute name="tag-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="tag-value" type="xs:string" use="optional" default=""/>

@@ -105,4 +105,17 @@ public class PermissionConfig {
     public void setEndpoints(Set<String> endpoints) {
         this.endpoints = endpoints;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("PermissionConfig");
+        sb.append("{type=").append(type);
+        sb.append(", name='").append(name).append('\'');
+        sb.append(", principal='").append(principal).append('\'');
+        sb.append(", endpoints=").append(endpoints);
+        sb.append(", actions=").append(actions);
+        sb.append('}');
+        return sb.toString();
+    }
 }

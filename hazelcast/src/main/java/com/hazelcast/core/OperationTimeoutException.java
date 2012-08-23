@@ -26,7 +26,7 @@ package com.hazelcast.core;
  *
  * @see java.util.concurrent.TimeoutException
  */
-public class OperationTimeoutException extends RuntimeException {
+public class OperationTimeoutException extends HazelcastException {
 
     public OperationTimeoutException() {
     }

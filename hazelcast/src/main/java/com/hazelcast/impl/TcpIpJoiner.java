@@ -110,6 +110,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.INFO, "Connecting to possible member: " + possibleAddress);
                 node.connectionManager.getOrConnect(possibleAddress);
             }
+            
             boolean foundConnection = false;
             int numberOfSeconds = 0;
             final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
@@ -242,7 +243,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
         final String host = tcpIpConfig.getRequiredMember();
         try {
-            final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getPort());
+            final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getNetworkConfig().getPort());
             if (AddressUtil.isIpAddress(addressHolder.address)) {
                 return new Address(addressHolder.address, addressHolder.port);
             } else {
@@ -300,9 +301,9 @@ public class TcpIpJoiner extends AbstractJoiner {
         for (String possibleMember : possibleMembers) {
             try {
                 final AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
-                final boolean portIsDefined = addressHolder.port != -1 || !config.isPortAutoIncrement();
+                final boolean portIsDefined = addressHolder.port != -1 || !networkConfig.isPortAutoIncrement();
                 final int count = portIsDefined ? 1 : MAX_PORT_TRIES;
-                final int port = addressHolder.port != -1 ? addressHolder.port : config.getPort();
+                final int port = addressHolder.port != -1 ? addressHolder.port : networkConfig.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
                     addressMatcher = AddressUtil.getAddressMatcher(addressHolder.address);

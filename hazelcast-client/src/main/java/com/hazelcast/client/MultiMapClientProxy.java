@@ -25,11 +25,9 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.monitor.LocalMapStats;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.ProxyHelper.check;
@@ -125,6 +123,10 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         doLock(ClusterOperation.CONCURRENT_MAP_UNLOCK_MAP, null, -1, null);
     }
 
+    public LocalMapStats getLocalMultiMapStats() {
+        throw new UnsupportedOperationException();
+    }
+
     public boolean put(K key, V value) {
         check(key);
         check(value);
@@ -133,7 +135,10 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public Collection get(Object key) {
         check(key);
-        return (Collection) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, key, null);
+        Collection result = (Collection) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, key, null);
+        if (result == null)
+            result = Collections.emptySet();
+        return result;
     }
 
     public boolean remove(Object key, Object value) {

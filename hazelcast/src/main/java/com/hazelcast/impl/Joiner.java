@@ -29,4 +29,6 @@ public interface Joiner {
     long getStartTime();
 
     void setTargetAddress(Address targetAddress);
+
+    void reset();
 }

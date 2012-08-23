@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.cluster.JoinInfo;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -31,12 +32,12 @@ import java.util.logging.Level;
 
 public class MulticastJoiner extends AbstractJoiner {
 
-    final AtomicInteger currentTryCount = new AtomicInteger(0);
-    final AtomicInteger tryCount;
+    private final AtomicInteger currentTryCount = new AtomicInteger(0);
+    private final AtomicInteger maxTryCount;
 
     public MulticastJoiner(Node node) {
         super(node);
-        tryCount = new AtomicInteger(calculateTryCount());
+        maxTryCount = new AtomicInteger(calculateTryCount());
     }
 
     public void doJoin(AtomicBoolean joined) {
@@ -115,7 +116,7 @@ public class MulticastJoiner extends AbstractJoiner {
             if (joinInfo != null) {
                 if (joinInfo.getMemberCount() == 1) {
                     // if the other cluster has just single member, that may be a newly starting node
-                    // instead of a split node. (Note: TcpIpJoiner can handle this issue with JOIN_CHECK call.)
+                    // instead of a split node.
                     // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinInfo.
                     Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
                 }
@@ -123,7 +124,7 @@ public class MulticastJoiner extends AbstractJoiner {
                     logger.log(Level.WARNING, node.address + " is merging [multicast] to " + joinInfo.address);
                     targetAddress = joinInfo.address;
                     sendClusterMergeToOthers(targetAddress);
-                    node.hazelcastInstance.getLifecycleService().restart();
+                    splitBrainHandler.restart();
                     return;
                 }
             }
@@ -157,7 +158,7 @@ public class MulticastJoiner extends AbstractJoiner {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
                 JoinInfo joinInfo = node.createJoinInfo();
-                for (; node.isActive() && currentTryCount.incrementAndGet() <= tryCount.get(); ) {
+                for (; node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get(); ) {
                     joinInfo.setTryCount(currentTryCount.get());
                     node.multicastService.send(joinInfo);
                     if (node.getMasterAddress() == null) {
@@ -169,7 +170,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
             } else {
                 logger.log(Level.FINEST, "RETURNING join.ip");
-                return new Address(ip, config.getPort());
+                return new Address(ip, config.getNetworkConfig().getPort());
             }
         } catch (final Exception e) {
             if (logger != null) {
@@ -182,7 +183,8 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     private int calculateTryCount() {
-        int timeoutSeconds = config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
         int tryCount = timeoutSeconds * 100;
         String host = node.address.getHost();
         int lastDigits = 0;
@@ -192,14 +194,14 @@ public class MulticastJoiner extends AbstractJoiner {
             lastDigits = (int) (512 * Math.random());
         }
         lastDigits = lastDigits % 100;
-        tryCount += lastDigits + (node.address.getPort() - node.config.getPort()) * timeoutSeconds * 3;
+        tryCount += lastDigits + (node.address.getPort() - networkConfig.getPort()) * timeoutSeconds * 3;
         return tryCount;
     }
 
     public void onReceivedJoinInfo(JoinInfo joinInfo) {
         if (joinInfo.getTryCount() > this.currentTryCount.get() + 20) {
             int timeoutSeconds = (config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() + 4) * 100;
-            this.tryCount.set(timeoutSeconds);
+            this.maxTryCount.set(timeoutSeconds);
         }
     }
 }

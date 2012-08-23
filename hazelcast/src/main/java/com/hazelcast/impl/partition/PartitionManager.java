@@ -613,12 +613,12 @@ public class PartitionManager {
         return needBackup || !immediateTasksQueue.isEmpty();
     }
 
-    public void fireMigrationEvent(final boolean started, int partitionId, Address from, Address to) {
+    public void fireMigrationEvent(final MigrationStatus status, int partitionId, Address from, Address to) {
         final MemberImpl current = node.clusterImpl.getMember(from);
         final MemberImpl newOwner = node.clusterImpl.getMember(to);
         final MigrationEvent migrationEvent = new MigrationEvent(node, partitionId, current, newOwner);
-        systemLogService.logPartition("MigrationEvent [" + started + "] " + migrationEvent);
-        partitionServiceImpl.doFireMigrationEvent(started, migrationEvent);
+        systemLogService.logPartition("MigrationEvent [" + status + "] " + migrationEvent);
+        partitionServiceImpl.doFireMigrationEvent(status, migrationEvent);
     }
 
     private boolean shouldCheckRepartitioning() {

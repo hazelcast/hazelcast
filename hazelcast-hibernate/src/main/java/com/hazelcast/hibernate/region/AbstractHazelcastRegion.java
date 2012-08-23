@@ -101,11 +101,11 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
         return size;
     }
 
-    public int getTimeout() {
+    public final int getTimeout() {
         return timeout;
     }
 
-    public long nextTimestamp() {
+    public final long nextTimestamp() {
         return HazelcastTimestamper.nextTimestamp(instance);
     }
 
@@ -120,5 +120,9 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
     public boolean contains(Object key) {
         return getCache().containsKey(key);
+    }
+
+    public final HazelcastInstance getInstance() {
+        return instance;
     }
 }

@@ -58,6 +58,8 @@ public class AddOrRemoveConnection extends AbstractOperation implements NoReply,
     }
 
     public void run() {
-//        getOperationContext().getNodeService().getClusterImpl().handleAddRemoveConnection(this);
+        if (!add) {
+            getNodeService().getClusterImpl().removeAddress(address);
+        }
     }
 }

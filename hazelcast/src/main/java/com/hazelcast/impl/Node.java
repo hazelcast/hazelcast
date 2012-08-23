@@ -19,10 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterImpl;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.cluster.JoinRequest;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.Join;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
@@ -139,16 +136,16 @@ public class Node {
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         systemLogService = new SystemLogService(this);
         ServerSocketChannel serverSocketChannel = null;
-        Address localAddress = null;
+        Address publicAddress = null;
         try {
             AddressPicker addressPicker = new AddressPicker(this);
             addressPicker.pickAddress();
-            localAddress = addressPicker.getAddress();
+            publicAddress = addressPicker.getPublicAddress();
             serverSocketChannel = addressPicker.getServerSocketChannel();
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }
-        address = localAddress;
+        address = publicAddress;
         localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
@@ -367,9 +364,9 @@ public class Node {
         }
     }
 
-    private void doShutdown(boolean force) {
+    void doShutdown(boolean force) {
         long start = Clock.currentTimeMillis();
-        logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
+        logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             int waitSeconds = 0;
@@ -446,6 +443,7 @@ public class Node {
 
     public void onRestart() {
         joined.set(false);
+        joiner.reset();
         final String uuid = UUID.randomUUID().toString();
         logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
         localMember.setUuid(uuid);
@@ -467,20 +465,10 @@ public class Node {
         return connectionManager;
     }
 
-    public void onOutOfMemory(OutOfMemoryError e) {
-        try {
-            if (connectionManager != null) {
-                connectionManager.shutdown();
-                shutdown(true, false);
-            }
-        } catch (Throwable ignored) {
-            logger.log(Level.FINEST, ignored.getMessage(), ignored);
-        } finally {
-            // Node.doShutdown sets active=false
-            // active = false;
-            outOfMemory = true;
-            logger.log(Level.SEVERE, e.getMessage(), e);
-        }
+    void onOutOfMemory() {
+        outOfMemory = true;
+        joined.set(false);
+        setActive(false);
     }
 
     public Set<Address> getFailedConnections() {
@@ -564,10 +552,10 @@ public class Node {
             }
         } catch (Exception e) {
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                logger.log(Level.WARNING, e.getMessage());
+                logger.log(Level.WARNING, "Trying to rejoin: " + e.getMessage());
                 rejoin();
             } else {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.log(Level.SEVERE, "Could not join cluster, shutting down!", e);
                 shutdown(false, true);
             }
         }

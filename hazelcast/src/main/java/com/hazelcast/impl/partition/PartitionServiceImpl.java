@@ -78,7 +78,7 @@ public class PartitionServiceImpl implements PartitionService {
         return mapPartitions.get(partitionId);
     }
 
-    void doFireMigrationEvent(final boolean started, final MigrationEvent migrationEvent) {
+    void doFireMigrationEvent(final MigrationStatus status, final MigrationEvent migrationEvent) {
         if (migrationEvent == null) throw new IllegalArgumentException("MigrationEvent is null.");
 //        if (!started) {
 //            concurrentMapManager.node.executorManager.executeNow(new Runnable() {
@@ -98,10 +98,16 @@ public class PartitionServiceImpl implements PartitionService {
         for (final MigrationListener migrationListener : lsMigrationListeners) {
             partitionManager.node.nodeService.getExecutorService().execute(new Runnable() {
                 public void run() {
-                    if (started) {
-                        migrationListener.migrationStarted(migrationEvent);
-                    } else {
-                        migrationListener.migrationCompleted(migrationEvent);
+                    switch (status) {
+                        case STARTED:
+                            migrationListener.migrationStarted(migrationEvent);
+                            break;
+                        case COMPLETED:
+                            migrationListener.migrationCompleted(migrationEvent);
+                            break;
+                        case FAILED:
+                            migrationListener.migrationFailed(migrationEvent);
+                            break;
                     }
                 }
             });

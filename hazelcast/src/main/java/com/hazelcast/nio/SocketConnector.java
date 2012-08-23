@@ -119,7 +119,7 @@ public class SocketConnector implements Runnable {
             final SocketChannelWrapper socketChannelWrapper = connectionManager
                     .wrapSocketChannel(socketChannel, true);
             Connection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
-            connectionManager.bind(address, connection, false);
+            connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {
             closeSocket(socketChannel);
             final Level level = silent ? Level.FINEST : Level.INFO;

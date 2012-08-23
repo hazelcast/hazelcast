@@ -33,7 +33,8 @@ class AddressPicker {
     private final Node node;
     private final ILogger logger;
     private ServerSocketChannel serverSocketChannel;
-    private Address address;
+    private Address publicAddress;
+    private Address bindAddress;
 
     public AddressPicker(Node node) {
         this.node = node;
@@ -41,13 +42,13 @@ class AddressPicker {
     }
 
     public void pickAddress() throws Exception {
-        if (address != null) {
+        if (publicAddress != null || bindAddress != null) {
             return;
         }
         try {
-            final Config config = node.getConfig();
-            final AddressDefinition addressDef = pickAddress(config);
-            final boolean reuseAddress = config.isReuseAddress();
+            final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
+            final AddressDefinition bindAddressDef = pickAddress(networkConfig);
+            final boolean reuseAddress = networkConfig.isReuseAddress();
             final boolean bindAny = node.getGroupProperties().SOCKET_BIND_ANY.getBoolean();
             serverSocketChannel = ServerSocketChannel.open();
             final ServerSocket serverSocket = serverSocketChannel.socket();
@@ -70,20 +71,20 @@ class AddressPicker {
             serverSocket.setReuseAddress(reuseAddress);
             serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
-            int port = config.getPort();
+            int port = networkConfig.getPort();
             for (int i = 0; i < 100; i++) {
                 try {
                     if (bindAny) {
                         isa = new InetSocketAddress(port);
                     } else {
-                        isa = new InetSocketAddress(addressDef.inetAddress, port);
+                        isa = new InetSocketAddress(bindAddressDef.inetAddress, port);
                     }
                     log(Level.FINEST, "Trying to bind inet socket address:" + isa);
                     serverSocket.bind(isa, 100);
                     log(Level.FINEST, "Bind successful to inet socket address:" + isa);
                     break;
                 } catch (final Exception e) {
-                    if (config.isPortAutoIncrement()) {
+                    if (networkConfig.isPortAutoIncrement()) {
                         port++;
                     } else {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
@@ -94,26 +95,35 @@ class AddressPicker {
                 }
             }
             serverSocketChannel.configureBlocking(false);
-            if (addressDef.host != null) {
-                address = new Address(addressDef.host, port);
+            bindAddress = createAddress(bindAddressDef, port);
+            log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+            
+            AddressDefinition publicAddressDef = getPublicAddress(node.getConfig());
+            if (publicAddressDef != null) {
+            	publicAddress = createAddress(publicAddressDef, port);
+            	log(Level.INFO, "Using public address: " + publicAddress);
             } else {
-                address = new Address(addressDef.inetAddress, port);
+            	publicAddress = bindAddress;
+            	log(Level.FINEST, "Using public address the same as the bind address. " + publicAddress);
             }
-            log(Level.INFO, "Picked " + address + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+            
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw e;
         }
     }
 
-    private AddressDefinition pickAddress(final Config config) throws UnknownHostException, SocketException {
+    private Address createAddress(final AddressDefinition addressDef, final int port) throws UnknownHostException {
+        return new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
+    }
+
+    private AddressDefinition pickAddress(final NetworkConfig networkConfig) throws UnknownHostException, SocketException {
         AddressDefinition addressDef = getSystemConfiguredAddress();
         if (addressDef == null) {
-            final NetworkConfig networkConfig = config.getNetworkConfig();
             final Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
             if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
                     || interfaces.contains(new InterfaceDefinition("localhost"))) {
-                addressDef = pickLoopbackAddress();
+                addressDef = pickLoopbackAddress(); 
             } else {
                 if (preferIPv4Stack()) {
                     log(Level.INFO, "Prefer IPv4 stack is true.");
@@ -205,19 +215,37 @@ class AddressPicker {
     }
 
     private AddressDefinition getSystemConfiguredAddress() throws UnknownHostException {
-        String localAddress = System.getProperty("hazelcast.local.localAddress");
-        if (localAddress != null) {
-            localAddress = localAddress.trim();
-            if ("127.0.0.1".equals(localAddress) || "localhost".equals(localAddress)) {
+    	String address = System.getProperty("hazelcast.local.localAddress");
+        if (address != null) {
+            address = address.trim();
+            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress();
             } else {
                 log(Level.INFO, "Picking address configured by System property 'hazelcast.local.localAddress'");
-                return new AddressDefinition(localAddress, InetAddress.getByName(localAddress));
+                return new AddressDefinition(address, InetAddress.getByName(address));
             }
         }
         return null;
     }
 
+    private AddressDefinition getPublicAddress(Config config) throws UnknownHostException {
+        // first; the system prop
+    	// second; config value
+    	String address = config.getProperty("hazelcast.local.publicAddress");
+        if (address == null) {
+        	address = config.getNetworkConfig().getPublicAddress();
+        }
+        if (address != null) {
+            address = address.trim();
+            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
+                return pickLoopbackAddress();
+            } else {
+                return new AddressDefinition(address, InetAddress.getByName(address));
+            }
+        }
+        return null;
+    }
+    
     // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
     private AddressDefinition pickLoopbackAddress() throws UnknownHostException {
         if (System.getProperty("java.net.preferIPv6Addresses") == null
@@ -227,7 +255,7 @@ class AddressPicker {
                     "Picking loopback address [127.0.0.1]; setting 'java.net.preferIPv4Stack' to true.");
             System.setProperty("java.net.preferIPv4Stack", "true");
         }
-        return new AddressDefinition("127.0.0.1", InetAddress.getByName("127.0.0.1"));
+        return new AddressDefinition(InetAddress.getByName("127.0.0.1"));
     }
 
     private AddressDefinition pickMatchingAddress(final Collection<InterfaceDefinition> interfaces) throws SocketException {
@@ -273,9 +301,18 @@ class AddressPicker {
         return preferIPv4Stack || awsEnabled;
     }
 
+    @Deprecated
     public Address getAddress() {
-        return address;
+        return getBindAddress();
     }
+    
+    public Address getBindAddress() {
+		return bindAddress;
+	}
+    
+    public Address getPublicAddress() {
+		return publicAddress;
+	}
 
     public ServerSocketChannel getServerSocketChannel() {
         return serverSocketChannel;
@@ -305,7 +342,7 @@ class AddressPicker {
 
         @Override
         public String toString() {
-            return host != null ? host : address;
+            return host != null ? (host + "/" + address) : address;
         }
 
         @Override

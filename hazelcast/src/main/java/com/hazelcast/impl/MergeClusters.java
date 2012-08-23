@@ -16,6 +16,8 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.impl.spi.NoReply;
+
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
