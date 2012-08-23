@@ -90,7 +90,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
     public void testEntity() {
         final HazelcastInstance hz = getHazelcastInstance();
         assertNotNull(hz);
-        assertEquals(Hazelcast.getDefaultInstance(), hz);
         final int count = 100;
         final int childCount = 3;
         insertDummyEntities(count, childCount);

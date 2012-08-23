@@ -17,7 +17,6 @@
 package com.hazelcast.impl.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.memcache.*;
@@ -25,13 +24,14 @@ import com.hazelcast.impl.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.impl.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.impl.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.impl.ascii.rest.RestValue;
-import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.SimpleBlockingQueue;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -40,7 +40,8 @@ import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
 
 public class TextCommandServiceImpl implements TextCommandService, TextCommandConstants {
     private final Node node;
-    private final ParallelExecutor parallelExecutor;
+//    private final ParallelExecutor parallelExecutor;
+    private final Executor parallelExecutor;
     private final TextCommandProcessor[] textCommandProcessors = new TextCommandProcessor[100];
     private final HazelcastInstance hazelcast;
     private final AtomicLong gets = new AtomicLong();
@@ -54,9 +55,10 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     public TextCommandServiceImpl(Node node) {
         this.node = node;
-        this.hazelcast = node.factory;
+        this.hazelcast = node.hazelcastInstance;
         this.logger = node.getLogger(this.getClass().getName());
-        this.parallelExecutor = this.node.executorManager.newParallelExecutor(40);
+//        this.parallelExecutor = this.node.executorManager.newParallelExecutor(40);
+        this.parallelExecutor = this.node.nodeService.getExecutorService();
         textCommandProcessors[GET.getValue()] = new GetCommandProcessor(this, true);
         textCommandProcessors[PARTIAL_GET.getValue()] = new GetCommandProcessor(this, false);
         textCommandProcessors[SET.getValue()] = new SetCommandProcessor(this);
@@ -83,8 +85,8 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     public Stats getStats() {
         Stats stats = new Stats();
         stats.uptime = (int) ((Clock.currentTimeMillis() - startTime) / 1000);
-        stats.threads = parallelExecutor.getActiveCount();
-        stats.waiting_requests = parallelExecutor.getPoolSize();
+//        stats.threads = parallelExecutor.getActiveCount();
+//        stats.waiting_requests = parallelExecutor.getPoolSize();
         stats.cmd_get = gets.get();
         stats.cmd_set = sets.get();
         stats.cmd_delete = deletes.get();

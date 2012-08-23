@@ -77,10 +77,10 @@ public class TestManagedContext {
     @Test
     public void testDistributedTask() throws ExecutionException, InterruptedException {
         SomeTask task = (SomeTask) context.getBean("someTask");
-        Future<Long> f = instance1.getExecutorService().submit(task);
+        Future<Long> f = instance1.getExecutorService("test").submit(task);
         Assert.assertEquals(bean.value, f.get().longValue());
 
-        Future<Long> f2 = (Future<Long>) instance1.getExecutorService()
+        Future<Long> f2 = (Future<Long>) instance1.getExecutorService("test")
                 .submit(new DistributedTask<Long>(new SomeTask()));
         Assert.assertEquals(bean.value, f2.get().longValue());
     }

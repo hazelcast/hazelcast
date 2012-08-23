@@ -20,31 +20,27 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.logging.ILogger;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 public class LifecycleServiceImpl implements LifecycleService {
-    final FactoryImpl factory;
+    final HazelcastInstanceImpl instance;
     final AtomicBoolean paused = new AtomicBoolean(false);
-    final CopyOnWriteArrayList<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
+    final List<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
     final Object lifecycleLock = new Object();
 
-    public LifecycleServiceImpl(FactoryImpl factory) {
-        this.factory = factory;
+    public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
+        this.instance = instance;
     }
 
     private ILogger getLogger() {
-        return factory.node.getLogger(LifecycleServiceImpl.class.getName());
+        return instance.node.getLogger(LifecycleServiceImpl.class.getName());
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {
@@ -60,7 +56,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
-        getLogger().log(Level.INFO, factory.node.getThisAddress() + " is " + lifecycleEvent.getState());
+        getLogger().log(Level.INFO, instance.node.getThisAddress() + " is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }
@@ -94,14 +90,14 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public boolean isRunning() {
         synchronized (lifecycleLock) {
-            return factory.node.isActive();
+            return instance.node.isActive();
         }
     }
 
     public void shutdown() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            FactoryImpl.shutdown(factory);
+            instance.shutdown();
             fireLifecycleEvent(SHUTDOWN);
         }
     }
@@ -109,7 +105,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void kill() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            FactoryImpl.kill(factory);
+            instance.shutdown();
             fireLifecycleEvent(SHUTDOWN);
         }
     }
@@ -118,42 +114,13 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(RESTARTING);
             paused.set(true);
-            final Node node = factory.node;
-            final ILogger logger = getLogger();
-            List<Record> lsOwnedRecords = new ArrayList<Record>();
-            for (CMap cmap : node.concurrentMapManager.getCMaps().values()) {
-                if (cmap.isUserMap()) {
-                    lsOwnedRecords.addAll(cmap.getMapIndexService().getOwnedRecords());
-                }
-            }
+            final Node node = instance.node;
             node.onRestart();
-            node.clientHandlerService.restart();
+//            node.clientHandlerService.restart();
             node.connectionManager.onRestart();
             node.clusterImpl.onRestart();
             node.partitionManager.onRestart();
-            node.concurrentMapManager.onRestart();
             node.rejoin();
-            final CountDownLatch latch = new CountDownLatch(lsOwnedRecords.size());
-            final ParallelExecutor executor = node.executorManager.newParallelExecutor(16);
-            for (final Record ownedRecord : lsOwnedRecords) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        try {
-                            ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
-                            mput.merge(ownedRecord);
-                            // invalidate record now (skipped invalidation on restart)
-                            ownedRecord.invalidate();
-                            latch.countDown();
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, e.getMessage(), e);
-                        }
-                    }
-                });
-            }
-            try {
-                latch.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
             paused.set(false);
             fireLifecycleEvent(RESTARTED);
         }

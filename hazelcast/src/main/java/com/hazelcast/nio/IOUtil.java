@@ -71,9 +71,8 @@ public final class IOUtil {
             Data data = new Data();
             data.readData(in);
             return data;
-        } else {
-            return null;
         }
+        return null;
     }
 
     public static byte[] toByteArray(Object obj) {

@@ -17,7 +17,7 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,7 +27,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class Response extends AbstractOperation implements NonBlockingOperation, NoReply {
-    private Object result = null;
+    private transient Object result = null;
     private Data resultData = null;
     private boolean exception = false;
     private Data opBeforeData = null;
@@ -85,14 +85,14 @@ public class Response extends AbstractOperation implements NonBlockingOperation,
     }
 
     public void writeData(DataOutput out) throws IOException {
-        SerializationHelper.writeNullableData(out, opBeforeData);
-        SerializationHelper.writeNullableData(out, resultData);
+        IOUtil.writeData(out, opBeforeData);
+        IOUtil.writeData(out, resultData);
         out.writeBoolean(exception);
     }
 
     public void readData(DataInput in) throws IOException {
-        opBeforeData = SerializationHelper.readNullableData(in);
-        resultData = SerializationHelper.readNullableData(in);
+        opBeforeData = IOUtil.readData(in);
+        resultData = IOUtil.readData(in);
         exception = in.readBoolean();
     }
 

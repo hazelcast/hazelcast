@@ -369,8 +369,8 @@ public class HazelcastClient implements HazelcastInstance {
         return config;
     }
 
-    public void registerGlobalSerializer(final TypeSerializer serializer) {
-        serializerRegistry.registerGlobal(serializer);
+    public void registerFallbackSerializer(final TypeSerializer serializer) {
+        serializerRegistry.registerFallback(serializer);
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {

@@ -204,6 +204,7 @@ public class ConnectionManager {
         log(Level.FINEST, "Binding " + connection + " to " + endPoint + ", accept: " + accept);
         connection.setEndPoint(endPoint);
         if (mapConnections.containsKey(endPoint)) {
+            log(Level.FINEST, connection + " is already bound  to " + endPoint);
             return false;
         }
         if (!endPoint.equals(ioService.getThisAddress())) {

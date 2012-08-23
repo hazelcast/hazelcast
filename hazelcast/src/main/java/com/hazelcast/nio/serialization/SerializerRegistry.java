@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class SerializerRegistry {
 
-    private final AtomicReference<TypeSerializer> global = new AtomicReference<TypeSerializer>();
+    private final AtomicReference<TypeSerializer> fallback = new AtomicReference<TypeSerializer>();
 
     private final ConcurrentMap<Class, TypeSerializer> typeMap = new ConcurrentHashMap<Class, TypeSerializer>();
 
@@ -52,9 +52,9 @@ public class SerializerRegistry {
         safeRegister(type, serializer);
     }
 
-    public void registerGlobal(final TypeSerializer serializer) {
-        if (!global.compareAndSet(null, serializer)) {
-            throw new IllegalStateException("Global serializer is already registered!");
+    public void registerFallback(final TypeSerializer serializer) {
+        if (!fallback.compareAndSet(null, serializer)) {
+            throw new IllegalStateException("Fallback serializer is already registered!");
         }
     }
 
@@ -65,8 +65,8 @@ public class SerializerRegistry {
         }
     }
 
-    public void deregisterGlobal() {
-        global.set(null);
+    public void deregisterFallback() {
+        fallback.set(null);
     }
 
     public TypeSerializer serializerFor(final Class type) {
@@ -95,7 +95,7 @@ public class SerializerRegistry {
                         }
                     }
                 }
-                if (serializer == null && (serializer = global.get()) != null) {
+                if (serializer == null && (serializer = fallback.get()) != null) {
                     safeRegister(type, serializer);
                 }
                 if (serializer == null && (serializer = DefaultSerializers.serializerFor(type)) != null) {
@@ -146,6 +146,6 @@ public class SerializerRegistry {
         }
         typeMap.clear();
         idMap.clear();
-        global.set(null);
+        fallback.set(null);
     }
 }

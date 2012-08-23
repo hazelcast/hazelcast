@@ -16,37 +16,33 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.FactoryImpl.ProxyKey;
-
-import java.util.concurrent.ExecutorService;
-
 public interface ProxyFactory {
 
-    void checkProxy(ProxyKey proxyKey);
+//    void checkProxy(ProxyKey proxyKey);
 
     MProxy createMapProxy(String name);
 
-    QProxy createQueueProxy(String name);
-
-    TopicProxy createTopicProxy(String name);
-
-    MultiMapProxy createMultiMapProxy(String name);
-
-    ListProxy createListProxy(String name);
-
-    SetProxy createSetProxy(String name);
-
-    LockProxy createLockProxy(Object key);
-
-    AtomicNumberProxy createAtomicNumberProxy(String name);
-
-    SemaphoreProxy createSemaphoreProxy(String name);
-
-    CountDownLatchProxy createCountDownLatchProxy(String name);
-
-    IdGeneratorProxy createIdGeneratorProxy(String name);
-
-    ExecutorService createExecutorServiceProxy(String name);
+//    QProxy createQueueProxy(String name);
+//
+//    TopicProxy createTopicProxy(String name);
+//
+//    MultiMapProxy createMultiMapProxy(String name);
+//
+//    ListProxy createListProxy(String name);
+//
+//    SetProxy createSetProxy(String name);
+//
+//    LockProxy createLockProxy(Object key);
+//
+//    AtomicNumberProxy createAtomicNumberProxy(String name);
+//
+//    SemaphoreProxy createSemaphoreProxy(String name);
+//
+//    CountDownLatchProxy createCountDownLatchProxy(String name);
+//
+//    IdGeneratorProxy createIdGeneratorProxy(String name);
+//
+//    ExecutorService createExecutorServiceProxy(String name);
 
     TransactionImpl createTransaction();
 }

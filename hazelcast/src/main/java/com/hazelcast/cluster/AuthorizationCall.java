@@ -17,12 +17,15 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.NonMemberOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class AuthorizationCall extends AbstractRemotelyCallable<Boolean> {
+public class AuthorizationCall extends AbstractOperation implements NonBlockingOperation, NonMemberOperation {
 
     String groupName;
     String groupPassword;
@@ -35,11 +38,15 @@ public class AuthorizationCall extends AbstractRemotelyCallable<Boolean> {
         this.groupPassword = groupPassword;
     }
 
-    public Boolean call() throws Exception {
-        GroupConfig groupConfig = node.getConfig().getGroupConfig();
-        if (!groupName.equals(groupConfig.getName())) return Boolean.FALSE;
-        if (!groupPassword.equals(groupConfig.getPassword())) return Boolean.FALSE;
-        return Boolean.TRUE;
+    public void run() {
+        GroupConfig groupConfig = getOperationContext().getNodeService().getNode().getConfig().getGroupConfig();
+        Boolean response = Boolean.TRUE;
+        if (!groupName.equals(groupConfig.getName())) {
+            response = Boolean.FALSE;
+        } else if (!groupPassword.equals(groupConfig.getPassword())) {
+            response = Boolean.FALSE;
+        }
+        getOperationContext().getResponseHandler().sendResponse(response);
     }
 
     @Override

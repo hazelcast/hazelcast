@@ -18,7 +18,7 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.ExecutorThreadFactory;
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -52,7 +52,7 @@ public class ManagementService {
 
     private final ILogger logger;
 
-    private final FactoryImpl instance;
+    private final HazelcastInstance instance;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
@@ -62,7 +62,7 @@ public class ManagementService {
 
     private final boolean showDetails;
 
-    public ManagementService(FactoryImpl instance) {
+    public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.name = instance.getName();
         this.logger = instance.node.getLogger(ManagementService.class.getName());

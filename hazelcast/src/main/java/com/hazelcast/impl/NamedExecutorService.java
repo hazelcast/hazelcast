@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.impl.executor.ExecutionLoadBalancer;
 import com.hazelcast.impl.executor.ParallelExecutor;
 
 public class NamedExecutorService {

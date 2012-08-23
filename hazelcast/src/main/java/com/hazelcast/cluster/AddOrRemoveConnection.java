@@ -16,13 +16,16 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class AddOrRemoveConnection extends AbstractRemotelyProcessable {
+public class AddOrRemoveConnection extends AbstractOperation implements NoReply, NonBlockingOperation {
     public Address address = null;
 
     public boolean add = true;
@@ -54,7 +57,7 @@ public class AddOrRemoveConnection extends AbstractRemotelyProcessable {
         return "AddOrRemoveConnection add=" + add + ", " + address;
     }
 
-    public void process() {
-        node.clusterImpl.handleAddRemoveConnection(this);
+    public void run() {
+//        getOperationContext().getNodeService().getClusterImpl().handleAddRemoveConnection(this);
     }
 }

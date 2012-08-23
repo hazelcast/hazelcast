@@ -16,14 +16,12 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.Processable;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.base.SystemLogService;
@@ -58,7 +56,7 @@ public class NodeIOService implements IOService {
     }
 
     public void onIOThreadStart() {
-        ThreadContext.get().setCurrentFactory(node.factory);
+        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
     }
 
     public Address getThisAddress() {
@@ -87,7 +85,7 @@ public class NodeIOService implements IOService {
     }
 
     public void handleClientPacket(Packet p) {
-        node.clientHandlerService.handle(p);
+//        node.clientHandlerService.handle(p);
     }
 
     public void handleMemberPacket(final Packet p) {
@@ -96,7 +94,8 @@ public class NodeIOService implements IOService {
             node.nodeService.handleOperation(new SimpleSocketWritable(p));
             p.conn.releasePacket(p);
         } else {
-            node.clusterService.enqueuePacket(p);
+//            node.clusterService.enqueuePacket(p);
+            new RuntimeException("Unknown packet: " + p);
         }
     }
 
@@ -116,7 +115,7 @@ public class NodeIOService implements IOService {
 //        AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
 //        addOrRemoveConnection.setNode(node);
 //        node.clusterImpl.enqueueAndReturn(addOrRemoveConnection);
-        node.executorManager.executeNow(new Runnable() {
+        node.nodeService.getExecutorService().execute(new Runnable() {
             public void run() {
                 node.clusterImpl.removeAddress(endPoint);
             }
@@ -185,8 +184,13 @@ public class NodeIOService implements IOService {
 
     public void disconnectExistingCalls(final Address deadEndpoint) {
         if (deadEndpoint != null) {
-            node.clusterImpl.enqueueAndReturn(new Processable() {
-                public void process() {
+//            node.clusterImpl.enqueueAndReturn(new Processable() {
+//                public void process() {
+//                    node.clusterImpl.disconnectExistingCalls(deadEndpoint);
+//                }
+//            });
+            node.nodeService.getExecutorService().execute(new Runnable() {
+                public void run() {
                     node.clusterImpl.disconnectExistingCalls(deadEndpoint);
                 }
             });
@@ -206,7 +210,7 @@ public class NodeIOService implements IOService {
     }
 
     public void onShutdown() {
-        node.clusterImpl.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
+//        node.clusterImpl.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
         try {
             // wait a little
             Thread.sleep(100);

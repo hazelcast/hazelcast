@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.*;
 import com.hazelcast.core.Instance;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.SerializerRegistry;
@@ -31,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toObject;
-import static com.hazelcast.impl.BaseManager.getInstanceType;
 
 public class ListenerManager extends ClientRunnable {
 
@@ -77,9 +77,9 @@ public class ListenerManager extends ClientRunnable {
                     } else {
                         membershipListenerManager.notifyListeners(packet);
                     }
-                } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.TOPIC)) {
+                } else if (Prefix.getInstanceType(packet.getName()).equals(Instance.InstanceType.TOPIC)) {
                     messageListenerManager.notifyMessageListeners(packet);
-                } else if (getInstanceType(packet.getName()).equals(Instance.InstanceType.QUEUE)) {
+                } else if (Prefix.getInstanceType(packet.getName()).equals(Instance.InstanceType.QUEUE)) {
                     queueItemListenerManager.notifyListeners(packet);
                 } else {
                     entryListenerManager.notifyListeners(packet);

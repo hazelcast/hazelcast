@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.core.Instance.InstanceType;
+
 /**
  * Holds the prefix constants used by Hazelcast.
  */
@@ -134,6 +136,33 @@ public final class Prefix {
      * The Constant LOCKS_MAP_HAZELCAST: "c:__hz_Locks"
      */
     public static final String LOCKS_MAP_HAZELCAST = MAP_HAZELCAST + "Locks";
+
+
+    public static InstanceType getInstanceType(final String name) {
+        if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
+            return InstanceType.ATOMIC_NUMBER;
+        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
+            return InstanceType.COUNT_DOWN_LATCH;
+        } else if (name.startsWith(Prefix.IDGEN)) {
+            return InstanceType.ID_GENERATOR;
+        } else if (name.startsWith(Prefix.AS_LIST)) {
+            return InstanceType.LIST;
+        } else if (name.startsWith(Prefix.MAP)) {
+            return InstanceType.MAP;
+        } else if (name.startsWith(Prefix.MULTIMAP)) {
+            return InstanceType.MULTIMAP;
+        } else if (name.startsWith(Prefix.QUEUE)) {
+            return InstanceType.QUEUE;
+        } else if (name.startsWith(Prefix.SEMAPHORE)) {
+            return InstanceType.SEMAPHORE;
+        } else if (name.startsWith(Prefix.SET)) {
+            return InstanceType.SET;
+        } else if (name.startsWith(Prefix.TOPIC)) {
+            return InstanceType.TOPIC;
+        } else {
+            throw new RuntimeException("Unknown InstanceType " + name);
+        }
+    }
 
     /**
      * Private constructor to avoid instances of the class.

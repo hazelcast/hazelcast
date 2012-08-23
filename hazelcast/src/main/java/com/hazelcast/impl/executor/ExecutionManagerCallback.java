@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.executor;
 
-import com.hazelcast.core.MultiMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
-public interface MultiMapProxy extends MultiMap, HazelcastInstanceAwareInstance {
-    MProxy getMProxy();
+public interface ExecutionManagerCallback {
+
+    boolean cancel(boolean mayInterruptIfRunning);
+
+    void get() throws InterruptedException, ExecutionException;
+
+    void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException;
 }

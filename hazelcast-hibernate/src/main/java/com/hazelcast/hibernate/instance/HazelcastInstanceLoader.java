@@ -38,7 +38,6 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 
     private final Properties props = new Properties();
     private boolean useLiteMember = false;
-    private boolean staticInstance = false;
     private String instanceName = null;
     private HazelcastInstance instance;
     private Config config = null;
@@ -69,13 +68,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
                     "Creating Hazelcast node as Lite-Member. "
                             + "Make sure this node has access to an already running cluster...");
         }
-        if (isEmpty(configResourcePath)) {
-            // If both useLiteMember and instanceName is not set
-            // then just use default instance.
-            if (!useLiteMember && instanceName == null) {
-                staticInstance = true;
-            }
-        } else {
+        if (!isEmpty(configResourcePath)) {
             try {
                 config = ConfigLoader.load(configResourcePath);
             } catch (IOException e) {
@@ -101,16 +94,12 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
     }
 
     private void createOrGetInstance() throws DuplicateInstanceNameException {
-        if (staticInstance) {
-            instance = Hazelcast.getDefaultInstance();
-        } else {
-            if (config == null) {
-                config = new XmlConfigBuilder().build();
-            }
-            config.setInstanceName(instanceName);
-            config.setLiteMember(useLiteMember);
-            instance = Hazelcast.newHazelcastInstance(config);
+        if (config == null) {
+            config = new XmlConfigBuilder().build();
         }
+        config.setInstanceName(instanceName);
+        config.setLiteMember(useLiteMember);
+        instance = Hazelcast.newHazelcastInstance(config);
     }
 
     public void unloadInstance() throws CacheException {

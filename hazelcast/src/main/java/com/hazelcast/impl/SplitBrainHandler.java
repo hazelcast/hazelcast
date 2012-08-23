@@ -16,39 +16,24 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.Clock;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SplitBrainHandler implements Runnable {
+
     final Node node;
-    final ILogger logger;
-    @SuppressWarnings("VolatileLongOrDoubleField")
-    volatile long lastRun = 0;
-    volatile boolean inProgress = false;
-    final long FIRST_RUN_DELAY_MILLIS;
-    final long NEXT_RUN_DELAY_MILLIS;
+    final AtomicBoolean inProgress = new AtomicBoolean(false);
 
     public SplitBrainHandler(Node node) {
         this.node = node;
-        this.logger = node.getLogger(SplitBrainHandler.class.getName());
-        FIRST_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000L;
-        NEXT_RUN_DELAY_MILLIS = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000L;
-        lastRun = Clock.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
     }
 
     public void run() {
-        if (node.isMaster() && node.joined() && node.isActive()) {
-            long now = Clock.currentTimeMillis();
-            if (!inProgress && (now - lastRun > NEXT_RUN_DELAY_MILLIS) && node.clusterImpl.shouldTryMerge()) {
-                inProgress = true;
-                node.executorManager.executeNow(new FallThroughRunnable() {
-                    @Override
-                    public void doRun() {
-                        searchForOtherClusters();
-                        lastRun = Clock.currentTimeMillis();
-                        inProgress = false;
-                    }
-                });
+        if (node.isMaster() && node.joined() && node.isActive() && node.clusterImpl.shouldTryMerge()
+            && inProgress.compareAndSet(false, true)) {
+            try {
+                searchForOtherClusters();
+            } finally {
+                inProgress.set(false);
             }
         }
     }
@@ -61,7 +46,6 @@ public class SplitBrainHandler implements Runnable {
     }
 
     public void restart() {
-        lastRun = Clock.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
-        node.factory.restart();
+        node.hazelcastInstance.getLifecycleService().restart();
     }
 }

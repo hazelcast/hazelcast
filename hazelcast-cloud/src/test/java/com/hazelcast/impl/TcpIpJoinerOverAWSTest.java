@@ -52,6 +52,6 @@ public class TcpIpJoinerOverAWSTest {
         System.setProperty("hazelcast.config", "/Users/malikov/hazelcast-1.9.4/bin/hazelcast.xml");
 //        XmlConfigBuilder configBuilder = new XmlConfigBuilder(new FileInputStream(new File("/Users/malikov/hazelcast-1.9.4/bin/hazelcast.xml")));
 //        HazelcastInstance h = Hazelcast.newHazelcastInstance(configBuilder.build());
-        Hazelcast.getMap("myMap").get(1);
+        Hazelcast.newHazelcastInstance(null).getMap("myMap").get(1);
     }
 }

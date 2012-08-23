@@ -17,15 +17,11 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.HazelcastInstanceAwareInstance;
-import com.hazelcast.impl.ThreadContext;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.impl.HazelcastInstanceImpl;
 
-import java.io.*;
-
-public abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareInstance, DataSerializable {
-    transient protected FactoryImpl factory = null;
+public abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareInstance {
+    transient protected HazelcastInstanceImpl hazelcastInstance = null;
     protected String name = null;
 
     protected FactoryAwareNamedProxy() {
@@ -39,28 +35,11 @@ public abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareIn
         this.name = name;
     }
 
-    public FactoryImpl getFactory() {
-        return factory;
+    public HazelcastInstance getHazelcastInstance() {
+        return hazelcastInstance;
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.factory = (FactoryImpl) hazelcastInstance;
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-    }
-
-    public void readData(DataInput in) throws IOException {
-        setName(in.readUTF());
-        setHazelcastInstance(ThreadContext.get().getCurrentFactory());
-    }
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        writeData(out);
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        readData(in);
+        this.hazelcastInstance = (HazelcastInstanceImpl) hazelcastInstance;
     }
 }

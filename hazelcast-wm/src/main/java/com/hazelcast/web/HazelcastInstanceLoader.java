@@ -79,10 +79,6 @@ class HazelcastInstanceLoader {
             return HazelcastClient.newHazelcastClient(clientConfig);
         }
 
-        if (configUrl == null && isEmpty(instanceName)) {
-            return Hazelcast.getDefaultInstance();
-        }
-
         Config config;
         if (configUrl == null) {
             config = new XmlConfigBuilder().build();

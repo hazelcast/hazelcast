@@ -23,4 +23,6 @@ public interface MigrationListener extends EventListener {
     void migrationStarted(MigrationEvent migrationEvent);
 
     void migrationCompleted(MigrationEvent migrationEvent);
+
+    void migrationFailed(MigrationEvent migrationEvent);
 }

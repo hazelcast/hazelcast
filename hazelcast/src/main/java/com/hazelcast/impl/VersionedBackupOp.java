@@ -26,7 +26,7 @@ public class VersionedBackupOp implements Runnable, Comparable {
     }
 
     public void run() {
-        cmap.doBackup(request);
+//        cmap.doBackup(request);
     }
 
     long getVersion() {

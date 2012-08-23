@@ -18,7 +18,6 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

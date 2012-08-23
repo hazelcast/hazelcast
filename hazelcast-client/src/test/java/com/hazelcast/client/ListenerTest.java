@@ -107,7 +107,7 @@ public class ListenerTest {
                 System.out.println(event);
             }
         });
-        Hazelcast.getDefaultInstance();
+        Hazelcast.newHazelcastInstance(null);
         HazelcastClient client = HazelcastClient.newHazelcastClient(config);
 
         Assert.assertEquals(new LifecycleEvent(LifecycleState.STARTING), q.poll(3, TimeUnit.SECONDS));
