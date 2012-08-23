@@ -161,7 +161,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     /**
      * If this map has a MapStore and write-delay-seconds is
      * bigger than 0 (write-behind) then this method flushes
-     * all the local dirty entries by calling MapStore.storeAll()
+     * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
      */
     void flush();
 

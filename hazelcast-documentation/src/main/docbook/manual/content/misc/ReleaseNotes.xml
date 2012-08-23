@@ -83,7 +83,7 @@
                 <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=12&amp;state=closed">
                     Fixed issues:</link></para>
                 <para>167, 182, 188, 209, 217, 218, 220, 222, 223, 225, 226, 227, 228, 229,
-                    230, 233, 234, 235, 237, 241, 243</para>
+                    230, 233, 234, 235, 237, 241, 243, 244, 247, 250</para>
             </listitem>
         </itemizedlist>
     </para>

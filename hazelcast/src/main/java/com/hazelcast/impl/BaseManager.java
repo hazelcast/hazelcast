@@ -185,7 +185,7 @@ public abstract class BaseManager {
     protected void rethrowException(ClusterOperation operation, AddressAwareException exception) {
         String msg = operation + " failed at " + thisAddress
                 + " because of an exception thrown at " + exception.getAddress();
-        throw new RuntimeException(msg, exception.getException());
+        throw new HazelcastException(msg, exception.getException());
     }
 
     abstract class AbstractCall implements Call, CallStateAware {
@@ -697,7 +697,7 @@ public abstract class BaseManager {
             if (packet.responseType == RESPONSE_SUCCESS) {
                 setResult(packet.longValue);
             } else {
-                throw new RuntimeException("handleLongNoneRedoResponse.responseType "
+                throw new HazelcastException("handleLongNoneRedoResponse.responseType "
                         + packet.responseType);
             }
         }
@@ -711,7 +711,7 @@ public abstract class BaseManager {
                     setResult(valueData);
                 }
             } else {
-                throw new RuntimeException(request.operation + " handleObjectNoneRedoResponse.responseType "
+                throw new HazelcastException(request.operation + " handleObjectNoneRedoResponse.responseType "
                         + packet.responseType);
             }
         }
@@ -725,7 +725,7 @@ public abstract class BaseManager {
             } else if (request.isObjectRequest()) {
                 handleObjectNoneRedoResponse(packet);
             } else {
-                throw new RuntimeException(request.operation + " Unknown request.responseType. " + request.responseType);
+                throw new HazelcastException(request.operation + " Unknown request.responseType. " + request.responseType);
             }
         }
 
@@ -1070,7 +1070,7 @@ public abstract class BaseManager {
                     onComplete();
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new HazelcastException(e);
             }
             return (T) returnResult();
         }
@@ -1140,7 +1140,7 @@ public abstract class BaseManager {
         } else if (name.startsWith(Prefix.TOPIC)) {
             return InstanceType.TOPIC;
         } else {
-            throw new RuntimeException("Unknown InstanceType " + name);
+            throw new HazelcastException("Unknown InstanceType " + name);
         }
     }
 

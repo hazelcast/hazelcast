@@ -223,7 +223,14 @@ public class ConcurrentMapManager extends BaseManager {
                     }
                 }
             }
-            cmap.runStoreUpdate(dirtyRecords);
+            try {
+                cmap.runStoreUpdate(dirtyRecords);
+            } catch (Throwable e) {
+                for (Record dirtyRecord : dirtyRecords) {
+                    dirtyRecord.setDirty(true);
+                }
+                Util.throwUncheckedException(e);
+            }
         }
     }
 

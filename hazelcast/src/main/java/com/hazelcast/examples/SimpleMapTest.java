@@ -111,7 +111,7 @@ public class SimpleMapTest {
     }
 
     private static void load(ExecutorService es) throws InterruptedException {
-        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        final IMap<String, byte[]> map = Hazelcast.getMap(NAMESPACE);
         final Member thisMember = Hazelcast.getCluster().getLocalMember();
         List<String> lsOwnedEntries = new LinkedList<String>();
         for (int i = 0; i < ENTRY_COUNT; i++) {
@@ -134,7 +134,7 @@ public class SimpleMapTest {
     }
 
     private static void startPrintStats() {
-        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        final IMap<String, byte[]> map = Hazelcast.getMap(NAMESPACE);
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             public void run() {
                 while (true) {
