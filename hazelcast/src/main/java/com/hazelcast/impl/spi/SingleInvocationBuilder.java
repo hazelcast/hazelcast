@@ -100,7 +100,7 @@ public class SingleInvocationBuilder {
         if (target == null) {
             return new SinglePartitionInvocation(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
         } else {
-            return new SingleTargetInvocation(nodeService, serviceName, op, partitionId, target, tryCount, tryPauseMillis);
+            return new SingleTargetInvocation(nodeService, serviceName, op, partitionId, replicaIndex, target, tryCount, tryPauseMillis);
         }
     }
 }

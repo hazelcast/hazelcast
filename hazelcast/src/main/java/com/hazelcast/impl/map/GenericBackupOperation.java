@@ -103,7 +103,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
                 lock.lock(caller, threadId, ttl);
             }
         }
-        System.out.println(getNodeService().getThisAddress() + "  sending backup response " + firstCallerId + " firstCallerAddress: " + firstCallerAddress);
+//        System.out.println(getNodeService().getThisAddress() + "  sending backup response " + firstCallerId + " firstCallerAddress: " + firstCallerAddress);
         getNodeService().send(MapService.MAP_SERVICE_NAME, new BackupResponse(), partitionId, 0, firstCallerId, firstCallerAddress);
     }
 

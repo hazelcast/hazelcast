@@ -462,7 +462,6 @@ public class PartitionManager {
     }
 
     public void processPartitionRuntimeState(PartitionRuntimeState runtimeState) {
-//        node.checkServiceThread();
         lock.lock();
         try {
             final Address sender = runtimeState.getEndpoint();
@@ -500,7 +499,6 @@ public class PartitionManager {
     }
 
     private void checkMigratingPartitionFor(PartitionInfo partition) {
-//        node.checkServiceThread();
         lock.lock();
         try {
             final MigratingPartition mPartition = migratingPartition;
@@ -690,8 +688,9 @@ public class PartitionManager {
         public void run() {
             if (node.isMaster() && node.isActive()) {
                 if ((!scheduledTasksQueue.isEmpty() || !immediateTasksQueue.isEmpty()) && migrationActive.get()) {
+                    // TODO !!!
                 }
-                    logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
+                logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
                             + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
                 sendPartitionRuntimeState();
             }

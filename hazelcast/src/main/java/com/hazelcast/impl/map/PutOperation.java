@@ -94,7 +94,7 @@ public class PutOperation extends BackupAwareOperation {
             GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
             op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
             op.setFirstCallerId(backupCallId, getCaller());
-            System.out.println("PUT FIRST caller " + getCaller());
+//            System.out.println("PUT FIRST caller " + getCaller());
             try {
                 getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, op, partitionId, mapBackupCount);
             } catch (Exception e) {
@@ -102,7 +102,7 @@ public class PutOperation extends BackupAwareOperation {
             }
         }
         responseHandler.sendResponse(oldValueData);
-        System.out.println(getNodeService().getThisAddress() + "  PUT is complete " + backupCallId);
+//        System.out.println(getNodeService().getThisAddress() + "  PUT is complete " + backupCallId);
     }
 
     private boolean takeBackup() {

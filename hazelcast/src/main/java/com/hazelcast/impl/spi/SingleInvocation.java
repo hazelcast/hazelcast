@@ -62,7 +62,7 @@ abstract class SingleInvocation extends FutureTask implements Invocation, Callba
     public Future invoke() {
         try {
             invokeCount++;
-            nodeService.invokeSingle(SingleInvocation.this);
+            nodeService.invokeSingle(this);
         } catch (Exception e) {
             setResult(e);
         }

@@ -44,10 +44,10 @@ public class MapProxy {
     }
 
     public Object put(String name, Object k, Object v, long ttl) {
-        Data key = toData(k);
-        int partitionId = nodeService.getPartitionId(key);
         ThreadContext threadContext = ThreadContext.get();
         threadContext.setCurrentInstance(nodeService.getNode().hazelcastInstance);
+        Data key = toData(k);
+        int partitionId = nodeService.getPartitionId(key);
         TransactionImpl txn = threadContext.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -55,9 +55,8 @@ public class MapProxy {
             txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
         }
         PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
-//        nodeService.printPartitions();
         long backupCallId = mapService.createNewBackupCallQueue();
-        System.out.println(nodeService.getThisAddress() + " map.put() with BACKUP ID " + backupCallId);
+//        System.out.println(nodeService.getThisAddress() + " map.put() with BACKUP ID " + backupCallId);
         try {
             putOperation.setBackupCallId(backupCallId);
             putOperation.setServiceName(MAP_SERVICE_NAME);
@@ -66,9 +65,9 @@ public class MapProxy {
             Object response = f.get();
             BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
             Object backupResponse = backupResponses.poll(10, TimeUnit.SECONDS);
-            if (backupResponse == null) {
-                System.out.println(nodeService.getThisAddress() + " Has Null backup " + backupCallId);
-            }
+//            if (backupResponse == null) {
+//                System.out.println(nodeService.getThisAddress() + " Has Null backup " + backupCallId);
+//            }
             Object returnObj = null;
             if (response instanceof Response) {
                 Response r = (Response) response;
@@ -116,6 +115,8 @@ public class MapProxy {
     }
 
     public Object getOperation(String name, Object k) {
+        ThreadContext threadContext = ThreadContext.get();
+        threadContext.setCurrentInstance(nodeService.getNode().hazelcastInstance);
         Data key = toData(k);
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));

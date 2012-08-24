@@ -23,8 +23,8 @@ class SingleTargetInvocation extends SingleInvocation {
     private final Address target;
 
     SingleTargetInvocation(NodeService nodeService, String serviceName, Operation op, int partitionId,
-                           Address target, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, partitionId, 0, tryCount, tryPauseMillis);
+                           int replicaIndex, Address target, int tryCount, long tryPauseMillis) {
+        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
         this.target = target;
     }
 

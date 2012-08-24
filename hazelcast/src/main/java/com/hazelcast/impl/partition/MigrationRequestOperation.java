@@ -18,10 +18,7 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.impl.spi.Invocation;
-import com.hazelcast.impl.spi.Operation;
-import com.hazelcast.impl.spi.ResponseHandler;
-import com.hazelcast.impl.spi.ServiceMigrationOperation;
+import com.hazelcast.impl.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -35,7 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends Operation {
+public class MigrationRequestOperation extends Operation implements NonBlockingOperation {
     protected Address from;
     protected Address to;
     private boolean migration; // migration or copy
@@ -78,6 +75,15 @@ public class MigrationRequestOperation extends Operation {
         this.from = from;
     }
 
+    @Override
+    public Operation setReplicaIndex(final int replicaIndex) {
+        if (getReplicaIndex() > 0 && replicaIndex == 0) {
+            System.err.println("ERROR => " + this);
+            new Throwable().printStackTrace();
+        }
+        return super.setReplicaIndex(replicaIndex);
+    }
+
     public void run() {
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
@@ -99,16 +105,18 @@ public class MigrationRequestOperation extends Operation {
                 return;
             }
 
+            final NodeService nodeService = getNodeService();
+            final long timeout = nodeService.getNode().groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();
             pm.lockPartition(partitionId);
-            final Collection<ServiceMigrationOperation> tasks = pm.collectMigrationTasks(partitionId, replicaIndex, to, diffOnly);
-            getNodeService().getExecutorService().execute(new Runnable() {
+            final Collection<ServiceMigrationOperation> tasks = pm.collectMigrationTasks(partitionId, replicaIndex, to,
+                    diffOnly);
+            nodeService.getExecutorService().execute(new Runnable() {
                 public void run() {
                     try {
-                        Invocation inv = getNodeService().createSingleInvocation(PartitionManager.PARTITION_SERVICE_NAME,
+                        Invocation inv = nodeService.createSingleInvocation(PartitionManager.PARTITION_SERVICE_NAME,
                                 new MigrationOperation(partitionId, tasks, replicaIndex, from), partitionId)
                                 .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to).build();
                         Future future = inv.invoke();
-                        final long timeout = getNodeService().getNode().groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();
                         Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
                         responseHandler.sendResponse(result);
                     } catch (Throwable e) {
@@ -123,7 +131,8 @@ public class MigrationRequestOperation extends Operation {
         }
     }
 
-    private void onError(final ResponseHandler responseHandler, Throwable e) {Level level = Level.WARNING;
+    private void onError(final ResponseHandler responseHandler, Throwable e) {
+        Level level = Level.WARNING;
         if (e instanceof ExecutionException) {
             e = e.getCause();
         }

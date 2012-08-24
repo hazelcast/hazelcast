@@ -155,7 +155,8 @@ public class NodeService {
             Data valueData = toData(op);
             TheCall call = new TheCall(target, inv);
             long callId = node.clusterImpl.registerCall(call);
-            SimpleSocketWritable ssw = new SimpleSocketWritable(REMOTE_CALL, serviceName, valueData, callId, partitionId, replicaIndex, null, nonBlocking);
+            SimpleSocketWritable ssw = new SimpleSocketWritable(REMOTE_CALL, serviceName, valueData, callId,
+                    partitionId, replicaIndex, null, nonBlocking);
             boolean sent = node.clusterImpl.send(ssw, target);
             if (!sent) {
                 inv.setResult(new IOException("Packet not sent!"));
@@ -229,7 +230,8 @@ public class NodeService {
                     }
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
-                    node.clusterImpl.send(new SimpleSocketWritable(REMOTE_CALL, serviceName, toData(e), callId, partitionId, replicaIndex, null, true), ssw.getConn());
+                    node.clusterImpl.send(new SimpleSocketWritable(REMOTE_CALL, serviceName, toData(e), callId,
+                            partitionId, replicaIndex, null, true), ssw.getConn());
                 }
             }
         });
@@ -246,7 +248,8 @@ public class NodeService {
         return op;
     }
 
-    public void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds) throws ExecutionException, TimeoutException, InterruptedException {
+    public void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
+            throws ExecutionException, TimeoutException, InterruptedException {
         op.setServiceName(serviceName);
         backupCount = Math.min(getClusterImpl().getSize() - 1, backupCount);
         if (backupCount > 0) {
@@ -269,7 +272,8 @@ public class NodeService {
         }
     }
 
-    public void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount) throws ExecutionException, TimeoutException, InterruptedException {
+    public void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount)
+            throws ExecutionException, TimeoutException, InterruptedException {
         op.setServiceName(serviceName);
         backupCount = Math.min(getClusterImpl().getSize() - 1, backupCount);
         if (backupCount > 0) {
@@ -278,25 +282,19 @@ public class NodeService {
             for (int i = 0; i < backupCount; i++) {
                 int replicaIndex = i + 1;
                 Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
-                System.out.println(partitionInfo);
+//                System.out.println(partitionInfo);
                 if (replicaTarget != null) {
                     if (replicaTarget.equals(getThisAddress())) {
                         // Normally shouldn't happen!!
                     } else {
                         SimpleSocketWritable ssw = new SimpleSocketWritable(REMOTE_CALL, serviceName, opData, -1, partitionId, replicaIndex, null, true);
                         node.clusterImpl.send(ssw, replicaTarget);
-                        System.out.println(getThisAddress() + " sending backup to " + replicaTarget + " and backupId: " + op.getFirstCallerId());
+//                        System.out.println(getThisAddress() + " sending backup to " + replicaTarget + " and backupId: " + op.getFirstCallerId());
                     }
                 } else {
-                    System.out.println(getThisAddress() + " NOT sending backup target null and backupId: " + op.getFirstCallerId());
+//                    System.out.println(getThisAddress() + " NOT sending backup target null and backupId: " + op.getFirstCallerId());
                 }
             }
-        }
-    }
-
-    public void printPartitions() {
-        for (int i = 0; i < 271; i++) {
-            System.out.println(getPartitionInfo(i));
         }
     }
 

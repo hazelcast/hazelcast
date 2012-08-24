@@ -26,7 +26,7 @@ public class BackupResponse extends Response {
             long callId = getCallId();
             MapService mapService = (MapService) getService();
             mapService.getBackupCallQueue(callId).offer(Boolean.TRUE);
-            System.out.println(callId + " Notifying Backup " + getNodeService().getThisAddress());
+//            System.out.println(callId + " Notifying Backup " + getNodeService().getThisAddress());
         } catch (Exception e) {
             e.printStackTrace();
         }

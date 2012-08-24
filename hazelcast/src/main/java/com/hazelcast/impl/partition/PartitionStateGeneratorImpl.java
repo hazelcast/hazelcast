@@ -93,11 +93,10 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             for (int replicaIndex = 0; replicaIndex < PartitionInfo.MAX_REPLICA_COUNT; replicaIndex++) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
-                MigrationRequestOperation migrationRequestTask = null;
+                MigrationRequestOperation op = null;
                 if (currentOwner != null && newOwner != null && !currentOwner.equals(newOwner)) {
                     // migration owner or backup
-                    migrationRequestTask = new MigrationRequestOperation(
-                            partitionId, currentOwner, newOwner, replicaIndex, true);
+                    op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, true);
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
                     currentOwner = currentPartition.getOwner();
@@ -118,24 +117,23 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     if (!selfCopy) {
                         // currentOwner set here is not used on operation, just for an info.
                         // actual currentOwner will be determined just before copy.
-                        migrationRequestTask = new MigrationRequestOperation(
-                                partitionId, currentOwner, newOwner, replicaIndex, false);
+                        op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, false);
                     }
                 } else if (currentOwner != null && newOwner == null) {
                     // A member is dead, this replica should not have an owner!
                     immediateTasksList.add(new MigrationRequestOperation(partitionId, currentOwner, null, replicaIndex, false));
                 }
-                if (migrationRequestTask != null) {
-                    partitionMigrationTasks.add(migrationRequestTask);
+                if (op != null) {
+                    partitionMigrationTasks.add(op);
                     if (replicaIndex == 0 && currentOwner == null) {
-                        lostPartitionTasksList.add(migrationRequestTask);
+                        lostPartitionTasksList.add(op);
                     } else if (replicaIndex == 0 && currentOwner != null
                             && currentOwner.equals(newPartition.getReplicaAddress(1))) {
-                        immediateTasksList.add(migrationRequestTask);
+                        immediateTasksList.add(op);
                     } else if (replicaIndex == 1 && currentPartition.getReplicaAddress(1) == null) {
-                        immediateTasksList.add(migrationRequestTask);
+                        immediateTasksList.add(op);
                     } else {
-                        scheduledTasksList.add(migrationRequestTask);
+                        scheduledTasksList.add(op);
                     }
                 }
             }
