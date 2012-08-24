@@ -16,10 +16,11 @@
 
 package com.hazelcast.examples;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
 
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class SimpleMapTest {
@@ -39,8 +41,9 @@ public class SimpleMapTest {
     public static int PUT_PERCENTAGE = 40;
 
     private static final HazelcastInstance INSTANCE;
-    private static final ILogger logger ;
+    private static final ILogger logger;
     private static final String NAMESPACE = "default";
+    final static Stats stats = new Stats();
 
     static {
         INSTANCE = Hazelcast.newHazelcastInstance(null);
@@ -78,13 +81,13 @@ public class SimpleMapTest {
         boolean load = parse(args);
         logger.log(Level.INFO, "Starting Test with ");
         printVariables();
-        ITopic<String> commands = INSTANCE.getTopic(NAMESPACE);
-        commands.addMessageListener(new MessageListener<String>() {
-            public void onMessage(Message<String> stringMessage) {
-                parse(stringMessage.getMessageObject());
-                printVariables();
-            }
-        });
+//        ITopic<String> commands = INSTANCE.getTopic(NAMESPACE);
+//        commands.addMessageListener(new MessageListener<String>() {
+//            public void onMessage(Message<String> stringMessage) {
+//                parse(stringMessage.getMessageObject());
+//                printVariables();
+//            }
+//        });
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
         startPrintStats();
         if (load)
@@ -97,19 +100,22 @@ public class SimpleMapTest {
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.execute(new Runnable() {
                 public void run() {
-                    while (true) {
-                        try {
+                    try {
+                        while (true) {
                             int key = (int) (Math.random() * ENTRY_COUNT);
                             int operation = ((int) (Math.random() * 100));
                             if (operation < GET_PERCENTAGE) {
                                 map.get(String.valueOf(key));
+                                stats.gets.incrementAndGet();
                             } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
                                 map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                                stats.puts.incrementAndGet();
                             } else {
                                 map.remove(String.valueOf(key));
+                                stats.removes.incrementAndGet();
                             }
-                        } catch (Exception ignored) {
                         }
+                    } catch (Exception ignored) {
                     }
                 }
             });
@@ -140,26 +146,45 @@ public class SimpleMapTest {
     }
 
     private static void startPrintStats() {
-        final IMap<String, byte[]> map = INSTANCE.getMap("default");
-        Executors.newSingleThreadExecutor().execute(new Runnable() {
+        Executors.newSingleThreadExecutor().submit(new Runnable() {
             public void run() {
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
-                        logger.log(Level.INFO, "cluster size:" + INSTANCE.getCluster().getMembers().size());
-                        LocalMapOperationStats mapOpStats = map.getLocalMapStats().getOperationStats();
-                        long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
-                        if (period == 0) {
-                            continue;
-                        }
-                        logger.log(Level.INFO, mapOpStats.toString());
-                        logger.log(Level.INFO, "Operations per Second : " + mapOpStats.total() / period);
+                        Stats statsNow = stats.getAndReset();
+                        System.out.println(statsNow);
+                        System.out.println("Operations per Second : " + statsNow.total() / STATS_SECONDS);
                     } catch (InterruptedException ignored) {
                         return;
                     }
                 }
             }
         });
+    }
+
+    public static class Stats {
+        public AtomicLong gets = new AtomicLong();
+        public AtomicLong puts = new AtomicLong();
+        public AtomicLong removes = new AtomicLong();
+
+        public Stats getAndReset() {
+            long getsNow = gets.getAndSet(0);
+            long putsNow = puts.getAndSet(0);
+            long removesNow = removes.getAndSet(0);
+            Stats newOne = new Stats();
+            newOne.gets.set(getsNow);
+            newOne.puts.set(putsNow);
+            newOne.removes.set(removesNow);
+            return newOne;
+        }
+
+        public long total() {
+            return gets.get() + puts.get() + removes.get();
+        }
+
+        public String toString() {
+            return "total= " + total() + ", gets:" + gets.get() + ", puts:" + puts.get() + ", removes:" + removes.get();
+        }
     }
 
     private static void printVariables() {
