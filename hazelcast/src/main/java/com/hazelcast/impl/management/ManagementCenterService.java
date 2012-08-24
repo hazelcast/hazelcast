@@ -176,7 +176,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
         urlChanged = true;
         logger.log(Level.INFO, "Web server URL has been changed. " +
-                               "Hazelcast will connect to Management Center on address: " + webServerUrl);
+                "Hazelcast will connect to Management Center on address: " + webServerUrl);
     }
 
     private void interruptThread(Thread t) {
@@ -320,12 +320,14 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         InputStream inputStream = connection.getInputStream();
                         DataInputStream input = new DataInputStream(inputStream);
                         final int taskId = input.readInt();
-                        final int requestType = input.readInt();
-                        if (taskId > 0 && requestType < consoleRequests.length) {
-                            final ConsoleRequest request = consoleRequests[requestType];
-                            if (request != null) {
-                                request.readData(input);
-                                sendResponse(taskId, request);
+                        if (taskId > 0) {
+                            final int requestType = input.readInt();
+                            if (requestType < consoleRequests.length) {
+                                final ConsoleRequest request = consoleRequests[requestType];
+                                if (request != null) {
+                                    request.readData(input);
+                                    sendResponse(taskId, request);
+                                }
                             }
                         }
                     } catch (Exception e) {
