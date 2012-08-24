@@ -16,10 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.impl.spi.NoReply;
-import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.NonMemberOperation;
+import com.hazelcast.impl.spi.*;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
@@ -47,7 +44,7 @@ public class Bind extends Master implements NonMemberOperation, NoReply, NonBloc
 
     @Override
     public void run() {
-        NodeService ns = getNodeService();
+        NodeServiceImpl ns = (NodeServiceImpl) getNodeService();
         ns.getNode().getConnectionManager().bind(getConnection(), address, targetAddress, replyBack);
     }
 

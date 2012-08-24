@@ -17,10 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.NonMemberOperation;
-import com.hazelcast.impl.spi.Response;
+import com.hazelcast.impl.spi.*;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -41,8 +38,8 @@ public class JoinCheck extends AbstractOperation implements NonBlockingOperation
     }
 
     public void run() {
-        System.out.println("RUNNING CHECK !!!!! -> " + joinInfo);
-        Node node = getNodeService().getNode();
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        Node node = nodeService.getNode();
         boolean ok = false;
         if (joinInfo != null && node.joined() && node.isActive()) {
             try {
@@ -60,7 +57,6 @@ public class JoinCheck extends AbstractOperation implements NonBlockingOperation
     @Override
     public void readInternal(final DataInput in) throws IOException {
         super.readInternal(in);
-        System.out.println("READING =============");
         joinInfo = new JoinInfo();
         joinInfo.readData(in);
     }
@@ -68,7 +64,6 @@ public class JoinCheck extends AbstractOperation implements NonBlockingOperation
     @Override
     public void writeInternal(final DataOutput out) throws IOException {
         super.writeInternal(out);
-        System.out.println("WRITING =============");
         joinInfo.writeData(out);
     }
 }

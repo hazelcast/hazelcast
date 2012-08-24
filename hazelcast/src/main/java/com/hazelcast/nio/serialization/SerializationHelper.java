@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -26,9 +27,6 @@ import com.hazelcast.nio.FastDataInputStream;
 import com.hazelcast.nio.FastDataOutputStream;
 import com.hazelcast.nio.HazelcastSerializationException;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.NotSerializableException;
 import java.util.logging.Level;
 
@@ -165,24 +163,6 @@ public final class SerializationHelper {
         }
     }
 
-    public static void writeNullableData(DataOutput out, Data data) throws IOException {
-        boolean isNull = (data == null);
-        out.writeBoolean(isNull);
-        if (!isNull) {
-            data.writeData(out);
-        }
-    }
-
-    public static Data readNullableData(DataInput in) throws IOException {
-        boolean isNull = in.readBoolean();
-        if (!isNull) {
-            Data data = new Data();
-            data.readData(in);
-            return data;
-        }
-        return null;
-    }
-
     private class SerializationBuffer {
 
         private final FastDataOutputStream out;
@@ -208,6 +188,9 @@ public final class SerializationHelper {
                 out.flush();
                 return out.toByteArray();
             } catch (Throwable e) {
+                if (e instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+                }
                 if (e instanceof HazelcastSerializationException) {
                     throw (HazelcastSerializationException) e;
                 }
@@ -230,6 +213,9 @@ public final class SerializationHelper {
                 }
                 return serializer.read(in);
             } catch (Throwable e) {
+                if (e instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+                }
                 if (e instanceof HazelcastSerializationException) {
                     throw (HazelcastSerializationException) e;
                 }

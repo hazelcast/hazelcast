@@ -651,10 +651,11 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
             implements NoReply, NonMemberOperation, NonBlockingOperation {
 
         public void run() {
-            final Node node = getNodeService().getNode();
-            node.nodeService.getExecutorService().execute(new Runnable() {
+            final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+            final Node node = nodeService.getNode();
+            nodeService.getExecutorService().execute(new Runnable() {
                 public void run() {
-                    final ILogger logger = node.loggingService.getLogger("com.hazelcast.security");
+                    final ILogger logger = nodeService.getLogger("com.hazelcast.security");
                     logger.log(Level.SEVERE, "Authentication failed on master node! Node is going to shutdown now!");
                     node.shutdown(true, true);
                 }

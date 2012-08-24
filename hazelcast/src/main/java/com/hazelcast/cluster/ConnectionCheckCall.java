@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.AbstractOperation;
+import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.nio.ConnectionManager;
 
@@ -26,7 +27,8 @@ import com.hazelcast.nio.ConnectionManager;
 public class ConnectionCheckCall extends AbstractOperation implements NonBlockingOperation {
     public void run() {
         Boolean result = Boolean.TRUE;
-        Node node = getNodeService().getNode();
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        Node node = nodeService.getNode();
         final ConnectionManager connectionManager = node.connectionManager;
         for (MemberImpl member : node.clusterImpl.getMemberList()) {
             if (!member.localMember()) {

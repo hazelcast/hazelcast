@@ -89,7 +89,7 @@ public class PutOperation extends BackupAwareOperation {
 //        }
 //        responseHandler.sendResponse(new Response(preResponseBackupOp, oldValueData, false));
         int mapBackupCount = 1;
-        int backupCount = Math.min(getNodeService().getClusterImpl().getSize() - 1, mapBackupCount);
+        int backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
         if (backupCount > 0) {
             GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
             op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
@@ -105,13 +105,17 @@ public class PutOperation extends BackupAwareOperation {
 //        System.out.println(getNodeService().getThisAddress() + "  PUT is complete " + backupCallId);
     }
 
+    private int getClusterSize() {
+        return getNodeService().getCluster().getMembers().size();
+    }
+
     private boolean takeBackup() {
         boolean callerBackup = false;
-        NodeService nodeService = getNodeService();
+        NodeService NodeService = getNodeService();
         MapService mapService = (MapService) getService();
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         int mapBackupCount = 1;
-        int backupCount = Math.min(nodeService.getClusterImpl().getSize() - 1, mapBackupCount);
+        int backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
         if (backupCount > 0) {
             List<Future> backupOps = new ArrayList<Future>(backupCount);
             PartitionInfo partitionInfo = mapPartition.partitionInfo;
@@ -119,7 +123,7 @@ public class PutOperation extends BackupAwareOperation {
                 int replicaIndex = i + 1;
                 Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
                 if (replicaTarget != null) {
-                    if (replicaTarget.equals(nodeService.getThisAddress())) {
+                    if (replicaTarget.equals(NodeService.getThisAddress())) {
 //                            Normally shouldn't happen!!
 //                            PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
 //                            pbo.call();
@@ -131,7 +135,7 @@ public class PutOperation extends BackupAwareOperation {
                         } else {
                             PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
                             try {
-                                backupOps.add(nodeService.createSingleInvocation(MapService.MAP_SERVICE_NAME, pbo,
+                                backupOps.add(NodeService.createSingleInvocation(MapService.MAP_SERVICE_NAME, pbo,
                                         partitionInfo.getPartitionId()).setReplicaIndex(replicaIndex).build().invoke());
                             } catch (Exception e) {
                                 e.printStackTrace();

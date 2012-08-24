@@ -50,6 +50,11 @@ public final class IOUtil {
         writeNullableData(out, data);
     }
 
+    public static <T> T readObject(DataInput in) throws IOException {
+        Data data = readNullableData(in);
+        return toObject(data);
+    }
+
     public static void writeNullableString(DataOutput out, String obj) throws IOException {
         boolean NULL = obj == null;
         out.writeBoolean(NULL);
@@ -64,11 +69,6 @@ public final class IOUtil {
             return in.readUTF();
         }
         return null;
-    }
-
-    public static <T> T readObject(DataInput in) throws IOException {
-        Data data = readNullableData(in);
-        return toObject(data);
     }
 
     public static void writeNullableData(DataOutput out, Data data) throws IOException {

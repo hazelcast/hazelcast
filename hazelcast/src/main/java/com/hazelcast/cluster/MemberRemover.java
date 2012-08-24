@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
@@ -46,7 +47,8 @@ public class MemberRemover extends Operation implements NoReply, NonBlockingOper
 //    }
 
     public void run() {
-        Node node = getNodeService().getNode();
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        Node node = nodeService.getNode();
         Address caller = getCaller();
         if (caller != null && caller.equals(node.getMasterAddress())) {
             node.clusterImpl.removeAddress(deadAddress);

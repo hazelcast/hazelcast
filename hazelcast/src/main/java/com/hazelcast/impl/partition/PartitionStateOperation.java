@@ -17,7 +17,6 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.cluster.MemberInfo;
-import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
@@ -40,9 +39,8 @@ public class PartitionStateOperation extends AbstractOperation implements NonBlo
     }
 
     public void run() {
-        Node node = getNodeService().getNode();
         partitionState.setEndpoint(getCaller());
-        PartitionManager partitionManager = node.partitionManager;
+        PartitionManager partitionManager = getService();
         partitionManager.processPartitionRuntimeState(partitionState);
     }
 

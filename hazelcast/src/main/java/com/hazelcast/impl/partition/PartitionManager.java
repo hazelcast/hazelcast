@@ -51,7 +51,7 @@ public class PartitionManager {
     private static final int REPARTITIONING_TASK_REPLICA_THRESHOLD = 2;
 
     final Node node;
-    final NodeService nodeService;
+    final NodeServiceImpl nodeService;
     private final ILogger logger;
     private final int partitionCount;
     private final PartitionInfo[] partitions;
@@ -278,7 +278,6 @@ public class PartitionManager {
 
     private void compareAndSetActiveMigratingPartition(final MigratingPartition expectedMigratingPartition,
                                                        final MigratingPartition newMigratingPartition) {
-//        node.checkServiceThread();
         lock.lock();
         try {
             if (expectedMigratingPartition == null) {
@@ -689,7 +688,8 @@ public class PartitionManager {
 
     public static class AssignPartitions extends AbstractOperation implements NonBlockingOperation, NoReply {
         public void run() {
-            getNodeService().getNode().partitionManager.firstArrangement();
+            final PartitionManager service = getService();
+            service.firstArrangement();
         }
     }
 
@@ -697,10 +697,9 @@ public class PartitionManager {
         public void run() {
             if (node.isMaster() && node.isActive()) {
                 if ((!scheduledTasksQueue.isEmpty() || !immediateTasksQueue.isEmpty()) && migrationActive.get()) {
-                    // TODO !!!
+                    logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
+                                + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
                 }
-                logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
-                            + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
                 sendPartitionRuntimeState();
             }
         }
@@ -719,8 +718,8 @@ public class PartitionManager {
         public void run() {
             boolean result = false;
             if (migratingPartition != null) {
-                Node node = getNodeService().getNode();
-                final MigratingPartition masterMigratingPartition = node.partitionManager.migratingPartition;
+                PartitionManager service = getService();
+                final MigratingPartition masterMigratingPartition = service.migratingPartition;
                 result = migratingPartition.equals(masterMigratingPartition);
             }
             getResponseHandler().sendResponse(result);

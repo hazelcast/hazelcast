@@ -16,9 +16,9 @@
 
 package com.hazelcast.impl.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
-import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.nio.Data;
@@ -27,20 +27,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PartitionContainer {
-    private final Node node;
+    private final Config config;
     private final MapService mapService;
     final PartitionInfo partitionInfo;
     final Map<String, MapPartition> maps = new HashMap<String, MapPartition>(100);
     final Map<String, TransactionLog> transactions = new HashMap<String, TransactionLog>(100);
 
-    public PartitionContainer(Node node, MapService mapService, PartitionInfo partitionInfo) {
-        this.node = node;
+    public PartitionContainer(Config config, MapService mapService, PartitionInfo partitionInfo) {
+        this.config = config;
         this.mapService = mapService;
         this.partitionInfo = partitionInfo;
     }
 
     MapConfig getMapConfig(String name) {
-        return node.getConfig().findMatchingMapConfig(name.substring(2));
+        return config.findMatchingMapConfig(name.substring(2));
     }
 
     public MapPartition getMapPartition(String name) {

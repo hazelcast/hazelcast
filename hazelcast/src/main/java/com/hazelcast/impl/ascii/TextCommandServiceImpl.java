@@ -28,7 +28,6 @@ import com.hazelcast.impl.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.impl.ascii.rest.RestValue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ascii.SocketTextWriter;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.SimpleBlockingQueue;
 
 import java.nio.ByteBuffer;

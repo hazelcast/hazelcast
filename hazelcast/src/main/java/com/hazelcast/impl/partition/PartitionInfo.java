@@ -50,11 +50,11 @@ public class PartitionInfo {
         return addresses.get(0);
     }
 
-    public void setOwner(Address ownerAddress) {
+    void setOwner(Address ownerAddress) {
         setReplicaAddress(0, ownerAddress);
     }
 
-    public void setReplicaAddress(int index, Address address) {
+    void setReplicaAddress(int index, Address address) {
         boolean changed = false;
         Address currentAddress = addresses.get(index);
         if (partitionListener != null) {
@@ -75,7 +75,7 @@ public class PartitionInfo {
                 ? addresses.get(index) : null;
     }
 
-    public void setPartitionInfo(PartitionInfo partitionInfo) {
+    void setPartitionInfo(PartitionInfo partitionInfo) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             setReplicaAddress(i, partitionInfo.getReplicaAddress(i));
         }
@@ -117,7 +117,7 @@ public class PartitionInfo {
         return sb.toString();
     }
 
-    public boolean onDeadAddress(Address deadAddress) {
+    boolean onDeadAddress(Address deadAddress) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (deadAddress.equals(addresses.get(i))) {
                 for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {

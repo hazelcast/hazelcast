@@ -39,7 +39,7 @@ public class AuthorizationCall extends AbstractOperation implements NonBlockingO
     }
 
     public void run() {
-        GroupConfig groupConfig = getNodeService().getNode().getConfig().getGroupConfig();
+        GroupConfig groupConfig = getNodeService().getConfig().getGroupConfig();
         Boolean response = Boolean.TRUE;
         if (!groupName.equals(groupConfig.getName())) {
             response = Boolean.FALSE;

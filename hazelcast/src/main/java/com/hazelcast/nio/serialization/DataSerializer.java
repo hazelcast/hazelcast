@@ -16,17 +16,12 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.impl.map.BackupResponse;
-import com.hazelcast.impl.map.GenericBackupOperation;
-import com.hazelcast.impl.map.GetOperation;
-import com.hazelcast.impl.map.PutOperation;
-import com.hazelcast.impl.spi.Response;
+import com.hazelcast.impl.DataSerializerRegistrar;
+import com.hazelcast.impl.DataSerializerRegistrar.DataSerializableFactory;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.FastDataInputStream;
 import com.hazelcast.nio.FastDataOutputStream;
 import com.hazelcast.nio.HazelcastSerializationException;
-
-import java.util.HashMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.nio.serialization.SerializationConstants.SERIALIZER_TYPE_DATA;
@@ -36,49 +31,15 @@ import static com.hazelcast.nio.serialization.SerializationConstants.SERIALIZER_
  */
 public final class DataSerializer implements TypeSerializer<DataSerializable> {
 
-    private final static HashMap<String, DataSerializableFactory> factories = new HashMap<String, DataSerializableFactory>(100);
-
-    static {
-        factories.put(PutOperation.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new PutOperation();
-            }
-        });
-        factories.put(Response.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new Response();
-            }
-        });
-        factories.put(BackupResponse.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new BackupResponse();
-            }
-        });
-        factories.put(GenericBackupOperation.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new GenericBackupOperation();
-            }
-        });
-        factories.put(GetOperation.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new GetOperation();
-            }
-        });
-    }
-
     public int getTypeId() {
         return SERIALIZER_TYPE_DATA;
-    }
-
-    interface DataSerializableFactory {
-        DataSerializable create();
     }
 
     public final DataSerializable read(final FastDataInputStream in) throws Exception {
         final String className = in.readUTF();
         try {
             DataSerializable ds;
-            DataSerializableFactory dsf = factories.get(className);
+            DataSerializableFactory dsf = DataSerializerRegistrar.getFactory(className);
             if (dsf != null) {
                 ds = dsf.create();
             } else {
@@ -88,7 +49,7 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
             return ds;
         } catch (final Exception e) {
             throw new HazelcastSerializationException("Problem while reading DataSerializable class : "
-                    + className + ", exception: " + e);
+                    + className + ", exception: " + e.getMessage(), e);
         }
     }
 

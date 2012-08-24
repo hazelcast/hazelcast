@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.Operation;
 
@@ -36,7 +37,8 @@ public class SyncProcess extends Operation implements NonBlockingOperation {
 //    }
 
     public void run() {
-        Node node = getNodeService().getNode();
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        Node node = nodeService.getNode();
         node.clusterImpl.syncForAdd();
         getResponseHandler().sendResponse(Boolean.TRUE);
     }

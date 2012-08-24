@@ -19,8 +19,6 @@ package com.hazelcast.nio;
 import com.hazelcast.impl.ClusterOperation;
 
 public class SimpleSocketWritable implements SocketWritable {
-    private final ClusterOperation op;
-    //    private final String name;
     private final Data value;
     private final long callId;
     private final int partitionId;
@@ -28,9 +26,7 @@ public class SimpleSocketWritable implements SocketWritable {
     private final boolean targetAware;
     private final Connection conn;
 
-    public SimpleSocketWritable(ClusterOperation op, String name, Data value, long callId, int partitionId, int replicaIndex, Connection conn, boolean targetAware) {
-        this.op = op;
-//        this.name = name;
+    public SimpleSocketWritable(Data value, long callId, int partitionId, int replicaIndex, Connection conn, boolean targetAware) {
         this.value = value;
         this.callId = callId;
         this.partitionId = partitionId;
@@ -40,22 +36,12 @@ public class SimpleSocketWritable implements SocketWritable {
     }
 
     public SimpleSocketWritable(Packet packet) {
-        op = packet.operation;
-//        name = packet.name;
         value = packet.getValueData();
         conn = packet.conn;
         partitionId = packet.blockId;
         callId = packet.callId;
         replicaIndex = packet.threadId;
         targetAware = packet.longValue == 1;
-    }
-
-    public ClusterOperation getOp() {
-        return op;
-    }
-
-    public String getName() {
-        return null; //name;
     }
 
     public Data getValue() {
@@ -86,8 +72,7 @@ public class SimpleSocketWritable implements SocketWritable {
     }
 
     void setToPacket(Packet packet) {
-        packet.operation = op;
-//        packet.name = name;
+        packet.operation = ClusterOperation.REMOTE_CALL;
         packet.setValue(value);
         packet.callId = callId;
         packet.blockId = partitionId;

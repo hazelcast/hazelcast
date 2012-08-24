@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 
 public class SingleInvocationBuilder {
 
-    private final NodeService nodeService;
+    private final NodeServiceImpl nodeService;
     private final String serviceName;
     private final Operation op;
     private final int partitionId;
@@ -30,14 +30,14 @@ public class SingleInvocationBuilder {
     private int tryCount = 100;
     private long tryPauseMillis = 500;
 
-    public SingleInvocationBuilder(NodeService nodeService, String serviceName, Operation op, int partitionId) {
+    public SingleInvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
     }
 
-    public SingleInvocationBuilder(NodeService nodeService, String serviceName, Operation op,
+    public SingleInvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op,
                                    int partitionId, int replicaIndex, int tryCount, long tryPauseMillis) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;

@@ -128,14 +128,14 @@ public abstract class Operation implements Runnable, DataSerializable {
         return this;
     }
 
-    public Object getService() {
+    public <T> T getService() {
         if (service == null) {
             service = nodeService.getService(serviceName);
             if (service == null) {
                 throw new RuntimeException(serviceName + "  is nullTLLLLLLLllllll " + nodeService);
             }
         }
-        return service;
+        return (T) service;
     }
 
     public Operation setService(Object service) {

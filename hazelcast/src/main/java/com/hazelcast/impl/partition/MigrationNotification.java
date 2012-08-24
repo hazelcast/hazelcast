@@ -25,6 +25,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class MigrationNotification extends AbstractOperation implements NoReply, NonBlockingOperation {
+
     MigratingPartition migratingPartition;
     MigrationStatus status;
 
@@ -37,8 +38,8 @@ public class MigrationNotification extends AbstractOperation implements NoReply,
     }
 
     public void run() {
-        getNodeService().getNode()
-                .partitionManager.fireMigrationEvent(status, migratingPartition);
+        PartitionManager partitionManager = getService();
+        partitionManager.fireMigrationEvent(status, migratingPartition);
     }
 
     @Override

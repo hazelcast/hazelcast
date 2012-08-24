@@ -84,7 +84,8 @@ public class TcpIpJoiner extends AbstractJoiner {
     public static class MasterClaim extends AbstractOperation implements NonMemberOperation, NonBlockingOperation {
 
         public void run() {
-            Node node = getNodeService().getNode();
+            final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+            Node node = nodeService.getNode();
             ResponseHandler responseHandler = getResponseHandler();
             Joiner joiner = node.getJoiner();
             boolean approvedAsMaster = false;

@@ -21,32 +21,29 @@ package com.hazelcast.nio.serialization;
  */
 final class SerializationConstants {
 
-    static final int EXTERNAL_TYPE_ID_MIN = 100;
-
-    //------------ SERIALIZER TYPES
     private static byte ID = 0;
 
-    static final byte SERIALIZER_TYPE_DATA = ID++;
+    static final byte SERIALIZER_TYPE_DATA = ID--;
 
-    static final byte SERIALIZER_TYPE_OBJECT = ID++;
+    static final byte SERIALIZER_TYPE_OBJECT = ID--;
 
-    static final byte SERIALIZER_TYPE_STRING = ID++;
+    static final byte SERIALIZER_TYPE_STRING = ID--;
 
-    static final byte SERIALIZER_TYPE_LONG = ID++;
+    static final byte SERIALIZER_TYPE_LONG = ID--;
 
-    static final byte SERIALIZER_TYPE_INTEGER = ID++;
+    static final byte SERIALIZER_TYPE_INTEGER = ID--;
 
-    static final byte SERIALIZER_TYPE_BYTE_ARRAY = ID++;
+    static final byte SERIALIZER_TYPE_BYTE_ARRAY = ID--;
 
-    static final byte SERIALIZER_TYPE_BOOLEAN = ID++;
+    static final byte SERIALIZER_TYPE_BOOLEAN = ID--;
 
-    static final byte SERIALIZER_TYPE_EXTERNALIZABLE = ID++;
+    static final byte SERIALIZER_TYPE_EXTERNALIZABLE = ID--;
 
-    static final byte SERIALIZER_TYPE_CLASS = ID++;
+    static final byte SERIALIZER_TYPE_CLASS = ID--;
 
-    static final byte SERIALIZER_TYPE_DATE = ID++;
+    static final byte SERIALIZER_TYPE_DATE = ID--;
 
-    static final byte SERIALIZER_TYPE_BIG_INTEGER = ID++;
+    static final byte SERIALIZER_TYPE_BIG_INTEGER = ID--;
 
 
     private SerializationConstants() {}

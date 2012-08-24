@@ -18,7 +18,7 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -64,7 +64,7 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        SerializationHelper.writeNullableData(out, dataValue);
+        IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
         out.writeLong(backupCallId);
         boolean txnal = (txnId != null);
@@ -77,7 +77,7 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
     @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        dataValue = SerializationHelper.readNullableData(in);
+        dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
         backupCallId = in.readLong();
         boolean txnal = in.readBoolean();

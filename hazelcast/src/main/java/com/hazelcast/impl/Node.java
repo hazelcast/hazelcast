@@ -29,7 +29,7 @@ import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.map.MapService;
 import com.hazelcast.impl.partition.PartitionManager;
-import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -72,7 +72,7 @@ public class Node {
 
     private final NodeType localNodeType;
 
-    public final NodeService nodeService;
+    public final NodeServiceImpl nodeService;
 
     public final PartitionManager partitionManager;
 
@@ -161,14 +161,15 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        nodeService = new NodeService(this);
+        nodeService = new NodeServiceImpl(this);
         //initialize managers..
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterImpl = new ClusterImpl(this);
         partitionManager = new PartitionManager(this);
 //        clientHandlerService = new ClientHandlerService(this);
 //        concurrentMapManager = new ConcurrentMapManager(this);
-        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService, partitionManager.getPartitions()));
+        nodeService.registerService(MapService.MAP_SERVICE_NAME,
+                new MapService(nodeService, partitionManager.getPartitions()));
         listenerManager = new ListenerManager(this);
 //        clientService = new ClientServiceImpl(concurrentMapManager);
         textCommandService = new TextCommandServiceImpl(this);

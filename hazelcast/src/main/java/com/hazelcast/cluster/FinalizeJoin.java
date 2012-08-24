@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.Operation;
 
@@ -28,7 +29,8 @@ import java.io.IOException;
 public class FinalizeJoin extends Operation implements NonBlockingOperation, NoReply {
 
     public void run() {
-        Node node = getNodeService().getNode();
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        Node node = nodeService.getNode();
         node.listenerManager.syncForAdd(getCaller());
     }
 

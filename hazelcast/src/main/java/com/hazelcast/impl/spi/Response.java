@@ -17,7 +17,7 @@
 package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -66,7 +66,8 @@ public class Response extends Operation implements NonBlockingOperation, NoReply
             op.run();
         }
         long callId = getCallId();
-        getNodeService().notifyCall(callId, Response.this);
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        nodeService.notifyCall(callId, Response.this);
     }
 
     public boolean isException() {
@@ -85,14 +86,14 @@ public class Response extends Operation implements NonBlockingOperation, NoReply
     }
 
     public void writeInternal(DataOutput out) throws IOException {
-        SerializationHelper.writeNullableData(out, opBeforeData);
-        SerializationHelper.writeNullableData(out, resultData);
+        IOUtil.writeNullableData(out, opBeforeData);
+        IOUtil.writeNullableData(out, resultData);
         out.writeBoolean(exception);
     }
 
     public void readInternal(DataInput in) throws IOException {
-        opBeforeData = SerializationHelper.readNullableData(in);
-        resultData = SerializationHelper.readNullableData(in);
+        opBeforeData = IOUtil.readNullableData(in);
+        resultData = IOUtil.readNullableData(in);
         exception = in.readBoolean();
     }
 

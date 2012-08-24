@@ -16,11 +16,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.*;
 
-import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
-import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
@@ -43,7 +41,8 @@ public class MergeClusters extends AbstractOperation implements NonBlockingOpera
 
     public void run() {
         final Address endpoint = getCaller();
-        final Node node = getNodeService().getNode();
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        final Node node = nodeService.getNode();
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
         if (endpoint == null || !endpoint.equals(masterAddress)) {

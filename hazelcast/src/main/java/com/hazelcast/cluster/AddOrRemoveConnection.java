@@ -16,9 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NoReply;
-import com.hazelcast.impl.spi.NonBlockingOperation;
+import com.hazelcast.impl.spi.*;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
@@ -59,7 +57,8 @@ public class AddOrRemoveConnection extends AbstractOperation implements NoReply,
 
     public void run() {
         if (!add) {
-            getNodeService().getClusterImpl().removeAddress(address);
+            final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+            nodeService.getClusterImpl().removeAddress(address);
         }
     }
 }

@@ -106,7 +106,7 @@ public class MigrationRequestOperation extends Operation implements NonBlockingO
             }
 
             final NodeService nodeService = getNodeService();
-            final long timeout = nodeService.getNode().groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();
+            final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             pm.lockPartition(partitionId);
             final Collection<ServiceMigrationOperation> tasks = pm.collectMigrationTasks(partitionId, replicaIndex, to,
                     diffOnly);
@@ -144,7 +144,7 @@ public class MigrationRequestOperation extends Operation implements NonBlockingO
     }
 
     private ILogger getLogger() {
-        return getNodeService().getNode().getLogger(MigrationRequestOperation.class.getName());
+        return getNodeService().getLogger(MigrationRequestOperation.class.getName());
     }
 
     public void writeInternal(DataOutput out) throws IOException {

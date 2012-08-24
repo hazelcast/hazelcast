@@ -39,7 +39,7 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         int partitionCount = nodeService.getPartitionCount();
         partitionContainers = new PartitionContainer[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new PartitionContainer(nodeService.getNode(), this, partitions[i]);
+            partitionContainers[i] = new PartitionContainer(nodeService.getConfig(), this, partitions[i]);
         }
     }
 
@@ -85,7 +85,8 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), partitionId, maxBackupCount, 60);
+            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), partitionId,
+                    maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
         }
@@ -96,7 +97,8 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), partitionId, maxBackupCount, 60);
+            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), partitionId,
+                    maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
         }
@@ -107,7 +109,8 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), partitionId, maxBackupCount, 60);
+            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), partitionId,
+                    maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
         }

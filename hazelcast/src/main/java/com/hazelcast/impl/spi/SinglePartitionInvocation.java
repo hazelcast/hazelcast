@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 
 class SinglePartitionInvocation extends SingleInvocation {
 
-    SinglePartitionInvocation(NodeService nodeService, String serviceName, Operation op, int partitionId,
+    SinglePartitionInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
                               int replicaIndex, int tryCount, long tryPauseMillis) {
         super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
     }

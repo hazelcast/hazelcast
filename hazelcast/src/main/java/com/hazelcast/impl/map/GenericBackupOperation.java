@@ -23,7 +23,7 @@ import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -104,7 +104,10 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
             }
         }
 //        System.out.println(getNodeService().getThisAddress() + "  sending backup response " + firstCallerId + " firstCallerAddress: " + firstCallerAddress);
-        getNodeService().send(MapService.MAP_SERVICE_NAME, new BackupResponse(), partitionId, 0, firstCallerId, firstCallerAddress);
+        final BackupResponse backupResponse = new BackupResponse();
+        backupResponse.setServiceName(MapService.MAP_SERVICE_NAME).setCallId(firstCallerId)
+                .setPartitionId(partitionId).setReplicaIndex(0);
+        getNodeService().send(backupResponse, partitionId, firstCallerAddress);
     }
 
     public Address getFirstCallerAddress() {
@@ -118,7 +121,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        SerializationHelper.writeNullableData(out, dataValue);
+        IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
         out.writeInt(backupOpType.ordinal());
         out.writeLong(firstCallerId);
@@ -132,7 +135,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
     @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        dataValue = SerializationHelper.readNullableData(in);
+        dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
         backupOpType = BackupOpType.values()[in.readInt()];
         firstCallerId = in.readLong();

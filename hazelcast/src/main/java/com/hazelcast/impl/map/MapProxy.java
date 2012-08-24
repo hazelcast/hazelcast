@@ -19,10 +19,7 @@ package com.hazelcast.impl.map;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.TransactionImpl;
-import com.hazelcast.impl.spi.Invocation;
-import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.Response;
-import com.hazelcast.impl.spi.RetryableException;
+import com.hazelcast.impl.spi.*;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
@@ -38,17 +35,15 @@ public class MapProxy {
     final NodeService nodeService;
     final MapService mapService;
 
-    public MapProxy(NodeService nodeService) {
-        this.nodeService = nodeService;
-        this.mapService = nodeService.getService(MAP_SERVICE_NAME);
+    public MapProxy(NodeService NodeService) {
+        this.nodeService = NodeService;
+        this.mapService = NodeService.getService(MAP_SERVICE_NAME);
     }
 
     public Object put(String name, Object k, Object v, long ttl) {
-        ThreadContext threadContext = ThreadContext.get();
-        threadContext.setCurrentInstance(nodeService.getNode().hazelcastInstance);
-        Data key = toData(k);
+        Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);
-        TransactionImpl txn = threadContext.getTransaction();
+        TransactionImpl txn = nodeService.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
             txnId = txn.getTxnId();
@@ -115,9 +110,7 @@ public class MapProxy {
     }
 
     public Object getOperation(String name, Object k) {
-        ThreadContext threadContext = ThreadContext.get();
-        threadContext.setCurrentInstance(nodeService.getNode().hazelcastInstance);
-        Data key = toData(k);
+        Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));
         getOperation.setServiceName(MAP_SERVICE_NAME);

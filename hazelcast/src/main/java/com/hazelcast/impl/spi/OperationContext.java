@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
 public class OperationContext {
-    NodeService nodeService;
+    NodeService NodeService;
     Object service;
     ResponseHandler responseHandler;
     Address caller;
@@ -31,11 +31,11 @@ public class OperationContext {
     int replicaIndex;
 
     public NodeService getNodeService() {
-        return nodeService;
+        return NodeService;
     }
 
-    public OperationContext setNodeService(NodeService nodeService) {
-        this.nodeService = nodeService;
+    public OperationContext setNodeService(NodeService NodeService) {
+        this.NodeService = NodeService;
         return this;
     }
 

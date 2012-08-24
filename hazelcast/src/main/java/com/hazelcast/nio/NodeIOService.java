@@ -20,10 +20,7 @@ import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
@@ -92,6 +89,10 @@ public class NodeIOService implements IOService {
     public void handleMemberPacket(final Packet p) {
 //        System.out.println("handle p " + p.operation);
         if (p.operation == ClusterOperation.REMOTE_CALL) {
+            final MemberImpl member = node.clusterImpl.getMember(p.conn.getEndPoint());
+            if (member != null) {
+                member.didRead();
+            }
             node.nodeService.handleOperation(new SimpleSocketWritable(p));
             p.conn.releasePacket(p);
         } else {

@@ -97,7 +97,7 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
     }
 
     private ILogger getLogger() {
-        return getNodeService().getNode().getLogger(MigrationOperation.class.getName());
+        return getNodeService().getLogger(MigrationOperation.class.getName());
     }
 
     public void writeInternal(DataOutput out) throws IOException {

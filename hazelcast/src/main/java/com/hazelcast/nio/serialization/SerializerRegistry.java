@@ -45,9 +45,8 @@ public class SerializerRegistry {
         if (type == null) {
             throw new IllegalArgumentException("Class type information is required!");
         }
-        if (serializer.getTypeId() < SerializationConstants.EXTERNAL_TYPE_ID_MIN) {
-            throw new IllegalArgumentException("Type id must be greater than " + SerializationConstants.EXTERNAL_TYPE_ID_MIN
-                                               + "! Current: " + serializer.getTypeId());
+        if (serializer.getTypeId() <= 0) {
+            throw new IllegalArgumentException("Type id must be greater than 0! Current: " + serializer.getTypeId());
         }
         safeRegister(type, serializer);
     }

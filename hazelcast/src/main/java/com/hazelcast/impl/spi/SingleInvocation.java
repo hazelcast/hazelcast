@@ -23,7 +23,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 abstract class SingleInvocation extends FutureTask implements Invocation, Callback {
-    protected final NodeService nodeService;
+    protected final NodeServiceImpl nodeService;
     protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
@@ -32,7 +32,7 @@ abstract class SingleInvocation extends FutureTask implements Invocation, Callba
     protected long tryPauseMillis = 500;
     protected volatile int invokeCount = 0;
 
-    SingleInvocation(NodeService nodeService, String serviceName, Operation op, int partitionId,
+    SingleInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
                      int replicaIndex, int tryCount, long tryPauseMillis) {
         super(op, null);
         this.nodeService = nodeService;

@@ -61,7 +61,7 @@ public class MapMigrationOperation extends ServiceMigrationOperation {
         if (data == null) {
             return;
         }
-        NodeService nodeService = getNodeService();
+        NodeService NodeService = getNodeService();
         MapService mapService = (MapService) getService();
         buffer = new HashMap<String, Map<Data, Record>>(data.size());
         for (Entry<String, Map<Data, DataRecordEntry>> dataEntry : data.entrySet()) {
@@ -69,7 +69,7 @@ public class MapMigrationOperation extends ServiceMigrationOperation {
             Map<Data, Record> map = new HashMap<Data, Record>(dataMap.size());
             for (Entry<Data, DataRecordEntry> entry : dataMap.entrySet()) {
                 final DataRecordEntry recordEntry = entry.getValue();
-                Record record = new DefaultRecord(null, nodeService.getPartitionId(recordEntry.getKeyData()),
+                Record record = new DefaultRecord(null, NodeService.getPartitionId(recordEntry.getKeyData()),
                         recordEntry.getKeyData(), recordEntry.getValueData(), -1, -1, mapService.nextId());
                 map.put(entry.getKey(), record);
             }
