@@ -57,21 +57,21 @@ public class NodeMulticastListener implements MulticastListener {
                                         + "Removing " + node.getMasterAddress());
                                 node.clusterImpl.removeAddress(node.getMasterAddress());
                             }
-                        } else {
-                            if (!node.joined() && !joinInfo.isRequest()) {
-                                if (node.masterAddress == null) {
-                                    final String masterHost = joinInfo.address.getHost();
-                                    if (trustedInterfaces.isEmpty() ||
-                                        AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
-                                        node.masterAddress = new Address(joinInfo.address);
-                                    }
+                        }
+                    } else {
+                        if (!node.joined() && !joinInfo.isRequest()) {
+                            if (node.masterAddress == null) {
+                                final String masterHost = joinInfo.address.getHost();
+                                if (trustedInterfaces.isEmpty() ||
+                                    AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
+                                    node.masterAddress = new Address(joinInfo.address);
                                 }
-                            } else if (joinInfo.isRequest()) {
-                                Joiner joiner = node.getJoiner();
-                                if (joiner instanceof MulticastJoiner) {
-                                    MulticastJoiner mjoiner = (MulticastJoiner) joiner;
-                                    mjoiner.onReceivedJoinInfo(joinInfo);
-                                }
+                            }
+                        } else if (joinInfo.isRequest()) {
+                            Joiner joiner = node.getJoiner();
+                            if (joiner instanceof MulticastJoiner) {
+                                MulticastJoiner mjoiner = (MulticastJoiner) joiner;
+                                mjoiner.onReceivedJoinInfo(joinInfo);
                             }
                         }
                     }
