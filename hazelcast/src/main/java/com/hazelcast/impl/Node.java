@@ -228,7 +228,7 @@ public class Node {
             } else if (listener instanceof MembershipListener) {
                 clusterImpl.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {
-//                concurrentMapManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
+                partitionManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
             } else if (listener instanceof LifecycleListener) {
                 hazelcastInstance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
             } else if (listener != null) {

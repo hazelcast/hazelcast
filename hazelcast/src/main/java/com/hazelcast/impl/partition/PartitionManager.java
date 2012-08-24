@@ -67,7 +67,7 @@ public class PartitionManager {
     private final BlockingQueue<Runnable> immediateTasksQueue = new LinkedBlockingQueue<Runnable>();
     private final Queue<Runnable> scheduledTasksQueue = new LinkedBlockingQueue<Runnable>();
     private final AtomicBoolean sendingDiffs = new AtomicBoolean(false);
-    private final AtomicBoolean migrationActive = new AtomicBoolean(true); // for testing purposes only
+    private final AtomicBoolean migrationActive = new AtomicBoolean(true);
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final SystemLogService systemLogService;
     private final AtomicLong[] partitionLocks ;
@@ -156,6 +156,15 @@ public class PartitionManager {
                 if (newState != null) {
                     for (PartitionInfo partitionInfo : newState) {
                         partitions[partitionInfo.getPartitionId()].setPartitionInfo(partitionInfo);
+                        for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
+                            Address to = partitionInfo.getReplicaAddress(index);
+                            if (to != null) {
+                                MigratingPartition mp = new MigratingPartition(partitionInfo.getPartitionId(),
+                                        index, null, to);
+                                sendMigrationEvent(MigrationStatus.STARTED, mp);
+                                sendMigrationEvent(MigrationStatus.COMPLETED, mp);
+                            }
+                        }
                     }
                 }
                 initialized = true;
@@ -835,7 +844,9 @@ public class PartitionManager {
                     MemberImpl ownerMember = node.clusterImpl.getMember(newOwner);
                     if (ownerMember != null) {
                         partition.setReplicaAddress(replicaIndex, newOwner);
-                        sendMigrationEvent(MigrationStatus.COMPLETED, migrationRequestOp.createMigratingPartition());
+                        final MigratingPartition mp = migrationRequestOp.createMigratingPartition();
+                        sendMigrationEvent(MigrationStatus.STARTED, mp);
+                        sendMigrationEvent(MigrationStatus.COMPLETED, mp);
                     }
                 }
                 sendPartitionRuntimeState();
