@@ -21,6 +21,8 @@ import com.hazelcast.util.ResponseQueueFactory;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Call {
 
@@ -111,4 +113,27 @@ public class Call {
         return "Call " + "[" + id + "] operation=" +
                 (request != null ? request.getOperation() : null);
     }
+
+//    public static AtomicLong before = new AtomicLong();
+//    public static AtomicLong server = new AtomicLong();
+//    public static AtomicLong after = new AtomicLong();
+//    public static AtomicInteger counter = new AtomicInteger(0);
+//
+//    public void end() {
+//        long beforeServer = written - sent;
+//        long onServer = received - sent;
+//        long afterServer = replied - received;
+//        before.addAndGet(beforeServer);
+//        server.addAndGet(onServer);
+//        after.addAndGet(afterServer);
+//        int c = counter.incrementAndGet();
+//        if (c == 100000) {
+//            System.out.println("BEFORE: " + before.getAndSet(0));
+//            System.out.println("SERVER: " + server.getAndSet(0));
+//            System.out.println(" AFTER: " + after.getAndSet(0));
+//            counter.set(0);
+//        }
+//    }
+
+
 }

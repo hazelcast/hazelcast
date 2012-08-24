@@ -64,6 +64,7 @@ public class InRunnable extends IORunnable implements Runnable {
                 Call call = callMap.remove(packet.getCallId());
                 if (call != null) {
                     call.received = System.nanoTime();
+//                    call.end();
                     call.setResponse(packet);
                 } else {
                     if (packet.getOperation().equals(ClusterOperation.EVENT)) {
