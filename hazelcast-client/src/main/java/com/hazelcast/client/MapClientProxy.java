@@ -228,7 +228,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);
-        return (V) protocolProxyHelper.doCommandWithObjectResponse(Command.MPUTIFABSENT, new String[]{getName(), "" + timeunit.toMillis(ttl)}, toData(key), toData(value));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MPUTIFABSENT, new String[]{getName(), "" + timeunit.toMillis(ttl)}, toData(key), toData(value));
     }
 
     public V putIfAbsent(K key, V value) {
@@ -245,7 +245,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V replace(K arg0, V arg1) {
         check(arg0);
         check(arg1);
-        return (V) protocolProxyHelper.doCommandWithObjectResponse(Command.MREPLACEIFNOTNULL, getName(), toData(arg0), toData(arg1));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MREPLACEIFNOTNULL, getName(), toData(arg0), toData(arg1));
     }
 
     public boolean replace(K arg0, V arg1, V arg2) {
@@ -284,7 +284,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public V get(Object key) {
         check(key);
-        return (V) protocolProxyHelper.doCommandWithObjectResponse(Command.MGET, getName(), toData((K) key));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MGET, getName(), toData((K) key));
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {
@@ -351,13 +351,13 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public V put(K key, V value) {
         check(key);
         check(value);
-        return (V) protocolProxyHelper.doCommandWithObjectResponse(Command.MPUT, getName(), toData(key), toData(value));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MPUT, getName(), toData(key), toData(value));
     }
 
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);
-        return (V) protocolProxyHelper.doCommandWithObjectResponse(Command.MPUT, new String[]{getName(), "" + timeunit.toMillis(ttl)}, toData(key), toData(value));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MPUT, new String[]{getName(), "" + timeunit.toMillis(ttl)}, toData(key), toData(value));
     }
 
     public void set(K key, V value, long ttl, TimeUnit timeunit) {
@@ -400,7 +400,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public V remove(Object arg0) {
         check(arg0);
-        return (V) protocolProxyHelper.doCommandWithObjectResponse(Command.MREMOVE, getName(), toData(arg0));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MREMOVE, getName(), toData(arg0));
     }
 
     public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
@@ -444,7 +444,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void destroy() {
-        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{"map", getName()}, null);
+        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{InstanceType.MAP.name(), getName()}, null);
     }
 
     @Override

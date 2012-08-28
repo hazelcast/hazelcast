@@ -61,7 +61,7 @@ public class ProtocolProxyHelper extends ProxyHelper {
      * @param data
      * @return
      */
-    public Object doCommandWithObjectResponse(Command command, String[] arg, Data... data) {
+    public Object doCommandAsObject(Command command, String[] arg, Data... data) {
         Protocol response = this.doCommand(command, arg, data);
         return getSingleObjectFromResponse(response);
     }
@@ -80,10 +80,15 @@ public class ProtocolProxyHelper extends ProxyHelper {
      * @param data
      * @return
      */
-    public Object doCommandWithObjectResponse(Command command, String arg, Data... data) {
-        return doCommandWithObjectResponse(command, new String[]{arg}, data);
+    public Object doCommandAsObject(Command command, String arg, Data... data) {
+        return doCommandAsObject(command, new String[]{arg}, data);
     }
 
+    public void doFireNForget(Command command, String[] args, Data... data) {
+        Call call = createCall(command, args, data);
+        call.setFireNforget(true);
+        sendCall(call);
+    }
     public Protocol doCommand(Command command, String[] args, Data... data) {
         Call call = createCall(command, args, data);
         Protocol response = (Protocol) doCall(call);
@@ -140,5 +145,15 @@ public class ProtocolProxyHelper extends ProxyHelper {
                 return (V)ProtocolProxyHelper.this.getSingleObjectFromResponse(protocol);
             }
         };
+    }
+
+    public boolean doCommandAssBoolean(Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(command, args, datas);
+        return Boolean.valueOf(protocol.args[0]);
+    }
+
+    public int doCommandAsInt(Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(command, args, datas);
+        return Integer.valueOf(protocol.args[0]);
     }
 }

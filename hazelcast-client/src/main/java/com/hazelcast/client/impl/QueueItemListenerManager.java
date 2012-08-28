@@ -75,7 +75,6 @@ public class QueueItemListenerManager {
 
     public void notifyListeners(Protocol protocol) {
         String name = protocol.args[0];
-
         List<ItemListenerHolder> list = queueItemListeners.get(name);
         if (list != null) {
             for (ItemListenerHolder listenerHolder : list) {

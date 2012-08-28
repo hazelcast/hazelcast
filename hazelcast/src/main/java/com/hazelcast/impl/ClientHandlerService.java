@@ -139,14 +139,14 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(Command.CDLGETCOUNT, new CountDownLatchGetCountHandler());
         registerHandler(Command.CDLGETOWNER, new CountDownLatchGetOwnerHandler());
         registerHandler(Command.CDLSETCOUNT, new CountDownLatchSetCountHandler());
-        registerHandler(Command.LOCK_LOCK, new LockOperationHandler());
-        registerHandler(Command.LOCK_TRYLOCK, new LockOperationHandler());
-        registerHandler(Command.LOCK_UNLOCK, new UnlockOperationHandler());
-        registerHandler(Command.LOCK_FORCE_UNLOCK, new UnlockOperationHandler());
-        ;
-        registerHandler(Command.LOCK_IS_LOCKED, new IsLockedOperationHandler());
+        registerHandler(Command.LOCK, new LockOperationHandler());
+        registerHandler(Command.TRYLOCK, new LockOperationHandler());
+        registerHandler(Command.UNLOCK, new UnlockOperationHandler());
+        registerHandler(Command.FORCEUNLOCK, new UnlockOperationHandler());
+        registerHandler(Command.ISLOCKED, new IsLockedOperationHandler());
         registerHandler(Command.TPUBLISH, new TopicPublishHandler());
         registerHandler(Command.TADDLISTENER, new TopicAddListenerHandler());
+        registerHandler(Command.TREMOVELISTENER, new TopicRemoveListenerHandler());
         registerHandler(Command.DESTROY, new DestroyHandler());
 //        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
 //                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
@@ -430,10 +430,10 @@ public class ClientHandlerService implements ConnectionListener {
                     queue.put(item);
                     result = true;
                 } else {
-                    long timeout = Long.valueOf(protocol.args[1]);
-                    if (timeout == 0) {
+                    if (protocol.args.length <= 1) {
                         result = queue.offer(item);
                     } else {
+                        long timeout = Long.valueOf(protocol.args[1]);
                         result = queue.offer(item, timeout, TimeUnit.MILLISECONDS);
                     }
                 }
@@ -469,10 +469,10 @@ public class ClientHandlerService implements ConnectionListener {
                 if (Command.QTAKE.equals(protocol.command)) {
                     result = queue.take();
                 } else {
-                    long timeout = Long.valueOf(protocol.args[1]);
-                    if (timeout == 0) {
+                    if (protocol.args.length <= 1) {
                         result = queue.poll();
                     } else {
+                        long timeout = Long.valueOf(protocol.args[1]);
                         result = queue.poll(timeout, TimeUnit.MILLISECONDS);
                     }
                 }
@@ -597,7 +597,9 @@ public class ClientHandlerService implements ConnectionListener {
 
         public Protocol processCall(Node node, Protocol protocol) {
             String type = protocol.args[0];
-            String name = protocol.args[1];
+            String name = null;
+            if (protocol.args.length > 1)
+                name = protocol.args[1];
             if (InstanceType.MAP.toString().equalsIgnoreCase(type)) {
                 node.factory.getMap(name).destroy();
             } else if (InstanceType.QUEUE.toString().equalsIgnoreCase(type)) {
@@ -615,7 +617,13 @@ public class ClientHandlerService implements ConnectionListener {
             } else if (InstanceType.ID_GENERATOR.toString().equalsIgnoreCase(type)) {
                 node.factory.getIdGenerator(name).destroy();
             } else if (InstanceType.LOCK.toString().equalsIgnoreCase(type)) {
-                node.factory.getLock(name).destroy();
+                Object object;
+                if (protocol.hasBuffer()) {
+                    object = new Data(protocol.buffers[0].array());
+                } else {
+                    object = name;
+                }
+                node.factory.getLock(object).destroy();
             } else if (InstanceType.SEMAPHORE.toString().equalsIgnoreCase(type)) {
                 node.factory.getSemaphore(name).destroy();
             } else if (InstanceType.COUNT_DOWN_LATCH.toString().equalsIgnoreCase(type)) {
@@ -1529,10 +1537,10 @@ public class ClientHandlerService implements ConnectionListener {
                 set.add(new Data(protocol.buffers[i].array()));
             }
             Map<Object, Object> map = node.factory.getMap(name).getAll(set);
-            ByteBuffer[] buffers = new ByteBuffer[size*2];
+            ByteBuffer[] buffers = new ByteBuffer[size * 2];
             int i = 0;
             for (Object k : set) {
-                buffers[i++] = ByteBuffer.wrap(((Data)k).buffer);
+                buffers[i++] = ByteBuffer.wrap(((Data) k).buffer);
                 Object v = map.get(k);
                 if (v == null) {
                     buffers[i++] = ByteBuffer.wrap(new byte[0]);
@@ -1947,18 +1955,30 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.args[0];
-            ILock lock = node.factory.getLock(name);
+            Object object;
+            long time = -1;
+            if (protocol.hasBuffer()) {
+                object = new Data(protocol.buffers[0].array());
+                if (protocol.args.length > 0) {
+                    time = Long.valueOf(protocol.args[0]);
+                }
+            } else {
+                object = protocol.args[0];
+                if (protocol.args.length > 1) {
+                    time = Long.valueOf(protocol.args[1]);
+                }
+            }
+            ILock lock = node.factory.getLock(object);
             try {
-                if (Command.LOCK_TRYLOCK.equals(protocol.command)) {
-                    if (protocol.args.length > 1) {
-                        return protocol.success(String.valueOf(lock.tryLock(Long.valueOf(protocol.args[1]),
-                                TimeUnit.MILLISECONDS)));
+                if (Command.TRYLOCK.equals(protocol.command)) {
+                    System.out.println("calling tryLock with " + protocol.args.length);
+                    if (time != -1) {
+                        return protocol.success(String.valueOf(lock.tryLock(time, TimeUnit.MILLISECONDS)));
                     } else {
                         return protocol.success(String.valueOf(lock.tryLock()));
                     }
                 } else {
-                    lock.unlock();
+                    lock.lock();
                     return protocol.success();
                 }
             } catch (InterruptedException e) {
@@ -1979,8 +1999,13 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.args[0];
-            ILock lock = node.factory.getLock(name);
+            Object object;
+            if (protocol.hasBuffer()) {
+                object = new Data(protocol.buffers[0].array());
+            } else {
+                object = protocol.args[0];
+            }
+            ILock lock = node.factory.getLock(object);
             return protocol.success(String.valueOf(lock.isLocked()));
         }
     }
@@ -1999,11 +2024,16 @@ public class ClientHandlerService implements ConnectionListener {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
-            String name = protocol.args[0];
-            ILock lock = node.factory.getLock(name);
-            if (Command.LOCK_UNLOCK.equals(protocol.command)) {
+            Object object;
+            if (protocol.hasBuffer()) {
+                object = new Data(protocol.buffers[0].array());
+            } else {
+                object = protocol.args[0];
+            }
+            ILock lock = node.factory.getLock(object);
+            if (Command.UNLOCK.equals(protocol.command)) {
                 lock.unlock();
-            } else if (Command.LOCK_FORCE_UNLOCK.equals(protocol.command)) {
+            } else if (Command.FORCEUNLOCK.equals(protocol.command)) {
                 lock.forceUnlock();
             }
             return protocol.success();
@@ -2244,6 +2274,21 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
+    private class TopicRemoveListenerHandler extends ClientOperationHandler {
+
+        @Override
+        public Protocol processCall(Node node, Protocol protocol) {
+            final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+            String name = protocol.args[0];
+            ITopic<Object> topic = (ITopic) factory.getTopic(name);
+            topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));
+            return protocol.success();
+        }
+
+        public void processCall(Node node, Packet packet) {
+        }
+    }
+
     private class QueueRemoveListenerHandler extends ClientOperationHandler {
 
         @Override
@@ -2353,13 +2398,13 @@ public class ClientHandlerService implements ConnectionListener {
 
         public void itemAdded(ItemEvent itemEvent) {
             DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
-            Protocol protocol = new Protocol(clientEndpoint.conn, Command.QEVENT, new String[]{ItemEventType.ADDED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
+            Protocol protocol = new Protocol(clientEndpoint.conn, Command.QEVENT, new String[]{name, ItemEventType.ADDED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
             clientEndpoint.sendPacket(protocol);
         }
 
         public void itemRemoved(ItemEvent itemEvent) {
             DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
-            Protocol protocol = new Protocol(clientEndpoint.conn, Command.QEVENT, new String[]{ItemEventType.REMOVED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
+            Protocol protocol = new Protocol(clientEndpoint.conn, Command.QEVENT, new String[]{name, ItemEventType.REMOVED.name()}, ByteBuffer.wrap(dataAwareItemEvent.getItemData().buffer));
             clientEndpoint.sendPacket(protocol);
         }
     }
