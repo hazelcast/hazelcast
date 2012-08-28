@@ -48,6 +48,10 @@
                 </para>
             </listitem>
             <listitem>
+                <para>Added <emphasis>MultiMap and Distributed ExecutorService statistics</emphasis> to
+                    <link xlink:href="http://hazelcast.com/mancenter.jsp">Management Center</link> application.</para>
+            </listitem>
+            <listitem>
                 <para>
                     <code>MigrationListener</code> has now an additional method to receive failed migration events;
                     <code>void migrationFailed(MigrationEvent migrationEvent)</code>.
