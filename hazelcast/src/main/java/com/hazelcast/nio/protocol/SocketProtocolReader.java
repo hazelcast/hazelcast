@@ -67,7 +67,6 @@ public class SocketProtocolReader implements SocketReader {
     }
 
     public void read(ByteBuffer bb) throws Exception {
-
         while (bb.hasRemaining()) {
             doRead(bb);
         }
@@ -83,9 +82,12 @@ public class SocketProtocolReader implements SocketReader {
                 String stringCommandLine = SocketTextReader.toStringAndClear(binaryCommandLine);
                 parseCommandLine(stringCommandLine);
                 if (commandLineIsParsed) {
-                    if (hasSizeLine())
+                    if (hasSizeLine()) {
+                        int sizeCount = bufferSize.length;
+                        if (sizeCount * 11 > sizeLine.array().length)
+                            sizeLine = ByteBuffer.allocate(sizeCount * 11);
                         readLineIfNotRead(bb, sizeLineRead, sizeLine);
-                    else
+                    } else
                         sizeLineRead.set(true);
                 }
                 if (commandLineIsParsed && !hasSizeLine() || sizeLineIsRead()) {

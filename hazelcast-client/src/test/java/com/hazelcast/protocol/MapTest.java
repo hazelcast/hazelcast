@@ -73,7 +73,7 @@ public class MapTest extends ProtocolTest{
         out.write("\r\n".getBytes());
         out.flush();
         assertTrue(read(socket).contains("OK"));
-        doOp("ENTRYSET map default", null);
+        doOp("MENTRYSET map default", null);
         List<String> keys = read(socket);
         System.out.println("keys = " + keys);
     }
@@ -276,7 +276,7 @@ public class MapTest extends ProtocolTest{
     public void entrySet() throws IOException, InterruptedException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
         put(socket, "2".getBytes(), "b".getBytes(), 0);
-        doOp("ENTRYSET map default", null);
+        doOp("MENTRYSET map default", null);
         List<String> keys = read(socket);
         assertEquals(4, keys.size());
         assertTrue(keys.contains("1"));

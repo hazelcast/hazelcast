@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.util.Clock;
@@ -43,7 +42,7 @@ public class InRunnable extends IORunnable implements Runnable {
             Thread.sleep(10L);
             return;
         }
-        Protocol command;
+        Protocol protocol;
         try {
             Connection oldConnection = connection;
             connection = client.connectionManager.getConnection();
@@ -60,24 +59,27 @@ public class InRunnable extends IORunnable implements Runnable {
                 outRunnable.clusterIsDown(oldConnection);
                 Thread.sleep(10);
             } else {
-                command = reader.read(connection);
-
+                protocol = reader.read(connection);
 //                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 this.lastReceived = Clock.currentTimeMillis();
-                Call call = callMap.remove(Long.valueOf(command.flag));
+                long callId = protocol.flag == null ? -1 : Long.valueOf(protocol.flag);
+                Call call = callMap.remove(callId);
                 if (call != null) {
                     call.received = System.nanoTime();
-                    call.setResponse(command);
+                    call.setResponse(protocol);
                 } else {
-                    if (command.command.equals(Command.EVENT)) {
-                        client.getListenerManager().enqueue(command);
+                    if (protocol.command.equals(Command.EVENT) ||
+                            protocol.command.equals(Command.QEVENT) ||
+                            protocol.command.equals(Command.MESSAGE)) {
+                        client.getListenerManager().enqueue(protocol);
                     }
-                    if (command.flag != "-1") {
-                        logger.log(Level.SEVERE, "In Thread can not handle: " + command.command + " : " + command.flag);
+                    if (callId != -1) {
+                        logger.log(Level.SEVERE, "In Thread can not handle: " + protocol.command + " : " + protocol.flag);
                     }
                 }
             }
         } catch (Throwable e) {
+            e.printStackTrace();
             logger.log(Level.FINEST, "InRunnable [" + connection + "] got an exception:" + e.toString(), e);
             outRunnable.clusterIsDown(connection);
         }

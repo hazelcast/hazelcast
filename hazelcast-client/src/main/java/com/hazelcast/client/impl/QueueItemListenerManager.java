@@ -25,6 +25,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareItemEvent;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Protocol;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,6 +72,25 @@ public class QueueItemListenerManager {
             }
         }
     }
+
+    public void notifyListeners(Protocol protocol) {
+        String name = protocol.args[0];
+
+        List<ItemListenerHolder> list = queueItemListeners.get(name);
+        if (list != null) {
+            for (ItemListenerHolder listenerHolder : list) {
+                ItemListener<Object> listener = listenerHolder.listener;
+                Data item = listenerHolder.includeValue?new Data(protocol.buffers[0].array()):null;
+                ItemEventType itemEventType = ItemEventType.valueOf(protocol.args[1]);
+                if (ItemEventType.ADDED.equals(itemEventType)) {
+                    listener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, item));
+                } else {
+                    listener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, item));
+                }
+            }
+        }
+    }
+
 
     public <E> void removeListener(String name, ItemListener<E> listener) {
         if (!queueItemListeners.containsKey(name)) {

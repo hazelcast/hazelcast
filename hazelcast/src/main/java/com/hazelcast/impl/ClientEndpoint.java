@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ClientEndpoint implements EntryListener, InstanceListener, MembershipListener, ConnectionListener, ClientHandlerService.ClientListener, Client {
     final Connection conn;
@@ -64,17 +65,17 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     public synchronized void addThisAsListener(IMap map, Data key, boolean includeValue) {
-        System.out.println("Key is " + key);
+        Object oKey = toObject(key);
         if (!listeningMaps.contains(map) && !(listeningKeyExist(map, key))) {
             if (key == null)
                 map.addEntryListener(this, includeValue);
             else
-                map.addEntryListener(this, key, includeValue);
+                map.addEntryListener(this, oKey, includeValue);
         }
         if (key == null)
             listeningMaps.add(map);
         else
-            listeningKeysOfMaps.add(new Entry(map, key));
+            listeningKeysOfMaps.add(new Entry(map, oKey));
     }
 
     public synchronized void removeThisListener(IMap map, Data key) {
@@ -247,6 +248,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
         if (newValue != null) list.add(ByteBuffer.wrap(newValue.buffer));
         if (oldValue != null) list.add(ByteBuffer.wrap(oldValue.buffer));
         if (value != null) list.add(ByteBuffer.wrap(value.buffer));
+
         protocol = new Protocol(this.conn, Command.EVENT, new String[]{type, name, eventType}, list.toArray(new ByteBuffer[0]));
         return protocol;
     }

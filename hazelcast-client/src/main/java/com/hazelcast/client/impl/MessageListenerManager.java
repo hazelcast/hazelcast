@@ -24,6 +24,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataMessage;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Protocol;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,6 +66,16 @@ public class MessageListenerManager {
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
                 messageListener.onMessage(new DataMessage(packet.getName(), new Data(packet.getKey())));
+            }
+        }
+    }
+
+    public void notifyMessageListeners(Protocol protocol) {
+        String name = protocol.args[0];
+        List<MessageListener> list = messageListeners.get(name);
+        if (list != null) {
+            for (MessageListener<Object> messageListener : list) {
+                messageListener.onMessage(new DataMessage(name, new Data(protocol.buffers[0].array())));
             }
         }
     }

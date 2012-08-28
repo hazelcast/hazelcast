@@ -38,38 +38,46 @@ public class ProxyHelper {
         return (int) Thread.currentThread().getId();
     }
 
-
     public static Long newCallId() {
         return callIdGen.incrementAndGet();
     }
-
 
     public void sendCall(final Call c) {
         if (c == null) {
             throw new NullPointerException();
         }
         client.getOutRunnable().enQueue(c);
+        c.sent = System.nanoTime();
     }
 
     protected Object doCall(Call c) {
         sendCall(c);
-        c.sent = System.nanoTime();
+        return getResponse(c);
+    }
+
+    protected Object getResponse(Call c, long timeout, TimeUnit timeUnit) {
+        final Object response = c.getResponse(timeout, timeUnit);
+        if (response != null) {
+            c.replied = System.nanoTime();
+            c.end();
+        }
+        if (!client.isActive()) {
+            throw new RuntimeException("HazelcastClient is no longer active.");
+        }
+        return response;
+    }
+
+    protected Object getResponse(Call c) {
         final int timeout = 5;
         for (int i = 0; ; i++) {
-            final Object response = c.getResponse(timeout, TimeUnit.SECONDS);
-            if (response != null) {
-                c.replied = System.nanoTime();
-                c.end();
-                return response;
-            }
+            final Object response = getResponse(c, timeout, TimeUnit.SECONDS);
             if (i > 0) {
                 logger.log(Level.INFO, "There is no response for " + c
                         + " in " + (timeout * i) + " seconds.");
             }
-            if (!client.isActive()) {
-                throw new RuntimeException("HazelcastClient is no longer active.");
+            if (response != null) {
+                return response;
             }
         }
     }
-
 }

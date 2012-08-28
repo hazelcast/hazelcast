@@ -26,6 +26,8 @@ import java.nio.ByteBuffer;
 public class Protocol implements SocketWritable {
 
     public static final String NOREPLY = "noreply";
+    private static final String NEWLINE = "\r\n";
+    private static final String SPACE = " ";
     public final Command command;
     public final String[] args;
     public final ByteBuffer[] buffers;
@@ -55,30 +57,29 @@ public class Protocol implements SocketWritable {
     public void onEnqueue() {
         StringBuilder builder = new StringBuilder();
         if (threadId != -1)
-            builder.append(threadId).append(" ");
+            builder.append(threadId).append(SPACE);
         builder.append(command.toString());
         if (flag != null) {
-            builder.append(" ").append(flag);
+            builder.append(SPACE).append(flag);
         }
         for (String arg : args) {
-            builder.append(" ").append(arg);
+            builder.append(SPACE).append(arg);
         }
-        int bSize = buffers == null ? 0 : buffers.length;
-        if (bSize > 0) {
-            builder.append(" #").append(buffers == null ? 0 : buffers.length);
-            builder.append("\r\n");
+        if (hasBuffer()) {
+            builder.append(SPACE).append("#").append(buffers == null ? 0 : buffers.length);
+            builder.append(NEWLINE);
             int i = buffers.length;
             for (ByteBuffer buffer : buffers) {
                 builder.append(buffer == null ? 0 : buffer.capacity());
                 if (--i != 0) {
-                    builder.append(" ");
+                    builder.append(SPACE);
                 }
             }
         }
-        builder.append("\r\n");
+        builder.append(NEWLINE);
         response = ByteBuffer.wrap(builder.toString().getBytes());
         totalSize = response.array().length;
-        if (buffers != null && buffers.length > 0) {
+        if (hasBuffer()) {
             for (ByteBuffer buffer : buffers) {
                 totalSize += buffer.capacity();
             }
@@ -99,7 +100,7 @@ public class Protocol implements SocketWritable {
 
     public final boolean writeToSocketBuffer(ByteBuffer destination) {
         totalWritten += IOUtil.copyToHeapBuffer(response, destination);
-        if (buffers != null && buffers.length > 0) {
+        if (hasBuffer()) {
             for (ByteBuffer buffer : buffers) {
                 totalWritten += IOUtil.copyToHeapBuffer(buffer, destination);
             }
@@ -137,5 +138,9 @@ public class Protocol implements SocketWritable {
         return "Protocol{" +
                 "command=" + command +
                 '}';
+    }
+
+    public boolean hasBuffer() {
+        return buffers!=null && buffers.length > 0;
     }
 }

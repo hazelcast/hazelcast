@@ -100,6 +100,30 @@
         </para>
     </sect2>
 
+    <sect2 xml:id="MSIZE" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MSIZE</title>
+
+        <para>
+            Returns the size of the map.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+        MSIZE <name>
+        ]]></programlisting>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <programlisting language="java"><![CDATA[
+        OK <size>
+        ]]></programlisting>
+
+    </sect2>
+
     <sect2 xml:id="MSET" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>MSET</title>
 
@@ -950,9 +974,9 @@
             </para>
 
         <programlisting language="java"><![CDATA[
-        EVENT <-1> <type> <name> <eventType> #2
-        <size of newvalue in bytes> <size of oldValue in bytes>
-        <newvalue in bytes><oldvalue in bytes>
+        EVENT <type> <name> <eventType> #3
+        <size of key> <size of newvalue in bytes> <size of oldValue in bytes>
+        <key in bytes> <newvalue in bytes><oldvalue in bytes>
         ]]></programlisting>
             <para>
                 eventype is one of the following: ADDED, REMOVED, UPDATED, EVICTED. Depending on the event type, only one
@@ -984,6 +1008,34 @@
         <para>
             providing key is optional. If provided the listener will be stopped to receive events only for the key,
             otherwise it will stop to receive for all entries in the map.
+        </para>
+
+        <para>
+            <emphasis role="bold">Return value:</emphasis>
+        </para>
+        <para>
+            OK will return.
+        </para>
+    </sect2>
+
+    <sect2 xml:id="MADDINDEX" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MADDINDEX</title>
+
+        <para>
+            Add's index to the map.   Index attribute should either have a getter method or be public.
+            You should also make sure to add the indexes before adding
+            entries to this map.
+        </para>
+
+        <para>
+            <emphasis role="bold">COMMAND:</emphasis>
+        </para>
+
+        <programlisting language="java"><![CDATA[
+        MADDINDEX <name> <attribute> <ordered?> [noreply]
+        ]]></programlisting>
+        <para>
+            add's index to the specified attribute. ordered should be set true if the index will be ordered?
         </para>
 
         <para>

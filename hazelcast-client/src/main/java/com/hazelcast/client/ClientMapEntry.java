@@ -17,53 +17,106 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.CMap.CMapEntry;
 
 public class ClientMapEntry<K, V> implements MapEntry<K, V> {
-    private final CMapEntry mapEntry;
-    private final K key;
-    private final MapClientProxy<K, V> proxy;
+    private final MapClientProxy<K,V> proxy;
 
-    public ClientMapEntry(CMapEntry mapEntry, K key, MapClientProxy<K, V> proxy) {
-        this.mapEntry = mapEntry;
+    private final K key;
+    private V value;
+    private long cost = 0;
+    private long expirationTime = 0;
+    private long lastAccessTime = 0;
+    private long lastUpdateTime = 0;
+    private long lastStoredTime = 0;
+    private long creationTime = 0;
+    private long version = 0;
+    private int hits = 0;
+    private boolean valid = true;
+    private String name = null;
+
+    public ClientMapEntry(K key, MapClientProxy<K,V> proxy) {
         this.key = key;
         this.proxy = proxy;
     }
 
-    public long getCost() {
-        return mapEntry.getCost();
+    public String getName() {
+        return name;
     }
 
-    public long getCreationTime() {
-        return mapEntry.getCreationTime();
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public long getCost() {
+        return cost;
+    }
+
+    public void setCost(long cost) {
+        this.cost = cost;
     }
 
     public long getExpirationTime() {
-        return mapEntry.getExpirationTime();
+        return expirationTime;
     }
 
-    public int getHits() {
-        return mapEntry.getHits();
+    public void setExpirationTime(long expirationTime) {
+        this.expirationTime = expirationTime;
     }
 
     public long getLastAccessTime() {
-        return mapEntry.getLastAccessTime();
+        return lastAccessTime;
     }
 
-    public long getLastStoredTime() {
-        return mapEntry.getLastStoredTime();
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
     }
 
     public long getLastUpdateTime() {
-        return mapEntry.getLastUpdateTime();
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+
+    public long getLastStoredTime() {
+        return lastStoredTime;
+    }
+
+    public void setLastStoredTime(long lastStoredTime) {
+        this.lastStoredTime = lastStoredTime;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
     }
 
     public long getVersion() {
-        return mapEntry.getVersion();
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public int getHits() {
+        return hits;
+    }
+
+    public void setHits(int hits) {
+        this.hits = hits;
     }
 
     public boolean isValid() {
-        return mapEntry.isValid();
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
     }
 
     public K getKey() {
@@ -71,11 +124,14 @@ public class ClientMapEntry<K, V> implements MapEntry<K, V> {
     }
 
     public V getValue() {
-        return proxy.get(key);
+        return value;
     }
 
     public V setValue(V value) {
         return proxy.put(key, value);
+    }
+    public void setV(V value) {
+        this.value = value;
     }
 
     @Override

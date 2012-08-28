@@ -20,11 +20,13 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
 import com.hazelcast.client.PacketProxyHelper;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Protocol;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -38,7 +40,6 @@ import static com.hazelcast.client.IOUtil.toObject;
 public class EntryListenerManager {
 
     private final Object NULL_KEY = new Object();
-
     private final ConcurrentMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>> entryListeners =
             new ConcurrentHashMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>>();
 
@@ -134,13 +135,36 @@ public class EntryListenerManager {
         }
     }
 
+    public void notifyListeners(Protocol protocol) {
+        Data key = new Data(protocol.buffers[0].array());
+        Data newValue = null;
+        Data oldValue = null;
+        if (protocol.buffers.length > 1) {
+            newValue = new Data(protocol.buffers[1].array());
+            if (protocol.buffers.length > 2) {
+                oldValue = new Data(protocol.buffers[2].array());
+            }
+        }
+        String name = protocol.args[1];
+        String eventType = protocol.args[2];
+        EntryEventType entryEventType = EntryEventType.valueOf(eventType);
+        final DataAwareEntryEvent event =
+                new DataAwareEntryEvent(null, entryEventType.getType(), name, key, newValue, oldValue, false);
+        if (entryListeners.get(name) != null) {
+            notifyListeners(event, entryListeners.get(name).get(NULL_KEY));
+            if (key != NULL_KEY) {
+                notifyListeners(event, entryListeners.get(name).get(toObject(key)));
+            }
+        }
+    }
+
     private void notifyListeners(DataAwareEntryEvent event, Collection<EntryListenerHolder> collection) {
         if (collection == null) {
             return;
         }
         DataAwareEntryEvent eventNoValue = event.getValue() != null ?
                 new DataAwareEntryEvent(event.getMember(), event.getEventType().getType(), event.getName(),
-                                        event.getKeyData(), null, null, false) :
+                        event.getKeyData(), null, null, false) :
                 event;
         switch (event.getEventType()) {
             case ADDED:

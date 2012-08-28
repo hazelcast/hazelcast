@@ -21,19 +21,26 @@ import com.hazelcast.core.*;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.Keys;
+import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 
+import java.net.UnknownHostException;
 import java.util.*;
 
 import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class ClusterClientProxy implements Cluster {
     final PacketProxyHelper proxyHelper;
+    final ProtocolProxyHelper protocolProxyHelper;
     final private HazelcastClient client;
 
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
         proxyHelper = new PacketProxyHelper("", client);
+        protocolProxyHelper = new ProtocolProxyHelper("", client);
     }
 
     public Collection<Instance> getInstances() {
@@ -63,14 +70,27 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public Set<Member> getMembers() {
+        Protocol protocol = protocolProxyHelper.doCommand(Command.MEMBERS, (String[])null, null);
+        Set<Member> members = new HashSet<Member>();
+        for(String arg: protocol.args){
+            String[] address = arg.split(":");
+            System.out.println(arg + "::: " + address[0] + "::::" + address[1]);
+            try {
+                Member member = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
+                members.add(member);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        }
+//
+//
 //        Keys cw = (Keys) proxyHelper.doOp(ClusterOperation.GET_MEMBERS, null, null);
 //        Collection<Data> datas = cw.getKeys();
 //        Set<Member> set = new LinkedHashSet<Member>();
 //        for (Data d : datas) {
 //            set.add((Member) IOUtil.toObject(d.buffer));
 //        }
-//        return set;
-        return Collections.emptySet();
+        return members;
     }
 
     public Member getLocalMember() {

@@ -72,6 +72,8 @@ public class ProtocolReader extends PacketHandler {
         if (bufferCount < 0) bufferCount = 0;
         buffers = new ByteBuffer[bufferCount];
         if (bufferCount > 0) {
+            if(bufferCount*11 > line.array().length)
+                line = ByteBuffer.allocate(bufferCount*11);
             String sizeLine = readLine(dis);
             String[] sizes = SocketProtocolReader.fastSplit(sizeLine, ' ');
             int i = 0;

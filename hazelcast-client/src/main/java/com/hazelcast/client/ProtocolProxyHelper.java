@@ -24,6 +24,10 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 public class ProtocolProxyHelper extends ProxyHelper {
@@ -36,20 +40,69 @@ public class ProtocolProxyHelper extends ProxyHelper {
         this.name = name;
     }
 
-    public Object doCommand(Command command, String arg, Data... data) {
-        return this.doCommand(command, new String[]{arg}, data);
+    /**
+     * Returns true if the response is OK, otherwise returns false.
+     *
+     * @param command
+     * @param arg
+     * @param data
+     * @return
+     */
+    public boolean doCommand(Command command, String arg, Data... data) {
+        Protocol response = this.doCommand(command, new String[]{arg}, data);
+        return response.command.equals(Command.OK);
     }
 
-    public Object doCommand(Command command, String[] args, Data... data) {
+    /**
+     * Expects one binary data on response and returns the deserialized version of that binary data.
+     *
+     * @param command
+     * @param arg
+     * @param data
+     * @return
+     */
+    public Object doCommandWithObjectResponse(Command command, String[] arg, Data... data) {
+        Protocol response = this.doCommand(command, arg, data);
+        return getSingleObjectFromResponse(response);
+    }
+
+    private Object getSingleObjectFromResponse(Protocol response) {
+        if (response!=null && response.buffers != null && response.hasBuffer()) {
+            return IOUtil.toObject(response.buffers[0].array());
+        } else return null;
+    }
+
+    /**
+     * Expects one binary data on response and returns the deserialized version of that binary data.
+     *
+     * @param command
+     * @param arg
+     * @param data
+     * @return
+     */
+    public Object doCommandWithObjectResponse(Command command, String arg, Data... data) {
+        return doCommandWithObjectResponse(command, new String[]{arg}, data);
+    }
+
+    public Protocol doCommand(Command command, String[] args, Data... data) {
+        Call call = createCall(command, args, data);
+        Protocol response = (Protocol) doCall(call);
+        return response;
+    }
+
+    private Call createCall(Command command, String[] args, Data[] data) {
         ByteBuffer[] buffers = new ByteBuffer[data == null ? 0 : data.length];
         int index = 0;
-        for (Data d : data) {
-            buffers[index++] = ByteBuffer.wrap(d.buffer);
+        if (data != null) {
+            for (Data d : data) {
+                if (d != null && d.buffer != null)
+                    buffers[index++] = ByteBuffer.wrap(d.buffer);
+            }
         }
         if (args == null) args = new String[]{};
         long id = newCallId();
         Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, buffers);
-        Call call = new Call(id, protocol) {
+        return new Call(id, protocol) {
             @Override
             public void onDisconnect(Member member) {
                 if (!client.getOutRunnable().queue.contains(this)) {
@@ -58,9 +111,34 @@ public class ProtocolProxyHelper extends ProxyHelper {
                 }
             }
         };
-        Protocol response = (Protocol) doCall(call);
-        if (response.buffers != null && response.buffers.length > 0 && response.buffers[0] != null) {
-            return IOUtil.toObject(response.buffers[0].array());
-        } else return null;
+    }
+
+    <V> Future<V> doAsync(final Command command, String[] args, Data... data) {
+        final Call call = createCall(command, args, data);
+        sendCall(call);
+
+        return new Future<V>() {
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return false;
+            }
+
+            public boolean isCancelled() {
+                return false;
+            }
+
+            public boolean isDone() {
+                return call.hasResponse();
+            }
+
+            public V get() throws InterruptedException, ExecutionException {
+                Protocol protocol =  (Protocol)ProtocolProxyHelper.this.getResponse(call);
+                return (V)ProtocolProxyHelper.this.getSingleObjectFromResponse(protocol);
+            }
+
+            public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                Protocol protocol =  (Protocol)ProtocolProxyHelper.this.getResponse(call, timeout, unit);
+                return (V)ProtocolProxyHelper.this.getSingleObjectFromResponse(protocol);
+            }
+        };
     }
 }
