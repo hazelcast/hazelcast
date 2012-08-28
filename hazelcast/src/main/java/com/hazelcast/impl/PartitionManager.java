@@ -654,6 +654,14 @@ public class PartitionManager {
                 && migratingPartition == null;
     }
 
+    public int getImmediateTasksCount() {
+        return immediateTasksQueue.size();
+    }
+
+    public int getScheduledTasksCount() {
+        return scheduledTasksQueue.size();
+    }
+
     public static class AssignPartitions extends AbstractRemotelyProcessable {
         public void process() {
             node.concurrentMapManager.getPartitionManager().getOwner(0);
