@@ -542,7 +542,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return mapEntry;
         }
-
+        
         public boolean putMulti(Object key, Object value) {
             long begin = Clock.currentTimeMillis();
             check(key);
@@ -818,9 +818,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public boolean removeMulti(Object key, Object value) {
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MRemoveMulti mremove = concurrentMapManager.new MRemoveMulti();
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return mremove.remove(name, key, value);
         }
 
