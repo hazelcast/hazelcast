@@ -147,7 +147,7 @@ public class ProtocolProxyHelper extends ProxyHelper {
         };
     }
 
-    public boolean doCommandAssBoolean(Command command, String[] args, Data... datas) {
+    public boolean doCommandAsBoolean(Command command, String[] args, Data... datas) {
         Protocol protocol = doCommand(command, args, datas);
         return Boolean.valueOf(protocol.args[0]);
     }

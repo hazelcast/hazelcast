@@ -106,6 +106,11 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(Command.MMPUT, new MapPutMultiHandler());
         registerHandler(Command.MMREMOVE, new MapRemoveMultiHandler());
         registerHandler(Command.MMVALUECOUNT, new MapValueCountHandler());
+        registerHandler(Command.MMSIZE, new MultiMapSizeHandler());
+        registerHandler(Command.MMCONTAINSENTRY, new MultiMapContainsEntryHandler());
+        registerHandler(Command.MMCONTAINSKEY, new MultiMapContainsKeyHandler());
+        registerHandler(Command.MMCONTAINSVALUE, new MultiMapContainsValueHandler());
+        registerHandler(Command.MMKEYS, new MultiMapKeysHandler());
         registerHandler(Command.MEVICT, new MapEvictHandler());
         registerHandler(Command.MFLUSH, new MapFlushHandler());
         registerHandler(Command.MADDINDEX, new AddIndexHandler());
@@ -673,6 +678,66 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
+    private class MultiMapSizeHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            return protocol.success(String.valueOf(node.factory.getMultiMap(name).size()));
+        }
+    }
+
+    private class MultiMapContainsEntryHandler extends ClientOperationHandler{
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            Data key = toData(protocol.buffers[0]);
+            Data value = toData(protocol.buffers[1]);
+            return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsEntry(key, value)));
+        }
+    }
+    private class MultiMapContainsValueHandler extends ClientOperationHandler{
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            Data value = toData(protocol.buffers[0]);
+            return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsValue(value)));
+        }
+    }
+    
+    private class MultiMapKeysHandler extends ClientOperationHandler{
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+
+            Set<Object> set = node.factory.getMultiMap(name).keySet();
+            ByteBuffer[] buffers = new ByteBuffer[set.size()];
+            int i=0;
+            for(Object o : set){
+                Data d = (Data)o;
+                buffers[i++] = ByteBuffer.wrap(d.buffer);
+            }
+            return protocol.success(buffers);
+        }
+    }
+    private class MultiMapContainsKeyHandler extends ClientOperationHandler{
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            Data key = toData(protocol.buffers[0]);
+            return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsKey(key)));
+        }
+    }
+
     private class MapRemoveMultiHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
             MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
@@ -872,7 +937,12 @@ public class ClientHandlerService implements ConnectionListener {
                 Set<Partition> set = partitionService.getPartitions();
                 for (Partition partition : set) {
                     args.add(String.valueOf(partition.getPartitionId()));
-                    args.add(partition.getOwner().getInetSocketAddress().toString());
+                    if (partition.getOwner() != null) {
+                        MemberImpl member = (MemberImpl) partition.getOwner();
+                        args.add(member.getAddress().getHost() + ":" + member.getAddress().getPort());
+                    } else {
+                        args.add("null");
+                    }
                 }
             }
             return protocol.success(args.toArray(new String[0]));

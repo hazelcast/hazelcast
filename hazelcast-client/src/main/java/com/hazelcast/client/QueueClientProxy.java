@@ -83,7 +83,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     public boolean offer(E e) {
         check(e);
-        return protocolProxyHelper.doCommandAssBoolean(Command.QOFFER, new String[]{getName()}, toData(e));
+        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName()}, toData(e));
     }
 
     public E poll() {
@@ -101,7 +101,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         if (e == null) {
             throw new NullPointerException();
         }
-        return protocolProxyHelper.doCommandAssBoolean(Command.QOFFER, new String[]{getName(), String.valueOf(timeUnit.toMillis(l))}, toData(e));
+        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName(), String.valueOf(timeUnit.toMillis(l))}, toData(e));
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
@@ -161,7 +161,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     @Override
     public boolean remove(Object o) {
-        return protocolProxyHelper.doCommandAssBoolean(Command.QREMOVE, new String[]{getName()}, toData(o));
+        return protocolProxyHelper.doCommandAsBoolean(Command.QREMOVE, new String[]{getName()}, toData(o));
     }
 
     @Override
