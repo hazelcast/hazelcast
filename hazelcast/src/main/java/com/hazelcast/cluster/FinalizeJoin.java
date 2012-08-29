@@ -17,28 +17,15 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NodeServiceImpl;
-import com.hazelcast.impl.spi.NonBlockingOperation;
-import com.hazelcast.impl.spi.Operation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
-public class FinalizeJoin extends Operation implements NonBlockingOperation, NoReply {
+public class FinalizeJoin extends AbstractOperation implements NoReply {
 
     public void run() {
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
         Node node = nodeService.getNode();
         node.listenerManager.syncForAdd(getCaller());
-    }
-
-    @Override
-    protected void writeInternal(DataOutput out) throws IOException {
-    }
-
-    @Override
-    protected void readInternal(DataInput in) throws IOException {
     }
 }

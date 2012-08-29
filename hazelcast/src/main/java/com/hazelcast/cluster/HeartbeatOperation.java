@@ -18,12 +18,11 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
-import com.hazelcast.impl.spi.NonBlockingOperation;
 
 /**
  * @mdogan 7/25/12
  */
-public class HeartbeatOperation extends AbstractOperation implements NoReply, NonBlockingOperation {
+public class HeartbeatOperation extends AbstractOperation implements NoReply {
 
     public void run() {
         // do nothing ...

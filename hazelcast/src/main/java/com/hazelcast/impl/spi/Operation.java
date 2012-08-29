@@ -32,8 +32,8 @@ public abstract class Operation implements Runnable, DataSerializable {
     private int partitionId;
     private int replicaIndex;
     private long callId;
-    private boolean noReply = false;
-    private boolean validateTarget = true;
+    private boolean noReply = true;
+    private boolean validateTarget = false;
     // injected
     private NodeService nodeService = null;
     private Object service;
@@ -110,7 +110,7 @@ public abstract class Operation implements Runnable, DataSerializable {
         return this;
     }
 
-    public boolean isTargetValid() {
+    public boolean shouldValidateTarget() {
         return validateTarget;
     }
 

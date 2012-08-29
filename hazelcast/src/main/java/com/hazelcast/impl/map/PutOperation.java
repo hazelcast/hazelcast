@@ -82,19 +82,12 @@ public class PutOperation extends BackupAwareOperation {
             }
             mapPartition.store.store(key, record.getValue());
         }
-//        boolean callerBackup = takeBackup();
-//        Operation preResponseBackupOp = null;
-//        if (callerBackup) {
-//            preResponseBackupOp = new PutBackupOperation(name, dataKey, dataValue, ttl, false);
-//        }
-//        responseHandler.sendResponse(new Response(preResponseBackupOp, oldValueData, false));
         int mapBackupCount = 1;
         int backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
         if (backupCount > 0) {
             GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
             op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
             op.setFirstCallerId(backupCallId, getCaller());
-//            System.out.println("PUT FIRST caller " + getCaller());
             try {
                 getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, op, partitionId, mapBackupCount);
             } catch (Exception e) {
@@ -102,7 +95,6 @@ public class PutOperation extends BackupAwareOperation {
             }
         }
         responseHandler.sendResponse(oldValueData);
-//        System.out.println(getNodeService().getThisAddress() + "  PUT is complete " + backupCallId);
     }
 
     private int getClusterSize() {

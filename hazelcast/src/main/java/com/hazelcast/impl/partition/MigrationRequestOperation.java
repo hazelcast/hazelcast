@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends Operation implements NonBlockingOperation {
+public class MigrationRequestOperation extends Operation {
     protected Address from;
     protected Address to;
     private boolean migration; // migration or copy
@@ -104,7 +104,6 @@ public class MigrationRequestOperation extends Operation implements NonBlockingO
                 responseHandler.sendResponse(Boolean.FALSE);
                 return;
             }
-
             final NodeService nodeService = getNodeService();
             final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             pm.lockPartition(partitionId);
@@ -113,8 +112,9 @@ public class MigrationRequestOperation extends Operation implements NonBlockingO
             nodeService.getExecutorService().execute(new Runnable() {
                 public void run() {
                     try {
+                        MigrationOperation op = new MigrationOperation(partitionId, tasks, replicaIndex, from);
                         Invocation inv = nodeService.createSingleInvocation(PartitionManager.PARTITION_SERVICE_NAME,
-                                new MigrationOperation(partitionId, tasks, replicaIndex, from), partitionId)
+                                op, partitionId)
                                 .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to).build();
                         Future future = inv.invoke();
                         Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));

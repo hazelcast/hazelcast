@@ -37,7 +37,7 @@ import java.util.logging.Level;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class ExecutorManager  {
+public class ExecutorManager {
 
     private final Node node;
     private final ConcurrentMap<String, NamedExecutorService> mapExecutors = new ConcurrentHashMap<String, NamedExecutorService>(10);
@@ -77,7 +77,7 @@ public class ExecutorManager  {
                 60L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue(),
-                new ExecutorThreadFactory(node, node.getThreadPoolNamePrefix("cached"), classLoader),
+                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance, node.getThreadPoolNamePrefix("cached"), classLoader),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);
@@ -132,7 +132,6 @@ public class ExecutorManager  {
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
         return parallelExecutorService.newParallelExecutor(concurrencyLevel);
     }
-
 //    class ExecutionCancelOperationHandler extends AbstractOperationHandler {
 //        protected void doOperation(Request request) {
 //            ExecutionKey executionKey = new ExecutionKey(request.caller, request.longValue);
@@ -371,7 +370,7 @@ public class ExecutorManager  {
         threadContext.setCallContext(callContext);
     }
 
-//    class MembersCall implements ExecutionManagerCallback, ExecutionListener {
+    //    class MembersCall implements ExecutionManagerCallback, ExecutionListener {
 //        final DistributedTask dtask;
 //        final String name;
 //        final Set<Member> members;
@@ -472,7 +471,6 @@ public class ExecutorManager  {
     interface ExecutionListener {
         void onResponse(Object result);
     }
-
 //    class TaskCancellationCall extends TargetAwareOp {
 //        final String name;
 //        final MemberImpl member;

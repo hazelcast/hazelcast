@@ -34,20 +34,19 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createLocalResponseHandler(NodeService NodeService, SingleInvocation inv) {
-        if (inv.getOperation() instanceof NoReply) {
+        if (inv.getOperation().isNoReply()) {
             return new NoReplyResponseHandler(NodeService, inv.getOperation());
         }
         return new LocalInvocationResponseHandler(inv);
     }
 
     public static void setRemoteResponseHandler(NodeService NodeService, Operation op, final int partitionId, final long callId) {
-        op.setResponseHandler(
-                createRemoteResponseHandler(NodeService, op, partitionId, callId));
+        op.setResponseHandler(createRemoteResponseHandler(NodeService, op, partitionId, callId));
     }
 
     public static ResponseHandler createRemoteResponseHandler(NodeService NodeService, Operation op,
                                                               final int partitionId, final long callId) {
-        if (op instanceof NoReply) {
+        if (op.isNoReply()) {
             return new NoReplyResponseHandler(NodeService, op);
         }
         return new RemoteInvocationResponseHandler(NodeService, op.getConnection(), partitionId, callId);

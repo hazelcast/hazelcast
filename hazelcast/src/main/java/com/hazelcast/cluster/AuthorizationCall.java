@@ -17,15 +17,14 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
+import com.hazelcast.impl.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class AuthorizationCall extends AbstractOperation implements NonBlockingOperation, NonMemberOperation {
+public class AuthorizationCall extends Operation implements NonMemberOperation {
 
     String groupName;
     String groupPassword;
@@ -51,14 +50,12 @@ public class AuthorizationCall extends AbstractOperation implements NonBlockingO
 
     @Override
     public void readInternal(DataInput in) throws IOException {
-        super.readInternal(in);
         groupName = in.readUTF();
         groupPassword = in.readUTF();
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
-        super.writeInternal(out);
         out.writeUTF(groupName);
         out.writeUTF(groupPassword);
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.ServiceMigrationOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -30,7 +29,7 @@ import java.util.logging.Level;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-public class MigrationOperation extends AbstractOperation implements NonBlockingOperation {
+public class MigrationOperation extends AbstractOperation {
     private int partitionId;
     private int replicaIndex;
     private Collection<ServiceMigrationOperation> tasks;
@@ -74,14 +73,12 @@ public class MigrationOperation extends AbstractOperation implements NonBlocking
                 ServiceMigrationOperation task = IOUtil.readObject(in);
                 tasks.add(task);
             }
-
             if (taskCount != tasks.size()) {
                 getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
                         "expected-count: " + size + ", actual-count: " + tasks.size() +
                         "\nfrom: " + from + ", partition: " + partitionId
                         + ", replica: " + replicaIndex);
             }
-
             final boolean result = pm.runMigrationTasks(tasks, partitionId, replicaIndex, from);
             getResponseHandler().sendResponse(result);
         } catch (Throwable e) {

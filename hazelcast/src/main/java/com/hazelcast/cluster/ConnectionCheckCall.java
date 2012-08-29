@@ -20,11 +20,10 @@ import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NodeServiceImpl;
-import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.nio.ConnectionManager;
 
 // TODO: check if this call is required really!
-public class ConnectionCheckCall extends AbstractOperation implements NonBlockingOperation {
+public class ConnectionCheckCall extends AbstractOperation {
     public void run() {
         Boolean result = Boolean.TRUE;
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();

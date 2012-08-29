@@ -16,9 +16,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.spi.*;
-
+import com.hazelcast.impl.spi.AbstractOperation;
 import com.hazelcast.impl.spi.NoReply;
+import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
@@ -27,7 +27,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
-public class MergeClusters extends AbstractOperation implements NonBlockingOperation, NoReply {
+public class MergeClusters extends AbstractOperation implements NoReply {
 
     private Address newTargetAddress = null;
 

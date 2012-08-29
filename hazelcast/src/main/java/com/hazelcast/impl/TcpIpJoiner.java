@@ -81,7 +81,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    public static class MasterClaim extends AbstractOperation implements NonMemberOperation, NonBlockingOperation {
+    public static class MasterClaim extends AbstractOperation implements NonMemberOperation {
 
         public void run() {
             final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
@@ -111,7 +111,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.INFO, "Connecting to possible member: " + possibleAddress);
                 node.connectionManager.getOrConnect(possibleAddress);
             }
-            
             boolean foundConnection = false;
             int numberOfSeconds = 0;
             final int connectionTimeoutSeconds = config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();

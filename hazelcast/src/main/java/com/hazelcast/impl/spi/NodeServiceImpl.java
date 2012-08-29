@@ -43,6 +43,7 @@ public class NodeServiceImpl implements NodeService {
     private final ILogger logger;
     private final int partitionCount;
     private final int maxBackupCount;
+    private final ThreadGroup partitionThreadGroup;
 
     public NodeServiceImpl(Node node) {
         this.node = node;
@@ -51,10 +52,14 @@ public class NodeServiceImpl implements NodeService {
         executorService = new ThreadPoolExecutor(
                 2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
                 new SynchronousQueue(),
-                new ExecutorThreadFactory(node, node.getThreadPoolNamePrefix("cached"), classLoader));
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new ExecutorThreadFactory(node,
-                node.getThreadPoolNamePrefix("scheduled"), classLoader));
-        workers = new Workers("workers", 2);
+                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                        node.getThreadPoolNamePrefix("cached"), classLoader));
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
+                new ExecutorThreadFactory(node.threadGroup,
+                        node.hazelcastInstance,
+                        node.getThreadPoolNamePrefix("scheduled"), classLoader));
+        partitionThreadGroup = new ThreadGroup(node.threadGroup, "partitionThreads");
+        workers = new Workers(partitionThreadGroup, "workers", 2);
         partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -124,15 +129,16 @@ public class NodeServiceImpl implements NodeService {
     }
 
     void invokeSingle(final SingleInvocation inv) {
-//        if (Thread.currentThread().getName().indexOf("hz.Blocking") != -1) {
-//            throw new RuntimeException(Thread.currentThread() + " cannot make another call! " + inv.getOperation());
-//        }
+        if (Thread.currentThread().getThreadGroup() == partitionThreadGroup) {
+            throw new RuntimeException(Thread.currentThread() + " cannot make another call! " + inv.getOperation());
+        }
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionId();
         final int replicaIndex = inv.getReplicaIndex();
         final String serviceName = inv.getServiceName();
         setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId, replicaIndex);
+        op.setNoReply(false);
         if (target == null) {
             throw new NullPointerException(inv.getOperation() + ": Target is null");
         }
@@ -154,12 +160,12 @@ public class NodeServiceImpl implements NodeService {
     }
 
     public void runLocally(final Operation op) {
-        final boolean nonBlocking = op instanceof NonBlockingOperation;
+        final boolean shouldValidateTarget = op.shouldValidateTarget();
         final int partitionId = op.getPartitionId();
         final ExecutorService executor = getExecutor(partitionId);
         executor.execute(new Runnable() {
             public void run() {
-                if (partitionId != -1 && !nonBlocking) {
+                if (partitionId != -1 && shouldValidateTarget) {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     if (!getThisAddress().equals(owner)) {
@@ -205,7 +211,8 @@ public class NodeServiceImpl implements NodeService {
                         if (partitionId != -1) {
                             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                             Address owner = partitionInfo.getOwner();
-                            if (!(op instanceof NonBlockingOperation) && !getThisAddress().equals(owner)) {
+                            final boolean shouldValidateTarget = op.shouldValidateTarget();
+                            if (shouldValidateTarget && !getThisAddress().equals(owner)) {
                                 throw new WrongTargetException(getThisAddress(), owner, partitionId,
                                         op.getClass().getName(), op.getServiceName());
                             }
@@ -319,11 +326,13 @@ public class NodeServiceImpl implements NodeService {
     }
 
     class Workers {
+        private final ThreadGroup partitionThreadGroup;
         final int threadCount;
         final ExecutorService[] workers;
         final AtomicInteger threadNumber = new AtomicInteger();
 
-        Workers(String threadName, int threadCount) {
+        Workers(ThreadGroup partitionThreadGroup, String threadName, int threadCount) {
+            this.partitionThreadGroup = partitionThreadGroup;
             this.threadCount = threadCount;
             workers = new ExecutorService[threadCount];
             for (int i = 0; i < threadCount; i++) {
@@ -339,7 +348,7 @@ public class NodeServiceImpl implements NodeService {
             return new ThreadPoolExecutor(
                     1, 1, 0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<Runnable>(),
-                    new ExecutorThreadFactory(node, node.getThreadPoolNamePrefix(threadName),
+                    new ExecutorThreadFactory(partitionThreadGroup, node.hazelcastInstance, node.getThreadPoolNamePrefix(threadName),
                             threadNumber, node.getConfig().getClassLoader()),
                     new RejectedExecutionHandler() {
                         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {

@@ -70,7 +70,7 @@ public class PartitionManager {
     private final AtomicBoolean migrationActive = new AtomicBoolean(true);
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final SystemLogService systemLogService;
-    private final AtomicLong[] partitionLocks ;
+    private final AtomicLong[] partitionLocks;
 
     public final PartitionServiceImpl partitionServiceImpl;
 
@@ -686,7 +686,7 @@ public class PartitionManager {
         return partitionLocks[partitionId].get() > (Clock.currentTimeMillis() + partitionMigrationTimeout);
     }
 
-    public static class AssignPartitions extends AbstractOperation implements NonBlockingOperation, NoReply {
+    public static class AssignPartitions extends AbstractOperation implements NoReply {
         public void run() {
             final PartitionManager service = getService();
             service.firstArrangement();
@@ -698,14 +698,14 @@ public class PartitionManager {
             if (node.isMaster() && node.isActive()) {
                 if ((!scheduledTasksQueue.isEmpty() || !immediateTasksQueue.isEmpty()) && migrationActive.get()) {
                     logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
-                                + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
+                            + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
                 }
                 sendPartitionRuntimeState();
             }
         }
     }
 
-    public static class RemotelyCheckMigratingPartition extends AbstractOperation implements NonBlockingOperation {
+    public static class RemotelyCheckMigratingPartition extends AbstractOperation {
         MigratingPartition migratingPartition;
 
         public RemotelyCheckMigratingPartition() {
@@ -918,7 +918,6 @@ public class PartitionManager {
                                 migrationRequestOp, migrationRequestOp.getPartitionId())
                                 .setTryCount(3).setTryPauseMillis(1000).setTarget(migrationRequestOp.getFromAddress())
                                 .setReplicaIndex(migrationRequestOp.getReplicaIndex()).build();
-
                         addActiveMigration(migrationRequestOp.createMigratingPartition());
                         Future future = inv.invoke();
                         try {

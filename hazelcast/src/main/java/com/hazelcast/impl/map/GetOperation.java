@@ -21,7 +21,6 @@ import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
 import com.hazelcast.nio.Data;
 
 public class GetOperation extends AbstractNamedKeyBasedOperation {
-    boolean local = true;
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -40,7 +39,6 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
     @Override
     public String toString() {
         return "GetOperation{" +
-                "local=" + local +
                 '}';
     }
 }

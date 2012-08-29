@@ -16,7 +16,6 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.impl.spi.ResponseHandler;
 
@@ -24,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapTxnBackupRollbackOperation extends Operation implements NonBlockingOperation {
+public class MapTxnBackupRollbackOperation extends Operation {
     String txnId;
 
     public MapTxnBackupRollbackOperation(String txnId) {

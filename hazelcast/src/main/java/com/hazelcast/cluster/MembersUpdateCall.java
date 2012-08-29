@@ -18,7 +18,9 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.NodeServiceImpl;
+import com.hazelcast.impl.spi.NonMemberOperation;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
@@ -30,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class MembersUpdateCall extends Operation implements NonBlockingOperation, NonMemberOperation {
+public class MembersUpdateCall extends Operation implements NonMemberOperation {
 
     private static final long serialVersionUID = -2311579721761844861L;
 
@@ -56,8 +58,7 @@ public class MembersUpdateCall extends Operation implements NonBlockingOperation
         final Connection conn = getConnection();
         final Address masterAddress = conn != null ? conn.getEndPoint() : null;
         final boolean accept = conn == null ||  // which means this is a local call.
-                               (masterAddress != null && masterAddress.equals(node.getMasterAddress()));
-
+                (masterAddress != null && masterAddress.equals(node.getMasterAddress()));
         if (accept) {
             node.getClusterImpl().setMasterTime(masterTime);
             node.clusterImpl.updateMembers(getMemberInfos());

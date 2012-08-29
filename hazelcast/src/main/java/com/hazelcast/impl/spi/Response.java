@@ -26,7 +26,7 @@ import java.io.IOException;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class Response extends Operation implements NonBlockingOperation, NoReply {
+public class Response extends Operation implements NoReply {
     private Object result = null;
     private Data resultData = null;
     private boolean exception = false;

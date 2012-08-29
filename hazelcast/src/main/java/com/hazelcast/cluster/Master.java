@@ -17,7 +17,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.spi.NoReply;
-import com.hazelcast.impl.spi.NonBlockingOperation;
 import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
@@ -29,7 +28,7 @@ import java.io.IOException;
 /**
  * The Class Master.
  */
-public class Master extends Operation implements NonMemberOperation, NoReply, NonBlockingOperation {
+public class Master extends Operation implements NonMemberOperation, NoReply {
 
     /**
      * The address.

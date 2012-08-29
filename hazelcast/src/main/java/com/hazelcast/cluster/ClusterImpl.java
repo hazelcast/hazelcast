@@ -648,7 +648,7 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
     }
 
     public static class AuthenticationFailureOperation extends AbstractOperation
-            implements NoReply, NonMemberOperation, NonBlockingOperation {
+            implements NoReply, NonMemberOperation {
 
         public void run() {
             final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();

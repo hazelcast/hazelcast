@@ -16,5 +16,5 @@
 
 package com.hazelcast.impl.spi;
 
-public interface BackupOperation extends NonBlockingOperation {
+public interface BackupOperation {
 }

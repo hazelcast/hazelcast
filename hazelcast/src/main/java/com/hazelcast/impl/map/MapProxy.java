@@ -17,9 +17,11 @@
 package com.hazelcast.impl.map;
 
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.TransactionImpl;
-import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.Invocation;
+import com.hazelcast.impl.spi.NodeService;
+import com.hazelcast.impl.spi.Response;
+import com.hazelcast.impl.spi.RetryableException;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
@@ -50,19 +52,17 @@ public class MapProxy {
             txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
         }
         PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
+        putOperation.setValidateTarget(true);
         long backupCallId = mapService.createNewBackupCallQueue();
-//        System.out.println(nodeService.getThisAddress() + " map.put() with BACKUP ID " + backupCallId);
         try {
             putOperation.setBackupCallId(backupCallId);
             putOperation.setServiceName(MAP_SERVICE_NAME);
+            putOperation.setNoReply(false);
             Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
             Object response = f.get();
             BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
             Object backupResponse = backupResponses.poll(10, TimeUnit.SECONDS);
-//            if (backupResponse == null) {
-//                System.out.println(nodeService.getThisAddress() + " Has Null backup " + backupCallId);
-//            }
             Object returnObj = null;
             if (response instanceof Response) {
                 Response r = (Response) response;
@@ -85,34 +85,11 @@ public class MapProxy {
         }
     }
 
-    public Object put2(String name, Object k, Object v, long ttl) {
-        Data key = toData(k);
-        int partitionId = nodeService.getPartitionId(key);
-        ThreadContext threadContext = ThreadContext.get();
-        TransactionImpl txn = threadContext.getTransaction();
-        String txnId = null;
-        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-            txnId = txn.getTxnId();
-            txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
-        }
-        PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
-        try {
-            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
-            Future f = invocation.invoke();
-            Object response = f.get();
-            if (response instanceof Response) {
-                return ((Response) response).getResult();
-            }
-            return toObject((Data) response);
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
-
     public Object getOperation(String name, Object k) {
         Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);
         GetOperation getOperation = new GetOperation(name, toData(k));
+        getOperation.setValidateTarget(true);
         getOperation.setServiceName(MAP_SERVICE_NAME);
         try {
             Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, getOperation, partitionId).build();
@@ -126,7 +103,9 @@ public class MapProxy {
 
     public int getSize(String name) {
         try {
-            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, new MapSizeOperation(name));
+            MapSizeOperation mapSizeOperation = new MapSizeOperation(name);
+            mapSizeOperation.setValidateTarget(true);
+            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) result;
