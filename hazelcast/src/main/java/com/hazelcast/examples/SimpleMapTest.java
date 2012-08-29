@@ -18,6 +18,7 @@ package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.partition.Partition;
 
@@ -37,8 +38,8 @@ public class SimpleMapTest {
     public static int GET_PERCENTAGE = 40;
     public static int PUT_PERCENTAGE = 40;
 
-    final static ILogger logger = Hazelcast.getLoggingService().getLogger("SimpleMapTest");
     private static final String NAMESPACE = "default";
+    private static final ILogger logger = Logger.getLogger("SimpleMapTest");
 
     public static boolean parse(String... input) {
         boolean load = false;
@@ -90,8 +91,8 @@ public class SimpleMapTest {
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.execute(new Runnable() {
                 public void run() {
-                    try {
-                        while (true) {
+                    while (true) {
+                        try {
                             int key = (int) (Math.random() * ENTRY_COUNT);
                             int operation = ((int) (Math.random() * 100));
                             if (operation < GET_PERCENTAGE) {
@@ -101,8 +102,8 @@ public class SimpleMapTest {
                             } else {
                                 map.remove(String.valueOf(key));
                             }
+                        } catch (Exception ignored) {
                         }
-                    } catch (Exception ignored) {
                     }
                 }
             });
@@ -110,7 +111,7 @@ public class SimpleMapTest {
     }
 
     private static void load(ExecutorService es) throws InterruptedException {
-        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        final IMap<String, byte[]> map = Hazelcast.getMap(NAMESPACE);
         final Member thisMember = Hazelcast.getCluster().getLocalMember();
         List<String> lsOwnedEntries = new LinkedList<String>();
         for (int i = 0; i < ENTRY_COUNT; i++) {
@@ -133,7 +134,7 @@ public class SimpleMapTest {
     }
 
     private static void startPrintStats() {
-        final IMap<String, byte[]> map = Hazelcast.getMap("default");
+        final IMap<String, byte[]> map = Hazelcast.getMap(NAMESPACE);
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             public void run() {
                 while (true) {

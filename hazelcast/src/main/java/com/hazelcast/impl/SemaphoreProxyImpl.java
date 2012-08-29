@@ -417,7 +417,7 @@ public class SemaphoreProxyImpl extends FactoryAwareNamedProxy implements Semaph
 
         public boolean tryAcquire(int permits) {
             try {
-                return doTryAcquire(permits, false, -1);
+                return doTryAcquire(permits, false, 0);
             } catch (Throwable e) {
                 return false;
             }
@@ -443,7 +443,7 @@ public class SemaphoreProxyImpl extends FactoryAwareNamedProxy implements Semaph
 
         public boolean tryAcquireAttach(int permits) {
             try {
-                return doTryAcquire(permits, true, -1);
+                return doTryAcquire(permits, true, 0);
             } catch (Throwable e) {
                 return false;
             }

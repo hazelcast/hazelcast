@@ -25,13 +25,13 @@ import java.io.IOException;
 
 public class MigrationNotification extends AbstractRemotelyProcessable {
     MigrationRequestTask migrationRequestTask;
-    boolean started;
+    MigrationStatus status;
 
     public MigrationNotification() {
     }
 
-    public MigrationNotification(boolean started, MigrationRequestTask migrationRequestTask) {
-        this.started = started;
+    public MigrationNotification(MigrationStatus status, MigrationRequestTask migrationRequestTask) {
+        this.status = status;
         this.migrationRequestTask = migrationRequestTask;
     }
 
@@ -39,7 +39,7 @@ public class MigrationNotification extends AbstractRemotelyProcessable {
         Address from = migrationRequestTask.getFromAddress();
         Address to = migrationRequestTask.getToAddress();
         int partitionId = migrationRequestTask.getPartitionId();
-        node.concurrentMapManager.getPartitionManager().fireMigrationEvent(started, partitionId, from, to);
+        node.concurrentMapManager.getPartitionManager().fireMigrationEvent(status, partitionId, from, to);
     }
 
     @Override
@@ -47,13 +47,13 @@ public class MigrationNotification extends AbstractRemotelyProcessable {
         super.readData(in);
         migrationRequestTask = new MigrationRequestTask();
         migrationRequestTask.readData(in);
-        started = in.readBoolean();
+        status = MigrationStatus.get(in.readByte());
     }
 
     @Override
     public void writeData(DataOutput out) throws IOException {
         super.writeData(out);
         migrationRequestTask.writeData(out);
-        out.writeBoolean(started);
+        out.writeByte(status.getCode());
     }
 }

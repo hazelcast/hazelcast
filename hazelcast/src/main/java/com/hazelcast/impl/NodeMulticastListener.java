@@ -16,11 +16,14 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.cluster.AddOrRemoveConnection;
 import com.hazelcast.cluster.JoinInfo;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
 import java.util.Set;
+import java.util.logging.Level;
 
 public class NodeMulticastListener implements MulticastListener {
     final Node node;
@@ -43,10 +46,19 @@ public class NodeMulticastListener implements MulticastListener {
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
-                    if (node.isMaster() && node.isActive() && node.joined()) {
+                    if (node.isActive() && node.joined()) {
                         if (joinInfo.isRequest()) {
-                            node.multicastService.send(joinInfo.copy(false, node.address,
-                                    node.getClusterImpl().getMembers().size()));
+                            if (node.isMaster()) {
+                                node.multicastService.send(joinInfo.copy(false, node.address,
+                                        node.getClusterImpl().getMembers().size()));
+                            } else if (isMasterNode(joinInfo.address) && !checkMasterUuid(joinInfo.getUuid())) {
+                                node.getLogger("NodeMulticastListener").log(Level.WARNING,
+                                        "New join request has been received from current master. "
+                                        + "Removing " + node.getMasterAddress());
+                                AddOrRemoveConnection removeConnection = new AddOrRemoveConnection(node.getMasterAddress(), false);
+                                removeConnection.setNode(node);
+                                node.clusterManager.enqueueAndReturn(removeConnection);
+                            }
                         }
                     } else {
                         if (!node.joined() && !joinInfo.isRequest()) {
@@ -68,5 +80,19 @@ public class NodeMulticastListener implements MulticastListener {
                 }
             }
         }
+    }
+
+    private boolean isMasterNode(Address address) {
+        return address.equals(node.getMasterAddress());
+    }
+
+    private boolean checkMasterUuid(String uuid) {
+        final Member masterMember = getMasterMember(node.getClusterImpl().getMembers());
+        return masterMember == null || masterMember.getUuid().equals(uuid);
+    }
+
+    private Member getMasterMember(final Set<Member> members) {
+        if (members == null || members.isEmpty()) return null;
+        return members.iterator().next();
     }
 }

@@ -23,12 +23,14 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.SleepCallable;
 import com.hazelcast.monitor.DistributedMapStatsCallable;
 import com.hazelcast.util.Clock;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -120,6 +122,23 @@ public class DynamicClusterTest {
             }
         }
         assertEquals(i, map.get("test"));
+    }
+
+    @Test
+    public void testClientFailoverWithOneMember() throws InterruptedException {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastClient client = TestUtility.newHazelcastClient(h1);
+        Map map = client.getMap("myMap");
+        map.put("test", 1);
+        h1.getLifecycleService().shutdown();
+        Thread.sleep(1000);
+        h1 = Hazelcast.newHazelcastInstance(config);
+
+        assertEquals(null, map.get("test"));
+        map.put("test", 2);
+        assertEquals(2, map.get("test"));
+
+        h1.getLifecycleService().shutdown();
     }
 
     @Test(expected = RuntimeException.class)
@@ -1036,9 +1055,11 @@ public class DynamicClusterTest {
         assertEquals(1, h2.getCluster().getMembers().size());
         Thread.sleep(2000);
         c1.getGroupConfig().setName("sameGroup");
-        assertTrue(l.waitFor(LifecycleEvent.LifecycleState.RESTARTED, 40));
-        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTING));
-        assertEquals(1, l.getCount(LifecycleEvent.LifecycleState.RESTARTED));
+        Assert.assertTrue(l.waitFor(LifecycleState.MERGED, 40));
+        Assert.assertEquals(1, l.getCount(LifecycleState.MERGING));
+        Assert.assertEquals(1, l.getCount(LifecycleState.RESTARTING));
+        Assert.assertEquals(1, l.getCount(LifecycleState.RESTARTED));
+        Assert.assertEquals(1, l.getCount(LifecycleState.MERGED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
         assertEquals(500, h1.getMap("default").size());

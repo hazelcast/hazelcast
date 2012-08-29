@@ -24,6 +24,7 @@ import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class NodeBaseVariables {
@@ -35,7 +36,7 @@ public class NodeBaseVariables {
 
     final Map<Address, MemberImpl> mapMembers = new HashMap<Address, MemberImpl>(200);
 
-    final Map<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(500);
+    final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(500, 0.75f, 1);
 
     final Queue<Packet> qServiceThreadPacketCache = new SimpleBoundedQueue<Packet>(1000);
 

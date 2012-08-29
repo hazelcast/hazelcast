@@ -67,6 +67,7 @@ public class SemaphoreTest {
             assertEquals(false, semaphore.tryAcquire(20, 10, TimeUnit.MILLISECONDS));
             assertEquals(10, semaphore.availablePermits());
         } catch (Throwable e) {
+            e.printStackTrace();
             fail(e.getMessage());
         }
     }

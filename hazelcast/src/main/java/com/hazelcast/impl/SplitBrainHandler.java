@@ -62,6 +62,6 @@ public class SplitBrainHandler implements Runnable {
 
     public void restart() {
         lastRun = Clock.currentTimeMillis() + FIRST_RUN_DELAY_MILLIS;
-        node.factory.restart();
+        node.factory.restartToMerge();
     }
 }

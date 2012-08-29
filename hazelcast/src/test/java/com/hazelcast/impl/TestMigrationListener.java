@@ -43,6 +43,10 @@ class TestMigrationListener implements MigrationListener {
         latchCompleted.countDown();
     }
 
+    public void migrationFailed(final MigrationEvent migrationEvent) {
+
+    }
+
     public boolean await(int seconds) throws Exception {
         if (!latchStarted.await(seconds, TimeUnit.SECONDS)) {
             return false;

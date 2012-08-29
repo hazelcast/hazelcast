@@ -81,8 +81,6 @@ public class ConnectionManager {
 
     private final MemberSocketInterceptor memberSocketInterceptor;
 
-    private final ExecutorService es = Executors.newCachedThreadPool();
-
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
     private Thread socketAcceptorThread; // accessed only in synchronized block
@@ -179,10 +177,6 @@ public class ConnectionManager {
         return ioService;
     }
 
-    void executeAsync(Runnable runnable) {
-        es.execute(runnable);
-    }
-
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         return memberSocketInterceptor;
     }
@@ -198,33 +192,46 @@ public class ConnectionManager {
         setConnectionListeners.add(listener);
     }
 
-    public boolean bind(Address endPoint, Connection connection,
-                        boolean accept) {
-        log(Level.FINEST, "Binding " + connection + " to " + endPoint + ", accept: " + accept);
-        connection.setEndPoint(endPoint);
-        if (mapConnections.containsKey(endPoint)) {
-            log(Level.FINEST, connection + " is already bound  to " + endPoint);
+    public boolean bind(Connection connection, Address remoteEndPoint, Address localEndpoint, final boolean replyBack) {
+        log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
+        final Address thisAddress = ioService.getThisAddress();
+        if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
+            log(Level.WARNING, "Wrong bind request from " + remoteEndPoint
+                               + "! This node is not requested endpoint: " + localEndpoint);
+            connection.close();
             return false;
         }
-        if (!endPoint.equals(ioService.getThisAddress())) {
+        connection.setEndPoint(remoteEndPoint);
+        if (replyBack) {
+            sendBindRequest(connection, remoteEndPoint, false);
+        }
+        final Connection existingConnection = mapConnections.get(remoteEndPoint);
+        if (existingConnection != null) {
+            if (existingConnection != connection) {
+                log(Level.WARNING, existingConnection + " is already bound  to " + remoteEndPoint);
+            }
+            return false;
+        }
+        if (!remoteEndPoint.equals(thisAddress)) {
             if (!connection.isClient()) {
-                connection.setMonitor(getConnectionMonitor(endPoint, true));
+                connection.setMonitor(getConnectionMonitor(remoteEndPoint, true));
             }
-            if (!accept) {
-                //make sure bind packet is the first packet sent to the end point.
-                Packet bindPacket = createBindPacket(new Bind(ioService.getThisAddress()));
-                connection.getWriteHandler().enqueueSocketWritable(bindPacket);
-                //now you can send anything...
-            }
-            mapConnections.put(endPoint, connection);
-            setConnectionInProgress.remove(endPoint);
+            mapConnections.put(remoteEndPoint, connection);
+            setConnectionInProgress.remove(remoteEndPoint);
             for (ConnectionListener listener : setConnectionListeners) {
                 listener.connectionAdded(connection);
             }
-        } else {
-            return false;
+            return true;
         }
-        return true;
+        return false;
+    }
+
+    void sendBindRequest(final Connection connection, final Address remoteEndPoint, final boolean replyBack) {
+        connection.setEndPoint(remoteEndPoint);
+        //make sure bind packet is the first packet sent to the end point.
+        Packet bindPacket = createBindPacket(new Bind(ioService.getThisAddress(), remoteEndPoint, replyBack));
+        connection.getWriteHandler().enqueueSocketWritable(bindPacket);
+        //now you can send anything...
     }
 
     private Packet createBindPacket(Bind rp) {
@@ -241,8 +248,7 @@ public class ConnectionManager {
         setActiveConnections.add(connection);
         selectorAssigned.addTask(connection.getReadHandler());
         selectorAssigned.selector.wakeup();
-        log(Level.INFO, channel.socket().getLocalPort()
-                + " accepted socket connection from "
+        log(Level.INFO, channel.socket().getLocalPort() + " accepted socket connection from "
                 + channel.socket().getRemoteSocketAddress());
         return connection;
     }
@@ -267,12 +273,12 @@ public class ConnectionManager {
         return getOrConnect(address, false);
     }
 
-    public Connection getOrConnect(Address address, boolean silent) {
+    public Connection getOrConnect(final Address address, final boolean silent) {
         Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
-                executeAsync(new SocketConnector(this, address, silent));
+                ioService.executeAsync(new SocketConnector(this, address, silent));
             }
         }
         return connection;
@@ -376,7 +382,6 @@ public class ConnectionManager {
                 stop();
             }
         } finally {
-            es.shutdownNow();
             if (serverSocketChannel != null) {
                 try {
                     log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
@@ -483,7 +488,7 @@ public class ConnectionManager {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("Connections {");
+        final StringBuilder sb = new StringBuilder("Connections {");
         for (Connection conn : mapConnections.values()) {
             sb.append("\n");
             sb.append(conn);

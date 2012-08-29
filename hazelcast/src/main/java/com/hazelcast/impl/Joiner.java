@@ -16,9 +16,9 @@
 
 package com.hazelcast.impl;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.hazelcast.nio.Address;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public interface Joiner {
 
@@ -29,4 +29,6 @@ public interface Joiner {
     long getStartTime();
 
     void setTargetAddress(Address targetAddress);
+
+    void reset();
 }

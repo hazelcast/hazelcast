@@ -46,14 +46,12 @@ public class Request implements CallStateAware {
     public long timeout = DEFAULT_TIMEOUT;
     public long ttl = DEFAULT_TTL;
     public boolean local = true;
-
     public boolean scheduled = false;
     public ClusterOperation operation;
     public Address caller = null;
-
-    public Address lockAddress = null;
     public int redoCount = DEFAULT_REDO_COUNT;
-
+    public byte redoCode = 0;
+    public Address lockAddress = null;
     public int lockCount = DEFAULT_LOCK_COUNT;
     public int lockThreadId = DEFAULT_LOCK_THREAD_ID;
     public int blockId = DEFAULT_BLOCK_ID;

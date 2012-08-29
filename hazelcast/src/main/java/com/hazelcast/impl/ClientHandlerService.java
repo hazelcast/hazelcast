@@ -228,6 +228,9 @@ public class ClientHandlerService implements ConnectionListener {
                 }
                 try {
                     r.run();
+                } catch (OutOfMemoryError e) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+                    throw e;
                 } catch (Throwable ignored) {
                 }
             }
@@ -841,12 +844,12 @@ public class ClientHandlerService implements ConnectionListener {
         public void processCall(Node node, Packet packet) {
             final Credentials credentials = (Credentials) toObject(packet.getValueData());
             boolean authenticated = false;
+            final Socket socket = packet.conn.getSocketChannelWrapper().socket();
             if (credentials == null) {
                 authenticated = false;
                 logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
             } else if (node.securityContext != null) {
-                final Socket endpointSocket = packet.conn.getSocketChannelWrapper().socket();
-                credentials.setEndpoint(endpointSocket.getInetAddress().getHostAddress());
+                credentials.setEndpoint(socket.getInetAddress().getHostAddress());
                 try {
                     LoginContext lc = node.securityContext.createClientLoginContext(credentials);
                     lc.login();
@@ -880,7 +883,7 @@ public class ClientHandlerService implements ConnectionListener {
             } else {
                 ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(packet.conn);
                 clientEndpoint.authenticated();
-                Bind bind = new Bind(new Address(packet.conn.getSocketChannelWrapper().socket().getInetAddress(), packet.conn.getSocketChannelWrapper().socket().getPort()));
+                Bind bind = new Bind(new Address(socket.getInetAddress(), socket.getPort()));
                 bind.setConnection(packet.conn);
                 bind.setNode(node);
                 node.clusterService.enqueueAndWait(bind);

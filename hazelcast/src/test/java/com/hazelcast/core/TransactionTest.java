@@ -728,12 +728,12 @@ public class TransactionTest {
         Collection r1 = txnMap.remove("2");
         assertTrue(r1.contains("x"));
         assertTrue(r1.contains("y"));
-        assertNull(txnMap.get("2"));
+        assertEquals(0, txnMap.get("2").size());
         Collection r2 = txnMap.remove("1");
         assertEquals(2, r2.size());
         assertTrue(r2.contains("A"));
         assertTrue(r2.contains("B"));
-        assertNull(txnMap.get("1"));
+        assertEquals(0, txnMap.get("1").size());
         txnMap.commit();
         assertEquals(0, txnMap.size());
     }

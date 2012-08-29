@@ -16,6 +16,7 @@
 
 package com.hazelcast.hibernate.region;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.hibernate.cache.Region;
 
@@ -23,6 +24,9 @@ import org.hibernate.cache.Region;
  * @author Leo Kim (lkim@limewire.com)
  */
 public interface HazelcastRegion extends Region {
+
+    HazelcastInstance getInstance();
+
     IMap getCache();
 
     void clearCache();

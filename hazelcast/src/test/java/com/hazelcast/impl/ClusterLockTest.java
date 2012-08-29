@@ -143,9 +143,10 @@ public class ClusterLockTest {
             public void run() {
                 try {
                     map3.lock(1);
-                    assertTrue(latchLock.await(10, TimeUnit.SECONDS));
+                    assertTrue(latchLock.await(20, TimeUnit.SECONDS));
                 } catch (Throwable e) {
-                    fail();
+                    e.printStackTrace();
+                    fail(e.getMessage());
                 }
             }
         }).start();
@@ -168,7 +169,7 @@ public class ClusterLockTest {
         assertEquals(h3.getCluster().getLocalMember(), h3.getPartitionService().getPartition(1).getOwner());
         assertEquals(1, map1.put(1, 2));
         rec3 = cmap3.getRecord(dKey);
-        Thread.sleep(1500); // scheduled action may be invalid because of backup copy, wait a little.
+        Thread.sleep(2000); // scheduled action may be invalid because of backup copy, wait a little.
         assertEquals(1, rec3.getScheduledActionCount());
         assertTrue(rec3.getScheduledActions().iterator().next().isValid());
         map1.unlock(1);

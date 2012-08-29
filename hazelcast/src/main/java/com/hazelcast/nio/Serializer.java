@@ -68,10 +68,10 @@ public final class Serializer extends AbstractSerializer {
             return null;
         }
         byte[] byteArray = data.buffer;
-        final Object obj = toObject(byteArray);
+        Object obj = toObject(byteArray);
         final ManagedContext managedContext = ThreadContext.get().getCurrentManagedContext();
         if (managedContext != null) {
-            managedContext.initialize(obj);
+            obj = managedContext.initialize(obj);
         }
         return obj;
     }

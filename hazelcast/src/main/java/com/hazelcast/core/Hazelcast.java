@@ -599,4 +599,24 @@ public final class Hazelcast {
     public static LifecycleService getLifecycleService() {
         return getDefaultInstance().getLifecycleService();
     }
+
+    /**
+     * Sets <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
+     * is caught by Hazelcast threads.
+     *
+     * <p>
+     * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
+     * <tt>OutOfMemoryError</tt>.
+     * Because error may be thrown from an external (user thread) thread
+     * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
+     * </p>
+     *
+     * @param outOfMemoryHandler
+     *
+     * @see OutOfMemoryError
+     * @see OutOfMemoryHandler
+     */
+    public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
+        com.hazelcast.impl.OutOfMemoryErrorDispatcher.setHandler(outOfMemoryHandler);
+    }
 }

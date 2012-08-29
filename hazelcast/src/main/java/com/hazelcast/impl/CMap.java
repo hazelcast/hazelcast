@@ -216,9 +216,9 @@ public class CMap {
         }
         writeDelayMillis = (writeDelaySeconds == -1) ? -1L : writeDelaySeconds * 1000L;
         if (writeDelaySeconds > 0) {
-            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS + writeDelayMillis;
+            removeDelayMillis = concurrentMapManager.globalRemoveDelayMillis + writeDelayMillis;
         } else {
-            removeDelayMillis = concurrentMapManager.GLOBAL_REMOVE_DELAY_MILLIS;
+            removeDelayMillis = concurrentMapManager.globalRemoveDelayMillis;
         }
         loader = (mapStoreWrapper == null || !mapStoreWrapper.isMapLoader()) ? null : mapStoreWrapper;
         store = (mapStoreWrapper == null || !mapStoreWrapper.isMapStore()) ? null : mapStoreWrapper;
@@ -517,7 +517,7 @@ public class CMap {
 
     public boolean backup(Request req) {
         if (req.key == null || req.key.size() == 0) {
-            throw new RuntimeException("Backup key size cannot be 0: " + req.key);
+            throw new HazelcastException("Backup key size cannot be 0: " + req.key);
         }
         if (isMap() || isSet()) {
             return backupOneValue(req);
@@ -573,7 +573,7 @@ public class CMap {
 
     public void doBackup(final Request req) {
         if (req.key == null || req.key.size() == 0) {
-            throw new RuntimeException("Backup key size cannot be zero! " + req.key);
+            throw new HazelcastException("Backup key size cannot be zero! " + req.key);
         }
         if (req.operation == CONCURRENT_MAP_BACKUP_PUT
                 || req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK) {
@@ -586,10 +586,10 @@ public class CMap {
             record.setVersion(req.version);
             if (req.indexes != null) {
                 if (req.indexTypes == null) {
-                    throw new RuntimeException("index types cannot be null!");
+                    throw new HazelcastException("index types cannot be null!");
                 }
                 if (req.indexes.length != req.indexTypes.length) {
-                    throw new RuntimeException("index and type lengths do not match");
+                    throw new HazelcastException("index and type lengths do not match");
                 }
                 record.setIndexes(req.indexes, req.indexTypes);
             }
@@ -959,43 +959,43 @@ public class CMap {
         if (dirtyRecords.size() > 0) {
             concurrentMapManager.storeExecutor.execute(new Runnable() {
                 public void run() {
-                    runStoreUpdate(dirtyRecords);
+                    try {
+                        runStoreUpdate(dirtyRecords);
+                    } catch (Throwable e) {
+                        for (Record dirtyRecord : dirtyRecords) {
+                            dirtyRecord.setDirty(true);
+                        }
+                    }
                 }
             });
         }
     }
 
-    void runStoreUpdate(final Set<Record> dirtyRecords) {
-        try {
-            Set<Object> keysToDelete = new HashSet<Object>();
-            Set<Record> toStore = new HashSet<Record>();
-            Map<Object, Object> updates = new HashMap<Object, Object>();
-            for (Record dirtyRecord : dirtyRecords) {
-                if (!dirtyRecord.isActive()) {
-                    keysToDelete.add(dirtyRecord.getKey());
-                } else {
-                    toStore.add(dirtyRecord);
-                    updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
-                }
+    void runStoreUpdate(final Set<Record> dirtyRecords) throws Exception {
+        Set<Object> keysToDelete = new HashSet<Object>();
+        Set<Record> toStore = new HashSet<Record>();
+        Map<Object, Object> updates = new HashMap<Object, Object>();
+        for (Record dirtyRecord : dirtyRecords) {
+            if (!dirtyRecord.isActive()) {
+                keysToDelete.add(dirtyRecord.getKey());
+            } else {
+                toStore.add(dirtyRecord);
+                updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
             }
-            if (keysToDelete.size() == 1) {
-                store.delete(keysToDelete.iterator().next());
-            } else if (keysToDelete.size() > 1) {
-                store.deleteAll(keysToDelete);
-            }
-            if (updates.size() == 1) {
-                Map.Entry entry = updates.entrySet().iterator().next();
-                store.store(entry.getKey(), entry.getValue());
-            } else if (updates.size() > 1) {
-                store.storeAll(updates);
-            }
-            for (Record stored : toStore) {
-                stored.setLastStoredTime(Clock.currentTimeMillis());
-            }
-        } catch (Exception e) {
-            for (Record dirtyRecord : dirtyRecords) {
-                dirtyRecord.setDirty(true);
-            }
+        }
+        if (keysToDelete.size() == 1) {
+            store.delete(keysToDelete.iterator().next());
+        } else if (keysToDelete.size() > 1) {
+            store.deleteAll(keysToDelete);
+        }
+        if (updates.size() == 1) {
+            Map.Entry entry = updates.entrySet().iterator().next();
+            store.store(entry.getKey(), entry.getValue());
+        } else if (updates.size() > 1) {
+            store.storeAll(updates);
+        }
+        for (Record stored : toStore) {
+            stored.setLastStoredTime(Clock.currentTimeMillis());
         }
     }
 
@@ -1398,7 +1398,7 @@ public class CMap {
                         }
                     }
                 }
-                Level levelLog = (concurrentMapManager.LOG_STATE) ? Level.INFO : Level.FINEST;
+                Level levelLog = (concurrentMapManager.logState) ? Level.INFO : Level.FINEST;
                 if (logger.isLoggable(levelLog)) {
                     logger.log(levelLog, name + " Cleanup "
                             + ", dirty:" + recordsDirty.size()
@@ -1698,7 +1698,7 @@ public class CMap {
 
     Record createAndAddNewRecord(Data key, Data value) {
         if (key == null || key.size() == 0) {
-            throw new RuntimeException("Cannot create record from a 0 size key: " + key);
+            throw new HazelcastException("Cannot create record from a 0 size key: " + key);
         }
         final int blockId = concurrentMapManager.getPartitionId(key);
         final Record record = concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value,
@@ -1721,7 +1721,7 @@ public class CMap {
 
     Record createNewTransientRecord(Data key, Data value) {
         if (key == null || key.size() == 0) {
-            throw new RuntimeException("Cannot create record from a 0 size key: " + key);
+            throw new HazelcastException("Cannot create record from a 0 size key: " + key);
         }
         int blockId = concurrentMapManager.getPartitionId(key);
         return new DefaultRecord(this, blockId, key, value,

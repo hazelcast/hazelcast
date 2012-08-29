@@ -43,12 +43,12 @@ public class ItemListenerManager {
         EntryListener<E, V> e = new EntryAdapter<E, V>() {
             public void entryAdded(EntryEvent<E, V> event) {
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                itemListener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, dataAwareEntryEvent.getNewValueData()));
+                itemListener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, dataAwareEntryEvent.getNewValueData(), event.getMember()));
             }
 
             public void entryRemoved(EntryEvent<E, V> event) {
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                itemListener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, dataAwareEntryEvent.getNewValueData()));
+                itemListener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, dataAwareEntryEvent.getNewValueData(), event.getMember()));
             }
         };
         entryListenerManager.registerListener(name, null, includeValue, e);

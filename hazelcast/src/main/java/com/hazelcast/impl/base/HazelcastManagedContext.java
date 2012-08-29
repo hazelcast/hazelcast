@@ -35,13 +35,14 @@ public final class HazelcastManagedContext implements ManagedContext {
         hasExternalContext = this.externalContext != null;
     }
 
-    public final void initialize(final Object obj) {
+    public final Object initialize(Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) obj).setHazelcastInstance(factory);
         }
 
         if (hasExternalContext) {
-            externalContext.initialize(obj);
+            obj = externalContext.initialize(obj);
         }
+        return obj;
     }
 }

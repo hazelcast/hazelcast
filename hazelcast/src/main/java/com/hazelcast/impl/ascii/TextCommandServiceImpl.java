@@ -17,6 +17,7 @@
 package com.hazelcast.impl.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
@@ -230,6 +231,9 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                     }
                 } catch (InterruptedException e) {
                     return;
+                } catch (OutOfMemoryError e) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+                    throw e;
                 }
             }
         }

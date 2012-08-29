@@ -108,4 +108,14 @@ public class Interfaces implements DataSerializable {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Interfaces");
+        sb.append("{enabled=").append(enabled);
+        sb.append(", interfaces=").append(interfaceSet);
+        sb.append('}');
+        return sb.toString();
+    }
 }

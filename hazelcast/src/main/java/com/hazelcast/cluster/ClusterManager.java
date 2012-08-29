@@ -62,8 +62,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private long firstJoinRequest = 0;
 
-    private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
-
     private long lastHeartbeat = 0;
 
     final ILogger securityLogger;
@@ -114,14 +112,17 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             public void process(Packet packet) {
                 Connection conn = packet.conn;
                 Request request = Request.copyFromPacket(packet);
-                JoinInfo joinInfo = (JoinInfo) toObject(request.value);
+                Data value = request.value;
                 request.clearForResponse();
-                if (joinInfo != null && node.joined() && node.isActive()) {
-                    try {
-                        node.validateJoinRequest(joinInfo);
-                        request.response = toData(node.createJoinInfo());
-                    } catch (Exception e) {
-                        request.response = toData(e);
+                if (node.isMaster() && node.joined() && node.isActive()) {
+                    JoinInfo joinInfo = (JoinInfo) toObject(value);
+                    if (joinInfo != null) {
+                        try {
+                            node.validateJoinRequest(joinInfo);
+                            request.response = toData(node.createJoinInfo());
+                        } catch (Exception e) {
+                            request.response = toData(e);
+                        }
                     }
                 }
                 returnResponse(request, conn);
@@ -339,14 +340,14 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                             // no route to host
                             // means we cannot connect anymore
                         }
-                    }
+                            }
                     logger.log(Level.WARNING, thisAddress + " couldn't ping " + address);
-                    // not reachable.
-                    enqueueAndReturn(new Processable() {
-                        public void process() {
-                            doRemoveAddress(address);
-                        }
-                    });
+                            // not reachable.
+                            enqueueAndReturn(new Processable() {
+                                public void process() {
+                                    doRemoveAddress(address);
+                                }
+                            });
                 } catch (Throwable ignored) {
                 }
             }
@@ -374,8 +375,18 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public void handleMaster(Master master) {
         if (!node.joined() && !thisAddress.equals(master.address)) {
+            logger.log(Level.FINEST, "Handling master response: " + master);
+            final Address currentMaster = node.getMasterAddress();
+            if (currentMaster != null && !currentMaster.equals(master.address)) {
+                final Connection conn = node.connectionManager.getConnection(currentMaster);
+                if (conn != null && conn.live()) {
+                    logger.log(Level.FINEST, "Ignoring master response " + master +
+                              " since node has an active master: " + currentMaster);
+                    return;
+                }
+            }
             node.setMasterAddress(master.address);
-            Connection connMaster = node.connectionManager.getOrConnect(master.address);
+            final Connection connMaster = node.connectionManager.getOrConnect(master.address);
             if (connMaster != null) {
                 sendJoinRequest(master.address, true);
             }
@@ -429,10 +440,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
         MemberImpl deadMember = getMember(deadAddress);
         if (deadMember != null) {
-            lsMembersBefore.clear();
-            for (MemberImpl memberBefore : lsMembers) {
-                lsMembersBefore.add(memberBefore);
-            }
             removeMember(deadMember);
             node.getClusterImpl().setMembers(lsMembers);
             node.concurrentMapManager.syncForDead(deadMember);
@@ -461,29 +468,35 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         String msg = "Handling join from " + joinRequest.address + ", inProgress: " + joinInProgress
                      + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
         logger.log(Level.FINEST, msg);
-        final MemberImpl member = getMember(joinRequest.address);
-        final Connection conn = joinRequest.getConnection();
-        if (member != null) {
-            if (joinRequest.getUuid().equals(member.getUuid())) {
-                String message = "Ignoring join request, member already exists.. => " + joinRequest;
-                logger.log(Level.FINEST, message);
-                return;
-            }
-            logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
-                    + " Removing old member and processing join request...");
-            // If existing connection of endpoint is different from current connection
-            // destroy it, otherwise keep it.
-            final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
-            final boolean destroyExistingConnection = existingConnection != conn;
-            doRemoveAddress(member.getAddress(), destroyExistingConnection);
-        }
-        boolean validateJoinRequest;
+        boolean validJoinRequest;
         try {
-            validateJoinRequest = node.validateJoinRequest(joinRequest);
+            validJoinRequest = node.validateJoinRequest(joinRequest);
         } catch (Exception e) {
-            validateJoinRequest = false;
+            validJoinRequest = false;
         }
-        if (validateJoinRequest) {
+        final Connection conn = joinRequest.getConnection();
+        if (validJoinRequest) {
+            final MemberImpl member = getMember(joinRequest.address);
+            if (member != null) {
+                if (joinRequest.getUuid().equals(member.getUuid())) {
+                    String message = "Ignoring join request, member already exists.. => " + joinRequest;
+                    logger.log(Level.FINEST, message);
+                    return;
+                }
+                // If this node is master then remove old member and process join request.
+                // If requesting address is equal to master node's address, that means master node
+                // somehow disconnected and wants to join back.
+                // So drop old member and process join request if this node becomes master.
+                if (isMaster() || member.getAddress().equals(getMasterAddress())) {
+                    logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
+                                              + " Removing old member and processing join request...");
+                    // If existing connection of endpoint is different from current connection
+                    // destroy it, otherwise keep it.
+//                    final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
+//                    final boolean destroyExistingConnection = existingConnection != conn;
+                    doRemoveAddress(member.getAddress(), false);
+                }
+            }
             if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
                 if (node.isActive() && node.joined() && node.getMasterAddress() != null && !isMaster()) {
                     sendProcessableTo(new Master(node.getMasterAddress()), conn);
@@ -587,24 +600,36 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         AbstractRemotelyCallable<Boolean> authorizationCall = new AuthorizationCall(groupName, groupPassword);
-        AsyncRemotelyBooleanCallable call = new NoneMemberAsyncRemotelyBooleanCallable();
-        call.executeProcess(target, authorizationCall);
-        return call.getResultAsBoolean();
+        AsyncRemotelyBooleanOp op = new NoneMemberAsyncRemotelyBooleanOp(authorizationCall, target, true);
+        op.execute();
+        return op.getResultAsBoolean();
     }
 
-    public class NoneMemberAsyncRemotelyBooleanCallable extends AsyncRemotelyBooleanCallable {
+    public class NoneMemberAsyncRemotelyBooleanOp extends AsyncRemotelyBooleanOp {
+
+        public NoneMemberAsyncRemotelyBooleanOp(final AbstractRemotelyCallable<Boolean> arp,
+                                                final Address target, final boolean canTimeout) {
+            super(arp, target, canTimeout);
+        }
+
         @Override
         protected boolean memberOnly() {
             return false;
         }
     }
 
-    public class AsyncRemotelyBooleanCallable extends TargetAwareOp {
-        AbstractRemotelyCallable<Boolean> arp = null;
+    public class AsyncRemotelyBooleanOp extends TargetAwareOp {
+        private final AbstractRemotelyCallable<Boolean> arp;
+        private final boolean canTimeout;
 
-        public void executeProcess(Address address, AbstractRemotelyCallable<Boolean> arp) {
+        public AsyncRemotelyBooleanOp(final AbstractRemotelyCallable<Boolean> arp,
+                                      final Address target, final boolean canTimeout) {
             this.arp = arp;
-            super.target = address;
+            this.target = target;
+            this.canTimeout = canTimeout;
+        }
+
+        public void execute() {
             arp.setNode(node);
             setLocal(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN, "call", null, arp, 0, -1);
             request.setBooleanRequest();
@@ -654,20 +679,26 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         protected void packetNotSent() {
             setResult(Boolean.FALSE);
         }
+
+        @Override
+        protected final boolean canTimeout() {
+            return canTimeout;
+        }
     }
 
     public void finalizeJoin() {
         Set<Member> members = node.getClusterImpl().getMembers();
-        List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>();
+        List<AsyncRemotelyBooleanOp> calls = new ArrayList<AsyncRemotelyBooleanOp>();
         for (Member m : members) {
             MemberImpl member = (MemberImpl) m;
             if (!member.localMember() && !member.isLiteMember()) {
-                AsyncRemotelyBooleanCallable rrp = new AsyncRemotelyBooleanCallable();
-                rrp.executeProcess(member.getAddress(), new FinalizeJoin());
-                calls.add(rrp);
+                AsyncRemotelyBooleanOp op = new AsyncRemotelyBooleanOp(
+                        new FinalizeJoin(), member.getAddress(), false);
+                op.execute();
+                calls.add(op);
             }
         }
-        for (AsyncRemotelyBooleanCallable call : calls) {
+        for (AsyncRemotelyBooleanOp call : calls) {
             call.getResultAsBoolean();
         }
     }
@@ -696,16 +727,16 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         void doCall(AbstractRemotelyCallable callable, List<Address> targets, boolean ignoreThis) {
-            List<AsyncRemotelyBooleanCallable> calls = new ArrayList<AsyncRemotelyBooleanCallable>(targets.size());
+            List<AsyncRemotelyBooleanOp> calls = new ArrayList<AsyncRemotelyBooleanOp>(targets.size());
             for (final Address target : targets) {
                 boolean skip = ignoreThis && thisAddress.equals(target);
                 if (!skip) {
-                    AsyncRemotelyBooleanCallable call = new AsyncRemotelyBooleanCallable();
-                    call.executeProcess(target, callable);
-                    calls.add(call);
+                    AsyncRemotelyBooleanOp op = new AsyncRemotelyBooleanOp(callable, target, false);
+                    op.execute();
+                    calls.add(op);
                 }
             }
-            for (AsyncRemotelyBooleanCallable call : calls) {
+            for (AsyncRemotelyBooleanOp call : calls) {
                 if (!call.getResultAsBoolean(5)) {
                     targets.remove(call.getTarget());
                 }
@@ -730,11 +761,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
         checkServiceThread();
         logger.log(Level.FINEST, "Updating Members");
-        // Copy lsMembers to lsMembersBefore
-        lsMembersBefore.clear();
         Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
         for (MemberImpl member : lsMembers) {
-            lsMembersBefore.add(member);
             mapOldMembers.put(member.getAddress(), member);
         }
         lsMembers.clear();
@@ -899,9 +927,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         dataMemberCount.reset();
         if (mapMembers != null) {
             mapMembers.clear();
-        }
-        if (lsMembersBefore != null) {
-            lsMembersBefore.clear();
         }
         if (mapCalls != null) {
             mapCalls.clear();

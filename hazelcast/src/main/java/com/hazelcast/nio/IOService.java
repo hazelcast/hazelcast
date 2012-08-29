@@ -99,4 +99,6 @@ public interface IOService {
     boolean isClient();
 
     void onShutdown();
+
+    void executeAsync(Runnable runnable);
 }

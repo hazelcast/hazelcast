@@ -185,5 +185,4 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 	public boolean isConnectionTracingDetail() {
 		return connectionTracingDetail;
 	}
-
 }

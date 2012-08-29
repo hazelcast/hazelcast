@@ -90,4 +90,15 @@ public class MultiMapConfig implements DataSerializable {
     public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("MultiMapConfig");
+        sb.append("{listenerConfigs=").append(listenerConfigs);
+        sb.append(", name='").append(name).append('\'');
+        sb.append(", valueCollectionType='").append(valueCollectionType).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

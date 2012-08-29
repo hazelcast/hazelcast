@@ -26,6 +26,8 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 import com.hazelcast.config.ConfigBuilder;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -38,6 +40,14 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	private HazelcastInstance hazelcast;
 	private String configurationLocation;
 
+    private final static AtomicInteger idGen = new AtomicInteger();
+    private transient final int id;
+
+    public ResourceAdapterImpl() {
+        id = idGen.incrementAndGet();
+    }
+
+	
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec)
             throws ResourceException {
     }
@@ -76,6 +86,7 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     	}
     }
 
+
 	private void setHazelcast(HazelcastInstance hazelcast) {
 		this.hazelcast = hazelcast;
 	}
@@ -95,6 +106,7 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 
 	@Override
 	public boolean equals(Object obj) {
+	//TODO ADD ID
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -117,5 +129,5 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	public String getConfigLocation() {
 		return configurationLocation;
 	}
-	
+
 }

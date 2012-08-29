@@ -126,4 +126,16 @@ public class ExecutorConfig implements DataSerializable {
         maxPoolSize = in.readInt();
         keepAliveSeconds = in.readInt();
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ExecutorConfig");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", corePoolSize=").append(corePoolSize);
+        sb.append(", maxPoolSize=").append(maxPoolSize);
+        sb.append(", keepAliveSeconds=").append(keepAliveSeconds);
+        sb.append('}');
+        return sb.toString();
+    }
 }

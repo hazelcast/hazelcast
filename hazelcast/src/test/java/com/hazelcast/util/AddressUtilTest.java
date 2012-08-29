@@ -115,4 +115,37 @@ public class AddressUtilTest {
         assertFalse(AddressUtil.matchAnyInterface("10.235.194.23", Arrays.asList("10.235.193.*")));
     }
 
+    @Test
+    public void testIsIpAddress() {
+        assertTrue(AddressUtil.isIpAddress("10.10.10.10"));
+        assertTrue(AddressUtil.isIpAddress("111.12-66.123.*"));
+        assertTrue(AddressUtil.isIpAddress("111-255.12-66.123.*"));
+        assertTrue(AddressUtil.isIpAddress("255.255.123.*"));
+        assertTrue(AddressUtil.isIpAddress("255.11-255.123.0"));
+        assertFalse(AddressUtil.isIpAddress("255.11-256.123.0"));
+        assertFalse(AddressUtil.isIpAddress("111.12-66-.123.*"));
+        assertFalse(AddressUtil.isIpAddress("111.12*66-.123.-*"));
+        assertFalse(AddressUtil.isIpAddress("as11d.897.hazelcast.com"));
+        assertFalse(AddressUtil.isIpAddress("192.111.10.com"));
+        assertFalse(AddressUtil.isIpAddress("192.111.10.999"));
+
+        assertTrue(AddressUtil.isIpAddress("::1"));
+        assertTrue(AddressUtil.isIpAddress("0:0:0:0:0:0:0:1"));
+        assertTrue(AddressUtil.isIpAddress("2001:db8:85a3:0:0:8a2e:370:7334"));
+        assertTrue(AddressUtil.isIpAddress("2001::370:7334"));
+        assertTrue(AddressUtil.isIpAddress("fe80::62c5:0:fe05:480a%en0"));
+        assertTrue(AddressUtil.isIpAddress("fe80::62c5:0:fe05:480a%en0"));
+        assertTrue(AddressUtil.isIpAddress("2001:db8:85a3:*:0:8a2e:370:7334"));
+        assertTrue(AddressUtil.isIpAddress("fe80::62c5:0-ffff:fe05:480a"));
+        assertTrue(AddressUtil.isIpAddress("fe80::62c5:*:fe05:480a"));
+
+        assertFalse(AddressUtil.isIpAddress("2001:acdb8:85a3:0:0:8a2e:370:7334"));
+        assertFalse(AddressUtil.isIpAddress("2001::370::7334"));
+        assertFalse(AddressUtil.isIpAddress("2001:370::7334.155"));
+        assertFalse(AddressUtil.isIpAddress("2001:**:85a3:*:0:8a2e:370:7334"));
+        assertFalse(AddressUtil.isIpAddress("fe80::62c5:0-ffff:fe05-:480a"));
+        assertFalse(AddressUtil.isIpAddress("fe80::62c5:*:fe05-fffddd:480a"));
+        assertFalse(AddressUtil.isIpAddress("fe80::62c5:*:fe05-ffxd:480a"));
+    }
+
 }

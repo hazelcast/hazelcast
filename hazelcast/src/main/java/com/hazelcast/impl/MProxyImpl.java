@@ -59,7 +59,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     public MProxyImpl() {
     }
 
-    class DynamicInvoker implements InvocationHandler {
+    private class DynamicInvoker implements InvocationHandler {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             beforeCall();
             try {
@@ -68,6 +68,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
                 if (e instanceof InvocationTargetException) {
                     InvocationTargetException ite = (InvocationTargetException) e;
                     throw ite.getCause();
+                }
+                if (e instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
                 }
                 throw e;
             } finally {
@@ -229,6 +232,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
     public void putTransient(Object key, Object value, long time, TimeUnit timeunit) {
         dynamicProxy.putTransient(key, value, time, timeunit);
+    }
+
+    public boolean putFromLoad(Object key, Object value) {
+        return dynamicProxy.putFromLoad(key, value);
     }
 
     public boolean tryPut(Object key, Object value, long time, TimeUnit timeunit) {
@@ -535,11 +542,13 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return mapEntry;
         }
-
+        
         public boolean putMulti(Object key, Object value) {
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MPutMulti mput = concurrentMapManager.new MPutMulti();
+            mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
             return mput.put(name, key, value);
         }
 
@@ -608,6 +617,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             }
             mapOperationCounter.incrementOtherOperations();
             concurrentMapManager.putTransient(name, key, value, ttl);
+        }
+
+        public boolean putFromLoad(Object key, Object value) {
+            mapOperationCounter.incrementOtherOperations();
+            return concurrentMapManager.putFromLoad(name, key, value);
         }
 
         public Object put(Object key, Object value, long ttl) {
@@ -804,9 +818,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public boolean removeMulti(Object key, Object value) {
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MRemoveMulti mremove = concurrentMapManager.new MRemoveMulti();
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return mremove.remove(name, key, value);
         }
 

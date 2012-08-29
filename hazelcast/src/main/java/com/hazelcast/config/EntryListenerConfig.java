@@ -66,4 +66,14 @@ public class EntryListenerConfig extends ListenerConfig {
         this.includeValue = includeValue;
         return this;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("EntryListenerConfig");
+        sb.append("{local=").append(local);
+        sb.append(", includeValue=").append(includeValue);
+        sb.append('}');
+        return sb.toString();
+    }
 }

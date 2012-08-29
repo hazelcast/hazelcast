@@ -321,6 +321,9 @@ public class ClusterTest {
             public void migrationCompleted(MigrationEvent migrationEvent) {
                 latch.countDown();
             }
+
+            public void migrationFailed(final MigrationEvent migrationEvent) {
+            }
         }));
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         ISet set1 = h1.getSet("mySet");

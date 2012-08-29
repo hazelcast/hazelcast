@@ -37,8 +37,9 @@ public class GroupProperties {
     public static final String PROP_REDO_WAIT_MILLIS = "hazelcast.redo.wait.millis";
     public static final String PROP_REDO_LOG_THRESHOLD = "hazelcast.redo.log.threshold";
     public static final String PROP_REDO_GIVE_UP_THRESHOLD = "hazelcast.redo.giveup.threshold";
+    public static final String PROP_BACKUP_REDO_ENABLED = "hazelcast.backup.redo.enabled";
     public static final String PROP_MAX_OPERATION_TIMEOUT = "hazelcast.max.operation.timeout";
-    public static final String PROP_OPERATION_RESPONSE_POLL_TIMEOUT = "hazelcast.operation.response.poll.timeout";
+    public static final String PROP_MAX_CONCURRENT_OPERATION_LIMIT = "hazelcast.max.concurrent.operation.limit";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
@@ -135,9 +136,11 @@ public class GroupProperties {
 
     public final GroupProperty REDO_GIVE_UP_THRESHOLD;
 
+    public final GroupProperty BACKUP_REDO_ENABLED;
+
     public final GroupProperty MAX_OPERATION_TIMEOUT;
 
-    public final GroupProperty OPERATION_RESPONSE_POLL_TIMEOUT;
+    public final GroupProperty MAX_CONCURRENT_OPERATION_LIMIT;
 
     public final GroupProperty SOCKET_BIND_ANY;
 
@@ -262,8 +265,9 @@ public class GroupProperties {
         REDO_WAIT_MILLIS = new GroupProperty(config, PROP_REDO_WAIT_MILLIS, "500");
         REDO_LOG_THRESHOLD = new GroupProperty(config, PROP_REDO_LOG_THRESHOLD, "15");
         REDO_GIVE_UP_THRESHOLD = new GroupProperty(config, PROP_REDO_GIVE_UP_THRESHOLD, "90");
-        MAX_OPERATION_TIMEOUT = new GroupProperty(config, PROP_MAX_OPERATION_TIMEOUT, "300");
-        OPERATION_RESPONSE_POLL_TIMEOUT = new GroupProperty(config, PROP_OPERATION_RESPONSE_POLL_TIMEOUT, "10");
+        BACKUP_REDO_ENABLED = new GroupProperty(config, PROP_BACKUP_REDO_ENABLED, "false");
+        MAX_OPERATION_TIMEOUT = new GroupProperty(config, PROP_MAX_OPERATION_TIMEOUT, "300000");
+        MAX_CONCURRENT_OPERATION_LIMIT = new GroupProperty(config, PROP_MAX_CONCURRENT_OPERATION_LIMIT, "-1");
         SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
         SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");

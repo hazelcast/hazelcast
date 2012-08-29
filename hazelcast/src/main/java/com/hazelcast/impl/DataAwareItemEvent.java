@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Data;
 
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -25,8 +26,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class DataAwareItemEvent extends ItemEvent {
     final Data itemData;
 
-    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data itemData) {
-        super(name, itemEventType, null);
+    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data itemData, Member member) {
+        super(name, itemEventType, null, member);
         this.itemData = itemData;
     }
 

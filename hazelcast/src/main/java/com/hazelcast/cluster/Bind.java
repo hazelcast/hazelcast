@@ -18,21 +18,57 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 public class Bind extends Master {
+
+    private Address targetAddress;
+    private boolean replyBack = false;
 
     public Bind() {
     }
 
     public Bind(Address localAddress) {
         super(localAddress);
+        this.targetAddress = null;
+    }
+
+    public Bind(Address localAddress, final Address targetAddress, final boolean replyBack) {
+        super(localAddress);
+        this.targetAddress = targetAddress;
+        this.replyBack = replyBack;
+    }
+
+    public void process() {
+        getNode().connectionManager.bind(getConnection(), address, targetAddress, replyBack);
+    }
+
+    @Override
+    public void readData(final DataInput in) throws IOException {
+        super.readData(in);
+        boolean hasTarget = in.readBoolean();
+        if (hasTarget) {
+            targetAddress = new Address();
+            targetAddress.readData(in);
+        }
+        replyBack = in.readBoolean();
+    }
+
+    @Override
+    public void writeData(final DataOutput out) throws IOException {
+        super.writeData(out);
+        boolean hasTarget = targetAddress != null;
+        out.writeBoolean(hasTarget);
+        if (hasTarget) {
+            targetAddress.writeData(out);
+        }
+        out.writeBoolean(replyBack);
     }
 
     @Override
     public String toString() {
         return "Bind " + address;
-    }
-
-    public void process() {
-        getNode().connectionManager.bind(address, getConnection(), true);
     }
 }

@@ -26,11 +26,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.*;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.Counter;
+import com.hazelcast.util.DistributedTimeoutException;
+import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -46,6 +50,9 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
 
+    private static final long MIN_POLL_TIMEOUT = 100L;      // 100 milliseconds
+    private static final long MAX_POLL_TIMEOUT = 1000L * 5; // 5 seconds
+
     protected final List<MemberImpl> lsMembers;
     /**
      * Counter for normal/data (non-lite) members.
@@ -57,7 +64,7 @@ public abstract class BaseManager {
 
     protected final Queue<Packet> qServiceThreadPacketCache;
 
-    protected final Map<Long, Call> mapCalls;
+    protected final ConcurrentMap<Long, Call> mapCalls;
 
     protected final AtomicLong localIdGen;
 
@@ -69,9 +76,11 @@ public abstract class BaseManager {
 
     protected final ILogger logger;
 
-    protected final long operationResponsePollTimeout;
+    protected final long responsePollTimeout;
 
     protected final long maxOperationTimeout;
+
+    protected final int maxOperationLimit;
 
     protected final long redoWaitMillis;
 
@@ -96,8 +105,9 @@ public abstract class BaseManager {
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
-        operationResponsePollTimeout = node.getGroupProperties().OPERATION_RESPONSE_POLL_TIMEOUT.getLong();
-        maxOperationTimeout = node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong() * 1000;
+        maxOperationTimeout = Math.max(node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong(), 0L);
+        maxOperationLimit = node.getGroupProperties().MAX_CONCURRENT_OPERATION_LIMIT.getInteger();
+        responsePollTimeout = Math.min(Math.max(maxOperationTimeout / 5, MIN_POLL_TIMEOUT), MAX_POLL_TIMEOUT);
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
         redoLogThreshold = node.getGroupProperties().REDO_LOG_THRESHOLD.getInteger();
         redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
@@ -175,7 +185,7 @@ public abstract class BaseManager {
     protected void rethrowException(ClusterOperation operation, AddressAwareException exception) {
         String msg = operation + " failed at " + thisAddress
                 + " because of an exception thrown at " + exception.getAddress();
-        throw new RuntimeException(msg, exception.getException());
+        throw new HazelcastException(msg, exception.getException());
     }
 
     abstract class AbstractCall implements Call, CallStateAware {
@@ -327,28 +337,29 @@ public abstract class BaseManager {
     }
 
     public boolean returnRedoResponse(Request request, RedoType redoType) {
+        setRedoResponse(request, redoType);
+        return returnResponse(request, null);
+    }
+
+    void setRedoResponse(final Request request, final RedoType redoType) {
         logRedo(request, redoType, false);
         request.clearForResponse();
         request.response = OBJECT_REDO;
-        return returnResponse(request, null, redoType);
+        request.redoCode = redoType != null ? redoType.getCode() : REDO_UNKNOWN.getCode();
     }
 
     public boolean returnResponse(Request request) {
-        return returnResponse(request, null, null);
+        return returnResponse(request, null);
     }
 
     public boolean returnResponse(Request request, Connection conn) {
-        return returnResponse(request, conn, null);
-    }
-
-    private boolean returnResponse(Request request, Connection conn, RedoType redoType) {
         if (systemLogService.shouldLog(INFO)) {
             systemLogService.logObject(request, INFO, "ReturnResponse");
         }
         if (request.local) {
             final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
             if (request.response == OBJECT_REDO) {
-                targetAwareOp.setRedoResult(redoType);
+                targetAwareOp.setRedoResult(RedoType.getRedoType(request.redoCode));
             } else {
                 targetAwareOp.setResult(request.response);
             }
@@ -364,7 +375,7 @@ public abstract class BaseManager {
             if (request.response == OBJECT_REDO) {
                 packet.lockAddress = null;
                 packet.responseType = RESPONSE_REDO;
-                packet.redoData = redoType != null ? redoType.getCode() : REDO_UNKNOWN.getCode();
+                packet.redoData = request.redoCode;
                 if (systemLogService.shouldInfo()) {
                     systemLogService.info(request, "Returning REDO response");
                 }
@@ -581,14 +592,15 @@ public abstract class BaseManager {
 
         public Object waitAndGetResult() {
             // should be more than request timeout
-            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout == -1)
+            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
                                            ? Long.MAX_VALUE
-                                           : (request.timeout == 0 ? operationResponsePollTimeout * 1500
-                                                                   : (long) (request.timeout * 1.5f));
+                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
+                                                                         : responsePollTimeout;
+
             final long start = Clock.currentTimeMillis();
             while (true) {
                 try {
-                    Object obj = responses.poll(operationResponsePollTimeout, TimeUnit.SECONDS);
+                    Object obj = responses.poll(responsePollTimeout, TimeUnit.MILLISECONDS);
                     if (obj != null) {
                         if (obj instanceof DistributedTimeoutException) {
                             throw new OperationTimeoutException(request.operation.toString(),
@@ -597,13 +609,15 @@ public abstract class BaseManager {
                         return obj;
                     }
                     if (node.isActive()) {
-                        logger.log(Level.FINEST, "Still no response! " + request);
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Still no response! " + request);
+                        }
                         if (systemLogService.shouldTrace()) {
                             systemLogService.trace(this, "Still no response");
                         }
                         if (canTimeout() && noResponseTimeout <= (Clock.currentTimeMillis() - start)) {
                             throw new OperationTimeoutException(request.operation.toString(),
-                                    "Operation Timeout: " + request.timeout);
+                                    "Operation Timeout (with no response!): " + request.timeout);
                         }
                     }
                     node.checkNodeState();
@@ -632,8 +646,8 @@ public abstract class BaseManager {
                     request.redoCount++;
                     logRedo(request, redoType, true);
                     if (request.redoCount > redoGiveUpThreshold) {
-                        throw new OperationTimeoutException(request.operation.toString(), "Redo threshold exceeded!" +
-                                " Last redo cause: " + redoType + ", Name: " + request.name);
+                        throw new OperationTimeoutException(request.operation.toString(), "Redo threshold[" + redoGiveUpThreshold
+                                + "] exceeded!" + " Last redo cause: " + redoType + ", Name: " + request.name);
                     }
                     try {
                         //noinspection BusyWait
@@ -683,7 +697,7 @@ public abstract class BaseManager {
             if (packet.responseType == RESPONSE_SUCCESS) {
                 setResult(packet.longValue);
             } else {
-                throw new RuntimeException("handleLongNoneRedoResponse.responseType "
+                throw new HazelcastException("handleLongNoneRedoResponse.responseType "
                         + packet.responseType);
             }
         }
@@ -697,7 +711,7 @@ public abstract class BaseManager {
                     setResult(valueData);
                 }
             } else {
-                throw new RuntimeException(request.operation + " handleObjectNoneRedoResponse.responseType "
+                throw new HazelcastException(request.operation + " handleObjectNoneRedoResponse.responseType "
                         + packet.responseType);
             }
         }
@@ -711,7 +725,7 @@ public abstract class BaseManager {
             } else if (request.isObjectRequest()) {
                 handleObjectNoneRedoResponse(packet);
             } else {
-                throw new RuntimeException(request.operation + " Unknown request.responseType. " + request.responseType);
+                throw new HazelcastException(request.operation + " Unknown request.responseType. " + request.responseType);
             }
         }
 
@@ -900,8 +914,11 @@ public abstract class BaseManager {
                 targetConnection = node.connectionManager.getOrConnect(target);
                 boolean sent = send(packet, targetConnection);
                 if (!sent) {
-                    targetConnection = null;
                     logger.log(Level.FINEST, TargetAwareOp.this + " Packet cannot be sent to " + target);
+                    if (targetConnection != null && !targetConnection.live()) {
+                        node.connectionManager.destroyConnection(targetConnection);
+                    }
+                    targetConnection = null;
                     releasePacket(packet);
                     packetNotSent();
                 }
@@ -1053,7 +1070,7 @@ public abstract class BaseManager {
                     onComplete();
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                throw new HazelcastException(e);
             }
             return (T) returnResult();
         }
@@ -1123,11 +1140,15 @@ public abstract class BaseManager {
         } else if (name.startsWith(Prefix.TOPIC)) {
             return InstanceType.TOPIC;
         } else {
-            throw new RuntimeException("Unknown InstanceType " + name);
+            throw new HazelcastException("Unknown InstanceType " + name);
         }
     }
 
-    public void enqueueCall(Call call) {
+    private void enqueueCall(Call call) {
+        if (maxOperationLimit > 0 && Thread.currentThread().getThreadGroup() != node.threadGroup
+                && mapCalls.size() >= maxOperationLimit) {
+            throw new OperationRejectedException("Max concurrent operation limit exceeded! -> " + maxOperationLimit);
+        }
         call.onEnqueue();
         enqueueAndReturn(call);
     }

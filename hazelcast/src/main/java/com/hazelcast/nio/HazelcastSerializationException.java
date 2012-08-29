@@ -16,10 +16,12 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
  * This is an exception thrown when an exception occurs while serializing/deserializing objects.
  */
-public class HazelcastSerializationException extends RuntimeException {
+public class HazelcastSerializationException extends HazelcastException {
     public HazelcastSerializationException(String message, Throwable cause) {
         super(message, cause);
     }

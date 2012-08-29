@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
@@ -44,11 +45,14 @@ public class Util {
 
     public static void throwUncheckedException(Throwable t) {
         if (t instanceof Error) {
+            if (t instanceof OutOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
+            }
             throw (Error) t;
         } else if (t instanceof RuntimeException) {
             throw (RuntimeException) t;
         } else {
-            throw new RuntimeException(t);
+            throw new HazelcastException(t);
         }
     }
 

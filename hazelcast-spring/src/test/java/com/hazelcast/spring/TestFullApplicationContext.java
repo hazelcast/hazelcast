@@ -281,8 +281,8 @@ public class TestFullApplicationContext {
     public void testNetworkConfig() {
         NetworkConfig networkConfig = config.getNetworkConfig();
         assertNotNull(networkConfig);
-        assertEquals(5700, config.getPort());
-        assertFalse(config.isPortAutoIncrement());
+        assertEquals(5700, networkConfig.getPort());
+        assertFalse(networkConfig.isPortAutoIncrement());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);

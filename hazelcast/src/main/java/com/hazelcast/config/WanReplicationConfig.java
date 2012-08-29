@@ -50,13 +50,11 @@ public class WanReplicationConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<wan-replication name='" + name + "'>\n");
-        for (WanTargetClusterConfig targetClusterConfig : lsTargetClusterConfigs) {
-            sb.append(targetClusterConfig.toString());
-            sb.append("\n");
-        }
-        sb.append("</wan-replication>\n");
+        final StringBuilder sb = new StringBuilder();
+        sb.append("WanReplicationConfig");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", targetClusterConfigs=").append(lsTargetClusterConfigs);
+        sb.append('}');
         return sb.toString();
     }
 }

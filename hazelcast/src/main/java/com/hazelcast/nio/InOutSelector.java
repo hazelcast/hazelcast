@@ -77,7 +77,7 @@ public final class InOutSelector implements Runnable {
                 }
             });
             l.await(5, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+        } catch (Throwable ignored) {
         }
     }
 
@@ -167,5 +167,8 @@ public final class InOutSelector implements Runnable {
     protected void handleSelectorException(final Throwable e) {
         String msg = "Selector exception at  " + Thread.currentThread().getName() + ", cause= " + e.toString();
         logger.log(Level.WARNING, msg, e);
+        if (e instanceof OutOfMemoryError) {
+            connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
+        }
     }
 }
