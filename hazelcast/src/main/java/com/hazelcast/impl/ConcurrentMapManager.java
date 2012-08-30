@@ -1339,12 +1339,9 @@ public class ConcurrentMapManager extends BaseManager {
                     allValues.addAll(currentValues);
                 }
                 txn.getMulti(name, key, allValues);
-                if (allValues.size() == 0) {
-                    return Collections.emptySet();
-                }
                 return allValues;
             } else {
-                return currentValues;
+                return currentValues != null ? currentValues : Collections.emptySet();
             }
         }
 

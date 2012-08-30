@@ -680,15 +680,13 @@ public class CMap {
             }
         }
         record.setLastAccessed();
-        Data data = record.getValueData();
+
         Data returnValue = null;
-        if (data != null) {
-            returnValue = data;
-        } else {
-            if (record.getMultiValues() != null && record.getMultiValues().size() > 0) {
-                Values values = new Values(record.getMultiValues());
-                returnValue = toData(values);
-            }
+        if (!isMultiMap()) {
+            returnValue = record.getValueData();
+        } else if (record.getMultiValues() != null && record.getMultiValues().size() > 0) {
+            Values values = new Values(record.getMultiValues());
+            returnValue = toData(values);
         }
         return returnValue;
     }
@@ -1593,7 +1591,6 @@ public class CMap {
                 record.incrementVersion();
             }
             markAsRemoved(record);
-            record.setActive(record.isLocked());   // if record is locked, make it active!
             if (localUpdateListener != null && req.txnId != Long.MIN_VALUE) {
                 localUpdateListener.recordUpdated(record);
             }
@@ -1668,6 +1665,7 @@ public class CMap {
         record.markRemoved();
         markAsEvicted(record);
         markAsDirty(record, false);
+        record.setActive(record.isLocked());   // if record is locked, make it active!
     }
 
     /**
@@ -1696,26 +1694,29 @@ public class CMap {
         mapIndexService.index(record);
     }
 
-    Record createAndAddNewRecord(Data key, Data value) {
+    Record createAndAddNewRecord(final Data key, final Data value) {
         if (key == null || key.size() == 0) {
             throw new HazelcastException("Cannot create record from a 0 size key: " + key);
         }
+        final Data actualValue = isMultiMap() ? null : value;
         final int blockId = concurrentMapManager.getPartitionId(key);
-        final Record record = concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, value,
+        final Record record = concurrentMapManager.recordFactory.createNewRecord(this, blockId, key, actualValue,
                 ttl, maxIdle, concurrentMapManager.newRecordId());
+
         final Record oldRecord = mapRecords.put(key, record);
 
+        // for bug tracing!
         if (oldRecord != null && oldRecord.getLock() != null) {
             final List<ScheduledAction> scheduledActions = oldRecord.getScheduledActions();
             if (scheduledActions != null && !scheduledActions.isEmpty()) {
-                logger.log(Level.WARNING, "Replacing a record which is locked " +
-                                          "and has scheduled actions! " +
+                logger.log(Level.WARNING, "Replacing a record which is locked and has scheduled actions! " +
                                           oldRecord + " -> " + oldRecord.getLock());
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.log(Level.FINEST, "Stack trace:", new Throwable());
                 }
             }
         }
+        // ----------------
         return record;
     }
 

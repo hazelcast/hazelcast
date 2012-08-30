@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -654,6 +655,9 @@ public class ClusterLockTest {
     }
 
     @Test
+    /**
+     * Test for issues #223, #228, #256
+     */
     public void testMapPutLockAndRemove() throws InterruptedException {
         Config config = new Config() ;
         config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
@@ -664,14 +668,15 @@ public class ClusterLockTest {
         }
 
         final int loop = 1000;
-        final Thread[] threads = new Thread[nodes.length * 2];
+        final int key = 1;
+        final Thread[] threads = new Thread[nodes.length * 3];
         final CountDownLatch latch = new CountDownLatch(loop * threads.length);
         abstract class TestThread extends Thread {
-            IMap<Integer, Object> map;
+            MultiMap<Integer, Object> map;
 
             protected TestThread(String name, final HazelcastInstance hazelcast) {
                 super(name);
-                map = hazelcast.getMap("test");
+                map = hazelcast.getMultiMap("test");
             }
 
             public final void run() {
@@ -695,22 +700,37 @@ public class ClusterLockTest {
             threads[k++] = new TestThread("Putter-" + k, node) {
                 void doRun() {
                     UUID uuid = UUID.randomUUID();
-                    map.lock(1);
+                    map.lock(key);
                     try {
-                        map.put(1, uuid);
+                        map.put(key, uuid);
                     } finally {
-                        map.unlock(1);
+                        map.unlock(key);
                     }
                 }
             };
 
-            threads[k++] = new TestThread("Remover-" + k, node) {
+            threads[k++] = new TestThread("Remover.A-" + k, node) {
                 void doRun() {
-                    map.lock(1);
+                    map.lock(key);
                     try {
-                        map.remove(1);
+                        map.remove(key);
                     } finally {
-                        map.unlock(1);
+                        map.unlock(key);
+                    }
+                }
+            };
+
+            threads[k++] = new TestThread("Remover.B-" + k, node) {
+                void doRun() {
+                    map.lock(key);
+                    try {
+                        Collection values = map.get(key);
+                        for (Object value : values) {
+                            map.remove(key, value);
+                        }
+
+                    } finally {
+                        map.unlock(key);
                     }
                 }
             };
