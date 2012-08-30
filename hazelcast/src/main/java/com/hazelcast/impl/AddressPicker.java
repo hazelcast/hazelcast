@@ -114,7 +114,9 @@ class AddressPicker {
     }
 
     private Address createAddress(final AddressDefinition addressDef, final int port) throws UnknownHostException {
-        return new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
+//        return new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
+        return addressDef.host != null ? new Address(addressDef.host, port)
+                : new Address(addressDef.inetAddress, port);
     }
 
     private AddressDefinition pickAddress(final NetworkConfig networkConfig) throws UnknownHostException, SocketException {
