@@ -19,7 +19,7 @@ package com.hazelcast.impl.spi;
 /**
  * @mdogan 7/23/12
  */
-public abstract class ServiceMigrationOperation extends Operation implements NoReply {
+public abstract class ServiceMigrationOperation extends Operation {
 
     public abstract void onSuccess();
 

@@ -18,10 +18,9 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NodeServiceImpl;
 
-public class FinalizeJoin extends AbstractOperation implements NoReply {
+public class FinalizeJoin extends AbstractOperation {
 
     public void run() {
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();

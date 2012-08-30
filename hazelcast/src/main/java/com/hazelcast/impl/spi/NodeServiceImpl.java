@@ -62,7 +62,7 @@ public class NodeServiceImpl implements NodeService {
                         node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("scheduled"), classLoader));
         partitionThreadGroup = new ThreadGroup(node.threadGroup, "partitionThreads");
-        workers = new Workers(partitionThreadGroup, "workers", 1);
+        workers = new Workers(partitionThreadGroup, "workers", 2);
         partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -83,11 +83,10 @@ public class NodeServiceImpl implements NodeService {
             Object result = r.get();
             Map<Integer, Object> partialResult = null;
             if (result instanceof Data) {
-                partialResult = (Map<Integer, Object>) toObject((Data) r.get());
+                partialResult = (Map<Integer, Object>) toObject(result);
             } else {
                 partialResult = (Map<Integer, Object>) result;
             }
-            System.out.println(partialResult);
             partitionResults.putAll(partialResult);
         }
         List<Integer> failedPartitions = new ArrayList<Integer>(0);
@@ -141,7 +140,6 @@ public class NodeServiceImpl implements NodeService {
         final int replicaIndex = inv.getReplicaIndex();
         final String serviceName = inv.getServiceName();
         setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId, replicaIndex);
-        op.setNoReply(false);
         if (target == null) {
             throw new NullPointerException(inv.getOperation() + ": Target is null");
         }
@@ -168,7 +166,6 @@ public class NodeServiceImpl implements NodeService {
         final ExecutorService executor = getExecutor(partitionId);
         executor.execute(new Runnable() {
             public void run() {
-                System.out.println(Thread.currentThread() + " executing " + op);
                 if (partitionId != -1 && shouldValidateTarget) {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
@@ -180,7 +177,6 @@ public class NodeServiceImpl implements NodeService {
                 }
                 try {
                     op.run();
-                    System.out.println(Thread.currentThread() + " executed " + op);
                 } catch (Throwable e) {
                     logOperationError(e);
                     op.getResponseHandler().sendResponse(e);
@@ -209,7 +205,6 @@ public class NodeServiceImpl implements NodeService {
             public void run() {
                 try {
                     final Operation op = (Operation) toObject(data);
-                    System.out.println(Thread.currentThread() + " executing " + op);
                     setOperationContext(op, op.getServiceName(), caller, callId, partitionId, replicaIndex);
                     op.setConnection(ssw.getConn());
                     ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op, partitionId, callId);
@@ -224,7 +219,6 @@ public class NodeServiceImpl implements NodeService {
                             }
                         }
                         op.run();
-                        System.out.println(Thread.currentThread() + " executed " + op);
                     } catch (Throwable e) {
                         logOperationError(e);
                         op.getResponseHandler().sendResponse(e);
@@ -393,7 +387,7 @@ public class NodeServiceImpl implements NodeService {
     }
 
     public void notifyCall(long callId, Response response) {
-        Call call = (Call) deregisterRemoteCall(callId);
+        Call call = deregisterRemoteCall(callId);
         if (call != null) {
             call.offerResponse(response);
         }

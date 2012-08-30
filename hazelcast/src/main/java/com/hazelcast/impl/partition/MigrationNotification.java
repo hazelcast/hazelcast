@@ -17,13 +17,12 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NoReply;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MigrationNotification extends AbstractOperation implements NoReply {
+public class MigrationNotification extends AbstractOperation {
 
     MigratingPartition migratingPartition;
     MigrationStatus status;

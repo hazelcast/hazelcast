@@ -18,11 +18,12 @@ package com.hazelcast.impl.spi;
 
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.ResponseQueueFactory;
 
 import java.util.concurrent.*;
 
 abstract class SingleInvocation implements Future, Invocation, Callback {
+    private final static Object NULL = new Object();
+    private final BlockingQueue responseQ = new LinkedBlockingQueue();
     protected final NodeServiceImpl nodeService;
     protected final String serviceName;
     protected final Operation op;
@@ -31,7 +32,6 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
     protected int tryCount = 100;
     protected long tryPauseMillis = 500;
     protected volatile int invokeCount = 0;
-    private final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
     private volatile boolean done = false;
 
     SingleInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
@@ -70,14 +70,18 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
         return this;
     }
 
-    void setResult(final Object obj) {
+    void setResult(Object obj) {
+        if (obj == null) {
+            obj = NULL;
+        }
         responseQ.offer(obj);
     }
 
     private Object doGet(long time, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
         long timeout = unit.toMillis(time);
         if (timeout < 0) timeout = 0;
-        Object obj = (timeout == Long.MAX_VALUE) ? responseQ.take() : responseQ.poll(timeout, unit);
+        Object obj = (timeout == Long.MAX_VALUE) ? responseQ.take() : responseQ.poll(timeout, TimeUnit.MILLISECONDS);
+        if (obj == NULL) obj = null;
         if (obj instanceof RetryableException) {
             if (invokeCount < tryCount) {
                 Thread.sleep(tryPauseMillis);
@@ -104,6 +108,7 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
         try {
             return doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
+            e.printStackTrace();
             return null;
         }
     }

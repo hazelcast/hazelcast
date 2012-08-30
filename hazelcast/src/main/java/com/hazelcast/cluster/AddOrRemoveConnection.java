@@ -17,7 +17,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.nio.Address;
 
@@ -25,7 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class AddOrRemoveConnection extends AbstractOperation implements NoReply {
+public class AddOrRemoveConnection extends AbstractOperation {
     public Address address = null;
 
     public boolean add = true;

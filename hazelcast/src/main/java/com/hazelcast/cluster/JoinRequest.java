@@ -18,7 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.impl.NodeType;
-import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
@@ -29,7 +28,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class JoinRequest extends Operation implements NonMemberOperation, NoReply {
+public class JoinRequest extends Operation implements NonMemberOperation {
 
     protected NodeType nodeType = NodeType.MEMBER;
     public Address address;

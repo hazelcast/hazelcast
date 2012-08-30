@@ -32,7 +32,6 @@ public abstract class Operation implements Runnable, DataSerializable {
     private int partitionId;
     private int replicaIndex;
     private long callId;
-    private boolean noReply = true;
     private boolean validateTarget = false;
     // injected
     private NodeService nodeService = null;
@@ -46,7 +45,6 @@ public abstract class Operation implements Runnable, DataSerializable {
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
         out.writeLong(callId);
-        out.writeBoolean(noReply);
         out.writeBoolean(validateTarget);
         writeInternal(out);
     }
@@ -56,7 +54,6 @@ public abstract class Operation implements Runnable, DataSerializable {
         partitionId = in.readInt();
         replicaIndex = in.readInt();
         callId = in.readLong();
-        noReply = in.readBoolean();
         validateTarget = in.readBoolean();
         readInternal(in);
     }
@@ -101,15 +98,6 @@ public abstract class Operation implements Runnable, DataSerializable {
         return this;
     }
 
-    public boolean isNoReply() {
-        return noReply;
-    }
-
-    public Operation setNoReply(boolean noReply) {
-        this.noReply = noReply;
-        return this;
-    }
-
     public boolean shouldValidateTarget() {
         return validateTarget;
     }
@@ -132,7 +120,7 @@ public abstract class Operation implements Runnable, DataSerializable {
         if (service == null) {
             service = nodeService.getService(serviceName);
             if (service == null) {
-                throw new RuntimeException(serviceName + "  is nullTLLLLLLLllllll " + nodeService);
+                throw new RuntimeException(serviceName + "  not found!");
             }
         }
         return (T) service;

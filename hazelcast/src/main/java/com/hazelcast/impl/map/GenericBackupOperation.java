@@ -19,7 +19,6 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
-import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
@@ -28,7 +27,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class GenericBackupOperation extends AbstractNamedKeyBasedOperation implements NoReply {
+public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
 
     enum BackupOpType {
         PUT,

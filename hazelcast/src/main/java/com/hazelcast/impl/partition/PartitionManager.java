@@ -258,7 +258,6 @@ public class PartitionManager {
 
     private void addActiveMigration(final int partitionId, final int replicaIndex,
                                     final Address currentAddress, final Address newAddress) {
-//        node.checkServiceThread();
         lock.lock();
         try {
             final MigratingPartition currentMigratingPartition = migratingPartition;
@@ -686,7 +685,7 @@ public class PartitionManager {
         return partitionLocks[partitionId].get() > (Clock.currentTimeMillis() + partitionMigrationTimeout);
     }
 
-    public static class AssignPartitions extends AbstractOperation implements NoReply {
+    public static class AssignPartitions extends AbstractOperation {
         public void run() {
             final PartitionManager service = getService();
             service.firstArrangement();

@@ -57,7 +57,6 @@ public class MapProxy {
         try {
             putOperation.setBackupCallId(backupCallId);
             putOperation.setServiceName(MAP_SERVICE_NAME);
-            putOperation.setNoReply(false);
             Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
             Object response = f.get();
@@ -109,7 +108,6 @@ public class MapProxy {
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) result;
-                System.out.println(">> " + size);
                 total += size;
             }
             return total;

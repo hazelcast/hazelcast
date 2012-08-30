@@ -38,4 +38,12 @@ class Call {
             callback.notify(new RetryableException(new IOException("Target[" + dead + "] disconnected.")));
         }
     }
+
+    @Override
+    public String toString() {
+        return "Call{" +
+                "target=" + target +
+                ", callback=" + callback +
+                '}';
+    }
 }

@@ -18,14 +18,13 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.NoReply;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 
-public class PartitionStateOperation extends AbstractOperation implements NoReply {
+public class PartitionStateOperation extends AbstractOperation {
     private PartitionRuntimeState partitionState;
 
     public PartitionStateOperation(final Collection<MemberInfo> memberInfos,

@@ -17,7 +17,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
-import com.hazelcast.impl.spi.NoReply;
 import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
@@ -26,7 +25,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MemberRemover extends Operation implements NoReply {
+public class MemberRemover extends Operation {
     private Address deadAddress = null;
 
     public MemberRemover() {

@@ -34,9 +34,6 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createLocalResponseHandler(NodeService NodeService, SingleInvocation inv) {
-        if (inv.getOperation().isNoReply()) {
-            return new NoReplyResponseHandler(NodeService, inv.getOperation());
-        }
         return new LocalInvocationResponseHandler(inv);
     }
 
@@ -46,9 +43,6 @@ public final class ResponseHandlerFactory {
 
     public static ResponseHandler createRemoteResponseHandler(NodeService NodeService, Operation op,
                                                               final int partitionId, final long callId) {
-        if (op.isNoReply()) {
-            return new NoReplyResponseHandler(NodeService, op);
-        }
         return new RemoteInvocationResponseHandler(NodeService, op.getConnection(), partitionId, callId);
     }
 
