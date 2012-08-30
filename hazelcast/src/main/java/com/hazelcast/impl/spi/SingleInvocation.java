@@ -18,11 +18,11 @@ package com.hazelcast.impl.spi;
 
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.ResponseQueueFactory;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.*;
 
-abstract class SingleInvocation extends FutureTask implements Invocation, Callback {
+abstract class SingleInvocation implements Future, Invocation, Callback {
     protected final NodeServiceImpl nodeService;
     protected final String serviceName;
     protected final Operation op;
@@ -31,10 +31,11 @@ abstract class SingleInvocation extends FutureTask implements Invocation, Callba
     protected int tryCount = 100;
     protected long tryPauseMillis = 500;
     protected volatile int invokeCount = 0;
+    private final BlockingQueue responseQ = ResponseQueueFactory.newResponseQueue();
+    private volatile boolean done = false;
 
     SingleInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
                      int replicaIndex, int tryCount, long tryPauseMillis) {
-        super(op, null);
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
@@ -69,7 +70,47 @@ abstract class SingleInvocation extends FutureTask implements Invocation, Callba
         return this;
     }
 
-    abstract void setResult(Object obj) ;
+    void setResult(final Object obj) {
+        responseQ.offer(obj);
+    }
+
+    private Object doGet(long time, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
+        long timeout = unit.toMillis(time);
+        if (timeout < 0) timeout = 0;
+        Object obj = (timeout == Long.MAX_VALUE) ? responseQ.take() : responseQ.poll(timeout, unit);
+        if (obj instanceof RetryableException) {
+            if (invokeCount < tryCount) {
+                Thread.sleep(tryPauseMillis);
+                if (timeout != Long.MAX_VALUE) {
+                    timeout -= tryPauseMillis;
+                }
+                invoke();
+                return doGet(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                done = true;
+                throw new ExecutionException((Throwable) obj);
+            }
+        } else {
+            done = true;
+            if (obj instanceof Exception) {
+                throw new ExecutionException((Throwable) obj);
+            } else {
+                return obj;
+            }
+        }
+    }
+
+    public Object get() throws InterruptedException, ExecutionException {
+        try {
+            return doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            return null;
+        }
+    }
+
+    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return doGet(timeout, unit);
+    }
 
     public String getServiceName() {
         return serviceName;
@@ -97,5 +138,9 @@ abstract class SingleInvocation extends FutureTask implements Invocation, Callba
 
     public int getPartitionId() {
         return partitionId;
+    }
+
+    public boolean isDone() {
+        return done;
     }
 }

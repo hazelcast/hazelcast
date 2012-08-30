@@ -32,27 +32,4 @@ class SingleTargetInvocation extends SingleInvocation {
     Address getTarget() {
         return target;
     }
-
-    @Override
-    void setResult(final Object obj) {
-        if (obj instanceof RetryableException) {
-            if (invokeCount < tryCount) {
-                try {
-                    Thread.sleep(tryPauseMillis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                invoke();
-            } else {
-                setException((Throwable) obj);
-            }
-        } else {
-            if (obj instanceof Exception) {
-                setException((Throwable) obj);
-            } else {
-                set(obj);
-            }
-        }
-    }
-
 }

@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class NodeServiceImpl implements NodeService {
@@ -44,6 +45,8 @@ public class NodeServiceImpl implements NodeService {
     private final int partitionCount;
     private final int maxBackupCount;
     private final ThreadGroup partitionThreadGroup;
+    private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
+    private final AtomicLong localIdGen = new AtomicLong();
 
     public NodeServiceImpl(Node node) {
         this.node = node;
@@ -59,7 +62,7 @@ public class NodeServiceImpl implements NodeService {
                         node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("scheduled"), classLoader));
         partitionThreadGroup = new ThreadGroup(node.threadGroup, "partitionThreads");
-        workers = new Workers(partitionThreadGroup, "workers", 2);
+        workers = new Workers(partitionThreadGroup, "workers", 1);
         partitionCount = node.groupProperties.CONCURRENT_MAP_PARTITION_COUNT.getInteger();
         maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
@@ -149,12 +152,12 @@ public class NodeServiceImpl implements NodeService {
             ResponseHandlerFactory.setLocalResponseHandler(this, inv);
             runLocally(op);
         } else {
-            TheCall call = new TheCall(target, inv);
-            long callId = node.clusterImpl.registerCall(call);
+            Call call = new Call(target, inv);
+            long callId = registerCall(call);
             op.setCallId(callId);
             boolean sent = send(op, partitionId, target);
             if (!sent) {
-                inv.setResult(new IOException("Packet not sent!"));
+                inv.setResult(new RetryableException(new IOException("Packet not sent!")));
             }
         }
     }
@@ -165,6 +168,7 @@ public class NodeServiceImpl implements NodeService {
         final ExecutorService executor = getExecutor(partitionId);
         executor.execute(new Runnable() {
             public void run() {
+                System.out.println(Thread.currentThread() + " executing " + op);
                 if (partitionId != -1 && shouldValidateTarget) {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
@@ -176,6 +180,7 @@ public class NodeServiceImpl implements NodeService {
                 }
                 try {
                     op.run();
+                    System.out.println(Thread.currentThread() + " executed " + op);
                 } catch (Throwable e) {
                     logOperationError(e);
                     op.getResponseHandler().sendResponse(e);
@@ -204,6 +209,7 @@ public class NodeServiceImpl implements NodeService {
             public void run() {
                 try {
                     final Operation op = (Operation) toObject(data);
+                    System.out.println(Thread.currentThread() + " executing " + op);
                     setOperationContext(op, op.getServiceName(), caller, callId, partitionId, replicaIndex);
                     op.setConnection(ssw.getConn());
                     ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op, partitionId, callId);
@@ -218,6 +224,7 @@ public class NodeServiceImpl implements NodeService {
                             }
                         }
                         op.run();
+                        System.out.println(Thread.currentThread() + " executed " + op);
                     } catch (Throwable e) {
                         logOperationError(e);
                         op.getResponseHandler().sendResponse(e);
@@ -276,17 +283,13 @@ public class NodeServiceImpl implements NodeService {
             for (int i = 0; i < backupCount; i++) {
                 int replicaIndex = i + 1;
                 Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
-//                System.out.println(partitionInfo);
                 if (replicaTarget != null) {
                     if (replicaTarget.equals(getThisAddress())) {
                         // Normally shouldn't happen!!
                     } else {
                         SimpleSocketWritable ssw = new SimpleSocketWritable(opData, -1, partitionId, replicaIndex, null, true);
                         node.clusterImpl.send(ssw, replicaTarget);
-//                        System.out.println(getThisAddress() + " sending backup to " + replicaTarget + " and backupId: " + op.getFirstCallerId());
                     }
-                } else {
-//                    System.out.println(getThisAddress() + " NOT sending backup target null and backupId: " + op.getFirstCallerId());
                 }
             }
         }
@@ -373,8 +376,24 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
+    public void disconnectExistingCalls(Address deadAddress) {
+        for (Call call : mapCalls.values()) {
+            call.onDisconnect(deadAddress);
+        }
+    }
+
+    public long registerCall(Call call) {
+        long callId = localIdGen.incrementAndGet();
+        mapCalls.put(callId, call);
+        return callId;
+    }
+
+    public Call deregisterRemoteCall(long id) {
+        return mapCalls.remove(id);
+    }
+
     public void notifyCall(long callId, Response response) {
-        TheCall call = (TheCall) node.clusterImpl.deregisterRemoteCall(callId);
+        Call call = (Call) deregisterRemoteCall(callId);
         if (call != null) {
             call.offerResponse(response);
         }
@@ -479,5 +498,6 @@ public class NodeServiceImpl implements NodeService {
         } catch (InterruptedException ignored) {
         }
         workers.awaitTermination(3);
+        mapCalls.clear();
     }
 }

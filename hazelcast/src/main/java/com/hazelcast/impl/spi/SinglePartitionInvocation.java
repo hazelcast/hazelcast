@@ -28,42 +28,4 @@ class SinglePartitionInvocation extends SingleInvocation {
     Address getTarget() {
         return getPartitionInfo().getReplicaAddress(replicaIndex);
     }
-
-    void setResult(Object obj) {
-        if (obj instanceof RetryableException) {
-            if (invokeCount < tryCount) {
-                try {
-                    Thread.sleep(tryPauseMillis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                invoke();
-            } else {
-                setException((Throwable) obj);
-            }
-        } else {
-            if (obj instanceof Throwable) {
-                setException((Throwable) obj);
-            } else {
-                set(obj);
-            }
-        }
-        set(obj);
-    }
-//    final BlockingQueue q = ResponseQueueFactory.newResponseQueue();
-//
-//
-//    void setResult(Object obj) {
-//        q.offer(obj);
-//    }
-//
-//    @Override
-//    public Object get() throws InterruptedException, ExecutionException {
-//        return q.take();
-//    }
-//
-//    @Override
-//    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-//        return q.poll(timeout, unit);
-//    }
 }

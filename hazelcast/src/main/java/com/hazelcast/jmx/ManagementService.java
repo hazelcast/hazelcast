@@ -76,7 +76,7 @@ public class ManagementService {
 
     private static synchronized void startStatsCollector() {
         if (statCollectorExecutor == null) {
-            statCollectorExecutor = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, "hz.jmx", null));
+            statCollectorExecutor = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, null, "hz.jmx", null));
         }
     }
 
@@ -94,14 +94,12 @@ public class ManagementService {
         if (!enabled) {
             return;
         }
-
         if (started.compareAndSet(false, true)) {
             logger.log(Level.INFO, "Hazelcast JMX agent enabled");
             // Scheduler of the statistics collectors
             if (showDetails()) {
                 startStatsCollector();
             }
-
             MBeanServer mbs = mBeanServer();
             // Register the cluster monitor
             try {

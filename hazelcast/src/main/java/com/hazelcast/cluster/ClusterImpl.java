@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.base.Call;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.impl.spi.*;
@@ -35,9 +34,10 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -54,10 +54,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
     private final Node node;
 
     private final ILogger logger;
-
-    protected final ConcurrentMap<Long, Call> mapCalls;
-
-    protected final AtomicLong localIdGen = new AtomicLong();
 
     protected final Address thisAddress;
 
@@ -90,8 +86,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
     private long timeToStartJoin = 0;
 
     private long firstJoinRequest = 0;
-//    private final List<MemberImpl> lsMembersBefore = new ArrayList<MemberImpl>();
-//    private long lastHeartbeat = 0;
 
     private final ILogger securityLogger;
 
@@ -104,7 +98,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
     public ClusterImpl(final Node node) {
         this.node = node;
         logger = node.getLogger(getClass().getName());
-        mapCalls = new ConcurrentHashMap<Long, Call>();
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
         securityLogger = node.loggingService.getLogger("com.hazelcast.security");
@@ -126,112 +119,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
         node.connectionManager.addConnectionListener(this);
-//        registerPacketProcessor(ClusterOperation.RESPONSE, new PacketProcessor() {
-//            public void process(Packet packet) {
-//                handleResponse(packet);
-//            }
-//        });
-//        registerPacketProcessor(ClusterOperation.HEARTBEAT, new PacketProcessor() {
-//            public void process(Packet packet) {
-//                releasePacket(packet);
-//            }
-//        });
-//        registerPacketProcessor(ClusterOperation.LOG, new PacketProcessor() {
-//            public void process(Packet packet) {
-//                logger.log(Level.parse(packet.name), toObject(packet.getValueData()).toString());
-//                releasePacket(packet);
-//            }
-//        });
-//        registerPacketProcessor(ClusterOperation.JOIN_CHECK, new PacketProcessor() {
-//            public void process(Packet packet) {
-//                Connection conn = packet.conn;
-//                Request request = Request.copyFromPacket(packet);
-//                JoinInfo joinInfo = (JoinInfo) toObject(request.value);
-//                request.clearForResponse();
-//                if (joinInfo != null && node.joined() && node.isActive()) {
-//                    try {
-//                        node.validateJoinRequest(joinInfo);
-//                        request.response = toData(node.createJoinInfo());
-//                    } catch (Exception e) {
-//                        request.response = toData(e);
-//                    }
-//                }
-//                returnResponse(request, conn);
-//                releasePacket(packet);
-//            }
-//        });
-//        registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS_AND_RESPOND,
-//                new PacketProcessor() {
-//                    public void process(Packet packet) {
-//                        Data data = packet.getValueData();
-//                        RemotelyProcessable rp = (RemotelyProcessable) toObject(data);
-//                        rp.setConnection(packet.conn);
-//                        rp.setNode(node);
-//                        rp.process();
-//                        sendResponse(packet);
-//                    }
-//                });
-//        registerPacketProcessor(ClusterOperation.REMOTELY_PROCESS,
-//                new PacketProcessor() {
-//                    public void process(Packet packet) {
-//                        Data data = packet.getValueData();
-//                        RemotelyProcessable rp = (RemotelyProcessable) toObject(data);
-//                        rp.setConnection(packet.conn);
-//                        rp.setNode(node);
-//                        rp.process();
-//                        releasePacket(packet);
-//                    }
-//                });
-//        registerPacketProcessor(ClusterOperation.REMOTELY_CALLABLE_BOOLEAN,
-//                new PacketProcessor() {
-//                    public void process(Packet packet) {
-//                        Boolean result;
-//                        AbstractRemotelyCallable<Boolean> callable = null;
-//                        try {
-//                            Data data = packet.getValueData();
-//                            callable = (AbstractRemotelyCallable<Boolean>) toObject(data);
-//                            System.out.println("callable = " + callable);
-//                            callable.setConnection(packet.conn);
-//                            callable.setNode(node);
-//                            result = callable.call();
-//                        } catch (Exception e) {
-//                            logger.log(Level.SEVERE, "Error processing " + callable, e);
-//                            result = Boolean.FALSE;
-//                        }
-//                        if (result == Boolean.TRUE) {
-//                            sendResponse(packet);
-//                        } else {
-//                            sendResponseFailure(packet);
-//                        }
-//                    }
-//                });
-//        registerPacketProcessor(ClusterOperation.REMOTELY_CALLABLE_OBJECT,
-//                new PacketProcessor() {
-//                    public void process(Packet packet) {
-//                        Object result;
-//                        AbstractRemotelyCallable<Boolean> callable = null;
-//                        try {
-//                            Data data = packet.getValueData();
-//                            callable = (AbstractRemotelyCallable) toObject(data);
-//                            callable.setConnection(packet.conn);
-//                            callable.setNode(node);
-//                            result = callable.call();
-//                        } catch (Exception e) {
-//                            logger.log(Level.SEVERE, "Error processing " + callable, e);
-//                            result = null;
-//                        }
-//                        if (result != null) {
-//                            Data value;
-//                            if (result instanceof Data) {
-//                                value = (Data) result;
-//                            } else {
-//                                value = toData(result);
-//                            }
-//                            packet.setValue(value);
-//                        }
-//                        sendResponse(packet);
-//                    }
-//                });
         node.nodeService.registerService(SERVICE_NAME, this);
     }
 
@@ -243,13 +130,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
             lock.unlock();
         }
     }
-//    public void appendState(StringBuffer sbState) {
-//        sbState.append("\nClusterManager {");
-//        for (ScheduledAction sa : setScheduledActions) {
-//            sbState.append("\n\t" + sa + ", from:" + sa.getRequest().caller);
-//        }
-//        sbState.append("\n}");
-//    }
 
     public JoinInfo checkJoin(Address target) {
         Invocation inv = node.nodeService.createSingleInvocation(SERVICE_NAME, new JoinCheck(node.createJoinInfo()), -1)
@@ -378,11 +258,7 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
                     }
                     logger.log(Level.WARNING, thisAddress + " couldn't ping " + address);
                     // not reachable.
-//                    enqueueAndReturn(new Processable() {
-//                        public void process() {
                     removeAddress(address);
-//                        }
-//                    });
                 } catch (Throwable ignored) {
                 }
             }
@@ -536,13 +412,7 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
     public void disconnectExistingCalls(Address deadAddress) {
         lock.lock();
         try {
-//            Object[] calls = mapCalls.values().toArray();
-//            for (Object call : calls) {
-//                ((Call) call).onDisconnect(deadAddress);
-//            }
-            for (Call call : mapCalls.values()) {
-                call.onDisconnect(deadAddress);
-            }
+            node.nodeService.disconnectExistingCalls(deadAddress);
         } finally {
             lock.unlock();
         }
@@ -1084,27 +954,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
         return map != null ? map.values() : null;
     }
 
-    public int getDataMemberCount() {
-        return dataMemberCount.get();
-    }
-
-    public boolean registerAndSendRemoteCall(Address target, Packet packet, Call call) {
-        packet.callId = localIdGen.incrementAndGet();
-        mapCalls.put(packet.callId, call);
-        Connection targetConnection = node.connectionManager.getOrConnect(target);
-        return send(packet, targetConnection);
-    }
-
-    public long registerCall(Call call) {
-        long callId = localIdGen.incrementAndGet();
-        mapCalls.put(callId, call);
-        return callId;
-    }
-
-    public Call deregisterRemoteCall(long id) {
-        return mapCalls.remove(id);
-    }
-
     public final boolean send(SocketWritable packet, Address address) {
         if (address == null) return false;
         final Connection conn = node.connectionManager.getOrConnect(address);
@@ -1143,7 +992,6 @@ public final class ClusterImpl implements ConnectionListener, Cluster {
             timeToStartJoin = 0;
             membersRef.set(null);
             dataMemberCount.set(0);
-            mapCalls.clear();
         } finally {
             lock.unlock();
         }

@@ -14,20 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.impl.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
 
-public interface Call {
+import java.io.IOException;
 
-    long getCallId();
+class Call {
+    private final Address target;
+    private final Callback callback;
 
-    void handleResponse(Packet packet);
+    public Call(Address target, Callback callback) {
+        this.target = target;
+        this.callback = callback;
+    }
 
-    void onDisconnect(Address dead);
+    public void offerResponse(Response response) {
+        callback.notify(response);
+    }
 
-    void onEnqueue();
-
-    int getEnqueueCount();
+    public void onDisconnect(Address dead) {
+        if (dead.equals(target)) {
+            callback.notify(new RetryableException(new IOException("Target[" + dead + "] disconnected.")));
+        }
+    }
 }
