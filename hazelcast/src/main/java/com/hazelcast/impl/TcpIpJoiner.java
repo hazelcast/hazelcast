@@ -333,7 +333,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                         matchedAddresses = Collections.singleton(addressHolder.address);
                     }
                     for (String matchedAddress : matchedAddresses) {
-                        addPossibleAddresses(possibleAddresses, matchedAddress, null, port, count);
+                        addPossibleAddresses(possibleAddresses, null, InetAddress.getByName(matchedAddress), port, count);
                     }
                 } else {
                     final String host = addressHolder.address;
