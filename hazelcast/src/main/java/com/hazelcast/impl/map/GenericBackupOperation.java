@@ -101,19 +101,10 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
                 lock.lock(caller, threadId, ttl);
             }
         }
-//        System.out.println(getNodeService().getThisAddress() + "  sending backup response " + firstCallerId + " firstCallerAddress: " + firstCallerAddress);
         final BackupResponse backupResponse = new BackupResponse();
         backupResponse.setServiceName(MapService.MAP_SERVICE_NAME).setCallId(firstCallerId)
                 .setPartitionId(partitionId).setReplicaIndex(0);
         getNodeService().send(backupResponse, partitionId, firstCallerAddress);
-    }
-
-    public Address getFirstCallerAddress() {
-        return firstCallerAddress;
-    }
-
-    public long getFirstCallerId() {
-        return firstCallerId;
     }
 
     @Override

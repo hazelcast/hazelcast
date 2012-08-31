@@ -150,7 +150,7 @@ public class NodeServiceImpl implements NodeService {
             throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
         if (getThisAddress().equals(target)) {
-            ResponseHandlerFactory.setLocalResponseHandler(this, inv);
+            ResponseHandlerFactory.setLocalResponseHandler(inv);
             runLocally(op);
         } else {
             Call call = new Call(target, inv);
@@ -436,7 +436,7 @@ public class NodeServiceImpl implements NodeService {
         return node.partitionManager.getPartitionId(key);
     }
 
-    PartitionInfo getPartitionInfo(int partitionId) {
+    public PartitionInfo getPartitionInfo(int partitionId) {
         PartitionInfo p = node.partitionManager.getPartition(partitionId);
         if (p.getOwner() == null) {
             // probably ownerships are not set yet.

@@ -25,33 +25,33 @@ import java.util.logging.Level;
  */
 public final class ResponseHandlerFactory {
 
-    public static void setNoReplyResponseHandler(NodeService NodeService, Operation op) {
-        op.setResponseHandler(new NoReplyResponseHandler(NodeService, op));
+    public static void setNoReplyResponseHandler(NodeService nodeservice, Operation op) {
+        op.setResponseHandler(new NoReplyResponseHandler(nodeservice, op));
     }
 
-    public static void setLocalResponseHandler(NodeService NodeService, SingleInvocation inv) {
-        inv.getOperation().setResponseHandler(createLocalResponseHandler(NodeService, inv));
+    public static void setLocalResponseHandler(SingleInvocation inv) {
+        inv.getOperation().setResponseHandler(createLocalResponseHandler(inv));
     }
 
-    public static ResponseHandler createLocalResponseHandler(NodeService NodeService, SingleInvocation inv) {
+    public static ResponseHandler createLocalResponseHandler(SingleInvocation inv) {
         return new LocalInvocationResponseHandler(inv);
     }
 
-    public static void setRemoteResponseHandler(NodeService NodeService, Operation op, final int partitionId, final long callId) {
-        op.setResponseHandler(createRemoteResponseHandler(NodeService, op, partitionId, callId));
+    public static void setRemoteResponseHandler(NodeService nodeservice, Operation op, int partitionId, long callId) {
+        op.setResponseHandler(createRemoteResponseHandler(nodeservice, op, partitionId, callId));
     }
 
-    public static ResponseHandler createRemoteResponseHandler(NodeService NodeService, Operation op,
-                                                              final int partitionId, final long callId) {
-        return new RemoteInvocationResponseHandler(NodeService, op.getConnection(), partitionId, callId);
+    public static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op,
+                                                              int partitionId, long callId) {
+        return new RemoteInvocationResponseHandler(nodeService, op.getConnection(), partitionId, callId);
     }
 
     private static class NoReplyResponseHandler implements ResponseHandler {
         private final NodeService nodeService;
         private final Operation operation;
 
-        private NoReplyResponseHandler(final NodeService NodeService, final Operation operation) {
-            this.nodeService = NodeService;
+        private NoReplyResponseHandler(NodeService nodeService, Operation operation) {
+            this.nodeService = nodeService;
             this.operation = operation;
         }
 
@@ -73,8 +73,8 @@ public final class ResponseHandlerFactory {
         private final int partitionId;
         private final long callId;
 
-        private RemoteInvocationResponseHandler(final NodeService nodeService, final Connection conn, final int partitionId,
-                                                final long callId) {
+        private RemoteInvocationResponseHandler(NodeService nodeService, Connection conn,
+                                                int partitionId, long callId) {
             this.nodeService = nodeService;
             this.conn = conn;
             this.partitionId = partitionId;
@@ -95,11 +95,11 @@ public final class ResponseHandlerFactory {
 
         private final SingleInvocation invocation;
 
-        private LocalInvocationResponseHandler(final SingleInvocation invocation) {
+        private LocalInvocationResponseHandler(SingleInvocation invocation) {
             this.invocation = invocation;
         }
 
-        public void sendResponse(final Object obj) {
+        public void sendResponse(Object obj) {
             invocation.setResult(obj);
         }
     }

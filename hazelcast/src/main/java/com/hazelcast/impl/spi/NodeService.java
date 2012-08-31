@@ -21,6 +21,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.TransactionImpl;
 import com.hazelcast.impl.map.GenericBackupOperation;
+import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -50,12 +51,11 @@ public interface NodeService {
 
     boolean send(Operation op, int partitionId, Connection connection);
 
-
     void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
-                                                  throws ExecutionException, TimeoutException, InterruptedException;
+            throws ExecutionException, TimeoutException, InterruptedException;
 
     void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount)
-                                                          throws ExecutionException, TimeoutException, InterruptedException;
+            throws ExecutionException, TimeoutException, InterruptedException;
 
     void registerService(String serviceName, Object obj);
 
@@ -68,6 +68,8 @@ public interface NodeService {
     int getPartitionId(Data key);
 
     int getPartitionCount();
+
+    PartitionInfo getPartitionInfo(int partitionId);
 
     Config getConfig();
 
@@ -86,5 +88,4 @@ public interface NodeService {
     Object toObject(Object object);
 
     TransactionImpl getTransaction();
-
 }

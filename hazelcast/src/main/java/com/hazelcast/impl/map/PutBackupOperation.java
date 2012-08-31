@@ -18,14 +18,13 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.impl.spi.BackupOperation;
 import com.hazelcast.nio.Data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class PutBackupOperation extends PutOperation implements BackupOperation {
+public class PutBackupOperation extends PutOperation {
 
     boolean sendResponse = true;
 

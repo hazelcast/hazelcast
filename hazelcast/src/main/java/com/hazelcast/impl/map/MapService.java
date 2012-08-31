@@ -19,11 +19,10 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MapService implements ServiceLifecycle, TransactionalService {
@@ -41,6 +40,34 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new PartitionContainer(nodeService.getConfig(), this, partitions[i]);
         }
+        nodeService.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+            public void run() {
+                List<Integer> ownedPartitions = new ArrayList<Integer>();
+                for (int i = 0; i < partitionContainers.length; i++) {
+                    if (nodeService.getThisAddress().equals(nodeService.getPartitionInfo(i).getOwner())) {
+                        ownedPartitions.add(i);
+                    }
+                }
+                final CountDownLatch latch = new CountDownLatch(ownedPartitions.size());
+                for (Integer partitionId : ownedPartitions) {
+                    Operation op = new AbstractOperation() {
+                        public void run() {
+                            try {
+                                // TODO check and validate scheduled operations
+                            } finally {
+                                latch.countDown();
+                            }
+                        }
+                    };
+                    op.setPartitionId(partitionId).setValidateTarget(false);
+                    nodeService.runLocally(op);
+                    try {
+                        latch.await(5, TimeUnit.SECONDS);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+            }
+        }, 1, 1, TimeUnit.SECONDS);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {

@@ -18,16 +18,8 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.spi.ResponseHandler;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -94,14 +86,6 @@ public class PutOperation extends BackupAwareOperation {
                 e.printStackTrace();
             }
         }
-//        Future f = getNodeService().createSingleInvocation(MapService.MAP_SERVICE_NAME, new GetOperation("name", new Data()), 1).build().invoke();
-//        try {
-//            f.get();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        }
         responseHandler.sendResponse(oldValueData);
     }
 
@@ -109,53 +93,8 @@ public class PutOperation extends BackupAwareOperation {
         return getNodeService().getCluster().getMembers().size();
     }
 
-    private boolean takeBackup() {
-        boolean callerBackup = false;
-        NodeService NodeService = getNodeService();
-        MapService mapService = (MapService) getService();
-        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        int mapBackupCount = 1;
-        int backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
-        if (backupCount > 0) {
-            List<Future> backupOps = new ArrayList<Future>(backupCount);
-            PartitionInfo partitionInfo = mapPartition.partitionInfo;
-            for (int i = 0; i < backupCount; i++) {
-                int replicaIndex = i + 1;
-                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
-                if (replicaTarget != null) {
-                    if (replicaTarget.equals(NodeService.getThisAddress())) {
-//                            Normally shouldn't happen!!
-//                            PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
-//                            pbo.call();
-                    } else {
-                        if (replicaTarget.equals(getCaller())) {
-                            callerBackup = true;
-//                                PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
-//                                backupOps.add(service.backup(pbo, replicaTarget));
-                        } else {
-                            PutBackupOperation pbo = new PutBackupOperation(name, dataKey, dataValue, ttl);
-                            try {
-                                backupOps.add(NodeService.createSingleInvocation(MapService.MAP_SERVICE_NAME, pbo,
-                                        partitionInfo.getPartitionId()).setReplicaIndex(replicaIndex).build().invoke());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            }
-            for (Future backupOp : backupOps) {
-                try {
-                    backupOp.get(10, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                }
-            }
-        }
-        return callerBackup;
-    }
-
     @Override
     public String toString() {
-        return "PutOperation{}";
+        return "PutOperation{" + name + "}";
     }
 }

@@ -21,22 +21,31 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 
 public class PartitionContainer {
     private final Config config;
     private final MapService mapService;
     final PartitionInfo partitionInfo;
-    final Map<String, MapPartition> maps = new HashMap<String, MapPartition>(100);
-    final Map<String, TransactionLog> transactions = new HashMap<String, TransactionLog>(100);
+    final Map<String, MapPartition> maps = new HashMap<String, MapPartition>(1000);
+    final Map<String, TransactionLog> transactions = new HashMap<String, TransactionLog>(1000);
+    final Map<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations = new HashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
 
     public PartitionContainer(Config config, MapService mapService, PartitionInfo partitionInfo) {
         this.config = config;
         this.mapService = mapService;
         this.partitionInfo = partitionInfo;
+    }
+
+    void onDeadAddress(Address deadAddress) {
+        // invalidate scheduled operations of dead
+        // invalidate transactions of dead
+        // invalidate locks owned by dead
     }
 
     MapConfig getMapConfig(String name) {
