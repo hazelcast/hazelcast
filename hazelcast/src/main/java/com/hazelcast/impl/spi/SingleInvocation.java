@@ -65,7 +65,11 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
             invokeCount++;
             nodeService.invokeSingle(this);
         } catch (Exception e) {
-            setResult(e);
+            if (e instanceof RetryableException) {
+                setResult(e);
+            } else {
+                throw (RuntimeException) e;
+            }
         }
         return this;
     }
@@ -147,5 +151,15 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
 
     public boolean isDone() {
         return done;
+    }
+
+    @Override
+    public String toString() {
+        return "SingleInvocation{" +
+                "serviceName='" + serviceName + '\'' +
+                ", op=" + op +
+                ", partitionId=" + partitionId +
+                ", replicaIndex=" + replicaIndex +
+                '}';
     }
 }

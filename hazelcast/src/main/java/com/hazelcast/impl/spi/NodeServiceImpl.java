@@ -132,7 +132,10 @@ public class NodeServiceImpl implements NodeService {
 
     void invokeSingle(final SingleInvocation inv) {
         if (Thread.currentThread().getThreadGroup() == partitionThreadGroup) {
-            throw new RuntimeException(Thread.currentThread() + " cannot make another call! " + inv.getOperation());
+            throw new RuntimeException(Thread.currentThread()
+                    + " cannot make another call: "
+                    + inv.getOperation()
+                    + " currentOp:" + ThreadContext.get().getCurrentOperation());
         }
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
@@ -166,6 +169,7 @@ public class NodeServiceImpl implements NodeService {
         final ExecutorService executor = getExecutor(partitionId);
         executor.execute(new Runnable() {
             public void run() {
+                ThreadContext.get().setCurrentOperation(op);
                 if (partitionId != -1 && shouldValidateTarget) {
                     PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
@@ -205,6 +209,7 @@ public class NodeServiceImpl implements NodeService {
             public void run() {
                 try {
                     final Operation op = (Operation) toObject(data);
+                    ThreadContext.get().setCurrentOperation(op);
                     setOperationContext(op, op.getServiceName(), caller, callId, partitionId, replicaIndex);
                     op.setConnection(ssw.getConn());
                     ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op, partitionId, callId);

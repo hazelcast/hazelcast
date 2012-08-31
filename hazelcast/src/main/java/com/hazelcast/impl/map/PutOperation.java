@@ -94,6 +94,14 @@ public class PutOperation extends BackupAwareOperation {
                 e.printStackTrace();
             }
         }
+//        Future f = getNodeService().createSingleInvocation(MapService.MAP_SERVICE_NAME, new GetOperation("name", new Data()), 1).build().invoke();
+//        try {
+//            f.get();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        }
         responseHandler.sendResponse(oldValueData);
     }
 

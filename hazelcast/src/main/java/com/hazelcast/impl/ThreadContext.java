@@ -45,7 +45,7 @@ public final class ThreadContext {
             try {
                 threadContext = new ThreadContext(Thread.currentThread());
                 mapContexts.put(currentThread, threadContext);
-                Iterator<Entry<Thread,ThreadContext>> threads = mapContexts.entrySet().iterator();
+                Iterator<Entry<Thread, ThreadContext>> threads = mapContexts.entrySet().iterator();
                 while (threads.hasNext()) {
                     Entry<Thread, ThreadContext> entry = threads.next();
                     if (!entry.getKey().isAlive()) {
@@ -92,6 +92,8 @@ public final class ThreadContext {
     private SerializerRegistry currentSerializerRegistry;
 
     private Object attachment;
+
+    private Object currentOperation = null;
 
     private ThreadContext(Thread thread) {
         this.thread = thread;
@@ -192,6 +194,14 @@ public final class ThreadContext {
         this.attachment = attachment;
     }
 
+    public Object getCurrentOperation() {
+        return currentOperation;
+    }
+
+    public void setCurrentOperation(Object currentOperation) {
+        this.currentOperation = currentOperation;
+    }
+
     public void shutdown(HazelcastInstanceImpl instance) {
         mapHazelcastInstanceContexts.remove(instance.getName());
         currentInstance = null;
@@ -208,20 +218,12 @@ public final class ThreadContext {
 
     private class HazelcastInstanceThreadContext {
         final HazelcastInstanceImpl instance;
-//        CallCache callCache;
         volatile CallContext callContext = null;
 
         HazelcastInstanceThreadContext(HazelcastInstanceImpl instance) {
             this.instance = instance;
             callContext = (new CallContext(createNewThreadId(), false));
         }
-
-//        CallCache getCallCache() {
-//            if (callCache == null) {
-//                callCache = new CallCache(factory);
-//            }
-//            return callCache;
-//        }
 
         CallContext getCallContext() {
             return callContext;
@@ -231,45 +233,6 @@ public final class ThreadContext {
             this.callContext = callContext;
         }
     }
-
-//    class CallCache {
-//        final FactoryImpl factory;
-//        final ConcurrentMapManager.MPut mput;
-//        final ConcurrentMapManager.MGet mget;
-//        final ConcurrentMapManager.MRemove mremove;
-//        final ConcurrentMapManager.MEvict mevict;
-//
-//        CallCache(FactoryImpl factory) {
-//            this.factory = factory;
-//            mput = factory.node.concurrentMapManager.new MPut();
-//            mget = factory.node.concurrentMapManager.new MGet();
-//            mremove = factory.node.concurrentMapManager.new MRemove();
-//            mevict = factory.node.concurrentMapManager.new MEvict();
-//        }
-//
-//        public ConcurrentMapManager.MPut getMPut() {
-//            mput.reset();
-//            mput.request.lastTime = System.nanoTime();
-//            return mput;
-//        }
-//
-//        public ConcurrentMapManager.MGet getMGet() {
-//            mget.reset();
-//            mget.request.lastTime = System.nanoTime();
-//            return mget;
-//        }
-//
-//        public ConcurrentMapManager.MRemove getMRemove() {
-//            mremove.reset();
-//            mremove.request.lastTime = System.nanoTime();
-//            return mremove;
-//        }
-//
-//        public ConcurrentMapManager.MEvict getMEvict() {
-//            mevict.reset();
-//            return mevict;
-//        }
-//    }
 
     @Override
     public boolean equals(Object o) {
