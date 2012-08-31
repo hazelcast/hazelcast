@@ -226,7 +226,10 @@ cfg.setProperty("hazelcast.property.foo", "value");
                     <literal xml:id="hazelcast.backup.redo.enabled">hazelcast.backup.redo.enabled</literal>
                 </td>
                 <td>Enable (strict) redo for backup operations. Backup operations may fail due to node failures,
-                    but generally during partition re-assignment process missing backups are restored.</td>
+                    but generally during partition re-assignment process missing backups are restored.
+                    <emphasis>When 'hazelcast.backup.redo.enabled' is set to true,
+                        <link xlink:href="#hazelcast.partition.migration.interval"></link> should be 0.</emphasis>
+                </td>
                 <td>boolean</td>
                 <td>false</td>
             </tr>
@@ -567,11 +570,11 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.partition.migration.interval</literal>
+                    <literal xml:id="hazelcast.partition.migration.interval">hazelcast.partition.migration.interval</literal>
                 </td>
                 <td>Interval to run partition migration tasks in seconds.</td>
                 <td>integer</td>
-                <td>10</td>
+                <td>0</td>
             </tr>
             <tr>
                 <td>
