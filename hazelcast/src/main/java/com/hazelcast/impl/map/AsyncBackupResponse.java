@@ -18,7 +18,7 @@ package com.hazelcast.impl.map;
 
 import com.hazelcast.impl.spi.Response;
 
-public class BackupResponse extends Response {
+public class AsyncBackupResponse extends Response {
 
     @Override
     public void run() {

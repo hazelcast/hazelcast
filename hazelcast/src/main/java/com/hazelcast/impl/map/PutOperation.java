@@ -74,7 +74,7 @@ public class PutOperation extends BackupAwareOperation {
             }
             mapPartition.store.store(key, record.getValue());
         }
-        int mapBackupCount = 1;
+        int mapBackupCount = mapPartition.getBackupCount();
         int backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
         long version = pc.incrementAndGetVersion();
         if (backupCount > 0) {
@@ -87,7 +87,7 @@ public class PutOperation extends BackupAwareOperation {
                 e.printStackTrace();
             }
         }
-        responseHandler.sendResponse(oldValueData);
+        responseHandler.sendResponse(new UpdateResponse(oldValueData, version, backupCount));
     }
 
     private int getClusterSize() {

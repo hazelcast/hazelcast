@@ -60,16 +60,6 @@ public class MapProxy {
             Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
             Object response = f.get();
-            BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
-            Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
-            if (backupResponse == null) {
-                Data dataValue = putOperation.getValue();
-                GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, ttl, 1);
-                backupOp.setInvocation(true);
-                Invocation backupInv = nodeService.createSingleInvocation(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(1).build();
-                f = backupInv.invoke();
-                f.get(5, TimeUnit.SECONDS);
-            }
             Object returnObj = null;
             if (response instanceof Response) {
                 Response r = (Response) response;
@@ -80,7 +70,29 @@ public class MapProxy {
             if (returnObj instanceof Throwable) {
                 throw (Throwable) returnObj;
             }
-            return returnObj;
+            UpdateResponse updateResponse = (UpdateResponse) returnObj;
+            int backupCount = updateResponse.getBackupCount();
+            if (backupCount > 0) {
+                boolean backupsComplete = true;
+                for (int i = 0; i < backupCount; i++) {
+                    BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
+                    Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
+                    if (backupResponse == null) {
+                        backupsComplete = false;
+                    }
+                }
+                if (!backupsComplete) {
+                    for (int i = 0; i < backupCount; i++) {
+                        Data dataValue = putOperation.getValue();
+                        GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, ttl, updateResponse.getVersion());
+                        backupOp.setInvocation(true);
+                        Invocation backupInv = nodeService.createSingleInvocation(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(i).build();
+                        f = backupInv.invoke();
+                        f.get(5, TimeUnit.SECONDS);
+                    }
+                }
+            }
+            return toObject(updateResponse.getOldValue());
         } catch (RetryableException t) {
             t.printStackTrace();
             throw t;

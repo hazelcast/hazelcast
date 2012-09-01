@@ -16,10 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.map.BackupResponse;
-import com.hazelcast.impl.map.GenericBackupOperation;
-import com.hazelcast.impl.map.GetOperation;
-import com.hazelcast.impl.map.PutOperation;
+import com.hazelcast.impl.map.*;
 import com.hazelcast.impl.spi.Response;
 import com.hazelcast.nio.DataSerializable;
 
@@ -32,11 +29,10 @@ import java.util.Map;
  */
 public final class DataSerializerRegistrar {
 
-    private static final Map<String, DataSerializableFactory> FACTORIES ;
+    private static final Map<String, DataSerializableFactory> FACTORIES;
 
     static {
         final Map<String, DataSerializableFactory> factories = new HashMap<String, DataSerializableFactory>(100);
-
         factories.put(PutOperation.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
                 return new PutOperation();
@@ -47,9 +43,14 @@ public final class DataSerializerRegistrar {
                 return new Response();
             }
         });
-        factories.put(BackupResponse.class.getName(), new DataSerializableFactory() {
+        factories.put(UpdateResponse.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
-                return new BackupResponse();
+                return new UpdateResponse();
+            }
+        });
+        factories.put(AsyncBackupResponse.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new AsyncBackupResponse();
             }
         });
         factories.put(GenericBackupOperation.class.getName(), new DataSerializableFactory() {
@@ -62,10 +63,8 @@ public final class DataSerializerRegistrar {
                 return new GetOperation();
             }
         });
-
         FACTORIES = Collections.unmodifiableMap(factories);
     }
-
 
     public static DataSerializableFactory getFactory(String name) {
         return FACTORIES.get(name);

@@ -112,7 +112,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         if (invocation) {
             getResponseHandler().sendResponse(Boolean.TRUE);
         } else {
-            final BackupResponse backupResponse = new BackupResponse();
+            final AsyncBackupResponse backupResponse = new AsyncBackupResponse();
             backupResponse.setServiceName(MapService.MAP_SERVICE_NAME).setCallId(firstCallerId)
                     .setPartitionId(partitionId).setReplicaIndex(0);
             getNodeService().send(backupResponse, partitionId, firstCallerAddress);
