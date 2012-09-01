@@ -136,8 +136,9 @@ public class PartitionManager {
         }
         Address owner = partitions[partitionId].getOwner();
         if (owner == null && !node.isMaster()) {
-            nodeService.createSingleInvocation(PARTITION_SERVICE_NAME, new AssignPartitions(), -1)
-                    .setTarget(node.getMasterAddress()).setTryCount(1).build().invoke();
+            Operation op = new AssignPartitions();
+            op.setServiceName(PARTITION_SERVICE_NAME);
+            nodeService.send(op, -1, node.getMasterAddress());
             return partitions[partitionId].getOwner();
         }
         return owner;

@@ -43,16 +43,17 @@ public class LockOperation extends AbstractNamedKeyBasedOperation {
     }
 
     public void run() {
+        int partitionId = getPartitionId();
         ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
-        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
+        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
+        MapPartition mapPartition = mapService.getMapPartition(partitionId, name);
         LockInfo lock = mapPartition.getOrCreateLock(getKey());
         if (lock.testLock(threadId, getCaller())) {
             boolean locked = lock.lock(getCaller(), threadId, ttl);
             if (locked) {
-                GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, ttl);
+                GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl, pc.incrementAndGetVersion());
                 backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
-                int partitionId = getPartitionId();
                 int backupCount = mapPartition.getBackupCount();
                 try {
                     getNodeService().takeBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount, 60);

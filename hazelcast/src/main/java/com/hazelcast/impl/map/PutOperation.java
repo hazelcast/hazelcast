@@ -76,8 +76,9 @@ public class PutOperation extends BackupAwareOperation {
         }
         int mapBackupCount = 1;
         int backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
+        long version = pc.incrementAndGetVersion();
         if (backupCount > 0) {
-            GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
+            GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
             op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
             op.setFirstCallerId(backupCallId, getCaller());
             try {

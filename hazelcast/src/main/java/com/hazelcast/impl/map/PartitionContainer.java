@@ -24,9 +24,7 @@ import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 public class PartitionContainer {
     private final Config config;
@@ -35,11 +33,47 @@ public class PartitionContainer {
     final Map<String, MapPartition> maps = new HashMap<String, MapPartition>(1000);
     final Map<String, TransactionLog> transactions = new HashMap<String, TransactionLog>(1000);
     final Map<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations = new HashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
+    final Map<Long, GenericBackupOperation> waitingBackupOps = new HashMap<Long, GenericBackupOperation>(1000);
+    long version = 0;
 
     public PartitionContainer(Config config, MapService mapService, PartitionInfo partitionInfo) {
         this.config = config;
         this.mapService = mapService;
         this.partitionInfo = partitionInfo;
+    }
+
+    long incrementAndGetVersion() {
+        version++;
+        return version;
+    }
+
+    void handleBackupOperation(GenericBackupOperation op) {
+        if (op.version == version + 1) {
+            op.backupAndReturn();
+            version++;
+            while (waitingBackupOps.size() > 0) {
+                GenericBackupOperation backupOp = waitingBackupOps.remove(version + 1);
+                if (backupOp != null) {
+                    backupOp.doBackup();
+                    version++;
+                } else {
+                    return;
+                }
+            }
+        } else if (op.version <= version) {
+            op.sendResponse();
+        } else {
+            waitingBackupOps.put(op.version, op);
+            op.sendResponse();
+        }
+        if (waitingBackupOps.size() > 3) {
+            Set<GenericBackupOperation> ops = new TreeSet<GenericBackupOperation>(waitingBackupOps.values());
+            for (GenericBackupOperation backupOp : ops) {
+                backupOp.doBackup();
+                version = backupOp.version;
+            }
+            waitingBackupOps.clear();
+        }
     }
 
     void onDeadAddress(Address deadAddress) {

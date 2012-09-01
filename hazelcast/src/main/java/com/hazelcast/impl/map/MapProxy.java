@@ -61,7 +61,15 @@ public class MapProxy {
             Future f = invocation.invoke();
             Object response = f.get();
             BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
-            Object backupResponse = backupResponses.poll(10, TimeUnit.SECONDS);
+            Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
+            if (backupResponse == null) {
+                Data dataValue = putOperation.getValue();
+                GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, ttl, 1);
+                backupOp.setInvocation(true);
+                Invocation backupInv = nodeService.createSingleInvocation(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(1).build();
+                f = backupInv.invoke();
+                f.get(5, TimeUnit.SECONDS);
+            }
             Object returnObj = null;
             if (response instanceof Response) {
                 Response r = (Response) response;

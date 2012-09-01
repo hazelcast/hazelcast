@@ -46,6 +46,18 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
         this.dataValue = dataValue;
     }
 
+    public Data getValue() {
+        return dataValue;
+    }
+
+    public long getTtl() {
+        return ttl;
+    }
+
+    public long getBackupCallId() {
+        return backupCallId;
+    }
+
     public String getTxnId() {
         return txnId;
     }

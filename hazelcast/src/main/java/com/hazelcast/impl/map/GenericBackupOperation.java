@@ -27,7 +27,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
+public class GenericBackupOperation extends AbstractNamedKeyBasedOperation implements Comparable<GenericBackupOperation> {
 
     enum BackupOpType {
         PUT,
@@ -41,20 +41,14 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
     BackupOpType backupOpType = BackupOpType.PUT;
     Address firstCallerAddress = null;
     long firstCallerId = -1;
+    boolean invocation = false;
+    long version = 0;
 
-    public GenericBackupOperation(String name, Data dataKey) {
-        super(name, dataKey);
-    }
-
-    public GenericBackupOperation(String name, Data dataKey, long ttl) {
-        super(name, dataKey);
-        this.ttl = ttl;
-    }
-
-    public GenericBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
+    public GenericBackupOperation(String name, Data dataKey, Data dataValue, long ttl, long version) {
         super(name, dataKey);
         this.ttl = ttl;
         this.dataValue = dataValue;
+        this.version = version;
     }
 
     public GenericBackupOperation() {
@@ -70,6 +64,16 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
     }
 
     public void run() {
+        MapService mapService = (MapService) getService();
+        mapService.getPartitionContainer(getPartitionId()).handleBackupOperation(this);
+    }
+
+    void backupAndReturn() {
+        doBackup();
+        sendResponse();
+    }
+
+    void doBackup() {
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         Address caller = getCaller();
@@ -101,10 +105,24 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
                 lock.lock(caller, threadId, ttl);
             }
         }
-        final BackupResponse backupResponse = new BackupResponse();
-        backupResponse.setServiceName(MapService.MAP_SERVICE_NAME).setCallId(firstCallerId)
-                .setPartitionId(partitionId).setReplicaIndex(0);
-        getNodeService().send(backupResponse, partitionId, firstCallerAddress);
+    }
+
+    void sendResponse() {
+        int partitionId = getPartitionId();
+        if (invocation) {
+            getResponseHandler().sendResponse(Boolean.TRUE);
+        } else {
+            final BackupResponse backupResponse = new BackupResponse();
+            backupResponse.setServiceName(MapService.MAP_SERVICE_NAME).setCallId(firstCallerId)
+                    .setPartitionId(partitionId).setReplicaIndex(0);
+            getNodeService().send(backupResponse, partitionId, firstCallerAddress);
+        }
+    }
+
+    public int compareTo(GenericBackupOperation another) {
+        long thisVal = this.version;
+        long anotherVal = another.version;
+        return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
     }
 
     @Override
@@ -119,6 +137,8 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
         if (!NULL) {
             firstCallerAddress.writeData(out);
         }
+        out.writeBoolean(invocation);
+        out.writeLong(version);
     }
 
     @Override
@@ -133,5 +153,11 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation {
             firstCallerAddress = new Address();
             firstCallerAddress.readData(in);
         }
+        invocation = in.readBoolean();
+        version = in.readLong();
+    }
+
+    public void setInvocation(boolean invocation) {
+        this.invocation = invocation;
     }
 }
