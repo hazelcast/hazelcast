@@ -24,7 +24,7 @@ import com.hazelcast.nio.Data;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class PutOperation extends BackupAwareOperation {
+public class PutOperation extends LockAwareOperation {
     Object value;
 
     public PutOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
@@ -36,20 +36,20 @@ public class PutOperation extends BackupAwareOperation {
     public PutOperation() {
     }
 
-    public void run() {
-        if (dataValue == null) {
-            dataValue = toData(value);
-        }
+    public void doRun() {
         ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         PartitionContainer pc = mapService.getPartitionContainer(partitionId);
+        MapPartition mapPartition = pc.getMapPartition(name);
+        if (dataValue == null) {
+            dataValue = toData(value);
+        }
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
             responseHandler.sendResponse(null);
             return;
         }
-        MapPartition mapPartition = pc.getMapPartition(name);
         Record record = mapPartition.records.get(dataKey);
         Object key = null;
         Object oldValue = null;
@@ -81,11 +81,7 @@ public class PutOperation extends BackupAwareOperation {
             GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
             op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
             op.setFirstCallerId(backupCallId, getCaller());
-            try {
-                getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, op, partitionId, mapBackupCount);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, op, partitionId, mapBackupCount);
         }
         responseHandler.sendResponse(new UpdateResponse(oldValueData, version, backupCount));
     }

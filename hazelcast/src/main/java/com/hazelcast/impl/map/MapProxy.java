@@ -21,7 +21,6 @@ import com.hazelcast.impl.TransactionImpl;
 import com.hazelcast.impl.spi.Invocation;
 import com.hazelcast.impl.spi.NodeService;
 import com.hazelcast.impl.spi.Response;
-import com.hazelcast.impl.spi.RetryableException;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
@@ -93,12 +92,8 @@ public class MapProxy {
                 }
             }
             return toObject(updateResponse.getOldValue());
-        } catch (RetryableException t) {
-            t.printStackTrace();
-            throw t;
         } catch (Throwable throwable) {
-            throwable.printStackTrace();
-            throw new RuntimeException(throwable);
+            throw (RuntimeException) throwable;
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
         }

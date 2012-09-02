@@ -16,8 +16,46 @@
 
 package com.hazelcast.impl.map;
 
-public interface ScheduledOperation {
-    boolean isValid();
+import com.hazelcast.util.Clock;
 
-    void onExpire();
+class ScheduledOperation {
+
+    LockAwareOperation op;
+    long timeToExpire;
+    long timeout;
+    boolean valid = true;
+
+    ScheduledOperation(LockAwareOperation op) {
+        this.op = op;
+        setTimeout(op.getTimeout());
+    }
+
+    boolean expired() {
+        return !valid || (timeout != -1 && Clock.currentTimeMillis() >= timeToExpire);
+    }
+
+    void setTimeout(long newTimeout) {
+        if (newTimeout > -1) {
+            this.timeout = newTimeout;
+            timeToExpire = Clock.currentTimeMillis() + newTimeout;
+            if (timeToExpire < 0) {
+                this.timeout = -1;
+                this.timeToExpire = Long.MAX_VALUE;
+            }
+        } else {
+            this.timeout = -1;
+        }
+    }
+
+    boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(final boolean valid) {
+        this.valid = valid;
+    }
+
+    public LockAwareOperation getOperation() {
+        return op;
+    }
 }

@@ -53,7 +53,7 @@ public class MapService implements ServiceLifecycle, TransactionalService {
                     Operation op = new AbstractOperation() {
                         public void run() {
                             try {
-                                // TODO check and validate scheduled operations
+                                getPartitionContainer(getPartitionId()).invalidateExpiredScheduledOps();
                             } finally {
                                 latch.countDown();
                             }

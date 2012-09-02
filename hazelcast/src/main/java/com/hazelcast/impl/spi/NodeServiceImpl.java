@@ -272,8 +272,7 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    public void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount)
-            throws ExecutionException, TimeoutException, InterruptedException {
+    public void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount) {
         op.setServiceName(serviceName);
         backupCount = Math.min(getClusterImpl().getSize() - 1, backupCount);
         if (backupCount > 0) {

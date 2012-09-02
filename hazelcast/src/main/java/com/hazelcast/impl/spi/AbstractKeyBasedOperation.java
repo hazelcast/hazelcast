@@ -25,6 +25,7 @@ import java.io.IOException;
 public abstract class AbstractKeyBasedOperation extends Operation {
     protected Data dataKey = null;
     protected int threadId = -1;
+    protected long timeout = -1;
 
     public AbstractKeyBasedOperation(Data dataKey) {
         this.dataKey = dataKey;
@@ -45,14 +46,24 @@ public abstract class AbstractKeyBasedOperation extends Operation {
         this.threadId = threadId;
     }
 
+    public long getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
+
     public void writeInternal(DataOutput out) throws IOException {
         dataKey.writeData(out);
         out.writeInt(threadId);
+        out.writeLong(timeout);
     }
 
     public void readInternal(DataInput in) throws IOException {
         dataKey = new Data();
         dataKey.readData(in);
         threadId = in.readInt();
+        timeout = in.readLong();
     }
 }

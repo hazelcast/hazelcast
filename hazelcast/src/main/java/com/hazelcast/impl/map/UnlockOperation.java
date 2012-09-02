@@ -16,24 +16,44 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
 import com.hazelcast.impl.spi.ResponseHandler;
 import com.hazelcast.nio.Data;
 
-public class UnlockOperation extends AbstractNamedKeyBasedOperation {
+public class UnlockOperation extends BackupAwareOperation {
 
     public UnlockOperation(String name, Data dataKey) {
         super(name, dataKey);
+    }
+
+    public UnlockOperation(String name, Data dataKey, long ttl) {
+        super(name, dataKey);
+        this.ttl = ttl;
     }
 
     public UnlockOperation() {
     }
 
     public void run() {
+        int partitionId = getPartitionId();
         ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
-        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        LockInfo lock = mapPartition.getOrCreateLock(getKey());
-        responseHandler.sendResponse(lock.unlock(getCaller(), threadId));
+        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
+        MapPartition mapPartition = mapService.getMapPartition(partitionId, name);
+        LockInfo lock = mapPartition.getLock(getKey());
+        if (lock != null && lock.testLock(threadId, getCaller())) {
+            if (lock.unlock(getCaller(), threadId)) {
+                GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl, pc.incrementAndGetVersion());
+                backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.UNLOCK);
+                int backupCount = mapPartition.getBackupCount();
+                getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
+            }
+            if (!lock.isLocked()) {
+                pc.onUnlock(lock, name, getKey());
+                mapPartition.removeLock(getKey());
+            }
+            responseHandler.sendResponse(Boolean.TRUE);
+        } else {
+            responseHandler.sendResponse(Boolean.FALSE);
+        }
     }
 }

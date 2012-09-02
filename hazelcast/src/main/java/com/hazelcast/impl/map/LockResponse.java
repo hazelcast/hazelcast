@@ -30,9 +30,10 @@ public class LockResponse implements DataSerializable {
     public LockResponse() {
     }
 
-    public LockResponse(boolean booleanValue, long version) {
+    public LockResponse(boolean booleanValue, long version, int backupCount) {
         this.booleanValue = booleanValue;
         this.version = version;
+        this.backupCount = backupCount;
     }
 
     public void writeData(DataOutput out) throws IOException {

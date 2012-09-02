@@ -20,7 +20,6 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Data;
 
 import java.util.HashMap;
@@ -59,10 +58,16 @@ public class MapPartition {
         return locks.get(key);
     }
 
+    void removeLock(Data key) {
+        locks.remove(key);
+    }
+
     public int getBackupCount() {
         return backupCount;
     }
 
-    public void schedule(Operation operation) {
+    boolean canRun(LockAwareOperation op) {
+        LockInfo lock = locks.get(op.getKey());
+        return lock == null || lock.testLock(op.getThreadId(), op.getCaller());
     }
 }

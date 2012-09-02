@@ -27,7 +27,7 @@ import java.io.IOException;
 public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperation {
 
     Data dataValue = null;
-    long ttl = LockOperation.DEFAULT_LOCK_TTL; // how long should the lock live?
+    long ttl = -1; // how long should this item live? -1 means forever
     long backupCallId = -1;
     String txnId = null;
 

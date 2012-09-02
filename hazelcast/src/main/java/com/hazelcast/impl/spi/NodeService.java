@@ -54,8 +54,7 @@ public interface NodeService {
     void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException;
 
-    void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount)
-            throws ExecutionException, TimeoutException, InterruptedException;
+    void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount);
 
     void registerService(String serviceName, Object obj);
 

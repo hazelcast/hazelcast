@@ -16,19 +16,12 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.AbstractNamedKeyBasedOperation;
 import com.hazelcast.impl.spi.ResponseHandler;
 import com.hazelcast.nio.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+public class LockOperation extends LockAwareOperation {
 
-public class LockOperation extends AbstractNamedKeyBasedOperation {
-
-    public static final long DEFAULT_LOCK_TTL = 60 * 1000;
-
-    long ttl = DEFAULT_LOCK_TTL; // how long should the lock live?
+    public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
 
     public LockOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -42,39 +35,20 @@ public class LockOperation extends AbstractNamedKeyBasedOperation {
     public LockOperation() {
     }
 
-    public void run() {
+    public void doRun() {
         int partitionId = getPartitionId();
         ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
         PartitionContainer pc = mapService.getPartitionContainer(partitionId);
         MapPartition mapPartition = mapService.getMapPartition(partitionId, name);
         LockInfo lock = mapPartition.getOrCreateLock(getKey());
-        if (lock.testLock(threadId, getCaller())) {
-            boolean locked = lock.lock(getCaller(), threadId, ttl);
-            if (locked) {
-                GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl, pc.incrementAndGetVersion());
-                backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
-                int backupCount = mapPartition.getBackupCount();
-                try {
-                    getNodeService().takeBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount, 60);
-                } catch (Exception ignored) {
-                }
-            }
-            responseHandler.sendResponse(locked);
-        } else {
-            mapPartition.schedule(LockOperation.this);
+        boolean locked = lock.lock(getCaller(), threadId, ttl);
+        if (locked) {
+            GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl, pc.incrementAndGetVersion());
+            backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
+            int backupCount = mapPartition.getBackupCount();
+            getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
         }
-    }
-
-    @Override
-    public void writeInternal(DataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(ttl);
-    }
-
-    @Override
-    public void readInternal(DataInput in) throws IOException {
-        super.readInternal(in);
-        ttl = in.readLong();
+        responseHandler.sendResponse(locked);
     }
 }
