@@ -23,33 +23,33 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class LockResponse implements DataSerializable {
-    boolean booleanValue = false;
+    boolean success = false;
     long version = 0;
     int backupCount = 0;
 
     public LockResponse() {
     }
 
-    public LockResponse(boolean booleanValue, long version, int backupCount) {
-        this.booleanValue = booleanValue;
+    public LockResponse(boolean success, long version, int backupCount) {
+        this.success = success;
         this.version = version;
         this.backupCount = backupCount;
     }
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeBoolean(booleanValue);
+        out.writeBoolean(success);
         out.writeLong(version);
         out.writeInt(backupCount);
     }
 
     public void readData(DataInput in) throws IOException {
-        booleanValue = in.readBoolean();
+        success = in.readBoolean();
         version = in.readLong();
         backupCount = in.readInt();
     }
 
-    public boolean getBooleanValue() {
-        return booleanValue;
+    public boolean getSuccess() {
+        return success;
     }
 
     public long getVersion() {
