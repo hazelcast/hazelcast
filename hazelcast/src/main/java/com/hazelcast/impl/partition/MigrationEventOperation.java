@@ -22,36 +22,37 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MigrationNotification extends AbstractOperation {
+public class MigrationEventOperation extends AbstractOperation {
 
-    MigratingPartition migratingPartition;
-    MigrationStatus status;
+    private MigrationInfo migrationInfo;
+    private MigrationStatus status;
 
-    public MigrationNotification() {
+    public MigrationEventOperation() {
     }
 
-    public MigrationNotification(MigrationStatus status, MigratingPartition migratingPartition) {
+    public MigrationEventOperation(final MigrationStatus status, final MigrationInfo migrationInfo) {
         this.status = status;
-        this.migratingPartition = migratingPartition;
+        this.migrationInfo = migrationInfo;
     }
 
     public void run() {
-        PartitionManager partitionManager = getService();
-        partitionManager.fireMigrationEvent(status, migratingPartition);
+        PartitionServiceImpl partitionService = getService();
+        partitionService.fireMigrationEvent(migrationInfo, status);
     }
 
     @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        migratingPartition = new MigratingPartition();
-        migratingPartition.readData(in);
+        migrationInfo = new MigrationInfo();
+        migrationInfo.readData(in);
         status = MigrationStatus.get(in.readByte());
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        migratingPartition.writeData(out);
+        migrationInfo.writeData(out);
         out.writeByte(status.getCode());
     }
+
 }

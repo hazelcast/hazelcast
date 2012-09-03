@@ -16,8 +16,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinInfo;
+import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Interfaces;
 import com.hazelcast.config.NetworkConfig;
@@ -72,7 +73,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     continue;
                 }
                 logger.log(Level.FINEST, "Sending joinRequest " + targetAddress);
-                node.clusterImpl.sendJoinRequest(targetAddress, true);
+                node.clusterService.sendJoinRequest(targetAddress, true);
                 //noinspection BusyWait
                 Thread.sleep(3000L);
             }
@@ -81,7 +82,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    public static class MasterClaim extends AbstractOperation implements NonMemberOperation {
+    public static class MasterClaim extends AbstractOperation implements JoinOperation {
 
         public void run() {
             final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
@@ -129,7 +130,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     if (conn != null) {
                         foundConnection = true;
                         logger.log(Level.FINEST, "Found and sending join request for " + possibleAddress);
-                        node.clusterImpl.sendJoinRequest(possibleAddress, true);
+                        node.clusterService.sendJoinRequest(possibleAddress, true);
                     }
                 }
             }
@@ -163,7 +164,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                             for (Address address : colPossibleAddresses) {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.log(Level.FINEST, "Claiming myself as master node!");
-                                    Invocation inv = node.nodeService.createSingleInvocation(ClusterImpl.SERVICE_NAME,
+                                    Invocation inv = node.nodeService.createSingleInvocation(ClusterService.SERVICE_NAME,
                                             new MasterClaim(), -1).setTarget(address).setTryCount(1).build();
                                     responses.add(inv.invoke());
                                 }
@@ -227,7 +228,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             Thread.sleep(1000L);
             final Address master = node.getMasterAddress();
             if (master != null) {
-                node.clusterImpl.sendJoinRequest(master, true);
+                node.clusterService.sendJoinRequest(master, true);
                 if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
                     logger.log(Level.WARNING, "Couldn't join to the master : " + master);
                     return;
@@ -395,7 +396,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
         colPossibleAddresses.remove(node.getThisAddress());
-        for (Member member : node.getClusterImpl().getMembers()) {
+        for (Member member : node.getClusterService().getMembers()) {
             colPossibleAddresses.remove(((MemberImpl) member).getAddress());
         }
         if (colPossibleAddresses.isEmpty()) {
@@ -412,7 +413,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                final JoinInfo response = node.clusterImpl.checkJoin(possibleAddress);
+                final JoinInfo response = node.clusterService.checkJoin(possibleAddress);
                 System.out.println("response = " + response);
                 if (response != null && shouldMerge(response)) {
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);

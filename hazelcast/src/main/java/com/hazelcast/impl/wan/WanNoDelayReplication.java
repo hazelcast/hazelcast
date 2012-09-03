@@ -82,7 +82,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 if (conn == null) {
                     conn = getConnection();
                     if (conn != null) {
-                        boolean authorized = node.clusterImpl.checkAuthorization(groupName, password, conn.getEndPoint());
+                        boolean authorized = node.clusterService.checkAuthorization(groupName, password, conn.getEndPoint());
                         if (!authorized) {
                             conn.close();
                             conn = null;

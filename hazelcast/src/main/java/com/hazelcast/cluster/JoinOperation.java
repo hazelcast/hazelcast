@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.spi;
+package com.hazelcast.cluster;
 
 /**
- * @mdogan 7/23/12
+ * @mdogan 7/25/12
  */
-public interface MigrationAware {
-
-    ServiceMigrationOperation getMigrationTask(int partitionId, int replicaIndex, boolean diffOnly);
-
+public interface JoinOperation {
 }

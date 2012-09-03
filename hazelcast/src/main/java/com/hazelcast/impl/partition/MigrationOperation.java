@@ -16,8 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.impl.spi.AbstractOperation;
-import com.hazelcast.impl.spi.ServiceMigrationOperation;
+import com.hazelcast.impl.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -32,7 +31,7 @@ import java.util.zip.InflaterInputStream;
 public class MigrationOperation extends AbstractOperation {
     private int partitionId;
     private int replicaIndex;
-    private Collection<ServiceMigrationOperation> tasks;
+    private Collection<Operation> tasks;
     private byte[] bytesRecordSet;
     private Address from;
     private int taskCount;
@@ -40,8 +39,9 @@ public class MigrationOperation extends AbstractOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(int partitionId, Collection<ServiceMigrationOperation> tasks,
+    public MigrationOperation(int partitionId, Collection<Operation> tasks,
                               int replicaIndex, Address from) throws IOException {
+        super();
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
         this.from = from;
@@ -52,7 +52,7 @@ public class MigrationOperation extends AbstractOperation {
         try {
             out = new DataOutputStream(new DeflaterOutputStream(bos));
             out.writeInt(taskCount);
-            for (ServiceMigrationOperation task : tasks) {
+            for (Operation task : tasks) {
                 IOUtil.writeObject(out, task);
             }
         } finally {
@@ -62,15 +62,14 @@ public class MigrationOperation extends AbstractOperation {
     }
 
     public void run() {
-        PartitionManager pm = (PartitionManager) getService();
         DataInputStream in = null;
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
             in = new DataInputStream(new InflaterInputStream(bais));
             int size = in.readInt();
-            tasks = new ArrayList<ServiceMigrationOperation>(size);
+            tasks = new ArrayList<Operation>(size);
             for (int i = 0; i < size; i++) {
-                ServiceMigrationOperation task = IOUtil.readObject(in);
+                Operation task = IOUtil.readObject(in);
                 tasks.add(task);
             }
             if (taskCount != tasks.size()) {
@@ -79,7 +78,7 @@ public class MigrationOperation extends AbstractOperation {
                         "\nfrom: " + from + ", partition: " + partitionId
                         + ", replica: " + replicaIndex);
             }
-            final boolean result = pm.runMigrationTasks(tasks, partitionId, replicaIndex, from);
+            final boolean result = runMigrationTasks(tasks, partitionId, replicaIndex, from);
             getResponseHandler().sendResponse(result);
         } catch (Throwable e) {
             Level level = Level.WARNING;
@@ -91,6 +90,41 @@ public class MigrationOperation extends AbstractOperation {
         } finally {
             IOUtil.closeResource(in);
         }
+    }
+
+    private boolean runMigrationTasks(Collection<Operation> operations, final int partitionId,
+                                      final int replicaIndex, final Address from) {
+        boolean error = false;
+        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        PartitionServiceImpl partitionService = getService();
+        for (Operation op : operations) {
+            try {
+                nodeService.setOperationContext(op, op.getServiceName(), from, -1, partitionId, replicaIndex);
+                ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
+                MigrationAwareService service = op.getService();
+                service.beforeMigration(MigrationEndpoint.DESTINATION, partitionId, replicaIndex);
+                partitionService.setActiveMigration(
+                        new MigrationInfo(partitionId, replicaIndex, from, nodeService.getThisAddress()));
+                op.run();
+            } catch (Throwable e) {
+                error = true;
+                getLogger().log(Level.SEVERE, e.getMessage(), e);
+                break;
+            }
+        }
+
+//        if (error) {
+//            for (ServiceMigrationOperation op : operations) {
+//                try {
+//                    op.rollback();
+//                } catch (Throwable e) {
+//                    getLogger().log(Level.WARNING, e.getMessage(), e);
+//                }
+//            }
+//        } else {
+//
+//        }
+        return !error;
     }
 
     private ILogger getLogger() {

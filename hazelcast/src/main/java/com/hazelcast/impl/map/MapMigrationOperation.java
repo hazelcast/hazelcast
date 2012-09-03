@@ -19,8 +19,7 @@ package com.hazelcast.impl.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.impl.spi.NodeService;
-import com.hazelcast.impl.spi.ServiceMigrationOperation;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Data;
 
 import java.io.DataInput;
@@ -33,10 +32,9 @@ import java.util.Map.Entry;
 /**
  * @mdogan 7/24/12
  */
-public class MapMigrationOperation extends ServiceMigrationOperation {
+public class MapMigrationOperation extends Operation {
 
     private Map<String, Map<Data, DataRecordEntry>> data;
-    private Map<String, Map<Data, Record>> buffer;
     private boolean diff;
 
     public MapMigrationOperation() {
@@ -48,56 +46,34 @@ public class MapMigrationOperation extends ServiceMigrationOperation {
         data = new HashMap<String, Map<Data, DataRecordEntry>>(container.maps.size());
         for (Entry<String, MapPartition> entry : container.maps.entrySet()) {
             String name = entry.getKey();
-            MapPartition partition = entry.getValue();
-            Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(partition.records.size());
-            for (Entry<Data, Record> recordEntry : partition.records.entrySet()) {
+            MapPartition mapPartition = entry.getValue();
+            Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(mapPartition.records.size());
+            for (Entry<Data, Record> recordEntry : mapPartition.records.entrySet()) {
                 map.put(recordEntry.getKey(), new DataRecordEntry(recordEntry.getValue(), true));
             }
             data.put(name, map);
         }
+
+        // TODO: migrate locks?
     }
 
     public void run() {
         if (data == null) {
             return;
         }
-        NodeService NodeService = getNodeService();
         MapService mapService = (MapService) getService();
-        buffer = new HashMap<String, Map<Data, Record>>(data.size());
         for (Entry<String, Map<Data, DataRecordEntry>> dataEntry : data.entrySet()) {
             Map<Data, DataRecordEntry> dataMap = dataEntry.getValue();
-            Map<Data, Record> map = new HashMap<Data, Record>(dataMap.size());
+            final String mapName = dataEntry.getKey();
+            MapPartition partition = mapService.getMapPartition(getPartitionId(), mapName);
             for (Entry<Data, DataRecordEntry> entry : dataMap.entrySet()) {
                 final DataRecordEntry recordEntry = entry.getValue();
-                Record record = new DefaultRecord(null, NodeService.getPartitionId(recordEntry.getKeyData()),
+                Record record = new DefaultRecord(null, getPartitionId(),
                         recordEntry.getKeyData(), recordEntry.getValueData(), -1, -1, mapService.nextId());
-                map.put(entry.getKey(), record);
+                partition.records.put(entry.getKey(), record);
             }
-            buffer.put(dataEntry.getKey(), map);
         }
-    }
-
-    public void onSuccess() {
-        MapService mapService = (MapService) getService();
-        PartitionContainer container = mapService.getPartitionContainer(getPartitionId());
-        for (Entry<String, Map<Data, Record>> entry : buffer.entrySet()) {
-            MapPartition partition = container.getMapPartition(entry.getKey());
-            partition.records.putAll(entry.getValue());
-        }
-        clear();
-    }
-
-    public void onError() {
-        clear();
-    }
-
-    private void clear() {
-        if (buffer != null) {
-            buffer.clear();
-        }
-        if (data != null) {
-            data.clear();
-        }
+        // TODO: migrate locks?
     }
 
     public String getServiceName() {

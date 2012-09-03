@@ -70,4 +70,9 @@ public class MapPartition {
         LockInfo lock = locks.get(op.getKey());
         return lock == null || lock.testLock(op.getThreadId(), op.getCaller());
     }
+
+    void clear() {
+        records.clear();
+        locks.clear();
+    }
 }

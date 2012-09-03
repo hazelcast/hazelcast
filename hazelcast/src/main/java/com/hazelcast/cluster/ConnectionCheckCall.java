@@ -29,7 +29,7 @@ public class ConnectionCheckCall extends AbstractOperation {
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
         Node node = nodeService.getNode();
         final ConnectionManager connectionManager = node.connectionManager;
-        for (MemberImpl member : node.clusterImpl.getMemberList()) {
+        for (MemberImpl member : node.clusterService.getMemberList()) {
             if (!member.localMember()) {
                 if (connectionManager.getConnection(member.getAddress()) == null) {
                     result = Boolean.FALSE;

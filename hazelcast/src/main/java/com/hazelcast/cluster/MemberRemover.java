@@ -49,7 +49,7 @@ public class MemberRemover extends Operation {
         Node node = nodeService.getNode();
         Address caller = getCaller();
         if (caller != null && caller.equals(node.getMasterAddress())) {
-            node.clusterImpl.removeAddress(deadAddress);
+            node.clusterService.removeAddress(deadAddress);
         }
     }
 

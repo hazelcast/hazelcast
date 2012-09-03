@@ -17,20 +17,28 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class PartitionStateOperation extends AbstractOperation {
     private PartitionRuntimeState partitionState;
 
-    public PartitionStateOperation(final Collection<MemberInfo> memberInfos,
+    public PartitionStateOperation(final Collection<MemberImpl> members,
                                    final PartitionInfo[] partitions,
+                                   final MigrationInfo migrationInfo,
                                    final long masterTime, int version) {
-        partitionState = new PartitionRuntimeState(memberInfos, partitions, masterTime, version);
+        final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
+        for (MemberImpl member : members) {
+            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
+        }
+        partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfo, masterTime, version);
     }
 
     public PartitionStateOperation() {
@@ -38,8 +46,8 @@ public class PartitionStateOperation extends AbstractOperation {
 
     public void run() {
         partitionState.setEndpoint(getCaller());
-        PartitionManager partitionManager = getService();
-        partitionManager.processPartitionRuntimeState(partitionState);
+        PartitionServiceImpl partitionService = getService();
+        partitionService.processPartitionRuntimeState(partitionState);
     }
 
     public void readInternal(DataInput in) throws IOException {
@@ -50,9 +58,4 @@ public class PartitionStateOperation extends AbstractOperation {
     public void writeInternal(DataOutput out) throws IOException {
         partitionState.writeData(out);
     }
-//    @Override
-//    public void setConnection(final Connection conn) {
-//        super.setConnection(conn);
-//        partitionState.setConnection(conn);
-//    }
 }

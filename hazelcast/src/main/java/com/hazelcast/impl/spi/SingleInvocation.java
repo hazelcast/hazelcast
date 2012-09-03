@@ -28,10 +28,10 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
     protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
-    protected int replicaIndex = 0;
-    protected int tryCount = 100;
-    protected long tryPauseMillis = 500;
-    protected volatile int invokeCount = 0;
+    protected final int replicaIndex;
+    protected final int tryCount;
+    protected final long tryPauseMillis;
+    private volatile int invokeCount = 0;
     private volatile boolean done = false;
 
     SingleInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
@@ -74,7 +74,7 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
         return this;
     }
 
-    void setResult(Object obj) {
+    final void setResult(Object obj) {
         if (obj == null) {
             obj = NULL;
         }

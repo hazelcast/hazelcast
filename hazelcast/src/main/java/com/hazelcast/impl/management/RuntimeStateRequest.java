@@ -16,10 +16,10 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.partition.PartitionManager;
+import com.hazelcast.impl.partition.PartitionServiceImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -49,10 +49,10 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
     }
 
     private ClusterRuntimeState createState(final HazelcastInstanceImpl factory) {
-        final ClusterImpl cluster = factory.node.getClusterImpl();
-        final PartitionManager pm = factory.node.partitionManager ;
+        final ClusterService cluster = factory.node.getClusterService();
+        final PartitionServiceImpl pm = factory.node.partitionService;
         final Collection<Record> lockedRecords = collectLockState(factory);
-        return new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), pm.getMigratingPartition(),
+        return new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), null,
                                   factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
     }
 

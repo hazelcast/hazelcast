@@ -118,8 +118,8 @@ public class LifecycleServiceImpl implements LifecycleService {
             node.onRestart();
 //            node.clientHandlerService.restart();
             node.connectionManager.onRestart();
-            node.clusterImpl.onRestart();
-            node.partitionManager.onRestart();
+            node.clusterService.onRestart();
+            node.partitionService.onRestart();
             node.rejoin();
             paused.set(false);
             fireLifecycleEvent(RESTARTED);

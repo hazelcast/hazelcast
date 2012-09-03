@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
@@ -77,7 +77,7 @@ public abstract class AbstractJoiner implements Joiner {
                         Thread.sleep(1000);
                     } catch (InterruptedException ignored) {
                     }
-                    Set<Member> members = node.getClusterImpl().getMembers();
+                    Set<Member> members = node.getClusterService().getMembers();
                     allConnected = true;
                     for (Member member : members) {
                         MemberImpl memberImpl = (MemberImpl) member;
@@ -104,14 +104,14 @@ public abstract class AbstractJoiner implements Joiner {
                 }
                 return;
             } else {
-                node.clusterImpl.finalizeJoin();
+                node.clusterService.finalizeJoin();
             }
         }
 
-        if (node.getClusterImpl().getSize() == 1) {
+        if (node.getClusterService().getSize() == 1) {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
-            sb.append(node.clusterImpl);
+            sb.append(node.clusterService);
             logger.log(Level.INFO, sb.toString());
         }
 
@@ -149,7 +149,7 @@ public abstract class AbstractJoiner implements Joiner {
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
-                    for (Member member : node.getClusterImpl().getMembers()) {
+                    for (Member member : node.getClusterService().getMembers()) {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (memberImpl.getAddress().equals(joinInfo.address)) {
                             logger.log(Level.FINEST, "Should not merge to " + joinInfo.address
@@ -157,7 +157,7 @@ public abstract class AbstractJoiner implements Joiner {
                             return false;
                         }
                     }
-                    int currentMemberCount = node.getClusterImpl().getMembers().size();
+                    int currentMemberCount = node.getClusterService().getMembers().size();
                     if (joinInfo.getMemberCount() > currentMemberCount) {
                         // I should join the other cluster
                         logger.log(Level.INFO, node.address + " is merging to " + joinInfo.address
@@ -193,7 +193,7 @@ public abstract class AbstractJoiner implements Joiner {
             final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
             if (conn != null) {
                 logger.log(Level.FINEST, "sending join request for " + possibleAddress);
-                node.clusterImpl.sendJoinRequest(possibleAddress, true);
+                node.clusterService.sendJoinRequest(possibleAddress, true);
             }
         }
     }
@@ -204,9 +204,9 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void sendClusterMergeToOthers(final Address targetAddress) {
-        for (MemberImpl member : node.getClusterImpl().getMemberList()) {
+        for (MemberImpl member : node.getClusterService().getMemberList()) {
             if (!member.localMember()) {
-                node.nodeService.createSingleInvocation(ClusterImpl.SERVICE_NAME, new MergeClusters(targetAddress), -1)
+                node.nodeService.createSingleInvocation(ClusterService.SERVICE_NAME, new MergeClusters(targetAddress), -1)
                         .setTarget(member.getAddress()).setTryCount(1).build().invoke();
             }
         }

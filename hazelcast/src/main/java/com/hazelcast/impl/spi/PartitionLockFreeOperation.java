@@ -16,21 +16,8 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.core.HazelcastException;
-
-public class RetryableException extends HazelcastException {
-    public RetryableException() {
-    }
-
-    public RetryableException(String message) {
-        super(message);
-    }
-
-    public RetryableException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public RetryableException(Throwable cause) {
-        super(cause);
-    }
+/**
+ * @mdogan 9/3/12
+ */
+public interface PartitionLockFreeOperation {
 }

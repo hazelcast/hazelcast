@@ -66,34 +66,34 @@ public abstract class Operation implements Runnable, DataSerializable {
         return serviceName;
     }
 
-    public Operation setServiceName(String serviceName) {
+    public final Operation setServiceName(String serviceName) {
         this.serviceName = serviceName;
         return this;
     }
 
-    public int getPartitionId() {
+    public final int getPartitionId() {
         return partitionId;
     }
 
-    public Operation setPartitionId(int partitionId) {
+    public final Operation setPartitionId(int partitionId) {
         this.partitionId = partitionId;
         return this;
     }
 
-    public int getReplicaIndex() {
+    public final int getReplicaIndex() {
         return replicaIndex;
     }
 
-    public Operation setReplicaIndex(int replicaIndex) {
+    public final Operation setReplicaIndex(int replicaIndex) {
         this.replicaIndex = replicaIndex;
         return this;
     }
 
-    public long getCallId() {
+    public final long getCallId() {
         return callId;
     }
 
-    public Operation setCallId(long callId) {
+    public final Operation setCallId(long callId) {
         this.callId = callId;
         return this;
     }
@@ -102,21 +102,21 @@ public abstract class Operation implements Runnable, DataSerializable {
         return validateTarget;
     }
 
-    public Operation setValidateTarget(boolean validateTarget) {
+    public final Operation setValidateTarget(boolean validateTarget) {
         this.validateTarget = validateTarget;
         return this;
     }
 
-    public NodeService getNodeService() {
+    public final NodeService getNodeService() {
         return nodeService;
     }
 
-    public Operation setNodeService(NodeService nodeService) {
+    public final Operation setNodeService(NodeService nodeService) {
         this.nodeService = nodeService;
         return this;
     }
 
-    public <T> T getService() {
+    public final <T> T getService() {
         if (service == null) {
             service = nodeService.getService(serviceName);
             if (service == null) {
@@ -126,35 +126,35 @@ public abstract class Operation implements Runnable, DataSerializable {
         return (T) service;
     }
 
-    public Operation setService(Object service) {
+    public final Operation setService(Object service) {
         this.service = service;
         return this;
     }
 
-    public Address getCaller() {
+    public final Address getCaller() {
         return caller;
     }
 
-    public Operation setCaller(Address caller) {
+    public final Operation setCaller(Address caller) {
         this.caller = caller;
         return this;
     }
 
-    public Connection getConnection() {
+    public final Connection getConnection() {
         return connection;
     }
 
-    public Operation setConnection(Connection connection) {
+    public final Operation setConnection(Connection connection) {
         this.connection = connection;
         return this;
     }
 
-    public Operation setResponseHandler(ResponseHandler responseHandler) {
+    public final Operation setResponseHandler(ResponseHandler responseHandler) {
         this.responseHandler = responseHandler;
         return this;
     }
 
-    public ResponseHandler getResponseHandler() {
+    public final ResponseHandler getResponseHandler() {
         return responseHandler;
     }
 }

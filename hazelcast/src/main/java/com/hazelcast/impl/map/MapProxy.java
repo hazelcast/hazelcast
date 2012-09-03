@@ -36,9 +36,9 @@ public class MapProxy {
     final NodeService nodeService;
     final MapService mapService;
 
-    public MapProxy(NodeService NodeService) {
-        this.nodeService = NodeService;
-        this.mapService = NodeService.getService(MAP_SERVICE_NAME);
+    public MapProxy(NodeService nodeService) {
+        this.nodeService = nodeService;
+        this.mapService = nodeService.getService(MAP_SERVICE_NAME);
     }
 
     public Object put(String name, Object k, Object v, long ttl) {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.cluster.JoinRequest;
 import com.hazelcast.config.*;
@@ -28,7 +28,7 @@ import com.hazelcast.impl.ascii.TextCommandServiceImpl;
 import com.hazelcast.impl.base.*;
 import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.map.MapService;
-import com.hazelcast.impl.partition.PartitionManager;
+import com.hazelcast.impl.partition.PartitionServiceImpl;
 import com.hazelcast.impl.spi.NodeServiceImpl;
 import com.hazelcast.impl.wan.WanReplicationService;
 import com.hazelcast.logging.ILogger;
@@ -74,11 +74,9 @@ public class Node {
 
     public final NodeServiceImpl nodeService;
 
-    public final PartitionManager partitionManager;
+    public final PartitionServiceImpl partitionService;
 
-//    public final ConcurrentMapManager concurrentMapManager;
-//
-    public final ClusterImpl clusterImpl;
+    public final ClusterService clusterService;
 
     public final ListenerManager listenerManager;
 
@@ -164,16 +162,16 @@ public class Node {
         nodeService = new NodeServiceImpl(this);
         //initialize managers..
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
-        clusterImpl = new ClusterImpl(this);
-        partitionManager = new PartitionManager(this);
+        clusterService = new ClusterService(this);
+        partitionService = new PartitionServiceImpl(this);
 //        clientHandlerService = new ClientHandlerService(this);
 //        concurrentMapManager = new ConcurrentMapManager(this);
         nodeService.registerService(MapService.MAP_SERVICE_NAME,
-                new MapService(nodeService, partitionManager.getPartitions()));
+                new MapService(nodeService, partitionService.getPartitions()));
         listenerManager = new ListenerManager(this);
 //        clientService = new ClientServiceImpl(concurrentMapManager);
         textCommandService = new TextCommandServiceImpl(this);
-        clusterImpl.addMember(localMember);
+        clusterService.addMember(localMember);
         initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
@@ -227,9 +225,9 @@ public class Node {
             if (listener instanceof InstanceListener) {
                 hazelcastInstance.addInstanceListener((InstanceListener) listener);
             } else if (listener instanceof MembershipListener) {
-                clusterImpl.addMembershipListener((MembershipListener) listener);
+                clusterService.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {
-                partitionManager.partitionServiceImpl.addMigrationListener((MigrationListener) listener);
+                partitionService.addMigrationListener((MigrationListener) listener);
             } else if (listener instanceof LifecycleListener) {
                 hazelcastInstance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
             } else if (listener != null) {
@@ -253,8 +251,8 @@ public class Node {
         failedConnections.add(address);
     }
 
-    public ClusterImpl getClusterImpl() {
-        return clusterImpl;
+    public ClusterService getClusterService() {
+        return clusterService;
     }
 
     public final NodeType getLocalNodeType() {
@@ -315,10 +313,10 @@ public class Node {
     }
 
     public void cleanupServiceThread() {
-        partitionManager.reset();
+        partitionService.reset();
 //        concurrentMapManager.reset();
         logger.log(Level.FINEST, "Shutting down the cluster manager");
-        clusterImpl.stop();
+        clusterService.stop();
     }
 
     public void start() {
@@ -336,7 +334,7 @@ public class Node {
         }
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
-        int clusterSize = clusterImpl.getSize();
+        int clusterSize = clusterService.getSize();
         if (config.isPortAutoIncrement() && address.getPort() >= config.getPort() + clusterSize) {
             StringBuilder sb = new StringBuilder("Config seed port is ");
             sb.append(config.getPort());
@@ -384,7 +382,7 @@ public class Node {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                 }
-            } while (partitionManager.hasActiveBackupTask() && ++waitSeconds < maxWaitSeconds);
+            } while (partitionService.hasActiveBackupTask() && ++waitSeconds < maxWaitSeconds);
             if (waitSeconds >= maxWaitSeconds) {
                 logger.log(Level.WARNING, "Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
@@ -407,7 +405,7 @@ public class Node {
 //            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
 //            clientHandlerService.shutdown();
             logger.log(Level.FINEST, "Shutting down the partitionManager");
-            partitionManager.shutdown();
+            partitionService.shutdown();
 //            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
 //            concurrentMapManager.shutdown();
             logger.log(Level.FINEST, "Shutting down the nodeService");
@@ -510,7 +508,7 @@ public class Node {
 
     public JoinInfo createJoinInfo(boolean withCredentials) {
         final JoinInfo jr = new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
-                Packet.PACKET_VERSION, buildNumber, clusterImpl.getMembers().size(), 0, localMember.getUuid());
+                Packet.PACKET_VERSION, buildNumber, clusterService.getMembers().size(), 0, localMember.getUuid());
         if (withCredentials && securityContext != null) {
             Credentials c = securityContext.getCredentialsFactory().newCredentials();
             jr.setCredentials(c);
@@ -536,7 +534,7 @@ public class Node {
         systemLogService.logJoin("Rejoining!");
         masterAddress = null;
         joined.set(false);
-        clusterImpl.reset();
+        clusterService.reset();
         failedConnections.clear();
         join();
     }

@@ -21,9 +21,9 @@ import com.hazelcast.impl.*;
 import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.base.SystemLog;
-import com.hazelcast.impl.partition.MigratingPartition;
+import com.hazelcast.impl.partition.MigrationInfo;
 import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.partition.PartitionManager;
+import com.hazelcast.impl.partition.PartitionServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
@@ -40,10 +40,10 @@ public class MapSystemLogFactory {
     }
 
     public static SystemLog newRedoLog(Node node, Request request, RedoType redoType, boolean isCaller) {
-        final Set<Member> members = new HashSet<Member>(node.getClusterImpl().getMembers());
+        final Set<Member> members = new HashSet<Member>(node.getClusterService().getMembers());
         final Data key = request.key;
         PartitionInfo partitionInfo = null;
-        PartitionManager pm = node.partitionManager;
+        PartitionServiceImpl pm = node.partitionService;
         if (key != null) {
             partitionInfo = new PartitionInfo(pm.getPartition(pm.getPartitionId(key)));
         }
@@ -54,7 +54,7 @@ public class MapSystemLogFactory {
             connected = (targetConnection != null && targetConnection.live());
         }
         return new RedoLog(request.name, key, request.operation, endpoint, connected,
-                members, partitionInfo, request.redoCount, pm.getMigratingPartition(), redoType, isCaller);
+                members, partitionInfo, request.redoCount, null, redoType, isCaller);
     }
 
     static class RedoLog extends SystemLog {
@@ -66,7 +66,7 @@ public class MapSystemLogFactory {
         final boolean connected;
         final Set<Member> members;
         final PartitionInfo partition;
-        final MigratingPartition migratingPartition;
+        final MigrationInfo migrationInfo;
         final int redoCount;
         final RedoType redoType;
         final boolean caller;
@@ -76,7 +76,7 @@ public class MapSystemLogFactory {
                 boolean connected,
                 Set<Member> members,
                 PartitionInfo partition,
-                int redoCount, MigratingPartition migratingPartition,
+                int redoCount, MigrationInfo migrationInfo,
                 final RedoType redoType, final boolean caller) {
             this.name = name;
             this.key = key;
@@ -86,7 +86,7 @@ public class MapSystemLogFactory {
             this.members = members;
             this.partition = partition;
             this.redoCount = redoCount;
-            this.migratingPartition = migratingPartition;
+            this.migrationInfo = migrationInfo;
             this.redoType = redoType;
             this.caller = caller;
         }
@@ -111,7 +111,7 @@ public class MapSystemLogFactory {
                     .append(caller ? ", target=" : ", caller=").append(endpoint)
                     .append(" / connected=").append(connected)
                     .append(", redoCount=").append(redoCount)
-                    .append(", migrating=").append(migratingPartition).append("\n")
+                    .append(", migrating=").append(migrationInfo).append("\n")
                     .append("partition=").append(partition).append("\n");
             if (partition != null) {
                 for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {

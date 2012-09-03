@@ -17,14 +17,13 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.impl.spi.NodeServiceImpl;
-import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.nio.Address;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class Bind extends Master implements NonMemberOperation {
+public class Bind extends Master implements JoinOperation {
 
     private Address targetAddress;
     private boolean replyBack = false;

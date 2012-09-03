@@ -25,7 +25,7 @@ public class SyncProcess extends AbstractOperation {
     public void run() {
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
         Node node = nodeService.getNode();
-        node.clusterImpl.syncForAdd();
+        node.clusterService.syncForAdd();
         getResponseHandler().sendResponse(Boolean.TRUE);
     }
 }

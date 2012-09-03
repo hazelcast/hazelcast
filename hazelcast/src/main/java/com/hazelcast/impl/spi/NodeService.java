@@ -27,7 +27,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +37,9 @@ import java.util.concurrent.TimeoutException;
  * @mdogan 8/24/12
  */
 public interface NodeService {
+
+    public static final int EXECUTOR_THREAD_ID = -1;
+    public static final int EVENT_THREAD_ID = -2;
 
     void runLocally(Operation op);
 
@@ -59,8 +61,6 @@ public interface NodeService {
     void registerService(String serviceName, Object obj);
 
     <T> T getService(String serviceName);
-
-    <T> Collection<T> getServices(Class<T> type);
 
     Address getThisAddress();
 

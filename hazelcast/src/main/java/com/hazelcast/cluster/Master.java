@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.nio.Address;
 
@@ -27,7 +26,7 @@ import java.io.IOException;
 /**
  * The Class Master.
  */
-public class Master extends Operation implements NonMemberOperation {
+public class Master extends Operation implements JoinOperation {
 
     /**
      * The address.
@@ -65,7 +64,7 @@ public class Master extends Operation implements NonMemberOperation {
     }
 
     public void run() {
-        ClusterImpl cm = (ClusterImpl) getService();
+        ClusterService cm = (ClusterService) getService();
         cm.handleMaster(this);
     }
 

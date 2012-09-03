@@ -17,7 +17,14 @@
 package com.hazelcast.impl.spi;
 
 /**
- * @mdogan 7/25/12
+ * @mdogan 7/23/12
  */
-public interface NonMemberOperation {
+public interface ManagedService {
+
+//    void init();
+
+//    void start();
+
+//    void stop();
+
 }

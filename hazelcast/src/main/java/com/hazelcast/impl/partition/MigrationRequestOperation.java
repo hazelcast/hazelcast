@@ -27,12 +27,13 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends Operation {
+public class MigrationRequestOperation extends Operation implements PartitionLockFreeOperation {
     protected Address from;
     protected Address to;
     private boolean migration; // migration or copy
@@ -55,8 +56,8 @@ public class MigrationRequestOperation extends Operation {
         this.diffOnly = diffOnly;
     }
 
-    public MigratingPartition createMigratingPartition() {
-        return new MigratingPartition(getPartitionId(), getReplicaIndex(), from, to);
+    public MigrationInfo createMigrationInfo() {
+        return new MigrationInfo(getPartitionId(), getReplicaIndex(), from, to);
     }
 
     public boolean isMigration() {
@@ -75,15 +76,6 @@ public class MigrationRequestOperation extends Operation {
         this.from = from;
     }
 
-    @Override
-    public Operation setReplicaIndex(final int replicaIndex) {
-        if (getReplicaIndex() > 0 && replicaIndex == 0) {
-            System.err.println("ERROR => " + this);
-            new Throwable().printStackTrace();
-        }
-        return super.setReplicaIndex(replicaIndex);
-    }
-
     public void run() {
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
@@ -96,7 +88,7 @@ public class MigrationRequestOperation extends Operation {
         if (from == null) {
             getLogger().log(Level.FINEST, "From address is null => " + toString());
         }
-        final PartitionManager pm = (PartitionManager) getService();
+        final PartitionServiceImpl pm = (PartitionServiceImpl) getService();
         try {
             Member target = pm.getMember(to);
             if (target == null) {
@@ -104,31 +96,46 @@ public class MigrationRequestOperation extends Operation {
                 responseHandler.sendResponse(Boolean.FALSE);
                 return;
             }
+
+            PartitionServiceImpl partitionService = getService();
+            partitionService.setActiveMigration(new MigrationInfo(partitionId, replicaIndex, from, to));
             final NodeService nodeService = getNodeService();
             final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
-            pm.lockPartition(partitionId);
-            final Collection<ServiceMigrationOperation> tasks = pm.collectMigrationTasks(partitionId, replicaIndex, to,
-                    diffOnly);
+            final Collection<Operation> tasks = collectMigrationTasks(partitionId, replicaIndex, diffOnly);
             nodeService.getExecutorService().execute(new Runnable() {
                 public void run() {
                     try {
-                        MigrationOperation op = new MigrationOperation(partitionId, tasks, replicaIndex, from);
-                        Invocation inv = nodeService.createSingleInvocation(PartitionManager.PARTITION_SERVICE_NAME,
-                                op, partitionId)
+                        Invocation inv = nodeService.createSingleInvocation(PartitionServiceImpl.PARTITION_SERVICE_NAME,
+                                new MigrationOperation(partitionId, tasks, replicaIndex, from), partitionId)
                                 .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to).build();
                         Future future = inv.invoke();
                         Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
                         responseHandler.sendResponse(result);
                     } catch (Throwable e) {
                         onError(responseHandler, e);
-                    } finally {
-                        pm.unlockPartition(partitionId);
                     }
                 }
             });
         } catch (Throwable e) {
             onError(responseHandler, e);
         }
+    }
+
+    private Collection<Operation> collectMigrationTasks(final int partitionId, final int replicaIndex,
+                                                                       boolean diffOnly) {
+        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        final Collection<Operation> tasks = new LinkedList<Operation>();
+        for (Object serviceObject : nodeService.getServices().values()) {
+            if (serviceObject instanceof MigrationAwareService) {
+                MigrationAwareService service = (MigrationAwareService) serviceObject;
+                service.beforeMigration(MigrationEndpoint.SOURCE, partitionId, replicaIndex);
+                Operation op = service.prepareMigrationOperation(partitionId, replicaIndex, diffOnly);
+                if (op != null) {
+                    tasks.add(op);
+                }
+            }
+        }
+        return tasks;
     }
 
     private void onError(final ResponseHandler responseHandler, Throwable e) {

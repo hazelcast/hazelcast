@@ -16,7 +16,6 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.util.Clock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -24,23 +23,26 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MigratingPartition implements DataSerializable {
+public class MigrationInfo implements DataSerializable {
     protected int partitionId;
     protected Address from;
     protected Address to;
     protected int replicaIndex;
 
-    private transient final long creationTime = Clock.currentTimeMillis();
-
-    public MigratingPartition() {
+    public MigrationInfo() {
     }
 
-    public MigratingPartition(int partitionId, int replicaIndex, Address from, Address to) {
+    public MigrationInfo(int partitionId, int replicaIndex, Address from, Address to) {
         this.partitionId = partitionId;
         this.from = from;
         this.to = to;
         this.replicaIndex = replicaIndex;
     }
+
+//    public MigrationInfo(final int partitionId, final int replicaIndex) {
+//        this.partitionId = partitionId;
+//        this.replicaIndex = replicaIndex;
+//    }
 
     public Address getFromAddress() {
         return from;
@@ -52,10 +54,6 @@ public class MigratingPartition implements DataSerializable {
 
     public int getReplicaIndex() {
         return replicaIndex;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -88,8 +86,8 @@ public class MigratingPartition implements DataSerializable {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof MigratingPartition)) return false;
-        final MigratingPartition that = (MigratingPartition) o;
+        if (!(o instanceof MigrationInfo)) return false;
+        final MigrationInfo that = (MigrationInfo) o;
         if (partitionId != that.partitionId) return false;
         if (replicaIndex != that.replicaIndex) return false;
         if (from != null ? !from.equals(that.from) : that.from != null) return false;
@@ -107,7 +105,7 @@ public class MigratingPartition implements DataSerializable {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("MigratingPartition");
+        sb.append("MigrationInfo");
         sb.append("{partitionId=").append(partitionId);
         sb.append(", from=").append(from);
         sb.append(", to=").append(to);

@@ -16,21 +16,31 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.core.HazelcastException;
+/**
+ * @mdogan 8/29/12
+ */
+public enum MigrationEndpoint {
 
-public class RetryableException extends HazelcastException {
-    public RetryableException() {
+    SOURCE(0),
+    DESTINATION(1);
+
+    public static MigrationEndpoint get(byte code) {
+        switch (code) {
+            case 0:
+                return SOURCE;
+            case 1:
+                return DESTINATION;
+        }
+        return null;
     }
 
-    public RetryableException(String message) {
-        super(message);
+    private final byte code;
+
+    private MigrationEndpoint(final int code) {
+        this.code = (byte) code;
     }
 
-    public RetryableException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public RetryableException(Throwable cause) {
-        super(cause);
+    public byte getCode() {
+        return code;
     }
 }

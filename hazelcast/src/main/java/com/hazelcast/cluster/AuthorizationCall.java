@@ -17,14 +17,13 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.impl.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class AuthorizationCall extends Operation implements NonMemberOperation {
+public class AuthorizationCall extends Operation implements JoinOperation {
 
     String groupName;
     String groupPassword;

@@ -18,7 +18,6 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.Clock;
 
@@ -32,11 +31,12 @@ import java.util.*;
  */
 public class PartitionRuntimeState implements DataSerializable {
 
-    protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
-    protected Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private long masterTime = Clock.currentTimeMillis();
     private int version;
-    private Address endpoint;
+    protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
+    protected Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
+    protected MigrationInfo migrationInfo;
+    private transient Address endpoint;
 
     public PartitionRuntimeState() {
         super();
@@ -48,9 +48,11 @@ public class PartitionRuntimeState implements DataSerializable {
 
     public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
                                  final PartitionInfo[] partitions,
+                                 final MigrationInfo migrationInfo,
                                  final long masterTime, int version) {
         this.masterTime = masterTime;
         this.version = version;
+        this.migrationInfo = migrationInfo;
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(memberInfos.size());
         int memberIndex = 0;
         for (MemberInfo memberInfo : memberInfos) {
@@ -102,20 +104,16 @@ public class PartitionRuntimeState implements DataSerializable {
         return partitions;
     }
 
-//    public Connection getConnection() {
-//        return connection;
-//    }
-
-//    void setConnection(final Connection connection) {
-//        this.connection = connection;
-//    }
-
     public Address getEndpoint() {
         return endpoint;
     }
 
     public void setEndpoint(final Address endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public MigrationInfo getMigrationInfo() {
+        return migrationInfo;
     }
 
     public void readData(DataInput in) throws IOException {
@@ -136,6 +134,11 @@ public class PartitionRuntimeState implements DataSerializable {
             spi.readData(in);
             partitionInfos.add(spi);
         }
+        boolean hasMigratingPartition = in.readBoolean();
+        if (hasMigratingPartition) {
+            migrationInfo = new MigrationInfo();
+            migrationInfo.readData(in);
+        }
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -151,6 +154,11 @@ public class PartitionRuntimeState implements DataSerializable {
         for (ShortPartitionInfo spi : partitionInfos) {
             spi.writeData(out);
         }
+        boolean hasMigratingPartition = migrationInfo != null;
+        out.writeBoolean(hasMigratingPartition);
+        if (hasMigratingPartition) {
+            migrationInfo.writeData(out);
+        }
     }
 
     @Override
@@ -159,6 +167,7 @@ public class PartitionRuntimeState implements DataSerializable {
         for (MemberInfo address : members) {
             sb.append(address).append('\n');
         }
+        sb.append(", migrationInfo=").append(migrationInfo);
         sb.append('}');
         return sb.toString();
     }

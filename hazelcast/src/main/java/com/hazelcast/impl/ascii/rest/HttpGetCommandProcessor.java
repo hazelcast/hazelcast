@@ -46,7 +46,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             prepareResponse(command, value);
         } else if (uri.startsWith(URI_CLUSTER)) {
             Node node = textCommandService.getNode();
-            StringBuilder res = new StringBuilder(node.getClusterImpl().toString());
+            StringBuilder res = new StringBuilder(node.getClusterService().toString());
             res.append("\n");
             ConnectionManager connectionManager = node.getConnectionManager();
             res.append("ConnectionCount: ").append(connectionManager.getCurrentClientConnections());

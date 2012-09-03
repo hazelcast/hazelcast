@@ -162,7 +162,6 @@ public class TransactionImpl implements Transaction {
         try {
             ThreadContext.get().setCurrentInstance(instance);
             List<Future> futures = new ArrayList<Future>(participants.size());
-            futures = new ArrayList<Future>(participants.size());
             for (TxnParticipant t : participants) {
                 Operation op = new PrepareOperation(txnId);
                 futures.add(instance.node.nodeService.createSingleInvocation(t.serviceName, op, t.partitionId).build()

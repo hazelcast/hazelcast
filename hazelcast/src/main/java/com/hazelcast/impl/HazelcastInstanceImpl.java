@@ -145,7 +145,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Cluster getCluster() {
-        return node.getClusterImpl();
+        return node.clusterService.getClusterProxy();
     }
 
     public Collection<Instance> getInstances() {
@@ -157,7 +157,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public PartitionService getPartitionService() {
-        return node.partitionManager.partitionServiceImpl;
+        return node.partitionService.getPartitionServiceProxy();
     }
 
     public ClientService getClientService() {

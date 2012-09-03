@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.map;
 
+import com.hazelcast.impl.spi.MigrationEndpoint;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.*;
 
@@ -25,7 +26,7 @@ import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class MapService implements ServiceLifecycle, TransactionalService {
+public class MapService implements ManagedService, MigrationAwareService, TransactionalService {
     public final static String MAP_SERVICE_NAME = "hz:mapService";
 
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
@@ -42,9 +43,10 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         }
         nodeService.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                List<Integer> ownedPartitions = new ArrayList<Integer>();
+                final List<Integer> ownedPartitions = new ArrayList<Integer>();
                 for (int i = 0; i < partitionContainers.length; i++) {
-                    if (nodeService.getThisAddress().equals(nodeService.getPartitionInfo(i).getOwner())) {
+                    final PartitionInfo partitionInfo = nodeService.getPartitionInfo(i);
+                    if (partitionInfo != null && nodeService.getThisAddress().equals(partitionInfo.getOwner())) {
                         ownedPartitions.add(i);
                     }
                 }
@@ -82,14 +84,37 @@ public class MapService implements ServiceLifecycle, TransactionalService {
         return counter.incrementAndGet();
     }
 
-    public ServiceMigrationOperation getMigrationTask(final int partitionId, final int replicaIndex, boolean diffOnly) {
+    public void beforeMigration(MigrationEndpoint migrationEndpoint, final int partitionId, final int replicaIndex) {
+        // TODO: what if partition has transactions?
+    }
+
+    public Operation prepareMigrationOperation(final int partitionId, final int replicaIndex, boolean diffOnly) {
         if (partitionId < 0 || partitionId >= nodeService.getPartitionCount()) {
             return null;
         }
         final PartitionContainer container = partitionContainers[partitionId];
-        ServiceMigrationOperation op = new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
-        op.setServiceName(MAP_SERVICE_NAME);
-        return op;
+        return new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
+    }
+
+    public void commitMigration(MigrationEndpoint migrationEndpoint, final int partitionId, final int replicaIndex) {
+        if (migrationEndpoint == MigrationEndpoint.SOURCE) {
+            clearPartitionData(partitionId);
+        }
+    }
+
+    public void rollbackMigration(MigrationEndpoint migrationEndpoint, final int partitionId, final int replicaIndex) {
+        if (migrationEndpoint == MigrationEndpoint.DESTINATION) {
+            clearPartitionData(partitionId);
+        }
+    }
+
+    private void clearPartitionData(final int partitionId) {
+        final PartitionContainer container = partitionContainers[partitionId];
+        for (MapPartition mapPartition : container.maps.values()) {
+            mapPartition.clear();
+        }
+        container.maps.clear();
+        container.transactions.clear(); // TODO: not sure?
     }
 
     public long createNewBackupCallQueue() {

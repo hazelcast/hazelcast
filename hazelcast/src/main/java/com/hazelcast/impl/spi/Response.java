@@ -26,7 +26,7 @@ import java.io.IOException;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class Response extends Operation {
+public class Response extends Operation implements PartitionLockFreeOperation {
     private Object result = null;
     private Data resultData = null;
     private boolean exception = false;

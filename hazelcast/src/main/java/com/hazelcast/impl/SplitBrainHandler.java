@@ -28,7 +28,7 @@ public class SplitBrainHandler implements Runnable {
     }
 
     public void run() {
-        if (node.isMaster() && node.joined() && node.isActive() && node.clusterImpl.shouldTryMerge()
+        if (node.isMaster() && node.joined() && node.isActive() && node.clusterService.shouldTryMerge()
             && inProgress.compareAndSet(false, true)) {
             try {
                 searchForOtherClusters();

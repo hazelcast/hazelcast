@@ -18,7 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.spi.NodeServiceImpl;
-import com.hazelcast.impl.spi.NonMemberOperation;
 import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.impl.spi.Response;
 
@@ -29,7 +28,7 @@ import java.io.IOException;
 /**
  * @mdogan 8/2/12
  */
-public class JoinCheck extends Operation implements NonMemberOperation {
+public class JoinCheck extends Operation implements JoinOperation {
 
     private JoinInfo joinInfo;
 

@@ -59,7 +59,7 @@
 //
 //    // updates will come from ServiceThread (one exception is PartitionManager.reset())
 //    // but reads will be multithreaded.
-//    private volatile MigratingPartition migratingPartition;
+//    private volatile MigrationInfo migratingPartition;
 //    private volatile boolean initialized = false;
 //    private final AtomicInteger version = new AtomicInteger();
 //    private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
@@ -127,7 +127,7 @@
 //        }, 180, 180, TimeUnit.SECONDS);
 //    }
 //
-//    public MigratingPartition getMigratingPartition() {
+//    public MigrationInfo getMigrationInfo() {
 //        return migratingPartition;
 //    }
 //
@@ -242,7 +242,7 @@
 //        return lsResultSet;
 //    }
 //
-//    private void addActiveMigration(final MigratingPartition migrationRequestTask) {
+//    private void addActiveMigration(final MigrationInfo migrationRequestTask) {
 //        addActiveMigration(migrationRequestTask.getPartitionId(), migrationRequestTask.getReplicaIndex(),
 //                migrationRequestTask.getFromAddress(), migrationRequestTask.getToAddress());
 //    }
@@ -250,8 +250,8 @@
 //    private void addActiveMigration(final int partitionId, final int replicaIndex,
 //                                    final Address currentAddress, final Address newAddress) {
 //        concurrentMapManager.checkServiceThread();
-//        final MigratingPartition currentMigratingPartition = migratingPartition;
-//        final MigratingPartition newMigratingPartition = new MigratingPartition(partitionId,
+//        final MigrationInfo currentMigratingPartition = migratingPartition;
+//        final MigrationInfo newMigratingPartition = new MigrationInfo(partitionId,
 //                replicaIndex, currentAddress, newAddress);
 //        if (!newMigratingPartition.equals(currentMigratingPartition)) {
 //            if (currentMigratingPartition != null) {
@@ -262,8 +262,8 @@
 //        }
 //    }
 //
-//    private void compareAndSetActiveMigratingPartition(final MigratingPartition expectedMigratingPartition,
-//                                                       final MigratingPartition newMigratingPartition) {
+//    private void compareAndSetActiveMigratingPartition(final MigrationInfo expectedMigratingPartition,
+//                                                       final MigrationInfo newMigratingPartition) {
 //        concurrentMapManager.checkServiceThread();
 //        if (expectedMigratingPartition == null) {
 //            if (migratingPartition == null) {
@@ -557,7 +557,7 @@
 //
 //    private void checkMigratingPartitionFor(PartitionInfo partition) {
 //        concurrentMapManager.checkServiceThread();
-//        final MigratingPartition mPartition = migratingPartition;
+//        final MigrationInfo mPartition = migratingPartition;
 //        if (mPartition != null && partition.getPartitionId() == mPartition.getPartitionId()) {
 //            final Address targetAddress = mPartition.getToAddress();
 //            if (targetAddress != null
@@ -580,7 +580,7 @@
 //     */
 //    public boolean isPartitionMigrating(int partitionId) {
 //        // volatile read
-//        final MigratingPartition currentMigratingPartition = migratingPartition;
+//        final MigrationInfo currentMigratingPartition = migratingPartition;
 //        return currentMigratingPartition != null
 //                && currentMigratingPartition.getPartitionId() == partitionId;
 //    }
@@ -600,7 +600,7 @@
 //     */
 //    public boolean isPartitionMigrating(int partitionId, int replicaIndex) {
 //        // volatile read
-//        final MigratingPartition currentMigratingPartition = migratingPartition;
+//        final MigrationInfo currentMigratingPartition = migratingPartition;
 //        return currentMigratingPartition != null
 //               && currentMigratingPartition.getPartitionId() == partitionId
 //               && currentMigratingPartition.getReplicaIndex() == replicaIndex;
@@ -661,18 +661,18 @@
 //    }
 //
 //    public static class RemotelyCheckMigratingPartition extends AbstractRemotelyCallable<Boolean> {
-//        MigratingPartition migratingPartition;
+//        MigrationInfo migratingPartition;
 //
 //        public RemotelyCheckMigratingPartition() {
 //        }
 //
-//        public RemotelyCheckMigratingPartition(final MigratingPartition migratingPartition) {
+//        public RemotelyCheckMigratingPartition(final MigrationInfo migratingPartition) {
 //            this.migratingPartition = migratingPartition;
 //        }
 //
 //        public Boolean call() throws Exception {
 //            if (migratingPartition != null) {
-//                final MigratingPartition masterMigratingPartition = node
+//                final MigrationInfo masterMigratingPartition = node
 //                        .concurrentMapManager.getPartitionManager().migratingPartition;
 //                return migratingPartition.equals(masterMigratingPartition);
 //            }
@@ -681,7 +681,7 @@
 //
 //        public void readData(final DataInput in) throws IOException {
 //            if (in.readBoolean()) {
-//                migratingPartition = new MigratingPartition();
+//                migratingPartition = new MigrationInfo();
 //                migratingPartition.readData(in);
 //            }
 //        }
@@ -716,7 +716,7 @@
 //    private class CheckMigratingPartitionTask implements Runnable {
 //        public void run() {
 //            if (!concurrentMapManager.isMaster()) {
-//                final MigratingPartition currentMigratingPartition = migratingPartition;
+//                final MigrationInfo currentMigratingPartition = migratingPartition;
 //                if (currentMigratingPartition != null
 //                        && (Clock.currentTimeMillis() - currentMigratingPartition.getCreationTime())
 //                        > MIGRATING_PARTITION_CHECK_INTERVAL) {
@@ -732,7 +732,7 @@
 //                        } else {
 //                            logger.log(Level.INFO, currentMigratingPartition +
 //                                    " could not be validated with master! " +
-//                                    "Removing current MigratingPartition...");
+//                                    "Removing current MigrationInfo...");
 //                            concurrentMapManager.enqueueAndReturn(new Processable() {
 //                                public void process() {
 //                                    migratingPartition = null;

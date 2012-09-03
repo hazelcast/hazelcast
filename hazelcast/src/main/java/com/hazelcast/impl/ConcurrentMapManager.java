@@ -423,7 +423,7 @@
 //        return partitionManager.getPartition(partitionId);
 //    }
 //
-////    public void sendMigrationEvent(boolean started, MigratingPartition migratingPartition) {
+////    public void sendMigrationEvent(boolean started, MigrationInfo migratingPartition) {
 ////        sendProcessableToAll(new MigrationNotification(started, migratingPartition), true);
 ////    }
 //

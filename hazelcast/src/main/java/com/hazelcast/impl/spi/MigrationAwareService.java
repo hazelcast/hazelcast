@@ -19,5 +19,14 @@ package com.hazelcast.impl.spi;
 /**
  * @mdogan 7/23/12
  */
-public interface ServiceLifecycle extends MigrationAware {
+public interface MigrationAwareService {
+
+    void beforeMigration(MigrationEndpoint migrationEndpoint, int partitionId, int replicaIndex);
+
+    Operation prepareMigrationOperation(int partitionId, int replicaIndex, boolean diffOnly);
+
+    void commitMigration(MigrationEndpoint migrationEndpoint, int partitionId, int replicaIndex);
+
+    void rollbackMigration(MigrationEndpoint migrationEndpoint, int partitionId, int replicaIndex);
+
 }

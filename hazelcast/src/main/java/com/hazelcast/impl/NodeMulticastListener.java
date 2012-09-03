@@ -50,12 +50,12 @@ public class NodeMulticastListener implements MulticastListener {
                         if (joinInfo.isRequest()) {
                             if (node.isMaster()) {
                                 node.multicastService.send(joinInfo.copy(false, node.address,
-                                        node.getClusterImpl().getMembers().size()));
+                                        node.getClusterService().getMembers().size()));
                             } else if (isMasterNode(joinInfo.address) && !checkMasterUuid(joinInfo.getUuid())) {
                                 node.getLogger("NodeMulticastListener").log(Level.WARNING,
                                         "New join request has been received from current master. "
                                         + "Removing " + node.getMasterAddress());
-                                node.clusterImpl.removeAddress(node.getMasterAddress());
+                                node.clusterService.removeAddress(node.getMasterAddress());
                             }
                         }
                     } else {
@@ -85,7 +85,7 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private boolean checkMasterUuid(String uuid) {
-        final Member masterMember = getMasterMember(node.getClusterImpl().getMembers());
+        final Member masterMember = getMasterMember(node.getClusterService().getMembers());
         return masterMember == null || masterMember.getUuid().equals(uuid);
     }
 

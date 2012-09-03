@@ -314,7 +314,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
             try {
                 Random rand = new Random();
-                Address address = ((MemberImpl) instance.node.getClusterImpl().getLocalMember()).getAddress();
+                Address address = ((MemberImpl) instance.node.getClusterService().getLocalMember()).getAddress();
                 GroupConfig groupConfig = instance.getConfig().getGroupConfig();
                 while (running.get()) {
                     try {

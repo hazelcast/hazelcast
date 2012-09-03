@@ -17,11 +17,10 @@
 package com.hazelcast.impl.spi;
 
 /**
- * @mdogan 7/23/12
+ * @mdogan 8/26/12
  */
-public abstract class ServiceMigrationOperation extends Operation {
+public interface ServiceBuilder<S extends ManagedService> {
 
-    public abstract void onSuccess();
+    S buildService(); // TODO: params!
 
-    public abstract void onError();
 }

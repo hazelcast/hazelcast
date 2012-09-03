@@ -20,7 +20,7 @@ import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Record;
-import com.hazelcast.impl.partition.MigratingPartition;
+import com.hazelcast.impl.partition.MigrationInfo;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.partition.PartitionRuntimeState;
 import com.hazelcast.nio.Address;
@@ -44,14 +44,13 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     private Collection<ConnectionInfo> connectionInfos = new LinkedList<ConnectionInfo>();
     private List<LockInfo> lockInfos = new ArrayList<LockInfo>();
     private int lockTotalNum = 0;
-    private MigratingPartition migratingPartition;
 
     public ClusterRuntimeState() {
     }
 
     public ClusterRuntimeState(final Collection<Member> members, // !!! ordered !!!
                                final PartitionInfo[] partitions,
-                               final MigratingPartition migratingPartition,
+                               final MigrationInfo migrationInfo,
                                final Map<Address, Connection> connections,
                                final Collection<Record> lockedRecords) {
         super();
@@ -79,7 +78,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         }
         setPartitions(partitions, addressIndexes);
         setLocks(lockedRecords, addressIndexes);
-        this.migratingPartition = migratingPartition;
+        this.migrationInfo = migrationInfo;
     }
 
     private void setLocks(final Collection<Record> lockedRecords, final Map<Address, Integer> addressIndexes) {
@@ -127,20 +126,11 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         return lockTotalNum;
     }
 
-    public MigratingPartition getMigratingPartition() {
-        return migratingPartition;
-    }
-
     @Override
     public void readData(final DataInput in) throws IOException {
+        super.readData(in);
         localMemberIndex = in.readInt();
         lockTotalNum = in.readInt();
-        boolean hasMigratingPartition = in.readBoolean();
-        if (hasMigratingPartition) {
-            migratingPartition = new MigratingPartition();
-            migratingPartition.readData(in);
-        }
-        super.readData(in);
         int size = members.size() - 1; // do not count local member
         for (int i = 0; i < size; i++) {
             ConnectionInfo connectionInfo = new ConnectionInfo();
@@ -157,14 +147,9 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
 
     @Override
     public void writeData(final DataOutput out) throws IOException {
+        super.writeData(out);
         out.writeInt(localMemberIndex);
         out.writeInt(lockTotalNum);
-        boolean hasMigratingPartition = migratingPartition != null;
-        out.writeBoolean(hasMigratingPartition);
-        if (hasMigratingPartition) {
-            migratingPartition.writeData(out);
-        }
-        super.writeData(out);
         for (ConnectionInfo info : connectionInfos) {
             info.writeData(out);
         }
@@ -181,7 +166,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         sb.append("ClusterRuntimeState");
         sb.append("{members=").append(members);
         sb.append(", localMember=").append(localMemberIndex);
-        sb.append(", migratingPartition=").append(migratingPartition);
+        sb.append(", migrationInfo=").append(migrationInfo);
         sb.append(", waitingLockCount=").append(lockInfos.size());
         sb.append('}');
         return sb.toString();

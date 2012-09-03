@@ -89,7 +89,7 @@ public class NodeIOService implements IOService {
     public void handleMemberPacket(final Packet p) {
 //        System.out.println("handle p " + p.operation);
         if (p.operation == ClusterOperation.REMOTE_CALL) {
-            final MemberImpl member = node.clusterImpl.getMember(p.conn.getEndPoint());
+            final MemberImpl member = node.clusterService.getMember(p.conn.getEndPoint());
             if (member != null) {
                 member.didRead();
             }
@@ -119,7 +119,7 @@ public class NodeIOService implements IOService {
 //        node.clusterImpl.enqueueAndReturn(addOrRemoveConnection);
         node.nodeService.getExecutorService().execute(new Runnable() {
             public void run() {
-                node.clusterImpl.removeAddress(endPoint);
+                node.clusterService.removeAddress(endPoint);
             }
         });
     }
@@ -193,7 +193,7 @@ public class NodeIOService implements IOService {
 //            });
             node.nodeService.getExecutorService().execute(new Runnable() {
                 public void run() {
-                    node.clusterImpl.disconnectExistingCalls(deadEndpoint);
+                    node.clusterService.disconnectExistingCalls(deadEndpoint);
                 }
             });
         }
