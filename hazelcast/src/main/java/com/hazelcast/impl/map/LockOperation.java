@@ -24,7 +24,7 @@ public class LockOperation extends LockAwareOperation {
     public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
 
     public LockOperation(String name, Data dataKey) {
-        super(name, dataKey);
+        this(name, dataKey, DEFAULT_LOCK_TTL);
     }
 
     public LockOperation(String name, Data dataKey, long ttl) {

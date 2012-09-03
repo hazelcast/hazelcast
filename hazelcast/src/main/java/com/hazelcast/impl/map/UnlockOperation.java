@@ -25,15 +25,11 @@ public class UnlockOperation extends BackupAwareOperation {
         super(name, dataKey);
     }
 
-    public UnlockOperation(String name, Data dataKey, long ttl) {
-        super(name, dataKey);
-        this.ttl = ttl;
-    }
-
     public UnlockOperation() {
     }
 
     public void run() {
+        // careful: Unlock cannot be scheduled.
         int partitionId = getPartitionId();
         ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
@@ -47,11 +43,10 @@ public class UnlockOperation extends BackupAwareOperation {
                 int backupCount = mapPartition.getBackupCount();
                 getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
             }
+            responseHandler.sendResponse(Boolean.TRUE);
             if (!lock.isLocked()) {
                 pc.onUnlock(lock, name, getKey());
-                mapPartition.removeLock(getKey());
             }
-            responseHandler.sendResponse(Boolean.TRUE);
         } else {
             responseHandler.sendResponse(Boolean.FALSE);
         }

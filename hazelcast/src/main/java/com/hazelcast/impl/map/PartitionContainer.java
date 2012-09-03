@@ -156,28 +156,33 @@ public class PartitionContainer {
         qScheduledOps.add(new ScheduledOperation(op));
     }
 
+    /**
+     * Should not be called from a schedulable operations as
+     * we might be removing the lock object
+     */
     void onUnlock(LockInfo lock, String name, Data key) {
-        if (lock != null && !lock.isLocked()) {
-            ScheduledOperationKey scheduledOperationKey = new ScheduledOperationKey(name, key);
-            Queue<ScheduledOperation> scheduledOps = mapScheduledOperations.get(scheduledOperationKey);
-            ScheduledOperation scheduledOp = scheduledOps.peek();
-            LockAwareOperation op = scheduledOp.getOperation();
-            while (!scheduledOp.isValid() || lock.testLock(op.getThreadId(), op.getCaller())) {
-                scheduledOps.poll();
-                if (scheduledOp.isValid()) {
-                    if (scheduledOp.expired()) {
-                        op.onExpire();
-                    } else {
-                        op.doRun();
-                    }
-                    scheduledOp.setValid(false);
+        ScheduledOperationKey scheduledOperationKey = new ScheduledOperationKey(name, key);
+        Queue<ScheduledOperation> scheduledOps = mapScheduledOperations.get(scheduledOperationKey);
+        ScheduledOperation scheduledOp = scheduledOps.peek();
+        LockAwareOperation op = scheduledOp.getOperation();
+        while (!scheduledOp.isValid() || lock.testLock(op.getThreadId(), op.getCaller())) {
+            scheduledOps.poll();
+            if (scheduledOp.isValid()) {
+                if (scheduledOp.expired()) {
+                    op.onExpire();
+                } else {
+                    op.doRun();
                 }
-                scheduledOp = scheduledOps.peek();
-                op = scheduledOp.getOperation();
+                scheduledOp.setValid(false);
             }
-            if (scheduledOps.isEmpty()) {
-                mapScheduledOperations.remove(scheduledOperationKey);
-            }
+            scheduledOp = scheduledOps.peek();
+            op = scheduledOp.getOperation();
+        }
+        if (scheduledOps.isEmpty()) {
+            mapScheduledOperations.remove(scheduledOperationKey);
+        }
+        if (!lock.isLocked()) {
+            getMapPartition(name).removeLock(key);
         }
     }
 
