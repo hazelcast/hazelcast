@@ -104,6 +104,10 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(Command.MREPLACEIFSAME, new MapReplaceIfSameHandler());
         registerHandler(Command.MFLUSH, new MapFlushHandler());
         registerHandler(Command.MMPUT, new MapPutMultiHandler());
+        registerHandler(Command.MMGET, new MultiMapGetHandler());
+        registerHandler(Command.MMLOCK, new MultiMapLockHandler());
+        registerHandler(Command.MMTRYLOCK, new MultiMapTryLockHandler());
+        registerHandler(Command.MMUNLOCK, new MultiMapUnLockHandler());
         registerHandler(Command.MMREMOVE, new MapRemoveMultiHandler());
         registerHandler(Command.MMVALUECOUNT, new MapValueCountHandler());
         registerHandler(Command.MMSIZE, new MultiMapSizeHandler());
@@ -688,46 +692,116 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
-    private class MultiMapContainsEntryHandler extends ClientOperationHandler{
+    private class MultiMapContainsEntryHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.args[0];
-            Data key = toData(protocol.buffers[0]);
+            Data key = new Data(protocol.buffers[0].array());
             Data value = toData(protocol.buffers[1]);
             return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsEntry(key, value)));
         }
     }
-    private class MultiMapContainsValueHandler extends ClientOperationHandler{
+
+    private class MultiMapLockHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.args[0];
-            Data value = toData(protocol.buffers[0]);
-            return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsValue(value)));
+            if (protocol.hasBuffer()) {
+                Data key = new Data(protocol.buffers[0].array());
+                node.factory.getMultiMap(name).lock(key);
+            } else {
+                long time = Long.valueOf(protocol.args[1]);
+                node.factory.getMultiMap(name).lockMap(time, TimeUnit.MILLISECONDS);
+            }
+            return protocol.success();
         }
     }
-    
-    private class MultiMapKeysHandler extends ClientOperationHandler{
+
+    private class MultiMapTryLockHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
         }
 
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.args[0];
+            Data key = new Data(protocol.buffers[0].array());
+            boolean result;
+            if (protocol.args.length > 1) {
+                long time = Long.valueOf(protocol.args[1]);
+                result = node.factory.getMultiMap(name).tryLock(key, time, TimeUnit.MILLISECONDS);
+            } else {
+                result = node.factory.getMultiMap(name).tryLock(key);
+            }
+            return protocol.success(String.valueOf(result));
+        }
+    }
 
-            Set<Object> set = node.factory.getMultiMap(name).keySet();
-            ByteBuffer[] buffers = new ByteBuffer[set.size()];
-            int i=0;
-            for(Object o : set){
-                Data d = (Data)o;
+    private class MultiMapUnLockHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            if (protocol.hasBuffer()) {
+                Data key = new Data(protocol.buffers[0].array());
+                node.factory.getMultiMap(name).unlock(key);
+            } else {
+                node.factory.getMultiMap(name).unlockMap();
+            }
+            return protocol.success();
+        }
+    }
+
+    private class MultiMapGetHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            Data key = new Data(protocol.buffers[0].array());
+            Collection<Object> result = node.factory.getMultiMap(name).get(key);
+            ByteBuffer[] buffers = new ByteBuffer[result.size()];
+            int i = 0;
+            for (Object o : result) {
+                Data d = (Data) o;
                 buffers[i++] = ByteBuffer.wrap(d.buffer);
             }
             return protocol.success(buffers);
         }
     }
-    private class MultiMapContainsKeyHandler extends ClientOperationHandler{
+
+    private class MultiMapContainsValueHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            Data value = new Data(protocol.buffers[0].array());
+            return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsValue(value)));
+        }
+    }
+
+    private class MultiMapKeysHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+        }
+
+        public Protocol processCall(Node node, Protocol protocol) {
+            String name = protocol.args[0];
+            Set<Object> set = node.factory.getMultiMap(name).keySet();
+            ByteBuffer[] buffers = new ByteBuffer[set.size()];
+            int i = 0;
+            for (Object o : set) {
+                Data d = toData(o);
+                buffers[i++] = ByteBuffer.wrap(d.buffer);
+            }
+            return protocol.success(buffers);
+        }
+    }
+
+    private class MultiMapContainsKeyHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
         }
 
@@ -756,9 +830,14 @@ public class ClientHandlerService implements ConnectionListener {
             Data value = null;
             if (protocol.buffers.length > 1) {
                 value = new Data(protocol.buffers[1].array());
-                return protocol.success(String.valueOf(node.factory.getMap(name).remove(key, value)));
+                return protocol.success(String.valueOf(node.factory.getMultiMap(name).remove(key, value)));
             }
-            return protocol.success(String.valueOf(node.factory.getMap(name).remove(key)));
+            Collection<Object> collection = node.factory.getMultiMap(name).remove(key);
+            List<ByteBuffer> list = new ArrayList<ByteBuffer>(collection.size());
+            for (Object o : collection) {
+                list.add(ByteBuffer.wrap(((Data) o).buffer));
+            }
+            return protocol.success(list.toArray(new ByteBuffer[0]));
         }
     }
 

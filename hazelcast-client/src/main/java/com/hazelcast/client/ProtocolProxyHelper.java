@@ -24,11 +24,17 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ProtocolProxyHelper extends ProxyHelper {
     private final String name;
@@ -155,5 +161,16 @@ public class ProtocolProxyHelper extends ProxyHelper {
     public int doCommandAsInt(Command command, String[] args, Data... datas) {
         Protocol protocol = doCommand(command, args, datas);
         return Integer.valueOf(protocol.args[0]);
+    }
+    
+    public <E> Collection<E> doCommandAsList(Command command, String[] args, Data... datas){
+        Protocol protocol = doCommand(Command.MMREMOVE, args, datas);
+        List<E> list = new ArrayList<E>();
+        if(protocol.hasBuffer()){
+            for(ByteBuffer bb: protocol.buffers){
+                list.add((E)toObject(new Data(bb.array())));
+            }
+        }
+        return list;
     }
 }

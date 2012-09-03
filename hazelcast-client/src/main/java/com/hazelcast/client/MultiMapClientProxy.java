@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.PacketProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.checkTime;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
@@ -93,63 +94,56 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public void lock(K key) {
-        PacketProxyHelper.check(key);
-        doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, -1, null);
+        check(key);
+        protocolProxyHelper.doCommand(Command.MMLOCK, getName(), toData(key));
     }
 
     public boolean tryLock(K key) {
         check(key);
-        return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, 0, null);
+        return protocolProxyHelper.doCommandAsBoolean(Command.MMTRYLOCK, new String[]{getName()}, toData(key));
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
-        PacketProxyHelper.checkTime(time, timeunit);
-        return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK, key, time, timeunit);
-    }
-
-    private Object doLock(ClusterOperation operation, Object key, long timeout, TimeUnit timeUnit) {
-        Packet request = proxyHelper.prepareRequest(operation, key, timeUnit);
-        request.setTimeout(timeout);
-        Packet response = proxyHelper.callAndGetResult(request);
-        return proxyHelper.getValue(response);
+        return protocolProxyHelper.doCommandAsBoolean(Command.MMTRYLOCK, new String[]{getName(),
+                String.valueOf(timeunit.toMillis(time))}, toData(key));
     }
 
     public void unlock(K key) {
         check(key);
-        proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_UNLOCK, key, null);
+        protocolProxyHelper.doCommand(Command.MMUNLOCK, getName(), toData(key));
     }
 
     public boolean lockMap(long time, TimeUnit timeunit) {
-        PacketProxyHelper.checkTime(time, timeunit);
-        return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_LOCK_MAP, null, time, timeunit);
+        checkTime(time, timeunit);
+        return protocolProxyHelper.doCommandAsBoolean(Command.MMLOCK, new String[]{getName(),
+                String.valueOf(timeunit.toMillis(time))}, null);
     }
 
     public void unlockMap() {
-        doLock(ClusterOperation.CONCURRENT_MAP_UNLOCK_MAP, null, -1, null);
+        protocolProxyHelper.doCommand(Command.MMUNLOCK, getName(), null);
     }
 
     public boolean put(K key, V value) {
         check(key);
         check(value);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_PUT_MULTI, key, value);
+        return protocolProxyHelper.doCommandAsBoolean(Command.MMPUT, new String[]{getName()}, toData(key), toData(value));
     }
 
     public Collection get(Object key) {
         check(key);
-        return (Collection) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, key, null);
+        return protocolProxyHelper.doCommandAsList(Command.MMGET, new String[]{getName()}, toData(key));
     }
 
     public boolean remove(Object key, Object value) {
         check(key);
         check(value);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, key, value);
+        return protocolProxyHelper.doCommandAsBoolean(Command.MMREMOVE, new String[]{getName()}, toData(key), toData(value));
     }
 
     public Collection remove(Object key) {
         check(key);
-        Protocol protocol = protocolProxyHelper.doCommand(Command.MMREMOVE, new String[]{getName()}, toData(key));
-        return (Collection) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_MULTI, key, null);
+        return protocolProxyHelper.doCommandAsList(Command.MMREMOVE, new String[]{getName()}, toData(key));
     }
 
     public Set<K> localKeySet() {
@@ -159,8 +153,8 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     public Set keySet() {
         Protocol protocol = protocolProxyHelper.doCommand(Command.MMKEYS, new String[]{getName()}, null);
         Set set = new HashSet();
-        if(protocol.hasBuffer()){
-            for(ByteBuffer bb: protocol.buffers){
+        if (protocol.hasBuffer()) {
+            for (ByteBuffer bb : protocol.buffers) {
                 set.add(toObject(new Data(bb.array())));
             }
         }

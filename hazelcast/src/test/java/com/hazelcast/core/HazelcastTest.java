@@ -1323,4 +1323,17 @@ public class HazelcastTest {
         assertTrue(map.containsKey("key"));
         h.getLifecycleService().shutdown();
     }
+    
+    @Test
+    public void goDistributed(){
+        Cluster cluster = Hazelcast.getCluster();
+        Set<Member> members = cluster.getMembers();
+        
+        Map<String, String> distributedMap = Hazelcast.getMap("distributed-nap");
+        distributedMap.put("key", "value");
+        String value = distributedMap.get("key");
+        
+        ITopic<String> topic = Hazelcast.getTopic("topic");
+        topic.publish("message");
+    }
 }
