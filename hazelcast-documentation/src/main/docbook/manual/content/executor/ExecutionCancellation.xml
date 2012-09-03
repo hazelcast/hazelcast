@@ -28,7 +28,7 @@
         <literal>cancel()</literal>
         api and 'encouraging' us
         to code and design for cancellations, which is highly ignored part of software development.
-        <programlisting language="java"><![CDATA[public class Fibonacci<Long> implements Callable<Long>, Serializable {
+        <programlisting language="java"><![CDATA[public class Fibonacci implements Callable<Long>, Serializable {
     int input = 0; 
 
     public Fibonacci() { 
