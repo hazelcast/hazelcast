@@ -90,13 +90,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         this.instanceFilterSemaphore = new StatsInstanceFilter(instance.node.getGroupProperties().MC_SEMAPHORE_EXCLUDES.getString());
         maxVisibleInstanceCount = this.instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         commandHandler = new ConsoleCommandHandler(this.instance);
-
         String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
         updateIntervalMs = (managementCenterConfig.getUpdateInterval() > 0)
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
-
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
     }
@@ -155,7 +153,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     public void memberAdded(MembershipEvent membershipEvent) {
         try {
             Member member = membershipEvent.getMember();
-            if(member != null && instance.node.isMaster() && urlChanged) {
+            if (member != null && instance.node.isMaster() && urlChanged) {
                 ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
                 FutureTask<Void> task = new DistributedTask<Void>(callable, member);
                 ExecutorService executorService = instance.getExecutorService(MANAGEMENT_EXECUTOR);
@@ -167,9 +165,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     public void memberRemoved(MembershipEvent membershipEvent) {
-
     }
-
 
     public void changeWebServerUrl(String newUrl) {
         if (newUrl == null)
@@ -180,7 +176,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
         urlChanged = true;
         logger.log(Level.INFO, "Web server URL has been changed. " +
-                               "Hazelcast will connect to Management Center on address: " + webServerUrl);
+                "Hazelcast will connect to Management Center on address: " + webServerUrl);
     }
 
     private void interruptThread(Thread t) {
@@ -233,7 +229,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     class StateSender extends Thread {
         StateSender() {
-            super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.State.Sender"));
+            super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
         }
 
         public void run() {
@@ -319,7 +315,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 while (running.get()) {
                     try {
                         URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
-                                          + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
+                                + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
@@ -352,9 +348,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         memberState.setAddress(node.getThisAddress());
         memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
         memberState.getMemberHealthStats().setActive(node.isActive());
-        memberState.getMemberHealthStats().setServiceThreadStats(node.getCpuUtilization().serviceThread);
-        memberState.getMemberHealthStats().setOutThreadStats(node.getCpuUtilization().outThread);
-        memberState.getMemberHealthStats().setInThreadStats(node.getCpuUtilization().inThread);
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
         memberState.clearPartitions();
@@ -364,18 +357,15 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
         }
         Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getProxies());
-
 //        ExecutorManager executorManager = factory.node.executorManager;
 //        ExecutorManager executorManager = instance.node.executorManager;
 //        memberState.putInternalThroughputStats(executorManager.getInternalThroughputMap());
 //        memberState.putThroughputStats(executorManager.getThroughputMap());
-
         createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.MULTIMAP);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
         createMemState(memberState, proxyObjects.iterator(), InstanceType.TOPIC);
         createRuntimeProps(memberState);
-
         // uncomment when client changes are made
         //createMemState(memberState, proxyObjects.iterator(), InstanceType.ATOMIC_LONG);
         //createMemState(memberState, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
@@ -390,12 +380,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemory = memoryMxBean.getHeapMemoryUsage();
         MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
-
         Map<String, Long> map = new HashMap<String, Long>();
         map.put("runtime.availableProcessors", Integer.valueOf(runtime.availableProcessors()).longValue());
         map.put("date.startTime", runtimeMxBean.getStartTime());
         map.put("seconds.upTime", runtimeMxBean.getUptime());
-
         map.put("memory.maxMemory", runtime.maxMemory());
         map.put("memory.freeMemory", runtime.freeMemory());
         map.put("memory.totalMemory", runtime.totalMemory());
@@ -411,7 +399,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         map.put("runtime.peakThreadCount", Integer.valueOf(threadMxBean.getPeakThreadCount()).longValue());
         map.put("runtime.daemonThreadCount", Integer.valueOf(threadMxBean.getDaemonThreadCount()).longValue());
         memberState.setRuntimeProps(map);
-
     }
 
     private void createMemState(MemberStateImpl memberState,
@@ -464,8 +451,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
         }
     }
-
-
 //    private List<String> getExecutorNames() {
 //        ExecutorManager executorManager = factory.node.executorManager;
 //        ExecutorManager executorManager = instance.node.executorManager;
@@ -667,5 +652,4 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             return true;
         }
     }
-
 }

@@ -19,7 +19,6 @@ package com.hazelcast.impl.spi;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.map.GenericBackupOperation;
@@ -44,7 +43,6 @@ public class NodeServiceImpl implements NodeService {
     private final Node node;
     private final ILogger logger;
     private final int partitionCount;
-    private final int maxBackupCount;
     private final ThreadGroup partitionThreadGroup;
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
     private final AtomicLong localIdGen = new AtomicLong();
@@ -58,11 +56,9 @@ public class NodeServiceImpl implements NodeService {
                 new SynchronousQueue(),
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("cached"), classLoader));
-
         eventService = Executors.newSingleThreadExecutor(
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("event"), node.getConfig().getClassLoader()));
-
         scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
                 new ExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
@@ -70,7 +66,6 @@ public class NodeServiceImpl implements NodeService {
         partitionThreadGroup = new ThreadGroup(node.threadGroup, "partitionThreads");
         workers = new Workers(partitionThreadGroup, "workers", 2);
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
-        maxBackupCount = MapConfig.MAX_BACKUP_COUNT;
     }
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
@@ -231,12 +226,10 @@ public class NodeServiceImpl implements NodeService {
         if (partitionId >= 0) {
             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
             Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
-
             if (!isPartitionLockFreeOperation(op) && node.partitionService.isPartitionLocked(partitionId)) {
                 throw new PartitionLockedException(getThisAddress(), owner, partitionId,
                         op.getClass().getName(), op.getServiceName());
             }
-
             final boolean shouldValidateTarget = op.shouldValidateTarget();
             if (shouldValidateTarget && !getThisAddress().equals(owner)) {
                 throw new WrongTargetException(getThisAddress(), owner, partitionId,
@@ -314,7 +307,7 @@ public class NodeServiceImpl implements NodeService {
         Address target = getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
             logger.log(Level.WARNING, "No target available for partition: "
-                                      + partitionId + " and replica: " + replicaIndex);
+                    + partitionId + " and replica: " + replicaIndex);
             return false;
         }
         return send(op, partitionId, target);
@@ -522,11 +515,11 @@ public class NodeServiceImpl implements NodeService {
 
     private static boolean isPartitionLockFreeOperation(Operation op) {
         return op instanceof PartitionLockFreeOperation
-               && op.getClass().getClassLoader() == NodeService.class.getClassLoader();
+                && op.getClass().getClassLoader() == NodeService.class.getClassLoader();
     }
 
     private static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation
-               && op.getClass().getClassLoader() == NodeService.class.getClassLoader();
+                && op.getClass().getClassLoader() == NodeService.class.getClassLoader();
     }
 }

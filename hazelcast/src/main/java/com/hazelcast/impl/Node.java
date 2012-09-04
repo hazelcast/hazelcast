@@ -19,13 +19,19 @@ package com.hazelcast.impl;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinInfo;
 import com.hazelcast.cluster.JoinRequest;
-import com.hazelcast.config.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.Join;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.ascii.TextCommandServiceImpl;
-import com.hazelcast.impl.base.*;
+import com.hazelcast.impl.base.NodeInitializer;
+import com.hazelcast.impl.base.NodeInitializerFactory;
+import com.hazelcast.impl.base.SystemLogService;
+import com.hazelcast.impl.base.VersionCheck;
 import com.hazelcast.impl.management.ManagementCenterService;
 import com.hazelcast.impl.map.MapService;
 import com.hazelcast.impl.partition.PartitionServiceImpl;
@@ -83,7 +89,6 @@ public class Node {
     public final MulticastService multicastService;
 
     public final ConnectionManager connectionManager;
-
 //    public final ClientHandlerService clientHandlerService;
 
     public final TextCommandServiceImpl textCommandService;
@@ -91,8 +96,6 @@ public class Node {
     public final Config config;
 
     public final GroupProperties groupProperties;
-
-    public final ThreadGroup threadGroup;
 
     final Address address;
 
@@ -106,10 +109,8 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
-//    public final ClientServiceImpl clientService;
+    //    public final ClientServiceImpl clientService;
 //
-    private final CpuUtilization cpuUtilization = new CpuUtilization();
-
     private final SystemLogService systemLogService;
 
     final SimpleBoundedQueue<Packet> serviceThreadPacketQueue = new SimpleBoundedQueue<Packet>(1000);
@@ -124,10 +125,12 @@ public class Node {
 
     public final SecurityContext securityContext;
 
+    public final ThreadGroup threadGroup;
+
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config) {
         ThreadContext.get().setCurrentInstance(hazelcastInstance);
-        this.threadGroup = new ThreadGroup(hazelcastInstance.getName());
         this.hazelcastInstance = hazelcastInstance;
+        this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
@@ -324,7 +327,7 @@ public class Node {
         if (completelyShutdown) return;
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            final Thread multicastServiceThread = new Thread(threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
+            final Thread multicastServiceThread = new Thread(hazelcastInstance.threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
         setActive(true);
@@ -621,10 +624,6 @@ public class Node {
 
     public boolean isOutOfMemory() {
         return outOfMemory;
-    }
-
-    public CpuUtilization getCpuUtilization() {
-        return cpuUtilization;
     }
 
     public String toString() {

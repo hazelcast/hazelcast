@@ -18,7 +18,6 @@ package com.hazelcast.impl.monitor;
 
 import com.hazelcast.monitor.MemberHealthStats;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.ThreadStats;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -28,43 +27,15 @@ public class MemberHealthStatsImpl implements MemberHealthStats, DataSerializabl
 
     boolean outOfMemory;
     boolean active;
-    ThreadStats serviceThreadStats = new ThreadStats(0, 0, 0, true);
-    ThreadStats inThreadStats = new ThreadStats(0, 0, 0, true);
-    ThreadStats outThreadStats = new ThreadStats(0, 0, 0, true);
 
     public void readData(DataInput in) throws IOException {
         outOfMemory = in.readBoolean();
         active = in.readBoolean();
-        serviceThreadStats = readThreadStats(in);
-        inThreadStats = readThreadStats(in);
-        outThreadStats = readThreadStats(in);
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeBoolean(outOfMemory);
         out.writeBoolean(active);
-        writeThreadStats(out, serviceThreadStats);
-        writeThreadStats(out, inThreadStats);
-        writeThreadStats(out, outThreadStats);
-    }
-
-    void writeThreadStats(DataOutput out, ThreadStats t) throws IOException {
-        out.writeInt(t.getUtilizationPercentage());
-        out.writeLong(t.getRunCount());
-        out.writeLong(t.getWaitCount());
-        out.writeBoolean(t.isRunning());
-    }
-
-    ThreadStats readThreadStats(DataInput in) throws IOException {
-        return new ThreadStats(in.readInt(), in.readLong(), in.readLong(), in.readBoolean());
-    }
-
-    public ThreadStats getInThreadStats() {
-        return inThreadStats;
-    }
-
-    public void setInThreadStats(ThreadStats inThreadStats) {
-        this.inThreadStats = inThreadStats;
     }
 
     public boolean isActive() {
@@ -83,30 +54,11 @@ public class MemberHealthStatsImpl implements MemberHealthStats, DataSerializabl
         this.outOfMemory = outOfMemory;
     }
 
-    public ThreadStats getOutThreadStats() {
-        return outThreadStats;
-    }
-
-    public void setOutThreadStats(ThreadStats outThreadStats) {
-        this.outThreadStats = outThreadStats;
-    }
-
-    public ThreadStats getServiceThreadStats() {
-        return serviceThreadStats;
-    }
-
-    public void setServiceThreadStats(ThreadStats serviceThreadStats) {
-        this.serviceThreadStats = serviceThreadStats;
-    }
-
     @Override
     public String toString() {
         return "MemberHealthStatsImpl{" +
                 "outOfMemory=" + outOfMemory +
                 ", active=" + active +
-                ", serviceThreadStats=" + serviceThreadStats +
-                ", inThreadStats=" + inThreadStats +
-                ", outThreadStats=" + outThreadStats +
                 '}';
     }
 }

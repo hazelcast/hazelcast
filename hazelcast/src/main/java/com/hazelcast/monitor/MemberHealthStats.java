@@ -16,16 +16,8 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.util.ThreadStats;
-
 public interface MemberHealthStats {
     boolean isActive();
 
     boolean isOutOfMemory();
-
-    ThreadStats getServiceThreadStats();
-
-    ThreadStats getInThreadStats();
-
-    ThreadStats getOutThreadStats();
 }

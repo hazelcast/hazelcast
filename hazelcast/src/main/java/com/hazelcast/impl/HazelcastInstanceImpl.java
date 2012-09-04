@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.HazelcastManagedContext;
+import com.hazelcast.impl.management.ThreadMonitoringService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -37,9 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 /**
  * @mdogan 7/31/12
@@ -63,13 +62,18 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final LifecycleServiceImpl lifecycleService;
 
-    final ManagedContext managedContext ;
+    final ManagedContext managedContext;
 
     final SerializerRegistry serializerRegistry = new SerializerRegistry();
 
-    HazelcastInstanceImpl(String name, Config config) throws Exception {
+    final ThreadMonitoringService threadMonitoringService;
 
+    final ThreadGroup threadGroup;
+
+    HazelcastInstanceImpl(String name, Config config) throws Exception {
         this.name = name;
+        this.threadGroup = new ThreadGroup(name);
+        threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
         registerConfigSerializers(config);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
@@ -82,9 +86,24 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             node.connectionManager.shutdown();
             throw new IllegalStateException("Node failed to start!");
         }
-
         managementService = new ManagementService(this);
         managementService.register();
+        new Thread(new Runnable() {
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(5000);
+                        System.out.println(threadMonitoringService);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
+    public ThreadMonitoringService getThreadMonitoringService() {
+        return threadMonitoringService;
     }
 
     public String getName() {
@@ -239,7 +258,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     private void destroyInstanceClusterWide(final Instance instance) {
-
     }
 
     private void fireInstanceCreateEvent(Instance instance) {
@@ -281,7 +299,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
                 } else {
                     Class typeClass = serializerConfig.getTypeClass();
                     if (typeClass == null) {
-                        typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName()) ;
+                        typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName());
                     }
                     serializerRegistry.register(factory, typeClass);
                 }
@@ -305,5 +323,9 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         lifecycleService.fireLifecycleEvent(MERGING);
         lifecycleService.restart();
         lifecycleService.fireLifecycleEvent(MERGED);
+    }
+
+    public ThreadGroup getThreadGroup() {
+        return threadGroup;
     }
 }
