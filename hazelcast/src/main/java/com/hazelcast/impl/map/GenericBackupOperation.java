@@ -89,8 +89,8 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
             record.setActive();
             record.setDirty(true);
         } else if (backupOpType == BackupOpType.REMOVE) {
-            Record record = mapPartition.records.get(dataKey);
-            if (record == null) {
+            Record record = mapPartition.records.remove(dataKey);
+            if (record != null) {
                 record.markRemoved();
             }
         } else {
