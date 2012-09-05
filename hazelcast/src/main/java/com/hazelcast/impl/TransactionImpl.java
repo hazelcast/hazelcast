@@ -118,8 +118,8 @@ public class TransactionImpl implements Transaction {
         status = TXN_STATUS_COMMITTING;
         try {
             ThreadContext.get().setCurrentFactory(factory);
-            for (TransactionRecord transactionRecord : transactionRecords) {
-                transactionRecord.commit();
+            for (TransactionRecord record : transactionRecords) {
+                record.commit();
             }
         } catch (RuntimeException e) {
             throw e;
@@ -427,6 +427,8 @@ public class TransactionImpl implements Transaction {
                             factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
                         }
                     }
+                    // since we do not have removeAndUnlock op, we should explicitly call unlock after remove!
+                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 } else {
                     factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 }

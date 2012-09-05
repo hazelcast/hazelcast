@@ -1232,7 +1232,7 @@ public class ConcurrentMapManager extends BaseManager {
             try {
                 return txnalRemove(CONCURRENT_MAP_REMOVE, name, key, null, timeout, -1L);
             } catch (OperationTimeoutException e) {
-                throw new TimeoutException();
+                throw new TimeoutException(e.getMessage());
             }
         }
 

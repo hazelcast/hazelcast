@@ -38,4 +38,8 @@ public class OperationTimeoutException extends HazelcastException {
     public OperationTimeoutException(String op, String message) {
         super("[" + op + "] " + message);
     }
+
+    public OperationTimeoutException(final Throwable cause) {
+        super(cause);
+    }
 }

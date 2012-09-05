@@ -285,9 +285,9 @@ public class BlockingQueueManager extends BaseManager {
             try {
                 removedItem = imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
                 if (removedItem != null) {
-                    ThreadContext threadContext = ThreadContext.get();
-                    TransactionImpl txn = threadContext.getCallContext().getTransaction();
-                    final Data removedItemData = toData(removedItem);
+                ThreadContext threadContext = ThreadContext.get();
+                TransactionImpl txn = threadContext.getCallContext().getTransaction();
+                final Data removedItemData = toData(removedItem);
                     if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                         txn.attachRemoveOp(name, key, removedItemData, true);
                     }
@@ -320,7 +320,7 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, getOperationTimeout(timeout));
             op.request.longValue = index;
-            op.request.txnId = ThreadContext.get().getThreadId();
+            op.request.txnId = ThreadContext.get().getTxnId();
             op.initOp();
             return (Data) op.getResultAsIs();
         } catch (Exception e) {
@@ -328,7 +328,7 @@ public class BlockingQueueManager extends BaseManager {
                 MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name,
                         getOperationTimeout(timeout));
                 op.request.longValue = index;
-                op.request.txnId = ThreadContext.get().getThreadId();
+                op.request.txnId = ThreadContext.get().getTxnId();
                 op.initOp();
                 throw new InterruptedException(e.getMessage());
             }
@@ -594,7 +594,7 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, getOperationTimeout(timeout));
             op.request.setLongRequest();
-            op.request.txnId = ThreadContext.get().getThreadId();
+            op.request.txnId = ThreadContext.get().getTxnId();
             op.initOp();
             return (Long) op.getResultAsObject();
         } catch (Exception e) {
@@ -742,7 +742,7 @@ public class BlockingQueueManager extends BaseManager {
         final CMap cmapStorage = getOrCreateStorageCMap(queueName);
         executeLocally(new Runnable() {
             public void run() {
-                TreeSet itemKeys = null;
+                TreeSet<Long> itemKeys = null;
                 if (cmapStorage.loader != null) {
                     Set keys = cmapStorage.loader.loadAllKeys();
                     if (keys != null && keys.size() > 0) {
@@ -947,7 +947,7 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        QData pollValidItem() {
+        private QData pollValidItem() {
             QData qdata = queue.poll();
             if (qdata == null) {
                 return null;
@@ -965,7 +965,7 @@ public class BlockingQueueManager extends BaseManager {
             return qdata;
         }
 
-        QData removeItemByIndex(int index) {
+        private QData removeItemByIndex(int index) {
             if (index >= queue.size()) {
                 return null;
             }
