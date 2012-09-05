@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
+import com.hazelcast.query.PredicateType;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -25,7 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 public interface IndexStore {
     void getSubRecordsBetween(MultiResultSet results, Long from, Long to);
 
-    void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, Long searchedValue);
+    void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue);
 
     void newRecordIndex(Long newValue, Record record);
 

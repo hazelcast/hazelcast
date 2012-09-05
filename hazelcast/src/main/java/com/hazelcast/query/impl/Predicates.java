@@ -17,14 +17,12 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.DateHelper;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.PredicateType;
 import com.hazelcast.util.Util;
-import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -67,7 +65,13 @@ public final class Predicates {
 
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
-            return index.getSubRecords(equal, less, index.getLongValue(second));
+            final PredicateType predicateType;
+            if (less) {
+                predicateType = equal ? PredicateType.LESSER_EQUAL : PredicateType.LESSER;
+            } else {
+                predicateType = equal ? PredicateType.GREATER_EQUAL : PredicateType.GREATER;
+            }
+            return index.getSubRecords(predicateType, index.getLongValue(second));
         }
 
         @Override
@@ -167,7 +171,7 @@ public final class Predicates {
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
-                return index.getSubRecords(false, false, index.getLongValue(second));
+                return index.getSubRecords(PredicateType.NOT_EQUAL, index.getLongValue(second));
             } else {
                 return null;
             }

@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
+import com.hazelcast.query.PredicateType;
 import com.hazelcast.util.NavigableSet;
 import com.hazelcast.util.concurrent.ConcurrentSkipListSet;
 
@@ -44,23 +45,38 @@ public class SortedIndexStore implements IndexStore {
         }
     }
 
-    public void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, Long searchedValue) {
-        Set<Long> values = (lessThan) ? sortedSet.headSet(searchedValue) : sortedSet.tailSet(searchedValue);
-        for (Long value : values) {
-            // exclude from when you have '>'
-            // because from is included
-            if (lessThan || equal || !value.equals(searchedValue)) {
+    public void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue) {
+        Set<Long> values = null;
+        boolean notEqual = false;
+        switch (predicateType) {
+            case LESSER:
+                values = sortedSet.headSet(searchedValue, false);
+                break;
+            case LESSER_EQUAL:
+                values = sortedSet.headSet(searchedValue, true);
+                break;
+            case GREATER:
+                values = sortedSet.tailSet(searchedValue, false);
+                break;
+            case GREATER_EQUAL:
+                values = sortedSet.tailSet(searchedValue, true);
+                break;
+            case NOT_EQUAL:
+                values = sortedSet;
+                notEqual = true;
+                break;
+        }
+
+        if (values != null) {
+            for (Long value : values) {
+                if (notEqual && searchedValue.longValue() == value.longValue()) {
+                    // skip this value if predicateType is NOT_EQUAL
+                    continue;
+                }
                 ConcurrentMap<Long, Record> records = mapRecords.get(value);
                 if (records != null) {
                     results.addResultSet(value, records.values());
                 }
-            }
-        }
-        if (lessThan && equal) {
-            // to wasn't included so include now
-            ConcurrentMap<Long, Record> records = mapRecords.get(searchedValue);
-            if (records != null) {
-                results.addResultSet(searchedValue, records.values());
             }
         }
     }
