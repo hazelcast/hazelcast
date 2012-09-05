@@ -22,31 +22,11 @@ import com.hazelcast.nio.Address;
 
 import java.util.*;
 
-public class HostAwareMemberGroupFactory implements MemberGroupFactory {
+public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
-    public Collection<MemberGroup> createMemberGroups(final Collection<Member> allMembers) {
-        final Collection<Member> members = removeLiteMembers(allMembers);
-        final Collection<MemberGroup> groups = createHostAwareMemberGroups(members);
-        if (groups.size() == 1 && members.size() >= 2) {
-            // If there are multiple members and just one host
-            // then split members into two groups to guarantee first backup.
-            MemberGroup group1 = groups.iterator().next();
-            MemberGroup group2 = new DefaultMemberGroup();
-            final int sizePerGroup = group1.size() / 2;
-
-            Iterator<Member> iter = group1.iterator();
-            while (group2.size() < sizePerGroup && iter.hasNext()) {
-                group2.addMember(iter.next());
-                iter.remove();
-            }
-            groups.add(group2);
-        }
-        return groups;
-    }
-
-    private Collection<MemberGroup> createHostAwareMemberGroups(final Collection<Member> members) {
-        Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
-        for (Member member : members) {
+    protected Collection<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) {
+        final Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
+        for (Member member : allMembers) {
             if (!member.isLiteMember()) {
                 Address address = ((MemberImpl) member).getAddress();
                 MemberGroup group = groups.get(address.getHost());
@@ -59,14 +39,5 @@ public class HostAwareMemberGroupFactory implements MemberGroupFactory {
         }
         return new HashSet<MemberGroup>(groups.values());
     }
-
-    private Collection<Member> removeLiteMembers(Collection<Member> members) {
-        final Collection<Member> result = new LinkedList<Member>();
-        for (Member member : members) {
-            if (!member.isLiteMember()) {
-                result.add(member);
-            }
-        }
-        return result;
-    }
 }
+
