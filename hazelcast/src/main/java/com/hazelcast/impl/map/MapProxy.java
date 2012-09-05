@@ -122,7 +122,13 @@ public class MapProxy {
             Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
             int total = 0;
             for (Object result : results.values()) {
-                Integer size = (Integer) result;
+                Integer size;
+                if(result instanceof Data) {
+                    size = (Integer) toObject(result);
+                }
+                else {
+                    size = (Integer) result;
+                }
                 total += size;
             }
             return total;
