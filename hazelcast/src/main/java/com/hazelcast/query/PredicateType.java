@@ -16,24 +16,15 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Record;
+/**
+ * @mdogan 9/5/12
+ */
+public enum PredicateType {
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
+    NOT_EQUAL,
+    LESSER,
+    GREATER,
+    LESSER_EQUAL,
+    GREATER_EQUAL
 
-public interface IndexStore {
-    void getSubRecordsBetween(MultiResultSet results, Long from, Long to);
-
-    void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue);
-
-    void newRecordIndex(Long newValue, Record record);
-
-    void removeRecordIndex(Long oldValue, Long recordId);
-
-    Set<MapEntry> getRecords(Long value);
-
-    void getRecords(MultiResultSet results, Set<Long> values);
-
-    ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords();
 }

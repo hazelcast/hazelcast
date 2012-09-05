@@ -38,14 +38,26 @@ public class UnsortedIndexStore implements IndexStore {
         }
     }
 
-    public void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, Long searchedValue) {
+    public void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue) {
         Set<Long> values = mapRecords.keySet();
         for (Long value : values) {
-            boolean valid;
-            if (lessThan) {
-                valid = (equal) ? (value <= searchedValue) : (value < searchedValue);
-            } else {
-                valid = (equal) ? (value >= searchedValue) : (value > searchedValue);
+            boolean valid = false;
+            switch (predicateType) {
+                case LESSER:
+                    valid = value < searchedValue;
+                    break;
+                case LESSER_EQUAL:
+                    valid = value <= searchedValue;
+                    break;
+                case GREATER:
+                    valid = value > searchedValue;
+                    break;
+                case GREATER_EQUAL:
+                    valid = value >= searchedValue;
+                    break;
+                case NOT_EQUAL:
+                    valid = value.longValue() != searchedValue.longValue();
+                    break;
             }
             if (valid) {
                 ConcurrentMap<Long, Record> records = mapRecords.get(value);
