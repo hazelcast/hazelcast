@@ -20,13 +20,10 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.util.AddressUtil;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
-public class ConfigMemberGroupFactory implements MemberGroupFactory {
+public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     private final Map<Integer, MemberGroupConfig> memberGroupConfigMap;
 
@@ -39,7 +36,7 @@ public class ConfigMemberGroupFactory implements MemberGroupFactory {
         }
     }
 
-    public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+    protected Collection<MemberGroup> createInternalMemberGroups(Collection<MemberImpl> members) {
         final Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
         for (MemberImpl member : members) {
             if (member.isLiteMember()) {
@@ -57,6 +54,6 @@ public class ConfigMemberGroupFactory implements MemberGroupFactory {
                 }
             }
         }
-        return memberGroups.values();
+        return new HashSet<MemberGroup>(memberGroups.values());
     }
 }
