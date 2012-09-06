@@ -54,13 +54,11 @@ public class MemberRemover extends Operation {
     }
 
     public void readInternal(DataInput in) throws IOException {
-        super.readData(in);
         deadAddress = new Address();
         deadAddress.readData(in);
     }
 
     public void writeInternal(DataOutput out) throws IOException {
-        super.writeData(out);
         deadAddress.writeData(out);
     }
 }
