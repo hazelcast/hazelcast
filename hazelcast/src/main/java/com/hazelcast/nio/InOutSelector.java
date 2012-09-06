@@ -16,9 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.Clock;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ThreadWatcher;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -44,8 +43,6 @@ public final class InOutSelector implements Runnable {
     private final int waitTime;
 
     protected boolean live = true;
-
-    protected final ThreadWatcher threadWatcher = new ThreadWatcher();
 
     final static long TEN_SECOND_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
@@ -107,7 +104,6 @@ public final class InOutSelector implements Runnable {
             connectionManager.ioService.onIOThreadStart();
             //noinspection WhileLoopSpinsOnField
             while (live) {
-                threadWatcher.incrementRunCount();
                 long currentMillis = Clock.currentTimeMillis();
                 if ((currentMillis - lastPublish) > TEN_SECOND_MILLIS) {
                     publishUtilization();
@@ -117,10 +113,7 @@ public final class InOutSelector implements Runnable {
                 if (!live) return;
                 int selectedKeyCount;
                 try {
-                    long startWait = System.nanoTime();
                     selectedKeyCount = selector.select(waitTime);
-                    long now = System.nanoTime();
-                    threadWatcher.addWait((now - startWait), now);
                     if (Thread.interrupted()) {
                         connectionManager.ioService.handleInterruptedException(Thread.currentThread(), new RuntimeException());
                         return;
