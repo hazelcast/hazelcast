@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.Instance;
 import com.hazelcast.impl.base.Values;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -41,7 +42,7 @@ public class MultiMapEntryIterator extends MapEntryIterator {
     public Map.Entry next() {
         if (currentValueIterator == null || !currentValueIterator.hasNext()) {
             lastKey = it.next();
-            Values value = (Values) proxy.get(lastKey);
+            Collection value = (Collection) proxy.get(lastKey);
             if (value == null) {
                 return next();
             }

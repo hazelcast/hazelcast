@@ -699,7 +699,7 @@ public class ClientHandlerService implements ConnectionListener {
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.args[0];
             Data key = new Data(protocol.buffers[0].array());
-            Data value = toData(protocol.buffers[1]);
+            Data value = new Data(protocol.buffers[1].array());
             return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsEntry(key, value)));
         }
     }
@@ -766,7 +766,7 @@ public class ClientHandlerService implements ConnectionListener {
             ByteBuffer[] buffers = new ByteBuffer[result.size()];
             int i = 0;
             for (Object o : result) {
-                Data d = (Data) o;
+                Data d = toData(o);
                 buffers[i++] = ByteBuffer.wrap(d.buffer);
             }
             return protocol.success(buffers);
@@ -807,7 +807,7 @@ public class ClientHandlerService implements ConnectionListener {
 
         public Protocol processCall(Node node, Protocol protocol) {
             String name = protocol.args[0];
-            Data key = toData(protocol.buffers[0]);
+            Data key = new Data(protocol.buffers[0].array());
             return protocol.success(String.valueOf(node.factory.getMultiMap(name).containsKey(key)));
         }
     }
@@ -832,10 +832,11 @@ public class ClientHandlerService implements ConnectionListener {
                 value = new Data(protocol.buffers[1].array());
                 return protocol.success(String.valueOf(node.factory.getMultiMap(name).remove(key, value)));
             }
+
             Collection<Object> collection = node.factory.getMultiMap(name).remove(key);
             List<ByteBuffer> list = new ArrayList<ByteBuffer>(collection.size());
             for (Object o : collection) {
-                list.add(ByteBuffer.wrap(((Data) o).buffer));
+                list.add(ByteBuffer.wrap(toData(o).buffer));
             }
             return protocol.success(list.toArray(new ByteBuffer[0]));
         }

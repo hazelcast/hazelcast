@@ -1294,7 +1294,15 @@ public class ConcurrentMapManager extends BaseManager {
             if (value instanceof AddressAwareException) {
                 rethrowException(request.operation, (AddressAwareException) value);
             }
-            Collection currentValues = (Collection) value;
+
+            Collection currentValues;
+            if(ThreadContext.get().isClient()){
+                currentValues = (Values) toObject((Data) value);
+            }else {
+                currentValues = (Collection) value;
+            }
+
+
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 List allValues = new ArrayList();
                 if (currentValues != null) {
@@ -1852,7 +1860,14 @@ public class ConcurrentMapManager extends BaseManager {
                 txn.attachRemoveOp(name, key, null, false, removedValueCount);
                 return allValues;
             } else {
-                Collection result = (Collection) objectCall(CONCURRENT_MAP_REMOVE, name, key, null, 0, -1);
+                
+                Object object = objectCall(CONCURRENT_MAP_REMOVE, name, key, null, 0, -1);
+                Collection result;
+                if(ThreadContext.get().isClient()){
+                    result = (Values) toObject((Data) object);
+                }else
+                    result = (Collection) object;
+
                 if (result != null) {
                     backup(CONCURRENT_MAP_BACKUP_REMOVE);
                 }

@@ -164,7 +164,7 @@ public class ProtocolProxyHelper extends ProxyHelper {
     }
     
     public <E> Collection<E> doCommandAsList(Command command, String[] args, Data... datas){
-        Protocol protocol = doCommand(Command.MMREMOVE, args, datas);
+        Protocol protocol = doCommand(command, args, datas);
         List<E> list = new ArrayList<E>();
         if(protocol.hasBuffer()){
             for(ByteBuffer bb: protocol.buffers){

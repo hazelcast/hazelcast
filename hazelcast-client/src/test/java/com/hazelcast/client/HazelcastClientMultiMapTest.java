@@ -104,7 +104,6 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         map.put(1, new CountDownLatch(1));
         map.put(2, new CountDownLatch(1));
         Collection<Integer> collection = multiMap.get("a");
-        assertEquals(Values.class, collection.getClass());
         assertEquals(2, collection.size());
         for (Iterator<Integer> it = collection.iterator(); it.hasNext(); ) {
             Integer o = it.next();
@@ -124,7 +123,6 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         map.put(1, new CountDownLatch(1));
         map.put(2, new CountDownLatch(1));
         Collection<Integer> collection = multiMap.remove("a");
-        assertEquals(Values.class, collection.getClass());
         assertEquals(2, collection.size());
         for (Iterator<Integer> it = collection.iterator(); it.hasNext(); ) {
             Object o = it.next();
@@ -227,6 +225,7 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         map.put("Hello", "Antarctica");
         map.put("Hello", "Australia");
         values = map.get("Hello");
+        System.out.println("Values are " + values);
         assertEquals(7, values.size());
         assertTrue(map.containsKey("Hello"));
         assertFalse(map.containsKey("Hi"));
