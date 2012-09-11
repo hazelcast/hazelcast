@@ -723,7 +723,13 @@ public class CMap {
         }
         DistributedLock lock = rec.getLock();
         Long response = (lock == null || !lock.isLocked()) ? 0L : 1L;
-        rec.lock(request.lockThreadId, request.lockAddress);
+        final boolean locked = rec.lock(request.lockThreadId, request.lockAddress);
+        if (!locked) {
+            response = -1L;
+            Throwable t = new IllegalStateException("Something is wrong! Lock cannot be acquired! "
+                                                    + request + " -> " + lock);
+            logger.log(Level.SEVERE, t.getMessage(), t);
+        }
         rec.incrementVersion();
         request.version = rec.getVersion();
         request.lockCount = rec.getLockCount();
@@ -733,11 +739,6 @@ public class CMap {
 
     void unlock(Record record, Request request) {
         record.unlock(request.lockThreadId, request.lockAddress);
-        fireScheduledActions(record);
-    }
-
-    void clearLock(Record record) {
-        record.clearLock();
         fireScheduledActions(record);
     }
 
@@ -813,6 +814,11 @@ public class CMap {
                 clearLock(record);
             }
         }
+    }
+
+    private void clearLock(Record record) {
+        record.clearLock();
+        fireScheduledActions(record);
     }
 
     public void onRemoveMulti(Request req, Record record) {
@@ -939,7 +945,7 @@ public class CMap {
         return mapForQueue;
     }
 
-    void sendKeyToMaster(Data key) {
+    private void sendKeyToMaster(Data key) {
         String queueName = name.substring(2);
         if (concurrentMapManager.isMaster()) {
             node.blockingQueueManager.doAddKey(queueName, key, 0);
@@ -1686,8 +1692,9 @@ public class CMap {
     }
 
     void removeAndPurgeRecord(Record record) {
-        mapRecords.remove(record.getKeyData());
-        mapIndexService.remove(record);
+        if (mapRecords.remove(record.getKeyData(), record)) {
+            mapIndexService.remove(record);
+        }
     }
 
     void updateIndexes(Record record) {

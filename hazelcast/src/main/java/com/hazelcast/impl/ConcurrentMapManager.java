@@ -1063,8 +1063,9 @@ public class ConcurrentMapManager extends BaseManager {
                     MLock mlock = new MLock();
                     boolean locked = mlock
                             .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
-                    if (!locked)
+                    if (!locked) {
                         throwTxTimeoutException(key);
+                    }
                     Object oldObject = null;
                     Data oldValue = mlock.oldValue;
                     if (oldValue != null) {
@@ -1192,8 +1193,9 @@ public class ConcurrentMapManager extends BaseManager {
                         MLock mlock = new MLock();
                         locked = mlock
                                 .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
-                        if (!locked)
+                        if (!locked) {
                             throwTxTimeoutException(key);
+                        }
                         Object oldObject = null;
                         Data oldValue = mlock.oldValue;
                         if (oldValue != null) {
@@ -1247,7 +1249,7 @@ public class ConcurrentMapManager extends BaseManager {
             if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
-                    boolean locked = mlock.lockAndGetValue(name, key, timeout);
+                    boolean locked = mlock.lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
                     if (!locked) {
                         throwTxTimeoutException(key);
                     }
@@ -1365,8 +1367,9 @@ public class ConcurrentMapManager extends BaseManager {
                 if (!txn.has(name, key)) {
                     MLock mlock = new MLock();
                     boolean locked = mlock.lock(name, key, DEFAULT_TXN_TIMEOUT);
-                    if (!locked)
+                    if (!locked) {
                         throwTxTimeoutException(key);
+                    }
                 }
                 if (txn.has(name, key, value)) {
                     return false;
@@ -1753,8 +1756,9 @@ public class ConcurrentMapManager extends BaseManager {
                     MLock mlock = new MLock();
                     boolean locked = mlock
                             .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
-                    if (!locked)
+                    if (!locked) {
                         throwTxTimeoutException(key);
+                    }
                     Object oldObject = null;
                     Data oldValue = mlock.oldValue;
                     if (oldValue != null) {
@@ -1811,8 +1815,9 @@ public class ConcurrentMapManager extends BaseManager {
                     MLock mlock = new MLock();
                     boolean locked = mlock
                             .lockAndGetValue(name, key, DEFAULT_TXN_TIMEOUT);
-                    if (!locked)
+                    if (!locked) {
                         throwTxTimeoutException(key);
+                    }
                     Object oldObject = null;
                     Data oldValue = mlock.oldValue;
                     if (oldValue != null) {
@@ -3862,11 +3867,10 @@ public class ConcurrentMapManager extends BaseManager {
                         onNoTimeToSchedule(request);
                     }
                 } else {
-                    Record record = cmap.getRecord(request.key);
+                    final Record record = cmap.getRecord(request.key);
                     if (request.operation == CONCURRENT_MAP_TRY_LOCK_AND_GET
-                            && cmap.loader != null
-                            && (record == null || !record.hasValueData())) {
-                        storeExecutor.execute(new LockLoader(cmap, request), request.key.hashCode());
+                            && cmap.loader != null && (record == null || !record.hasValueData())) {
+                        storeExecutor.execute(new TryLockAndGetLoader(cmap, request), request.key.hashCode());
                     } else if (cmap.isMultiMap() && request.value != null) {
                         Collection<ValueHolder> col = record.getMultiValues();
                         if (col != null && col.size() > 0) {
@@ -3907,10 +3911,10 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
 
-        class LockLoader extends AbstractMapStoreOperation {
+        class TryLockAndGetLoader extends AbstractMapStoreOperation {
             Data valueData = null;
 
-            LockLoader(CMap cmap, Request request) {
+            TryLockAndGetLoader(CMap cmap, Request request) {
                 super(cmap, request);
             }
 
@@ -3921,17 +3925,23 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void process() {
-                if (valueData != null) {
-                    Record record = cmap.getRecord(request);
-                    if (record == null) {
-                        record = cmap.createAndAddNewRecord(request.key, valueData);
-                    } else {
-                        record.setValueData(valueData);
+                final Record record = cmap.getRecord(request);
+                if (record != null && !record.testLock(request.lockThreadId, request.lockAddress)) {
+                    // record is locked by a previous TryLockAndGetLoader operation
+                    // return redo response.
+                    returnRedoResponse(request, REDO_MAP_LOCKED);
+                } else {
+                    if (valueData != null) {
+                        if (record == null) {
+                            cmap.createAndAddNewRecord(request.key, valueData);
+                        } else {
+                            record.setValueData(valueData);
+                        }
                     }
+                    doOperation(request);
+                    request.value = valueData;
+                    returnResponse(request);
                 }
-                doOperation(request);
-                request.value = valueData;
-                returnResponse(request);
             }
         }
 
@@ -4212,8 +4222,9 @@ public class ConcurrentMapManager extends BaseManager {
 
     Record recordExist(Request req) {
         CMap cmap = maps.get(req.name);
-        if (cmap == null)
+        if (cmap == null) {
             return null;
+        }
         return cmap.getRecord(req);
     }
 
@@ -4233,7 +4244,7 @@ public class ConcurrentMapManager extends BaseManager {
         return record;
     }
 
-    final boolean testLock(Request req) {
+    private boolean testLock(Request req) {
         Record record = recordExist(req);
         return record == null || record.testLock(req.lockThreadId, req.lockAddress);
     }

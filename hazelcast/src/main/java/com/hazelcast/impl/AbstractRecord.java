@@ -117,6 +117,21 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     // called from ServiceThread
+    public boolean lock(int threadId, Address address) {
+        invalidateValueCache();
+        final DistributedLock dl = lock;
+        if (dl == null) {
+            lock = new DistributedLock(address, threadId);
+            return true;
+        }
+        if (dl.lock(address, threadId)) {
+            lock = dl;
+            return true;
+        }
+        return false;
+    }
+
+    // called from ServiceThread
     public boolean unlock(int threadId, Address address) {
         invalidateValueCache();
         final DistributedLock dl = lock;
@@ -128,14 +143,37 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         return dl == null || dl.testLock(threadId, address);
     }
 
+    public DistributedLock getLock() {
+        return lock;
+    }
+
+    public void setLock(DistributedLock lock) {
+        this.lock = lock;
+    }
+
+    public boolean isLocked() {
+        final DistributedLock dl = lock;
+        return dl != null && dl.isLocked();
+    }
+
+    public int getLockCount() {
+        final DistributedLock dl = lock;
+        return (dl == null) ? 0 : dl.getLockCount();
+    }
+
     // called from ServiceThread
-    public boolean lock(int threadId, Address address) {
-        invalidateValueCache();
-        if (lock == null) {
-            lock = new DistributedLock(address, threadId);
-            return true;
-        }
-        return lock.lock(address, threadId);
+    public void clearLock() {
+        lock = null;
+    }
+
+    public Address getLockAddress() {
+        final DistributedLock dl = lock;
+        return (dl == null) ? null : dl.getLockAddress();
+    }
+
+    public long getLockAcquireTime() {
+        final DistributedLock dl = lock;
+        return (dl != null ? dl.getAcquireTime() : -1L);
     }
 
     protected void invalidateValueCache() {
@@ -323,14 +361,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         invalidateValueCache();
     }
 
-    public DistributedLock getLock() {
-        return lock;
-    }
-
-    public void setLock(DistributedLock lock) {
-        this.lock = lock;
-    }
-
     public Collection<ValueHolder> getMultiValues() {
         if (optionalInfo == null) return null;
         return getOptionalInfo().lsMultiValues;
@@ -408,34 +438,9 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
-    public boolean isLocked() {
-        final DistributedLock dl = lock;
-        return dl != null && dl.isLocked();
-    }
-
     public int getScheduledActionCount() {
         if (optionalInfo == null) return 0;
         return (getOptionalInfo().lsScheduledActions == null) ? 0 : getOptionalInfo().lsScheduledActions.size();
-    }
-
-    public int getLockCount() {
-        final DistributedLock dl = lock;
-        return (dl == null) ? 0 : dl.getLockCount();
-    }
-
-    // called from ServiceThread
-    public void clearLock() {
-        lock = null;
-    }
-
-    public Address getLockAddress() {
-        final DistributedLock dl = lock;
-        return (dl == null) ? null : dl.getLockAddress();
-    }
-
-    public long getLockAcquireTime() {
-        final DistributedLock dl = lock;
-        return (dl != null ? dl.getAcquireTime() : -1L);
     }
 
     public OptionalInfo getOptionalInfo() {
