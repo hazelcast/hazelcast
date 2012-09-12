@@ -460,17 +460,12 @@ public class TransactionImpl implements Transaction {
         }
 
         public void rollbackMap() {
-            MProxy mapProxy = null;
-            Object proxy = factory.getOrCreateProxyByName(name);
-            if (proxy instanceof MProxy) {
-                mapProxy = (MProxy) proxy;
-            }
-            if (mapProxy != null) mapProxy.unlock(key);
+            factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
         }
 
         public void rollbackQueue() {
             if (removed) {
-                factory.node.blockingQueueManager.rollbackPoll(name, key, value);
+                factory.node.blockingQueueManager.rollbackPoll(name, key);
             }
         }
 

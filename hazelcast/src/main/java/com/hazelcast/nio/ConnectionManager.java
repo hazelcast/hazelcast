@@ -32,10 +32,13 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -398,25 +401,23 @@ public class ConnectionManager {
         log(Level.FINEST, "Stopping ConnectionManager");
         shutdownSocketAcceptor(); // interrupt acceptor thread after live=false
         ioService.onShutdown();
-        for (Connection conn : mapConnections.values()) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
-            }
-        }
-        for (Connection conn : setActiveConnections) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
-            }
-        }
+        closeConnections(mapConnections.values());
+        closeConnections(setActiveConnections);
         shutdownIOSelectors();
         setConnectionInProgress.clear();
         mapConnections.clear();
         mapMonitors.clear();
         setActiveConnections.clear();
+    }
+
+    private void closeConnections(Collection<Connection> connections) {
+        for (Connection conn : connections) {
+            try {
+                destroyConnection(conn);
+            } catch (final Throwable t) {
+                logger.log(Level.FINEST, t.getMessage(), t);
+            }
+        }
     }
 
     private synchronized void shutdownIOSelectors() {

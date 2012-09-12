@@ -155,7 +155,7 @@ public class BlockingQueueManager extends BaseManager {
 
     public int size(String name) {
         ThreadContext threadContext = ThreadContext.get();
-        TransactionImpl txn = threadContext.getCallContext().getTransaction();
+        TransactionImpl txn = threadContext.getTransaction();
         int size = queueSize(name);
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
             size += txn.size(name);
@@ -249,7 +249,7 @@ public class BlockingQueueManager extends BaseManager {
             storeQueueItem(name, key, item, index);
     }
 
-    public void rollbackPoll(String name, Object key, Object obj) {
+    public void rollbackPoll(String name, Object key) {
         final Data dataKey = toData(key);
         if (addKeyAsync) {
             sendKeyToMaster(name, dataKey, 0);
@@ -285,16 +285,16 @@ public class BlockingQueueManager extends BaseManager {
             try {
                 removedItem = imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
                 if (removedItem != null) {
-                ThreadContext threadContext = ThreadContext.get();
-                TransactionImpl txn = threadContext.getCallContext().getTransaction();
-                final Data removedItemData = toData(removedItem);
+                    ThreadContext threadContext = ThreadContext.get();
+                    TransactionImpl txn = threadContext.getCallContext().getTransaction();
+                    final Data removedItemData = toData(removedItem);
                     if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
                         txn.attachRemoveOp(name, key, removedItemData, true);
                     }
                     fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                 }
             } catch (TimeoutException e) {
-                throw new OperationTimeoutException();
+                throw new OperationTimeoutException(e);
             }
             long now = Clock.currentTimeMillis();
             timeout -= (now - start);
@@ -755,8 +755,8 @@ public class BlockingQueueManager extends BaseManager {
                         itemKeys = new TreeSet<Long>(keys);
                     } else {
                         itemKeys.addAll(keys);
+                        }
                     }
-                }
                 if (itemKeys != null) {
                     final Set<Long> queueKeys = itemKeys;
                     enqueueAndReturn(new Processable() {

@@ -181,14 +181,15 @@ public final class Connection {
     }
 
     public void close0() throws IOException {
-        if (!live)
+        if (!live) {
             return;
+        }
+        readHandler.shutdown();
+        writeHandler.shutdown();
         live = false;
         if (socketChannel != null && socketChannel.isOpen()) {
             socketChannel.close();
         }
-        readHandler.shutdown();
-        writeHandler.shutdown();
     }
 
     public void close() {

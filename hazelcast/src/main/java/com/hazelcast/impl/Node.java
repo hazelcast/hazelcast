@@ -380,16 +380,17 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down the clientHandlerService");
             clientHandlerService.shutdown();
-            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
-            concurrentMapManager.shutdown();
-            logger.log(Level.FINEST, "Shutting down the cluster service");
-            clusterService.stop();
+            // connections should be destroyed first of all (write queues may be flushed before sockets are closed)
+            logger.log(Level.FINEST, "Shutting down the connection manager");
+            connectionManager.shutdown();
             if (multicastService != null) {
                 logger.log(Level.FINEST, "Shutting down the multicast service");
                 multicastService.stop();
             }
-            logger.log(Level.FINEST, "Shutting down the connection manager");
-            connectionManager.shutdown();
+            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
+            concurrentMapManager.shutdown();
+            logger.log(Level.FINEST, "Shutting down the cluster service");
+            clusterService.stop();
             logger.log(Level.FINEST, "Shutting down the executorManager");
             executorManager.stop();
             textCommandService.stop();

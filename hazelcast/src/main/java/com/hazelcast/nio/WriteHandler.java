@@ -16,16 +16,18 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.base.SystemArgsLog;
 import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
@@ -190,12 +192,21 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         registerOp(inOutSelector.selector, SelectionKey.OP_WRITE);
     }
 
+    final long fiveMillis = TimeUnit.MILLISECONDS.toNanos(5);
+
+    private void flush(final int waitMillis) {
+        long remaining = waitMillis;
+        while (size() > 0 && remaining > 0) {
+            long start = Clock.currentTimeMillis();
+            LockSupport.parkNanos(fiveMillis);
+            remaining -= (Clock.currentTimeMillis() - start);
+        }
+    }
+
     @Override
     public void shutdown() {
-        Object obj = poll();
-        while (obj != null) {
-            obj = poll();
-        }
+//        flush(1000);
+        writeQueue.clear();
     }
 
     public int size() {
