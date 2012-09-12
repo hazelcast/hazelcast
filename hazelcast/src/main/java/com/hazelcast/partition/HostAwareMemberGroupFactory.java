@@ -24,7 +24,7 @@ import java.util.*;
 
 public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
-    protected Collection<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) {
+    protected Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) {
         final Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (Member member : allMembers) {
             if (!member.isLiteMember()) {
