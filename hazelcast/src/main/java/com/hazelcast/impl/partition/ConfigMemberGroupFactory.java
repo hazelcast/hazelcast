@@ -36,7 +36,7 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
         }
     }
 
-    protected Collection<MemberGroup> createInternalMemberGroups(Collection<MemberImpl> members) {
+    protected Set<MemberGroup> createInternalMemberGroups(Collection<MemberImpl> members) {
         final Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
         for (MemberImpl member : members) {
             if (member.isLiteMember()) {

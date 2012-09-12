@@ -21,6 +21,7 @@ import com.hazelcast.impl.MemberImpl;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Set;
 
 abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
@@ -44,7 +45,7 @@ abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
         return groups;
     }
 
-    protected abstract Collection<MemberGroup> createInternalMemberGroups(final Collection<MemberImpl> allMembers) ;
+    protected abstract Set<MemberGroup> createInternalMemberGroups(final Collection<MemberImpl> allMembers) ;
 
     private Collection<MemberImpl> removeLiteMembers(Collection<MemberImpl> members) {
         final Collection<MemberImpl> result = new LinkedList<MemberImpl>();
