@@ -333,6 +333,7 @@ public class Node {
         } else {
             new Thread(new Runnable() {
                 public void run() {
+                    ThreadContext.get().setCurrentFactory(factory);
                     doShutdown(force);
                 }
             }).start();

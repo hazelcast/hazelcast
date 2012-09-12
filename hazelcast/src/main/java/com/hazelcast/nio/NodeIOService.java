@@ -197,6 +197,7 @@ public class NodeIOService implements IOService {
 
     public void onShutdown() {
         try {
+            ThreadContext.get().setCurrentFactory(node.factory);
             node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
             // wait a little
             Thread.sleep(100);
