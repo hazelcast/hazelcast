@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -242,7 +243,55 @@ public class ListenerLifecycleTest {
                 CountdownMessageListener.LATCH.await(5, TimeUnit.SECONDS));
     }
 
-    public static class CountdownMembershipListener implements MembershipListener {
+    @Test
+    public void testRemoveListener() throws InterruptedException {
+        final AtomicInteger counter = new AtomicInteger();
+        final int k = 5;
+        final String name = "test";
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(null);
+
+        IMap map = hazelcast.getMap(name);
+        map.addEntryListener(new NamedEntryListener(name, counter), true);
+        for (int i = 0; i < k; i++) {
+            map.put(i, i);
+        }
+        Thread.sleep(1000);
+        assertEquals(k, counter.get());
+        map.removeEntryListener(new NamedEntryListener(name));
+        map.put(k, k);
+        Thread.sleep(500);
+        assertEquals(k, counter.get());
+        counter.set(0);
+
+        ITopic t = hazelcast.getTopic(name);
+        t.addMessageListener(new NamedMessageListener(name, counter));
+        for (int i = 0; i < k; i++) {
+            t.publish(i);
+        }
+        Thread.sleep(1000);
+        assertEquals(k, counter.get());
+        t.removeMessageListener(new NamedMessageListener(name));
+        t.publish(k);
+        Thread.sleep(500);
+        assertEquals(k, counter.get());
+        counter.set(0);
+
+        IQueue q = hazelcast.getQueue(name);
+        q.addItemListener(new NamedItemListener(name, counter), true);
+        for (int i = 0; i < k; i++) {
+            q.offer(i);
+        }
+        Thread.sleep(1000);
+        assertEquals(k, counter.get());
+        q.removeItemListener(new NamedItemListener(name));
+        q.offer(k);
+        Thread.sleep(500);
+        assertEquals(k, counter.get());
+        counter.set(0);
+
+    }
+
+    static class CountdownMembershipListener implements MembershipListener {
         static final int MEMBERS = 3;
         static final int EVENT_TOTAL = 6;
 
@@ -256,7 +305,7 @@ public class ListenerLifecycleTest {
         }
     }
 
-    public static class CountdownInstanceListener implements InstanceListener {
+    static class CountdownInstanceListener implements InstanceListener {
         static final int INSTANCES = 5;
         static final int EVENT_TOTAL = INSTANCES * CountdownMembershipListener.MEMBERS * 5; // map, multimap, topic, queue x2
         static final CountDownLatch LATCH = new CountingCountdownLatch(EVENT_TOTAL);
@@ -269,7 +318,7 @@ public class ListenerLifecycleTest {
         }
     }
 
-    public static class CountdownEntryListener extends EntryAdapter {
+    static class CountdownEntryListener extends EntryAdapter {
         static final int ENTRIES = 15;
         static final int EVENT_TOTAL = CountdownMembershipListener.MEMBERS * CountdownInstanceListener.INSTANCES * ENTRIES;
         static final CountDownLatch LATCH = new CountingCountdownLatch(EVENT_TOTAL);
@@ -289,7 +338,7 @@ public class ListenerLifecycleTest {
         }
     }
 
-    public static class CountdownItemListener implements ItemListener {
+    static class CountdownItemListener implements ItemListener {
         static final int ENTRIES = 15;
         static final int EVENT_TOTAL = CountdownMembershipListener.MEMBERS * CountdownInstanceListener.INSTANCES * ENTRIES;
         static final CountDownLatch LATCH = new CountingCountdownLatch(EVENT_TOTAL);
@@ -302,7 +351,7 @@ public class ListenerLifecycleTest {
         }
     }
 
-    public static class CountdownMessageListener implements MessageListener {
+    static class CountdownMessageListener implements MessageListener {
         static final int MESSAGES = 15;
         static final int EVENT_TOTAL = CountdownMembershipListener.MEMBERS * CountdownInstanceListener.INSTANCES * MESSAGES;
         static final CountDownLatch LATCH = new CountingCountdownLatch(EVENT_TOTAL);
@@ -312,7 +361,7 @@ public class ListenerLifecycleTest {
         }
     }
 
-    public static class CountingCountdownLatch extends CountDownLatch {
+    static class CountingCountdownLatch extends CountDownLatch {
         final AtomicInteger count;
 
         public CountingCountdownLatch(int count) {
@@ -345,6 +394,87 @@ public class ListenerLifecycleTest {
             if ((c = count.get()) < 0) {
                 fail("Countdown to negative = " + c);
             }
+        }
+    }
+
+    private static abstract class NamedListener {
+        String name;
+        final AtomicInteger counter;
+
+        NamedListener(final String name) {
+            this(name, new AtomicInteger());
+        }
+
+        NamedListener(final String name, final AtomicInteger counter) {
+            this.name = name;
+            this.counter = counter;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final NamedListener that = (NamedListener) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+    }
+
+    static class NamedEntryListener extends NamedListener implements EntryListener {
+
+        NamedEntryListener(final String name) {
+            super(name);
+        }
+
+        NamedEntryListener(final String name, final AtomicInteger counter) {
+            super(name, counter);
+        }
+
+        public void entryAdded(final EntryEvent event) {
+            counter.incrementAndGet();
+        }
+        public void entryRemoved(final EntryEvent event) {}
+        public void entryUpdated(final EntryEvent event) {}
+        public void entryEvicted(final EntryEvent event) {}
+    }
+
+    static class NamedMessageListener extends NamedListener implements MessageListener {
+
+        NamedMessageListener(final String name) {
+            super(name);
+        }
+
+        NamedMessageListener(final String name, final AtomicInteger counter) {
+            super(name, counter);
+        }
+
+        public void onMessage(final Message message) {
+            counter.incrementAndGet();
+        }
+    }
+
+    static class NamedItemListener extends NamedListener implements ItemListener {
+
+        NamedItemListener(final String name) {
+            super(name);
+        }
+
+        NamedItemListener(final String name, final AtomicInteger counter) {
+            super(name, counter);
+        }
+
+        public void itemAdded(final ItemEvent item) {
+            counter.incrementAndGet();
+        }
+        public void itemRemoved(final ItemEvent item) {
         }
     }
 }
