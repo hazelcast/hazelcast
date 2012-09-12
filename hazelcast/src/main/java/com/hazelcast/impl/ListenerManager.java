@@ -285,7 +285,7 @@ public class ListenerManager extends BaseManager {
         List<ListenerItem> listeners = namedListeners.get(name);
         if (listeners == null) return;
         for (ListenerItem listenerItem : listeners) {
-            if (listener == listenerItem.listener && listenerItem.name.equals(name)) {
+            if (listener != null && listener.equals(listenerItem.listener) && listenerItem.name.equals(name)) {
                 if (key == null && listenerItem.key == null) {
                     listeners.remove(listenerItem);
                 } else if (key != null && key.equals(listenerItem.key)) {
