@@ -75,9 +75,9 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     	throw new NotSupportedException();
     }
     
-    public javax.resource.cci.LocalTransaction getLocalTransaction() throws ResourceException {
+    public HazelcastTransaction getLocalTransaction() throws ResourceException {
     	managedConnection.log(Level.FINEST, "getLocalTransaction");
-        return managedConnection;
+        return managedConnection.getLocalTransaction();
     }
 
     public ConnectionMetaData getMetaData() throws ResourceException {
@@ -89,50 +89,88 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return "hazelcast.ConnectionImpl [" + id + "]";
     }
     
+    /**
+     * Method is not exposed to force all clients to go through this connection object and its
+     * methods from {@link HazelcastConnection}
+     * @return the local hazelcast instance
+     */
     private HazelcastInstance getHazelcastInstance() {
     	return managedConnection.getHazelcastInstance();
     }
     
+    /* (non-Javadoc)
+     * @see com.hazelcast.jca.HazelcastConnection#getMap(java.lang.String)
+     */
     public <K, V> IMap<K, V> getMap(String name) {
     	return getHazelcastInstance().getMap(name);
     }
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getQueue(java.lang.String)
+	 */
 	public <E> IQueue<E> getQueue(String name) {
 		return getHazelcastInstance().getQueue(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getTopic(java.lang.String)
+	 */
 	public <E> ITopic<E> getTopic(String name) {
 		return getHazelcastInstance().getTopic(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getSet(java.lang.String)
+	 */
 	public <E> ISet<E> getSet(String name) {
 		return getHazelcastInstance().getSet(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getList(java.lang.String)
+	 */
 	public <E> IList<E> getList(String name) {
 		return getHazelcastInstance().getList(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getMultiMap(java.lang.String)
+	 */
 	public <K, V> MultiMap<K, V> getMultiMap(String name) {
 		return getHazelcastInstance().getMultiMap(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getExecutorService()
+	 */
 	public ExecutorService getExecutorService() {
 		return getHazelcastInstance().getExecutorService();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getExecutorService(java.lang.String)
+	 */
 	public ExecutorService getExecutorService(String name) {
 		return getHazelcastInstance().getExecutorService(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getAtomicNumber(java.lang.String)
+	 */
 	public AtomicNumber getAtomicNumber(String name) {
 		return getHazelcastInstance().getAtomicNumber(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getCountDownLatch(java.lang.String)
+	 */
 	public ICountDownLatch getCountDownLatch(String name) {
 		return getHazelcastInstance().getCountDownLatch(name);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.hazelcast.jca.HazelcastConnection#getSemaphore(java.lang.String)
+	 */
 	public ISemaphore getSemaphore(String name) {
 		return getHazelcastInstance().getSemaphore(name);
 	}
