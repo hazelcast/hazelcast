@@ -34,35 +34,60 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
+/**
+ * This is the starting point of the whole resrouce adapter for hazelcast.
+ * The hazelcast instance is created/fetched in this class 
+ */
 public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	private static final long serialVersionUID = -1727994229521767306L;
+	/** The hazelcast instance itself */
 	private HazelcastInstance hazelcast;
+	/** The configured hazelcast configuration location */
 	private String configurationLocation;
-
+	/** Identity generator */
     private final static AtomicInteger idGen = new AtomicInteger();
+    /** Identity */
     private transient final int id;
 
     public ResourceAdapterImpl() {
         id = idGen.incrementAndGet();
     }
 	
+	/* (non-Javadoc)
+	 * @see javax.resource.spi.ResourceAdapter#endpointActivation(javax.resource.spi.endpoint.MessageEndpointFactory, javax.resource.spi.ActivationSpec)
+	 */
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec)
             throws ResourceException {
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.spi.ResourceAdapter#endpointDeactivation(javax.resource.spi.endpoint.MessageEndpointFactory, javax.resource.spi.ActivationSpec)
+     */
     public void endpointDeactivation(MessageEndpointFactory endpointFactory, ActivationSpec spec) {
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.spi.ResourceAdapter#getXAResources(javax.resource.spi.ActivationSpec[])
+     */
     public XAResource[] getXAResources(ActivationSpec[] specs) throws ResourceException {
     	//JBoss is fine with null, weblogic requires an empty array
         return new XAResource[0];
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.spi.ResourceAdapter#start(javax.resource.spi.BootstrapContext)
+     */
     public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
+    	// Gets/creates the hazelcast instance
     	ConfigBuilder config = buildConfiguration();
     	setHazelcast(Hazelcast.newHazelcastInstance(config.build()));;
     }
 
+	/**
+	 * Creates a hazelcast configuration based on the {@link #getConfigLocation()}
+	 * @return the created hazelcast configuration 
+	 * @throws ResourceAdapterInternalException If there was a problem with the configuration creation
+	 */
 	private ConfigBuilder buildConfiguration()
 			throws ResourceAdapterInternalException {
 		XmlConfigBuilder config;
@@ -78,20 +103,40 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 		return config;
 	}
 
+    /* (non-Javadoc)
+     * @see javax.resource.spi.ResourceAdapter#stop()
+     */
     public void stop() {
     	if (getHazelcast() != null) {
     		getHazelcast().getLifecycleService().shutdown();
     	}
     }
 
+    /** Sets the underlying hazelcast instance */
 	private void setHazelcast(HazelcastInstance hazelcast) {
 		this.hazelcast = hazelcast;
 	}
 
+	/** Provides access to the underlying hazelcast instance */
 	HazelcastInstance getHazelcast() {
 		return hazelcast;
 	}
 
+	/**
+	 * Called by the container
+	 * @param configLocation Hazelcast's configuration location
+	 */
+	public void setConfigLocation(String configLocation) {
+		this.configurationLocation = configLocation;
+	}
+
+	/**
+	 * @return The configured hazelcast configuration location via RAR deployment descriptor
+	 */
+	public String getConfigLocation() {
+		return configurationLocation;
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -112,15 +157,6 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 		if (id != other.id)
 			return false;
 		return true;
-	}
-
-
-	public void setConfigLocation(String configLocation) {
-		this.configurationLocation = configLocation;
-	}
-
-	public String getConfigLocation() {
-		return configurationLocation;
 	}
 
 }

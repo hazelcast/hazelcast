@@ -34,31 +34,54 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterAssociation;
 import javax.security.auth.Subject;
 
+/**
+ * This managed connection factory is populated with all 
+ * container-specific configuration and infrastructure
+ * @see #setConnectionTracingDetail(boolean)
+ * @see #setConnectionTracingEvents(String)
+ * @see #setResourceAdapter(ResourceAdapter)
+ */
 public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConnectionFactory, ResourceAdapterAssociation {
 	private static final long serialVersionUID = -4889598421534961926L;
+	/** Identity generator */
 	private static final AtomicInteger idGen = new AtomicInteger();
-	
+	/** Identity */
 	private transient final int id;
 
-	private Set<HzConnectionEvent> hzConnectionTracingEvents;
+	/** Access to this resource adapter instance itself */
 	private ResourceAdapterImpl resourceAdapter;
+	/** Definies which events should be traced 
+	 * @see HzConnectionEvent */
+	private Set<HzConnectionEvent> hzConnectionTracingEvents;
+	
+	/** Should connection events be traced or not
+	 * @see #hzConnectionTracingEvents  */
 	private boolean connectionTracingDetail;
 
 	public ManagedConnectionFactoryImpl() {
 		id = idGen.incrementAndGet();
 	}
 
-	public Object createConnectionFactory() throws ResourceException {
+	/* (non-Javadoc)
+	 * @see javax.resource.spi.ManagedConnectionFactory#createConnectionFactory()
+	 */
+	public HazelcastConnectionFactory createConnectionFactory() throws ResourceException {
 		return createConnectionFactory(null);
 	}
 
-	public Object createConnectionFactory(ConnectionManager cm)
+	/* (non-Javadoc)
+	 * @see javax.resource.spi.ManagedConnectionFactory#createConnectionFactory(javax.resource.spi.ConnectionManager)
+	 */
+	public HazelcastConnectionFactory createConnectionFactory(ConnectionManager cm)
 			throws ResourceException {
 		log(Level.FINEST, "createConnectionFactory cm: " + cm);
 		logHzConnectionEvent(this, HzConnectionEvent.FACTORY_INIT);
 		return new ConnectionFactoryImpl(this, cm);
 	}
 
+	/* (non-Javadoc)
+	 * @see javax.resource.spi.ManagedConnectionFactory#createManagedConnection(javax.security.auth.Subject, javax.resource.spi.ConnectionRequestInfo)
+	 */
 	public ManagedConnection createManagedConnection(Subject subject,
 			ConnectionRequestInfo cxRequestInfo) throws ResourceException {
 		log(Level.FINEST, "createManagedConnection");
@@ -66,36 +89,49 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 		return new ManagedConnectionImpl(cxRequestInfo, this);
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		ManagedConnectionFactoryImpl other = (ManagedConnectionFactoryImpl) obj;
-		if (id != other.id)
-			return false;
-		return true;
-	}
-
+	/** Getter for the RAR property 'connectionTracingEvents' */ 
 	public String getConnectionTracingEvents() {
 		return this.hzConnectionTracingEvents.toString();
 	}
 
+	/** Setter for the RAR property 'connectionTracingDetails'. 
+	 * This method is called by the container */
+	public void setConnectionTracingDetail(boolean connectionTracingDetail) {
+		this.connectionTracingDetail = connectionTracingDetail;
+	}
+
+	/** Getter for the RAR property 'connectionTracingDetails' */
+	public boolean isConnectionTracingDetail() {
+		return connectionTracingDetail;
+	}
+	
+	/* (non-Javadoc)
+	 * @see javax.resource.spi.ResourceAdapterAssociation#getResourceAdapter()
+	 */
 	public ResourceAdapterImpl getResourceAdapter() {
 		return resourceAdapter;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + id;
-		return result;
+	/* (non-Javadoc)
+	 * @see javax.resource.spi.ResourceAdapterAssociation#setResourceAdapter(javax.resource.spi.ResourceAdapter)
+	 */
+	public void setResourceAdapter(ResourceAdapter resourceAdapter) throws ResourceException {
+		assert resourceAdapter != null;
+		
+		if (resourceAdapter instanceof ResourceAdapterImpl) {
+			this.resourceAdapter = (ResourceAdapterImpl) resourceAdapter;
+		} else {
+			throw new ResourceException(resourceAdapter
+					+ " is not the expected ResoruceAdapterImpl but "
+					+ resourceAdapter.getClass());
+		}
 	}
 
+	/**
+	 * Logs (or silently drops) the provided connection event if configured so
+	 * @param eventSource The source from where the event originates
+	 * @param event The event to log
+	 */
 	void logHzConnectionEvent(Object eventSource, HzConnectionEvent event) {
 		if (hzConnectionTracingEvents.contains(event)) {
 			StringBuilder sb = new StringBuilder("HZ Connection Event <<");
@@ -112,21 +148,25 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public ManagedConnection matchManagedConnections(Set connectionSet,
+	/* (non-Javadoc)
+	 * @see javax.resource.spi.ManagedConnectionFactory#matchManagedConnections(java.util.Set, javax.security.auth.Subject, javax.resource.spi.ConnectionRequestInfo)
+	 */
+	public ManagedConnection matchManagedConnections(@SuppressWarnings("rawtypes") Set connectionSet,
 			Subject subject, ConnectionRequestInfo cxRequestInfo)
 			throws ResourceException {
 		log(Level.FINEST, "matchManagedConnections");
 
 		if ((null != connectionSet) && !connectionSet.isEmpty()) {
-			for (ManagedConnection conn : (Set<ManagedConnection>) connectionSet) {
-				if (conn instanceof ManagedConnectionImpl) {
-					ConnectionRequestInfo otherCxRequestInfo = ((ManagedConnectionImpl) conn)
-							.getCxRequestInfo();
+			for (Object con : (Set<?>) connectionSet) {
+				if (con instanceof ManagedConnectionImpl) {
+					ManagedConnectionImpl conn = (ManagedConnectionImpl) con;
+					ConnectionRequestInfo otherCxRequestInfo = conn.getCxRequestInfo();
 					if (((null == otherCxRequestInfo) && (null == cxRequestInfo))
 							|| otherCxRequestInfo.equals(cxRequestInfo)) {
 						return conn;
 					}
+				} else {
+					log(Level.WARNING, "Unexpected element in list: " + con);
 				}
 			}
 		}
@@ -134,6 +174,12 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 		return null;
 	}
 
+	
+	/**
+	 * Setter for the property 'connectionTracingEvents'.
+	 * This method is called by the container
+	 * @param tracingSpec A comma delimited list of {@link HzConnectionEvent}
+	 */
 	public void setConnectionTracingEvents(String tracingSpec) {
 		if ((null != tracingSpec) && (0 < tracingSpec.length())) {
 			List<HzConnectionEvent> traceEvents = new ArrayList<HzConnectionEvent>();
@@ -160,29 +206,31 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 		}
 	}
 
-	public void setResourceAdapter(ResourceAdapter resourceAdapter)
-			throws ResourceException {
-		assert resourceAdapter != null;
-
-		if (resourceAdapter instanceof ResourceAdapterImpl) {
-			this.resourceAdapter = (ResourceAdapterImpl) resourceAdapter;
-		} else {
-			throw new ResourceException(resourceAdapter
-					+ " is not the expected ResoruceAdapterImpl but "
-					+ resourceAdapter.getClass());
-		}
-	}
-
 	@Override
 	public String toString() {
 		return "hazelcast.ManagedConnectionFactoryImpl [" + id + "]";
 	}
-
-	public void setConnectionTracingDetail(boolean connectionTracingDetail) {
-		this.connectionTracingDetail = connectionTracingDetail;
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		return result;
 	}
 
-	public boolean isConnectionTracingDetail() {
-		return connectionTracingDetail;
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ManagedConnectionFactoryImpl other = (ManagedConnectionFactoryImpl) obj;
+		if (id != other.id)
+			return false;
+		return true;
 	}
+
 }

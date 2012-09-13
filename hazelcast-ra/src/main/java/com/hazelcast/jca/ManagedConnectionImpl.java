@@ -18,8 +18,6 @@ package com.hazelcast.jca;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -28,19 +26,16 @@ import javax.resource.cci.Connection;
 import javax.resource.spi.ConnectionEvent;
 import javax.resource.spi.ConnectionEventListener;
 import javax.resource.spi.ConnectionRequestInfo;
-import javax.resource.spi.LocalTransaction;
 import javax.resource.spi.ManagedConnection;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.CallContext;
-import com.hazelcast.impl.ThreadContext;
 
 public class ManagedConnectionImpl extends JcaBase implements ManagedConnection {
+	/** Identity generator */
 	private static final AtomicInteger idGen = new AtomicInteger();
-	
+	/** Identity */
 	private transient final int id;
 
 	private final ManagedConnectionFactoryImpl factory;
