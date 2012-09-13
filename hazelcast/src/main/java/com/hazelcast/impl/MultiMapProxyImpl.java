@@ -22,7 +22,6 @@ import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ConcurrentMapManager.MMultiGet;
 import com.hazelcast.impl.ConcurrentMapManager.MRemoveMulti;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
-import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.Clock;

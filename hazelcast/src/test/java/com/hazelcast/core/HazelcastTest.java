@@ -926,12 +926,14 @@ public class HazelcastTest {
         Collection r1 = mm.remove("2");
         assertTrue(r1.contains("x"));
         assertTrue(r1.contains("y"));
-        assertNull(mm.get("2"));
+        assertNotNull(mm.get("2"));
+        assertTrue(mm.get("2").isEmpty());
         assertEquals(2, mm.size());
         Collection r2 = mm.remove("1");
         assertTrue(r2.contains("A"));
         assertTrue(r2.contains("B"));
-        assertNull(mm.get("1"));
+        assertNotNull(mm.get("1"));
+        assertTrue(mm.get("1").isEmpty());
         assertEquals(0, mm.size());
     }
 

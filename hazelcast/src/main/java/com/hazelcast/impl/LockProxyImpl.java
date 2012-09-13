@@ -164,7 +164,7 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
         }
 
         public void lockInterruptibly() throws InterruptedException {
-            throw new UnsupportedOperationException("lockInterruptibly is not implemented!");
+            throw new UnsupportedOperationException("lockInterruptibly() is not implemented!");
         }
 
         public boolean isLocked() {
@@ -172,7 +172,7 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
         }
 
         public Condition newCondition() {
-            return null;
+            throw new UnsupportedOperationException("newCondition() is not implemented!");
         }
 
         public boolean tryLock() {

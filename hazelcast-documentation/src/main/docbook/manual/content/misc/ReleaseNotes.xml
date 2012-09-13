@@ -28,6 +28,30 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.3.1</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=13&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>256, 258</para>
+            </listitem>
+            <listitem>
+                <para>Changed
+                    <link xlink:href="#hazelcast.partition.migration.interval">
+                        <code>hazelcast.partition.migration.interval</code>
+                    </link>
+                    value from 1 to 0.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    <code>ILock.newCondition()</code> now throws <code>UnsupportedOperationException</code>.
+                </para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.3</emphasis>
         <itemizedlist>
             <listitem>
