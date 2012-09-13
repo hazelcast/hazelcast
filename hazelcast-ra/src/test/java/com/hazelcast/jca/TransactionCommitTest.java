@@ -27,7 +27,7 @@ public class TransactionCommitTest extends AbsDeploymentTest {
 	@Test
 	public void testTransactionCommi() throws Throwable {
 
-		ConnectionImpl c = connectionFactory.getConnection();
+		HazelcastConnection c = connectionFactory.getConnection();
 
 		c.getLocalTransaction().begin();
 		

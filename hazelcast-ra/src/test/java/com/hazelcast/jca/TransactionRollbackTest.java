@@ -27,7 +27,7 @@ public class TransactionRollbackTest extends AbsDeploymentTest {
 	@Test
 	public void testTransactionRollback() throws Throwable {
 
-		ConnectionImpl c = connectionFactory.getConnection();
+		HazelcastConnection c = connectionFactory.getConnection();
 
 		c.getLocalTransaction().begin();
 		

@@ -35,7 +35,7 @@ public class SimpleMapAccessTest extends AbsDeploymentTest {
 	@Test
 	public void testDeployment() throws Throwable {
 
-		ConnectionImpl c = connectionFactory.getConnection();
+		HazelcastConnection c = connectionFactory.getConnection();
 
 		Map<String, String> m = c.getMap("testmap");
 		

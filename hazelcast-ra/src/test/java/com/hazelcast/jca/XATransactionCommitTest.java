@@ -38,7 +38,7 @@ public class XATransactionCommitTest extends AbsXADeploymentTest {
 		assertNotNull(o);
 		UserTransaction tx = (UserTransaction) o;
 		
-		ConnectionImpl c = connectionFactory.getConnection();
+		HazelcastConnection c = connectionFactory.getConnection();
 		Map<String, String> m = c.getMap("testmap");
 
 		tx.begin();
