@@ -29,7 +29,7 @@ import com.hazelcast.impl.ThreadContext;
 
 /**
  * Early version of XA support for Hazelcast.
- * This is still <b>ALPHA</b> code and should not used in prodction code!
+ * This is still <b>BETA</b> code and should not be used in production code!
  */
 public class XAResourceImpl implements XAResource {
 /*
@@ -47,7 +47,7 @@ public class XAResourceImpl implements XAResource {
 	}
 	
 	public void start(Xid xid, int arg1) throws XAException {
-		managedConnection.log(Level.INFO, "XA start: " + xid);
+		managedConnection.log(Level.FINEST, "XA start: " + xid);
 		Transaction tx = managedConnection.getHazelcastInstance().getTransaction();
 		if (Transaction.TXN_STATUS_ACTIVE != tx.getStatus()) {
 			tx.setTransactionTimeout(transactionTimeout * 1000);
@@ -59,17 +59,20 @@ public class XAResourceImpl implements XAResource {
 
 	public void end(Xid xvid, int arg1) throws XAException {
 		// Nothing to do
-		managedConnection.log(Level.INFO, "XA end: " + xvid + ", " + arg1);
+		managedConnection.log(Level.FINEST, "XA end: " + xvid + ", " + arg1);
 	}
 	
 	public int prepare(Xid xid) throws XAException {
-		managedConnection.log(Level.INFO, "XA prepare: " + xid);
-		//If it is in memory, it will be fine to commit
+		managedConnection.log(Level.FINEST, "XA prepare: " + xid);
+		//Everything is in memory, all modified elements are already locked by Hazelcast itself
 		return XA_OK;
 	}
 
+	/**
+	 * Used in {@link XAResourceImpl#doInRestoredThreadContext(Xid, Action)}
+	 */
 	protected interface Action {
-		public void run(Transaction tx);
+		void run(Transaction tx);
 	}
 	
 	protected void doInRestoredThreadContext(Xid xid, Action action) {
@@ -93,7 +96,7 @@ public class XAResourceImpl implements XAResource {
 		doInRestoredThreadContext(xid, new Action() {
 			public void run(Transaction tx) {
 				if (tx != null) {
-					managedConnection.log(Level.INFO, "XA commit: " + xid);
+					managedConnection.log(Level.FINEST, "XA commit: " + xid);
 					tx.commit();
 				} else {
 					managedConnection.log(Level.WARNING, "XA commit: No active transaction anymore" + xid);
@@ -107,7 +110,7 @@ public class XAResourceImpl implements XAResource {
 		doInRestoredThreadContext(xid, new Action() {
 			public void run(Transaction tx) {
 				if (tx != null) {
-					managedConnection.log(Level.INFO, "XA rollback: " + xid);
+					managedConnection.log(Level.FINEST, "XA rollback: " + xid);
 					tx.rollback();
 				} else {
 					managedConnection.log(Level.WARNING, "XA rollback: No active transaction anymore" + xid);
@@ -118,19 +121,19 @@ public class XAResourceImpl implements XAResource {
 	}
 
 	public Xid[] recover(int arg0) throws XAException {
-		managedConnection.log(Level.INFO, "XA recover: " + arg0);
+		managedConnection.log(Level.FINEST, "XA recover: " + arg0);
 		return new Xid[0];
 	}
 	
 	public void forget(Xid xvid) throws XAException {
-		managedConnection.log(Level.INFO, "XA forget: " + xvid);
+		managedConnection.log(Level.FINEST, "XA forget: " + xvid);
 		transactionCache.remove(xvid);
 	}
 
 	public boolean isSameRM(XAResource arg0) throws XAException {
-		managedConnection.log(Level.INFO, "XA isSameRM: " + arg0 );
+		managedConnection.log(Level.FINEST, "XA isSameRM: " + arg0 );
 		boolean retValue = (arg0 instanceof XAResourceImpl);
-		managedConnection.log(Level.INFO, "this is " + (retValue?"":"not") + " the same RM as " + arg0);
+		managedConnection.log(Level.FINE, "this is " + (retValue?"":"not") + " the same RM as " + arg0);
 		return retValue;
 	}
 

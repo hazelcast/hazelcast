@@ -16,6 +16,7 @@
 
 package com.hazelcast.jca;
 
+import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.cci.ConnectionMetaData;
 import javax.resource.cci.Interaction;
@@ -38,19 +39,26 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-public class ConnectionImpl implements HazelcastConnection {
+public class HazelcastConnectionImpl implements HazelcastConnection {
+	/** Reference to this creator and access to container infrastructure */
     final ManagedConnectionImpl managedConnection;
+    /** Identity generator */
     private static AtomicInteger idGen = new AtomicInteger();
+    /** this identity */
     private final int id;
     
-    public ConnectionImpl(ManagedConnectionImpl managedConnectionImpl, Subject subject) {
+    public HazelcastConnectionImpl(ManagedConnectionImpl managedConnectionImpl, Subject subject) {
         super();
         this.managedConnection = managedConnectionImpl;
         id = idGen.incrementAndGet();
     }
     
+    /* (non-Javadoc)
+     * @see javax.resource.cci.Connection#close()
+     */
     public void close() throws ResourceException {
     	managedConnection.log(Level.FINEST, "close");
+    	//important: inform the container!
         managedConnection.fireConnectionEvent(ConnectionEvent.CONNECTION_CLOSED, this);
     }
 
@@ -59,9 +67,12 @@ public class ConnectionImpl implements HazelcastConnection {
         return null;
     }
 
-    public ResultSetInfo getResultSetInfo() throws ResourceException {
-    	//TODO
-        return null;
+    /**
+     * @throws NotSupportedException as this is not supported by this resource adapter
+     */
+    public ResultSetInfo getResultSetInfo() throws NotSupportedException {
+    	//as per spec 15.11.3
+    	throw new NotSupportedException();
     }
     
     public javax.resource.cci.LocalTransaction getLocalTransaction() throws ResourceException {
@@ -72,7 +83,6 @@ public class ConnectionImpl implements HazelcastConnection {
     public ConnectionMetaData getMetaData() throws ResourceException {
     	return managedConnection.getMetaData();
     }
-
 
     @Override
     public String toString() {

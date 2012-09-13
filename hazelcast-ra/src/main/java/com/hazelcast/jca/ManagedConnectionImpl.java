@@ -172,7 +172,6 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection,
 		log(Level.FINEST, "fireConnectionEvevnt: " + event);
 
 		ConnectionEvent connnectionEvent = new ConnectionEvent(this, event);
-		connnectionEvent.setConnectionHandle(conn);
 
 		for (ConnectionEventListener listener : connectionEventListeners) {
 			switch (event) {
@@ -193,6 +192,8 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection,
 				break;
 			case ConnectionEvent.CONNECTION_CLOSED:
 				if (isDeliverClosed()) {
+					//Connection handle is only required for close as per spec 6.5.7
+					connnectionEvent.setConnectionHandle(conn);
 					listener.connectionClosed(connnectionEvent);
 				}
 				break;
@@ -203,12 +204,12 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection,
 		}
 	}
 
-	public Object getConnection(Subject subject,
+	public HazelcastConnection getConnection(Subject subject,
 			ConnectionRequestInfo connectionRequestInfo) {
 		log(Level.FINEST, "getConnection: " + subject + ", "
 				+ connectionRequestInfo);
-		// must be new per JCA spec
-		return new ConnectionImpl(this, subject);
+		// must be new as per JCA spec
+		return new HazelcastConnectionImpl(this, subject);
 	}
 
 	public ConnectionRequestInfo getCxRequestInfo() {

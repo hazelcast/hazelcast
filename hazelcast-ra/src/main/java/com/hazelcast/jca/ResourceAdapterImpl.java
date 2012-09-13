@@ -35,7 +35,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
-
 	private static final long serialVersionUID = -1727994229521767306L;
 	private HazelcastInstance hazelcast;
 	private String configurationLocation;
@@ -46,7 +45,6 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     public ResourceAdapterImpl() {
         id = idGen.incrementAndGet();
     }
-
 	
 	public void endpointActivation(MessageEndpointFactory endpointFactory, ActivationSpec spec)
             throws ResourceException {
@@ -86,7 +84,6 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     	}
     }
 
-
 	private void setHazelcast(HazelcastInstance hazelcast) {
 		this.hazelcast = hazelcast;
 	}
@@ -99,14 +96,12 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result
-				+ ((hazelcast == null) ? 0 : hazelcast.hashCode());
+		result = prime * result + id;
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-	//TODO ADD ID
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -114,13 +109,11 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 		if (getClass() != obj.getClass())
 			return false;
 		ResourceAdapterImpl other = (ResourceAdapterImpl) obj;
-		if (hazelcast == null) {
-			if (other.hazelcast != null)
-				return false;
-		} else if (!hazelcast.equals(other.hazelcast))
+		if (id != other.id)
 			return false;
 		return true;
 	}
+
 
 	public void setConfigLocation(String configLocation) {
 		this.configurationLocation = configLocation;

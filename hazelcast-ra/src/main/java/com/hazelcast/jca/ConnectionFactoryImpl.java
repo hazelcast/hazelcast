@@ -28,14 +28,24 @@ import com.hazelcast.logging.Logger;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+/**
+ * Small facade to bring together container's pooling mechanism and other 
+ * vendor-specific calls with the real implementation classes of this 
+ * resource adapter
+ */
 public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
 	private static final long serialVersionUID = -5909363703528221650L;
-	
+	/** Access to this resource adapter infrastructure */
 	private ManagedConnectionFactoryImpl mcf;
+	/** Container's connection manager - i.e. for pooling */
     private ConnectionManager cm;
+    /** JNDI reference - not used */
     private Reference ref;
+    /** identity generator */
     private final static AtomicInteger idGen = new AtomicInteger();
+    /** class logger*/
     private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
+    /** this identity */
     private transient final int id;
 
     public ConnectionFactoryImpl() {
@@ -43,33 +53,51 @@ public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
     }
     
     public ConnectionFactoryImpl(ManagedConnectionFactoryImpl mcf, ConnectionManager cm) {
+    	this();
         this.mcf = mcf;
         this.cm = cm;
-        id = idGen.incrementAndGet();
     }
     
-    public ConnectionImpl getConnection() throws ResourceException {
+    /* (non-Javadoc)
+     * @see com.hazelcast.jca.HazelcastConnectionFactory#getConnection()
+     */
+    public HazelcastConnectionImpl getConnection() throws ResourceException {
         logger.log(Level.FINEST, "getConnection");
-        return (ConnectionImpl) cm.allocateConnection(mcf, null);
+        return this.getConnection(null);
     }
 
-    public ConnectionImpl getConnection(ConnectionSpec connSpec) throws ResourceException {
+    /* (non-Javadoc)
+     * @see com.hazelcast.jca.HazelcastConnectionFactory#getConnection(javax.resource.cci.ConnectionSpec)
+     */
+    public HazelcastConnectionImpl getConnection(ConnectionSpec connSpec) throws ResourceException {
     	logger.log(Level.FINEST, "getConnection spec: " + connSpec);
-        return (ConnectionImpl) cm.allocateConnection(mcf, null);
+        return (HazelcastConnectionImpl) cm.allocateConnection(mcf, null);
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.cci.ConnectionFactory#getMetaData()
+     */
     public ResourceAdapterMetaData getMetaData() throws ResourceException {
         return new ConnectionFactoryMetaData();
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.cci.ConnectionFactory#getRecordFactory()
+     */
     public RecordFactory getRecordFactory() throws ResourceException {
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.Referenceable#setReference(javax.naming.Reference)
+     */
     public void setReference(Reference ref) {
         this.ref = ref;
     }
 
+    /* (non-Javadoc)
+     * @see javax.naming.Referenceable#getReference()
+     */
     public Reference getReference() throws NamingException {
         return ref;
     }
