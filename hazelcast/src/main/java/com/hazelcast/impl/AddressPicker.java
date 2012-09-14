@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.*;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -72,6 +73,7 @@ class AddressPicker {
             serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
             int port = networkConfig.getPort();
+            Throwable error = null;
             for (int i = 0; i < 100; i++) {
                 try {
                     if (bindAny) {
@@ -86,6 +88,7 @@ class AddressPicker {
                 } catch (final Exception e) {
                     if (networkConfig.isPortAutoIncrement()) {
                         port++;
+                        error = e;
                     } else {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                      "disabled. Hazelcast cannot start.";
@@ -93,6 +96,9 @@ class AddressPicker {
                         throw e;
                     }
                 }
+            }
+            if (!serverSocket.isBound()) {
+                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start!", error);
             }
             serverSocketChannel.configureBlocking(false);
             bindAddress = createAddress(bindAddressDef, port);
@@ -114,7 +120,9 @@ class AddressPicker {
     }
 
     private Address createAddress(final AddressDefinition addressDef, final int port) throws UnknownHostException {
-        return new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
+//        return new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
+        return addressDef.host != null ? new Address(addressDef.host, port)
+                : new Address(addressDef.inetAddress, port);
     }
 
     private AddressDefinition pickAddress(final NetworkConfig networkConfig) throws UnknownHostException, SocketException {

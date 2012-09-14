@@ -319,7 +319,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                         matchedAddresses = Collections.singleton(addressHolder.address);
                     }
                     for (String matchedAddress : matchedAddresses) {
-                        addPossibleAddresses(possibleAddresses, matchedAddress, null, port, count);
+                        addPossibleAddresses(possibleAddresses, null, InetAddress.getByName(matchedAddress), port, count);
                     }
                 } else {
                     final String host = addressHolder.address;
@@ -403,7 +403,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
         for (Address possibleAddress : colPossibleAddresses) {
-            logger.log(Level.WARNING, node.getThisAddress() + " is connecting to " + possibleAddress);
+            logger.log(Level.FINEST, node.getThisAddress() + " is connecting to " + possibleAddress);
             node.connectionManager.getOrConnect(possibleAddress, true);
             try {
                 //noinspection BusyWait
@@ -413,7 +413,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                final JoinInfo response = node.clusterService.checkJoin(possibleAddress);
+                final JoinInfo response = node.clusterService.checkJoinInfo(possibleAddress);
                 System.out.println("response = " + response);
                 if (response != null && shouldMerge(response)) {
                     logger.log(Level.WARNING, node.address + " is merging [tcp/ip] to " + possibleAddress);
