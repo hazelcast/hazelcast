@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.impl.cluster.MemberInfo;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.spi.AbstractOperation;
 
@@ -30,15 +30,26 @@ import java.util.List;
 public class PartitionStateOperation extends AbstractOperation {
     private PartitionRuntimeState partitionState;
 
+//    public PartitionStateOperation(final Collection<MemberImpl> members,
+//                                   final PartitionInfo[] partitions,
+//                                   final MigrationInfo migrationInfo,
+//                                   final long masterTime, int version) {
+//        final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
+//        for (MemberImpl member : members) {
+//            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
+//        }
+//        partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfo, masterTime, version);
+//    }
+
     public PartitionStateOperation(final Collection<MemberImpl> members,
                                    final PartitionInfo[] partitions,
-                                   final MigrationInfo migrationInfo,
+                                   final Collection<MigrationInfo> migrationInfos,
                                    final long masterTime, int version) {
         final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
         for (MemberImpl member : members) {
             memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
         }
-        partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfo, masterTime, version);
+        partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfos, masterTime, version);
     }
 
     public PartitionStateOperation() {
@@ -48,6 +59,7 @@ public class PartitionStateOperation extends AbstractOperation {
         partitionState.setEndpoint(getCaller());
         PartitionServiceImpl partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);
+        getResponseHandler().sendResponse(null);
     }
 
     public void readInternal(DataInput in) throws IOException {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.impl.cluster.ClusterService;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.partition.PartitionServiceImpl;

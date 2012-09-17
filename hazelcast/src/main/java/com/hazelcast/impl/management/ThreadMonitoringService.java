@@ -100,9 +100,12 @@ public class ThreadMonitoringService {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("ThreadStats {\n");
-        for (MonitoredThread monitoredThread : getStats()) {
-            sb.append(monitoredThread.toString());
-            sb.append("\n");
+        final Set<MonitoredThread> stats = getStats();
+        if (stats != null) {
+            for (MonitoredThread monitoredThread : stats) {
+                sb.append(monitoredThread.toString());
+                sb.append("\n");
+            }
         }
         sb.append("}");
         return sb.toString();

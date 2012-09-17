@@ -19,6 +19,8 @@ package com.hazelcast.impl.partition;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationEndpoint;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -36,7 +38,7 @@ import java.util.logging.Level;
 public class MigrationRequestOperation extends Operation implements PartitionLockFreeOperation {
     protected Address from;
     protected Address to;
-    private boolean migration; // migration or copy
+    private boolean migration;  // migration or backup
     private boolean diffOnly;
     private int selfCopyReplicaIndex = -1;
 
@@ -57,7 +59,11 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
     }
 
     public MigrationInfo createMigrationInfo() {
-        return new MigrationInfo(getPartitionId(), getReplicaIndex(), from, to);
+        return new MigrationInfo(getPartitionId(), getReplicaIndex(), isMoving(), from, to);
+    }
+
+    private boolean isMoving() {
+        return migration && selfCopyReplicaIndex < 0;
     }
 
     public boolean isMigration() {
@@ -98,16 +104,17 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
             }
 
             PartitionServiceImpl partitionService = getService();
-            partitionService.setActiveMigration(new MigrationInfo(partitionId, replicaIndex, from, to));
+            partitionService.addActiveMigration(createMigrationInfo());
             final NodeService nodeService = getNodeService();
             final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
-            final Collection<Operation> tasks = collectMigrationTasks(partitionId, replicaIndex, diffOnly);
-            nodeService.getExecutorService().execute(new Runnable() {
+            final Collection<Operation> tasks = prepareMigrationTasks(partitionId, replicaIndex);
+            nodeService.execute(new Runnable() {
                 public void run() {
                     try {
                         Invocation inv = nodeService.createSingleInvocation(PartitionServiceImpl.PARTITION_SERVICE_NAME,
-                                new MigrationOperation(partitionId, tasks, replicaIndex, from), partitionId)
-                                .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to).build();
+                                new MigrationOperation(partitionId, replicaIndex, isMoving(), tasks, from), partitionId)
+                                .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
+                                .build();
                         Future future = inv.invoke();
                         Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
                         responseHandler.sendResponse(result);
@@ -121,16 +128,18 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
         }
     }
 
-    private Collection<Operation> collectMigrationTasks(final int partitionId, final int replicaIndex,
-                                                                       boolean diffOnly) {
+    private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        final MigrationType migrationType = isMoving() ? MigrationType.MOVE : MigrationType.COPY;
+        final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
+                partitionId, replicaIndex, migrationType);
         final Collection<Operation> tasks = new LinkedList<Operation>();
-        for (Object serviceObject : nodeService.getServices().values()) {
+        for (Object serviceObject : nodeService.getServices()) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
-                service.beforeMigration(MigrationEndpoint.SOURCE, partitionId, replicaIndex);
-                Operation op = service.prepareMigrationOperation(partitionId, replicaIndex, diffOnly);
+                final Operation op = service.prepareMigrationOperation(event);
                 if (op != null) {
+                    service.beforeMigration(event);
                     tasks.add(op);
                 }
             }

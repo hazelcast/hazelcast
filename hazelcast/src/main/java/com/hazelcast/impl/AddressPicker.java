@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.impl.cluster.TcpIpJoiner;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;

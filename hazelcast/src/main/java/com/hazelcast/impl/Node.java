@@ -16,9 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.cluster.JoinInfo;
-import com.hazelcast.cluster.JoinRequest;
+import com.hazelcast.impl.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Join;
 import com.hazelcast.config.ListenerConfig;
@@ -61,7 +59,6 @@ import java.util.logging.Level;
 public class Node {
     private final ILogger logger;
 
-    //private volatile boolean joined = false;
     private AtomicBoolean joined = new AtomicBoolean(false);
 
     private volatile boolean active = false;
@@ -89,6 +86,7 @@ public class Node {
     public final MulticastService multicastService;
 
     public final ConnectionManager connectionManager;
+
 //    public final ClientHandlerService clientHandlerService;
 
     public final TextCommandServiceImpl textCommandService;
@@ -163,14 +161,11 @@ public class Node {
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeService = new NodeServiceImpl(this);
-        //initialize managers..
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterService = new ClusterService(this);
         partitionService = new PartitionServiceImpl(this);
 //        clientHandlerService = new ClientHandlerService(this);
-//        concurrentMapManager = new ConcurrentMapManager(this);
-        nodeService.registerService(MapService.MAP_SERVICE_NAME,
-                new MapService(nodeService, partitionService.getPartitions()));
+        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService));
         listenerManager = new ListenerManager(this);
 //        clientService = new ClientServiceImpl(concurrentMapManager);
         textCommandService = new TextCommandServiceImpl(this);
@@ -519,21 +514,7 @@ public class Node {
         return jr;
     }
 
-    public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
-        boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion;
-        if (valid) {
-            try {
-                valid = config.isCompatible(joinRequest.config);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Invalid join request, reason:" + e.getMessage());
-                systemLogService.logJoin("Invalid join request, reason:" + e.getMessage());
-                throw e;
-            }
-        }
-        return valid;
-    }
-
-    void rejoin() {
+    public void rejoin() {
         systemLogService.logJoin("Rejoining!");
         masterAddress = null;
         joined.set(false);
@@ -542,7 +523,7 @@ public class Node {
         join();
     }
 
-    void join() {
+    public void join() {
         final long joinStartTime = joiner != null ? joiner.getStartTime() : Clock.currentTimeMillis();
         final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
@@ -563,7 +544,7 @@ public class Node {
         }
     }
 
-    Joiner getJoiner() {
+    public Joiner getJoiner() {
         return joiner;
     }
 
@@ -577,7 +558,7 @@ public class Node {
             return new TcpIpJoiner(this);
         } else if (join.getAwsConfig().isEnabled()) {
             try {
-                Class clazz = Class.forName("com.hazelcast.impl.TcpIpJoinerOverAWS");
+                Class clazz = Class.forName("com.hazelcast.impl.cluster.TcpIpJoinerOverAWS");
                 Constructor constructor = clazz.getConstructor(Node.class);
                 systemLogService.logJoin("Creating AWSJoiner");
                 return (Joiner) constructor.newInstance(this);
@@ -589,7 +570,7 @@ public class Node {
         return null;
     }
 
-    void setAsMaster() {
+    public void setAsMaster() {
         logger.log(Level.FINEST, "This node is being set as the master");
         systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;

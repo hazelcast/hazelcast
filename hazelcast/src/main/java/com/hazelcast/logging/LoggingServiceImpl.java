@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.impl.cluster.ClusterService;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.base.SystemLogService;
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.partition;
 
-import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.impl.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.Clock;
@@ -35,24 +35,20 @@ public class PartitionRuntimeState implements DataSerializable {
     private int version;
     protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
     protected Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
-    protected MigrationInfo migrationInfo;
+    private Collection<MigrationInfo> completedMigrations;
+
     private transient Address endpoint;
 
     public PartitionRuntimeState() {
         super();
     }
 
-    public long getMasterTime() {
-        return masterTime;
-    }
-
     public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
                                  final PartitionInfo[] partitions,
-                                 final MigrationInfo migrationInfo,
+                                 final Collection<MigrationInfo> migrationInfos,
                                  final long masterTime, int version) {
         this.masterTime = masterTime;
         this.version = version;
-        this.migrationInfo = migrationInfo;
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(memberInfos.size());
         int memberIndex = 0;
         for (MemberInfo memberInfo : memberInfos) {
@@ -60,10 +56,8 @@ public class PartitionRuntimeState implements DataSerializable {
             memberIndex++;
         }
         setPartitions(partitions, addressIndexes);
-    }
 
-    public ArrayList<MemberInfo> getMembers() {
-        return members;
+        completedMigrations = migrationInfos != null ? migrationInfos : new ArrayList<MigrationInfo>(0);
     }
 
     protected void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {
@@ -101,7 +95,16 @@ public class PartitionRuntimeState implements DataSerializable {
             }
             partitions[spi.partitionId] = partition;
         }
+
         return partitions;
+    }
+
+    public ArrayList<MemberInfo> getMembers() {
+        return members;
+    }
+
+    public long getMasterTime() {
+        return masterTime;
     }
 
     public Address getEndpoint() {
@@ -112,8 +115,8 @@ public class PartitionRuntimeState implements DataSerializable {
         this.endpoint = endpoint;
     }
 
-    public MigrationInfo getMigrationInfo() {
-        return migrationInfo;
+    public Collection<MigrationInfo> getCompletedMigrations() {
+        return completedMigrations;
     }
 
     public void readData(DataInput in) throws IOException {
@@ -134,10 +137,13 @@ public class PartitionRuntimeState implements DataSerializable {
             spi.readData(in);
             partitionInfos.add(spi);
         }
-        boolean hasMigratingPartition = in.readBoolean();
-        if (hasMigratingPartition) {
-            migrationInfo = new MigrationInfo();
-            migrationInfo.readData(in);
+
+        int k = in.readInt();
+        completedMigrations = new ArrayList<MigrationInfo>(k);
+        for (int i = 0; i < k; i++) {
+            MigrationInfo cm = new MigrationInfo();
+            cm.readData(in);
+            completedMigrations.add(cm);
         }
     }
 
@@ -154,10 +160,11 @@ public class PartitionRuntimeState implements DataSerializable {
         for (ShortPartitionInfo spi : partitionInfos) {
             spi.writeData(out);
         }
-        boolean hasMigratingPartition = migrationInfo != null;
-        out.writeBoolean(hasMigratingPartition);
-        if (hasMigratingPartition) {
-            migrationInfo.writeData(out);
+
+        int k = completedMigrations.size();
+        out.writeInt(k);
+        for (MigrationInfo cm : completedMigrations) {
+            cm.writeData(out);
         }
     }
 
@@ -167,7 +174,7 @@ public class PartitionRuntimeState implements DataSerializable {
         for (MemberInfo address : members) {
             sb.append(address).append('\n');
         }
-        sb.append(", migrationInfo=").append(migrationInfo);
+        sb.append(", completedMigrations=").append(completedMigrations);
         sb.append('}');
         return sb.toString();
     }
@@ -201,5 +208,13 @@ public class PartitionRuntimeState implements DataSerializable {
                 addressIndexes[i] = in.readInt();
             }
         }
+    }
+
+    private static String print(PartitionInfo[] partitions) {
+        StringBuilder s =  new StringBuilder();
+        for (PartitionInfo partition : partitions) {
+            s.append(partition).append('\n');
+        }
+        return s.toString();
     }
 }

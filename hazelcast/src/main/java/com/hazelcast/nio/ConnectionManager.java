@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.cluster.Bind;
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.impl.cluster.BindOperation;
+import com.hazelcast.impl.cluster.ClusterService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.impl.ClusterOperation;
@@ -230,19 +230,18 @@ public class ConnectionManager {
     void sendBindRequest(final Connection connection, final Address remoteEndPoint, final boolean replyBack) {
         connection.setEndPoint(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
-        Packet bindPacket = createBindPacket(new Bind(ioService.getThisAddress(), remoteEndPoint, replyBack));
+        Packet bindPacket = createBindPacket(new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack));
         connection.getWriteHandler().enqueueSocketWritable(bindPacket);
         //now you can send anything...
     }
 
-    private Packet createBindPacket(Bind rp) {
+    private Packet createBindPacket(BindOperation rp) {
         Data value = ThreadContext.get().toData(rp);
         Packet packet = new Packet();
         packet.operation = ClusterOperation.REMOTE_CALL;
         packet.blockId = -1;
         packet.name = ClusterService.SERVICE_NAME;
         packet.longValue = 1L;
-//        packet.set("remotelyProcess", ClusterOperation.REMOTELY_PROCESS, null, value);
         packet.setValue(value);
         packet.client = ioService.isClient();
         return packet;

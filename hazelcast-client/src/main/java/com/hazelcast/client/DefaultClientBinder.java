@@ -16,21 +16,19 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.cluster.Bind;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toByteArray;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DefaultClientBinder implements ClientBinder {
+
     private HazelcastClient client;
     private final ILogger logger = Logger.getLogger(getClass().getName());
 
@@ -40,7 +38,7 @@ public class DefaultClientBinder implements ClientBinder {
 
     public void bind(Connection connection, Credentials credentials) throws IOException {
         logger.log(Level.FINEST, connection + " -> "
-                + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
+                                 + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
         auth(connection, credentials);
 //        Bind b = null;
 //        try {

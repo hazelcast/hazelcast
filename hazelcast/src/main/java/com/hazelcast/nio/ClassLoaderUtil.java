@@ -27,13 +27,14 @@ import java.util.Map;
 public final class ClassLoaderUtil {
 
     public static final String HAZELCAST_BASE_PACKAGE = "com.hazelcast.";
+    public static final String HAZELCAST_IMPL_PACKAGE = "com.hazelcast.impl";
     public static final String HAZELCAST_ARRAY = "[L" + HAZELCAST_BASE_PACKAGE;
 
     private static final Map<String, Class> PRIMITIVE_CLASSES;
     private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
 
     static {
-        final Map<String, Class> primitives = new HashMap<String, Class>(8, 1.0f);
+        final Map<String, Class> primitives = new HashMap<String, Class>(10, 1.0f);
         primitives.put("boolean", boolean.class);
         primitives.put("byte", byte.class);
         primitives.put("int", int.class);
@@ -91,7 +92,13 @@ public final class ClassLoaderUtil {
     }
 
     public static boolean isInternalType(Class type) {
-        return type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
+        return type.getClassLoader() == ClassLoaderUtil.class.getClassLoader()
+            && type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
+    }
+
+    public static boolean isInternalImplType(Class type) {
+        return type.getClassLoader() == ClassLoaderUtil.class.getClassLoader()
+               && type.getName().startsWith(HAZELCAST_IMPL_PACKAGE);
     }
 
     private ClassLoaderUtil() {}

@@ -19,6 +19,7 @@ package com.hazelcast.impl.wan;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.impl.Node;
+import com.hazelcast.impl.spi.CoreService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
 
@@ -27,15 +28,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
-public class WanReplicationService {
-    final Node node;
-    final Map<String, WanReplication> mapWanReplications = new ConcurrentHashMap<String, WanReplication>(2);
-    private final ILogger logger;
+public class WanReplicationService implements CoreService {
 
+    public static final String SERVICE_NAME = "hz:core:wanReplicationService";
+
+    private final Node node;
+    private final Map<String, WanReplication> mapWanReplications = new ConcurrentHashMap<String, WanReplication>(2);
+    private final ILogger logger;
 
     public WanReplicationService(Node node) {
         this.node = node;
         this.logger = node.getLogger(WanReplicationService.class.getName());
+        node.nodeService.registerService(SERVICE_NAME, this);
     }
 
     @SuppressWarnings("SynchronizeOnThis")

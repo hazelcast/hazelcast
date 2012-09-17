@@ -21,10 +21,10 @@ package com.hazelcast.impl.spi;
  */
 public interface ManagedService {
 
-//    void init();
+    String getName();
 
-//    void start();
+    void init(NodeService nodeService);
 
-//    void stop();
+    void destroy();
 
 }

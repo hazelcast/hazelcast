@@ -71,6 +71,7 @@ public final class DataSerializerRegistrar {
     }
 
     public interface DataSerializableFactory {
+
         DataSerializable create();
     }
 }

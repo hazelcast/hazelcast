@@ -71,8 +71,7 @@ public class SerializerRegistry {
     public TypeSerializer serializerFor(final Class type) {
         TypeSerializer serializer = typeMap.get(type);
         if (serializer == null) {
-            if (DataSerializable.class.isAssignableFrom(type)
-                    && ClassLoaderUtil.isInternalType(type)) {
+            if (isInternalDataSerializable(type)) {
                 serializer = registerFromSuperType(type, DataSerializable.class);
             } else {
                 // look for super classes
@@ -114,20 +113,25 @@ public class SerializerRegistry {
     }
 
     private void safeRegister(final Class type, final TypeSerializer serializer) {
-        if (DataSerializable.class.isAssignableFrom(type)
-            && ClassLoaderUtil.isInternalType(type)
+        if (isInternalDataSerializable(type)
             && serializer.getClass() != DataSerializer.class) {
             throw new IllegalArgumentException("Internal DataSerializable[" + type + "] " +
                     "serializer cannot be overridden!");
         }
         TypeSerializer f = typeMap.putIfAbsent(type, serializer);
         if (f != null && f.getClass() != serializer.getClass()) {
-            throw new IllegalStateException("Serializer has been already registered for type: " + type);
+            throw new IllegalStateException("Serializer[" + f + "] has been already registered for type: " + type);
         }
         f = idMap.putIfAbsent(serializer.getTypeId(), serializer);
         if (f != null && f.getClass() != serializer.getClass()) {
-            throw new IllegalStateException("Serializer has been already registered for type-id: " + serializer.getTypeId());
+            throw new IllegalStateException("Serializer [" + f + "] has been already registered for type-id: "
+                                            + serializer.getTypeId());
         }
+    }
+
+    private boolean isInternalDataSerializable(final Class type) {
+        return DataSerializable.class.isAssignableFrom(type)
+               && ClassLoaderUtil.isInternalType(type);
     }
 
     public TypeSerializer serializerFor(final int typeId) {

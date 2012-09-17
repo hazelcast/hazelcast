@@ -16,8 +16,12 @@
 
 package com.hazelcast.impl.spi;
 
+import com.hazelcast.impl.spi.annotation.PrivateApi;
+
 /**
  * @mdogan 9/3/12
  */
+
+@PrivateApi
 public interface PartitionLockFreeOperation {
 }

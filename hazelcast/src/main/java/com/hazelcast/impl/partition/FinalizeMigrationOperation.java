@@ -17,46 +17,61 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationEndpoint;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationType;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.logging.Level;
+
+import static com.hazelcast.impl.spi.MigrationServiceEvent.MigrationEndpoint.*;
+import static com.hazelcast.impl.spi.MigrationServiceEvent.MigrationType.*;
 
 public class FinalizeMigrationOperation extends AbstractOperation implements PartitionLockFreeOperation {
 
+    private boolean source;     // source of destination
+    private boolean move;       // move or copy
     private boolean success;
-    private MigrationEndpoint endpoint;
 
     public FinalizeMigrationOperation() {
     }
 
-    public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final boolean success) {
-        this.endpoint = endpoint;
+    public FinalizeMigrationOperation(final boolean source, final boolean move, final boolean success) {
+        this.source = source;
         this.success = success;
+        this.move = move;
     }
 
+
     public void run() {
-        Collection<MigrationAwareService> services = getServices();
+        final Collection<MigrationAwareService> services = getServices();
+        final MigrationEndpoint endpoint = source ? SOURCE : DESTINATION;
+        final MigrationType type = move ? MOVE : COPY;
+        final MigrationServiceEvent event = new MigrationServiceEvent(endpoint, getPartitionId(),
+                getReplicaIndex(), type);
         for (MigrationAwareService service : services) {
-            if (success) {
-                service.commitMigration(endpoint, getPartitionId(), getReplicaIndex());
-            } else {
-                service.rollbackMigration(endpoint, getPartitionId(), getReplicaIndex());
+            try {
+                if (success) {
+                    service.commitMigration(event);
+                } else {
+                    service.rollbackMigration(event);
+                }
+            } catch (Throwable e) {
+                getNodeService().getLogger(FinalizeMigrationOperation.class.getName()).log(Level.WARNING,
+                        "Error while finalizing migration -> " + event, e);
             }
-//            System.err.println("Migration completed -> " + success + ". Endpoint -> " + endpoint
-//                              + ". Service -> " + service
-//                              + ". Partition -> " + getPartitionId() + ". Replica -> " + getReplicaIndex()
-//                              + " T -> " + Thread.currentThread().getName());
         }
-        getResponseHandler().sendResponse(null);
+        PartitionServiceImpl partitionService = getService();
+        partitionService.removeActiveMigration(getPartitionId());
     }
 
     protected Collection<MigrationAwareService> getServices() {
         Collection<MigrationAwareService> services = new LinkedList<MigrationAwareService>();
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        for (Object serviceObject : nodeService.getServices().values()) {
+        for (Object serviceObject : nodeService.getServices()) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 services.add(service);
@@ -69,13 +84,15 @@ public class FinalizeMigrationOperation extends AbstractOperation implements Par
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         success = in.readBoolean();
-        endpoint = MigrationEndpoint.get(in.readByte());
+        source = in.readBoolean();
+        move = in.readBoolean();
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(success);
-        out.writeByte(endpoint.getCode());
+        out.writeBoolean(source);
+        out.writeBoolean(move);
     }
 }

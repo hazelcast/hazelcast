@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.impl.cluster.MemberInfo;
 import com.hazelcast.core.Member;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Record;
@@ -78,7 +78,6 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         }
         setPartitions(partitions, addressIndexes);
         setLocks(lockedRecords, addressIndexes);
-        this.migrationInfo = migrationInfo;
     }
 
     private void setLocks(final Collection<Record> lockedRecords, final Map<Address, Integer> addressIndexes) {
@@ -166,7 +165,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         sb.append("ClusterRuntimeState");
         sb.append("{members=").append(members);
         sb.append(", localMember=").append(localMemberIndex);
-        sb.append(", migrationInfo=").append(migrationInfo);
+//        sb.append(", migrationInfo=").append(migrationInfo);
         sb.append(", waitingLockCount=").append(lockInfos.size());
         sb.append('}');
         return sb.toString();

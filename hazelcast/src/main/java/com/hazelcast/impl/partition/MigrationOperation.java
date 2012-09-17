@@ -17,6 +17,8 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationEndpoint;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -29,8 +31,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 public class MigrationOperation extends AbstractOperation {
-    private int partitionId;
-    private int replicaIndex;
+    private boolean move;
     private Collection<Operation> tasks;
     private byte[] bytesRecordSet;
     private Address from;
@@ -39,11 +40,11 @@ public class MigrationOperation extends AbstractOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(int partitionId, Collection<Operation> tasks,
-                              int replicaIndex, Address from) throws IOException {
+    public MigrationOperation(int partitionId, int replicaIndex, boolean move,
+                              Collection<Operation> tasks, Address from) throws IOException {
         super();
-        this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
+        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        this.move = move;
         this.from = from;
         this.tasks = tasks;
         this.taskCount = tasks.size();
@@ -75,10 +76,10 @@ public class MigrationOperation extends AbstractOperation {
             if (taskCount != tasks.size()) {
                 getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
                         "expected-count: " + size + ", actual-count: " + tasks.size() +
-                        "\nfrom: " + from + ", partition: " + partitionId
-                        + ", replica: " + replicaIndex);
+                        "\nfrom: " + from + ", partition: " + getPartitionId()
+                        + ", replica: " + getReplicaIndex());
             }
-            final boolean result = runMigrationTasks(tasks, partitionId, replicaIndex, from);
+            final boolean result = runMigrationTasks();
             getResponseHandler().sendResponse(result);
         } catch (Throwable e) {
             Level level = Level.WARNING;
@@ -92,19 +93,21 @@ public class MigrationOperation extends AbstractOperation {
         }
     }
 
-    private boolean runMigrationTasks(Collection<Operation> operations, final int partitionId,
-                                      final int replicaIndex, final Address from) {
+    private boolean runMigrationTasks() {
         boolean error = false;
-        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        PartitionServiceImpl partitionService = getService();
-        for (Operation op : operations) {
+        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        final MigrationType migrationType = move ? MigrationType.MOVE : MigrationType.COPY;
+        final PartitionServiceImpl partitionService = getService();
+        partitionService.addActiveMigration(new MigrationInfo(getPartitionId(), getReplicaIndex(), move,
+                from, nodeService.getThisAddress()));
+
+        for (Operation op : tasks) {
             try {
-                nodeService.setOperationContext(op, op.getServiceName(), from, -1, partitionId, replicaIndex);
+                nodeService.setOperationContext(op, op.getServiceName(), from, -1, getPartitionId(), getReplicaIndex());
                 ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
                 MigrationAwareService service = op.getService();
-                service.beforeMigration(MigrationEndpoint.DESTINATION, partitionId, replicaIndex);
-                partitionService.setActiveMigration(
-                        new MigrationInfo(partitionId, replicaIndex, from, nodeService.getThisAddress()));
+                service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),
+                        getReplicaIndex(), migrationType));
                 op.run();
             } catch (Throwable e) {
                 error = true;
@@ -112,18 +115,6 @@ public class MigrationOperation extends AbstractOperation {
                 break;
             }
         }
-
-//        if (error) {
-//            for (ServiceMigrationOperation op : operations) {
-//                try {
-//                    op.rollback();
-//                } catch (Throwable e) {
-//                    getLogger().log(Level.WARNING, e.getMessage(), e);
-//                }
-//            }
-//        } else {
-//
-//        }
         return !error;
     }
 
@@ -132,21 +123,15 @@ public class MigrationOperation extends AbstractOperation {
     }
 
     public void writeInternal(DataOutput out) throws IOException {
-        try {
-            out.writeInt(partitionId);
-            out.writeInt(replicaIndex);
-            out.writeInt(taskCount);
-            from.writeData(out);
-            out.writeInt(bytesRecordSet.length);
-            out.write(bytesRecordSet);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        out.writeBoolean(move);
+        out.writeInt(taskCount);
+        from.writeData(out);
+        out.writeInt(bytesRecordSet.length);
+        out.write(bytesRecordSet);
     }
 
     public void readInternal(DataInput in) throws IOException {
-        partitionId = in.readInt();
-        replicaIndex = in.readInt();
+        move = in.readBoolean();
         taskCount = in.readInt();
         from = new Address();
         from.readData(in);
@@ -159,8 +144,9 @@ public class MigrationOperation extends AbstractOperation {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("MigrationOperation");
-        sb.append("{partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append("{partitionId=").append(getPartitionId());
+        sb.append(", replicaIndex=").append(getReplicaIndex());
+        sb.append(", move=").append(move);
         sb.append(", from=").append(from);
         sb.append(", taskCount=").append(taskCount);
         sb.append('}');

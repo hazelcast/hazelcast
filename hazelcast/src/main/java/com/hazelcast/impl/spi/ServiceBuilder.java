@@ -21,6 +21,6 @@ package com.hazelcast.impl.spi;
  */
 public interface ServiceBuilder<S extends ManagedService> {
 
-    S buildService(); // TODO: params!
+    S buildService(Object someConfigElement); // TODO: params!
 
 }

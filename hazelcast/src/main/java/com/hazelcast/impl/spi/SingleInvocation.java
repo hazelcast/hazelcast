@@ -100,7 +100,7 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
             }
         } else {
             done = true;
-            if (obj instanceof Exception) {
+            if (obj instanceof Throwable) {
                 throw new ExecutionException((Throwable) obj);
             } else {
                 return obj;

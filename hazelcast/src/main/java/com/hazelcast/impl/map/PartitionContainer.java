@@ -46,28 +46,6 @@ public class PartitionContainer {
         this.config = config;
         this.mapService = mapService;
         this.partitionInfo = partitionInfo;
-
-//        final NodeService nodeService = mapService.getNodeService();
-//        nodeService.getScheduledExecutorService().scheduleWithFixedDelay(new Runnable() {
-//            public void run() {
-//                final Operation op = new Operation() {
-//                    protected void writeInternal(final DataOutput out) throws IOException {}
-//                    protected void readInternal(final DataInput in) throws IOException {}
-//
-//                    public void run() {
-//                        final String key = "c:default";
-//                        if (maps.containsKey(key)) {
-//                            System.err.println("SIZE = " + maps.get(key).records.size());
-//                        }
-//                    }
-//                };
-//                op.setPartitionId(partitionInfo.getPartitionId())
-//                        .setCallId(-1).setNodeService(nodeService).setServiceName(MapService.MAP_SERVICE_NAME)
-//                        .setCaller(nodeService.getThisAddress());
-//                ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
-//                nodeService.runLocally(op);
-//            }
-//        }, 5, 5, TimeUnit.SECONDS);
     }
 
     long incrementAndGetVersion() {

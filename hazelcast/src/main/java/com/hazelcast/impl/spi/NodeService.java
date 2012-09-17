@@ -28,10 +28,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 /**
  * @mdogan 8/24/12
@@ -78,9 +75,15 @@ public interface NodeService {
 
     ILogger getLogger(String name);
 
-    ExecutorService getExecutorService();
+    void execute(Runnable command);
 
-    ScheduledExecutorService getScheduledExecutorService();
+    Future<?> submit(Runnable task);
+
+    void schedule(Runnable command, long delay, TimeUnit unit);
+
+    void scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    void scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
 
     Data toData(Object object);
 

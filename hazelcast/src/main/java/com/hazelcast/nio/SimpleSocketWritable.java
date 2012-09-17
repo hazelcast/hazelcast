@@ -23,15 +23,13 @@ public class SimpleSocketWritable implements SocketWritable {
     private final long callId;
     private final int partitionId;
     private final int replicaIndex;
-    private final boolean targetAware;
     private final Connection conn;
 
-    public SimpleSocketWritable(Data value, long callId, int partitionId, int replicaIndex, Connection conn, boolean targetAware) {
+    public SimpleSocketWritable(Data value, long callId, int partitionId, int replicaIndex, Connection conn) {
         this.value = value;
         this.callId = callId;
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
-        this.targetAware = targetAware;
         this.conn = conn;
     }
 
@@ -41,7 +39,6 @@ public class SimpleSocketWritable implements SocketWritable {
         partitionId = packet.blockId;
         callId = packet.callId;
         replicaIndex = packet.threadId;
-        targetAware = packet.longValue == 1;
     }
 
     public Data getValue() {
@@ -64,10 +61,6 @@ public class SimpleSocketWritable implements SocketWritable {
         return conn;
     }
 
-    public boolean isTargetAware() {
-        return targetAware;
-    }
-
     public void onEnqueue() {
     }
 
@@ -77,6 +70,5 @@ public class SimpleSocketWritable implements SocketWritable {
         packet.callId = callId;
         packet.blockId = partitionId;
         packet.threadId = replicaIndex;
-        packet.longValue = (targetAware) ? 1 : 0;
     }
 }

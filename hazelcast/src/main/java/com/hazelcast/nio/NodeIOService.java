@@ -114,10 +114,7 @@ public class NodeIOService implements IOService {
     }
 
     public void removeEndpoint(final Address endPoint) {
-//        AddOrRemoveConnection addOrRemoveConnection = new AddOrRemoveConnection(endPoint, false);
-//        addOrRemoveConnection.setNode(node);
-//        node.clusterImpl.enqueueAndReturn(addOrRemoveConnection);
-        node.nodeService.getExecutorService().execute(new Runnable() {
+        node.nodeService.execute(new Runnable() {
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
@@ -186,12 +183,7 @@ public class NodeIOService implements IOService {
 
     public void disconnectExistingCalls(final Address deadEndpoint) {
         if (deadEndpoint != null) {
-//            node.clusterImpl.enqueueAndReturn(new Processable() {
-//                public void process() {
-//                    node.clusterImpl.disconnectExistingCalls(deadEndpoint);
-//                }
-//            });
-            node.nodeService.getExecutorService().execute(new Runnable() {
+            node.nodeService.execute(new Runnable() {
                 public void run() {
                     node.clusterService.disconnectExistingCalls(deadEndpoint);
                 }
@@ -221,7 +213,7 @@ public class NodeIOService implements IOService {
     }
 
     public void executeAsync(final Runnable runnable) {
-        node.nodeService.getExecutorService().execute(runnable);
+        node.nodeService.execute(runnable);
     }
 }
 

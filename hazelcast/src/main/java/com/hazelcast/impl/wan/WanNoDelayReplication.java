@@ -16,10 +16,12 @@
 
 package com.hazelcast.impl.wan;
 
+import com.hazelcast.impl.cluster.AuthorizationOperation;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.impl.spi.Operation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -32,6 +34,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 
@@ -54,8 +57,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         this.groupName = groupName;
         this.password = password;
         addressQueue.addAll(Arrays.asList(targets));
-//        node.executorManager.executeNow(this);
-        node.nodeService.getExecutorService().execute(this);
+        node.nodeService.execute(this);
     }
 
     /**
@@ -82,7 +84,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 if (conn == null) {
                     conn = getConnection();
                     if (conn != null) {
-                        boolean authorized = node.clusterService.checkAuthorization(groupName, password, conn.getEndPoint());
+                        boolean authorized = checkAuthorization(groupName, password, conn.getEndPoint());
                         if (!authorized) {
                             conn.close();
                             conn = null;
@@ -134,6 +136,17 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
             }
         }
         return null;
+    }
+
+    public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
+        Operation authorizationCall = new AuthorizationOperation(groupName, groupPassword);
+        Future<Boolean> future = node.nodeService.createSingleInvocation(WanReplicationService.SERVICE_NAME, authorizationCall, -1)
+                .setTarget(target).setTryCount(1).build().invoke();
+        try {
+            return future.get();
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
     class RecordUpdate {

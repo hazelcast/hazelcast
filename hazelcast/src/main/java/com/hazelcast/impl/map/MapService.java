@@ -16,60 +16,40 @@
 
 package com.hazelcast.impl.map;
 
-import com.hazelcast.impl.spi.MigrationEndpoint;
+import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.impl.spi.*;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationEndpoint;
+import com.hazelcast.impl.spi.MigrationServiceEvent.MigrationType;
+import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
-public class MapService implements ManagedService, MigrationAwareService, TransactionalService {
-    public final static String MAP_SERVICE_NAME = "hz:mapService";
+public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService, TransactionalService {
+    public final static String MAP_SERVICE_NAME = "hz:impl:mapService";
 
+    private final ILogger logger;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
     private final NodeService nodeService;
     private final ConcurrentMap<Long, BlockingQueue<Boolean>> backupCalls = new ConcurrentHashMap<Long, BlockingQueue<Boolean>>(1000);
 
-    public MapService(final NodeService nodeService, PartitionInfo[] partitions) {
+    public MapService(final NodeService nodeService) {
         this.nodeService = nodeService;
+        this.logger = nodeService.getLogger(MapService.class.getName());
         int partitionCount = nodeService.getPartitionCount();
         partitionContainers = new PartitionContainer[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new PartitionContainer(nodeService.getConfig(), this, partitions[i]);
+            PartitionInfo partition = nodeService.getPartitionInfo(i);
+            partitionContainers[i] = new PartitionContainer(nodeService.getConfig(), this, partition);
         }
-        nodeService.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                final List<Integer> ownedPartitions = new ArrayList<Integer>();
-                for (int i = 0; i < partitionContainers.length; i++) {
-                    final PartitionInfo partitionInfo = nodeService.getPartitionInfo(i);
-                    if (partitionInfo != null && nodeService.getThisAddress().equals(partitionInfo.getOwner())) {
-                        ownedPartitions.add(i);
-                    }
-                }
-                final CountDownLatch latch = new CountDownLatch(ownedPartitions.size());
-                for (Integer partitionId : ownedPartitions) {
-                    Operation op = new AbstractOperation() {
-                        public void run() {
-                            try {
-                                getPartitionContainer(getPartitionId()).invalidateExpiredScheduledOps();
-                            } finally {
-                                latch.countDown();
-                            }
-                        }
-                    };
-                    op.setPartitionId(partitionId).setValidateTarget(false);
-                    nodeService.runLocally(op);
-                    try {
-                        latch.await(5, TimeUnit.SECONDS);
-                    } catch (InterruptedException ignored) {
-                    }
-                }
-            }
-        }, 1, 1, TimeUnit.SECONDS);
+
+        nodeService.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -84,31 +64,35 @@ public class MapService implements ManagedService, MigrationAwareService, Transa
         return counter.incrementAndGet();
     }
 
-    public void beforeMigration(MigrationEndpoint migrationEndpoint, final int partitionId, final int replicaIndex) {
+    public void beforeMigration(MigrationServiceEvent event) {
         // TODO: what if partition has transactions?
     }
 
-    public Operation prepareMigrationOperation(final int partitionId, final int replicaIndex, boolean diffOnly) {
-        if (partitionId < 0 || partitionId >= nodeService.getPartitionCount()) {
+    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
             return null;
         }
-        final PartitionContainer container = partitionContainers[partitionId];
-        return new MapMigrationOperation(container, partitionId, replicaIndex, diffOnly);
+        final PartitionContainer container = partitionContainers[event.getPartitionId()];
+        return new MapMigrationOperation(container, event.getPartitionId(), event.getReplicaIndex(), false);
     }
 
-    public void commitMigration(MigrationEndpoint migrationEndpoint, final int partitionId, final int replicaIndex) {
-        if (migrationEndpoint == MigrationEndpoint.SOURCE) {
-            clearPartitionData(partitionId);
+    public void commitMigration(MigrationServiceEvent event) {
+        logger.log(Level.FINEST, "Committing " + event);
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
+                && event.getMigrationType() == MigrationType.MOVE) {
+            clearPartitionData(event.getPartitionId());
         }
     }
 
-    public void rollbackMigration(MigrationEndpoint migrationEndpoint, final int partitionId, final int replicaIndex) {
-        if (migrationEndpoint == MigrationEndpoint.DESTINATION) {
-            clearPartitionData(partitionId);
+    public void rollbackMigration(MigrationServiceEvent event) {
+        logger.log(Level.FINEST, "Rolling back " + event);
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            clearPartitionData(event.getPartitionId());
         }
     }
 
     private void clearPartitionData(final int partitionId) {
+        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
         for (MapPartition mapPartition : container.maps.values()) {
             mapPartition.clear();
@@ -170,5 +154,58 @@ public class MapService implements ManagedService, MigrationAwareService, Transa
 
     public NodeService getNodeService() {
         return nodeService;
+    }
+
+    public String getName() {
+        return MAP_SERVICE_NAME;
+    }
+
+    public void init(NodeService nodeService) {
+
+    }
+
+    public void destroy() {
+
+    }
+
+    public void memberAdded(final MemberImpl member) {
+
+    }
+
+    public void memberRemoved(final MemberImpl member) {
+        // submit operations to partition threads to;
+        // * release locks
+        // * rollback transaction
+        // * do not know ?
+    }
+
+    private class CleanupTask implements Runnable {
+        public void run() {
+            final List<Integer> ownedPartitions = new ArrayList<Integer>();
+            for (int i = 0; i < partitionContainers.length; i++) {
+                final PartitionInfo partitionInfo = nodeService.getPartitionInfo(i);
+                if (partitionInfo != null && nodeService.getThisAddress().equals(partitionInfo.getOwner())) {
+                    ownedPartitions.add(i);
+                }
+            }
+            final CountDownLatch latch = new CountDownLatch(ownedPartitions.size());
+            for (Integer partitionId : ownedPartitions) {
+                Operation op = new AbstractOperation() {
+                    public void run() {
+                        try {
+                            getPartitionContainer(getPartitionId()).invalidateExpiredScheduledOps();
+                        } finally {
+                            latch.countDown();
+                        }
+                    }
+                };
+                op.setPartitionId(partitionId).setValidateTarget(false);
+                nodeService.runLocally(op);
+            }
+            try {
+                latch.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 }

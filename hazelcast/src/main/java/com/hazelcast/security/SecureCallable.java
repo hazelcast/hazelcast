@@ -16,7 +16,7 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.cluster.NodeAware;
+import com.hazelcast.impl.cluster.NodeAware;
 import com.hazelcast.core.HazelcastInstanceAware;
 
 import java.io.Serializable;

@@ -16,17 +16,24 @@
 
 package com.hazelcast.impl.spi;
 
+import com.hazelcast.impl.spi.annotation.ExecutedBy;
+import com.hazelcast.impl.spi.annotation.ThreadType;
+
 /**
  * @mdogan 7/23/12
  */
 public interface MigrationAwareService {
 
-    void beforeMigration(MigrationEndpoint migrationEndpoint, int partitionId, int replicaIndex);
+    @ExecutedBy(ThreadType.PARTITION_THREAD)
+    void beforeMigration(MigrationServiceEvent migrationServiceEvent);
 
-    Operation prepareMigrationOperation(int partitionId, int replicaIndex, boolean diffOnly);
+    @ExecutedBy(ThreadType.PARTITION_THREAD)
+    Operation prepareMigrationOperation(MigrationServiceEvent migrationServiceEvent);
 
-    void commitMigration(MigrationEndpoint migrationEndpoint, int partitionId, int replicaIndex);
+    @ExecutedBy(ThreadType.PARTITION_THREAD)
+    void commitMigration(MigrationServiceEvent migrationServiceEvent);
 
-    void rollbackMigration(MigrationEndpoint migrationEndpoint, int partitionId, int replicaIndex);
+    @ExecutedBy(ThreadType.PARTITION_THREAD)
+    void rollbackMigration(MigrationServiceEvent migrationServiceEvent);
 
 }

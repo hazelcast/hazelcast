@@ -16,13 +16,14 @@
 
 package com.hazelcast.impl.spi;
 
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.cluster.JoinOperation;
+import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.impl.cluster.JoinOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.map.GenericBackupOperation;
 import com.hazelcast.impl.partition.PartitionInfo;
+import com.hazelcast.impl.spi.annotation.PrivateApi;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 
@@ -38,7 +39,7 @@ public class NodeServiceImpl implements NodeService {
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
     private final Workers workers;
     private final ExecutorService executorService;
-    private final ExecutorService eventService;
+    private final ExecutorService eventExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
     private final Node node;
     private final ILogger logger;
@@ -49,17 +50,17 @@ public class NodeServiceImpl implements NodeService {
 
     public NodeServiceImpl(Node node) {
         this.node = node;
-        logger = node.getLogger(NodeServiceImpl.class.getName());
+        logger = node.getLogger(NodeService.class.getName());
         final ClassLoader classLoader = node.getConfig().getClassLoader();
         executorService = new ThreadPoolExecutor(
-                2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
                 new SynchronousQueue(),
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("cached"), classLoader));
-        eventService = Executors.newSingleThreadExecutor(
+        eventExecutorService = Executors.newSingleThreadExecutor(
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("event"), node.getConfig().getClassLoader()));
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
+        scheduledExecutorService = Executors.newScheduledThreadPool(2,
                 new ExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("scheduled"), classLoader));
@@ -168,7 +169,7 @@ public class NodeServiceImpl implements NodeService {
             throw new WrongTargetException(getThisAddress(), target, partitionId,
                     op.getClass().getName(), serviceName);
         }
-        if (!isJoinOperation(op) && getClusterImpl().getMember(target) == null) {
+        if (!isJoinOperation(op) && getClusterService().getMember(target) == null) {
             throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
     }
@@ -176,77 +177,17 @@ public class NodeServiceImpl implements NodeService {
     public void runLocally(final Operation op) {
         final int partitionId = op.getPartitionId();
         final ExecutorService executor = getExecutor(partitionId);
-        executor.execute(new Runnable() {
-            public void run() {
-                ThreadContext.get().setCurrentOperation(op);
-                try {
-                    checkOperation(op);
-                    op.run();
-                } catch (Throwable e) {
-                    logOperationError(e);
-                    op.getResponseHandler().sendResponse(e);
-                }
-            }
-        });
+        executor.execute(new OperationExecutor(op));
     }
 
+    @PrivateApi
     public void handleOperation(final SimpleSocketWritable ssw) {
         final int partitionId = ssw.getPartitionId();
-        final int replicaIndex = ssw.getReplicaIndex();
-        final Data data = ssw.getValue();
-        final long callId = ssw.getCallId();
-        final Address caller = ssw.getConn().getEndPoint();
         final Executor executor = getExecutor(partitionId);
-        executor.execute(new Runnable() {
-            public void run() {
-                try {
-                    final Operation op = (Operation) toObject(data);
-                    ThreadContext.get().setCurrentOperation(op);
-                    setOperationContext(op, op.getServiceName(), caller, callId, partitionId, replicaIndex);
-                    op.setConnection(ssw.getConn());
-                    ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op, partitionId, callId);
-                    try {
-                        checkOperation(op);
-                        op.run();
-                    } catch (Throwable e) {
-                        logOperationError(e);
-                        op.getResponseHandler().sendResponse(e);
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
-                    node.clusterService.send(new SimpleSocketWritable(toData(e), callId,
-                            partitionId, replicaIndex, null, true), ssw.getConn());
-                }
-            }
-        });
+        executor.execute(new RemoteOperationExecutor(ssw));
     }
 
-    private void checkOperation(final Operation op) {
-        final int partitionId = op.getPartitionId();
-        if (partitionId >= 0) {
-            PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-            Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
-            if (!isPartitionLockFreeOperation(op) && node.partitionService.isPartitionLocked(partitionId)) {
-                throw new PartitionLockedException(getThisAddress(), owner, partitionId,
-                        op.getClass().getName(), op.getServiceName());
-            }
-            final boolean shouldValidateTarget = op.shouldValidateTarget();
-            if (shouldValidateTarget && !getThisAddress().equals(owner)) {
-                throw new WrongTargetException(getThisAddress(), owner, partitionId,
-                        op.getClass().getName(), op.getServiceName());
-            }
-        }
-    }
-
-    private void logOperationError(final Throwable e) {
-        if (e instanceof RetryableException) {
-            logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
-            logger.log(Level.FINEST, e.getMessage(), e);
-        } else {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-        }
-    }
-
+    @PrivateApi
     public Operation setOperationContext(Operation op, String serviceName, Address caller,
                                          long callId, int partitionId, int replicaIndex) {
         op.setNodeService(this)
@@ -261,7 +202,7 @@ public class NodeServiceImpl implements NodeService {
     public void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException {
         op.setServiceName(serviceName);
-        backupCount = Math.min(getClusterImpl().getSize() - 1, backupCount);
+        backupCount = Math.min(getClusterService().getSize() - 1, backupCount);
         if (backupCount > 0) {
             List<Future> backupOps = new ArrayList<Future>(backupCount);
             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
@@ -284,7 +225,7 @@ public class NodeServiceImpl implements NodeService {
 
     public void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount) {
         op.setServiceName(serviceName);
-        backupCount = Math.min(getClusterImpl().getSize() - 1, backupCount);
+        backupCount = Math.min(getClusterService().getSize() - 1, backupCount);
         if (backupCount > 0) {
             Data opData = toData(op);
             PartitionInfo partitionInfo = getPartitionInfo(partitionId);
@@ -295,7 +236,7 @@ public class NodeServiceImpl implements NodeService {
                     if (replicaTarget.equals(getThisAddress())) {
                         // Normally shouldn't happen!!
                     } else {
-                        SimpleSocketWritable ssw = new SimpleSocketWritable(opData, -1, partitionId, replicaIndex, null, true);
+                        SimpleSocketWritable ssw = new SimpleSocketWritable(opData, -1, partitionId, replicaIndex, null);
                         node.clusterService.send(ssw, replicaTarget);
                     }
                 }
@@ -326,7 +267,7 @@ public class NodeServiceImpl implements NodeService {
     public boolean send(final Operation op, final int partitionId, final Connection connection) {
         Data opData = toData(op);
         return node.clusterService.send(new SimpleSocketWritable(opData, op.getCallId(), partitionId,
-                op.getReplicaIndex(), null, true), connection);
+                op.getReplicaIndex(), null), connection);
     }
 
     private ExecutorService getExecutor(int partitionId) {
@@ -335,21 +276,168 @@ public class NodeServiceImpl implements NodeService {
         } else if (partitionId == EXECUTOR_THREAD_ID) {
             return executorService;
         } else if (partitionId == EVENT_THREAD_ID) {
-            return eventService;
+            return eventExecutorService;
         } else {
             throw new IllegalArgumentException("Illegal partition id: " + partitionId);
         }
     }
 
-    public ExecutorService getExecutorService() {
-        return executorService;
+    @PrivateApi
+    public void disconnectExistingCalls(Address deadAddress) {
+        for (Call call : mapCalls.values()) {
+            call.onDisconnect(deadAddress);
+        }
     }
 
+    private long registerCall(Call call) {
+        long callId = localIdGen.incrementAndGet();
+        mapCalls.put(callId, call);
+        return callId;
+    }
+
+    private Call deregisterRemoteCall(long id) {
+        return mapCalls.remove(id);
+    }
+
+    @PrivateApi
+    void notifyCall(long callId, Response response) {
+        Call call = deregisterRemoteCall(callId);
+        if (call != null) {
+            call.offerResponse(response);
+        }
+    }
+
+    public void registerService(String serviceName, Object service) {
+        services.put(serviceName, service);
+        if (service instanceof ManagedService) {
+            ((ManagedService) service).init(this);
+        }
+    }
+
+    public <T> T getService(String serviceName) {
+        return (T) services.get(serviceName);
+    }
+
+    @PrivateApi
+    public Collection<Object> getServices() {
+        return Collections.unmodifiableCollection(services.values());
+    }
+
+    @PrivateApi
+    public Node getNode() {
+        return node;
+    }
+
+    @PrivateApi
+    public ClusterService getClusterService() {
+        return node.getClusterService();
+    }
+
+    public Cluster getCluster() {
+        return getClusterService().getClusterProxy();
+    }
+
+    public Address getThisAddress() {
+        return node.getThisAddress();
+    }
+
+    public final int getPartitionId(Data key) {
+        return node.partitionService.getPartitionId(key);
+    }
+
+    public PartitionInfo getPartitionInfo(int partitionId) {
+        PartitionInfo p = node.partitionService.getPartition(partitionId);
+        if (p.getOwner() == null) {
+            // probably ownerships are not set yet.
+            // force it.
+            node.partitionService.getPartitionOwner(partitionId);
+        }
+        return p;
+    }
+
+    public int getPartitionCount() {
+        return partitionCount;
+    }
+
+    public Config getConfig() {
+        return node.getConfig();
+    }
+
+    @PrivateApi
     public ExecutorService getEventService() {
-        return eventService;
+        return eventExecutorService;
     }
 
-    class Workers {
+    public Future<?> submit(Runnable task) {
+        return executorService.submit(task);
+    }
+
+    public void execute(final Runnable command) {
+        executorService.execute(command);
+    }
+
+    public void schedule(final Runnable command, long delay, TimeUnit unit) {
+        scheduledExecutorService.schedule(command, delay, unit);
+    }
+
+    public void scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
+        scheduledExecutorService.scheduleAtFixedRate(command, initialDelay, period, unit);
+    }
+
+    public void scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
+        scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, period, unit);
+    }
+
+    public Data toData(final Object object) {
+        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
+        return IOUtil.toData(object);
+    }
+
+    public Object toObject(final Object object) {
+        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
+        return IOUtil.toObject(object);
+    }
+
+    public TransactionImpl getTransaction() {
+        return ThreadContext.get().getTransaction();
+    }
+
+    public ILogger getLogger(String name) {
+        return node.getLogger(name);
+    }
+
+    public GroupProperties getGroupProperties() {
+        return node.getGroupProperties();
+    }
+
+    @PrivateApi
+    public void shutdown() {
+        for (Object service : getServices()) {
+            if (service instanceof ManagedService) {
+                try {
+                    ((ManagedService) service).destroy();
+                } catch (Throwable t) {
+                    logger.log(Level.SEVERE, "Error while stopping service: " + t.getMessage(), t);
+                }
+            }
+        }
+        workers.shutdownNow();
+        executorService.shutdownNow();
+        scheduledExecutorService.shutdownNow();
+        eventExecutorService.shutdownNow();
+        try {
+            scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        try {
+            executorService.awaitTermination(3, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        workers.awaitTermination(3);
+        mapCalls.clear();
+    }
+
+    private class Workers {
         private final ThreadGroup partitionThreadGroup;
         final int threadCount;
         final ExecutorService[] workers;
@@ -397,129 +485,100 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    public void disconnectExistingCalls(Address deadAddress) {
-        for (Call call : mapCalls.values()) {
-            call.onDisconnect(deadAddress);
+    private class OperationExecutor implements Runnable {
+        protected Operation op;
+
+        private OperationExecutor() {
+        }
+
+        private OperationExecutor(final Operation op) {
+            this.op = op;
+        }
+
+        public void run() {
+            ThreadContext.get().setCurrentOperation(op);
+//                System.err.println(Thread.currentThread().getName() + " executing " +  op.getClass().getName());
+            try {
+                checkOperation(op);
+                op.run();
+            } catch (Throwable e) {
+                handleOperationError(op, e);
+            }
+        }
+
+        public void setOp(final Operation op) {
+            this.op = op;
+        }
+
+        private void checkOperation(final Operation op) {
+            final int partitionId = op.getPartitionId();
+            if (partitionId >= 0) {
+                PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+                Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
+                if (!isPartitionLockFreeOperation(op) && node.partitionService.isPartitionLocked(partitionId)) {
+                    throw new PartitionLockedException(getThisAddress(), owner, partitionId,
+                            op.getClass().getName(), op.getServiceName());
+                }
+                final boolean shouldValidateTarget = op.shouldValidateTarget();
+                if (shouldValidateTarget && !getThisAddress().equals(owner)) {
+                    throw new WrongTargetException(getThisAddress(), owner, partitionId,
+                            op.getClass().getName(), op.getServiceName());
+                }
+            }
+        }
+
+        private void handleOperationError(final Operation op, final Throwable e) {
+            if (e instanceof RetryableException) {
+                logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
+                logger.log(Level.FINEST, e.getMessage(), e);
+            } else {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
+            final ResponseHandler responseHandler = op.getResponseHandler();
+            if (responseHandler != null) {
+                responseHandler.sendResponse(e);
+            }
+        }
+
+    }
+
+    private class RemoteOperationExecutor extends OperationExecutor implements Runnable {
+        private final SimpleSocketWritable ssw;
+
+        private RemoteOperationExecutor(final SimpleSocketWritable ssw) {
+            this.ssw = ssw;
+        }
+
+        public void run() {
+            final int partitionId = ssw.getPartitionId();
+            final int replicaIndex = ssw.getReplicaIndex();
+            final Data data = ssw.getValue();
+            final long callId = ssw.getCallId();
+            final Address caller = ssw.getConn().getEndPoint();
+
+            try {
+                setOp((Operation) toObject(data));
+                setOperationContext(op, op.getServiceName(), caller, callId, partitionId, replicaIndex);
+                op.setConnection(ssw.getConn());
+                ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op, partitionId, callId);
+                super.run();
+            } catch (Throwable e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                node.clusterService.send(new SimpleSocketWritable(toData(e), callId,
+                        partitionId, replicaIndex, null), ssw.getConn());
+            }
         }
     }
 
-    private long registerCall(Call call) {
-        long callId = localIdGen.incrementAndGet();
-        mapCalls.put(callId, call);
-        return callId;
-    }
-
-    private Call deregisterRemoteCall(long id) {
-        return mapCalls.remove(id);
-    }
-
-    void notifyCall(long callId, Response response) {
-        Call call = deregisterRemoteCall(callId);
-        if (call != null) {
-            call.offerResponse(response);
-        }
-    }
-
-    public void registerService(String serviceName, Object obj) {
-        services.put(serviceName, obj);
-    }
-
-    public <T> T getService(String serviceName) {
-        return (T) services.get(serviceName);
-    }
-
-    public Map<String, Object> getServices() {
-        return Collections.unmodifiableMap(services);
-    }
-
-    public Node getNode() {
-        return node;
-    }
-
-    public ClusterService getClusterImpl() {
-        return node.getClusterService();
-    }
-
-    public Address getThisAddress() {
-        return node.getThisAddress();
-    }
-
-    public final int getPartitionId(Data key) {
-        return node.partitionService.getPartitionId(key);
-    }
-
-    public PartitionInfo getPartitionInfo(int partitionId) {
-        PartitionInfo p = node.partitionService.getPartition(partitionId);
-        if (p.getOwner() == null) {
-            // probably ownerships are not set yet.
-            // force it.
-            node.partitionService.getPartitionOwner(partitionId);
-        }
-        return p;
-    }
-
-    public int getPartitionCount() {
-        return partitionCount;
-    }
-
-    public Config getConfig() {
-        return node.getConfig();
-    }
-
-    public ScheduledExecutorService getScheduledExecutorService() {
-        return scheduledExecutorService;
-    }
-
-    public Data toData(final Object object) {
-        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-        return IOUtil.toData(object);
-    }
-
-    public Object toObject(final Object object) {
-        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-        return IOUtil.toObject(object);
-    }
-
-    public TransactionImpl getTransaction() {
-        return ThreadContext.get().getTransaction();
-    }
-
-    public Cluster getCluster() {
-        return node.clusterService;
-    }
-
-    public ILogger getLogger(String name) {
-        return node.getLogger(name);
-    }
-
-    public GroupProperties getGroupProperties() {
-        return node.getGroupProperties();
-    }
-
-    public void shutdown() {
-        workers.shutdownNow();
-        executorService.shutdownNow();
-        scheduledExecutorService.shutdownNow();
-        eventService.shutdownNow();
-        try {
-            scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
-        }
-        try {
-            executorService.awaitTermination(3, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
-        }
-        workers.awaitTermination(3);
-        mapCalls.clear();
-    }
+    private static final ClassLoader thisClassLoader = NodeService.class.getClassLoader();
 
     private static boolean isPartitionLockFreeOperation(Operation op) {
         return op instanceof PartitionLockFreeOperation
-                && op.getClass().getClassLoader() == NodeService.class.getClassLoader();
+               && op.getClass().getClassLoader() == thisClassLoader;
     }
 
     private static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation
-                && op.getClass().getClassLoader() == NodeService.class.getClassLoader();
+               && op.getClass().getClassLoader() == thisClassLoader;
     }
 }

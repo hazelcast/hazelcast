@@ -18,31 +18,36 @@ package com.hazelcast.impl.partition;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 public class MigrationInfo implements DataSerializable {
-    protected int partitionId;
-    protected Address from;
-    protected Address to;
-    protected int replicaIndex;
+    private int partitionId;
+    private Address from;
+    private Address to;
+    private int replicaIndex;
+    private boolean move;    // move or copy
+
+    private transient long creationTime = Clock.currentTimeMillis();
 
     public MigrationInfo() {
     }
 
-    public MigrationInfo(int partitionId, int replicaIndex, Address from, Address to) {
+    public MigrationInfo(int partitionId, int replicaIndex, boolean move, Address from, Address to) {
         this.partitionId = partitionId;
         this.from = from;
         this.to = to;
         this.replicaIndex = replicaIndex;
+        this.move = move;
     }
 
-//    public MigrationInfo(final int partitionId, final int replicaIndex) {
-//        this.partitionId = partitionId;
-//        this.replicaIndex = replicaIndex;
-//    }
+    public MigrationInfo(MigrationInfo migrationInfo) {
+        this(migrationInfo.partitionId, migrationInfo.replicaIndex,
+                migrationInfo.move, migrationInfo.from, migrationInfo.to);
+    }
 
     public Address getFromAddress() {
         return from;
@@ -56,9 +61,22 @@ public class MigrationInfo implements DataSerializable {
         return replicaIndex;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    public boolean isMoving() {
+        return move;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
+        out.writeBoolean(move);
         boolean hasFrom = from != null;
         out.writeBoolean(hasFrom);
         if (hasFrom) {
@@ -70,6 +88,7 @@ public class MigrationInfo implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         partitionId = in.readInt();
         replicaIndex = in.readInt();
+        move = in.readBoolean();
         boolean hasFrom = in.readBoolean();
         if (hasFrom) {
             from = new Address();
@@ -79,19 +98,17 @@ public class MigrationInfo implements DataSerializable {
         to.readData(in);
     }
 
-    public int getPartitionId() {
-        return partitionId;
-    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof MigrationInfo)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
+
         final MigrationInfo that = (MigrationInfo) o;
+
+        if (move != that.move) return false;
         if (partitionId != that.partitionId) return false;
         if (replicaIndex != that.replicaIndex) return false;
-        if (from != null ? !from.equals(that.from) : that.from != null) return false;
-        if (to != null ? !to.equals(that.to) : that.to != null) return false;
+
         return true;
     }
 
@@ -99,6 +116,7 @@ public class MigrationInfo implements DataSerializable {
     public int hashCode() {
         int result = partitionId;
         result = 31 * result + replicaIndex;
+        result = 31 * result + (move ? 1 : 0);
         return result;
     }
 
@@ -107,9 +125,10 @@ public class MigrationInfo implements DataSerializable {
         final StringBuilder sb = new StringBuilder();
         sb.append("MigrationInfo");
         sb.append("{partitionId=").append(partitionId);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", move=").append(move);
         sb.append(", from=").append(from);
         sb.append(", to=").append(to);
-        sb.append(", replicaIndex=").append(replicaIndex);
         sb.append('}');
         return sb.toString();
     }

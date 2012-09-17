@@ -16,11 +16,17 @@
 
 package com.hazelcast.impl.spi;
 
+import com.hazelcast.impl.spi.annotation.ExecutedBy;
+import com.hazelcast.impl.spi.annotation.ThreadType;
+
 public interface TransactionalService {
 
+    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void prepare(String txnId, int partitionId) throws TransactionException;
 
+    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void commit(String txnId, int partitionId) throws TransactionException;
 
+    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void rollback(String txnId, int partitionId) throws TransactionException;
 }
