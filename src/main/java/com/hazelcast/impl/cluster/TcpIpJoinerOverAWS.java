@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.impl.cluster;
 
 import com.hazelcast.aws.AWSClient;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
