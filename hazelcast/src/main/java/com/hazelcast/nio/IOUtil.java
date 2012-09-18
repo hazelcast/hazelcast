@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.ThreadContext;
 
 import java.io.*;
 import java.nio.ByteBuffer;

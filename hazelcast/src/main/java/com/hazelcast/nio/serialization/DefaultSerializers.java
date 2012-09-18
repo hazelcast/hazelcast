@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.FastDataInputStream;
 import com.hazelcast.nio.FastDataOutputStream;
 import com.hazelcast.nio.HazelcastSerializationException;

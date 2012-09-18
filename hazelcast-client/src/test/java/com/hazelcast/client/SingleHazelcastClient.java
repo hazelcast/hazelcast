@@ -19,7 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 
 public class SingleHazelcastClient {
 

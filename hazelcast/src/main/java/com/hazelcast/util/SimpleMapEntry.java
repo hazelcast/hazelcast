@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.impl.MProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;

@@ -21,7 +21,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import org.junit.After;
 import org.junit.Before;

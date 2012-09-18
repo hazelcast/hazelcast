@@ -16,8 +16,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.base.CallState;
-import com.hazelcast.impl.base.CallStateAware;
+import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.logging.CallState;
+import com.hazelcast.logging.CallStateAware;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;

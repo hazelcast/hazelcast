@@ -19,7 +19,7 @@ package com.hazelcast.client.util;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.TransactionClientProxy;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.ThreadContext;
 
 /**
  * @mdogan 5/23/12

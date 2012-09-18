@@ -17,7 +17,8 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
 import java.util.Set;
 
@@ -108,6 +109,6 @@ public final class Hazelcast {
      * @see OutOfMemoryHandler
      */
     public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
-        com.hazelcast.impl.OutOfMemoryErrorDispatcher.setHandler(outOfMemoryHandler);
+        OutOfMemoryErrorDispatcher.setHandler(outOfMemoryHandler);
     }
 }

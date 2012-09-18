@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl.base;
 
-import com.hazelcast.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.impl.IGetAwareProxy;
 import com.hazelcast.impl.MProxy;
 import com.hazelcast.nio.Data;

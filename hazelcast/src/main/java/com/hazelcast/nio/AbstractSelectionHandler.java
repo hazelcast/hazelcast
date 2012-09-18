@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.base.SystemLogService;
+import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;

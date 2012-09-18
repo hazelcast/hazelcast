@@ -26,7 +26,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.io.IOException;

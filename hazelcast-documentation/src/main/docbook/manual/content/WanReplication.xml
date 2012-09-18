@@ -44,18 +44,18 @@
     </para>
 
 
-    <programlisting language="xml"><![CDATA[
+    <programlisting language="xml"><![CDATA[<![CDATA[<![CDATA[
 <hazelcast>
     <wan-replication name="my-wan-cluster">
         <target-cluster group-name="tokyo" group-password="tokyo-pass">
-            <replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</replication-impl>
+            <replication-impl>com.hazelcast.wan.WanNoDelayReplication</replication-impl>
             <end-points>
                 <address>10.2.1.1:5701</address>
                 <address>10.2.1.2:5701</address>
             </end-points>
         </target-cluster>
         <target-cluster group-name="london" group-password="london-pass">
-            <replication-impl>com.hazelcast.impl.wan.WanNoDelayReplication</replication-impl>
+            <replication-icom.hazelcast.wan.wan.WanNoDelayReplication</replication-impl>
             <end-points>
                 <address>10.3.5.1:5701</address>
                 <address>10.3.5.2:5701</address>
@@ -70,7 +70,7 @@
 </network>
 ...
 </hazelcast>
-]]></programlisting>
+]]>]]>]]></programlisting>
 
 
     <para>

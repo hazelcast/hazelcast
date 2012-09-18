@@ -23,7 +23,7 @@ import java.net.InetSocketAddress;
 
 /**
  * Cluster member interface. The default implementation
- * {@link com.hazelcast.impl.MemberImpl} violates the Java Serialization contract.
+ * {@link com.hazelcast.instance.MemberImpl} violates the Java Serialization contract.
  * It should be serialized/deserialized by Hazelcast.
  *
  * @see Cluster

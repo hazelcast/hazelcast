@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.monitor.LocalLockStats;
 
 import java.util.concurrent.TimeUnit;

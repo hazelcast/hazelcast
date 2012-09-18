@@ -21,7 +21,7 @@ package com.hazelcast.core;
  * when an operation can not be accepted because number of concurrent
  * calls reaches the limit.
  *
- * @see com.hazelcast.impl.GroupProperties#PROP_MAX_CONCURRENT_OPERATION_LIMIT
+ * @see com.hazelcast.instance.GroupProperties#PROP_MAX_CONCURRENT_OPERATION_LIMIT
  * @see java.util.concurrent.RejectedExecutionException
  */
 public class OperationRejectedException extends HazelcastException {

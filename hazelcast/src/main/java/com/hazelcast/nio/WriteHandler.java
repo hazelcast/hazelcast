@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.base.SystemArgsLog;
+import com.hazelcast.logging.SystemArgsLog;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
 

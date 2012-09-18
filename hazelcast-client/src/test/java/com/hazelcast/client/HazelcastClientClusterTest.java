@@ -23,7 +23,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import org.junit.*;
 import org.junit.runner.RunWith;
 

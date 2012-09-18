@@ -18,7 +18,7 @@ package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.Assert;

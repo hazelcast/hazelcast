@@ -18,8 +18,8 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
-import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;

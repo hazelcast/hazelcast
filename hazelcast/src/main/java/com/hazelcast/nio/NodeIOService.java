@@ -21,8 +21,12 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.base.SystemLogService;
+import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 
 public class NodeIOService implements IOService {

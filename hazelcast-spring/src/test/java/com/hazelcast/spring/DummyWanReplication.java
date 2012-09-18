@@ -16,9 +16,9 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.impl.Node;
+import com.hazelcast.instance.Node;
 import com.hazelcast.impl.Record;
-import com.hazelcast.impl.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationEndpoint;
 
 public class DummyWanReplication implements WanReplicationEndpoint {
 

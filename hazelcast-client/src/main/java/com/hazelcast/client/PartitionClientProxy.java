@@ -19,9 +19,9 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.nio.Data;
-import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.core.MigrationListener;
+import com.hazelcast.core.Partition;
+import com.hazelcast.core.PartitionService;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

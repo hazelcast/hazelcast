@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.util.ByteUtil;
 
 import java.io.DataInputStream;

@@ -20,8 +20,8 @@ import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.base.SystemLogService;
+import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.logging.ILogger;
 
 public interface IOService {

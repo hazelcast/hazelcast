@@ -16,8 +16,8 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.impl.DistributedRunnableAdapter;
-import com.hazelcast.impl.executor.ExecutionManagerCallback;
+import com.hazelcast.executor.DistributedRunnableAdapter;
+import com.hazelcast.executor.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
 import com.hazelcast.util.Util;
 

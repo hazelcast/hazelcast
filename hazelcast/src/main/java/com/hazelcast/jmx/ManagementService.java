@@ -17,8 +17,8 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.ExecutorThreadFactory;
-import com.hazelcast.impl.HazelcastInstanceImpl;
+import com.hazelcast.executor.ExecutorThreadFactory;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 

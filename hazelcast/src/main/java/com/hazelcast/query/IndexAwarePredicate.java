@@ -17,6 +17,8 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.QueryContext;
 
 import java.util.List;
 import java.util.Map;

@@ -16,9 +16,8 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.impl.cluster.ClusterService;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.base.SystemLogService;
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.instance.MemberImpl;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

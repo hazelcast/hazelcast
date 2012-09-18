@@ -17,13 +17,16 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Predicates;
+import com.hazelcast.query.impl.QueryContext;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 
-import static com.hazelcast.query.Predicates.*;
+import static com.hazelcast.query.impl.Predicates.*;
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
     private transient Predicate predicate;

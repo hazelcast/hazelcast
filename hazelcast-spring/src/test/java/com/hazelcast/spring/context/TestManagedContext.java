@@ -19,7 +19,7 @@ package com.hazelcast.spring.context;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.Assert;

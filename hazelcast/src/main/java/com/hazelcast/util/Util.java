@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
@@ -39,9 +39,6 @@ public class Util {
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
         }
-//        if (!(obj instanceof Serializable)) {
-//            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
-//        }
     }
 
     public static void throwUncheckedException(Throwable t) {

@@ -16,6 +16,9 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.instance.CallContext;
+import com.hazelcast.instance.ThreadContext;
+
 import java.util.concurrent.*;
 
 public abstract class AsyncCall implements Future, Runnable {

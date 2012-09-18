@@ -16,8 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.HazelcastInstanceFactory;
-import com.hazelcast.impl.HazelcastInstanceFactory.ProxyKey;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceFactory.ProxyKey;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;

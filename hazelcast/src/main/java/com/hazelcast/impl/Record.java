@@ -26,7 +26,6 @@ import com.hazelcast.nio.Data;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 
 public interface Record extends MapEntry {
 
@@ -34,12 +33,6 @@ public interface Record extends MapEntry {
      * @return on-heap copy of Record
      */
     Record copy();
-
-    void runBackupOps();
-
-    void addBackupOp(VersionedBackupOp bo);
-
-    void forceBackupOps();
 
     Object getKey();
 
@@ -152,10 +145,6 @@ public interface Record extends MapEntry {
     void setMultiValues(Collection<ValueHolder> lsValues);
 
     int getBackupOpCount();
-
-    SortedSet<VersionedBackupOp> getBackupOps();
-
-    void setBackupOps(SortedSet<VersionedBackupOp> backupOps);
 
     boolean isDirty();
 

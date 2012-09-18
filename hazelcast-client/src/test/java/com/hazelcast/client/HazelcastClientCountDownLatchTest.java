@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import org.junit.*;
 import org.junit.runner.RunWith;

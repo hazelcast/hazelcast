@@ -16,7 +16,7 @@
 
 package com.hazelcast.jca;
 
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.ThreadContext;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.*;

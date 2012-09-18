@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
 import java.io.*;

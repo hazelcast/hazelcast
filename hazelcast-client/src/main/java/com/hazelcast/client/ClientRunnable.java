@@ -16,7 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.ThreadContext;
 
 public abstract class ClientRunnable implements Runnable {
     protected volatile boolean running = true;

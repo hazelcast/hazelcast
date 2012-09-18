@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.Message;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 

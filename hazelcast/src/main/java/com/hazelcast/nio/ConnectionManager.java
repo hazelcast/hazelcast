@@ -16,12 +16,12 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.cluster.BindOperation;
-import com.hazelcast.impl.cluster.ClusterService;
+import com.hazelcast.cluster.BindOperation;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;

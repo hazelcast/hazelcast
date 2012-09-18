@@ -18,7 +18,7 @@ package com.hazelcast.hibernate;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import org.hibernate.cfg.Environment;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;

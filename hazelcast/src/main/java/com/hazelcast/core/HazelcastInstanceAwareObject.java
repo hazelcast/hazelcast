@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.ThreadContext;
 
 import java.io.*;
 

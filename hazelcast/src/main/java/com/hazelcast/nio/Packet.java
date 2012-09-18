@@ -17,8 +17,10 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.impl.*;
-import com.hazelcast.impl.base.CallState;
-import com.hazelcast.impl.base.CallStateAware;
+import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.logging.CallState;
+import com.hazelcast.logging.CallStateAware;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.util.ByteUtil;
 
 import java.nio.ByteBuffer;

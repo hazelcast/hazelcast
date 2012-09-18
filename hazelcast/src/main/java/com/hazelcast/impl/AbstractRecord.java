@@ -47,52 +47,12 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
 
     protected volatile OptionalInfo optionalInfo = null;
 
-    public AbstractRecord(CMap cmap, int blockId, Data key, long ttl, long maxIdleMillis, long id) {
-        super(blockId, cmap, id, key);
+    public AbstractRecord(int blockId, Data key, long ttl, long maxIdleMillis, long id) {
+        super(blockId, id, key);
         this.setCreationTime(Clock.currentTimeMillis());
         this.setTTL(ttl);
         this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
         this.setVersion(0);
-    }
-
-    public void runBackupOps() {
-        final Set<VersionedBackupOp> backupOps = getBackupOps();
-        if (backupOps != null && !backupOps.isEmpty()) {
-            Iterator<VersionedBackupOp> it = backupOps.iterator();
-            while (it.hasNext()) {
-                VersionedBackupOp bo = it.next();
-                if (bo.getVersion() < getVersion() + 1) {
-                    it.remove();
-                } else if (bo.getVersion() == getVersion() + 1) {
-                    bo.run();
-                    setVersion(bo.getVersion());
-                    it.remove();
-                } else {
-                    return;
-                }
-            }
-        }
-    }
-
-    public void addBackupOp(VersionedBackupOp bo) {
-        if (getBackupOps() == null) {
-            setBackupOps(new TreeSet<VersionedBackupOp>());
-        }
-        getBackupOps().add(bo);
-        if (getBackupOps().size() > 4) {
-            forceBackupOps();
-        }
-    }
-
-    public void forceBackupOps() {
-        if (getBackupOps() == null) return;
-        Iterator<VersionedBackupOp> it = getBackupOps().iterator();
-        while (it.hasNext()) {
-            VersionedBackupOp v = it.next();
-            v.run();
-            setVersion(v.getVersion());
-            it.remove();
-        }
     }
 
     public Object getKey() {
@@ -342,21 +302,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
-    public int getBackupOpCount() {
-        if (optionalInfo == null) return 0;
-        return (getOptionalInfo().backupOps == null) ? 0 : getOptionalInfo().backupOps.size();
-    }
-
-    public SortedSet<VersionedBackupOp> getBackupOps() {
-        return getOptionalInfo().backupOps;
-    }
-
-    public void setBackupOps(SortedSet<VersionedBackupOp> backupOps) {
-        if (backupOps != null) {
-            this.getOptionalInfo().backupOps = backupOps;
-        }
-    }
-
     public boolean isDirty() {
         return dirty;
     }
@@ -471,7 +416,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         Long[] indexes; // indexes of the current value;
         byte[] indexTypes; // index types of the current value;
         List<ScheduledAction> lsScheduledActions = null;
-        SortedSet<VersionedBackupOp> backupOps = null;
         Map<Address, Boolean> mapListeners = null;
     }
 }

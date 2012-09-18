@@ -17,8 +17,8 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.HazelcastInstanceAwareInstance;
-import com.hazelcast.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceAwareInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 
 public abstract class FactoryAwareNamedProxy implements HazelcastInstanceAwareInstance {
     transient protected HazelcastInstanceImpl hazelcastInstance = null;

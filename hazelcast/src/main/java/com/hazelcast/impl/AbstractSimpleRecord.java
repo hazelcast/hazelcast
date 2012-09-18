@@ -25,26 +25,20 @@ import com.hazelcast.nio.Data;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 
 public abstract class AbstractSimpleRecord implements Record {
-    protected final CMap cmap;
     protected final long id;
     protected final Data key;
     protected final short blockId;
     protected volatile boolean active = true;
 
-    public AbstractSimpleRecord(int blockId, CMap cmap, long id, Data key) {
+    public AbstractSimpleRecord(int blockId, long id, Data key) {
         this.blockId = (short) blockId;
-        this.cmap = cmap;
         this.id = id;
         this.key = key;
     }
 
     public void runBackupOps() {
-    }
-
-    public void addBackupOp(VersionedBackupOp bo) {
     }
 
     public void forceBackupOps() {
@@ -222,13 +216,6 @@ public abstract class AbstractSimpleRecord implements Record {
         return 0;
     }
 
-    public SortedSet<VersionedBackupOp> getBackupOps() {
-        return null;
-    }
-
-    public void setBackupOps(SortedSet<VersionedBackupOp> backupOps) {
-    }
-
     public boolean isDirty() {
         return false;
     }
@@ -316,9 +303,5 @@ public abstract class AbstractSimpleRecord implements Record {
 
     public int hashCode() {
         return (int) (id ^ (id >>> 32));
-    }
-
-    public boolean equals(Object obj) {
-        return obj instanceof SimpleRecord && id == ((SimpleRecord) obj).id;
     }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.web;
 
 import com.hazelcast.core.*;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;

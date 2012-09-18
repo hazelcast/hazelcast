@@ -18,6 +18,8 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.SerializerRegistry;
@@ -370,7 +372,7 @@ public class ListenerManager {
 //                }
             }
         }
-        final SerializerRegistry serializerRegistry = node.hazelcastInstance.serializerRegistry;
+        final SerializerRegistry serializerRegistry = node.hazelcastInstance.getSerializerRegistry();
         final DataAwareEntryEvent event2 = listenerItem.includeValue ?
                 event :
                 // if new value is already null no need to create a new value-less event

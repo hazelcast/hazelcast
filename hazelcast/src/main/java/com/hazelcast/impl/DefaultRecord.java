@@ -28,13 +28,13 @@ public final class DefaultRecord extends AbstractRecord {
     private volatile Object valueObject;
     private volatile Data value;
 
-    public DefaultRecord(CMap cmap, int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
-        super(cmap, blockId, key, ttl, maxIdleMillis, id);
+    public DefaultRecord(int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
+        super(blockId, key, ttl, maxIdleMillis, id);
         this.value = value;
     }
 
     public Record copy() {
-        Record recordCopy = new DefaultRecord(cmap, blockId, key, value, getRemainingTTL(), getRemainingIdle(), id);
+        Record recordCopy = new DefaultRecord(blockId, key, value, getRemainingTTL(), getRemainingIdle(), id);
         if (optionalInfo != null) {
             recordCopy.setIndexes(getOptionalInfo().indexes, getOptionalInfo().indexTypes);
             recordCopy.setMultiValues(getOptionalInfo().lsMultiValues);
@@ -52,22 +52,6 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public Object getValue() {
-//        if (cmap.isCacheValue()) {
-//            final Object currentValue = valueObject;
-//            if (currentValue != null) {
-//                return currentValue;
-//            }
-//            synchronized (this) {
-//                if (valueObject != null) {
-//                    return valueObject;
-//                }
-//                final Object v = toObject(value);
-//                valueObject = v;
-//                return v;
-//            }
-//        } else {
-//            return toObject(value);
-//        }
         return toObject(value);
     }
 

@@ -19,7 +19,6 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.partition.PartitionService;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;

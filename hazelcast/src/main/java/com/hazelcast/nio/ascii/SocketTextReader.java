@@ -16,15 +16,15 @@
 
 package com.hazelcast.nio.ascii;
 
-import com.hazelcast.impl.ascii.CommandParser;
-import com.hazelcast.impl.ascii.TextCommand;
-import com.hazelcast.impl.ascii.TextCommandConstants;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.ascii.memcache.*;
-import com.hazelcast.impl.ascii.rest.HttpCommand;
-import com.hazelcast.impl.ascii.rest.HttpDeleteCommandParser;
-import com.hazelcast.impl.ascii.rest.HttpGetCommandParser;
-import com.hazelcast.impl.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.ascii.CommandParser;
+import com.hazelcast.ascii.TextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
+import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.ascii.memcache.*;
+import com.hazelcast.ascii.rest.HttpCommand;
+import com.hazelcast.ascii.rest.HttpDeleteCommandParser;
+import com.hazelcast.ascii.rest.HttpGetCommandParser;
+import com.hazelcast.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
-import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
 
 public class SocketTextReader implements TextCommandConstants, SocketReader {
 

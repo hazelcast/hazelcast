@@ -16,6 +16,8 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.query.impl.Predicates;
+
 public class EntryObject {
     PredicateBuilder qb;
 

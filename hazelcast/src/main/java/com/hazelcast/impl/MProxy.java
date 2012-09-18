@@ -17,7 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.impl.monitor.MapOperationsCounter;
+import com.hazelcast.monitor.impl.MapOperationsCounter;
 
 import java.util.Set;
 

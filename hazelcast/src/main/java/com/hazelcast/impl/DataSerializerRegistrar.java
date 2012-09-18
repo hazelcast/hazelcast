@@ -16,8 +16,8 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.map.*;
-import com.hazelcast.impl.spi.Response;
+import com.hazelcast.map.*;
+import com.hazelcast.spi.impl.Response;
 import com.hazelcast.nio.DataSerializable;
 
 import java.util.Collections;

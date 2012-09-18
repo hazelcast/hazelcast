@@ -20,10 +20,12 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.*;
 import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.base.SystemLog;
-import com.hazelcast.impl.partition.MigrationInfo;
-import com.hazelcast.impl.partition.PartitionInfo;
-import com.hazelcast.impl.partition.PartitionServiceImpl;
+import com.hazelcast.logging.SystemLog;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
+import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
@@ -43,7 +45,7 @@ public class MapSystemLogFactory {
         final Set<Member> members = new HashSet<Member>(node.getClusterService().getMembers());
         final Data key = request.key;
         PartitionInfo partitionInfo = null;
-        PartitionServiceImpl pm = node.partitionService;
+        PartitionService pm = node.partitionService;
         if (key != null) {
             partitionInfo = new PartitionInfo(pm.getPartition(pm.getPartitionId(key)));
         }

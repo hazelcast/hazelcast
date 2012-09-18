@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.impl.MemberImpl;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.DataSerializable;
 
 import java.io.DataInput;

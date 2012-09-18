@@ -21,8 +21,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
-import com.hazelcast.impl.map.MapProxy;
-import com.hazelcast.impl.monitor.MapOperationsCounter;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.map.MapProxy;
+import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
@@ -44,7 +45,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
     private final MapProxy mapProxy;
     private final MapOperationsCounter mapOperationCounter;
 
-    MProxyImpl(String name, HazelcastInstanceImpl instance) {
+    public MProxyImpl(String name, HazelcastInstanceImpl instance) {
         setName(name);
         setHazelcastInstance(instance);
         mapProxy = new MapProxy(instance.node.nodeService);
