@@ -116,6 +116,7 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public void restart() {
         synchronized (lifecycleLock) {
+            ThreadContext.get().setCurrentFactory(factory);
             fireLifecycleEvent(RESTARTING);
             paused.set(true);
             final Node node = factory.node;
