@@ -27,6 +27,8 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.ServiceProxy;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -188,6 +190,27 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public LifecycleService getLifecycleService() {
         return lifecycleService;
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends ManagedService> serviceClass) {
+        Collection services = node.nodeService.getServices(serviceClass, false);
+        for (Object service : services) {
+            if (serviceClass.isAssignableFrom(service.getClass())) {
+                return (S) ((ManagedService) service).createProxy();
+            }
+        }
+        throw new IllegalArgumentException();
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(final String serviceName) {
+        Object service = node.nodeService.getService(serviceName);
+        if (service == null) {
+            throw new NullPointerException();
+        }
+        if (service instanceof ManagedService) {
+            return (S) ((ManagedService) service).createProxy();
+        }
+        throw new IllegalArgumentException();
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {

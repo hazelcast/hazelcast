@@ -75,6 +75,8 @@ public class Config implements DataSerializable {
 
     private Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
+    private Services servicesConfig = new Services();
+
     private SecurityConfig securityConfig = new SecurityConfig();
 
     private List<ListenerConfig> listenerConfigs;
@@ -483,17 +485,6 @@ public class Config implements DataSerializable {
      * @param mapQConfigs the mapQConfigs to set
      */
     public Config setQConfigs(Map<String, QueueConfig> mapQConfigs) {
-        this.queueConfigs = mapQConfigs;
-        for (final Entry<String, QueueConfig> entry : this.queueConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * @param mapQConfigs the mapQConfigs to set
-     */
-    public Config setMapQConfigs(Map<String, QueueConfig> mapQConfigs) {
         this.queueConfigs = mapQConfigs;
         for (final Entry<String, QueueConfig> entry : this.queueConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
@@ -940,6 +931,15 @@ public class Config implements DataSerializable {
 
     public Config setManagementCenterConfig(final ManagementCenterConfig managementCenterConfig) {
         this.managementCenterConfig = managementCenterConfig;
+        return this;
+    }
+
+    public Services getServicesConfig() {
+        return servicesConfig;
+    }
+
+    public Config setServicesConfig(final Services servicesConfig) {
+        this.servicesConfig = servicesConfig;
         return this;
     }
 

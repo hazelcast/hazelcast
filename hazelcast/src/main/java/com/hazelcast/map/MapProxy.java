@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.Transaction;
+import com.hazelcast.spi.ServiceProxy;
 import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeService;
@@ -32,13 +33,13 @@ import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class MapProxy {
-    final NodeService nodeService;
-    final MapService mapService;
+public class MapProxy implements ServiceProxy {
+    private final NodeService nodeService;
+    private final MapService mapService;
 
-    public MapProxy(NodeService nodeService) {
+    public MapProxy(final MapService mapService, NodeService nodeService) {
+        this.mapService = mapService;
         this.nodeService = nodeService;
-        this.mapService = nodeService.getService(MAP_SERVICE_NAME);
     }
 
     public Object put(String name, Object k, Object v, long ttl) {

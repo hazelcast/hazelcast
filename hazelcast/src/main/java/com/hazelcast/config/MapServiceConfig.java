@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.config;
 
 /**
- * @mdogan 8/26/12
+ * @mdogan 9/18/12
  */
-public interface ServiceBuilder<S extends ManagedService> {
+public class MapServiceConfig extends ServiceConfig {
 
-    S buildService(NodeService nodeService, Object someConfigElement); // TODO: params!
+    public final static String SERVICE_NAME = "hz:impl:mapService";
 
+    public MapServiceConfig() {
+    }
+
+    @Override
+    public String getName() {
+        return SERVICE_NAME;
+    }
 }

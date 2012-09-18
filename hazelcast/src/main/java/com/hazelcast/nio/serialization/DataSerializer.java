@@ -16,12 +16,13 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.impl.DataSerializerRegistrar;
-import com.hazelcast.impl.DataSerializerRegistrar.DataSerializableFactory;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.FastDataInputStream;
 import com.hazelcast.nio.FastDataOutputStream;
 import com.hazelcast.nio.HazelcastSerializationException;
+
+import java.util.Collections;
+import java.util.Map;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.nio.serialization.SerializationConstants.SERIALIZER_TYPE_DATA;
@@ -31,6 +32,15 @@ import static com.hazelcast.nio.serialization.SerializationConstants.SERIALIZER_
  */
 public final class DataSerializer implements TypeSerializer<DataSerializable> {
 
+    private static final Map<String, DataSerializableFactory> factories;
+
+    static {
+        factories = Collections.unmodifiableMap(DataSerializerInitHook.createFactories());
+        factories.values();
+        factories.keySet();
+        factories.entrySet();
+    }
+
     public int getTypeId() {
         return SERIALIZER_TYPE_DATA;
     }
@@ -39,7 +49,7 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
         final String className = in.readUTF();
         try {
             DataSerializable ds;
-            DataSerializableFactory dsf = DataSerializerRegistrar.getFactory(className);
+            DataSerializableFactory dsf = factories.get(className);
             if (dsf != null) {
                 ds = dsf.create();
             } else {
@@ -59,5 +69,10 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
     }
 
     public void destroy() {
+    }
+
+    public interface DataSerializableFactory {
+
+        DataSerializable create();
     }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
@@ -27,13 +29,14 @@ import com.hazelcast.spi.impl.AbstractOperation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService, TransactionalService {
-    public final static String MAP_SERVICE_NAME = "hz:impl:mapService";
+    public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
     private final ILogger logger;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
@@ -44,11 +47,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public MapService(final NodeService nodeService) {
         this.nodeService = nodeService;
         this.logger = nodeService.getLogger(MapService.class.getName());
+        partitionContainers = new PartitionContainer[nodeService.getPartitionCount()];
+    }
+
+    public void init(NodeService nodeService, Properties properties) {
         int partitionCount = nodeService.getPartitionCount();
-        partitionContainers = new PartitionContainer[partitionCount];
+        final Config config = nodeService.getConfig();
         for (int i = 0; i < partitionCount; i++) {
             PartitionInfo partition = nodeService.getPartitionInfo(i);
-            partitionContainers[i] = new PartitionContainer(nodeService.getConfig(), this, partition);
+            partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
 
         nodeService.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
@@ -162,12 +169,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return MAP_SERVICE_NAME;
     }
 
-    public void init(NodeService nodeService) {
-
-    }
-
-    public void destroy() {
-
+    public MapProxy createProxy() {
+        return new MapProxy(this, nodeService);
     }
 
     public void memberAdded(final MemberImpl member) {
@@ -179,6 +182,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         // * release locks
         // * rollback transaction
         // * do not know ?
+    }
+
+    public void destroy() {
+
     }
 
     private class CleanupTask implements Runnable {

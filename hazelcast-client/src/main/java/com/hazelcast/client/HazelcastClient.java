@@ -28,6 +28,8 @@ import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.ServiceProxy;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -339,6 +341,14 @@ public class HazelcastClient implements HazelcastInstance {
 
     public LifecycleService getLifecycleService() {
         return lifecycleService;
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends ManagedService> serviceClass) {
+        return null;
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(final String serviceName) {
+        return null;
     }
 
     static void runAsyncAndWait(final Runnable runnable) {

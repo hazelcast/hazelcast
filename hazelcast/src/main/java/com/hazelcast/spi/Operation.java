@@ -16,10 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -118,9 +120,9 @@ public abstract class Operation implements Runnable, DataSerializable {
 
     public final <T> T getService() {
         if (service == null) {
-            service = nodeService.getService(serviceName);
+            service = ((NodeServiceImpl) nodeService).getService(serviceName);
             if (service == null) {
-                throw new RuntimeException(serviceName + "  not found!");
+                throw new HazelcastException(serviceName + " not found!");
             }
         }
         return (T) service;

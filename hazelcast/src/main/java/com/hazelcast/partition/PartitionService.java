@@ -43,8 +43,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-public class PartitionService implements MembershipAwareService, CoreService {
-    public static final String PARTITION_SERVICE_NAME = "hz:core:partitionService";
+public class PartitionService implements MembershipAwareService, CoreService, ManagedService {
+    public static final String SERVICE_NAME = "hz:core:partitionService";
 
     private static final long REPARTITIONING_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(300); // 5 MINUTES
     private static final int REPARTITIONING_TASK_COUNT_THRESHOLD = 20;
@@ -116,6 +116,10 @@ public class PartitionService implements MembershipAwareService, CoreService {
         immediateBackupInterval = node.groupProperties.IMMEDIATE_BACKUP_INTERVAL.getInteger() * 1000;
 
         migrationService = new MigrationService(node);
+        proxy = new PartitionServiceProxy(this);
+    }
+
+    public void init(final NodeService nodeService, Properties properties) {
         migrationService.start();
 
         int partitionTableSendInterval = node.groupProperties.PARTITION_TABLE_SEND_INTERVAL.getInteger();
@@ -129,15 +133,12 @@ public class PartitionService implements MembershipAwareService, CoreService {
         nodeService.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 if (node.isMaster() && node.isActive()
-                        && initialized && shouldCheckRepartitioning()) {
+                    && initialized && shouldCheckRepartitioning()) {
                     logger.log(Level.FINEST, "Checking partition table for repartitioning...");
                     immediateTasksQueue.add(new CheckRepartitioningTask());
                 }
             }
         }, 180, 180, TimeUnit.SECONDS);
-
-        proxy = new PartitionServiceProxy(this);
-        nodeService.registerService(PARTITION_SERVICE_NAME, this);
     }
 
     public Address getPartitionOwner(int partitionId) {
@@ -158,7 +159,7 @@ public class PartitionService implements MembershipAwareService, CoreService {
                 final Future f = nodeService.submit(new Runnable() {
                     public void run() {
                         try {
-                            Future f = nodeService.createSingleInvocation(PARTITION_SERVICE_NAME, new AssignPartitions(), -1)
+                            Future f = nodeService.createSingleInvocation(SERVICE_NAME, new AssignPartitions(), -1)
                                     .setTarget(node.getMasterAddress()).setTryCount(1).build().invoke();
                             f.get(750, TimeUnit.MILLISECONDS);
                         } catch (Exception e) {
@@ -359,7 +360,7 @@ public class PartitionService implements MembershipAwareService, CoreService {
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
                     try {
-                        nodeService.createSingleInvocation(PARTITION_SERVICE_NAME, op, NodeService.EXECUTOR_THREAD_ID)
+                        nodeService.createSingleInvocation(SERVICE_NAME, op, NodeService.EXECUTOR_THREAD_ID)
                                 .setTarget(member.getAddress()).setTryCount(1).build().invoke();
                     } catch (Exception e) {
                         logger.log(Level.FINEST, e.getMessage(), e);
@@ -731,7 +732,7 @@ public class PartitionService implements MembershipAwareService, CoreService {
                     systemLogService.logPartition("Started Migration : " + migrationRequestOp);
                     if (fromMember != null) {
                         migrationRequestOp.setFromAddress(fromMember.getAddress());
-                        Invocation inv = node.nodeService.createSingleInvocation(PARTITION_SERVICE_NAME,
+                        Invocation inv = node.nodeService.createSingleInvocation(SERVICE_NAME,
                                 migrationRequestOp, migrationRequestOp.getPartitionId())
                                 .setTryCount(3).setTryPauseMillis(1000).setTarget(migrationRequestOp.getFromAddress())
                                 .setReplicaIndex(migrationRequestOp.getReplicaIndex()).build();
@@ -952,8 +953,8 @@ public class PartitionService implements MembershipAwareService, CoreService {
         reset();
     }
 
-    public void shutdown() {
-        logger.log(Level.FINEST, "Shutting down the partition manager");
+    public void destroy() {
+        logger.log(Level.FINEST, "Shutting down the partition service");
         migrationService.stopNow();
         reset();
     }
@@ -963,7 +964,11 @@ public class PartitionService implements MembershipAwareService, CoreService {
         scheduledTasksQueue.clear();
     }
 
-    public com.hazelcast.core.PartitionService getPartitionServiceProxy() {
+    public PartitionServiceProxy getPartitionServiceProxy() {
+        return proxy;
+    }
+
+    public ServiceProxy createProxy() {
         return proxy;
     }
 
@@ -971,7 +976,7 @@ public class PartitionService implements MembershipAwareService, CoreService {
         final Collection<MemberImpl> members = node.clusterService.getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                nodeService.createSingleInvocation(PARTITION_SERVICE_NAME,
+                nodeService.createSingleInvocation(SERVICE_NAME,
                         new MigrationEventOperation(status, migrationInfo), NodeService.EVENT_THREAD_ID)
                         .setTarget(member.getAddress()).setTryCount(1).build().invoke();
             }

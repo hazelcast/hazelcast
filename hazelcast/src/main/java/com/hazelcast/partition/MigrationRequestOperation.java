@@ -112,7 +112,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
             nodeService.execute(new Runnable() {
                 public void run() {
                     try {
-                        Invocation inv = nodeService.createSingleInvocation(PartitionService.PARTITION_SERVICE_NAME,
+                        Invocation inv = nodeService.createSingleInvocation(PartitionService.SERVICE_NAME,
                                 new MigrationOperation(partitionId, replicaIndex, isMoving(), tasks, from), partitionId)
                                 .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
                                 .build();
@@ -135,7 +135,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
                 partitionId, replicaIndex, migrationType);
         final Collection<Operation> tasks = new LinkedList<Operation>();
-        for (Object serviceObject : nodeService.getServices()) {
+        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class, true)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 final Operation op = service.prepareMigrationOperation(event);

@@ -16,14 +16,16 @@
 
 package com.hazelcast.spi;
 
+import java.util.Properties;
+
 /**
  * @mdogan 7/23/12
  */
 public interface ManagedService {
 
-    String getName();
+    void init(NodeService nodeService, Properties properties);
 
-    void init(NodeService nodeService);
+    ServiceProxy createProxy();
 
     void destroy();
 

@@ -49,7 +49,7 @@ import java.util.logging.Level;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public final class ClusterService implements ConnectionListener, MembershipAwareService, CoreService {
+public final class ClusterService implements ConnectionListener, MembershipAwareService, CoreService, ManagedService {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -111,6 +111,10 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         heartbeatOperationData = toData(new HeartbeatOperation());
+        node.connectionManager.addConnectionListener(this);
+    }
+
+    public void init(final NodeService nodeService, Properties properties) {
         final long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong();
         final long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong();
         nodeService.scheduleWithFixedDelay(new SplitBrainHandler(node),
@@ -121,10 +125,6 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 heartBeater();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
-
-        node.connectionManager.addConnectionListener(this);
-
-        nodeService.registerService(SERVICE_NAME, this);
     }
 
     public boolean isJoinInProgress() {
@@ -626,7 +626,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             }
             setMembers(memberMap);
 
-            final Collection<MembershipAwareService> services = getMembershipAwareServices();
+            Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class, true);
             for (MemberImpl member : newMembers) {
                 for (MembershipAwareService service : services) {
                     service.memberAdded(member);
@@ -651,7 +651,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 }
                 setMembers(newMembers);
 
-                Collection<MembershipAwareService> services = getMembershipAwareServices();
+                Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class, true);
                 for (MembershipAwareService service : services) {
                     service.memberRemoved(deadMember);
                 }
@@ -664,21 +664,6 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         } finally {
             lock.unlock();
         }
-    }
-
-    private Collection<MembershipAwareService> getMembershipAwareServices() {
-        final Collection allServices = nodeService.getServices();
-        final LinkedList<MembershipAwareService> services = new LinkedList<MembershipAwareService>();
-        for (Object service : allServices) {
-            if (service instanceof MembershipAwareService) {
-                if (service instanceof CoreService) {
-                    services.addFirst((MembershipAwareService) service);
-                } else {
-                    services.addLast((MembershipAwareService) service);
-                }
-            }
-        }
-        return services;
     }
 
     private void invokeMemberRemoveOperation(final MemberImpl deadMember) {
@@ -775,10 +760,10 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     public void reset() {
-        stop();
+        destroy();
     }
 
-    public void stop() {
+    public void destroy() {
         lock.lock();
         try {
             if (setJoins != null) {
@@ -838,6 +823,10 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     public Cluster getClusterProxy() {
+        return new ClusterProxy(this);
+    }
+
+    public ServiceProxy createProxy() {
         return new ClusterProxy(this);
     }
 

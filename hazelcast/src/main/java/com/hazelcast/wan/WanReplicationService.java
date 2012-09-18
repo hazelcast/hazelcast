@@ -39,7 +39,6 @@ public class WanReplicationService implements CoreService {
     public WanReplicationService(Node node) {
         this.node = node;
         this.logger = node.getLogger(WanReplicationService.class.getName());
-        node.nodeService.registerService(SERVICE_NAME, this);
     }
 
     @SuppressWarnings("SynchronizeOnThis")

@@ -17,10 +17,11 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 8/26/12
+ * Marker interface for service proxies.
+ *
+ * @mdogan 9/18/12
  */
-public interface ServiceBuilder<S extends ManagedService> {
 
-    S buildService(NodeService nodeService, Object someConfigElement); // TODO: params!
+public interface ServiceProxy {
 
 }

@@ -14,13 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.config;
 
 /**
- * @mdogan 8/26/12
+ * @mdogan 9/18/12
  */
-public interface ServiceBuilder<S extends ManagedService> {
 
-    S buildService(NodeService nodeService, Object someConfigElement); // TODO: params!
+public abstract class ServiceConfig {
 
+    protected boolean enabled;
+
+    protected String name;
+
+    public ServiceConfig() {
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public ServiceConfig setEnabled(final boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

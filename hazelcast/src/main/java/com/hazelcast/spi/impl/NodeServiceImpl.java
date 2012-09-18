@@ -45,7 +45,6 @@ import java.util.logging.Level;
 
 public class NodeServiceImpl implements NodeService {
 
-    private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
     private final Workers workers;
     private final ExecutorService executorService;
     private final ExecutorService eventExecutorService;
@@ -56,6 +55,7 @@ public class NodeServiceImpl implements NodeService {
     private final ThreadGroup partitionThreadGroup;
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
     private final AtomicLong localIdGen = new AtomicLong();
+    private final ServiceManager serviceManager;
 
     public NodeServiceImpl(Node node) {
         this.node = node;
@@ -76,6 +76,11 @@ public class NodeServiceImpl implements NodeService {
         partitionThreadGroup = new ThreadGroup(node.threadGroup, "partitionThreads");
         workers = new Workers(partitionThreadGroup, "workers", 2);
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
+        serviceManager = new ServiceManager(this);
+    }
+
+    public void start() {
+        serviceManager.startServices();
     }
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
@@ -316,20 +321,14 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    public void registerService(String serviceName, Object service) {
-        services.put(serviceName, service);
-        if (service instanceof ManagedService) {
-            ((ManagedService) service).init(this);
-        }
-    }
-
+    @PrivateApi
     public <T> T getService(String serviceName) {
-        return (T) services.get(serviceName);
+        return serviceManager.getService(serviceName);
     }
 
     @PrivateApi
-    public Collection<Object> getServices() {
-        return Collections.unmodifiableCollection(services.values());
+    public <S> Collection<S> getServices(Class<S> serviceClass, boolean coreServicesFirst) {
+        return serviceManager.getServices(serviceClass, coreServicesFirst);
     }
 
     @PrivateApi
@@ -421,15 +420,7 @@ public class NodeServiceImpl implements NodeService {
 
     @PrivateApi
     public void shutdown() {
-        for (Object service : getServices()) {
-            if (service instanceof ManagedService) {
-                try {
-                    ((ManagedService) service).destroy();
-                } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Error while stopping service: " + t.getMessage(), t);
-                }
-            }
-        }
+        serviceManager.stopServices();
         workers.shutdownNow();
         executorService.shutdownNow();
         scheduledExecutorService.shutdownNow();

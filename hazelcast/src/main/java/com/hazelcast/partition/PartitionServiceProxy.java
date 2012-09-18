@@ -20,13 +20,14 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
+import com.hazelcast.spi.ServiceProxy;
 
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class PartitionServiceProxy implements com.hazelcast.core.PartitionService {
+public class PartitionServiceProxy implements com.hazelcast.core.PartitionService, ServiceProxy {
 
     private final PartitionService partitionService;
     private final ConcurrentMap<Integer, PartitionProxy> mapPartitions

@@ -55,10 +55,6 @@ public interface NodeService {
 
     void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount);
 
-    void registerService(String serviceName, Object obj);
-
-    <T> T getService(String serviceName);
-
     Address getThisAddress();
 
     int getPartitionId(Data key);

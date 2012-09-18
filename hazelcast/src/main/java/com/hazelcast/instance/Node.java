@@ -27,17 +27,19 @@ import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.map.MapService;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.util.*;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrentHashSet;
+import com.hazelcast.util.Util;
+import com.hazelcast.util.VersionCheck;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.lang.reflect.Constructor;
@@ -156,7 +158,6 @@ public class Node {
         clusterService = new ClusterService(this);
         partitionService = new PartitionService(this);
 //        clientHandlerService = new ClientHandlerService(this);
-        nodeService.registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService));
 //        clientService = new ClientServiceImpl(concurrentMapManager);
         textCommandService = new TextCommandServiceImpl(this);
         clusterService.addMember(localMember);
@@ -243,6 +244,10 @@ public class Node {
         return clusterService;
     }
 
+    public PartitionService getPartitionService() {
+        return partitionService;
+    }
+
     public final NodeType getLocalNodeType() {
         return localNodeType;
     }
@@ -300,16 +305,10 @@ public class Node {
         masterAddress = master;
     }
 
-    public void cleanupServiceThread() {
-        partitionService.reset();
-//        concurrentMapManager.reset();
-        logger.log(Level.FINEST, "Shutting down the cluster manager");
-        clusterService.stop();
-    }
-
     public void start() {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
+        nodeService.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(hazelcastInstance.threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
@@ -393,10 +392,6 @@ public class Node {
 //            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
 //            clientHandlerService.shutdown();
             logger.log(Level.FINEST, "Shutting down the partitionManager");
-            partitionService.shutdown();
-//            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
-//            concurrentMapManager.shutdown();
-            logger.log(Level.FINEST, "Shutting down the nodeService");
             nodeService.shutdown();
             if (multicastService != null) {
                 logger.log(Level.FINEST, "Shutting down the multicast service");

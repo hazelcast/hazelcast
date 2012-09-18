@@ -194,6 +194,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleWanReplication(node);
             } else if ("executor-service".equals(nodeName)) {
                 handleExecutor(node);
+            } else if ("services".equals(nodeName)) {
+                handleServices(node);
             } else if ("queue".equals(nodeName)) {
                 handleQueue(node);
             } else if ("map".equals(nodeName)) {
@@ -222,7 +224,34 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private void handleWanReplication(final org.w3c.dom.Node node) throws Exception {
+    private void handleServices(final Node node) {
+        final Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
+        final boolean enableDefaults = attDefaults == null || checkTrue(getTextContent(attDefaults));
+        Services services = config.getServicesConfig();
+        services.setEnableDefaults(enableDefaults);
+
+        for (Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("service".equals(nodeName)) {
+                CustomServiceConfig serviceConfig = new CustomServiceConfig();
+                NamedNodeMap attrs = child.getAttributes();
+                Node attName = attrs.getNamedItem("name");
+                String name = attName != null ? getTextContent(attName) : "";
+                Node attClassName = attrs.getNamedItem("class-name");
+                String className = attClassName != null ? getTextContent(attClassName) : "";
+                Node attEnabled = attrs.getNamedItem("enabled");
+                boolean enabled = attEnabled != null && checkTrue(getTextContent(attEnabled));
+                serviceConfig.setEnabled(enabled).setName(name).setClassName(className);
+                services.addServiceConfig(serviceConfig);
+            } else if ("map-service".equals(nodeName)) {
+                Node attEnabled = child.getAttributes().getNamedItem("enabled");
+                boolean enabled = attEnabled != null && checkTrue(getTextContent(attEnabled));
+                services.addServiceConfig(new MapServiceConfig().setEnabled(enabled));
+            }
+        }
+    }
+
+    private void handleWanReplication(final Node node) throws Exception {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
         final WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
