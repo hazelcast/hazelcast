@@ -592,7 +592,7 @@ public class FactoryImpl implements HazelcastInstance {
                         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
                             cmap.setInitState(InitializationState.INITIALIZING);
                             try {
-                                ExecutorService es = getExecutorService();
+                                ExecutorService es = getExecutorService("hz.initialization");
                                 final Set<Member> members = new HashSet<Member>(getCluster().getMembers());
                                 members.remove(node.localMember);
                                 final MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), members);
