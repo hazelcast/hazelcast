@@ -415,8 +415,7 @@ public class TransactionImpl implements Transaction {
         public void commitMap() {
             if (removed) {
                 if (instanceType.isSet()) {
-                    ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
-                    mRemoveItem.removeItem(name, key);
+                    factory.node.concurrentMapManager.new MRemoveItem().removeItem(name, key);
                 } else if (!newRecord) {
                     if (instanceType.isMap()) {
                         factory.node.concurrentMapManager.new MRemove().remove(name, key);
@@ -427,11 +426,9 @@ public class TransactionImpl implements Transaction {
                             factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
                         }
                     }
-                    // since we do not have removeAndUnlock op, we should explicitly call unlock after remove!
-                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
-                } else {
-                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 }
+                // since we do not have removeAndUnlock op, we should explicitly call unlock after remove!
+                factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
             } else {
                 if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);

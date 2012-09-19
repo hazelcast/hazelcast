@@ -2115,10 +2115,10 @@ public class ConcurrentMapManager extends BaseManager {
             if (totalBackupCount > maxBackupCount) {
                 String msg = "Max backup is " + maxBackupCount + " but total backupCount is " + totalBackupCount;
                 logger.log(Level.SEVERE, msg);
-                throw new RuntimeException(msg);
+                throw new HazelcastException(msg);
             }
             if (request.key == null || request.key.size() == 0) {
-                throw new RuntimeException("Key is null! " + request.key);
+                throw new HazelcastException("Key is null! " + request.key);
             }
             final MBackup[] backupOps = new MBackup[localBackupCount];
             for (int i = 0; i < totalBackupCount; i++) {
@@ -2136,7 +2136,11 @@ public class ConcurrentMapManager extends BaseManager {
             for (int i = 0; i < localBackupCount; i++) {
                 MBackup backupOp = backupOps[i];
                 try {
-                    backupOp.getResultAsBoolean();
+                    if (!backupOp.getResultAsBoolean()) {
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Backup failed -> " + request);
+                        }
+                    }
                 } catch (HazelcastException e) {
                     final Level level = backupRedoEnabled ? Level.WARNING : Level.FINEST;
                     logger.log(level, "Backup operation [" + operation + "] has failed! "

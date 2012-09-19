@@ -300,18 +300,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         setActive(true);
     }
 
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AbstractRecord)) return false;
-        Record record = (Record) o;
-        return record.getId() == getId();
-    }
-
-    public String toString() {
-        return "Record key=" + getKeyData() + ", active=" + isActive()
-               + ", version=" + getVersion() + ", removable=" + isRemovable();
-    }
-
     public long getVersion() {
         return version;
     }
@@ -468,6 +456,23 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
      */
     public boolean isLoadable() {
         return !isRemoved() && (!isActive() || !isValid() || !hasValueData());
+    }
+
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractRecord)) return false;
+        Record record = (Record) o;
+        return record.getId() == getId();
+    }
+
+    public String toString() {
+        return "Record key=" + getKeyData() + ", active=" + isActive()
+               + ", version=" + getVersion() + ", removable=" + isRemovable()
+               + ", valueCount= " + valueCount();
     }
 
     class OptionalInfo {

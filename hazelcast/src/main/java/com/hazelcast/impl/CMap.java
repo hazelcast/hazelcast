@@ -598,14 +598,17 @@ public class CMap {
                 ttlPerRecord = true;
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-            Record record = toRecord(req);
-            if (record.isActive()) {
-                markAsEvicted(record);
+            Record record = getRecord(req);
+            if (record != null) {
+                if (record.isActive()) {
+//                    markAsEvicted(record);
+                    markAsRemoved(record);
+                }
+                if (req.txnId != -1) {
+                    unlock(record, req);
+                }
+                record.setVersion(req.version);
             }
-            if (req.txnId != -1) {
-                unlock(record, req);
-            }
-            record.setVersion(req.version);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
             if (req.lockCount == 0) {
                 //UNLOCK operation
@@ -724,12 +727,14 @@ public class CMap {
         DistributedLock lock = rec.getLock();
         Long response = (lock == null || !lock.isLocked()) ? 0L : 1L;
         final boolean locked = rec.lock(request.lockThreadId, request.lockAddress);
+        // for bug tracing!
         if (!locked) {
             response = -1L;
             Throwable t = new IllegalStateException("Something is wrong! Lock cannot be acquired! "
                                                     + request + " -> " + lock);
             logger.log(Level.SEVERE, t.getMessage(), t);
         }
+        // ----------------
         rec.incrementVersion();
         request.version = rec.getVersion();
         request.lockCount = rec.getLockCount();
@@ -737,8 +742,12 @@ public class CMap {
         request.response = response;
     }
 
-    void unlock(Record record, Request request) {
+    private void unlock(Record record, Request request) {
         record.unlock(request.lockThreadId, request.lockAddress);
+        // see UnlockOperationHandler
+        if (record.valueCount() == 0 && record.isEvictable()) {
+            markAsEvicted(record);
+        }
         fireScheduledActions(record);
     }
 
