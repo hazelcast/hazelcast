@@ -481,6 +481,11 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 if (joinRequest.getUuid().equals(member.getUuid())) {
                     String message = "Ignoring join request, member already exists.. => " + joinRequest;
                     logger.log(Level.FINEST, message);
+
+                    // send members update back to node trying to join again...
+                    final long clusterTime = node.getClusterImpl().getClusterTime();
+                    sendProcessableTo(new MembersUpdateCall(lsMembers, clusterTime), conn);
+                    sendProcessableTo(new SyncProcess(), conn);
                     return;
                 }
                 // If this node is master then remove old member and process join request.

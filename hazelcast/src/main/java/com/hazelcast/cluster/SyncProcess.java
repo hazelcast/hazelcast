@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class SyncProcess extends AbstractRemotelyCallable<Boolean> {
+public class SyncProcess extends AbstractRemotelyCallable<Boolean> implements RemotelyProcessable {
 
     private Connection connection;
 

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
+public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> implements RemotelyProcessable {
 
     private static final long serialVersionUID = -2311579721761844861L;
 
@@ -58,6 +58,10 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> {
             return Boolean.TRUE;
         }
         return Boolean.FALSE;
+    }
+
+    public void process() {
+        call();
     }
 
     public void addMemberInfo(MemberInfo memberInfo) {
