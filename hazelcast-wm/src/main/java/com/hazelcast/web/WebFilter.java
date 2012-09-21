@@ -52,6 +52,12 @@ public class WebFilter implements Filter {
 
     private String sessionCookieName = HAZELCAST_SESSION_COOKIE_NAME;
 
+    private String sessionCookieDomain = null;
+
+    private boolean sessionCookieSecure = false;
+
+    private boolean sessionCookieHttpOnly = false;
+
     private boolean stickySession = true;
 
     private boolean debug = false;
@@ -89,6 +95,18 @@ public class WebFilter implements Filter {
         String cookieName = getParam("cookie-name");
         if (cookieName != null) {
             sessionCookieName = cookieName;
+        }
+        String cookieDomain = getParam("cookie-domain");
+        if (cookieDomain != null) {
+          sessionCookieDomain = cookieDomain;
+        }
+        String cookieSecure = getParam("cookie-secure");
+        if (cookieSecure != null) {
+          sessionCookieSecure = Boolean.valueOf(cookieSecure);
+        }
+        String cookieHttpOnly = getParam("cookie-http-only");
+        if (cookieHttpOnly != null) {
+          sessionCookieHttpOnly = Boolean.valueOf(cookieHttpOnly);
         }
         String stickySessionParam = getParam("sticky-session");
         if (stickySessionParam != null) {
@@ -537,6 +555,11 @@ public class WebFilter implements Filter {
         }
         sessionCookie.setPath(path);
         sessionCookie.setMaxAge(-1);
+        if (sessionCookieDomain != null) {
+          sessionCookie.setDomain(sessionCookieDomain);
+        }
+        sessionCookie.setHttpOnly(sessionCookieHttpOnly);
+        sessionCookie.setSecure(sessionCookieSecure);
         req.res.addCookie(sessionCookie);
     }
 
