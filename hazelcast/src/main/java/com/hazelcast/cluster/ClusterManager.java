@@ -765,11 +765,26 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     void updateMembers(Collection<MemberInfo> lsMemberInfos) {
         checkServiceThread();
-        logger.log(Level.FINEST, "Updating Members");
-        Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
+        final Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
         for (MemberImpl member : lsMembers) {
             mapOldMembers.put(member.getAddress(), member);
         }
+        if (mapOldMembers.size() == lsMemberInfos.size()) {
+            boolean same = true;
+            for (MemberInfo memberInfo : lsMemberInfos) {
+                MemberImpl member = mapOldMembers.get(memberInfo.getAddress());
+                if (member == null || !member.getUuid().equals(memberInfo.uuid)) {
+                    same = false;
+                    break;
+                }
+            }
+            if (same) {
+                logger.log(Level.FINEST, "No need to process member update...");
+                return;
+            }
+        }
+
+        logger.log(Level.FINEST, "Updating Members");
         lsMembers.clear();
         dataMemberCount.reset();
         mapMembers.clear();
