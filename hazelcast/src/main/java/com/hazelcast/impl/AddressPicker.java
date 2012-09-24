@@ -126,7 +126,7 @@ class AddressPicker {
     }
 
     private AddressDefinition pickAddress(final NetworkConfig networkConfig) throws UnknownHostException, SocketException {
-        AddressDefinition addressDef = getSystemConfiguredAddress();
+        AddressDefinition addressDef = getSystemConfiguredAddress(node.getConfig());
         if (addressDef == null) {
             final Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
             if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
@@ -222,14 +222,14 @@ class AddressPicker {
         return addresses;
     }
 
-    private AddressDefinition getSystemConfiguredAddress() throws UnknownHostException {
-    	String address = System.getProperty("hazelcast.local.localAddress");
+    private AddressDefinition getSystemConfiguredAddress(Config config) throws UnknownHostException {
+    	String address = config.getProperty("hazelcast.local.localAddress");
         if (address != null) {
             address = address.trim();
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress();
             } else {
-                log(Level.INFO, "Picking address configured by System property 'hazelcast.local.localAddress'");
+                log(Level.INFO, "Picking address configured by property 'hazelcast.local.localAddress'");
                 return new AddressDefinition(address, InetAddress.getByName(address));
             }
         }
