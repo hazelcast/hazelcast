@@ -364,6 +364,30 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
+                    <literal>hazelcast.master.confirmation.interval.seconds</literal>
+                </td>
+                <td>Interval at which nodes send master confirmation</td>
+                <td>integer</td>
+                <td>30</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.max.no.master.confirmation.seconds</literal>
+                </td>
+                <td>Max timeout of master confirmation from other nodes</td>
+                <td>integer</td>
+                <td>600</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.member.list.publish.interval.seconds</literal>
+                </td>
+                <td>Interval at which master node publishes a member list</td>
+                <td>integer</td>
+                <td>900</td>
+            </tr>
+            <tr>
+                <td>
                     <literal>hazelcast.prefer.ipv4.stack</literal>
                 </td>
                 <td>Prefer IPv4 Stack, don't use IPv6. See <link xlink:href="#IPv6">IPv6 doc.</link></td>
