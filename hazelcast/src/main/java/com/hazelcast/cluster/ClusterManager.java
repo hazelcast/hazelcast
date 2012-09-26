@@ -28,6 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 import javax.security.auth.login.LoginContext;
@@ -95,7 +96,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     
     private long lastMemberListPublish = 0;
 
-    private final Map<MemberImpl, Long> memberMasterConfirmations = new HashMap<MemberImpl, Long>();
+    private final Map<MemberImpl, Long> memberMasterConfirmations = new ConcurrentHashMap<MemberImpl, Long>();
     
     final ILogger securityLogger;
 
@@ -454,7 +455,16 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
     
+    // Will be called just before this node becomes the master
+    public void resetMemberMasterConfirmations() {
+        checkServiceThread();
+        for (MemberImpl member : lsMembers) {
+            this.memberMasterConfirmations.put(member, Clock.currentTimeMillis());
+        }
+    }
+    
     private void sendMemberListToOthers() {
+        checkServiceThread();
         if (!isMaster()) {
             return;
         }
