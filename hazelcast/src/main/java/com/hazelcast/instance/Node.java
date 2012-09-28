@@ -127,17 +127,14 @@ public class Node {
         this.liteMember = config.isLiteMember();
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         systemLogService = new SystemLogService(this);
-        ServerSocketChannel serverSocketChannel = null;
-        Address publicAddress = null;
+        final AddressPicker addressPicker = new AddressPicker(this);
         try {
-            AddressPicker addressPicker = new AddressPicker(this);
             addressPicker.pickAddress();
-            publicAddress = addressPicker.getPublicAddress();
-            serverSocketChannel = addressPicker.getServerSocketChannel();
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }
-        address = publicAddress;
+        final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
+        address = addressPicker.getPublicAddress();
         localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
@@ -176,7 +173,8 @@ public class Node {
                 multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
                 // set the send interface
                 try {
-                    multicastSocket.setInterface(address.getInetAddress());
+                    final Address bindAddress = addressPicker.getBindAddress();
+                    multicastSocket.setInterface(bindAddress.getInetAddress());
                 } catch (Exception e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }

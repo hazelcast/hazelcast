@@ -47,14 +47,13 @@ class ConnectionMonitor {
     }
 
     public synchronized void onError(Throwable t) {
-        faults++;
         String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
         logger.log(Level.FINEST, errorMessage);
         ioService.getSystemLogService().logConnection(errorMessage);
         final long now = Clock.currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
-            if (faults >= maxFaults) {
+            if (faults++ >= maxFaults) {
                 String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
                 logger.log(Level.WARNING, removeEndpointMessage);
                 ioService.getSystemLogService().logConnection(removeEndpointMessage);
@@ -79,6 +78,6 @@ class ConnectionMonitor {
         } else {
             s.append("Unknown");
         }
-        return s.append(", Error-Count: ").append(faults).toString();
+        return s.append(", Error-Count: ").append(faults + 1).toString();
     }
 }
