@@ -16,8 +16,11 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.AbstractOperation;
+
+import java.util.logging.Level;
 
 /**
  * @mdogan 9/28/12
@@ -25,11 +28,16 @@ import com.hazelcast.spi.impl.AbstractOperation;
 public class MasterConfirmationOperation extends AbstractOperation {
 
     public void run() {
-        ClusterService clusterService = getService();
-        if (!clusterService.isMaster()) {
+        Address endpoint = getCaller();
+        if (endpoint == null) {
             return;
         }
-        Address endpoint = getCaller();
+        ClusterService clusterService = getService();
+        if (!clusterService.isMaster()) {
+            final ILogger logger = getNodeService().getLogger(MasterConfirmationOperation.class.getName());
+            logger.log(Level.WARNING, endpoint + " has sent MasterConfirmation, but this node is not master!");
+            return;
+        }
         clusterService.acceptMasterConfirmation(endpoint);
     }
 

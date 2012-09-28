@@ -324,11 +324,16 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         }
         final Address masterAddress = getMasterAddress();
         if (masterAddress == null) {
+            logger.log(Level.FINEST, "Could not send MasterConfirmation, master is null!");
             return;
         }
         final MemberImpl masterMember = getMember(masterAddress);
         if (masterMember == null) {
+            logger.log(Level.FINEST, "Could not send MasterConfirmation, master is null!");
             return;
+        }
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "Sending MasterConfirmation to " + masterMember);
         }
         invokeClusterOperation(new MasterConfirmationOperation(), masterAddress);
     }
@@ -539,7 +544,13 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     void acceptMasterConfirmation(Address endpoint) {
         MemberImpl member = getMember(endpoint);
         if (member != null) {
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
+            }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());
+        } else {
+            logger.log(Level.WARNING, "MasterConfirmation has been received from " + endpoint +
+                    ", but it is not a member of this cluster!");
         }
     }
 
