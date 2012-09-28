@@ -1,32 +1,23 @@
 package com.hazelcast.cluster;
 
-import static junit.framework.Assert.assertEquals;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.impl.GroupProperties;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.Processable;
-import com.hazelcast.impl.TestUtil;
+import com.hazelcast.impl.*;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static junit.framework.Assert.assertEquals;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MemberListTest {
@@ -74,8 +65,6 @@ public class MemberListTest {
         // This prevents the heart beat code from timing out
         final AtomicBoolean doingWork = new AtomicBoolean(true);
         Thread workThread = new Thread(new Runnable() {
-            
-            @Override
             public void run() {
                 while (doingWork.get()) {
                     Set<Member> members = new HashSet<Member>(h1.getCluster().getMembers());
@@ -121,8 +110,6 @@ public class MemberListTest {
     }
     
     private static class PingCallable implements Callable<String>, Serializable {
-
-        @Override
         public String call() throws Exception {
             return "ping response";
         }

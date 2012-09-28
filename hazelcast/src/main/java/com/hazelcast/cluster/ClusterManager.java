@@ -16,46 +16,25 @@
 
 package com.hazelcast.cluster;
 
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
-
-import java.net.ConnectException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
-
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.BaseManager;
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.FallThroughRunnable;
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.impl.MergeClusters;
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.NodeType;
-import com.hazelcast.impl.Processable;
-import com.hazelcast.impl.Request;
-import com.hazelcast.impl.SplitBrainHandler;
+import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.Call;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Prioritized;
+
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
+import java.net.ConnectException;
+import java.util.*;
+import java.util.logging.Level;
+
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public final class ClusterManager extends BaseManager implements ConnectionListener {
 
@@ -293,21 +272,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
     }
 
-    public static class MasterConfirmation extends AbstractRemotelyProcessable {
-
-        @Override
-        public void process() {
-            node.clusterManager.checkServiceThread();
-            if (!getNode().isMaster()) {
-                return;
-            }
-            MemberImpl m = node.clusterManager.getMember(conn.getEndPoint());
-            if (m != null) {
-                node.clusterManager.memberMasterConfirmations.put(m, Clock.currentTimeMillis());
-            }
-        }
-    }
-    
     public final void heartBeater() {
         if (!node.joined() || !node.isActive()) return;
         long now = Clock.currentTimeMillis();
@@ -324,7 +288,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 if (lsDeadAddresses == null) {
                                     lsDeadAddresses = new ArrayList<Address>();
                                 }
-                                logger.log(Level.WARNING, "Added " + address + " to list of dead addresses because of timeout since last read");
+                                logger.log(Level.WARNING, "Added " + address
+                                                          + " to list of dead addresses because of timeout since last read");
                                 lsDeadAddresses.add(address);
                             } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
                                 ping(memberImpl);
@@ -337,7 +302,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                                 if (lsDeadAddresses == null) {
                                     lsDeadAddresses = new ArrayList<Address>();
                                 }
-                                logger.log(Level.WARNING, "Added " + address + " to list of dead addresses because it has not sent a master confirmation recently");
+                                logger.log(Level.WARNING, "Added " + address
+                                                          + " to list of dead addresses because it has not sent a master confirmation recently");
                                 lsDeadAddresses.add(address);
                             }
                         } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
@@ -396,15 +362,45 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         
         final Address masterAddress = getMasterAddress();
         if (masterAddress == null) {
+            logger.log(Level.FINEST, "Could not send MasterConfirmation, master is null!");
             return;
         }
         
         final MemberImpl masterMember = getMember(masterAddress);
         if (masterMember == null) {
+            logger.log(Level.FINEST, "Could not send MasterConfirmation, master is null!");
             return;
         }
-        
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "Sending MasterConfirmation to " + masterMember);
+        }
         sendProcessableTo(new MasterConfirmation(), masterAddress);
+    }
+
+    public static class MasterConfirmation extends AbstractRemotelyProcessable {
+
+        public void process() {
+            final Address endPoint = conn.getEndPoint();
+            if (endPoint == null) {
+                return;
+            }
+            final ILogger logger = node.getLogger(MasterConfirmation.class.getName());
+            if (!getNode().isMaster()) {
+                logger.log(Level.WARNING, endPoint + " has sent MasterConfirmation, but this node is not master!");
+                return;
+            }
+            final ClusterManager clusterManager = node.clusterManager;
+            MemberImpl member = clusterManager.getMember(endPoint);
+            if (member != null) {
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
+                }
+                clusterManager.memberMasterConfirmations.put(member, Clock.currentTimeMillis());
+            } else {
+                logger.log(Level.WARNING, "MasterConfirmation has been received from " + endPoint
+                          + ", but it is not a member of this cluster!");
+            }
+        }
     }
 
     private void ping(final MemberImpl memberImpl) {
