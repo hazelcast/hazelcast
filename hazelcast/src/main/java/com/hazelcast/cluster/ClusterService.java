@@ -520,13 +520,29 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     void updateMembers(Collection<MemberInfo> members) {
-        logger.log(Level.FINEST, "Updating Members");
         lock.lock();
         try {
             Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
             for (MemberImpl member : getMemberList()) {
                 mapOldMembers.put(member.getAddress(), member);
             }
+
+            if (mapOldMembers.size() == members.size()) {
+                boolean same = true;
+                for (MemberInfo memberInfo : members) {
+                    MemberImpl member = mapOldMembers.get(memberInfo.getAddress());
+                    if (member == null || !member.getUuid().equals(memberInfo.uuid)) {
+                        same = false;
+                        break;
+                    }
+                }
+                if (same) {
+                    logger.log(Level.FINEST, "No need to process member update...");
+                    return;
+                }
+            }
+
+            logger.log(Level.FINEST, "Updating Members");
             MemberImpl[] newMembers = new MemberImpl[members.size()];
             int k = 0;
             for (MemberInfo memberInfo : members) {
