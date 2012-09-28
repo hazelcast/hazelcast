@@ -226,7 +226,10 @@ cfg.setProperty("hazelcast.property.foo", "value");
                     <literal xml:id="hazelcast.backup.redo.enabled">hazelcast.backup.redo.enabled</literal>
                 </td>
                 <td>Enable (strict) redo for backup operations. Backup operations may fail due to node failures,
-                    but generally during partition re-assignment process missing backups are restored.</td>
+                    but generally during partition re-assignment process missing backups are restored.
+                    <emphasis>When 'hazelcast.backup.redo.enabled' is set to true,
+                        <link xlink:href="#hazelcast.partition.migration.interval"></link> should be 0.</emphasis>
+                </td>
                 <td>boolean</td>
                 <td>false</td>
             </tr>
@@ -358,6 +361,30 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>ICMP TTL (maximum numbers of hops to try)</td>
                 <td>int</td>
                 <td>0</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.master.confirmation.interval.seconds</literal>
+                </td>
+                <td>Interval at which nodes send master confirmation</td>
+                <td>integer</td>
+                <td>30</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.max.no.master.confirmation.seconds</literal>
+                </td>
+                <td>Max timeout of master confirmation from other nodes</td>
+                <td>integer</td>
+                <td>450</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.member.list.publish.interval.seconds</literal>
+                </td>
+                <td>Interval at which master node publishes a member list</td>
+                <td>integer</td>
+                <td>600</td>
             </tr>
             <tr>
                 <td>
@@ -567,11 +594,11 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.partition.migration.interval</literal>
+                    <literal xml:id="hazelcast.partition.migration.interval">hazelcast.partition.migration.interval</literal>
                 </td>
                 <td>Interval to run partition migration tasks in seconds.</td>
                 <td>integer</td>
-                <td>10</td>
+                <td>0</td>
             </tr>
             <tr>
                 <td>

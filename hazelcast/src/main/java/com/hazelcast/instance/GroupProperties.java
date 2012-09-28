@@ -56,6 +56,9 @@ public class GroupProperties {
     public static final String PROP_MAX_JOIN_MERGE_TARGET_SECONDS = "hazelcast.max.join.merge.target.seconds";
     public static final String PROP_HEARTBEAT_INTERVAL_SECONDS = "hazelcast.heartbeat.interval.seconds";
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
+    public static final String PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS = "hazelcast.max.no.master.confirmation.seconds";
+    public static final String PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS = "hazelcast.master.confirmation.interval.seconds";
+    public static final String PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = "hazelcast.member.list.publish.interval.seconds";
     public static final String PROP_ICMP_ENABLED = "hazelcast.icmp.enabled";
     public static final String PROP_ICMP_TIMEOUT = "hazelcast.icmp.timeout";
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
@@ -167,6 +170,12 @@ public class GroupProperties {
     public final GroupProperty MAX_NO_HEARTBEAT_SECONDS;
 
     public final GroupProperty HEARTBEAT_INTERVAL_SECONDS;
+
+    public final GroupProperty MASTER_CONFIRMATION_INTERVAL_SECONDS;
+
+    public final GroupProperty MAX_NO_MASTER_CONFIRMATION_SECONDS;
+
+    public final GroupProperty MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 
     public final GroupProperty ICMP_ENABLED;
 
@@ -281,6 +290,9 @@ public class GroupProperties {
         MAX_JOIN_MERGE_TARGET_SECONDS = new GroupProperty(config, PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "20");
         HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_HEARTBEAT_INTERVAL_SECONDS, "1");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
+        MASTER_CONFIRMATION_INTERVAL_SECONDS = new GroupProperty(config, PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "30");
+        MAX_NO_MASTER_CONFIRMATION_SECONDS = new GroupProperty(config, PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "450");
+        MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "600");
         ICMP_ENABLED = new GroupProperty(config, PROP_ICMP_ENABLED, "false");
         ICMP_TIMEOUT = new GroupProperty(config, PROP_ICMP_TIMEOUT, "1000");
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");

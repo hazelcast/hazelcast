@@ -37,9 +37,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -69,6 +67,8 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private final long maxNoHeartbeatMillis;
 
+    private final long maxNoMasterConfirmationMillis;
+
     private final boolean icmpEnabled;
 
     private final int icmpTtl;
@@ -95,6 +95,8 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private long firstJoinRequest = 0;
 
+    private final ConcurrentMap<MemberImpl, Long> masterConfirmationTimes = new ConcurrentHashMap<MemberImpl, Long>();
+
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
     public ClusterService(final Node node) {
@@ -107,6 +109,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxWaitSecondsBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
         maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
+        maxNoMasterConfirmationMillis = node.groupProperties.MAX_NO_MASTER_CONFIRMATION_SECONDS.getInteger() * 1000L;
         icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
@@ -119,12 +122,27 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         final long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong();
         nodeService.scheduleWithFixedDelay(new SplitBrainHandler(node),
                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.SECONDS);
+
         final long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         nodeService.scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 heartBeater();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
+
+        final long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
+        nodeService.scheduleWithFixedDelay(new Runnable() {
+            public void run() {
+                sendMasterConfirmation();
+            }
+        }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
+
+        final long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
+        nodeService.scheduleWithFixedDelay(new Runnable() {
+            public void run() {
+                sendMemberListToOthers();
+            }
+        }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
     }
 
     public boolean isJoinInProgress() {
@@ -188,7 +206,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         long now = Clock.currentTimeMillis();
         final Collection<MemberImpl> members = getMemberList();
         if (node.isMaster()) {
-            List<Address> lsDeadAddresses = null;
+            List<Address> deadAddresses = null;
             for (MemberImpl memberImpl : members) {
                 final Address address = memberImpl.getAddress();
                 if (!thisAddress.equals(address)) {
@@ -196,16 +214,26 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                         Connection conn = node.connectionManager.getOrConnect(address);
                         if (conn != null && conn.live()) {
                             if ((now - memberImpl.getLastRead()) >= (maxNoHeartbeatMillis)) {
-                                if (lsDeadAddresses == null) {
-                                    lsDeadAddresses = new ArrayList<Address>();
+                                if (deadAddresses == null) {
+                                    deadAddresses = new ArrayList<Address>();
                                 }
                                 logger.log(Level.WARNING, "Added " + address + " to list of dead addresses because of timeout since last read");
-                                lsDeadAddresses.add(address);
+                                deadAddresses.add(address);
                             } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
                                 ping(memberImpl);
                             }
                             if ((now - memberImpl.getLastWrite()) > 500) {
                                 sendHeartbeat(address);
+                            }
+                            Long lastConfirmation = masterConfirmationTimes.get(memberImpl);
+                            if (lastConfirmation == null ||
+                                (now - lastConfirmation > maxNoMasterConfirmationMillis)) {
+                                if (deadAddresses == null) {
+                                    deadAddresses = new ArrayList<Address>();
+                                }
+                                logger.log(Level.WARNING, "Added " + address +
+                                                          " to list of dead addresses because it has not sent a master confirmation recently");
+                                deadAddresses.add(address);
                             }
                         } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
                             logMissingConnection(address);
@@ -216,8 +244,8 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                     }
                 }
             }
-            if (lsDeadAddresses != null) {
-                for (Address address : lsDeadAddresses) {
+            if (deadAddresses != null) {
+                for (Address address : deadAddresses) {
                     logger.log(Level.FINEST, "No heartbeat should remove " + address);
                     removeAddress(address);
                 }
@@ -284,9 +312,39 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         });
     }
 
-    void sendHeartbeat(Address target) {
+    private void sendHeartbeat(Address target) {
         if (target == null) return;
         send(new SimpleSocketWritable(heartbeatOperationData, -1, -1, 0, null), target);
+    }
+
+
+    private void sendMasterConfirmation() {
+        if (!node.joined() || !node.isActive() || isMaster()) {
+            return;
+        }
+        final Address masterAddress = getMasterAddress();
+        if (masterAddress == null) {
+            return;
+        }
+        final MemberImpl masterMember = getMember(masterAddress);
+        if (masterMember == null) {
+            return;
+        }
+        invokeClusterOperation(new MasterConfirmationOperation(), masterAddress);
+    }
+
+    private void sendMemberListToOthers() {
+        if (!isMaster()) {
+            return;
+        }
+        final Collection<MemberImpl> memberList = getMemberList();
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(memberList, getClusterTime());
+        for (MemberImpl member : memberList) {
+            if (member.equals(thisMember)) {
+                continue;
+            }
+            invokeClusterOperation(op, member.getAddress());
+        }
     }
 
     public void removeAddress(Address deadAddress) {
@@ -470,6 +528,13 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         invokeClusterOperation(new SetMasterOperation(node.getMasterAddress()), joinRequest.address);
     }
 
+    void acceptMasterConfirmation(Address endpoint) {
+        MemberImpl member = getMember(endpoint);
+        if (member != null) {
+            masterConfirmationTimes.put(member, Clock.currentTimeMillis());
+        }
+    }
+
     private void joinReset() {
         lock.lock();
         try {
@@ -477,6 +542,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             setJoins.clear();
             timeToStartJoin = Clock.currentTimeMillis() + waitMillisBeforeJoin;
             firstJoinRequest = 0;
+            masterConfirmationTimes.clear();
         } finally {
             lock.unlock();
         }
@@ -486,6 +552,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         joinReset();
         membersRef.set(null);
         dataMemberCount.set(0);
+        masterConfirmationTimes.clear();
     }
 
     void startJoin() {
@@ -630,6 +697,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 MemberImpl oldMember = memberMap.remove(member.getAddress());
                 if (oldMember == null) {
                     newMembers.add(member);
+                    masterConfirmationTimes.put(member, Clock.currentTimeMillis());
                 } else if (!oldMember.isLiteMember()) {
                     dataMemberCount.decrementAndGet();
                 }
@@ -660,6 +728,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             if (members != null && members.containsKey(deadMember.getAddress())) {
                 Map<Address, MemberImpl> newMembers = new LinkedHashMap<Address, MemberImpl>(members);  // ! ORDERED !
                 newMembers.remove(deadMember.getAddress());
+                masterConfirmationTimes.remove(deadMember);
                 if (!deadMember.isLiteMember()) {
                     dataMemberCount.decrementAndGet();
                 }
@@ -786,6 +855,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             timeToStartJoin = 0;
             membersRef.set(null);
             dataMemberCount.set(0);
+            masterConfirmationTimes.clear();
         } finally {
             lock.unlock();
         }
@@ -793,6 +863,10 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     public Address getMasterAddress() {
         return node.getMasterAddress();
+    }
+
+    public boolean isMaster() {
+        return node.isMaster();
     }
 
     public Address getThisAddress() {
