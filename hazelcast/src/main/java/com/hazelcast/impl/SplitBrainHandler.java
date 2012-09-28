@@ -19,14 +19,16 @@ package com.hazelcast.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
+import java.util.logging.Level;
+
 public class SplitBrainHandler implements Runnable {
-    final Node node;
-    final ILogger logger;
+    private final Node node;
+    private final ILogger logger;
     @SuppressWarnings("VolatileLongOrDoubleField")
-    volatile long lastRun = 0;
-    volatile boolean inProgress = false;
-    final long FIRST_RUN_DELAY_MILLIS;
-    final long NEXT_RUN_DELAY_MILLIS;
+    private volatile long lastRun = 0;
+    private volatile boolean inProgress = false;
+    private final long FIRST_RUN_DELAY_MILLIS;
+    private final long NEXT_RUN_DELAY_MILLIS;
 
     public SplitBrainHandler(Node node) {
         this.node = node;
@@ -56,6 +58,8 @@ public class SplitBrainHandler implements Runnable {
     private void searchForOtherClusters() {
         Joiner joiner = node.getJoiner();
         if (joiner != null) {
+            logger.log(Level.FINEST, "Searching for other clusters.");
+            node.getSystemLogService().logJoin("Searching for other clusters.");
             joiner.searchForOtherClusters(this);
         }
     }

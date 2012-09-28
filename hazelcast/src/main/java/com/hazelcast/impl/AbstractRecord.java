@@ -472,8 +472,10 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     public String toString() {
         return "Record key=" + getKeyData() + ", active=" + isActive()
                + ", version=" + getVersion() + ", removable=" + isRemovable()
-               + ", valueCount= " + valueCount()
-               + ", isLocked= " + isLocked();
+               + ", evictable=" + isEvictable() + ", valueCount= " + valueCount()
+               + ", isLocked= " + isLocked() + ", scheduled= " + getScheduledActionCount()
+               ;
+
     }
 
     class OptionalInfo {

@@ -926,15 +926,15 @@ public class PartitionManager {
                         try {
                             result = future.get(partitionMigrationTimeout, TimeUnit.SECONDS);
                         } catch (Throwable e) {
-                            logger.log(Level.WARNING, "Failed migrating from " + fromMember);
+                            logger.log(Level.WARNING, "Failed migrating from " + fromMember, e);
                         }
                     } else {
                         // Partition is lost! Assign new owner and exit.
                         result = Boolean.TRUE;
                     }
-                    logger.log(Level.FINEST, "Finished Migration : " + migrationRequestTask);
-                    systemLogService.logPartition("Finished Migration : " + migrationRequestTask);
                     if (Boolean.TRUE.equals(result)) {
+                        logger.log(Level.FINEST, "Finished Migration : " + migrationRequestTask);
+                        systemLogService.logPartition("Finished Migration : " + migrationRequestTask);
                         concurrentMapManager.enqueueAndWait(new ProcessMigrationResult(migrationRequestTask), 10000);
                     } else {
                         // remove active partition migration
