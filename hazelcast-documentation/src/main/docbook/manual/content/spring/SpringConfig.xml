@@ -144,7 +144,8 @@
     Similar for client
     <programlisting language="xml"><![CDATA[<hz:client id="client"
     group-name="${cluster.group.name}" group-password="${cluster.group.password}">
-    <hz:members>10.10.1.2:5701, 10.10.1.3:5701</hz:members>
+    <hz:member>10.10.1.2:5701</hz:member>
+    <hz:member>10.10.1.3:5701</hz:member>
 </hz:client>
 ]]></programlisting>
     Hazelcast also supports <code>lazy-init</code>, <code>scope</code> and <code>depends-on</code> bean attributes.
