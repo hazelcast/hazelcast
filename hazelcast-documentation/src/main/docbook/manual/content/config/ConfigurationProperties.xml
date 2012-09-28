@@ -376,7 +376,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 </td>
                 <td>Max timeout of master confirmation from other nodes</td>
                 <td>integer</td>
-                <td>600</td>
+                <td>450</td>
             </tr>
             <tr>
                 <td>
@@ -384,7 +384,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 </td>
                 <td>Interval at which master node publishes a member list</td>
                 <td>integer</td>
-                <td>900</td>
+                <td>600</td>
             </tr>
             <tr>
                 <td>
