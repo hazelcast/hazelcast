@@ -132,7 +132,9 @@
     </xs:element>
     <xs:element name="initial-permits" default="0">
         <xs:simpleType>
-            <xs:restriction base="xs:integer"/>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
         </xs:simpleType>
     </xs:element>
     <xs:element name="semaphore-factory">
@@ -167,7 +169,9 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
         </xs:simpleType>
     </xs:element>
     <xs:element name="max-idle-seconds" default="0">
@@ -180,7 +184,9 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
         </xs:simpleType>
     </xs:element>
     <xs:element name="tcp-ip">
@@ -454,7 +460,9 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
+            <xs:restriction base="xs:short">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
         </xs:simpleType>
     </xs:element>
     <xs:element name="keyPassword">
@@ -479,7 +487,9 @@
     </xs:element>
     <xs:element name="keep-alive-seconds" default="60">
         <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
         </xs:simpleType>
     </xs:element>
     <xs:element name="join">
@@ -498,7 +508,9 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
+            <xs:restriction base="xs:byte">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
         </xs:simpleType>
     </xs:element>
     <xs:element name="interfaces">
@@ -655,7 +667,9 @@
     </xs:element>
     <xs:element name="core-pool-size" default="16">
         <xs:simpleType>
-            <xs:restriction base="xs:byte"/>
+            <xs:restriction base="xs:short">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
         </xs:simpleType>
     </xs:element>
     <xs:element name="backup-count" default="1">
