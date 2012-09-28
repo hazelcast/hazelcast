@@ -333,6 +333,14 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         invokeClusterOperation(new MasterConfirmationOperation(), masterAddress);
     }
 
+    // Will be called just before this node becomes the master
+    private void resetMemberMasterConfirmations() {
+        final Collection<MemberImpl> memberList = getMemberList();
+        for (MemberImpl member : memberList) {
+            masterConfirmationTimes.put(member, Clock.currentTimeMillis());
+        }
+    }
+
     private void sendMemberListToOthers() {
         if (!isMaster()) {
             return;
