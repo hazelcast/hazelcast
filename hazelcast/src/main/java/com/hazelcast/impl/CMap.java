@@ -1308,7 +1308,7 @@ public class CMap {
         @Override
         public int getMaxSize() {
             final int maxSize = maxSizeConfig.getSize();
-            final int clusterMemberSize = node.getClusterImpl().getMembers().size();
+            final int clusterMemberSize = concurrentMapManager.dataMemberCount.get();
             final int memberCount = (clusterMemberSize == 0) ? 1 : clusterMemberSize;
             return maxSize / memberCount;
         }
