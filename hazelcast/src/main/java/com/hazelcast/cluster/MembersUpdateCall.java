@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.logging.Level;
 
 public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> implements RemotelyProcessable {
 
@@ -48,14 +49,18 @@ public class MembersUpdateCall extends AbstractRemotelyCallable<Boolean> impleme
     }
 
     public Boolean call() {
-        final Address masterAddress = conn != null ? conn.getEndPoint() : null;
+        final Address senderAddress = conn != null ? conn.getEndPoint() : null;
         final boolean accept = conn == null ||  // which means this is a local call.
-                (masterAddress != null && masterAddress.equals(node.getMasterAddress()));
+                (senderAddress != null && senderAddress.equals(node.getMasterAddress()));
 
         if (accept) {
             node.getClusterImpl().setMasterTime(masterTime);
             node.clusterManager.updateMembers(getMemberInfos());
             return Boolean.TRUE;
+        } else {
+            node.getLogger(MembersUpdateCall.class.getName()).log(Level.WARNING,
+                    "Received MembersUpdateCall from " + senderAddress + ", but current master is " +
+                    node.getMasterAddress());
         }
         return Boolean.FALSE;
     }

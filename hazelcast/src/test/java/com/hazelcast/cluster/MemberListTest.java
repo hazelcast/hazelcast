@@ -231,6 +231,77 @@ public class MemberListTest {
         assertEquals(3, h3.getCluster().getMembers().size());
     }
     
+    @Test
+    public void testSwitchingMastersIssue274() throws Exception {
+        Config c1 = buildConfig(false);
+        Config c2 = buildConfig(false);
+        Config c3 = buildConfig(false);
+        Config c4 = buildConfig(false);
+        Config c5 = buildConfig(false);
+        
+        c1.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
+        c2.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
+        c3.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
+        c4.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
+        c5.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
+        
+        c1.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
+        c2.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
+        c3.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
+        c4.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
+        c5.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
+        
+        c1.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
+        c2.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
+        c3.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
+        c4.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
+        c5.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
+        
+        c1.getNetworkConfig().setPort(55701);
+        c2.getNetworkConfig().setPort(55702);
+        c3.getNetworkConfig().setPort(55703);
+        c4.getNetworkConfig().setPort(55704);
+        c5.getNetworkConfig().setPort(55705);
+        
+        List<String> allMembers = Arrays.asList("127.0.0.1:55701", "127.0.0.1:55702", "127.0.0.1:55703", "127.0.0.1:55704", "127.0.0.1:55705");
+        c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+        c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+        c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+        c4.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+        c5.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+        
+        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
+        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(c4);
+        final HazelcastInstance h5 = Hazelcast.newHazelcastInstance(c5);
+
+        assertEquals(5, h1.getCluster().getMembers().size());
+        assertEquals(5, h2.getCluster().getMembers().size());
+        assertEquals(5, h3.getCluster().getMembers().size());
+        assertEquals(5, h4.getCluster().getMembers().size());
+        assertEquals(5, h5.getCluster().getMembers().size());
+        
+        // Need to wait for at least as long as PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS
+        Thread.sleep(60 * 1000);
+        
+        h1.getLifecycleService().shutdown();
+        
+        Thread.sleep(10 * 1000);
+        
+        assertEquals(4, h2.getCluster().getMembers().size());
+        assertEquals(4, h3.getCluster().getMembers().size());
+        assertEquals(4, h4.getCluster().getMembers().size());
+        assertEquals(4, h5.getCluster().getMembers().size());
+        
+        Thread.sleep(20 * 1000);
+        
+        assertEquals(4, h2.getCluster().getMembers().size());
+        assertEquals(4, h3.getCluster().getMembers().size());
+        assertEquals(4, h4.getCluster().getMembers().size());
+        assertEquals(4, h5.getCluster().getMembers().size());
+    }
+    
     private static Config buildConfig(boolean multicastEnabled) {
         Config c = new Config();
         c.getGroupConfig().setName("group").setPassword("pass");
