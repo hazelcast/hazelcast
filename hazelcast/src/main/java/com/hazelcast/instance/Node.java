@@ -320,7 +320,8 @@ public class Node {
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
         int clusterSize = clusterService.getSize();
-        if (config.isPortAutoIncrement() && address.getPort() >= config.getPort() + clusterSize) {
+        if (config.getNetworkConfig().isPortAutoIncrement()
+                && address.getPort() >= config.getNetworkConfig().getPort() + clusterSize) {
             StringBuilder sb = new StringBuilder("Config seed port is ");
             sb.append(config.getPort());
             sb.append(" and cluster size is ");
@@ -342,6 +343,7 @@ public class Node {
         } else {
             new Thread(new Runnable() {
                 public void run() {
+                    ThreadContext.get().setCurrentInstance(hazelcastInstance);
                     doShutdown(force);
                 }
             }).start();

@@ -209,7 +209,7 @@ public class NodeIOService implements IOService {
 
     public void onShutdown() {
         try {
-//            node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
+            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
             // wait a little
 //            Thread.sleep(100);
         } catch (Throwable ignored) {
