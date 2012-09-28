@@ -657,6 +657,7 @@ public class CMap {
             return false;
         } else {
             if (record.isActive() && record.isValid()) {
+                record.setLastAccessed();
                 return record.valueCount() > 0;
             }
         }
