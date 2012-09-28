@@ -386,6 +386,10 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                     if (joinRequest.getUuid().equals(member.getUuid())) {
                         String message = "Ignoring join request, member already exists.. => " + joinRequest;
                         logger.log(Level.FINEST, message);
+
+                        // send members update back to node trying to join again...
+                        invokeClusterOperation(new FinalizeJoinOperation(getMemberList(), getClusterTime()),
+                                member.getAddress());
                         return;
                     }
                     // If this node is master then remove old member and process join request.
@@ -415,7 +419,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                         if (cr == null) {
                             securityLogger.log(Level.SEVERE, "Expecting security credentials " +
                                     "but credentials could not be found in JoinRequest!");
-                            sendAuthFail(joinRequest.address);
+                            invokeClusterOperation(new AuthenticationFailureOperation(), joinRequest.address);
                             return;
                         } else {
                             try {
@@ -426,7 +430,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                                         + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
                                         ")");
                                 securityLogger.log(Level.FINEST, e.getMessage(), e);
-                                sendAuthFail(joinRequest.address);
+                                invokeClusterOperation(new AuthenticationFailureOperation(), joinRequest.address);
                                 return;
                             }
                         }
@@ -463,14 +467,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     private void sendMasterAnswer(final JoinRequest joinRequest) {
-        node.nodeService.createSingleInvocation(SERVICE_NAME,
-                new SetMasterOperation(node.getMasterAddress()), -1).setTarget(joinRequest.address)
-                .setTryCount(1).build().invoke();
-    }
-
-    private void sendAuthFail(Address target) {
-        node.nodeService.createSingleInvocation(SERVICE_NAME, new AuthenticationFailureOperation(),
-                NodeService.EXECUTOR_THREAD_ID).setTarget(target).setTryCount(1).build().invoke();
+        invokeClusterOperation(new SetMasterOperation(node.getMasterAddress()), joinRequest.address);
     }
 
     private void joinReset() {
@@ -506,9 +503,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             List<Future> calls = new ArrayList<Future>(members.size());
             for (final MemberInfo member : members) {
                 if (!member.getAddress().equals(thisAddress)) {
-                    Invocation inv = nodeService.createSingleInvocation(SERVICE_NAME, finalizeJoinOp, -1)
-                            .setTarget(member.getAddress()).setTryCount(1).build();
-                    calls.add(inv.invoke());
+                    calls.add(invokeClusterOperation(finalizeJoinOp, member.getAddress()));
                 }
             }
             updateMembers(members);
@@ -561,9 +556,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             toAddress = node.getMasterAddress();
         }
         JoinRequest joinRequest = node.createJoinInfo(withCredentials);
-        Invocation inv = node.nodeService.createSingleInvocation(SERVICE_NAME, joinRequest, NodeService.EXECUTOR_THREAD_ID)
-                .setTarget(toAddress).setTryCount(1).build();
-        inv.invoke();
+        invokeClusterOperation(joinRequest, toAddress);
         return true;
     }
 
@@ -582,6 +575,11 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 node.setMasterAddress(null);
             }
         }
+    }
+
+    private Future invokeClusterOperation(Operation op, Address target) {
+        return nodeService.createSingleInvocation(SERVICE_NAME, op, NodeService.EXECUTOR_THREAD_ID)
+                .setTarget(target).setTryCount(1).build().invoke();
     }
 
     public NodeServiceImpl getNodeService() {
@@ -672,7 +670,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         for (MemberImpl member : getMemberList()) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
-                Future f = node.nodeService.createSingleInvocation(SERVICE_NAME, new MemberRemoveOperation(deadAddress), -1)
+                Future f = nodeService.createSingleInvocation(SERVICE_NAME, new MemberRemoveOperation(deadAddress), -1)
                         .setTarget(address).setTryCount(10).setTryPauseMillis(100).build().invoke();
                 responses.add(f);
             }

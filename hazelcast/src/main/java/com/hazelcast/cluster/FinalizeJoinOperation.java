@@ -17,95 +17,24 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.util.Clock;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
-public class FinalizeJoinOperation extends Operation implements JoinOperation {
-
-    private static final long serialVersionUID = -2311579721761844861L;
-
-    private Collection<MemberInfo> memberInfos;
-
-    private long masterTime = Clock.currentTimeMillis();
+public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
     public FinalizeJoinOperation() {
-        memberInfos = new ArrayList<MemberInfo>();
     }
 
-    public FinalizeJoinOperation(Collection<MemberImpl> lsMembers, long masterTime) {
-        this.masterTime = masterTime;
-        memberInfos = new ArrayList<MemberInfo>(lsMembers.size());
-        for (MemberImpl member : lsMembers) {
-            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
-        }
+    public FinalizeJoinOperation(final Collection<MemberImpl> lsMembers, final long masterTime) {
+        super(lsMembers, masterTime);
     }
 
+    @Override
     public void run() {
-        final ClusterService clusterService = getService();
-        final Connection conn = getConnection();
-        final Address masterAddress = conn != null ? conn.getEndPoint() : null;
-        final boolean accept = conn == null ||  // which means this is a local call.
-                (masterAddress != null && masterAddress.equals(clusterService.getMasterAddress()));
-        if (accept) {
-            clusterService.setMasterTime(masterTime);
-            clusterService.updateMembers(getMemberInfos());
-            getResponseHandler().sendResponse(Boolean.TRUE);
-        } else {
-            getResponseHandler().sendResponse(Boolean.FALSE);
+        if (isValid()) {
+            super.run();
+            // do other things...
         }
-    }
-
-    public void addMemberInfo(MemberInfo memberInfo) {
-        if (!memberInfos.contains(memberInfo)) {
-            memberInfos.add(memberInfo);
-        }
-    }
-
-    @Override
-    public void readInternal(DataInput in) throws IOException {
-        masterTime = in.readLong();
-        int size = in.readInt();
-        memberInfos = new ArrayList<MemberInfo>(size);
-        while (size-- > 0) {
-            MemberInfo memberInfo = new MemberInfo();
-            memberInfo.readData(in);
-            memberInfos.add(memberInfo);
-        }
-    }
-
-    @Override
-    public void writeInternal(DataOutput out) throws IOException {
-        out.writeLong(masterTime);
-        out.writeInt(memberInfos.size());
-        for (MemberInfo memberInfo : memberInfos) {
-            memberInfo.writeData(out);
-        }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("MembersUpdateCall {\n");
-        for (MemberInfo address : memberInfos) {
-            sb.append(address).append('\n');
-        }
-        sb.append('}');
-        return sb.toString();
-    }
-
-    /**
-     * @return the lsMemberInfos
-     */
-    public Collection<MemberInfo> getMemberInfos() {
-        return Collections.unmodifiableCollection(memberInfos);
     }
 }
 
