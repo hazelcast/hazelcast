@@ -316,6 +316,9 @@ public class Node {
         if (master != null) {
             logger.log(Level.INFO, "** setting master address to " + master.toString());
         }
+        if (address != null && address.equals(master)) {
+            clusterManager.resetMemberMasterConfirmations();
+        }
         masterAddress = master;
     }
 
