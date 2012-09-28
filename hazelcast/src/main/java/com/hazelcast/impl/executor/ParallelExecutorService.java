@@ -93,7 +93,6 @@ public class ParallelExecutorService {
         private final ExecutionSegment[] executionSegments;
         private final AtomicInteger offerIndex = new AtomicInteger();
         private final AtomicInteger activeCount = new AtomicInteger();
-        private final int concurrencyLevel;
 
         /**
          * Creates a new ParallelExecutorImpl
@@ -105,26 +104,22 @@ public class ParallelExecutorService {
          *                         task.
          */
         private ParallelExecutorImpl(int concurrencyLevel, int segmentCapacity) {
-            this.executionSegments = new ExecutionSegment[concurrencyLevel+1];
-            this.concurrencyLevel = concurrencyLevel;
+            this.executionSegments = new ExecutionSegment[concurrencyLevel];
             for (int i = 0; i < concurrencyLevel; i++) {
                 executionSegments[i] = new ExecutionSegment(segmentCapacity);
             }
         }
 
         public void execute(Runnable command) {
-            if (command == null) {
-                throw new NullPointerException("Runnable is not allowed to be null");
-            }
-            ExecutionSegment segment = executionSegments[concurrencyLevel];
-            segment.offer(command);
+            int hash = offerIndex.incrementAndGet();
+            execute(command, hash);
         }
 
         public void execute(Runnable command, int hash) {
             if (command == null) {
                 throw new NullPointerException("Runnable is not allowed to be null");
             }
-            int index = (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % concurrencyLevel;
+            int index = (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % executionSegments.length;
             ExecutionSegment segment = executionSegments[index];
             segment.offer(command);
         }

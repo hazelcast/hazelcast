@@ -971,7 +971,7 @@ public class CMap {
 
     private void executeStoreUpdate(final Set<Record> dirtyRecords) {
         if (dirtyRecords.size() > 0) {
-            concurrentMapManager.storeExecutor.execute(new Runnable() {
+            concurrentMapManager.executeLocally(new Runnable() {
                 public void run() {
                     try {
                         runStoreUpdate(dirtyRecords);
