@@ -161,7 +161,8 @@ public class Config implements DataSerializable {
     }
 
     public String getProperty(String name) {
-        return properties.getProperty(name);
+        String value = properties.getProperty(name);
+        return value != null ? value : System.getProperty(name);
     }
 
     public QueueConfig findMatchingQueueConfig(final String name) {
