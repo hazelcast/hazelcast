@@ -58,7 +58,7 @@ public class MapProxy implements ServiceProxy {
         try {
             removeOperation.setBackupCallId(backupCallId);
             removeOperation.setServiceName(MAP_SERVICE_NAME);
-            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, removeOperation, partitionId).build();
+            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, removeOperation, partitionId).build();
             Future f = invocation.invoke();
             Object response = f.get();
             Object returnObj = null;
@@ -88,7 +88,8 @@ public class MapProxy implements ServiceProxy {
                         GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, -1, updateResponse.getVersion());
                         backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
                         backupOp.setInvocation(true);
-                        Invocation backupInv = nodeService.createSingleInvocation(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(i).build();
+                        Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp,
+                                partitionId).setReplicaIndex(i).build();
                         f = backupInv.invoke();
                         f.get(5, TimeUnit.SECONDS);
                     }
@@ -117,7 +118,7 @@ public class MapProxy implements ServiceProxy {
         try {
             putOperation.setBackupCallId(backupCallId);
             putOperation.setServiceName(MAP_SERVICE_NAME);
-            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, putOperation, partitionId).build();
+            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, putOperation, partitionId).build();
             Future f = invocation.invoke();
             Object response = f.get();
             Object returnObj = null;
@@ -146,7 +147,8 @@ public class MapProxy implements ServiceProxy {
                         Data dataValue = putOperation.getValue();
                         GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, ttl, updateResponse.getVersion());
                         backupOp.setInvocation(true);
-                        Invocation backupInv = nodeService.createSingleInvocation(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(i).build();
+                        Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp,
+                                partitionId).setReplicaIndex(i).build();
                         f = backupInv.invoke();
                         f.get(5, TimeUnit.SECONDS);
                     }
@@ -167,7 +169,7 @@ public class MapProxy implements ServiceProxy {
         getOperation.setValidateTarget(true);
         getOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, getOperation, partitionId).build();
+            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, getOperation, partitionId).build();
             Future f = invocation.invoke();
             Data response = (Data) f.get();
             return toObject(response);

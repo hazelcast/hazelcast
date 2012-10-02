@@ -165,7 +165,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                             for (Address address : colPossibleAddresses) {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.log(Level.FINEST, "Claiming myself as master node!");
-                                    Invocation inv = node.nodeService.createSingleInvocation(ClusterService.SERVICE_NAME,
+                                    Invocation inv = node.nodeService.createInvocationBuilder(
+                                            ClusterService.SERVICE_NAME,
                                             new MasterClaim(), -1).setTarget(address).setTryCount(1).build();
                                     responses.add(inv.invoke());
                                 }

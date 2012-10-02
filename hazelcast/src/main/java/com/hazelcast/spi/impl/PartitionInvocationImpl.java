@@ -19,10 +19,10 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 
-public class SinglePartitionInvocation extends SingleInvocation {
+public class PartitionInvocationImpl extends InvocationImpl {
 
-    public SinglePartitionInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
-                              int replicaIndex, int tryCount, long tryPauseMillis) {
+    public PartitionInvocationImpl(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
+                                   int replicaIndex, int tryCount, long tryPauseMillis) {
         super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
     }
 

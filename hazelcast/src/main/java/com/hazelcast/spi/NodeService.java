@@ -42,7 +42,7 @@ public interface NodeService {
 
     Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception;
 
-    InvocationBuilder createSingleInvocation(String serviceName, Operation op, int partitionId);
+    InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
     boolean send(Operation op, int partitionId, int replicaIndex);
 

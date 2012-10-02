@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
@@ -90,7 +91,7 @@ public class NodeServiceImpl implements NodeService {
         final Data operationData = toData(op); // don't use op object in invocations!
         for (Entry<Address, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
             Address target = mp.getKey();
-            Invocation inv = createSingleInvocation(serviceName, new PartitionIterator(mp.getValue(), operationData),
+            Invocation inv = createInvocationBuilder(serviceName, new PartitionIterator(mp.getValue(), operationData),
                     EXECUTOR_THREAD_ID).setTarget(target).setTryCount(5).setTryPauseMillis(300).build();
             Future future = inv.invoke();
             responses.put(target, future);
@@ -123,7 +124,7 @@ public class NodeServiceImpl implements NodeService {
 //        System.err.println("failedPartitions = " + failedPartitions);
 //        Thread.sleep(500);
         for (Integer failedPartition : failedPartitions) {
-            Invocation inv = createSingleInvocation(serviceName,
+            Invocation inv = createInvocationBuilder(serviceName,
                     new OperationWrapper(operationData), failedPartition).build();
             Future f = inv.invoke();
             partitionResults.put(failedPartition, f);
@@ -151,13 +152,13 @@ public class NodeServiceImpl implements NodeService {
         return memberPartitions;
     }
 
-    public InvocationBuilder createSingleInvocation(String serviceName, Operation op, int partitionId) {
+    public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         return new InvocationBuilder(this, serviceName, op, partitionId);
     }
 
-    void invokeSingle(final SingleInvocation inv) {
+    void invoke(final InvocationImpl inv) {
         if (Thread.currentThread().getThreadGroup() == partitionThreadGroup) {
-            throw new RuntimeException(Thread.currentThread()
+            throw new HazelcastException(Thread.currentThread()
                     + " cannot make another call: "
                     + inv.getOperation()
                     + " currentOp:" + ThreadContext.get().getCurrentOperation());
@@ -183,7 +184,7 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    private void checkInvocation(SingleInvocation inv) {
+    private void checkInvocation(InvocationImpl inv) {
         final Address target = inv.getTarget();
         final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionId();
@@ -236,7 +237,8 @@ public class NodeServiceImpl implements NodeService {
                     if (replicaTarget.equals(getThisAddress())) {
                         // Normally shouldn't happen!!
                     } else {
-                        backupOps.add(createSingleInvocation(serviceName, op, partitionId).setReplicaIndex(replicaIndex).build().invoke());
+                        backupOps.add(createInvocationBuilder(serviceName, op, partitionId).setReplicaIndex(replicaIndex)
+                                .build().invoke());
                     }
                 }
             }

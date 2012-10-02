@@ -32,11 +32,11 @@ public final class ResponseHandlerFactory {
         op.setResponseHandler(new NoReplyResponseHandler(nodeservice, op));
     }
 
-    public static void setLocalResponseHandler(SingleInvocation inv) {
+    public static void setLocalResponseHandler(InvocationImpl inv) {
         inv.getOperation().setResponseHandler(createLocalResponseHandler(inv));
     }
 
-    public static ResponseHandler createLocalResponseHandler(SingleInvocation inv) {
+    public static ResponseHandler createLocalResponseHandler(InvocationImpl inv) {
         return new LocalInvocationResponseHandler(inv);
     }
 
@@ -96,9 +96,9 @@ public final class ResponseHandlerFactory {
 
     private static class LocalInvocationResponseHandler implements ResponseHandler {
 
-        private final SingleInvocation invocation;
+        private final InvocationImpl invocation;
 
-        private LocalInvocationResponseHandler(SingleInvocation invocation) {
+        private LocalInvocationResponseHandler(InvocationImpl invocation) {
             this.invocation = invocation;
         }
 

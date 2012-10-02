@@ -19,12 +19,12 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 
-public class SingleTargetInvocation extends SingleInvocation {
+public class TargetInvocationImpl extends InvocationImpl {
 
     private final Address target;
 
-    public SingleTargetInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
-                           int replicaIndex, Address target, int tryCount, long tryPauseMillis) {
+    public TargetInvocationImpl(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
+                                int replicaIndex, Address target, int tryCount, long tryPauseMillis) {
         super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
         this.target = target;
     }

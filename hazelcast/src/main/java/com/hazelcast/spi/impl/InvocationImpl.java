@@ -24,7 +24,7 @@ import com.hazelcast.spi.exception.RetryableException;
 
 import java.util.concurrent.*;
 
-abstract class SingleInvocation implements Future, Invocation, Callback {
+abstract class InvocationImpl implements Future, Invocation, Callback {
     private static final Object NULL = new Object();
     private static final Object RETRY = new Object();
 
@@ -39,8 +39,8 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
     private volatile int invokeCount = 0;
     private volatile boolean done = false;
 
-    SingleInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
-                     int replicaIndex, int tryCount, long tryPauseMillis) {
+    InvocationImpl(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
+                   int replicaIndex, int tryCount, long tryPauseMillis) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
@@ -68,7 +68,7 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
     public final Future invoke() {
         try {
             invokeCount++;
-            nodeService.invokeSingle(this);
+            nodeService.invoke(this);
         } catch (Exception e) {
             if (e instanceof RetryableException) {
                 setResult(e);
@@ -177,7 +177,7 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
 
     @Override
     public String toString() {
-        return "SingleInvocation{" +
+        return "InvocationImpl{" +
                 "serviceName='" + serviceName + '\'' +
                 ", op=" + op +
                 ", partitionId=" + partitionId +

@@ -165,7 +165,7 @@ public class TransactionImpl implements Transaction {
             List<Future> futures = new ArrayList<Future>(participants.size());
             for (TxnParticipant t : participants) {
                 Operation op = new PrepareOperation(txnId);
-                futures.add(instance.node.nodeService.createSingleInvocation(t.serviceName, op, t.partitionId).build()
+                futures.add(instance.node.nodeService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
                         .invoke());
             }
             for (Future future : futures) {
@@ -174,7 +174,7 @@ public class TransactionImpl implements Transaction {
             futures.clear();
             for (TxnParticipant t : participants) {
                 Operation op = new CommitOperation(txnId);
-                futures.add(instance.node.nodeService.createSingleInvocation(t.serviceName, op, t.partitionId).build()
+                futures.add(instance.node.nodeService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
                         .invoke());
             }
             for (Future future : futures) {

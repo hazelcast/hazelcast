@@ -112,7 +112,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
             nodeService.execute(new Runnable() {
                 public void run() {
                     try {
-                        Invocation inv = nodeService.createSingleInvocation(PartitionService.SERVICE_NAME,
+                        Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
                                 new MigrationOperation(partitionId, replicaIndex, isMoving(), tasks, from), partitionId)
                                 .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
                                 .build();

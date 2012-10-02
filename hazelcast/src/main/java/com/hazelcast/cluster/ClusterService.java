@@ -152,7 +152,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     public JoinInfo checkJoinInfo(Address target) {
-        Invocation inv = nodeService.createSingleInvocation(SERVICE_NAME,
+        Invocation inv = nodeService.createInvocationBuilder(SERVICE_NAME,
                 new JoinCheckOperation(node.createJoinInfo()), -1)
                 .setTarget(target).setTryCount(1).build();
         try {
@@ -680,7 +680,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     private Future invokeClusterOperation(Operation op, Address target) {
-        return nodeService.createSingleInvocation(SERVICE_NAME, op, NodeService.EXECUTOR_THREAD_ID)
+        return nodeService.createInvocationBuilder(SERVICE_NAME, op, NodeService.EXECUTOR_THREAD_ID)
                 .setTarget(target).setTryCount(1).build().invoke();
     }
 
@@ -774,7 +774,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         for (MemberImpl member : getMemberList()) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
-                Future f = nodeService.createSingleInvocation(SERVICE_NAME, new MemberRemoveOperation(deadAddress), -1)
+                Future f = nodeService.createInvocationBuilder(SERVICE_NAME, new MemberRemoveOperation(deadAddress), -1)
                         .setTarget(address).setTryCount(10).setTryPauseMillis(100).build().invoke();
                 responses.add(f);
             }

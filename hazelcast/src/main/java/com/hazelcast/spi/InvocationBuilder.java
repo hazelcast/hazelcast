@@ -19,8 +19,8 @@ package com.hazelcast.spi;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.impl.SinglePartitionInvocation;
-import com.hazelcast.spi.impl.SingleTargetInvocation;
+import com.hazelcast.spi.impl.PartitionInvocationImpl;
+import com.hazelcast.spi.impl.TargetInvocationImpl;
 
 public class InvocationBuilder {
 
@@ -101,9 +101,9 @@ public class InvocationBuilder {
 
     public Invocation build() {
         if (target == null) {
-            return new SinglePartitionInvocation(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+            return new PartitionInvocationImpl(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
         } else {
-            return new SingleTargetInvocation(nodeService, serviceName, op, partitionId, replicaIndex, target, tryCount, tryPauseMillis);
+            return new TargetInvocationImpl(nodeService, serviceName, op, partitionId, replicaIndex, target, tryCount, tryPauseMillis);
         }
     }
 }
