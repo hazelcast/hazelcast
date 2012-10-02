@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.map;
 
-import com.hazelcast.map.*;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.serialization.DataSerializer.DataSerializableFactory;
-import com.hazelcast.spi.impl.Response;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,19 +26,14 @@ import java.util.Map;
 /**
  * @mdogan 8/24/12
  */
-final class DataSerializerInitHook {
+public final class DataSerializerMapHook implements DataSerializerHook {
 
-    static Map<String, DataSerializableFactory> createFactories() {
-        final Map<String, DataSerializableFactory> factories = new HashMap<String, DataSerializableFactory>(100);
+    public Map<String, DataSerializableFactory> createFactoryMap() {
+        final Map<String, DataSerializableFactory> factories = new HashMap<String, DataSerializableFactory>();
 
         factories.put(PutOperation.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
                 return new PutOperation();
-            }
-        });
-        factories.put(Response.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new Response();
             }
         });
         factories.put(UpdateResponse.class.getName(), new DataSerializableFactory() {

@@ -20,8 +20,12 @@ import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.FastDataInputStream;
 import com.hazelcast.nio.FastDataOutputStream;
 import com.hazelcast.nio.HazelcastSerializationException;
+import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.util.Util;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
@@ -34,8 +38,20 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
 
     private static final Map<String, DataSerializableFactory> factories;
 
+    private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
+
     static {
-        factories = Collections.unmodifiableMap(DataSerializerInitHook.createFactories());
+        final Map<String, DataSerializableFactory> map = new HashMap<String, DataSerializableFactory>();
+        try {
+            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID);
+            while (hooks.hasNext()) {
+                DataSerializerHook hook = hooks.next();
+                map.putAll(hook.createFactoryMap());
+            }
+        } catch (Exception e) {
+            Util.throwUncheckedException(e);
+        }
+        factories = Collections.unmodifiableMap(map);
         factories.values();
         factories.keySet();
         factories.entrySet();
@@ -69,10 +85,5 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
     }
 
     public void destroy() {
-    }
-
-    public interface DataSerializableFactory {
-
-        DataSerializable create();
     }
 }
