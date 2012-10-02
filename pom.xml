@@ -30,14 +30,14 @@
 
     <modules>
         <module>hazelcast</module>
-        <module>hazelcast-hibernate</module>
-        <module>hazelcast-wm</module>
-        <module>hazelcast-ra</module>
-        <module>hazelcast-client</module>
-        <module>hazelcast-spring</module>
-        <module>hazelcast-all</module>
-        <module>hazelcast-cloud</module>
-        <module>hazelcast-documentation</module>
+        <!--<module>hazelcast-hibernate</module>-->
+        <!--<module>hazelcast-wm</module>-->
+        <!--<module>hazelcast-ra</module>-->
+        <!--<module>hazelcast-client</module>-->
+        <!--<module>hazelcast-spring</module>-->
+        <!--<module>hazelcast-all</module>-->
+        <!--<module>hazelcast-cloud</module>-->
+        <!--<module>hazelcast-documentation</module>-->
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
