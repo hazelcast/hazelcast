@@ -26,7 +26,7 @@ public class SinglePartitionInvocation extends SingleInvocation {
         super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
     }
 
-    Address getTarget() {
+    protected Address getTarget() {
         return getPartitionInfo().getReplicaAddress(replicaIndex);
     }
 }

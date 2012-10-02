@@ -30,7 +30,7 @@ public class SingleTargetInvocation extends SingleInvocation {
     }
 
     @Override
-    Address getTarget() {
+    protected Address getTarget() {
         return target;
     }
 }

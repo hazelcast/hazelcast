@@ -101,7 +101,11 @@ public class NodeServiceImpl implements NodeService {
                 Object result = response.getValue().get();
                 partitionResults.putAll((Map<Integer, Object>) toObject(result));
             } catch (Throwable t) {
-                logger.log(Level.WARNING, t.getMessage(), t);
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.WARNING, t.getMessage(), t);
+                } else {
+                    logger.log(Level.WARNING, t.getMessage());
+                }
                 List<Integer> partitions = memberPartitions.get(response.getKey());
                 for (Integer partition : partitions) {
                     partitionResults.put(partition, t);

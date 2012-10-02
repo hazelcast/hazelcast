@@ -25,8 +25,10 @@ import com.hazelcast.spi.exception.RetryableException;
 import java.util.concurrent.*;
 
 abstract class SingleInvocation implements Future, Invocation, Callback {
-    private final static Object NULL = new Object();
-    private final BlockingQueue responseQ = new LinkedBlockingQueue();
+    private static final Object NULL = new Object();
+    private static final Object RETRY = new Object();
+
+    private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     protected final NodeServiceImpl nodeService;
     protected final String serviceName;
     protected final Operation op;
@@ -61,7 +63,7 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
         }
     }
 
-    abstract Address getTarget();
+    protected abstract Address getTarget();
 
     public final Future invoke() {
         try {
@@ -84,19 +86,49 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
         responseQ.offer(obj);
     }
 
+    public Object get() throws InterruptedException, ExecutionException {
+        try {
+            return doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return doGet(timeout, unit);
+    }
+
+    // TODO: rethink about interruption and timeouts
     private Object doGet(long time, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
         long timeout = unit.toMillis(time);
         if (timeout < 0) timeout = 0;
-        Object obj = (timeout == Long.MAX_VALUE) ? responseQ.take() : responseQ.poll(timeout, TimeUnit.MILLISECONDS);
-        if (obj == NULL) obj = null;
-        if (obj instanceof RetryableException) {
-            if (invokeCount < tryCount) {
+
+        while (timeout >= 0) {
+            final Object response = pollResponse(timeout);
+            if (response == NULL) {
+                return null;
+            } else if (response == RETRY) {
                 Thread.sleep(tryPauseMillis);
                 if (timeout != Long.MAX_VALUE) {
                     timeout -= tryPauseMillis;
                 }
-                invoke();
-                return doGet(timeout, TimeUnit.MILLISECONDS);
+                if (timeout > 0) {
+                    invoke();
+                }
+            } else {
+                return response;
+            }
+        }
+        throw new TimeoutException();
+    }
+
+    // TODO: rethink about interruption and timeouts
+    private Object pollResponse(final long timeout) throws ExecutionException, InterruptedException {
+        final Object obj = (timeout == Long.MAX_VALUE) ? responseQ.take() : responseQ.poll(timeout, TimeUnit.MILLISECONDS);
+        if (obj instanceof RetryableException) {
+            if (invokeCount < tryCount) {
+                return RETRY;
             } else {
                 done = true;
                 throw new ExecutionException((Throwable) obj);
@@ -109,19 +141,6 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
                 return obj;
             }
         }
-    }
-
-    public Object get() throws InterruptedException, ExecutionException {
-        try {
-            return doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return doGet(timeout, unit);
     }
 
     public String getServiceName() {
