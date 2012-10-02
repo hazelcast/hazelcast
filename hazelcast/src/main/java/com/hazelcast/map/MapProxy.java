@@ -42,6 +42,66 @@ public class MapProxy implements ServiceProxy {
         this.nodeService = nodeService;
     }
 
+    public Object remove(String name, Object k) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        TransactionImpl txn = nodeService.getTransaction();
+        String txnId = null;
+        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+            txnId = txn.getTxnId();
+            txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
+        }
+        RemoveOperation removeOperation = new RemoveOperation(name, toData(k), txnId);
+        removeOperation.setValidateTarget(true);
+
+        long backupCallId = mapService.createNewBackupCallQueue();
+        try {
+            removeOperation.setBackupCallId(backupCallId);
+            removeOperation.setServiceName(MAP_SERVICE_NAME);
+            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, removeOperation, partitionId).build();
+            Future f = invocation.invoke();
+            Object response = f.get();
+            Object returnObj = null;
+            if (response instanceof Response) {
+                Response r = (Response) response;
+                returnObj = r.getResult();
+            } else {
+                returnObj = toObject(response);
+            }
+            if (returnObj instanceof Throwable) {
+                throw (Throwable) returnObj;
+            }
+            UpdateResponse updateResponse = (UpdateResponse) returnObj;
+            int backupCount = updateResponse.getBackupCount();
+            if (backupCount > 0) {
+                boolean backupsComplete = true;
+                for (int i = 0; i < backupCount; i++) {
+                    BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
+                    Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
+                    if (backupResponse == null) {
+                        backupsComplete = false;
+                    }
+                }
+                if (!backupsComplete) {
+                    for (int i = 0; i < backupCount; i++) {
+                        Data dataValue = removeOperation.getValue();
+                        GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, -1, updateResponse.getVersion());
+                        backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
+                        backupOp.setInvocation(true);
+                        Invocation backupInv = nodeService.createSingleInvocation(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(i).build();
+                        f = backupInv.invoke();
+                        f.get(5, TimeUnit.SECONDS);
+                    }
+                }
+            }
+            return toObject(updateResponse.getOldValue());
+        } catch (Throwable throwable) {
+            throw (RuntimeException) throwable;
+        } finally {
+            mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
+
     public Object put(String name, Object k, Object v, long ttl) {
         Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);

@@ -141,7 +141,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
     }
 
     public Object remove(final Object key) {
-        return null;
+        long begin = Clock.currentTimeMillis();
+        check(key);
+        Object result = mapProxy.remove(name, key);
+        mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
+        return result;
     }
 
     public void putAll(final Map m) {
