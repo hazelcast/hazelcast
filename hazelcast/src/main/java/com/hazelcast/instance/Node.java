@@ -26,7 +26,7 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.MigrationListener;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
@@ -489,7 +489,7 @@ public class Node {
 
     public JoinInfo createJoinInfo(boolean withCredentials) {
         final JoinInfo jr = new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
-                Packet.PACKET_VERSION, buildNumber, clusterService.getMembers().size(), 0, localMember.getUuid());
+                Packet.PACKET_VERSION, buildNumber, clusterService.getSize(), 0, localMember.getUuid());
         if (withCredentials && securityContext != null) {
             Credentials c = securityContext.getCredentialsFactory().newCredentials();
             jr.setCredentials(c);

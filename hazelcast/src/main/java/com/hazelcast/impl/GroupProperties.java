@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.impl;
 
-import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.config.Config;
 
-import java.util.Set;
+/**
+ * @deprecated : will be deleted !!!
+ *
+ * @mdogan 10/1/12
+ */
+@Deprecated
+public class GroupProperties extends com.hazelcast.instance.GroupProperties {
 
-public interface PartitionService {
-
-    Set<Partition> getPartitions();
-
-    Partition getPartition(Object key);
-
-    void addMigrationListener(MigrationListener migrationListener);
-
-    void removeMigrationListener(MigrationListener migrationListener);
+    public GroupProperties(Config config) {
+        super(config);
+    }
 }

@@ -21,7 +21,7 @@ import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.IOException;
 
-class Call {
+final class Call {
     private final Address target;
     private final Callback callback;
 

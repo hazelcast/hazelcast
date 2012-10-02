@@ -19,7 +19,7 @@ package com.hazelcast.monitor;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.util.Clock;
-import com.hazelcast.core.Partition;
+import com.hazelcast.partition.Partition;
 
 import java.io.Serializable;
 import java.util.HashSet;

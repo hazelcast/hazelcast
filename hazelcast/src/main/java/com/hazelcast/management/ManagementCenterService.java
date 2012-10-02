@@ -33,7 +33,7 @@ import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
-import com.hazelcast.core.Partition;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.core.PartitionService;
 
 import java.io.DataInputStream;

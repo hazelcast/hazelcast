@@ -46,21 +46,25 @@ import java.util.logging.Level;
 class ServiceManager {
 
     private final NodeServiceImpl nodeService;
+    private final ILogger logger;
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
 
     ServiceManager(final NodeServiceImpl nodeService) {
         this.nodeService = nodeService;
+        this.logger = nodeService.getLogger(ServiceManager.class.getName());
     }
 
-    void startServices() {
+    synchronized void startServices() {
         final Node node = nodeService.getNode();
         // register core services
+        logger.log(Level.FINEST, "Registering core services...");
         registerService(ClusterService.SERVICE_NAME, node.getClusterService());
         registerService(PartitionService.SERVICE_NAME, node.getPartitionService());
 
         final Services servicesConfig = node.getConfig().getServicesConfig();
         if (servicesConfig != null) {
             if (servicesConfig.isEnableDefaults()) {
+                logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService));
                 // TODO: add other services
                 // ...
@@ -78,7 +82,7 @@ class ServiceManager {
                             try {
                                 service = ClassLoaderUtil.newInstance(customServiceConfig.getClassName());
                             } catch (Throwable e) {
-                                getLogger().log(Level.SEVERE, e.getMessage(), e);
+                                logger.log(Level.SEVERE, e.getMessage(), e);
                             }
                         }
                     } else if (serviceConfig instanceof MapServiceConfig) {
@@ -95,36 +99,42 @@ class ServiceManager {
         }
     }
 
-    void stopServices() {
+    synchronized void stopServices() {
         final Collection<ManagedService> managedServices = getServices(ManagedService.class, false);
         services.clear();
         for (ManagedService service : managedServices) {
-            try {
-                service.destroy();
-            } catch (Throwable t) {
-                getLogger().log(Level.SEVERE, "Error while stopping service: " + t.getMessage(), t);
-            }
+            destroyService(service);
         }
     }
 
-    private ILogger getLogger() {
-        return nodeService.getLogger(ServiceManager.class.getName());
+    private void destroyService(final ManagedService service) {
+        try {
+            logger.log(Level.FINEST, "Destroying service -> " + service);
+            service.destroy();
+        } catch (Throwable t) {
+            logger.log(Level.SEVERE, "Error while stopping service: " + t.getMessage(), t);
+        }
     }
 
-    private void registerService(String serviceName, Object service) {
-        final ILogger logger = getLogger();
+    private synchronized void registerService(String serviceName, Object service) {
         logger.log(Level.FINEST, "Registering service: '" + serviceName + "'");
-        Object oldService = services.put(serviceName, service);
+        Object oldService = services.putIfAbsent(serviceName, service);
         if (oldService != null) {
-            logger.log(Level.WARNING, "Overriding '" + serviceName + "' using " + service);
+            logger.log(Level.WARNING, "Replacing " + serviceName + ": " +
+                                      oldService + " with " + service);
             if (oldService instanceof CoreService) {
-                services.put(serviceName, oldService);
                 throw new HazelcastException("Can not replace a CoreService! Name: " + serviceName
                     + ", Service: " + oldService);
             }
+
+            if (oldService instanceof ManagedService) {
+                destroyService((ManagedService) oldService);
+            }
+            services.put(serviceName, service);
         }
         if (service instanceof ManagedService) {
             try {
+                logger.log(Level.FINEST, "Initializing service -> " + serviceName + ": " + service);
                 ((ManagedService) service).init(nodeService, new Properties());
             } catch (Throwable t) {
                 logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);

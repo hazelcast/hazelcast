@@ -19,7 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.core.*;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
-import com.hazelcast.core.Partition;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.core.PartitionService;
 import org.junit.Ignore;
 import org.junit.Test;

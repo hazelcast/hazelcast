@@ -18,18 +18,19 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
 
-public class PartitionLockedException extends RetryableException {
-    public PartitionLockedException(Address thisAddress, Address target) {
+public class PartitionMigratingException extends RetryableException {
+
+    public PartitionMigratingException(Address thisAddress, Address target) {
         this(thisAddress, target, -1, null);
     }
 
-    public PartitionLockedException(Address thisAddress, Address target, int partitionId, String operationName) {
+    public PartitionMigratingException(Address thisAddress, Address target, int partitionId, String operationName) {
         this(thisAddress, target, partitionId, operationName, null);
     }
 
-    public PartitionLockedException(Address thisAddress, Address target, int partitionId,
-                                    String operationName, String serviceName) {
-        super("PartitionLocked! this:" + thisAddress + ", target:" + target
-                + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
+    public PartitionMigratingException(Address thisAddress, Address target, int partitionId,
+                                       String operationName, String serviceName) {
+        super("Partition is migrating! this:" + thisAddress + ", target:" + target
+              + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

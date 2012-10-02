@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.core.Partition;
+import com.hazelcast.partition.Partition;
 
 import java.util.LinkedList;
 import java.util.List;

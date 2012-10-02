@@ -29,8 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-
-import static com.hazelcast.nio.IOUtil.toObject;
+import java.util.logging.Level;
 
 class PartitionIterator extends AbstractOperation {
     ArrayList<Integer> partitions;
@@ -45,16 +44,17 @@ class PartitionIterator extends AbstractOperation {
     }
 
     public void run() {
+        final NodeService nodeService = getNodeService();
         try {
-            final NodeService nodeService = getNodeService();
             Map<Integer, Object> results = new HashMap<Integer, Object>(partitions.size());
             Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
             for (final int partitionId : partitions) {
-                Operation op = (Operation) toObject(operationData);
+                Operation op = (Operation) nodeService.toObject(operationData);
                 ResponseQueue r = new ResponseQueue();
                 op.setNodeService(getNodeService())
                         .setCaller(getCaller())
                         .setPartitionId(partitionId)
+                        .setReplicaIndex(getReplicaIndex())
                         .setResponseHandler(r)
                         .setService(getService());
                 nodeService.runLocally(op);
@@ -66,7 +66,7 @@ class PartitionIterator extends AbstractOperation {
             }
             getResponseHandler().sendResponse(results);
         } catch (Exception e) {
-            e.printStackTrace();
+            nodeService.getLogger(PartitionIterator.class.getName()).log(Level.WARNING, e.getMessage(), e);
             getResponseHandler().sendResponse(e);
         }
     }

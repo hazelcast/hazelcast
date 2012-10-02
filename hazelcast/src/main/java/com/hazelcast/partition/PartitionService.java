@@ -21,8 +21,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.SystemLogService;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.ExecutedBy;
 import com.hazelcast.spi.annotation.ThreadType;

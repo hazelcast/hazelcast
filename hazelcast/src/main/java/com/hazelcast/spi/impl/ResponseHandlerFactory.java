@@ -103,7 +103,7 @@ public final class ResponseHandlerFactory {
         }
 
         public void sendResponse(Object obj) {
-            invocation.setResult(obj);
+            invocation.notify(obj);
         }
     }
 

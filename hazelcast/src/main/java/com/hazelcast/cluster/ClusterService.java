@@ -83,11 +83,9 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private final AtomicInteger dataMemberCount = new AtomicInteger(); // excluding lite members
 
-    private final ILogger securityLogger;
-
     private final Data heartbeatOperationData;
 
-    private final CopyOnWriteArraySet<MembershipListener> listeners = new CopyOnWriteArraySet<MembershipListener>();
+    private final List<MembershipListener> listeners = new CopyOnWriteArrayList<MembershipListener>();
 
     private boolean joinInProgress = false;
 
@@ -105,7 +103,6 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         logger = node.getLogger(getClass().getName());
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
-        securityLogger = node.loggingService.getLogger("com.hazelcast.security");
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxWaitSecondsBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
         maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
@@ -380,6 +377,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             }
             if (node.isMaster()) {
                 setJoins.remove(new MemberInfo(deadAddress));
+                resetMemberMasterConfirmations();
             }
             final Connection conn = node.connectionManager.getConnection(deadAddress);
             if (destroyConnection && conn != null) {
@@ -409,11 +407,13 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 if (member.getAddress().equals(oldMasterAddress)) {
                     newMaster = iter.next();
                 } else {
-                    logger.log(Level.SEVERE, "Old master is dead but the first of member list is a different member!");
+                    logger.log(Level.SEVERE, "Old master " + oldMasterAddress
+                                             + " is dead but the first of member list is a different member " +
+                                             member + "!");
                     newMaster = member;
                 }
             } else {
-                logger.log(Level.WARNING, "Old master is dead, this node is not master " +
+                logger.log(Level.WARNING, "Old master is dead and this node is not master " +
                                           "but member list contains only " + size + " members! -> " + members);
             }
             if (newMaster != null) {
@@ -487,6 +487,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                             joinRequest.getUuid());
                     if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
                         final Credentials cr = joinRequest.getCredentials();
+                        ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
                         if (cr == null) {
                             securityLogger.log(Level.SEVERE, "Expecting security credentials " +
                                     "but credentials could not be found in JoinRequest!");
@@ -561,7 +562,6 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             setJoins.clear();
             timeToStartJoin = Clock.currentTimeMillis() + waitMillisBeforeJoin;
             firstJoinRequest = 0;
-            masterConfirmationTimes.clear();
         } finally {
             lock.unlock();
         }

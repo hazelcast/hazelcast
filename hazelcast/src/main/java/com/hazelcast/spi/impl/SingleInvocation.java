@@ -63,7 +63,7 @@ abstract class SingleInvocation implements Future, Invocation, Callback {
 
     abstract Address getTarget();
 
-    public Future invoke() {
+    public final Future invoke() {
         try {
             invokeCount++;
             nodeService.invokeSingle(this);

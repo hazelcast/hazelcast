@@ -24,20 +24,21 @@ import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.GenericBackupOperation;
-import com.hazelcast.transaction.TransactionImpl;
+import com.hazelcast.nio.*;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
-import com.hazelcast.spi.exception.PartitionLockedException;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.transaction.TransactionImpl;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -63,7 +64,7 @@ public class NodeServiceImpl implements NodeService {
         final ClassLoader classLoader = node.getConfig().getClassLoader();
         executorService = new ThreadPoolExecutor(
                 3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-                new SynchronousQueue(),
+                new SynchronousQueue<Runnable>(),
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("cached"), classLoader));
         eventExecutorService = Executors.newSingleThreadExecutor(
@@ -84,28 +85,30 @@ public class NodeServiceImpl implements NodeService {
     }
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
-        Map<Address, ArrayList<Integer>> memberPartitions = getMemberPartitions();
-        List<Future> responses = new ArrayList<Future>(memberPartitions.size());
-        Data data = toData(op);
-        for (Map.Entry<Address, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
+        final Map<Address, ArrayList<Integer>> memberPartitions = getMemberPartitions();
+        final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
+        final Data operationData = toData(op); // don't use op object in invocations!
+        for (Entry<Address, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
             Address target = mp.getKey();
-            Invocation inv = createSingleInvocation(serviceName, new PartitionIterator(mp.getValue(), data), EXECUTOR_THREAD_ID)
-                    .setTarget(target).setTryCount(100).setTryPauseMillis(500).build();
+            Invocation inv = createSingleInvocation(serviceName, new PartitionIterator(mp.getValue(), operationData),
+                    EXECUTOR_THREAD_ID).setTarget(target).setTryCount(5).setTryPauseMillis(300).build();
             Future future = inv.invoke();
-            responses.add(future);
+            responses.put(target, future);
         }
-        Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(partitionCount);
-        for (Future r : responses) {
-            Object result = r.get();
-            Map<Integer, Object> partialResult = null;
-            if (result instanceof Data) {
-                partialResult = (Map<Integer, Object>) toObject(result);
-            } else {
-                partialResult = (Map<Integer, Object>) result;
+        final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(partitionCount);
+        for (Entry<Address, Future> response : responses.entrySet()) {
+            try {
+                Object result = response.getValue().get();
+                partitionResults.putAll((Map<Integer, Object>) toObject(result));
+            } catch (Throwable t) {
+                logger.log(Level.WARNING, t.getMessage(), t);
+                List<Integer> partitions = memberPartitions.get(response.getKey());
+                for (Integer partition : partitions) {
+                    partitionResults.put(partition, t);
+                }
             }
-            partitionResults.putAll(partialResult);
         }
-        List<Integer> failedPartitions = new ArrayList<Integer>(0);
+        final List<Integer> failedPartitions = new LinkedList<Integer>();
         for (Map.Entry<Integer, Object> partitionResult : partitionResults.entrySet()) {
             int partitionId = partitionResult.getKey();
             Object result = partitionResult.getValue();
@@ -113,11 +116,13 @@ public class NodeServiceImpl implements NodeService {
                 failedPartitions.add(partitionId);
             }
         }
-        Thread.sleep(500);
+//        System.err.println("failedPartitions = " + failedPartitions);
+//        Thread.sleep(500);
         for (Integer failedPartition : failedPartitions) {
-            Invocation inv = createSingleInvocation(serviceName, op, failedPartition).build();
-            inv.invoke();
-            partitionResults.put(failedPartition, inv);
+            Invocation inv = createSingleInvocation(serviceName,
+                    new OperationWrapper(operationData), failedPartition).build();
+            Future f = inv.invoke();
+            partitionResults.put(failedPartition, f);
         }
         for (Integer failedPartition : failedPartitions) {
             Future f = (Future) partitionResults.get(failedPartition);
@@ -143,7 +148,7 @@ public class NodeServiceImpl implements NodeService {
     }
 
     public InvocationBuilder createSingleInvocation(String serviceName, Operation op, int partitionId) {
-        return new InvocationBuilder(NodeServiceImpl.this, serviceName, op, partitionId);
+        return new InvocationBuilder(this, serviceName, op, partitionId);
     }
 
     void invokeSingle(final SingleInvocation inv) {
@@ -516,7 +521,7 @@ public class NodeServiceImpl implements NodeService {
                 PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                 Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                 if (!isPartitionLockFreeOperation(op) && node.partitionService.isPartitionLocked(partitionId)) {
-                    throw new PartitionLockedException(getThisAddress(), owner, partitionId,
+                    throw new PartitionMigratingException(getThisAddress(), owner, partitionId,
                             op.getClass().getName(), op.getServiceName());
                 }
                 final boolean shouldValidateTarget = op.shouldValidateTarget();

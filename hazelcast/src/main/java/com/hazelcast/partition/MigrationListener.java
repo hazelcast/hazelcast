@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.partition;
 
 import java.util.EventListener;
+
+/**
+ * will be moved to com.hazelcast.core package
+ */
 
 public interface MigrationListener extends EventListener {
 
