@@ -32,8 +32,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 
 class PartitionIterator extends AbstractOperation {
-    ArrayList<Integer> partitions;
-    Data operationData;
+    private ArrayList<Integer> partitions;
+    private Data operationData;
 
     public PartitionIterator(ArrayList<Integer> partitions, Data operationData) {
         this.partitions = partitions;
