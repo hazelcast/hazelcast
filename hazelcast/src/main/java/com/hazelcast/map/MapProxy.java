@@ -71,6 +71,9 @@ public class MapProxy implements ServiceProxy {
             if (returnObj instanceof Throwable) {
                 throw (Throwable) returnObj;
             }
+            if(returnObj == null)
+                return null;
+
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             int backupCount = updateResponse.getBackupCount();
             if (backupCount > 0) {
