@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.nio.DataSerializable;
 
-public class SingleTargetInvocation extends SingleInvocation {
+/**
+ * @mdogan 10/2/12
+ */
 
-    private final Address target;
+public interface DataSerializableFactory {
 
-    public SingleTargetInvocation(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
-                           int replicaIndex, Address target, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
-        this.target = target;
-    }
-
-    @Override
-    protected Address getTarget() {
-        return target;
-    }
+    DataSerializable create();
 }

@@ -18,13 +18,8 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.util.ServiceLoader;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.Enumeration;
 import java.util.logging.Level;
 
 public final class NodeInitializerFactory {
@@ -34,66 +29,16 @@ public final class NodeInitializerFactory {
 
     public static NodeInitializer create() {
         NodeInitializer initializer = null;
-        final String initializerClassname = ServiceLoader.load(FACTORY_ID);
-        if (initializerClassname != null) {
-            try {
-                Class klass = ClassLoaderUtil.loadClass(initializerClassname);
-                initializer = (NodeInitializer) ClassLoaderUtil.newInstance(klass);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Initializer instance of class[" + initializerClassname + "] " +
-                        "could not be instantiated! => "
-                        + e.getClass().getName() + ": " + e.getMessage());
-            }
+        try {
+            initializer = ServiceLoader.load(NodeInitializer.class, FACTORY_ID);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "NodeInitializer could not be instantiated! => "
+                                      + e.getClass().getName() + ": " + e.getMessage());
         }
         return initializer != null ? initializer : createDefault();
     }
 
     public static NodeInitializer createDefault() {
         return new DefaultNodeInitializer();
-    }
-
-    /**
-     * ServiceLoader utility similar to Java 6 ServiceLoader
-     */
-    private static class ServiceLoader {
-        public static String load(String factoryId) {
-            final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            final String resourceName = "META-INF/services/" + factoryId;
-            try {
-                final Enumeration<URL> configs;
-                if (cl != null) {
-                    configs = cl.getResources(resourceName);
-                } else {
-                    configs = ClassLoader.getSystemResources(resourceName);
-                }
-                while (configs.hasMoreElements()) {
-                    URL url = configs.nextElement();
-                    InputStream in = url.openStream();
-                    try {
-                        BufferedReader r = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                        while (true) {
-                            String line = r.readLine();
-                            if (line == null) {
-                                break;
-                            }
-                            int comment = line.indexOf('#');
-                            if (comment >= 0) {
-                                line = line.substring(0, comment);
-                            }
-                            String name = line.trim();
-                            if (name.length() == 0) {
-                                continue;
-                            }
-                            return name;
-                        }
-                    } finally {
-                        in.close();
-                    }
-                }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-            }
-            return null;
-        }
     }
 }

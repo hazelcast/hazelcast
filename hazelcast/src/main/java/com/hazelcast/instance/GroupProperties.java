@@ -84,7 +84,6 @@ public class GroupProperties {
     public static final String PROP_MC_TOPIC_EXCLUDES = "hazelcast.mc.topic.excludes";
     public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
     public static final String PROP_MC_URL_CHANGE_ENABLED = "hazelcast.mc.url.change.enabled";
-    public static final String PROP_CONCURRENT_MAP_SIMPLE_RECORD = "hazelcast.map.simple.record";
     public static final String PROP_CONNECTION_MONITOR_INTERVAL = "hazelcast.connection.monitor.interval";
     public static final String PROP_CONNECTION_MONITOR_MAX_FAULTS = "hazelcast.connection.monitor.max.faults";
     public static final String PROP_PARTITION_MIGRATION_INTERVAL = "hazelcast.partition.migration.interval";
@@ -227,8 +226,6 @@ public class GroupProperties {
 
     public final GroupProperty MC_URL_CHANGE_ENABLED;
 
-    public final GroupProperty CONCURRENT_MAP_SIMPLE_RECORD;
-
     public final GroupProperty CONNECTION_MONITOR_INTERVAL;
 
     public final GroupProperty CONNECTION_MONITOR_MAX_FAULTS;
@@ -318,7 +315,6 @@ public class GroupProperties {
         MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES, null);
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
         MC_URL_CHANGE_ENABLED = new GroupProperty(config, PROP_MC_URL_CHANGE_ENABLED, "true");
-        CONCURRENT_MAP_SIMPLE_RECORD = new GroupProperty(config, PROP_CONCURRENT_MAP_SIMPLE_RECORD, "false");
         CONNECTION_MONITOR_INTERVAL = new GroupProperty(config, PROP_CONNECTION_MONITOR_INTERVAL, "100");
         CONNECTION_MONITOR_MAX_FAULTS = new GroupProperty(config, PROP_CONNECTION_MONITOR_MAX_FAULTS, "3");
         PARTITION_MIGRATION_INTERVAL = new GroupProperty(config, PROP_PARTITION_MIGRATION_INTERVAL, "1");

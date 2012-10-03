@@ -31,14 +31,12 @@ public class DefaultNodeInitializer implements NodeInitializer {
     protected String version;
     protected String build;
     private int buildNumber;
-    protected boolean simpleRecord = false;
 
     public void beforeInitialize(Node node) {
         this.node = node;
         systemLogger = node.getLogger("com.hazelcast.system");
         logger = node.getLogger("com.hazelcast.initializer");
         parseSystemProps();
-        simpleRecord = node.groupProperties.CONCURRENT_MAP_SIMPLE_RECORD.getBoolean();
     }
 
     public void printNodeInfo(Node node) {
