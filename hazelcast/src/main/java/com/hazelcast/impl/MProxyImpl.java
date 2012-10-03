@@ -321,7 +321,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
     }
 
     public boolean containsKey(final Object key) {
-        return false;
+        check(key);
+        long begin = Clock.currentTimeMillis();
+        Boolean result = (Boolean) mapProxy.containsKey(name, key);
+        mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
+        return result;
     }
 
     public boolean containsValue(final Object value) {

@@ -179,6 +179,23 @@ public class MapProxy implements ServiceProxy {
         }
     }
 
+
+    public boolean containsKey(String name, Object k) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, toData(k));
+        containsKeyOperation.setValidateTarget(true);
+        containsKeyOperation.setServiceName(MAP_SERVICE_NAME);
+        try {
+            Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, containsKeyOperation, partitionId).build();
+            Future f = invocation.invoke();
+            return (Boolean)nodeService.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+
     public int getSize(String name) {
         try {
             MapSizeOperation mapSizeOperation = new MapSizeOperation(name);

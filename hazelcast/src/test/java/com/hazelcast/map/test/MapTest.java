@@ -138,6 +138,22 @@ public class MapTest {
         assertEquals(map.size(), 1);
     }
 
+
+    @Test
+    public void testMapContainsKey() {
+        IMap<String, String> map = getInstance().getMap("testMapRemove");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(map.containsKey("key1"), true);
+        assertEquals(map.containsKey("key5"), false);
+        map.remove("key1");
+        assertEquals(map.containsKey("key1"), false);
+        assertEquals(map.containsKey("key2"), true);
+        assertEquals(map.containsKey("key5"), false);
+    }
+
+
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {
         IMap<String, String> map = getInstance().getMap("testGetPutAndSizeWhileStartShutdown");
