@@ -212,7 +212,22 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
         return null;
     }
 
-    public void set(final Object key, final Object value, final long ttl, final TimeUnit timeunit) {
+    public void set(final Object key, final Object value, long ttl, final TimeUnit timeunit) {
+        if (ttl < 0) {
+            throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
+        }
+        if (ttl == 0) {
+            ttl = -1;
+        } else {
+            ttl = toMillis(ttl, timeunit);
+        }
+
+        long begin = Clock.currentTimeMillis();
+        check(key);
+        check(value);
+        mapProxy.set(name, key, value, ttl);
+        // todo incrementPuts or incrementOthers ???
+        mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
 
     }
 

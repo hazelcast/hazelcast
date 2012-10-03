@@ -78,7 +78,7 @@ public class MapTest {
 
     private void removeInstance() {
         instanceCount--;
-        instances.remove(instanceCount - 1).getLifecycleService().shutdown();
+        instances.remove(0).getLifecycleService().shutdown();
     }
 
     private void removeInstance(int index) {
@@ -89,7 +89,7 @@ public class MapTest {
     private void removeInstanceMany(int count) {
         for (int i = 0; i < count; i++) {
             instanceCount--;
-            instances.remove(instanceCount).getLifecycleService().shutdown();
+            instances.remove(0).getLifecycleService().shutdown();
         }
     }
 
@@ -136,6 +136,18 @@ public class MapTest {
         assertEquals(map.size(), 2);
         assertEquals(map.remove("key3"), "value3");
         assertEquals(map.size(), 1);
+    }
+
+
+    @Test
+    public void testMapSet() {
+        IMap<String, String> map = getInstance().getMap("testMapRemove");
+        map.put("key1", "value1");
+        map.set("key1", "valueX",0, TimeUnit.MILLISECONDS);
+        map.set("key2", "value2",0, TimeUnit.MILLISECONDS);
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("key1"), "valueX");
+        assertEquals(map.get("key2"), "value2");
     }
 
 
