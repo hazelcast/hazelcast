@@ -75,7 +75,7 @@ public class MapProxy implements ServiceProxy {
         Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
+        PutOperation putOperation = new PutOperation(name, key, v, txnId, ttl);
         putOperation.setValidateTarget(true);
         long backupCallId = mapService.createNewBackupCallQueue();
         putOperation.setBackupCallId(backupCallId);
@@ -93,11 +93,33 @@ public class MapProxy implements ServiceProxy {
     }
 
 
+
+    public void putTransient(String name, Object k, Object v, long ttl) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        PutTransientOperation putOperation = new PutTransientOperation(name, key, v, txnId, ttl);
+        putOperation.setValidateTarget(true);
+        long backupCallId = mapService.createNewBackupCallQueue();
+        putOperation.setBackupCallId(backupCallId);
+        putOperation.setServiceName(MAP_SERVICE_NAME);
+        try {
+            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
+            UpdateResponse updateResponse = (UpdateResponse) returnObj;
+            checkBackups(name, partitionId, putOperation, updateResponse);
+        } catch (Throwable throwable) {
+            throw (RuntimeException) throwable;
+        } finally {
+            mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
+
+
     public void set(String name, Object k, Object v, long ttl) {
         Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        SetOperation setOperation = new SetOperation(name, toData(k), v, txnId, ttl);
+        SetOperation setOperation = new SetOperation(name, key, v, txnId, ttl);
         setOperation.setValidateTarget(true);
         long backupCallId = mapService.createNewBackupCallQueue();
         setOperation.setBackupCallId(backupCallId);
@@ -118,7 +140,7 @@ public class MapProxy implements ServiceProxy {
         int partitionId = nodeService.getPartitionId(key);
         TransactionImpl txn = nodeService.getTransaction();
         String txnId = prepareTransaction(partitionId);
-        RemoveOperation removeOperation = new RemoveOperation(name, toData(k), txnId);
+        RemoveOperation removeOperation = new RemoveOperation(name, key, txnId);
         removeOperation.setValidateTarget(true);
 
         long backupCallId = mapService.createNewBackupCallQueue();

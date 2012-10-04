@@ -192,7 +192,21 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
         return put(key, value, ttl);
     }
 
-    public void putTransient(final Object key, final Object value, final long ttl, final TimeUnit timeunit) {
+    public void putTransient(final Object key, final Object value, long ttl, final TimeUnit timeunit) {
+        if (ttl < 0) {
+            throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
+        }
+        if (ttl == 0) {
+            ttl = -1;
+        } else {
+            ttl = toMillis(ttl, timeunit);
+        }
+
+        long begin = Clock.currentTimeMillis();
+        check(key);
+        check(value);
+        mapProxy.putTransient(name, key, value, ttl);
+        mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
 
     }
 

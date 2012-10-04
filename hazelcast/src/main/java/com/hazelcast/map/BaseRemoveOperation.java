@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.NodeService;
@@ -25,14 +24,13 @@ import com.hazelcast.spi.ResponseHandler;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public abstract class BasePutOperation extends LockAwareOperation {
+public abstract class BaseRemoveOperation extends LockAwareOperation {
     Object key;
-    Object value;
     Record record;
     int backupCount;
     long version;
 
-    Data oldValueData;
+    Data valueData;
     PartitionContainer pc;
     ResponseHandler responseHandler;
     MapPartition mapPartition;
@@ -47,14 +45,13 @@ public abstract class BasePutOperation extends LockAwareOperation {
     boolean SEND_BACKUPS = true;
     boolean TRANSACTION_ENABLED = true;
 
-    public BasePutOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
-        super(name, dataKey, toData(value), ttl);
+    public BaseRemoveOperation(String name, Data dataKey, String txnId) {
+        super(name, dataKey);
         setTxnId(txnId);
-        this.value = value;
         initFlags();
     }
 
-    public BasePutOperation() {
+    public BaseRemoveOperation() {
         initFlags();
     }
 
@@ -63,7 +60,7 @@ public abstract class BasePutOperation extends LockAwareOperation {
     protected boolean prepareTransaction() {
         if (TRANSACTION_ENABLED) {
             if (txnId != null) {
-                pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
+                pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
                 if (RETURN_RESPONSE)
                     responseHandler.sendResponse(null);
                 return true;
@@ -85,7 +82,7 @@ public abstract class BasePutOperation extends LockAwareOperation {
             if (mapPartition.loader != null) {
                 key = toObject(dataKey);
                 Object oldValue = mapPartition.loader.load(key);
-                oldValueData = toData(oldValue);
+                valueData = toData(oldValue);
             }
         }
     }
@@ -97,7 +94,7 @@ public abstract class BasePutOperation extends LockAwareOperation {
                 if (key == null) {
                     key = toObject(dataKey);
                 }
-                mapPartition.store.store(key, record.getValue());
+                mapPartition.store.delete(key);
             }
         }
     }
@@ -109,31 +106,26 @@ public abstract class BasePutOperation extends LockAwareOperation {
             version = pc.incrementAndGetVersion();
             if (backupCount > 0) {
                 GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-                op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
+                op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
                 op.setFirstCallerId(backupCallId, getCaller());
                 nodeService.sendBackups(MapService.MAP_SERVICE_NAME, op, getPartitionId(), mapBackupCount);
             }
         }
     }
 
-    protected void prepareRecord() {
+    protected void prepareValue() {
         record = mapPartition.records.get(dataKey);
         if (record == null) {
             load();
-            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-            mapPartition.records.put(dataKey, record);
         } else {
-            oldValueData = record.getValueData();
-            record.setValueData(dataValue);
+            valueData = record.getValueData();
         }
-        record.setActive();
-        record.setDirty(true);
     }
 
     protected void sendResponse() {
         if (RETURN_RESPONSE){
             if (RETURN_OLD_VALUE){
-                responseHandler.sendResponse(new UpdateResponse(oldValueData, version, backupCount));
+                responseHandler.sendResponse(new UpdateResponse(valueData, version, backupCount));
             }
             else {
                 responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
@@ -148,10 +140,15 @@ public abstract class BasePutOperation extends LockAwareOperation {
         if (prepareTransaction()) {
             return;
         }
-        prepareRecord();
+        prepareValue();
+        remove();
         store();
         sendBackups();
         sendResponse();
+    }
+
+    private void remove() {
+        mapPartition.records.remove(dataKey);
     }
 
     private int getClusterSize() {
