@@ -42,7 +42,6 @@ public class MapProxy implements ServiceProxy {
     }
 
 
-
     private Object invokeSingleInvocation(Operation operation, int partitionId) throws Throwable {
         Invocation invocation = nodeService.createSingleInvocation(MAP_SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
@@ -92,6 +91,30 @@ public class MapProxy implements ServiceProxy {
         }
     }
 
+
+    public Object putIfAbsent(String name, Object k, Object v, long ttl) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        PutIfAbsentOperation putOperation = new PutIfAbsentOperation(name, key, v, txnId, ttl);
+        putOperation.setValidateTarget(true);
+        long backupCallId = mapService.createNewBackupCallQueue();
+        putOperation.setBackupCallId(backupCallId);
+        putOperation.setServiceName(MAP_SERVICE_NAME);
+        Object result = null;
+        try {
+            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
+            UpdateResponse updateResponse = (UpdateResponse) returnObj;
+            result = toObject(updateResponse.getOldValue());
+            if (result == null)
+                checkBackups(name, partitionId, putOperation, updateResponse);
+            return result;
+        } catch (Throwable throwable) {
+            throw (RuntimeException) throwable;
+        } finally {
+                mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
 
 
     public void putTransient(String name, Object k, Object v, long ttl) {

@@ -211,11 +211,25 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy {
     }
 
     public Object putIfAbsent(final Object key, final Object value) {
-        return null;
+          return putIfAbsent(key, value, 0, TimeUnit.SECONDS);
     }
 
-    public Object putIfAbsent(final Object key, final Object value, final long ttl, final TimeUnit timeunit) {
-        return null;
+    public Object putIfAbsent(final Object key, final Object value, long ttl, final TimeUnit timeunit) {
+        if (ttl < 0) {
+            throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
+        }
+        if (ttl == 0) {
+            ttl = -1;
+        } else {
+            ttl = toMillis(ttl, timeunit);
+        }
+
+        long begin = Clock.currentTimeMillis();
+        check(key);
+        check(value);
+        Object res = mapProxy.putIfAbsent(name, key, value, ttl);
+        mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
+        return res;
     }
 
     public boolean replace(final Object key, final Object oldValue, final Object newValue) {

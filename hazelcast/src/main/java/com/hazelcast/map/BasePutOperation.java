@@ -154,7 +154,7 @@ public abstract class BasePutOperation extends LockAwareOperation {
         sendResponse();
     }
 
-    private int getClusterSize() {
+    protected int getClusterSize() {
         return getNodeService().getCluster().getMembers().size();
     }
 

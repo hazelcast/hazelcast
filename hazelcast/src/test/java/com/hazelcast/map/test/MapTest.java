@@ -123,6 +123,17 @@ public class MapTest {
         assertEquals("New World", map.get("Hello"));
     }
 
+    @Test
+    public void testMapPutIfAbsent() {
+        IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
+        assertEquals(map.putIfAbsent("key1", "value1"), null);
+        System.out.println(map.get("key1"));
+        assertEquals(map.putIfAbsent("key2", "value2"), null);
+        assertEquals(map.putIfAbsent("key1", "valueX"), "value1");
+        assertEquals(map.get("key1"), "value1");
+        assertEquals(map.size(), 2);
+    }
+
 
     @Test
     public void testMapRemove() {
@@ -143,8 +154,8 @@ public class MapTest {
     public void testMapSet() {
         IMap<String, String> map = getInstance().getMap("testMapRemove");
         map.put("key1", "value1");
-        map.set("key1", "valueX",0, TimeUnit.MILLISECONDS);
-        map.set("key2", "value2",0, TimeUnit.MILLISECONDS);
+        map.set("key1", "valueX", 0, TimeUnit.MILLISECONDS);
+        map.set("key2", "value2", 0, TimeUnit.MILLISECONDS);
         assertEquals(map.size(), 2);
         assertEquals(map.get("key1"), "valueX");
         assertEquals(map.get("key2"), "value2");
