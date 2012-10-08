@@ -51,7 +51,7 @@
                 <para>Each member of the merging cluster will do the followings</para>
                 <itemizedlist>
                     <listitem>
-                        <para>pause (<literal>HazelcastInstance.getLifecycleService().pause()</literal>)
+                        <para>pause
                         </para>
                     </listitem>
                     <listitem>
@@ -67,7 +67,7 @@
                         <para>send merge request for each its locally owned map entry</para>
                     </listitem>
                     <listitem>
-                        <para>resume (<literal>HazelcastInstance.getLifecycleService().resume()</literal>)
+                        <para>resume
                         </para>
                     </listitem>
                 </itemizedlist>
