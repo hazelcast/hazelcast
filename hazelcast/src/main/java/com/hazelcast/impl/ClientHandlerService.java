@@ -53,13 +53,12 @@ public class ClientHandlerService implements ConnectionListener {
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[ClusterOperation.LENGTH];
     private final ClientOperationHandler unknownOperationHandler = new UnknownClientOperationHandler();
     private final ILogger logger;
-    private final int THREAD_COUNT;
-    final Worker[] workers;
+    final ExecutorService threadPool;
     private final FactoryImpl factory;
-    boolean firstCall = true;
 
     public ClientHandlerService(Node node) {
         this.node = node;
+        this.threadPool = node.executorManager.threadPoolExecutor;
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
@@ -146,11 +145,6 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(LOCK_FORCE_UNLOCK.getValue(), new UnlockOperationHandler());
         registerHandler(LOCK_IS_LOCKED.getValue(), new IsLockedOperationHandler());
         node.connectionManager.addConnectionListener(this);
-        this.THREAD_COUNT = node.getGroupProperties().EXECUTOR_CLIENT_THREAD_COUNT.getInteger();
-        workers = new Worker[THREAD_COUNT];
-        for (int i = 0; i < THREAD_COUNT; i++) {
-            workers[i] = new Worker();
-        }
         this.factory = node.factory;
     }
 
@@ -160,14 +154,6 @@ public class ClientHandlerService implements ConnectionListener {
 
     // always called by InThread
     public void handle(Packet packet) {
-        if (firstCall) {
-            String threadNamePrefix = node.getThreadPoolNamePrefix("client.service");
-            for (int i = 0; i < THREAD_COUNT; i++) {
-                Worker worker = workers[i];
-                new Thread(node.threadGroup, worker, threadNamePrefix + i).start();
-            }
-            firstCall = false;
-        }
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
@@ -184,19 +170,12 @@ public class ClientHandlerService implements ConnectionListener {
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext,
                 clientOperationHandler, clientEndpoint.getSubject());
         clientEndpoint.addRequest(clientRequestHandler);
-        if (packet.operation == CONCURRENT_MAP_UNLOCK) {
-            node.executorManager.executeNow(clientRequestHandler);
-        } else {
-            int hash = hash(callContext.getThreadId(), THREAD_COUNT);
-            workers[hash].addWork(clientRequestHandler);
-        }
+        threadPool.execute(clientRequestHandler);
+
     }
 
     public void shutdown() {
         mapClientEndpoints.clear();
-        for (Worker worker : workers) {
-            worker.stop();
-        }
     }
 
     public void restart() {

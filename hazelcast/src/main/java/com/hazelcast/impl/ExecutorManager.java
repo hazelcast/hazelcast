@@ -59,7 +59,7 @@ public class ExecutorManager extends BaseManager {
     private static final String EVENT_EXECUTOR_SERVICE = "x:hz.events";
     private final Object CREATE_LOCK = new Object();
     private final ParallelExecutorService parallelExecutorService;
-    private final ThreadPoolExecutor threadPoolExecutor;
+    public final ThreadPoolExecutor threadPoolExecutor;
     private final ConcurrentMap<ExecutionKey, RequestExecutor> executions = new ConcurrentHashMap<ExecutionKey, RequestExecutor>(100);
     private final ScheduledThreadPoolExecutor esScheduled;
 
