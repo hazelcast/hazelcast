@@ -27,7 +27,7 @@
     Say you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down
     then your users on that server will be directed to one of the live servers (B or C) but their sessions will be lost!
     So we have to have all these sessions backed up somewhere if we don't want to lose the sessions upon server crashes.
-    Hazelcast WM allows you to cluster user http sessions automatically. Followings are required for enabling
+    Hazelcast WM allows you to cluster user http sessions automatically. The following are required for enabling
     Hazelcast Session Clustering:
     <itemizedlist>
         <listitem>
@@ -96,6 +96,27 @@
     <init-param>
         <param-name>cookie-name</param-name>
         <param-value>hazelcast.sessionId</param-value>
+    </init-param>
+    <!--
+        Domain of session id cookie. Default is based on incoming request.
+    -->
+    <init-param>
+        <param-name>cookie-domain</param-name>
+        <param-value>.mywebsite.com</param-value>
+    </init-param>
+    <!--
+        Should cookie only be sent using a secure protocol? Default is false.
+    -->
+    <init-param>
+        <param-name>cookie-secure</param-name>
+        <param-value>false</param-value>
+    </init-param>
+    <!--
+        Should HttpOnly attribute be set on cookie ? Default is false.
+    -->
+    <init-param>
+        <param-name>cookie-http-only</param-name>
+        <param-value>false</param-value>
     </init-param>
     <!--
         Are you debugging? Default is false.

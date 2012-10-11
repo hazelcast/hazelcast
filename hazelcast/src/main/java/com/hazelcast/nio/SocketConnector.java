@@ -66,7 +66,8 @@ public class SocketConnector implements Runnable {
                 // find possible remote inet6 addresses and try each one to connect...
                 final Collection<Inet6Address> possibleInetAddresses = AddressUtil.getPossibleInetAddressesFor(
                         (Inet6Address) address.getInetAddress());
-                log(Level.INFO, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
+                final Level level = silent ? Level.FINEST : Level.INFO;
+                log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
                 boolean connected = false;
                 Exception error = null;
                 for (Inet6Address inetAddress : possibleInetAddresses) {

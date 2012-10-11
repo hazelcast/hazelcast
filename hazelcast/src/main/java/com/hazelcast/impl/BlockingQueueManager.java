@@ -155,7 +155,7 @@ public class BlockingQueueManager extends BaseManager {
 
     public int size(String name) {
         ThreadContext threadContext = ThreadContext.get();
-        TransactionImpl txn = threadContext.getCallContext().getTransaction();
+        TransactionImpl txn = threadContext.getTransaction();
         int size = queueSize(name);
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
             size += txn.size(name);
@@ -249,7 +249,7 @@ public class BlockingQueueManager extends BaseManager {
             storeQueueItem(name, key, item, index);
     }
 
-    public void rollbackPoll(String name, Object key, Object obj) {
+    public void rollbackPoll(String name, Object key) {
         final Data dataKey = toData(key);
         if (addKeyAsync) {
             sendKeyToMaster(name, dataKey, 0);
@@ -294,7 +294,7 @@ public class BlockingQueueManager extends BaseManager {
                     fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                 }
             } catch (TimeoutException e) {
-                throw new OperationTimeoutException();
+                throw new OperationTimeoutException(e);
             }
             long now = Clock.currentTimeMillis();
             timeout -= (now - start);
@@ -320,7 +320,7 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, getOperationTimeout(timeout));
             op.request.longValue = index;
-            op.request.txnId = ThreadContext.get().getThreadId();
+            op.request.txnId = ThreadContext.get().getTxnId();
             op.initOp();
             return (Data) op.getResultAsIs();
         } catch (Exception e) {
@@ -328,7 +328,7 @@ public class BlockingQueueManager extends BaseManager {
                 MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name,
                         getOperationTimeout(timeout));
                 op.request.longValue = index;
-                op.request.txnId = ThreadContext.get().getThreadId();
+                op.request.txnId = ThreadContext.get().getTxnId();
                 op.initOp();
                 throw new InterruptedException(e.getMessage());
             }
@@ -594,7 +594,7 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, getOperationTimeout(timeout));
             op.request.setLongRequest();
-            op.request.txnId = ThreadContext.get().getThreadId();
+            op.request.txnId = ThreadContext.get().getTxnId();
             op.initOp();
             return (Long) op.getResultAsObject();
         } catch (Exception e) {
@@ -742,7 +742,7 @@ public class BlockingQueueManager extends BaseManager {
         final CMap cmapStorage = getOrCreateStorageCMap(queueName);
         executeLocally(new Runnable() {
             public void run() {
-                TreeSet itemKeys = null;
+                TreeSet<Long> itemKeys = null;
                 if (cmapStorage.loader != null) {
                     Set keys = cmapStorage.loader.loadAllKeys();
                     if (keys != null && keys.size() > 0) {
@@ -755,8 +755,8 @@ public class BlockingQueueManager extends BaseManager {
                         itemKeys = new TreeSet<Long>(keys);
                     } else {
                         itemKeys.addAll(keys);
+                        }
                     }
-                }
                 if (itemKeys != null) {
                     final Set<Long> queueKeys = itemKeys;
                     enqueueAndReturn(new Processable() {
@@ -786,7 +786,7 @@ public class BlockingQueueManager extends BaseManager {
     public void removeItemListener(final String name, final ItemListener listener) {
         List<ListenerManager.ListenerItem> lsListenerItems = node.listenerManager.getOrCreateListenerList(name);
         for (ListenerManager.ListenerItem listenerItem : lsListenerItems) {
-            if (listenerItem.listener == listener) {
+            if (listener != null && listener.equals(listenerItem.listener)) {
                 lsListenerItems.remove(listenerItem);
                 return;
             }
@@ -947,7 +947,7 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        QData pollValidItem() {
+        private QData pollValidItem() {
             QData qdata = queue.poll();
             if (qdata == null) {
                 return null;
@@ -965,7 +965,7 @@ public class BlockingQueueManager extends BaseManager {
             return qdata;
         }
 
-        QData removeItemByIndex(int index) {
+        private QData removeItemByIndex(int index) {
             if (index >= queue.size()) {
                 return null;
             }

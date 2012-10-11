@@ -82,10 +82,13 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public static class MasterQuestion extends AbstractRemotelyProcessable {
         public void process() {
-            TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) getNode().getJoiner();
-            boolean shouldApprove = (!(tcpIpJoiner.askingForApproval || node.isMaster()));
-            getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
+            final Joiner joiner = getNode().getJoiner();
+            if (joiner instanceof TcpIpJoiner) {
+                TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
+                boolean shouldApprove = (!(tcpIpJoiner.askingForApproval || node.isMaster()));
+                getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
                                                        getConnection());
+            }
         }
     }
 
@@ -333,7 +336,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                         matchedAddresses = Collections.singleton(addressHolder.address);
                     }
                     for (String matchedAddress : matchedAddresses) {
-                        addPossibleAddresses(possibleAddresses, matchedAddress, null, port, count);
+                        addPossibleAddresses(possibleAddresses, null, InetAddress.getByName(matchedAddress), port, count);
                     }
                 } else {
                     final String host = addressHolder.address;

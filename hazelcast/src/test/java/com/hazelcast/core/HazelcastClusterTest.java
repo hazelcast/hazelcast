@@ -20,10 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.Clock;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -456,14 +455,19 @@ public class HazelcastClusterTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
         Config config1 = new Config();
-        config1.setPort(5901) ; // bigger port to make sure address.hashCode() check pass during merge!
+        config1.getNetworkConfig().setPort(5901) ; // bigger port to make sure address.hashCode() check pass during merge!
         config1.setProperties(props);
         config1.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
                 System.out.println(event);
-                if (event.getState() == LifecycleState.RESTARTING
-                        || event.getState() == LifecycleState.RESTARTED) {
-                    latch.countDown();
+                switch (event.getState()) {
+                    case MERGING:
+                    case RESTARTING:
+                    case RESTARTED:
+                    case MERGED:
+                        latch.countDown();
+                    default:
+                        break;
                 }
             }
         }));
@@ -471,7 +475,7 @@ public class HazelcastClusterTest {
         Thread.sleep(5000);
 
         Config config2 = new Config();
-        config2.setPort(5701) ;
+        config2.getNetworkConfig().setPort(5701) ;
         config2.setProperties(props);
         Hazelcast.newHazelcastInstance(config2);
 

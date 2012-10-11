@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
@@ -61,6 +62,8 @@ public class SocketAcceptor implements Runnable {
                     }
                 }
             }
+        } catch (OutOfMemoryError e) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } catch (IOException e) {
             log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
@@ -100,14 +103,15 @@ public class SocketAcceptor implements Runnable {
         }
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
-            connectionManager.executeAsync(new Runnable() {
+            connectionManager.ioService.executeAsync(new Runnable() {
                 public void run() {
                     String message = socketChannel.socket().getLocalPort()
-                            + " is accepting socket connection from "
-                            + socketChannel.socket().getRemoteSocketAddress();
+                                     + " is accepting socket connection from "
+                                     + socketChannel.socket().getRemoteSocketAddress();
                     log(Level.INFO, message);
                     try {
-                        MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
+                        MemberSocketInterceptor memberSocketInterceptor = connectionManager
+                                .getMemberSocketInterceptor();
                         if (memberSocketInterceptor != null) {
                             log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor
                                               + " for " + socketChannel);

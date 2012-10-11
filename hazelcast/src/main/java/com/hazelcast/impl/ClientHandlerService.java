@@ -228,6 +228,9 @@ public class ClientHandlerService implements ConnectionListener {
                 }
                 try {
                     r.run();
+                } catch (OutOfMemoryError e) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+                    throw e;
                 } catch (Throwable ignored) {
                 }
             }

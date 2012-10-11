@@ -87,10 +87,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         maxVisibleInstanceCount = factory.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         commandHandler = new ConsoleCommandHandler(factory);
 
-        String tmpWebServerUrl = managementCenterConfig != null ? managementCenterConfig.getUrl() : null;
+        String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
                 (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
-        updateIntervalMs = (managementCenterConfig != null && managementCenterConfig.getUpdateInterval() > 0)
+        updateIntervalMs = (managementCenterConfig.getUpdateInterval() > 0)
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
 
         taskPoller = new TaskPoller();
@@ -102,9 +102,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (webServerUrl != null) {
                 taskPoller.start();
                 stateSender.start();
-                logger.log(Level.INFO, "Hazelcast Management Center is listening from " + webServerUrl);
+                logger.log(Level.INFO, "Hazelcast will connect to Management Center on address: " + webServerUrl);
             } else {
-                logger.log(Level.WARNING, "Hazelcast Management Center Web server url is null!");
+                logger.log(Level.WARNING, "Hazelcast Management Center web-server URL is null!");
             }
         }
     }
@@ -158,7 +158,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 executorService.execute(task);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Web server url cannot be assigned to the newly joined member", e);
+            logger.log(Level.WARNING, "Web server url cannot be send to the newly joined member", e);
         }
     }
 
@@ -170,12 +170,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     public void changeWebServerUrl(String newUrl) {
         if (newUrl == null)
             return;
-        this.webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
+        webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";
         if (!running.get()) {
             start();
         }
         urlChanged = true;
-        logger.log(Level.INFO, "Web server url has been changed. Management Center is now listening from " + webServerUrl);
+        logger.log(Level.INFO, "Web server URL has been changed. " +
+                "Hazelcast will connect to Management Center on address: " + webServerUrl);
     }
 
     private void interruptThread(Thread t) {
@@ -256,6 +257,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     Thread.sleep(updateIntervalMs);
                 }
             } catch (Throwable throwable) {
+                if (throwable instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
+                }
                 logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
                 shutdown();
             }
@@ -316,12 +320,14 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         InputStream inputStream = connection.getInputStream();
                         DataInputStream input = new DataInputStream(inputStream);
                         final int taskId = input.readInt();
-                        final int requestType = input.readInt();
-                        if (taskId > 0 && requestType < consoleRequests.length) {
-                            final ConsoleRequest request = consoleRequests[requestType];
-                            if (request != null) {
-                                request.readData(input);
-                                sendResponse(taskId, request);
+                        if (taskId > 0) {
+                            final int requestType = input.readInt();
+                            if (requestType < consoleRequests.length) {
+                                final ConsoleRequest request = consoleRequests[requestType];
+                                if (request != null) {
+                                    request.readData(input);
+                                    sendResponse(taskId, request);
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -330,6 +336,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     Thread.sleep(700 + rand.nextInt(300));
                 }
             } catch (Throwable throwable) {
+                if (throwable instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
+                }
                 logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
             }
         }

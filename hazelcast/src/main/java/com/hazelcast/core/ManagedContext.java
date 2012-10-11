@@ -27,9 +27,11 @@ public interface ManagedContext {
     /**
      * Initialize the given object instance.
      * This is intended for repopulating select fields and methods for deserialized instances.
+     * It is also possible to proxy the object, e.g. with AOP proxies.
      *
      * @param obj Object to initialize
+     * @return the initialized object to use
      */
-    void initialize(Object obj);
+    Object initialize(Object obj);
 
 }

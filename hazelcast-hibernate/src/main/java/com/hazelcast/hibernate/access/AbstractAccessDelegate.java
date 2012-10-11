@@ -28,6 +28,7 @@ import org.hibernate.cache.access.SoftLock;
 import java.util.Comparator;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -60,15 +61,18 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     protected boolean putInToCache(final Object key, final Object value) {
         try {
             getCache().set(key, value, 0, TimeUnit.SECONDS);
-        } catch (HazelcastException ignore) {
+            return true;
+        } catch (HazelcastException e) {
+            LOG.log(Level.FINEST, "Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            return false;
         }
-        return true;
     }
 
     public Object get(final Object key, final long txTimestamp) throws CacheException {
         try {
             return getCache().get(key);
         } catch (HazelcastException e) {
+            LOG.log(Level.FINEST, "Could not read from Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             return null;
         }
     }
@@ -81,8 +85,8 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     public void remove(final Object key) throws CacheException {
         try {
             getCache().remove(key);
-        } catch (HazelcastException ignore) {
-            throw new CacheException("Operation timeout during remove operation from cache!");
+        } catch (HazelcastException e) {
+            throw new CacheException("Operation timeout during remove operation from cache!", e);
         }
     }
 

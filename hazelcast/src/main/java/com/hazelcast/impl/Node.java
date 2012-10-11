@@ -46,9 +46,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-
 public class Node {
     private final ILogger logger;
 
@@ -142,17 +139,14 @@ public class Node {
         this.liteMember = config.isLiteMember();
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         systemLogService = new SystemLogService(this);
-        ServerSocketChannel serverSocketChannel = null;
-        Address publicAddress = null;
+        final AddressPicker addressPicker = new AddressPicker(this);
         try {
-            AddressPicker addressPicker = new AddressPicker(this);
             addressPicker.pickAddress();
-            publicAddress = addressPicker.getPublicAddress();
-            serverSocketChannel = addressPicker.getServerSocketChannel();
         } catch (Throwable e) {
             Util.throwUncheckedException(e);
         }
-        address = publicAddress;
+        final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
+        address = addressPicker.getPublicAddress();
         localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
@@ -199,7 +193,8 @@ public class Node {
                 multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
                 // set the send interface
                 try {
-                    multicastSocket.setInterface(address.getInetAddress());
+                    final Address bindAddress = addressPicker.getBindAddress();
+                    multicastSocket.setInterface(bindAddress.getInetAddress());
                 } catch (Exception e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
@@ -338,15 +333,16 @@ public class Node {
         } else {
             new Thread(new Runnable() {
                 public void run() {
+                    ThreadContext.get().setCurrentFactory(factory);
                     doShutdown(force);
                 }
             }).start();
         }
     }
 
-    private void doShutdown(boolean force) {
+    void doShutdown(boolean force) {
         long start = Clock.currentTimeMillis();
-        logger.log(Level.FINE, "** we are being asked to shutdown when active = " + String.valueOf(active));
+        logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             int waitSeconds = 0;
@@ -385,16 +381,17 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down the clientHandlerService");
             clientHandlerService.shutdown();
-            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
-            concurrentMapManager.shutdown();
-            logger.log(Level.FINEST, "Shutting down the cluster service");
-            clusterService.stop();
+            // connections should be destroyed first of all (write queues may be flushed before sockets are closed)
+            logger.log(Level.FINEST, "Shutting down the connection manager");
+            connectionManager.shutdown();
             if (multicastService != null) {
                 logger.log(Level.FINEST, "Shutting down the multicast service");
                 multicastService.stop();
             }
-            logger.log(Level.FINEST, "Shutting down the connection manager");
-            connectionManager.shutdown();
+            logger.log(Level.FINEST, "Shutting down the concurrentMapManager");
+            concurrentMapManager.shutdown();
+            logger.log(Level.FINEST, "Shutting down the cluster service");
+            clusterService.stop();
             logger.log(Level.FINEST, "Shutting down the executorManager");
             executorManager.stop();
             textCommandService.stop();
@@ -451,7 +448,7 @@ public class Node {
         try {
             managementCenterService = new ManagementCenterService(factory);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
+            logger.log(Level.WARNING, "ManagementCenterService could not be created!", e);
         }
         initializer.afterInitialize(this);
     }
@@ -480,29 +477,10 @@ public class Node {
         return connectionManager;
     }
 
-    public void onOutOfMemory(OutOfMemoryError e) {
-        try {
-            new Thread(new Runnable() {
-                public void run() {
-                    if (connectionManager != null) {
-                        connectionManager.shutdown();
-                        LifecycleServiceImpl lifecycleService = factory.lifecycleService;
-                        synchronized (lifecycleService.lifecycleLock) {
-                            lifecycleService.fireLifecycleEvent(SHUTTING_DOWN);
-                            doShutdown(true);
-                            lifecycleService.fireLifecycleEvent(SHUTDOWN);
-                        }
-                    }
-                }
-            }).start();
-        } catch (Throwable ignored) {
-            logger.log(Level.FINEST, ignored.getMessage(), ignored);
-        } finally {
-            // Node.doShutdown sets active=false
-            // active = false;
-            outOfMemory = true;
-            logger.log(Level.SEVERE, e.getMessage(), e);
-        }
+    void onOutOfMemory() {
+        outOfMemory = true;
+        joined.set(false);
+        setActive(false);
     }
 
     public Set<Address> getFailedConnections() {
@@ -586,7 +564,7 @@ public class Node {
             }
         } catch (Exception e) {
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                logger.log(Level.WARNING, e.getMessage());
+                logger.log(Level.WARNING, "Trying to rejoin: " + e.getMessage());
                 rejoin();
             } else {
                 logger.log(Level.SEVERE, "Could not join cluster, shutting down!", e);

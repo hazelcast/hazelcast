@@ -46,7 +46,7 @@ public class PartitionServiceImpl implements PartitionService {
         this.logger = concurrentMapManager.node.getLogger(PartitionService.class.getName());
         this.concurrentMapManager = concurrentMapManager;
         this.partitions = new TreeSet<Partition>();
-        for (int i = 0; i < concurrentMapManager.PARTITION_COUNT; i++) {
+        for (int i = 0; i < concurrentMapManager.partitionCount; i++) {
             PartitionProxy partitionProxy = new PartitionProxy(i);
             partitions.add(partitionProxy);
             mapPartitions.put(i, partitionProxy);

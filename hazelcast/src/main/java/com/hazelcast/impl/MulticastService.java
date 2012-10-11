@@ -40,14 +40,14 @@ public class MulticastService implements Runnable {
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
 
     private final ILogger logger;
-    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
     private final MulticastSocket multicastSocket;
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
     private final Object sendLock = new Object();
-    final Node node;
-    private boolean running = true;
+    private volatile boolean running = true;
+    private final CountDownLatch stopLatch = new CountDownLatch(1);
     private List<MulticastListener> lsListeners = new CopyOnWriteArrayList<MulticastListener>();
+    final Node node;
 
     private final InflatingPipedBuffer inflatingBuffer = PipedZipBufferFactory.createInflatingBuffer(DATAGRAM_BUFFER_SIZE);
     private final DeflatingPipedBuffer deflatingBuffer = PipedZipBufferFactory.createDeflatingBuffer(DATAGRAM_BUFFER_SIZE, Deflater.BEST_SPEED);
@@ -74,25 +74,15 @@ public class MulticastService implements Runnable {
 
     public void stop() {
         try {
+            if (!running && multicastSocket.isClosed()) {
+                return;
+            }
             try {
                 multicastSocket.close();
             } catch (Throwable ignored) {
             }
-            final CountDownLatch l = new CountDownLatch(1);
-            queue.put(new Runnable() {
-                public void run() {
-                    running = false;
-                    try {
-                        inflatingBuffer.destroy();
-                        deflatingBuffer.destroy();
-                        datagramPacketReceive.setData(new byte[0]);
-                        datagramPacketSend.setData(new byte[0]);
-                    } finally {
-                        l.countDown();
-                    }
-                }
-            });
-            if (!l.await(5, TimeUnit.SECONDS)) {
+            running = false;
+            if (!stopLatch.await(5, TimeUnit.SECONDS)) {
                 logger.log(Level.WARNING, "Failed to shutdown MulticastService in 5 seconds!");
             }
         } catch (Throwable e) {
@@ -100,30 +90,41 @@ public class MulticastService implements Runnable {
         }
     }
 
+    private void cleanup() {
+        running = false;
+        try {
+            inflatingBuffer.destroy();
+            deflatingBuffer.destroy();
+            datagramPacketReceive.setData(new byte[0]);
+            datagramPacketSend.setData(new byte[0]);
+        } catch (Throwable ignored) {
+        }
+        stopLatch.countDown();
+    }
+
     @SuppressWarnings("WhileLoopSpinsOnField")
     public void run() {
-        while (running) {
-            try {
-                Runnable runnable = queue.poll();
-                if (runnable != null) {
-                    runnable.run();
-                    return;
-                }
-                final JoinInfo joinInfo = receive();
-                if (joinInfo != null) {
-                    for (MulticastListener multicastListener : lsListeners) {
-                        try {
-                            multicastListener.onMessage(joinInfo);
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, e.getMessage(), e);
+        try {
+            while (running) {
+                try {
+                    final JoinInfo joinInfo = receive();
+                    if (joinInfo != null) {
+                        for (MulticastListener multicastListener : lsListeners) {
+                            try {
+                                multicastListener.onMessage(joinInfo);
+                            } catch (Exception e) {
+                                logger.log(Level.WARNING, e.getMessage(), e);
+                            }
                         }
                     }
+                } catch (OutOfMemoryError e) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
                 }
-            } catch (OutOfMemoryError e) {
-                node.onOutOfMemory(e);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
             }
+        } finally {
+            cleanup();
         }
     }
 

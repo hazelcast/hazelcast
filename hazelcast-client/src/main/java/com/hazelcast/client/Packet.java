@@ -128,9 +128,11 @@ public class Packet {
             readHeaderBuffer.get(b);
             this.name = new String(b);
         }
-        int indexCount = readHeaderBuffer.get();
+        readHeaderBuffer.get(); // index count, not used in client
         keyHash = readHeaderBuffer.getInt();
         valueHash = readHeaderBuffer.getInt();
+        readHeaderBuffer.get();  // redo data, not used in client
+
         key = new byte[keySize];
         dis.readFully(key);
         value = new byte[valueSize];
@@ -187,9 +189,10 @@ public class Packet {
         if (nameLen > 0) {
             writeHeaderBuffer.put(nameInBytes);
         }
-        writeHeaderBuffer.put((byte) 0);
+        writeHeaderBuffer.put((byte) 0);  // index length, not used in client
         writeHeaderBuffer.putInt(keyHash);
         writeHeaderBuffer.putInt(valueHash);
+        writeHeaderBuffer.put((byte) 0);  // redo data, not used in client
     }
 
     public void set(String name, ClusterOperation operation,

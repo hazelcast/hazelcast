@@ -263,6 +263,11 @@ public class TestUtil {
             this.index = index;
         }
 
+        public Value(String name, int index) {
+            super(name);
+            this.index = index;
+        }
+
         public Value(String name) {
             this(name, null, 0);
         }

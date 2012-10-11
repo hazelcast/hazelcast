@@ -603,6 +603,9 @@ public class ClusterBackupTest {
         final Config config = new Config();
         config.setProperty("hazelcast.partition.migration.interval", "0");
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
+        config.setProperty(GroupProperties.PROP_BACKUP_REDO_ENABLED, "true");
+        final String name = "test";
+        config.getMapConfig(name).setBackupCounts(1, 0);
 
         final Random rand = new Random(System.currentTimeMillis());
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
@@ -622,7 +625,7 @@ public class ClusterBackupTest {
                         if (finalI != 0) { // do not run on master node,
                             // let partition assignment be made during put ops.
                             for (int j = 0; j < 10000; j++) {
-                                instance.getMap("test").put(getName() + "-" + j, "value");
+                                instance.getMap(name).put(getName() + "-" + j, "value");
                             }
                         }
                     } catch (InterruptedException e) {
@@ -644,7 +647,7 @@ public class ClusterBackupTest {
             long totalBackup = 0L;
             for (int j = 0; j < instances.length(); j++) {
                 HazelcastInstance hz = instances.get(j);
-                LocalMapStats stats = hz.getMap("test").getLocalMapStats();
+                LocalMapStats stats = hz.getMap(name).getLocalMapStats();
                 totalOwned += stats.getOwnedEntryCount();
                 totalBackup += stats.getBackupEntryCount();
             }

@@ -18,8 +18,10 @@ package com.hazelcast.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.MapStoreTest.MapStoreAdaptor;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -30,12 +32,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -143,9 +143,10 @@ public class ClusterLockTest {
             public void run() {
                 try {
                     map3.lock(1);
-                    assertTrue(latchLock.await(10, TimeUnit.SECONDS));
+                    assertTrue(latchLock.await(20, TimeUnit.SECONDS));
                 } catch (Throwable e) {
-                    fail();
+                    e.printStackTrace();
+                    fail(e.getMessage());
                 }
             }
         }).start();
@@ -167,8 +168,8 @@ public class ClusterLockTest {
         assertEquals(h3.getCluster().getLocalMember(), h1.getPartitionService().getPartition(1).getOwner());
         assertEquals(h3.getCluster().getLocalMember(), h3.getPartitionService().getPartition(1).getOwner());
         assertEquals(1, map1.put(1, 2));
+        Thread.sleep(5000); // scheduled action may be invalid because of backup copy, wait a little.
         rec3 = cmap3.getRecord(dKey);
-        Thread.sleep(1500); // scheduled action may be invalid because of backup copy, wait a little.
         assertEquals(1, rec3.getScheduledActionCount());
         assertTrue(rec3.getScheduledActions().iterator().next().isValid());
         map1.unlock(1);
@@ -653,6 +654,9 @@ public class ClusterLockTest {
     }
 
     @Test
+    /**
+     * Test for issues #223, #228, #256
+     */
     public void testMapPutLockAndRemove() throws InterruptedException {
         Config config = new Config() ;
         config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
@@ -663,14 +667,15 @@ public class ClusterLockTest {
         }
 
         final int loop = 1000;
-        final Thread[] threads = new Thread[nodes.length * 2];
+        final int key = 1;
+        final Thread[] threads = new Thread[nodes.length * 3];
         final CountDownLatch latch = new CountDownLatch(loop * threads.length);
         abstract class TestThread extends Thread {
-            IMap<Integer, Object> map;
+            MultiMap<Integer, Object> map;
 
             protected TestThread(String name, final HazelcastInstance hazelcast) {
                 super(name);
-                map = hazelcast.getMap("test");
+                map = hazelcast.getMultiMap("test");
             }
 
             public final void run() {
@@ -694,22 +699,37 @@ public class ClusterLockTest {
             threads[k++] = new TestThread("Putter-" + k, node) {
                 void doRun() {
                     UUID uuid = UUID.randomUUID();
-                    map.lock(1);
+                    map.lock(key);
                     try {
-                        map.put(1, uuid);
+                        map.put(key, uuid);
                     } finally {
-                        map.unlock(1);
+                        map.unlock(key);
                     }
                 }
             };
 
-            threads[k++] = new TestThread("Remover-" + k, node) {
+            threads[k++] = new TestThread("Remover.A-" + k, node) {
                 void doRun() {
-                    map.lock(1);
+                    map.lock(key);
                     try {
-                        map.remove(1);
+                        map.remove(key);
                     } finally {
-                        map.unlock(1);
+                        map.unlock(key);
+                    }
+                }
+            };
+
+            threads[k++] = new TestThread("Remover.B-" + k, node) {
+                void doRun() {
+                    map.lock(key);
+                    try {
+                        Collection values = map.get(key);
+                        for (Object value : values) {
+                            map.remove(key, value);
+                        }
+
+                    } finally {
+                        map.unlock(key);
                     }
                 }
             };
@@ -723,6 +743,138 @@ public class ClusterLockTest {
 
         for (Thread thread : threads) {
             thread.interrupt();
+        }
+    }
+
+    @Test(timeout = 1000 * 100)
+    /**
+     * Test for issue 267
+     */
+    public void testHighConcurrentLockAndUnlock() {
+        Config config = new Config();
+        // increases chance of reproduce issue
+        config.setProperty(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final String key = "key";
+        final int threadCount = 100;
+        final int lockCountPerThread = 5000;
+        final int locks = 50;
+        final CountDownLatch latch = new CountDownLatch(threadCount);
+        final AtomicInteger totalCount = new AtomicInteger();
+
+        class LockTest implements Runnable {
+            public void run() {
+                boolean live = true;
+                Random rand = new Random();
+                try {
+                    for (int j = 0; j < lockCountPerThread && live; j++) {
+                        final Lock lock = hz.getLock(key + rand.nextInt(locks));
+                        lock.lock();
+                        try {
+                            totalCount.incrementAndGet();
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            break;
+                        } finally {
+                            try {
+                                lock.unlock();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                live = false;
+                            }
+                        }
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            }
+        }
+
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        for (int i = 0; i < threadCount; i++) {
+            executorService.execute(new LockTest());
+        }
+
+        try {
+            assertTrue("Lock tasks stuck!", latch.await(60, TimeUnit.SECONDS));
+            assertEquals((threadCount * lockCountPerThread), totalCount.get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                hz.getLifecycleService().kill();
+            } catch (Throwable ignored) {
+            }
+            executorService.shutdownNow();
+        }
+    }
+
+    @Test(timeout = 1000 * 30)
+    /**
+     * Test for issue #268
+     */
+    public void testConcurrentTryLockAndGetWithMapStore() {
+        Config config = new Config();
+        final String name = "test";
+        config.getMapConfig(name).setMapStoreConfig(
+                new MapStoreConfig().setEnabled(true).setImplementation(new MapStoreAdaptor()));
+
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final IMap map = hz.getMap(name);
+        final String key = "key";
+        final int taskCount = 25;
+        final CountDownLatch latch = new CountDownLatch(taskCount);
+
+        class TryLockAndGetRunnable implements Runnable {
+            volatile boolean gotTheLock = false;
+
+            boolean gotTheLock() {
+                return gotTheLock;
+            }
+
+            public void run() {
+                try {
+                    try {
+                        map.tryLockAndGet(key, 50, TimeUnit.MILLISECONDS);
+                        gotTheLock = true;
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignored) {
+                        }
+                    } catch (TimeoutException ignored) {
+                        // can not acquire lock
+                    } finally {
+                        if (gotTheLock) {
+                            map.unlock(key);
+                        }
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            }
+        }
+        TryLockAndGetRunnable[] tasks = new TryLockAndGetRunnable[taskCount];
+        for (int i = 0; i < tasks.length; i++) {
+            tasks[i] = new TryLockAndGetRunnable();
+        }
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        for (TryLockAndGetRunnable task : tasks) {
+            executorService.execute(task);
+        }
+        try {
+            assertTrue("TryLockAndGetRunnable tasks stuck: " + latch.getCount(),
+                    latch.await(10, TimeUnit.SECONDS));
+            int lockCount = 0;
+            for (TryLockAndGetRunnable task : tasks) {
+                lockCount += (task.gotTheLock() ? 1 : 0);
+            }
+            assertEquals("Multiple threads got the lock!", 1, lockCount);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+        } finally {
+            executorService.shutdownNow();
         }
     }
 

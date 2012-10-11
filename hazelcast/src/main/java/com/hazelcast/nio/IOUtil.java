@@ -48,6 +48,9 @@ public final class IOUtil {
             }
 
             public int read(byte[] bytes, int off, int len) throws IOException {
+                if (!buf.hasRemaining()) {
+                    return -1;
+                }
                 len = Math.min(len, buf.remaining());
                 buf.get(bytes, off, len);
                 return len;

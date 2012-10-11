@@ -63,6 +63,10 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_EXECUTE_SCRIPT;
     }
 
+    public Set<Address> getTargets() {
+        return targets;
+    }
+
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
         Object result = null;
         ScriptExecutorCallable callable = new ScriptExecutorCallable(engine, script);

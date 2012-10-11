@@ -32,10 +32,13 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -80,8 +83,6 @@ public class ConnectionManager {
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
     private final MemberSocketInterceptor memberSocketInterceptor;
-
-    private final ExecutorService es = Executors.newCachedThreadPool();
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
@@ -177,10 +178,6 @@ public class ConnectionManager {
 
     public IOService getIOHandler() {
         return ioService;
-    }
-
-    void executeAsync(Runnable runnable) {
-        es.execute(runnable);
     }
 
     public MemberSocketInterceptor getMemberSocketInterceptor() {
@@ -279,12 +276,12 @@ public class ConnectionManager {
         return getOrConnect(address, false);
     }
 
-    public Connection getOrConnect(Address address, boolean silent) {
+    public Connection getOrConnect(final Address address, final boolean silent) {
         Connection connection = mapConnections.get(address);
         if (connection == null) {
             if (setConnectionInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
-                executeAsync(new SocketConnector(this, address, silent));
+                ioService.executeAsync(new SocketConnector(this, address, silent));
             }
         }
         return connection;
@@ -388,7 +385,6 @@ public class ConnectionManager {
                 stop();
             }
         } finally {
-            es.shutdownNow();
             if (serverSocketChannel != null) {
                 try {
                     log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
@@ -405,25 +401,23 @@ public class ConnectionManager {
         log(Level.FINEST, "Stopping ConnectionManager");
         shutdownSocketAcceptor(); // interrupt acceptor thread after live=false
         ioService.onShutdown();
-        for (Connection conn : mapConnections.values()) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
-            }
-        }
-        for (Connection conn : setActiveConnections) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
-            }
-        }
+        closeConnections(mapConnections.values());
+        closeConnections(setActiveConnections);
         shutdownIOSelectors();
         setConnectionInProgress.clear();
         mapConnections.clear();
         mapMonitors.clear();
         setActiveConnections.clear();
+    }
+
+    private void closeConnections(Collection<Connection> connections) {
+        for (Connection conn : connections) {
+            try {
+                destroyConnection(conn);
+            } catch (final Throwable t) {
+                logger.log(Level.FINEST, t.getMessage(), t);
+            }
+        }
     }
 
     private synchronized void shutdownIOSelectors() {

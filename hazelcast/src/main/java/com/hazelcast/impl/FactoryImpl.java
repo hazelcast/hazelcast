@@ -42,8 +42,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 @SuppressWarnings("SynchronizationOnStaticField")
 public class FactoryImpl implements HazelcastInstance {
@@ -326,6 +325,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdownAll() {
+        OutOfMemoryErrorDispatcher.clear();
         Collection<FactoryImpl> colFactories = factories.values();
         for (FactoryImpl factory : colFactories) {
             factory.shutdown();
@@ -336,6 +336,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void kill(FactoryImpl factory) {
+        OutOfMemoryErrorDispatcher.deregister(factory);
         factory.managementService.unregister();
         factories.remove(factory.getName());
         if (factories.size() == 0) {
@@ -349,6 +350,7 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public static void shutdown(FactoryImpl factory) {
+        OutOfMemoryErrorDispatcher.deregister(factory);
         factory.managementService.unregister();
         factories.remove(factory.getName());
         if (factories.size() == 0) {
@@ -416,6 +418,7 @@ public class FactoryImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
+        OutOfMemoryErrorDispatcher.register(this);
     }
 
     @Override
@@ -509,6 +512,12 @@ public class FactoryImpl implements HazelcastInstance {
         lifecycleService.restart();
     }
 
+    public void restartToMerge() {
+        lifecycleService.fireLifecycleEvent(MERGING);
+        lifecycleService.restart();
+        lifecycleService.fireLifecycleEvent(MERGED);
+    }
+
     public void shutdown() {
         lifecycleService.shutdown();
     }
@@ -583,7 +592,7 @@ public class FactoryImpl implements HazelcastInstance {
                         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
                             cmap.setInitState(InitializationState.INITIALIZING);
                             try {
-                                ExecutorService es = getExecutorService();
+                                ExecutorService es = getExecutorService("hz.initialization");
                                 final Set<Member> members = new HashSet<Member>(getCluster().getMembers());
                                 members.remove(node.localMember);
                                 final MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), members);

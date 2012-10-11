@@ -22,9 +22,9 @@ import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ConcurrentMapManager.MMultiGet;
 import com.hazelcast.impl.ConcurrentMapManager.MRemoveMulti;
 import com.hazelcast.impl.base.FactoryAwareNamedProxy;
-import com.hazelcast.impl.monitor.LocalMapStatsImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.Set;
@@ -265,6 +265,8 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
         }
 
         public Collection get(Object key) {
+            long begin = Clock.currentTimeMillis();
+            mapProxy.getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - begin);
             MMultiGet multiGet = factory.node.concurrentMapManager.new MMultiGet();
             return multiGet.get(name, key);
         }
@@ -279,6 +281,8 @@ public class MultiMapProxyImpl extends FactoryAwareNamedProxy implements MultiMa
 
         public Collection remove(Object key) {
             MRemoveMulti m = factory.node.concurrentMapManager.new MRemoveMulti();
+            long begin = Clock.currentTimeMillis();
+            mapProxy.getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - begin);
             return m.remove(name, key);
         }
 

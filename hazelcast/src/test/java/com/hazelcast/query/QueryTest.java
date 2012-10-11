@@ -924,6 +924,25 @@ public class QueryTest extends TestUtil {
 
     }
 
+    @Test
+    public void testPredicateNotEqualWithIndex() {
+        IMap map1 = Hazelcast.getMap("testPredicateNotEqualWithIndex-ordered");
+        IMap map2 = Hazelcast.getMap("testPredicateNotEqualWithIndex-unordered");
+        testPredicateNotEqualWithIndex(map1, true);
+        testPredicateNotEqualWithIndex(map2, false);
+    }
+
+    private void testPredicateNotEqualWithIndex(final IMap map, boolean ordered) {
+        map.addIndex("name", ordered);
+        map.put(1, new Value("abc", 1));
+        map.put(2, new Value("xyz", 2));
+        map.put(3, new Value("aaa", 3));
+        assertEquals(3, map.values(new SqlPredicate("name != 'aac'")).size());
+        assertEquals(2, map.values(new SqlPredicate("index != 2")).size());
+        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
+        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
+    }
+
     public void doFunctionalSQLQueryTest(IMap imap) {
         imap.put("1", new Employee("joe", 33, false, 14.56));
         imap.put("2", new Employee("ali", 23, true, 15.00));

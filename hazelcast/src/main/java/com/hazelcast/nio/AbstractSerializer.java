@@ -16,19 +16,15 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.lang.reflect.Constructor;
-import java.util.logging.Level;
 
 public abstract class AbstractSerializer {
-
-    private static final ILogger logger = Logger.getLogger(AbstractSerializer.class.getName());
 
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
 
@@ -107,7 +103,13 @@ public abstract class AbstractSerializer {
             ts.write(bos, object);
             bos.flush();
         } catch (Throwable e) {
-            throw new HazelcastSerializationException(e);
+            if (e instanceof OutOfMemoryError) {
+                final OutOfMemoryError oom = (OutOfMemoryError) e;
+                OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
+                throw oom;
+            } else {
+                throw new HazelcastSerializationException(e);
+            }
         }
     }
 
@@ -118,7 +120,13 @@ public abstract class AbstractSerializer {
             TypeSerializer ts = (typeId == ds.getTypeId()) ? ds : cs;
             return ts.read(bis);
         } catch (Throwable e) {
-            throw new HazelcastSerializationException("Problem when serializing type " + typeId, e);
+            if (e instanceof OutOfMemoryError) {
+                final OutOfMemoryError oom = (OutOfMemoryError) e;
+                OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
+                throw oom;
+            } else {
+                throw new HazelcastSerializationException("Problem when serializing type " + typeId, e);
+            }
         }
     }
 
@@ -129,14 +137,14 @@ public abstract class AbstractSerializer {
         try {
             this.bbos.reset();
             toByte(this.bbos, obj);
-            final byte[] result = this.bbos.toByteArray();
+            final byte[] result = this.bbos.toByteArray(); // may cause OOM
             if (this.bbos.size() > OUTPUT_STREAM_BUFFER_SIZE) {
                 this.bbos.set(new byte[OUTPUT_STREAM_BUFFER_SIZE]);
             }
             return result;
-        } catch (Throwable e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new RuntimeException(e);
+        } catch (OutOfMemoryError e) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            throw e;
         }
     }
 

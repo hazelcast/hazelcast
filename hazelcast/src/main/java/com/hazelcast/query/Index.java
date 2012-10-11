@@ -135,9 +135,9 @@ public class Index {
         return results;
     }
 
-    public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, Long searchedValue) {
+    public Set<MapEntry> getSubRecords(PredicateType predicateType, Long searchedValue) {
         MultiResultSet results = new MultiResultSet(recordValues);
-        indexStore.getSubRecords(results, equal, lessThan, searchedValue);
+        indexStore.getSubRecords(results, predicateType, searchedValue);
         return results;
     }
 

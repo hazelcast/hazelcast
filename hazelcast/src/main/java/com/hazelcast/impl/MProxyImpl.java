@@ -59,7 +59,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     public MProxyImpl() {
     }
 
-    class DynamicInvoker implements InvocationHandler {
+    private class DynamicInvoker implements InvocationHandler {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             beforeCall();
             try {
@@ -68,6 +68,9 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
                 if (e instanceof InvocationTargetException) {
                     InvocationTargetException ite = (InvocationTargetException) e;
                     throw ite.getCause();
+                }
+                if (e instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
                 }
                 throw e;
             } finally {
@@ -539,7 +542,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return mapEntry;
         }
-
+        
         public boolean putMulti(Object key, Object value) {
             long begin = Clock.currentTimeMillis();
             check(key);
@@ -815,9 +818,11 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public boolean removeMulti(Object key, Object value) {
+            long begin = Clock.currentTimeMillis();
             check(key);
             check(value);
             MRemoveMulti mremove = concurrentMapManager.new MRemoveMulti();
+            mapOperationCounter.incrementRemoves(Clock.currentTimeMillis() - begin);
             return mremove.remove(name, key, value);
         }
 
