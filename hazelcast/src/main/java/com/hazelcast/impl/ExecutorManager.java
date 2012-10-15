@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.executor.ParallelExecutorService;
 import com.hazelcast.impl.monitor.ExecutorOperationsCounter;
@@ -163,15 +164,23 @@ public class ExecutorManager extends BaseManager {
 
     class ExecutionOperationHandler extends AbstractOperationHandler {
         void doOperation(Request request) {
-            NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(request.name);
-            ExecutionKey executionKey = new ExecutionKey(request.caller, request.longValue);
-            RequestExecutor requestExecutor = new RequestExecutor(request, executionKey);
-            executions.put(executionKey, requestExecutor);
-            namedExecutorService.execute(requestExecutor);
+            if (isCallerKnownMember(request)) {
+                NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(request.name);
+                ExecutionKey executionKey = new ExecutionKey(request.caller, request.longValue);
+                RequestExecutor requestExecutor = new RequestExecutor(request, executionKey);
+                executions.put(executionKey, requestExecutor);
+                namedExecutorService.execute(requestExecutor);
+            } else {
+                returnRedoResponse(request, RedoType.REDO_MEMBER_UNKNOWN);
+            }
         }
 
         public void handle(Request request) {
             doOperation(request);
+        }
+
+        boolean isCallerKnownMember(Request request) {
+            return (request.local || getMember(request.caller) != null);
         }
     }
 
