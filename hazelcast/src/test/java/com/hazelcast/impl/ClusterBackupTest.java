@@ -34,6 +34,8 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -664,6 +666,129 @@ public class ClusterBackupTest {
                 assertEquals("Backup entry count is wrong! ", totalCount, totalBackup);
             }
         }
+    }
 
+    @Test
+    /**
+     * Test for issue #259.
+     */
+    public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
+        final Config config = new Config();
+        config.setProperty("hazelcast.wait.seconds.before.join", "1");
+        config.setProperty(GroupProperties.PROP_BACKUP_REDO_ENABLED, "true");
+        final String name = "test";
+
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        final IMap<Object, Object> map = hz2.getMap(name);
+
+        final int size = 100000;
+        final byte[] data = new byte[250];
+        final int threads = 100;
+        final int l = size / threads;
+        final CountDownLatch latch = new CountDownLatch(threads);
+        ExecutorService ex = Executors.newFixedThreadPool(threads);
+
+        new Thread() {
+            public void run() {
+                while (hz.getMap(name).size() < size / 2) {
+                    try {
+                        sleep(5);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+                TestUtil.getNode(hz).getConnectionManager().shutdown();
+            }
+        }.start();
+
+        for (int i = 0; i < threads; i++) {
+            final int n = i;
+            ex.execute(new Runnable() {
+                public void run() {
+                    for (int j = (n * l); j < (n + 1) * l; j++) {
+                        map.put(j, data);
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        ex.shutdown();
+        assertEquals("Data lost!", size, map.size());
+    }
+
+    @Test
+    /**
+     * Test for issue #259.
+     */
+    public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
+        final Config config = new Config();
+        config.setProperty("hazelcast.wait.seconds.before.join", "1");
+        config.setProperty(GroupProperties.PROP_BACKUP_REDO_ENABLED, "true");
+        final String name = "test";
+
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        final IMap<Object, Object> map = hz2.getMap(name);
+
+        final int size = 100000;
+        final int threads = 100;
+        ExecutorService ex = Executors.newFixedThreadPool(threads);
+        final int loadCount = 10;
+        final CountDownLatch loadLatch = new CountDownLatch(loadCount);
+
+        // initial load
+        for (int i = 0; i < loadCount; i++) {
+            final int n = i;
+            ex.execute(new Runnable() {
+                public void run() {
+                    int chunk = size / loadCount;
+                    for (int j = (n * chunk); j < (n + 1) * chunk; j++) {
+                        map.put(j, j);
+                    }
+                    loadLatch.countDown();
+                }
+            });
+        }
+        loadLatch.await();
+
+        new Thread() {
+            public void run() {
+                while (hz.getMap(name).size() > size / 2) {
+                    try {
+                        sleep(5);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+                TestUtil.getNode(hz).getConnectionManager().shutdown();
+            }
+        }.start();
+
+        final int chunk = size / threads;
+        final CountDownLatch latch = new CountDownLatch(threads);
+        for (int i = 0; i < threads; i++) {
+            final int n = i;
+            ex.execute(new Runnable() {
+                public void run() {
+                    for (int j = (n * chunk); j < (n + 1) * chunk; j++) {
+                        map.remove(j);
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        ex.shutdown();
+        assertEquals("Remove failed!", 0, map.size());
     }
 }
