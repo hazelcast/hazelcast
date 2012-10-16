@@ -1218,6 +1218,11 @@ public class ConcurrentMapManager extends BaseManager {
                 return removed;
             }
         }
+
+        @Override
+        protected boolean shouldRedoWhenOwnerDies() {
+            return true;
+        }
     }
 
     class MRemove extends MBackupAndMigrationAwareOp {
@@ -1315,6 +1320,11 @@ public class ConcurrentMapManager extends BaseManager {
             }
             super.handleNoneRedoResponse(packet);
         }
+
+        @Override
+        protected boolean shouldRedoWhenOwnerDies() {
+            return true;
+        }
     }
 
     public void destroy(String name) {
@@ -1383,6 +1393,11 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 return result;
             }
+        }
+
+        @Override
+        protected boolean shouldRedoWhenOwnerDies() {
+            return true;
         }
     }
 
@@ -1906,6 +1921,11 @@ public class ConcurrentMapManager extends BaseManager {
                     return true;
             }
         }
+
+        @Override
+        protected boolean shouldRedoWhenOwnerDies() {
+            return true;
+        }
     }
 
     class MRemoveMulti extends MBackupAndMigrationAwareOp {
@@ -1970,6 +1990,11 @@ public class ConcurrentMapManager extends BaseManager {
                 }
                 return result;
             }
+        }
+
+        @Override
+        protected boolean shouldRedoWhenOwnerDies() {
+            return true;
         }
     }
 
@@ -2148,6 +2173,20 @@ public class ConcurrentMapManager extends BaseManager {
                     logger.log(Level.FINEST, e.getMessage(), e);
                 }
             }
+            if (totalBackupCount > 0 && shouldRedoWhenOwnerDies()
+                    && target != null && node.getClusterImpl().getMember(target) == null) {
+                // Operation seems successful but since owner target is dead, we may loose data!
+                // We should retry actual operation for the new target
+                logger.log(Level.WARNING, "Target[" + target + "] dead! " +
+                                          "Hazelcast will retry " + request.operation);
+                // TODO: what if another call changes actual value? Do we need version check?
+                doOp(); // means redo...
+                getRedoAwareResult();   // wait for operation to complete...
+            }
+        }
+
+        protected boolean shouldRedoWhenOwnerDies() {
+            return false;
         }
 
         // executed by ServiceThread
