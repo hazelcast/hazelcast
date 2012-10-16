@@ -22,6 +22,8 @@ import com.hazelcast.util.ByteUtil;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 
 public class NetworkConfig implements DataSerializable {
 
@@ -34,6 +36,10 @@ public class NetworkConfig implements DataSerializable {
     private boolean reuseAddress = false;
 
     private String publicAddress = null;
+
+    private Collection<String> outboundPortDefinitions;
+
+    private Collection<Integer> outboundPorts;
 
     private Interfaces interfaces = new Interfaces();
 
@@ -88,6 +94,40 @@ public class NetworkConfig implements DataSerializable {
 
     public NetworkConfig setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
+        return this;
+    }
+
+    public Collection<String> getOutboundPortDefinitions() {
+        return outboundPortDefinitions;
+    }
+
+    public NetworkConfig setOutboundPortDefinitions(final Collection<String> outboundPortDefs) {
+        this.outboundPortDefinitions = outboundPortDefs;
+        return this;
+    }
+
+    public NetworkConfig addOutboundPortDefinition(String portDef) {
+        if (outboundPortDefinitions == null) {
+            outboundPortDefinitions = new HashSet<String>();
+        }
+        outboundPortDefinitions.add(portDef);
+        return this;
+    }
+
+    public Collection<Integer> getOutboundPorts() {
+        return outboundPorts;
+    }
+
+    public NetworkConfig setOutboundPorts(final Collection<Integer> outboundPorts) {
+        this.outboundPorts = outboundPorts;
+        return this;
+    }
+
+    public NetworkConfig addOutboundPort(int port) {
+        if (outboundPorts == null) {
+            outboundPorts = new HashSet<Integer>();
+        }
+        outboundPorts.add(port);
         return this;
     }
 

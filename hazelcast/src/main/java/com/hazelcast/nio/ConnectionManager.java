@@ -32,10 +32,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -86,6 +83,10 @@ public class ConnectionManager {
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
+    private final int outboundPortCount;
+
+    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();  // accessed only in synchronized block
+
     private Thread socketAcceptorThread; // accessed only in synchronized block
 
     public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
@@ -99,6 +100,11 @@ public class ConnectionManager {
         this.SOCKET_NO_DELAY = ioService.getSocketNoDelay();
         int selectorCount = ioService.getSelectorThreadCount();
         selectors = new InOutSelector[selectorCount];
+        final Collection<Integer> ports = ioService.getOutboundPorts();
+        outboundPortCount = ports == null ? 0 : ports.size();
+        if (ports != null) {
+            outboundPorts.addAll(ports);
+        }
         SSLConfig sslConfig = ioService.getSSLConfig();
         if (sslConfig != null && sslConfig.isEnabled()) {
             socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
@@ -468,6 +474,25 @@ public class ConnectionManager {
     private void log(Level level, String message) {
         logger.log(level, message);
         ioService.getSystemLogService().logConnection(message);
+    }
+
+    boolean useAnyOutboundPort() {
+        return outboundPortCount == 0;
+    }
+
+    int getOutboundPortCount() {
+        return outboundPortCount;
+    }
+
+    int acquireOutboundPort() {
+        if (useAnyOutboundPort()) {
+            return 0;
+        }
+        synchronized (outboundPorts) {
+            final Integer port = outboundPorts.removeFirst();
+            outboundPorts.addLast(port);
+            return port;
+        }
     }
 
     public void appendState(StringBuffer sbState) {

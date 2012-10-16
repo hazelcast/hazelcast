@@ -31,4 +31,6 @@
     <xi:include href="Encryption.xml"/>
     <xi:include href="SocketInterceptor.xml"/>
     <xi:include href="IPv6.xml"/>
+    <xi:include href="OutboundPorts.xml"/>
+
 </sect1>
