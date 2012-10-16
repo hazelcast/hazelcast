@@ -20,6 +20,7 @@ import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadWatcher;
@@ -160,7 +161,8 @@ public final class ClusterService implements Runnable, Constants {
 
     private void processPacket(Packet packet) {
         if (!running) return;
-        final MemberImpl memberFrom = node.clusterManager.getMember(packet.conn.getEndPoint());
+        final Address endPoint = packet.conn.getEndPoint();
+        final MemberImpl memberFrom = node.clusterManager.getMember(endPoint);
         if (memberFrom != null) {
             memberFrom.didRead();
         }

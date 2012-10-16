@@ -61,32 +61,42 @@ public class MemberListTest {
         assertEquals(3, h2.getCluster().getMembers().size());
         assertEquals(3, h3.getCluster().getMembers().size());
        
-        // This simulates node 1 doing at least one read from the other nodes in the list at regular intervals
+        // This simulates each node reading from the other nodes in the list at regular intervals
         // This prevents the heart beat code from timing out
+        final HazelcastInstance[] instances = new HazelcastInstance[] {h1, h2, h3};
         final AtomicBoolean doingWork = new AtomicBoolean(true);
-        Thread workThread = new Thread(new Runnable() {
-            public void run() {
-                while (doingWork.get()) {
-                    Set<Member> members = new HashSet<Member>(h1.getCluster().getMembers());
-                    members.remove(h1.getCluster().getLocalMember());
-                    MultiTask<String> task = new MultiTask<String>(new PingCallable(), members);
-                    h1.getExecutorService().execute(task);
-                    
-                    try {
-                        task.get();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+        Thread[] workThreads = new Thread[instances.length];
+        for (int i = 0; i < instances.length; i++) {
+            final int threadNum = i;
+            workThreads[threadNum] = new Thread(new Runnable() {
+
+                public void run() {
+                    while (doingWork.get()) {
+                        final HazelcastInstance hz = instances[threadNum];
+                        
+                        Set<Member> members = new HashSet<Member>(hz.getCluster().getMembers());
+                        members.remove(hz.getCluster().getLocalMember());
+                        
+                        MultiTask<String> task = new MultiTask<String>(new PingCallable(), members);
+                        hz.getExecutorService().execute(task);
+
+                        try {
+                            task.get();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-        });
-        workThread.start();
+            });
+            workThreads[threadNum].start();
+        }
+        
         
         final Node n3 = TestUtil.getNode(h3);
         n3.clusterManager.enqueueAndWait(new Processable() {
@@ -102,7 +112,9 @@ public class MemberListTest {
         Thread.sleep(30 * 1000);
         
         doingWork.set(false);
-        workThread.join();
+        for (Thread t : workThreads) {
+            t.join();
+        }
         
         assertEquals(3, h1.getCluster().getMembers().size());
         assertEquals(3, h2.getCluster().getMembers().size());

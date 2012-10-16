@@ -345,7 +345,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                     if (conn != null) {
                         sendHeartbeat(conn);
                     } else {
-                        logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
+                        logger.log(Level.FINEST, "Could not connect to " + address + " to send heartbeat");
                     }
                 }
             }
@@ -382,20 +382,21 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 return;
             }
             final ILogger logger = node.getLogger(MasterConfirmation.class.getName());
-            if (!getNode().isMaster()) {
-                logger.log(Level.WARNING, endPoint + " has sent MasterConfirmation, but this node is not master!");
-                return;
-            }
             final ClusterManager clusterManager = node.clusterManager;
-            MemberImpl member = clusterManager.getMember(endPoint);
+            final MemberImpl member = clusterManager.getMember(endPoint);
             if (member != null) {
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
+                if (getNode().isMaster()) {
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
+                    }
+                    clusterManager.memberMasterConfirmationTimes.put(member, Clock.currentTimeMillis());
+                } else {
+                    logger.log(Level.WARNING, endPoint + " has sent MasterConfirmation, but this node is not master!");
                 }
-                clusterManager.memberMasterConfirmationTimes.put(member, Clock.currentTimeMillis());
             } else {
                 logger.log(Level.WARNING, "MasterConfirmation has been received from " + endPoint
                           + ", but it is not a member of this cluster!");
+                clusterManager.sendProcessableTo(new MemberRemover(clusterManager.thisAddress), conn);
             }
         }
     }
