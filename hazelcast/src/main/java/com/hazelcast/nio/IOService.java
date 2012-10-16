@@ -24,6 +24,8 @@ import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
 
+import java.util.Collection;
+
 public interface IOService {
 
     boolean isActive();
@@ -101,4 +103,6 @@ public interface IOService {
     void onShutdown();
 
     void executeAsync(Runnable runnable);
+
+    Collection<Integer> getOutboundPorts();
 }

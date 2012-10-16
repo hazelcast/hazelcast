@@ -290,6 +290,7 @@
 
     <xs:complexType name="network">
         <xs:sequence>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1" />
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
@@ -351,6 +352,16 @@
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
     </xs:complexType>
 
+    <xs:complexType name="outbound-ports">
+        <xs:sequence>
+            <xs:element name="ports" minOccurs="0" maxOccurs="unbounded">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string" />
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    
     <xs:complexType name="join">
         <xs:sequence>
             <xs:element name="multicast" type="multicast" minOccurs="0"/>

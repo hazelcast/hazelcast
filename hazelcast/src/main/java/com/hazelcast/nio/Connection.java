@@ -26,21 +26,22 @@ import java.net.SocketAddress;
 import java.util.logging.Level;
 
 public final class Connection {
-    final SocketChannelWrapper socketChannel;
 
-    final ReadHandler readHandler;
+    private final SocketChannelWrapper socketChannel;
 
-    final WriteHandler writeHandler;
+    private final ReadHandler readHandler;
 
-    final ConnectionManager connectionManager;
+    private final WriteHandler writeHandler;
 
-    final InOutSelector inOutSelector;
+    private final ConnectionManager connectionManager;
+
+    private final InOutSelector inOutSelector;
 
     private volatile boolean live = true;
 
     private volatile Type type = Type.NONE;
 
-    Address endPoint = null;
+    private Address endPoint = null;
 
     private final ILogger logger;
 
