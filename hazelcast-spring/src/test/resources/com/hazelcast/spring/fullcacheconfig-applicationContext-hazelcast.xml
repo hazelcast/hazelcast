@@ -46,6 +46,10 @@
                 </hz:target-cluster>
             </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false">
+                <hz:outbound-ports>
+                    <hz:ports>35000-35100</hz:ports>
+                    <hz:ports>36000,36100</hz:ports>
+                </hz:outbound-ports>
                 <hz:join>
                     <hz:multicast enabled="${boolean.false}" multicast-group="224.2.2.3" multicast-port="54327"
                                   multicast-time-to-live="16" multicast-timeout-seconds="8"/>

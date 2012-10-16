@@ -17,16 +17,18 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.config.AsymmetricEncryptionConfig;
-import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class NodeIOService implements IOService {
 
@@ -210,6 +212,43 @@ public class NodeIOService implements IOService {
 
     public void executeAsync(final Runnable runnable) {
         node.nodeService.execute(runnable);
+    }
+
+    public Collection<Integer> getOutboundPorts() {
+        final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
+        final Collection<String> portDefinitions = networkConfig.getOutboundPortDefinitions() == null
+                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
+        final Set<Integer> ports = networkConfig.getOutboundPorts() == null
+                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+
+        if (portDefinitions.isEmpty() && ports.isEmpty()) {
+            return Collections.emptySet(); // means any port
+        }
+        if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
+            return Collections.emptySet(); // means any port
+        }
+
+        // not checking port ranges...
+        for (String portDef : portDefinitions) {
+            String[] portDefs = portDef.split("[,; ]");
+            for (String def : portDefs) {
+                def = def.trim();
+                final int dashPos = def.indexOf('-');
+                if (dashPos > 0) {
+                    final int start = Integer.parseInt(def.substring(0, dashPos));
+                    final int end = Integer.parseInt(def.substring(dashPos + 1));
+                    for (int port = start; port <= end; port++) {
+                        ports.add(port);
+                    }
+                } else {
+                    ports.add(Integer.parseInt(def));
+                }
+            }
+        }
+        if (ports.contains(0)) {
+            return Collections.emptySet(); // means any port
+        }
+        return ports;
     }
 }
 

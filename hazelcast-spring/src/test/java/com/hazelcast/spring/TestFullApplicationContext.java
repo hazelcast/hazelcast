@@ -283,6 +283,11 @@ public class TestFullApplicationContext {
         assertNotNull(networkConfig);
         assertEquals(5700, networkConfig.getPort());
         assertFalse(networkConfig.isPortAutoIncrement());
+        final Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
+        assertEquals(2, allowedPorts.size());
+        Iterator portIter = allowedPorts.iterator();
+        assertEquals("35000-35100", portIter.next());
+        assertEquals("36000,36100", portIter.next());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);

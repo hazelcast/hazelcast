@@ -293,6 +293,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String nodeName = cleanNodeName(child.getNodeName());
             if ("port".equals(nodeName)) {
                 handlePort(child);
+            } else if ("outbound-ports".equals(nodeName)) {
+                handleOutboundPorts(child);
             } else if ("public-address".equals(nodeName)) {
                 final String address = getValue(child);
                 config.getNetworkConfig().setPublicAddress(address);
@@ -563,7 +565,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private void handlePort(final org.w3c.dom.Node node) {
+    private void handlePort(final Node node) {
         final String portStr = getTextContent(node).trim();
         final NetworkConfig networkConfig = config.getNetworkConfig();
         if (portStr != null && portStr.length() > 0) {
@@ -575,6 +577,17 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("auto-increment")) {
                 networkConfig.setPortAutoIncrement(checkTrue(value));
+            }
+        }
+    }
+
+    private void handleOutboundPorts(final Node child) {
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        for (Node n : new IterableNodeList(child.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("ports".equals(nodeName)) {
+                final String value = getValue(n);
+                networkConfig.addOutboundPortDefinition(value);
             }
         }
     }
