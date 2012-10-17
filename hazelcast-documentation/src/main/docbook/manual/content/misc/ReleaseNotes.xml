@@ -28,6 +28,27 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.4</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>Client threads is no longer fixed size,
+                    now on it is going to use internal Hazelcast cached thread pool.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Added ability to restrict outbound ports that Hazelcast uses to connect other nodes.
+                    See <link xlink:href="#OutboundPorts">OutboundPorts</link> documentation.
+                </para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=15&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>168, 251, 260, 262, 267, 268, 269, 270, 274, 275, 276, 277, 279, 282, 284, 288, 290, 292, 301</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.3.1</emphasis>
         <itemizedlist>
             <listitem>
