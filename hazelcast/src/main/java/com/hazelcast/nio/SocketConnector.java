@@ -153,7 +153,7 @@ public class SocketConnector implements Runnable {
                     log(Level.FINEST, "Could not bind port[ " + port + "]: " +  e.getMessage());
                 }
             }
-            throw new IOException("Could not bind any of allowed ports!", ex);
+            throw ex;
         }
     }
 

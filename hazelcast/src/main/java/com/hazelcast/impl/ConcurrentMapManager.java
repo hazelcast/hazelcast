@@ -2177,7 +2177,7 @@ public class ConcurrentMapManager extends BaseManager {
                     && target != null && node.getClusterImpl().getMember(target) == null) {
                 // Operation seems successful but since owner target is dead, we may loose data!
                 // We should retry actual operation for the new target
-                logger.log(Level.WARNING, "Target[" + target + "] dead! " +
+                logger.log(Level.WARNING, "Target[" + target + "] is dead! " +
                                           "Hazelcast will retry " + request.operation);
                 // TODO: what if another call changes actual value? Do we need version check?
                 doOp(); // means redo...
@@ -3968,23 +3968,23 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void process() {
-                final Record record = cmap.getRecord(request);
-                if (record != null && !record.testLock(request.lockThreadId, request.lockAddress)) {
-                    // record is locked by a previous TryLockAndGetLoader operation
-                    // return redo response.
-                    returnRedoResponse(request, REDO_MAP_LOCKED);
-                } else {
-                    if (valueData != null) {
-                        if (record == null) {
-                            cmap.createAndAddNewRecord(request.key, valueData);
-                        } else {
-                            record.setValueData(valueData);
+                    final Record record = cmap.getRecord(request);
+                    if (record != null && !record.testLock(request.lockThreadId, request.lockAddress)) {
+                        // record is locked by a previous TryLockAndGetLoader operation
+                        // return redo response.
+                        returnRedoResponse(request, REDO_MAP_LOCKED);
+                    } else {
+                        if (valueData != null) {
+                            if (record == null) {
+                                cmap.createAndAddNewRecord(request.key, valueData);
+                            } else {
+                                record.setValueData(valueData);
+                            }
                         }
-                    }
-                    doOperation(request);
-                    request.value = valueData;
+                        doOperation(request);
+                        request.value = valueData;
                     returnResponse(request);
-                }
+                    }
             }
         }
 
