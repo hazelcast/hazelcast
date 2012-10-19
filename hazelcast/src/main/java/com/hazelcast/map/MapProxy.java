@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.Transaction;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceProxy;
 import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.spi.Invocation;
@@ -25,9 +26,7 @@ import com.hazelcast.spi.impl.Response;
 import com.hazelcast.nio.Data;
 
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
 import static com.hazelcast.nio.IOUtil.toData;
@@ -42,62 +41,48 @@ public class MapProxy implements ServiceProxy {
         this.nodeService = nodeService;
     }
 
-    public Object remove(String name, Object k) {
-        Data key = nodeService.toData(k);
-        int partitionId = nodeService.getPartitionId(key);
+
+    private Object invokeSingleInvocation(Operation operation, int partitionId) throws Throwable {
+        Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
+        Future f = invocation.invoke();
+        Object response = f.get();
+        Object returnObj = null;
+        if (response instanceof Response) {
+            Response r = (Response) response;
+            returnObj = r.getResult();
+        } else {
+            returnObj = toObject(response);
+        }
+        if (returnObj instanceof Throwable) {
+            throw (Throwable) returnObj;
+        }
+
+        return returnObj;
+    }
+
+    private String prepareTransaction(int partitionId) {
         TransactionImpl txn = nodeService.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
             txnId = txn.getTxnId();
             txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
         }
-        RemoveOperation removeOperation = new RemoveOperation(name, toData(k), txnId);
-        removeOperation.setValidateTarget(true);
+        return txnId;
+    }
 
+    public Object put(String name, Object k, Object v, long ttl) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        PutOperation putOperation = new PutOperation(name, key, v, txnId, ttl);
+        putOperation.setValidateTarget(true);
         long backupCallId = mapService.createNewBackupCallQueue();
+        putOperation.setBackupCallId(backupCallId);
+        putOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            removeOperation.setBackupCallId(backupCallId);
-            removeOperation.setServiceName(MAP_SERVICE_NAME);
-            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, removeOperation, partitionId).build();
-            Future f = invocation.invoke();
-            Object response = f.get();
-            Object returnObj = null;
-            if (response instanceof Response) {
-                Response r = (Response) response;
-                returnObj = r.getResult();
-            } else {
-                returnObj = toObject(response);
-            }
-            if (returnObj == null) {
-                return null;
-            }
-            if (returnObj instanceof Throwable) {
-                throw (Throwable) returnObj;
-            }
+            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
-            int backupCount = updateResponse.getBackupCount();
-            if (backupCount > 0) {
-                boolean backupsComplete = true;
-                for (int i = 0; i < backupCount; i++) {
-                    BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
-                    Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
-                    if (backupResponse == null) {
-                        backupsComplete = false;
-                    }
-                }
-                if (!backupsComplete) {
-                    for (int i = 0; i < backupCount; i++) {
-                        Data dataValue = removeOperation.getValue();
-                        GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, -1, updateResponse.getVersion());
-                        backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
-                        backupOp.setInvocation(true);
-                        Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp,
-                                partitionId).setReplicaIndex(i).build();
-                        f = backupInv.invoke();
-                        f.get(5, TimeUnit.SECONDS);
-                    }
-                }
-            }
+            checkBackups(name, partitionId, putOperation, updateResponse);
             return toObject(updateResponse.getOldValue());
         } catch (Throwable throwable) {
             throw (RuntimeException) throwable;
@@ -106,62 +91,120 @@ public class MapProxy implements ServiceProxy {
         }
     }
 
-    public Object put(String name, Object k, Object v, long ttl) {
+
+    public Object putIfAbsent(String name, Object k, Object v, long ttl) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        PutIfAbsentOperation putOperation = new PutIfAbsentOperation(name, key, v, txnId, ttl);
+        putOperation.setValidateTarget(true);
+        long backupCallId = mapService.createNewBackupCallQueue();
+        putOperation.setBackupCallId(backupCallId);
+        putOperation.setServiceName(MAP_SERVICE_NAME);
+        Object result = null;
+        try {
+            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
+            UpdateResponse updateResponse = (UpdateResponse) returnObj;
+            result = toObject(updateResponse.getOldValue());
+            if (result == null)
+                checkBackups(name, partitionId, putOperation, updateResponse);
+            return result;
+        } catch (Throwable throwable) {
+            throw (RuntimeException) throwable;
+        } finally {
+                mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
+
+
+    public void putTransient(String name, Object k, Object v, long ttl) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        PutTransientOperation putOperation = new PutTransientOperation(name, key, v, txnId, ttl);
+        putOperation.setValidateTarget(true);
+        long backupCallId = mapService.createNewBackupCallQueue();
+        putOperation.setBackupCallId(backupCallId);
+        putOperation.setServiceName(MAP_SERVICE_NAME);
+        try {
+            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
+            UpdateResponse updateResponse = (UpdateResponse) returnObj;
+            checkBackups(name, partitionId, putOperation, updateResponse);
+        } catch (Throwable throwable) {
+            throw (RuntimeException) throwable;
+        } finally {
+            mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
+
+
+    public void set(String name, Object k, Object v, long ttl) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        SetOperation setOperation = new SetOperation(name, key, v, txnId, ttl);
+        setOperation.setValidateTarget(true);
+        long backupCallId = mapService.createNewBackupCallQueue();
+        setOperation.setBackupCallId(backupCallId);
+        setOperation.setServiceName(MAP_SERVICE_NAME);
+        try {
+            Object returnObj = invokeSingleInvocation(setOperation, partitionId);
+            UpdateResponse updateResponse = (UpdateResponse) returnObj;
+            checkBackups(name, partitionId, setOperation, updateResponse);
+        } catch (Throwable throwable) {
+            throw (RuntimeException) throwable;
+        } finally {
+            mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
+
+    public Object remove(String name, Object k) {
         Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);
         TransactionImpl txn = nodeService.getTransaction();
-        String txnId = null;
-        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-            txnId = txn.getTxnId();
-            txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
-        }
-        PutOperation putOperation = new PutOperation(name, toData(k), v, txnId, ttl);
-        putOperation.setValidateTarget(true);
+        String txnId = prepareTransaction(partitionId);
+        RemoveOperation removeOperation = new RemoveOperation(name, key, txnId);
+        removeOperation.setValidateTarget(true);
+
         long backupCallId = mapService.createNewBackupCallQueue();
+        removeOperation.setBackupCallId(backupCallId);
+        removeOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            putOperation.setBackupCallId(backupCallId);
-            putOperation.setServiceName(MAP_SERVICE_NAME);
-            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, putOperation, partitionId).build();
-            Future f = invocation.invoke();
-            Object response = f.get();
-            Object returnObj = null;
-            if (response instanceof Response) {
-                Response r = (Response) response;
-                returnObj = r.getResult();
-            } else {
-                returnObj = toObject(response);
-            }
-            if (returnObj instanceof Throwable) {
-                throw (Throwable) returnObj;
-            }
+            Object returnObj = invokeSingleInvocation(removeOperation, partitionId);
+
+            if (returnObj == null)
+                return null;
+
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
-            int backupCount = updateResponse.getBackupCount();
-            if (backupCount > 0) {
-                boolean backupsComplete = true;
-                for (int i = 0; i < backupCount; i++) {
-                    BlockingQueue backupResponses = mapService.getBackupCallQueue(backupCallId);
-                    Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
-                    if (backupResponse == null) {
-                        backupsComplete = false;
-                    }
-                }
-                if (!backupsComplete) {
-                    for (int i = 0; i < backupCount; i++) {
-                        Data dataValue = putOperation.getValue();
-                        GenericBackupOperation backupOp = new GenericBackupOperation(name, key, dataValue, ttl, updateResponse.getVersion());
-                        backupOp.setInvocation(true);
-                        Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp,
-                                partitionId).setReplicaIndex(i).build();
-                        f = backupInv.invoke();
-                        f.get(5, TimeUnit.SECONDS);
-                    }
-                }
-            }
+            checkBackups(name, partitionId, removeOperation, updateResponse);
             return toObject(updateResponse.getOldValue());
         } catch (Throwable throwable) {
             throw (RuntimeException) throwable;
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
+        }
+    }
+
+    private void checkBackups(String name, int partitionId, BackupAwareOperation operation, UpdateResponse updateResponse) throws InterruptedException, ExecutionException, TimeoutException {
+        int backupCount = updateResponse.getBackupCount();
+        if (backupCount > 0) {
+            boolean backupsComplete = true;
+            for (int i = 0; i < backupCount; i++) {
+                BlockingQueue backupResponses = mapService.getBackupCallQueue(operation.getBackupCallId());
+                Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
+                if (backupResponse == null) {
+                    backupsComplete = false;
+                }
+            }
+            if (!backupsComplete) {
+                for (int i = 0; i < backupCount; i++) {
+                    GenericBackupOperation backupOp = new GenericBackupOperation(name, operation, updateResponse.getVersion());
+                    backupOp.setInvocation(true);
+                    Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(i).build();
+                    Future f = backupInv.invoke();
+                    f.get(5, TimeUnit.SECONDS);
+                }
+            }
         }
     }
 
@@ -180,6 +223,23 @@ public class MapProxy implements ServiceProxy {
             throw new RuntimeException(throwable);
         }
     }
+
+
+    public boolean containsKey(String name, Object k) {
+        Data key = nodeService.toData(k);
+        int partitionId = nodeService.getPartitionId(key);
+        ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, toData(k));
+        containsKeyOperation.setValidateTarget(true);
+        containsKeyOperation.setServiceName(MAP_SERVICE_NAME);
+        try {
+            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation, partitionId).build();
+            Future f = invocation.invoke();
+            return (Boolean) nodeService.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
 
     public int getSize(String name) {
         try {

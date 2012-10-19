@@ -18,23 +18,24 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.Data;
 
-public class RemoveOperation extends BaseRemoveOperation {
+public class SetOperation extends BasePutOperation {
 
-    public RemoveOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey, txnId);
+    public SetOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
+        super(name, dataKey, value, txnId, ttl);
     }
 
-    public RemoveOperation() {
+    public SetOperation() {
     }
 
     @Override
     void initFlags() {
-      // use default flags
+        LOAD_OLD = false;
+        RETURN_OLD_VALUE = false;
     }
 
 
     @Override
     public String toString() {
-        return "RemoveOperation{" + name + "}";
+        return "SetOperation{" + name + "}";
     }
 }

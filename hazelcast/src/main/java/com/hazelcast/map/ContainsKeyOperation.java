@@ -16,25 +16,28 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class RemoveOperation extends BaseRemoveOperation {
+public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
 
-    public RemoveOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey, txnId);
+    public ContainsKeyOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
-    public RemoveOperation() {
+    public ContainsKeyOperation() {
     }
 
-    @Override
-    void initFlags() {
-      // use default flags
+    public void run() {
+        MapService mapService = (MapService) getService();
+        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
+        getResponseHandler().sendResponse(mapPartition.records.containsKey(dataKey));
     }
-
 
     @Override
     public String toString() {
-        return "RemoveOperation{" + name + "}";
+        return "ContainsKeyOperation{" +
+                '}';
     }
 }

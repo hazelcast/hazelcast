@@ -51,6 +51,13 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         this.version = version;
     }
 
+    public GenericBackupOperation(String name, BackupAwareOperation op, long version) {
+        super(name, op.getKey());
+        this.ttl = op.ttl;
+        this.dataValue = op.getValue();
+        this.version = version;
+    }
+
     public GenericBackupOperation() {
     }
 
