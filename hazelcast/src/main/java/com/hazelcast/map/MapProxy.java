@@ -68,6 +68,9 @@ public class MapProxy implements ServiceProxy {
             } else {
                 returnObj = toObject(response);
             }
+            if (returnObj == null) {
+                return null;
+            }
             if (returnObj instanceof Throwable) {
                 throw (Throwable) returnObj;
             }
