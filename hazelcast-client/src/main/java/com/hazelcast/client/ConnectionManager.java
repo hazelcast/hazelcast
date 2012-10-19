@@ -72,7 +72,7 @@ public class ConnectionManager implements MembershipListener {
         heartbeatTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                long diff = client.getInRunnable().lastReceived - Clock.currentTimeMillis();
+                long diff = Clock.currentTimeMillis() - client.getInRunnable().lastReceived;
                 try {
                     if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
                         logger.log(Level.FINEST,
