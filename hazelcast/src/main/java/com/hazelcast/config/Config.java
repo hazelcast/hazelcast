@@ -406,15 +406,17 @@ public class Config implements DataSerializable {
      * @return ExecutorConfig
      */
     public ExecutorConfig getExecutorConfig(String name) {
-        ExecutorConfig ec = this.executorConfigs.get(name);
-        if (ec == null) {
-            ExecutorConfig defaultConfig = executorConfigs.get("default");
-            if (defaultConfig != null) {
-                ec = new ExecutorConfig(name,
-                        defaultConfig.getCorePoolSize(),
-                        defaultConfig.getMaxPoolSize(),
-                        defaultConfig.getKeepAliveSeconds());
-            }
+        ExecutorConfig ec = lookupByPattern(executorConfigs, name);
+        if (ec != null) {
+            return ec;
+        }
+
+        ExecutorConfig defaultConfig = executorConfigs.get("default");
+        if (defaultConfig != null) {
+            ec = new ExecutorConfig(name,
+                defaultConfig.getCorePoolSize(),
+                defaultConfig.getMaxPoolSize(),
+                defaultConfig.getKeepAliveSeconds());
         }
         if (ec == null) {
             ec = new ExecutorConfig(name);
@@ -559,12 +561,14 @@ public class Config implements DataSerializable {
      * @return SemaphoreConfig
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
-        SemaphoreConfig sc = this.semaphoreConfigs.get(name);
-        if (sc == null) {
-            SemaphoreConfig defaultConfig = semaphoreConfigs.get("default");
-            if (defaultConfig != null) {
-                sc = new SemaphoreConfig(name, defaultConfig);
-            }
+        SemaphoreConfig sc = lookupByPattern(semaphoreConfigs, name);
+        if (sc != null) {
+            return sc;
+        }
+
+        SemaphoreConfig defaultConfig = semaphoreConfigs.get("default");
+        if (defaultConfig != null) {
+           sc = new SemaphoreConfig(name, defaultConfig);
         }
         if (sc == null) {
             sc = new SemaphoreConfig(name);
