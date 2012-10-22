@@ -17,11 +17,8 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.BindOperation;
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
@@ -36,7 +33,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -230,21 +229,10 @@ public class ConnectionManager {
     void sendBindRequest(final Connection connection, final Address remoteEndPoint, final boolean replyBack) {
         connection.setEndPoint(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
-        Packet bindPacket = createBindPacket(new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack));
-        connection.getWriteHandler().enqueueSocketWritable(bindPacket);
+        final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
+        final Data bindData = IOUtil.toData(bind);
+        connection.getWriteHandler().enqueueSocketWritable(new Packet(bindData, -1, connection));
         //now you can send anything...
-    }
-
-    private Packet createBindPacket(BindOperation rp) {
-        Data value = ThreadContext.get().toData(rp);
-        Packet packet = new Packet();
-        packet.operation = ClusterOperation.REMOTE_CALL;
-        packet.blockId = -1;
-        packet.name = ClusterService.SERVICE_NAME;
-        packet.longValue = 1L;
-        packet.setValue(value);
-        packet.client = ioService.isClient();
-        return packet;
     }
 
     Connection assignSocketChannel(SocketChannelWrapper channel) {

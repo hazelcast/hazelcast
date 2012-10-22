@@ -168,7 +168,8 @@ public class NodeServiceImpl implements NodeService {
         final int partitionId = inv.getPartitionId();
         final int replicaIndex = inv.getReplicaIndex();
         final String serviceName = inv.getServiceName();
-        setOperationContext(op, serviceName, node.getThisAddress(), -1, partitionId, replicaIndex);
+        setOperationContext(op, serviceName, node.getThisAddress(), -1)
+                .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         checkInvocation(inv);
         if (getThisAddress().equals(target)) {
             ResponseHandlerFactory.setLocalResponseHandler(inv);
@@ -205,21 +206,18 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @PrivateApi
-    public void handleOperation(final SimpleSocketWritable ssw) {
-        final int partitionId = ssw.getPartitionId();
+    public void handleOperation(final Packet packet) {
+        final int partitionId = packet.getPartitionId();
         final Executor executor = getExecutor(partitionId);
-        executor.execute(new RemoteOperationExecutor(ssw));
+        executor.execute(new RemoteOperationExecutor(packet));
     }
 
     @PrivateApi
-    public Operation setOperationContext(Operation op, String serviceName, Address caller,
-                                         long callId, int partitionId, int replicaIndex) {
+    public Operation setOperationContext(Operation op, String serviceName, Address caller, long callId) {
         op.setNodeService(this)
                 .setServiceName(serviceName)
                 .setCaller(caller)
-                .setCallId(callId)
-                .setPartitionId(partitionId)
-                .setReplicaIndex(replicaIndex);
+                .setCallId(callId);
         return op;
     }
 
@@ -261,8 +259,8 @@ public class NodeServiceImpl implements NodeService {
                     if (replicaTarget.equals(getThisAddress())) {
                         // Normally shouldn't happen!!
                     } else {
-                        SimpleSocketWritable ssw = new SimpleSocketWritable(opData, -1, partitionId, replicaIndex, null);
-                        node.clusterService.send(ssw, replicaTarget);
+                        Packet packet = new Packet(opData, partitionId);
+                        node.clusterService.send(packet, replicaTarget);
                     }
                 }
             }
@@ -291,8 +289,7 @@ public class NodeServiceImpl implements NodeService {
 
     public boolean send(final Operation op, final int partitionId, final Connection connection) {
         Data opData = toData(op);
-        return node.clusterService.send(new SimpleSocketWritable(opData, op.getCallId(), partitionId,
-                op.getReplicaIndex(), null), connection);
+        return node.clusterService.send(new Packet(opData, partitionId, connection), connection);
     }
 
     private ExecutorService getExecutor(int partitionId) {
@@ -329,6 +326,8 @@ public class NodeServiceImpl implements NodeService {
         Call call = deregisterRemoteCall(callId);
         if (call != null) {
             call.offerResponse(response);
+        } else {
+            System.err.println("NO CALL WITH ID: " + callId);
         }
     }
 
@@ -449,7 +448,7 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private class Workers {
-        private final ThreadGroup partitionThreadGroup;
+        final ThreadGroup partitionThreadGroup;
         final int threadCount;
         final ExecutorService[] workers;
         final AtomicInteger threadNumber = new AtomicInteger();
@@ -463,7 +462,7 @@ public class NodeServiceImpl implements NodeService {
             }
         }
 
-        public ExecutorService getExecutor(int partitionId) {
+        ExecutorService getExecutor(int partitionId) {
             return workers[partitionId % threadCount];
         }
 
@@ -550,33 +549,34 @@ public class NodeServiceImpl implements NodeService {
                 responseHandler.sendResponse(e);
             }
         }
-
     }
 
     private class RemoteOperationExecutor extends OperationExecutor implements Runnable {
-        private final SimpleSocketWritable ssw;
+        private final Packet packet;
 
-        private RemoteOperationExecutor(final SimpleSocketWritable ssw) {
-            this.ssw = ssw;
+        private RemoteOperationExecutor(final Packet packet) {
+            this.packet = packet;
         }
 
         public void run() {
-            final int partitionId = ssw.getPartitionId();
-            final int replicaIndex = ssw.getReplicaIndex();
-            final Data data = ssw.getValue();
-            final long callId = ssw.getCallId();
-            final Address caller = ssw.getConn().getEndPoint();
-
+            final int partitionId = packet.getPartitionId();
+            final Data data = packet.getValue();
+            final Address caller = packet.getConn().getEndPoint();
             try {
                 setOp((Operation) toObject(data));
-                setOperationContext(op, op.getServiceName(), caller, callId, partitionId, replicaIndex);
-                op.setConnection(ssw.getConn());
-                ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op, partitionId, callId);
+//                if (op != null) {
+//                    throw new IllegalArgumentException();
+//                }
+                op.setNodeService(NodeServiceImpl.this).setCaller(caller).setPartitionId(partitionId);
+                op.setConnection(packet.getConn());
+                ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op);
                 super.run();
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-                node.clusterService.send(new SimpleSocketWritable(toData(e), callId,
-                        partitionId, replicaIndex, null), ssw.getConn());
+                // TODO: send error response operation !
+                send(new ErrorResponse(getThisAddress(), e), EXECUTOR_THREAD_ID, packet.getConn());
+//                node.clusterService.send(new Packet(toData(e), callId,
+//                        partitionId, null), packet.getConn());
             }
         }
     }

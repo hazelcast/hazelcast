@@ -17,13 +17,11 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractSimpleRecord implements Record {
@@ -75,8 +73,8 @@ public abstract class AbstractSimpleRecord implements Record {
         return false;
     }
 
-    public void addScheduledAction(ScheduledAction scheduledAction) {
-    }
+//    public void addScheduledAction(ScheduledAction scheduledAction) {
+//    }
 
     public boolean isRemovable() {
         return false;
@@ -245,12 +243,12 @@ public abstract class AbstractSimpleRecord implements Record {
         return false;
     }
 
-    public List<ScheduledAction> getScheduledActions() {
-        return null;
-    }
-
-    public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
-    }
+//    public List<ScheduledAction> getScheduledActions() {
+//        return null;
+//    }
+//
+//    public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
+//    }
 
     public Map<Address, Boolean> getListeners() {
         return null;

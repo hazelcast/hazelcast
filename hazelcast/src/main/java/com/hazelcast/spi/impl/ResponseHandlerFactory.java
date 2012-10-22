@@ -40,13 +40,12 @@ public final class ResponseHandlerFactory {
         return new LocalInvocationResponseHandler(inv);
     }
 
-    public static void setRemoteResponseHandler(NodeService nodeservice, Operation op, int partitionId, long callId) {
-        op.setResponseHandler(createRemoteResponseHandler(nodeservice, op, partitionId, callId));
+    public static void setRemoteResponseHandler(NodeService nodeservice, Operation op) {
+        op.setResponseHandler(createRemoteResponseHandler(nodeservice, op));
     }
 
-    public static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op,
-                                                              int partitionId, long callId) {
-        return new RemoteInvocationResponseHandler(nodeService, op.getConnection(), partitionId, callId);
+    public static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op) {
+        return new RemoteInvocationResponseHandler(nodeService, op.getConnection(), op.getPartitionId(), op.getCallId());
     }
 
     private static class NoReplyResponseHandler implements ResponseHandler {

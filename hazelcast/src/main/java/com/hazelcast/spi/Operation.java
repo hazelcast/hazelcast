@@ -36,11 +36,11 @@ public abstract class Operation implements Runnable, DataSerializable {
     private long callId;
     private boolean validateTarget = false;
     // injected
-    private NodeService nodeService = null;
-    private Object service;
-    private Address caller;
-    private Connection connection;
-    private ResponseHandler responseHandler;
+    private transient NodeService nodeService = null;
+    private transient Object service;
+    private transient Address caller;
+    private transient Connection connection;
+    private transient ResponseHandler responseHandler;
 
     final public void writeData(DataOutput out) throws IOException {
         IOUtil.writeNullableString(out, serviceName);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.impl.Constants.IO;
 import com.hazelcast.logging.ILogger;
 
 import javax.crypto.Cipher;
@@ -44,8 +45,9 @@ class SocketPacketReader implements SocketReader {
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(ioService);
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
-                packetReader = new ComplexCipherPacketReader();
-                logger.log(Level.INFO, "Reader started with ComplexEncryption");
+                logger.log(Level.INFO, "Incorrect encryption configuration.");
+                logger.log(Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
+                throw new RuntimeException();
             } else if (symmetricEncryptionEnabled) {
                 packetReader = new SymmetricCipherPacketReader();
                 logger.log(Level.INFO, "Reader started with SymmetricEncryption");
@@ -62,17 +64,20 @@ class SocketPacketReader implements SocketReader {
         packetReader.readPacket(inBuffer);
     }
 
-    public void enqueueFullPacket(final Packet p) {
-        p.flipBuffers();
-        p.read();
-        p.setFromConnection(connection);
-        if (p.client) {
-            connection.setType(Connection.Type.CLIENT);
-            ioService.handleClientPacket(p);
-        } else {
-            connection.setType(Connection.Type.MEMBER);
-            ioService.handleMemberPacket(p);
-        }
+    private void enqueueFullPacket(final Packet p) {
+//        p.flipBuffers();
+//        p.read();
+//        p.setFromConnection(connection);
+//        if (p.client) {
+//            connection.setType(Connection.Type.CLIENT);
+//            ioService.handleClientPacket(p);
+//        } else {
+//            connection.setType(Connection.Type.MEMBER);
+//            ioService.handleMemberPacket(p);
+//        }
+        p.setConn(connection);
+        connection.setType(Connection.Type.MEMBER);
+        ioService.handleMemberPacket(p);
     }
 
     interface PacketReader {
@@ -85,21 +90,14 @@ class SocketPacketReader implements SocketReader {
                 if (packet == null) {
                     packet = obtainReadable();
                 }
-                boolean complete = packet.read(inBuffer);
+                boolean complete = packet.readFrom(inBuffer);
                 if (complete) {
                     enqueueFullPacket(packet);
                     packet = null;
+                } else {
+                    break;
                 }
             }
-        }
-    }
-
-    class ComplexCipherPacketReader implements PacketReader {
-
-        ComplexCipherPacketReader() {
-        }
-
-        public void readPacket(ByteBuffer inBuffer) throws Exception {
         }
     }
 
@@ -137,7 +135,7 @@ class SocketPacketReader implements SocketReader {
                     if (packet == null) {
                         packet = obtainReadable();
                     }
-                    boolean complete = packet.read(cipherBuffer);
+                    boolean complete = packet.readFrom(cipherBuffer);
                     if (complete) {
                         enqueueFullPacket(packet);
                         packet = null;
@@ -151,7 +149,7 @@ class SocketPacketReader implements SocketReader {
     class SymmetricCipherPacketReader implements PacketReader {
         int size = -1;
         final Cipher cipher;
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * RECEIVE_SOCKET_BUFFER_SIZE);
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * ioService.getSocketReceiveBufferSize() * IO.KILO_BYTE);
 
         SymmetricCipherPacketReader() {
             cipher = init();
@@ -197,7 +195,7 @@ class SocketPacketReader implements SocketReader {
                     if (packet == null) {
                         packet = obtainReadable();
                     }
-                    boolean complete = packet.read(cipherBuffer);
+                    boolean complete = packet.readFrom(cipherBuffer);
                     if (complete) {
                         enqueueFullPacket(packet);
                         packet = null;

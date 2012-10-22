@@ -21,8 +21,10 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.util.Util;
 
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 abstract class InvocationImpl implements Future, Invocation, Callback {
     private static final Object NULL = new Object();
@@ -73,7 +75,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
             if (e instanceof RetryableException) {
                 setResult(e);
             } else {
-                throw (RuntimeException) e;
+                Util.throwUncheckedException(e);
             }
         }
         return this;
@@ -90,7 +92,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
         try {
             return doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            e.printStackTrace();
+            nodeService.getLogger(getClass().getName()).log(Level.FINEST, e.getMessage(), e);
             return null;
         }
     }

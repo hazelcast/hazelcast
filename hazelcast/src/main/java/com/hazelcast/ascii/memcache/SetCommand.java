@@ -40,7 +40,7 @@ public class SetCommand extends AbstractTextCommand {
         bbValue = ByteBuffer.allocate(valueLen);
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         copy(cb);
         if (!bbValue.hasRemaining()) {
             while (cb.hasRemaining()) {

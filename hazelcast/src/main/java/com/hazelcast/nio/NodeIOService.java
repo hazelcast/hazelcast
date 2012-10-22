@@ -16,18 +16,17 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.impl.*;
-import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.SystemLogService;
 
 public class NodeIOService implements IOService {
 
@@ -90,19 +89,12 @@ public class NodeIOService implements IOService {
 //        node.clientHandlerService.handle(p);
     }
 
-    public void handleMemberPacket(final Packet p) {
-//        System.out.println("handle p " + p.operation);
-        if (p.operation == ClusterOperation.REMOTE_CALL) {
-            final MemberImpl member = node.clusterService.getMember(p.conn.getEndPoint());
-            if (member != null) {
-                member.didRead();
-            }
-            node.nodeService.handleOperation(new SimpleSocketWritable(p));
-            p.conn.releasePacket(p);
-        } else {
-//            node.clusterService.enqueuePacket(p);
-            new RuntimeException("Unknown packet: " + p);
+    public void handleMemberPacket(final Packet packet) {
+        final MemberImpl member = node.clusterService.getMember(packet.getConn().getEndPoint());
+        if (member != null) {
+            member.didRead();
         }
+        node.nodeService.handleOperation(packet);
     }
 
     public TextCommandService getTextCommandService() {

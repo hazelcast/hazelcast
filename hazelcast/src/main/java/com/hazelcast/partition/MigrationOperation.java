@@ -106,7 +106,7 @@ public class MigrationOperation extends AbstractOperation {
 
         for (Operation op : tasks) {
             try {
-                nodeService.setOperationContext(op, op.getServiceName(), from, -1, getPartitionId(), getReplicaIndex());
+                nodeService.setOperationContext(op, op.getServiceName(), from, -1).setPartitionId(getPartitionId());
                 ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),

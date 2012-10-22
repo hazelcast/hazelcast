@@ -17,7 +17,6 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.base.ScheduledAction;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -101,12 +100,12 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     protected void invalidateValueCache() {
     }
 
-    public void addScheduledAction(ScheduledAction scheduledAction) {
-        if (getScheduledActions() == null) {
-            setScheduledActions(new LinkedList<ScheduledAction>());
-        }
-        getScheduledActions().add(scheduledAction);
-    }
+//    public void addScheduledAction(ScheduledAction scheduledAction) {
+//        if (getScheduledActions() == null) {
+//            setScheduledActions(new LinkedList<ScheduledAction>());
+//        }
+//        getScheduledActions().add(scheduledAction);
+//    }
 
     public boolean isRemovable() {
         return !isActive() && valueCount() <= 0 && getLockCount() <= 0 && !hasListener()
@@ -326,21 +325,21 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         this.removeTime = removeTime;
     }
 
-    public boolean hasScheduledAction() {
-        return optionalInfo != null && optionalInfo.lsScheduledActions != null &&
-               optionalInfo.lsScheduledActions.size() > 0;
-    }
+//    public boolean hasScheduledAction() {
+//        return optionalInfo != null && optionalInfo.lsScheduledActions != null &&
+//               optionalInfo.lsScheduledActions.size() > 0;
+//    }
 
-    public List<ScheduledAction> getScheduledActions() {
-        if (optionalInfo == null) return null;
-        return getOptionalInfo().lsScheduledActions;
-    }
+//    public List<ScheduledAction> getScheduledActions() {
+//        if (optionalInfo == null) return null;
+//        return getOptionalInfo().lsScheduledActions;
+//    }
 
-    public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
-        if (lsScheduledActions != null) {
-            this.getOptionalInfo().lsScheduledActions = lsScheduledActions;
-        }
-    }
+//    public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
+//        if (lsScheduledActions != null) {
+//            this.getOptionalInfo().lsScheduledActions = lsScheduledActions;
+//        }
+//    }
 
     public Map<Address, Boolean> getListeners() {
         if (optionalInfo == null) return null;
@@ -358,10 +357,10 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         return dl != null && dl.isLocked();
     }
 
-    public int getScheduledActionCount() {
-        if (optionalInfo == null) return 0;
-        return (getOptionalInfo().lsScheduledActions == null) ? 0 : getOptionalInfo().lsScheduledActions.size();
-    }
+//    public int getScheduledActionCount() {
+//        if (optionalInfo == null) return 0;
+//        return (getOptionalInfo().lsScheduledActions == null) ? 0 : getOptionalInfo().lsScheduledActions.size();
+//    }
 
     public int getLockCount() {
         final DistributedLock dl = lock;
@@ -415,7 +414,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         volatile Collection<ValueHolder> lsMultiValues = null; // multimap values
         Long[] indexes; // indexes of the current value;
         byte[] indexTypes; // index types of the current value;
-        List<ScheduledAction> lsScheduledActions = null;
+//        List<ScheduledAction> lsScheduledActions = null;
         Map<Address, Boolean> mapListeners = null;
     }
 }

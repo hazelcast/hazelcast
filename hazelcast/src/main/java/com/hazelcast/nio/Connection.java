@@ -16,9 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.SimpleBoundedQueue;
+import com.hazelcast.logging.SystemLogService;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -40,7 +39,7 @@ public final class Connection {
 
     private volatile Type type = Type.NONE;
 
-    Address endPoint = null;
+    private Address endPoint = null;
 
     private final ILogger logger;
 
@@ -48,7 +47,7 @@ public final class Connection {
 
     private final int connectionId;
 
-    private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
+//    private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
 
     private ConnectionMonitor monitor;
 
@@ -72,17 +71,18 @@ public final class Connection {
     }
 
     public void releasePacket(Packet packet) {
-        packetQueue.offer(packet);
+//        packetQueue.offer(packet);
     }
 
     public Packet obtainPacket() {
-        Packet packet = packetQueue.poll();
-        if (packet == null) {
-            packet = new Packet();
-        } else {
-            packet.reset();
-        }
-        return packet;
+//        Packet packet = packetQueue.poll();
+//        if (packet == null) {
+//            packet = new Packet();
+//        } else {
+//            packet.reset();
+//        }
+//        return packet;
+        return new Packet();
     }
 
     public ConnectionManager getConnectionManager() {

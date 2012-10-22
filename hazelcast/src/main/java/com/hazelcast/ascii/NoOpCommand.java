@@ -26,7 +26,7 @@ public class NoOpCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(response);
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         return true;
     }
 

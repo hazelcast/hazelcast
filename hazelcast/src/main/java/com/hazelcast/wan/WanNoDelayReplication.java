@@ -17,16 +17,15 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.cluster.AuthorizationOperation;
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.instance.Node;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
 
@@ -37,8 +36,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.toData;
 
 public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
@@ -161,10 +158,10 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
         public Packet toNewPacket() {
             Packet packet = new Packet();
-            packet.name = name;
-            packet.operation = ClusterOperation.CONCURRENT_MAP_ASYNC_MERGE;
-            packet.setKey(dataRecordEntry.getKeyData());
-            packet.setValue(toData(dataRecordEntry));
+//            packet.name = name;
+//            packet.operation = ClusterOperation.CONCURRENT_MAP_ASYNC_MERGE;
+//            packet.setKey(dataRecordEntry.getKeyData());
+//            packet.setValue(toData(dataRecordEntry));
             return packet;
         }
     }

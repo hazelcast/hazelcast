@@ -20,16 +20,15 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeType;
-import com.hazelcast.spi.*;
-import com.hazelcast.spi.annotation.ExecutedBy;
-import com.hazelcast.spi.annotation.ThreadType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.spi.*;
+import com.hazelcast.spi.annotation.ExecutedBy;
+import com.hazelcast.spi.annotation.ThreadType;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.util.Clock;
 
@@ -184,18 +183,18 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     private void logAtMaster(Level level, String msg) {
-        Address master = node.getMasterAddress();
-        if (!node.isMaster() && master != null) {
-            Connection connMaster = node.connectionManager.getOrConnect(node.getMasterAddress());
-            if (connMaster != null) {
-                Packet packet = new Packet();
-                packet.set(level.toString(), null, toData(msg), ClusterOperation.LOG);
-                packet.timeout = 0;
-                send(packet, connMaster);
-            }
-        } else {
-            logger.log(level, msg);
-        }
+//        Address master = node.getMasterAddress();
+//        if (!node.isMaster() && master != null) {
+//            Connection connMaster = node.connectionManager.getOrConnect(node.getMasterAddress());
+//            if (connMaster != null) {
+//                Packet packet = new Packet();
+//                packet.set(level.toString(), null, toData(msg), ClusterOperation.LOG);
+//                packet.timeout = 0;
+//                send(packet, connMaster);
+//            }
+//        } else {
+//            logger.log(level, msg);
+//        }
     }
 
     public final void heartBeater() {
@@ -311,7 +310,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private void sendHeartbeat(Address target) {
         if (target == null) return;
-        send(new SimpleSocketWritable(heartbeatOperationData, -1, -1, 0, null), target);
+        send(new Packet(heartbeatOperationData, -1), target);
     }
 
 

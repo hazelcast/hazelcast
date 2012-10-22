@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.spi.impl.Response;
 
+import java.util.concurrent.BlockingQueue;
+
 public class AsyncBackupResponse extends Response {
 
     @Override
@@ -25,7 +27,12 @@ public class AsyncBackupResponse extends Response {
         try {
             long callId = getCallId();
             MapService mapService = (MapService) getService();
-            mapService.getBackupCallQueue(callId).offer(Boolean.TRUE);
+            final BlockingQueue backupCallQueue = mapService.getBackupCallQueue(callId);
+            if (backupCallQueue != null) {
+                backupCallQueue.offer(Boolean.TRUE);
+            } else {
+                System.err.println("NO BACKUP QUEUE !!! " + callId);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
