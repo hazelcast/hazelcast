@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.Prefix.*;
@@ -121,6 +122,8 @@ public class CMap {
     private final AtomicBoolean cleanupActive = new AtomicBoolean(false);
 
     private volatile long totalCostOfRecords = 0L;
+
+    private AtomicLong totalGetCount = new AtomicLong(0);
 
     private MapStoreWrapper mapStoreWrapper;
 
@@ -1174,6 +1177,7 @@ public class CMap {
         localMapStats.setLockWaitCount(zeroOrPositive(lockWaitCount));
         localMapStats.setLockedEntryCount(zeroOrPositive(lockedEntryCount));
         localMapStats.setHits(zeroOrPositive(hits));
+        localMapStats.setMisses(totalGetCount.get() - localMapStats.getHits());
         localMapStats.setOwnedEntryCount(zeroOrPositive(ownedEntryCount));
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
@@ -1181,6 +1185,10 @@ public class CMap {
         localMapStats.setLastEvictionTime(zeroOrPositive(clusterImpl.getClusterTimeFor(lastEvictionTime)));
         localMapStats.setCreationTime(zeroOrPositive(clusterImpl.getClusterTimeFor(creationTime)));
         return localMapStats;
+    }
+
+    public void incrementGetCount() {
+        totalGetCount.incrementAndGet();
     }
 
     private static long zeroOrPositive(long value) {
