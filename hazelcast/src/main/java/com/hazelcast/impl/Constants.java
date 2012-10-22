@@ -69,6 +69,8 @@ public interface Constants {
 
         public static final int KILO_BYTE = 1024;
 
+        public static final int MEGA_BYTE = 1024 * KILO_BYTE;
+
         public static final Data EMPTY_DATA = new Data();
     }
 

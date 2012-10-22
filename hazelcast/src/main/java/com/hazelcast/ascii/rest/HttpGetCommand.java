@@ -25,7 +25,7 @@ public class HttpGetCommand extends HttpCommand {
         super(TextCommandType.HTTP_GET, uri);
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         while (cb.hasRemaining()) {
             char c = (char) cb.get();
             if (c == '\n') {

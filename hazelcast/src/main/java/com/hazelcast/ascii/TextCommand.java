@@ -20,11 +20,11 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 
-import java.nio.ByteBuffer;
-
 public interface TextCommand extends TextCommandConstants, SocketWritable {
 
-    boolean doRead(ByteBuffer cb);
+//    boolean readFrom(ByteBuffer cb);
+
+//    boolean writeTo(ByteBuffer bb);
 
     TextCommandType getType();
 
@@ -38,5 +38,4 @@ public interface TextCommand extends TextCommandConstants, SocketWritable {
 
     boolean shouldReply();
 
-    boolean writeTo(ByteBuffer bb);
 }

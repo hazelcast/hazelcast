@@ -50,7 +50,7 @@ public class HttpPostCommand extends HttpCommand {
      * @param cb
      * @return
      */
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         boolean complete = doActualRead(cb);
         while (!complete && readyToReadData && chunked && cb.hasRemaining()) {
             complete = doActualRead(cb);

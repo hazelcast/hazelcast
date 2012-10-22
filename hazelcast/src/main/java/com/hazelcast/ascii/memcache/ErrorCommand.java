@@ -53,7 +53,7 @@ public class ErrorCommand extends AbstractTextCommand {
         response.flip();
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         return true;
     }
 

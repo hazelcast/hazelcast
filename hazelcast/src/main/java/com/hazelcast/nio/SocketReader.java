@@ -18,10 +18,7 @@ package com.hazelcast.nio;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
-
 public interface SocketReader {
-    public static final int RECEIVE_SOCKET_BUFFER_SIZE = 32 * KILO_BYTE;
 
     void read(ByteBuffer bb) throws Exception;
 }

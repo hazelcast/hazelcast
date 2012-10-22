@@ -105,7 +105,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
                 processCmd(toStringAndClear(commandLine));
             }
             if (command != null) {
-                boolean complete = command.doRead(bb);
+                boolean complete = command.readFrom(bb);
                 if (complete) {
                     publishRequest(command);
                     reset();

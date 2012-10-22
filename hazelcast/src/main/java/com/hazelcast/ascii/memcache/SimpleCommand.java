@@ -27,7 +27,7 @@ public class SimpleCommand extends AbstractTextCommand {
         super(type);
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         return true;
     }
 

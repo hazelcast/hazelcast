@@ -33,7 +33,7 @@ public class DeleteCommand extends AbstractTextCommand {
         this.noreply = noreply;
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         return true;
     }
 

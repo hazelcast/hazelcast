@@ -39,7 +39,7 @@ public class GetCommand extends AbstractTextCommand {
         return key;
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         return true;
     }
 

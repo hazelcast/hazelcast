@@ -59,13 +59,13 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
-    private final ByteBuffer socketBB;
+    private final ByteBuffer buffer;
 
     private boolean ready = false;
 
-    private volatile SocketWritable lastWritable = null;
+    private SocketWritable lastWritable = null;
 
-    private volatile SocketWriter socketWriter = null;
+    private volatile SocketWriter socketWriter = null; // accessed from ReadHandler
 
     volatile long lastRegistration = 0;
 
@@ -73,14 +73,14 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     WriteHandler(Connection connection) {
         super(connection, connection.getInOutSelector());
-        socketBB = ByteBuffer.allocate(connectionManager.SOCKET_SEND_BUFFER_SIZE);
+        buffer = ByteBuffer.allocate(connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }
 
-    public void setProtocol(String protocol) {
+    void setProtocol(String protocol) {
         if (socketWriter == null) {
             if ("HZC".equals(protocol)) {
                 socketWriter = new SocketPacketWriter(connection);
-                socketBB.put("HZC".getBytes());
+                buffer.put("HZC".getBytes());
                 inOutSelector.addTask(this);
             } else {
                 socketWriter = new SocketTextWriter(connection);
@@ -107,13 +107,13 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     SocketWritable poll() {
         SocketWritable sw = writeQueue.poll();
-        if (sw instanceof SimpleSocketWritable) {
-            SimpleSocketWritable ssw = (SimpleSocketWritable) sw;
-            Packet packet = connection.obtainPacket();
-            ssw.setToPacket(packet);
-            packet.onEnqueue();
-            return packet;
-        }
+//        if (sw instanceof Packet) {
+//            Packet ssw = (Packet) sw;
+//            Packet packet = connection.obtainPacket();
+//            ssw.setToPacket(packet);
+//            packet.onEnqueue();
+//            return packet;
+//        }
         return sw;
     }
 
@@ -124,7 +124,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
         if (lastWritable == null) {
             lastWritable = poll();
-            if (lastWritable == null && socketBB.position() == 0) {
+            if (lastWritable == null && buffer.position() == 0) {
                 ready = true;
                 return;
             }
@@ -132,25 +132,24 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         if (!connection.live())
             return;
         try {
-            while (socketBB.hasRemaining()) {
+            while (buffer.hasRemaining()) {
                 if (lastWritable == null) {
                     lastWritable = poll();
                 }
                 if (lastWritable != null) {
-                    boolean complete = socketWriter.write(lastWritable, socketBB);
+                    boolean complete = socketWriter.write(lastWritable, buffer);
                     if (complete) {
                         if (lastWritable instanceof Packet) {
                             Packet packet = (Packet) lastWritable;
                             connection.releasePacket(packet);
                             if (systemLogService.shouldTrace()) {
-                                systemLogService.trace(packet,
-                                        new SystemArgsLog("WrittenOut ",
-                                                connection.getEndPoint(), packet.operation));
+                                systemLogService.trace(packet, new SystemArgsLog("WrittenOut ",
+                                        connection.getEndPoint()/*, packet.operation*/));
                             }
                         }
                         lastWritable = null;
                     } else {
-                        if (socketBB.hasRemaining()) {
+                        if (buffer.hasRemaining()) {
                             break;
                         }
                     }
@@ -158,19 +157,19 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                     break;
                 }
             }
-            if (socketBB.position() > 0) {
-                socketBB.flip();
+            if (buffer.position() > 0) {
+                buffer.flip();
                 try {
-                    socketChannel.write(socketBB);
+                    socketChannel.write(buffer);
                 } catch (Exception e) {
                     lastWritable = null;
                     handleSocketException(e);
                     return;
                 }
-                if (socketBB.hasRemaining()) {
-                    socketBB.compact();
+                if (buffer.hasRemaining()) {
+                    buffer.compact();
                 } else {
-                    socketBB.clear();
+                    buffer.clear();
                 }
             }
         } catch (Throwable t) {
@@ -200,10 +199,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     @Override
     public void shutdown() {
-        Object obj = poll();
-        while (obj != null) {
-            obj = poll();
-        }
+        while (poll() != null);
     }
 
     public int size() {

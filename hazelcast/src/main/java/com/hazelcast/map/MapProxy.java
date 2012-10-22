@@ -17,13 +17,13 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.Transaction;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceProxy;
-import com.hazelcast.transaction.TransactionImpl;
+import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ServiceProxy;
 import com.hazelcast.spi.impl.Response;
-import com.hazelcast.nio.Data;
+import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -33,6 +33,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapProxy implements ServiceProxy {
+
     private final NodeService nodeService;
     private final MapService mapService;
 
@@ -41,8 +42,7 @@ public class MapProxy implements ServiceProxy {
         this.nodeService = nodeService;
     }
 
-
-    private Object invokeSingleInvocation(Operation operation, int partitionId) throws Throwable {
+    private Object invoke(Operation operation, int partitionId) throws Throwable {
         Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();
@@ -56,7 +56,6 @@ public class MapProxy implements ServiceProxy {
         if (returnObj instanceof Throwable) {
             throw (Throwable) returnObj;
         }
-
         return returnObj;
     }
 
@@ -80,7 +79,7 @@ public class MapProxy implements ServiceProxy {
         putOperation.setBackupCallId(backupCallId);
         putOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
+            Object returnObj = invoke(putOperation, partitionId);
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             checkBackups(name, partitionId, putOperation, updateResponse);
             return toObject(updateResponse.getOldValue());
@@ -90,7 +89,6 @@ public class MapProxy implements ServiceProxy {
             mapService.removeBackupCallQueue(backupCallId);
         }
     }
-
 
     public Object putIfAbsent(String name, Object k, Object v, long ttl) {
         Data key = nodeService.toData(k);
@@ -103,19 +101,19 @@ public class MapProxy implements ServiceProxy {
         putOperation.setServiceName(MAP_SERVICE_NAME);
         Object result = null;
         try {
-            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
+            Object returnObj = invoke(putOperation, partitionId);
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             result = toObject(updateResponse.getOldValue());
-            if (result == null)
+            if (result == null) {
                 checkBackups(name, partitionId, putOperation, updateResponse);
+            }
             return result;
         } catch (Throwable throwable) {
             throw (RuntimeException) throwable;
         } finally {
-                mapService.removeBackupCallQueue(backupCallId);
+            mapService.removeBackupCallQueue(backupCallId);
         }
     }
-
 
     public void putTransient(String name, Object k, Object v, long ttl) {
         Data key = nodeService.toData(k);
@@ -127,7 +125,7 @@ public class MapProxy implements ServiceProxy {
         putOperation.setBackupCallId(backupCallId);
         putOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Object returnObj = invokeSingleInvocation(putOperation, partitionId);
+            Object returnObj = invoke(putOperation, partitionId);
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             checkBackups(name, partitionId, putOperation, updateResponse);
         } catch (Throwable throwable) {
@@ -136,7 +134,6 @@ public class MapProxy implements ServiceProxy {
             mapService.removeBackupCallQueue(backupCallId);
         }
     }
-
 
     public void set(String name, Object k, Object v, long ttl) {
         Data key = nodeService.toData(k);
@@ -148,7 +145,7 @@ public class MapProxy implements ServiceProxy {
         setOperation.setBackupCallId(backupCallId);
         setOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Object returnObj = invokeSingleInvocation(setOperation, partitionId);
+            Object returnObj = invoke(setOperation, partitionId);
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             checkBackups(name, partitionId, setOperation, updateResponse);
         } catch (Throwable throwable) {
@@ -170,10 +167,11 @@ public class MapProxy implements ServiceProxy {
         removeOperation.setBackupCallId(backupCallId);
         removeOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Object returnObj = invokeSingleInvocation(removeOperation, partitionId);
+            Object returnObj = invoke(removeOperation, partitionId);
 
-            if (returnObj == null)
+            if (returnObj == null) {
                 return null;
+            }
 
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             checkBackups(name, partitionId, removeOperation, updateResponse);
@@ -185,7 +183,8 @@ public class MapProxy implements ServiceProxy {
         }
     }
 
-    private void checkBackups(String name, int partitionId, BackupAwareOperation operation, UpdateResponse updateResponse) throws InterruptedException, ExecutionException, TimeoutException {
+    private void checkBackups(String name, int partitionId, BackupAwareOperation operation, UpdateResponse updateResponse)
+            throws InterruptedException, ExecutionException, TimeoutException {
         int backupCount = updateResponse.getBackupCount();
         if (backupCount > 0) {
             boolean backupsComplete = true;
@@ -198,9 +197,12 @@ public class MapProxy implements ServiceProxy {
             }
             if (!backupsComplete) {
                 for (int i = 0; i < backupCount; i++) {
-                    GenericBackupOperation backupOp = new GenericBackupOperation(name, operation, updateResponse.getVersion());
+                    GenericBackupOperation backupOp = new GenericBackupOperation(name, operation,
+                            updateResponse.getVersion());
                     backupOp.setInvocation(true);
-                    Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp, partitionId).setReplicaIndex(i).build();
+                    Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp, partitionId)
+                            .setReplicaIndex(
+                                    i).build();
                     Future f = backupInv.invoke();
                     f.get(5, TimeUnit.SECONDS);
                 }
@@ -215,7 +217,8 @@ public class MapProxy implements ServiceProxy {
         getOperation.setValidateTarget(true);
         getOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, getOperation, partitionId).build();
+            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, getOperation, partitionId)
+                    .build();
             Future f = invocation.invoke();
             Data response = (Data) f.get();
             return toObject(response);
@@ -224,7 +227,6 @@ public class MapProxy implements ServiceProxy {
         }
     }
 
-
     public boolean containsKey(String name, Object k) {
         Data key = nodeService.toData(k);
         int partitionId = nodeService.getPartitionId(key);
@@ -232,14 +234,14 @@ public class MapProxy implements ServiceProxy {
         containsKeyOperation.setValidateTarget(true);
         containsKeyOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation, partitionId).build();
+            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation,
+                    partitionId).build();
             Future f = invocation.invoke();
             return (Boolean) nodeService.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
-
 
     public int getSize(String name) {
         try {

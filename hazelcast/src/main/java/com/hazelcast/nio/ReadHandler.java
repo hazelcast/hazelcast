@@ -26,11 +26,11 @@ import java.util.logging.Level;
 
 class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
-    final ByteBuffer inBuffer;
+    private final ByteBuffer buffer;
 
-    final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
+    private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    SocketReader socketReader = null;
+    private SocketReader socketReader = null;
 
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastRegistration = 0;
@@ -39,7 +39,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     public ReadHandler(Connection connection) {
         super(connection, connection.getInOutSelector());
-        inBuffer = ByteBuffer.allocate(connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
+        buffer = ByteBuffer.allocate(connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     public final void handle() {
@@ -64,14 +64,14 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                         socketReader = new SocketPacketReader(socketChannel, connection);
                     } else {
                         writeHandler.setProtocol("TEXT");
-                        inBuffer.put(protocolBuffer.array());
+                        buffer.put(protocolBuffer.array());
                         socketReader = new SocketTextReader(connection);
                         connection.getConnectionManager().incrementTextConnections();
                     }
                 }
             }
             if (socketReader == null) return;
-            int readBytes = socketChannel.read(inBuffer);
+            int readBytes = socketChannel.read(buffer);
             if (readBytes == -1) {
                 throw new EOFException();
             }
@@ -80,13 +80,13 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
             return;
         }
         try {
-            if (inBuffer.position() == 0) return;
-            inBuffer.flip();
-            socketReader.read(inBuffer);
-            if (inBuffer.hasRemaining()) {
-                inBuffer.compact();
+            if (buffer.position() == 0) return;
+            buffer.flip();
+            socketReader.read(buffer);
+            if (buffer.hasRemaining()) {
+                buffer.compact();
             } else {
-                inBuffer.clear();
+                buffer.clear();
             }
         } catch (Throwable t) {
             handleSocketException(t);

@@ -240,7 +240,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             synchronized (stopObject) {
                 try {
                     blockingQueue.offer(new AbstractTextCommand(TextCommandConstants.TextCommandType.STOP) {
-                        public boolean doRead(ByteBuffer cb) {
+                        public boolean readFrom(ByteBuffer cb) {
                             return true;
                         }
 

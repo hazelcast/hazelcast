@@ -16,6 +16,13 @@
 
 package com.hazelcast.nio;
 
+import java.nio.ByteBuffer;
+
 public interface SocketWritable {
+
+    boolean writeTo(ByteBuffer destination);
+
+    boolean readFrom(ByteBuffer source);
+
     void onEnqueue();
 }

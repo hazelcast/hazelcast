@@ -40,7 +40,7 @@ public class StatsCommand extends AbstractTextCommand {
         super(TextCommandType.STATS);
     }
 
-    public boolean doRead(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer cb) {
         return true;
     }
 
