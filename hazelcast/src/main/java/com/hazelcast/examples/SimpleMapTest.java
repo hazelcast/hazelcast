@@ -33,82 +33,89 @@ import java.util.logging.Level;
 
 public class SimpleMapTest {
 
-    public static final int STATS_SECONDS = 10;
-    public static int THREAD_COUNT = 40;
-    public static int ENTRY_COUNT = 10 * 1000;
-    public static int VALUE_SIZE = 1000;
-    public static int GET_PERCENTAGE = 40;
-    public static int PUT_PERCENTAGE = 40;
-
-    private static final HazelcastInstance INSTANCE;
-    private static final ILogger logger;
     private static final String NAMESPACE = "default";
-    final static Stats stats = new Stats();
+    private static final long STATS_SECONDS = 10;
 
-    static {
-        INSTANCE = Hazelcast.newHazelcastInstance(null);
-        logger = INSTANCE.getLoggingService().getLogger("SimpleMapTest");
+    private final HazelcastInstance instance;
+    private final ILogger logger;
+    private final Stats stats = new Stats();
+
+    private final int threadCount;
+    private final int entryCount;
+    private final int valueSize;
+    private final int getPercentage;
+    private final int putPercentage;
+    private final boolean load;
+
+    public SimpleMapTest(final int threadCount, final int entryCount, final int valueSize,
+                         final int getPercentage, final int putPercentage, final boolean load) {
+        this.threadCount = threadCount;
+        this.entryCount = entryCount;
+        this.valueSize = valueSize;
+        this.getPercentage = getPercentage;
+        this.putPercentage = putPercentage;
+        this.load = load;
+        instance = Hazelcast.newHazelcastInstance(null);
+        logger = instance.getLoggingService().getLogger("SimpleMapTest");
     }
 
-    public static boolean parse(String... input) {
+    public static void main(String[] input) throws InterruptedException {
+        int threadCount = 40;
+        int entryCount = 10 * 1000;
+        int valueSize = 1000;
+        int getPercentage = 40;
+        int putPercentage = 40;
         boolean load = false;
+
         if (input != null && input.length > 0) {
             for (String arg : input) {
                 arg = arg.trim();
                 if (arg.startsWith("t")) {
-                    THREAD_COUNT = Integer.parseInt(arg.substring(1));
+                    threadCount = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("c")) {
-                    ENTRY_COUNT = Integer.parseInt(arg.substring(1));
+                    entryCount = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("v")) {
-                    VALUE_SIZE = Integer.parseInt(arg.substring(1));
+                    valueSize = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("g")) {
-                    GET_PERCENTAGE = Integer.parseInt(arg.substring(1));
+                    getPercentage = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("p")) {
-                    PUT_PERCENTAGE = Integer.parseInt(arg.substring(1));
+                    putPercentage = Integer.parseInt(arg.substring(1));
                 } else if (arg.startsWith("load")) {
                     load = true;
                 }
             }
         } else {
-            logger.log(Level.INFO, "Help: sh test.sh t200 v130 p10 g85 ");
-            logger.log(Level.INFO, "    // means 200 threads, value-size 130 bytes, 10% put, 85% get");
-            logger.log(Level.INFO, "");
+            System.out.println("Help: sh test.sh t200 v130 p10 g85 ");
+            System.out.println("means 200 threads, value-size 130 bytes, 10% put, 85% get");
+            System.out.println();
         }
-        return load;
+
+        SimpleMapTest test = new SimpleMapTest(threadCount, entryCount, valueSize, getPercentage, putPercentage, load);
+        test.start();
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        boolean load = parse(args);
-        logger.log(Level.INFO, "Starting Test with ");
+    private void start() throws InterruptedException {
         printVariables();
-//        ITopic<String> commands = INSTANCE.getTopic(NAMESPACE);
-//        commands.addMessageListener(new MessageListener<String>() {
-//            public void onMessage(Message<String> stringMessage) {
-//                parse(stringMessage.getMessageObject());
-//                printVariables();
-//            }
-//        });
-        ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
         startPrintStats();
-        if (load)
-            load(es);
+        load(es);
         run(es);
     }
 
-    private static void run(ExecutorService es) {
-        final IMap<String, byte[]> map = INSTANCE.getMap(NAMESPACE);
-        for (int i = 0; i < THREAD_COUNT; i++) {
+    private void run(ExecutorService es) {
+        final IMap<String, byte[]> map = instance.getMap(NAMESPACE);
+        for (int i = 0; i < threadCount; i++) {
             es.execute(new Runnable() {
                 public void run() {
                     try {
                         while (true) {
-                            int key = (int) (Math.random() * ENTRY_COUNT);
+                            int key = (int) (Math.random() * entryCount);
                             int operation = ((int) (Math.random() * 100));
-                            if (operation < GET_PERCENTAGE) {
+                            if (operation < getPercentage) {
                                 map.get(String.valueOf(key));
                                 stats.gets.incrementAndGet();
-                            } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
-                                map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                            } else if (operation < getPercentage + putPercentage) {
+                                map.put(String.valueOf(key), new byte[valueSize]);
                                 stats.puts.incrementAndGet();
                             } else {
                                 map.remove(String.valueOf(key));
@@ -116,19 +123,22 @@ public class SimpleMapTest {
                             }
                         }
                     } catch (Exception ignored) {
+                        ignored.printStackTrace();
                     }
                 }
             });
         }
     }
 
-    private static void load(ExecutorService es) throws InterruptedException {
-        final IMap<String, byte[]> map = INSTANCE.getMap("default");
-        final Member thisMember = INSTANCE.getCluster().getLocalMember();
+    private void load(ExecutorService es) throws InterruptedException {
+        if (!load) return;
+
+        final IMap<String, byte[]> map = instance.getMap(NAMESPACE);
+        final Member thisMember = instance.getCluster().getLocalMember();
         List<String> lsOwnedEntries = new LinkedList<String>();
-        for (int i = 0; i < ENTRY_COUNT; i++) {
+        for (int i = 0; i < entryCount; i++) {
             final String key = String.valueOf(i);
-            Partition partition = INSTANCE.getPartitionService().getPartition(key);
+            Partition partition = instance.getPartitionService().getPartition(key);
             if (thisMember.equals(partition.getOwner())) {
                 lsOwnedEntries.add(key);
             }
@@ -137,7 +147,7 @@ public class SimpleMapTest {
         for (final String ownedKey : lsOwnedEntries) {
             es.execute(new Runnable() {
                 public void run() {
-                    map.put(ownedKey, new byte[VALUE_SIZE]);
+                    map.put(ownedKey, new byte[valueSize]);
                     latch.countDown();
                 }
             });
@@ -145,54 +155,51 @@ public class SimpleMapTest {
         latch.await();
     }
 
-    private static void startPrintStats() {
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
+    private void startPrintStats() {
+        new Thread() {
+            {
+                setDaemon(true);
+                setName("PrintStats." + instance.getName());
+            }
+
             public void run() {
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
-                        Stats statsNow = stats.getAndReset();
-                        System.out.println(statsNow);
-                        System.out.println("Operations per Second : " + statsNow.total() / STATS_SECONDS);
+                        stats.printAndReset();
                     } catch (InterruptedException ignored) {
                         return;
                     }
                 }
             }
-        });
+        }.start();
     }
 
-    public static class Stats {
+    private class Stats {
         public AtomicLong gets = new AtomicLong();
         public AtomicLong puts = new AtomicLong();
         public AtomicLong removes = new AtomicLong();
 
-        public Stats getAndReset() {
+        public void printAndReset() {
             long getsNow = gets.getAndSet(0);
             long putsNow = puts.getAndSet(0);
             long removesNow = removes.getAndSet(0);
-            Stats newOne = new Stats();
-            newOne.gets.set(getsNow);
-            newOne.puts.set(putsNow);
-            newOne.removes.set(removesNow);
-            return newOne;
-        }
+            long total = getsNow + putsNow + removesNow;
 
-        public long total() {
-            return gets.get() + puts.get() + removes.get();
-        }
-
-        public String toString() {
-            return "total= " + total() + ", gets:" + gets.get() + ", puts:" + puts.get() + ", removes:" + removes.get();
+            logger.log(Level.INFO, "total= " + total + ", gets:" + getsNow
+                                   + ", puts:" + putsNow + ", removes:" + removesNow);
+            logger.log(Level.INFO, "Operations per Second : " + total / STATS_SECONDS);
         }
     }
 
-    private static void printVariables() {
-        logger.log(Level.INFO, "      Thread Count: " + THREAD_COUNT);
-        logger.log(Level.INFO, "       Entry Count: " + ENTRY_COUNT);
-        logger.log(Level.INFO, "        Value Size: " + VALUE_SIZE);
-        logger.log(Level.INFO, "    Get Percentage: " + GET_PERCENTAGE);
-        logger.log(Level.INFO, "    Put Percentage: " + PUT_PERCENTAGE);
-        logger.log(Level.INFO, " Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
+    private void printVariables() {
+        logger.log(Level.INFO, "Starting Test with ");
+        logger.log(Level.INFO, "Thread Count: " + threadCount);
+        logger.log(Level.INFO, "Entry Count: " + entryCount);
+        logger.log(Level.INFO, "Value Size: " + valueSize);
+        logger.log(Level.INFO, "Get Percentage: " + getPercentage);
+        logger.log(Level.INFO, "Put Percentage: " + putPercentage);
+        logger.log(Level.INFO, "Remove Percentage: " + (100 - (putPercentage + getPercentage)));
+        logger.log(Level.INFO, "Load: " + load);
     }
 }
