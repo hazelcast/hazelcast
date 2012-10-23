@@ -104,6 +104,18 @@ public class DistributedTask<V> extends FutureTask<V> {
         this(callable(task, result));
     }
 
+    public DistributedTask(Runnable task, V result, Member member){
+        this(callable(task, result), member);
+    }
+
+    public DistributedTask(Runnable task, V result, Set<Member> members){
+        this(callable(task, result), members);
+    }
+
+    public DistributedTask(Runnable task, V result, Object key){
+        this(callable(task,result), key);
+    }
+
     @Override
     public V get() throws InterruptedException, ExecutionException {
         if (!done || !passed) {
