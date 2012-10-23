@@ -565,26 +565,6 @@ public class MapConfig implements DataSerializable {
                                               : other.nearCacheConfig == null);
     }
 
-    @Override
-    public String toString() {
-        return "MapConfig{" +
-               "name='" + name + '\'' +
-               ", backupCount=" + backupCount +
-               ", asyncBackupCount=" + asyncBackupCount +
-               ", mergePolicy=" + mergePolicy +
-               ", evictionPercentage=" + evictionPercentage +
-               ", timeToLiveSeconds=" + timeToLiveSeconds +
-               ", maxIdleSeconds=" + maxIdleSeconds +
-               ", evictionDelaySeconds=" + evictionDelaySeconds +
-               ", maxSizeConfig=" + maxSizeConfig +
-               ", evictionPolicy='" + evictionPolicy + '\'' +
-               ", mapStoreConfig=" + mapStoreConfig +
-               ", nearCacheConfig=" + nearCacheConfig +
-               ", readBackupData=" + readBackupData +
-               ", wanReplicationRef=" + wanReplicationRef +
-               '}';
-    }
-
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
         backupCount = in.readInt();
@@ -618,5 +598,32 @@ public class MapConfig implements DataSerializable {
         out.writeUTF(mergePolicy);
         // TODO: MapStoreConfig mapStoreConfig
         // TODO: NearCacheConfig nearCacheConfig
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("MapConfig");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append(", timeToLiveSeconds=").append(timeToLiveSeconds);
+        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
+        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
+        sb.append(", evictionPercentage=").append(evictionPercentage);
+        sb.append(", evictionDelaySeconds=").append(evictionDelaySeconds);
+        sb.append(", maxSizeConfig=").append(maxSizeConfig);
+        sb.append(", cacheValue=").append(cacheValue);
+        sb.append(", readBackupData=").append(readBackupData);
+        sb.append(", nearCacheConfig=").append(nearCacheConfig);
+        sb.append(", mapStoreConfig=").append(mapStoreConfig);
+        sb.append(", mergePolicy='").append(mergePolicy).append('\'');
+        sb.append(", wanReplicationRef=").append(wanReplicationRef);
+        sb.append(", listenerConfigs=").append(listenerConfigs);
+        sb.append(", valueIndexed=").append(valueIndexed);
+        sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
+        sb.append(", storageType=").append(storageType);
+        sb.append('}');
+        return sb.toString();
     }
 }
