@@ -50,9 +50,12 @@ public class HazelcastInstanceFactory {
         return INSTANCE_MAP.get(instanceName);
     }
 
-    public static HazelcastInstance newHazelcastInstance(Config config) {
+    public static HazelcastInstance newHazelcastInstance(Config config, Boolean liteMember) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
+        }
+        if(liteMember != null) {
+            config.setLiteMember(liteMember);
         }
         String name = config.getInstanceName();
         if (name == null || name.trim().length() == 0) {

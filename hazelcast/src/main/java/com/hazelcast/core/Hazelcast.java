@@ -59,7 +59,61 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
-        return HazelcastInstanceFactory.newHazelcastInstance(config);
+        return HazelcastInstanceFactory.newHazelcastInstance(config, null);
+    }
+
+    /**
+     * Creates a new HazelcastInstance (a new node in a cluster).
+     * This method allows you to create and run multiple instances
+     * of Hazelcast cluster members on the same JVM.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * Hazelcast will look into two places for the configuration file:
+     * <ol>
+     *     <li>
+     *         System property: Hazelcast will first check if "hazelcast.config" system property is set to a file path.
+     *         Example: -Dhazelcast.config=C:/myhazelcast.xml.
+     *     </li>
+     *     <li>
+     *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
+     *     </li>
+     * </ol>
+     *
+     * @return new HazelcastInstance
+     * @see #shutdownAll()
+     * @see #getHazelcastInstanceByName(String)
+     */
+    public static HazelcastInstance newHazelcastInstance() {
+        return HazelcastInstanceFactory.newHazelcastInstance(null, null);
+    }
+
+    /**
+     * Creates a new HazelcastInstance Lite Member (a new node in a cluster).
+     * This method allows you to create and run multiple instances
+     * of Hazelcast cluster members on the same JVM.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * Hazelcast will look into two places for the configuration file:
+      * <ol>
+      *     <li>
+      *         System property: Hazelcast will first check if "hazelcast.config" system property is set to a file path.
+     *         Example: -Dhazelcast.config=C:/myhazelcast.xml.
+      *     </li>
+      *     <li>
+      *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
+      *     </li>
+      * </ol>
+     *
+     * @return new HazelcastInstance
+     * @see #shutdownAll()
+     * @see #getHazelcastInstanceByName(String)
+     */
+    public static HazelcastInstance newLiteMemberHazelcastInstance() {
+        return HazelcastInstanceFactory.newHazelcastInstance(null, Boolean.TRUE);
     }
 
     /**
