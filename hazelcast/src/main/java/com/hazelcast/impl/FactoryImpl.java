@@ -97,10 +97,15 @@ public class FactoryImpl implements HazelcastInstance {
         }
     }
 
-    public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
+    public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config, Boolean liteMember) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
+
+        if(liteMember != null){
+            config.setLiteMember(liteMember);
+        }
+
         String name = config.getInstanceName();
         if (name == null || name.trim().length() == 0) {
             name = "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
