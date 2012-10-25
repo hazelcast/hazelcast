@@ -80,6 +80,8 @@ public final class Hazelcast {
      *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
      *     </li>
      * </ol>
+     * If Hazelcast doesn't find any config file, it will happily start with default configuration (hazelcast-default.xml)
+     * located in hazelcast.jar.
      *
      * @return new HazelcastInstance
      * @see #shutdownAll()
@@ -107,6 +109,8 @@ public final class Hazelcast {
       *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
       *     </li>
       * </ol>
+     * If Hazelcast doesn't find any config file, it will happily start with default configuration (hazelcast-default.xml)
+     * located in hazelcast.jar.
      *
      * @return new HazelcastInstance
      * @see #shutdownAll()
