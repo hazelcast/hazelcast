@@ -51,7 +51,7 @@ try {
 ]]></programlisting>
 
         Isolation is always
-        <literal>READ_COMMITTED</literal>
+        <literal>REPEATABLE_READ</literal>
         . If you are in a transaction, you can read the data in your transaction and the data that is already committed
         and if not in a transaction, you can only read the committed data. Implementation is different for queue and
         map/set. For queue operations (offer,poll), offered and/or polled objects are copied to the next member in order
