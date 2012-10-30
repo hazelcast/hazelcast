@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.util.Clock;
@@ -28,6 +29,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -686,6 +688,7 @@ public class HazelcastTest {
                 assertEquals(value, itemEvent.getItem());
                 latch.countDown();
             }
+
             public void itemRemoved(ItemEvent<String> itemEvent) {
                 assertEquals(value, itemEvent.getItem());
                 latch.countDown();
@@ -1351,9 +1354,54 @@ public class HazelcastTest {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        IMap<String,String> map = h.getMap("testIssue174NearCacheContainsKeySingleNode");
-        map.put("key","value");
+        IMap<String, String> map = h.getMap("testIssue174NearCacheContainsKeySingleNode");
+        map.put("key", "value");
         assertTrue(map.containsKey("key"));
         h.getLifecycleService().shutdown();
+    }
+
+    /*
+        github issue 304
+     */
+    @Test
+    public void testIssue304EvictionDespitePut() throws InterruptedException {
+        Config c = new Config();
+        c.getGroupConfig().setName("testIssue304EvictionDespitePut");
+        final HashMap<String, MapConfig> mapConfigs = new HashMap<String, MapConfig>();
+        final MapConfig value = new MapConfig();
+        value.setMaxIdleSeconds(3);
+        mapConfigs.put("default", value);
+        c.setMapConfigs(mapConfigs);
+        final Properties properties = new Properties();
+        properties.setProperty("hazelcast.map.cleanup.delay.seconds", "1"); // we need faster cleanups
+        c.setProperties(properties);
+        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(c);
+
+        IMap<String, Long> map = hazelcastInstance.getMap("testIssue304EvictionDespitePutMap");
+        final AtomicInteger evictCount = new AtomicInteger(0);
+        map.addEntryListener(new EntryListener<String, Long>() {
+            public void entryAdded(EntryEvent<String, Long> event) {
+            }
+
+            public void entryRemoved(EntryEvent<String, Long> event) {
+            }
+
+            public void entryUpdated(EntryEvent<String, Long> event) {
+            }
+
+            public void entryEvicted(EntryEvent<String, Long> event) {
+                evictCount.incrementAndGet();
+            }
+        }, true);
+
+
+        String key = "key";
+        for (int i = 0; i < 5; i++) {
+            map.put(key, System.currentTimeMillis());
+            Thread.sleep(1000);
+        }
+        assertEquals(evictCount.get(), 0);
+        assertNotNull(map.get(key));
+        hazelcastInstance.getLifecycleService().shutdown();
     }
 }

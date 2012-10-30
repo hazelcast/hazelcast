@@ -281,7 +281,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         if (expirationTime == Long.MAX_VALUE && maxIdleMillis == Long.MAX_VALUE) {
             return true;
         }
-        long lastTouch = Math.max(lastAccessTime, creationTime);
+        long lastTouch = Math.max(lastUpdateTime, Math.max(lastAccessTime, creationTime));
         long idle = now - lastTouch;
         return expirationTime > now && (maxIdleMillis > idle);
     }
