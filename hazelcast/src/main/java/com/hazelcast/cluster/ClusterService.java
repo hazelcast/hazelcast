@@ -273,7 +273,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                     if (conn != null) {
                         sendHeartbeat(address);
                     } else {
-                        logger.log(Level.FINEST, "could not connect to " + address + " to send heartbeat");
+                        logger.log(Level.FINEST, "Could not connect to " + address + " to send heartbeat");
                     }
                 }
             }
@@ -541,16 +541,12 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         invokeClusterOperation(new SetMasterOperation(node.getMasterAddress()), joinRequest.address);
     }
 
-    void acceptMasterConfirmation(Address endpoint) {
-        MemberImpl member = getMember(endpoint);
+    void acceptMasterConfirmation(MemberImpl member) {
         if (member != null) {
             if (logger.isLoggable(Level.FINEST)) {
                 logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
             }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());
-        } else {
-            logger.log(Level.WARNING, "MasterConfirmation has been received from " + endpoint +
-                    ", but it is not a member of this cluster!");
         }
     }
 
@@ -678,7 +674,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         }
     }
 
-    private Future invokeClusterOperation(Operation op, Address target) {
+    Future invokeClusterOperation(Operation op, Address target) {
         return nodeService.createInvocationBuilder(SERVICE_NAME, op, NodeService.EXECUTOR_THREAD_ID)
                 .setTarget(target).setTryCount(1).build().invoke();
     }
