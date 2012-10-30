@@ -73,6 +73,8 @@ public final class Connection {
     }
 
     public void releasePacket(Packet packet) {
+        if (packet == null) return;
+        packet.reset();
         packetQueue.offer(packet);
     }
 
