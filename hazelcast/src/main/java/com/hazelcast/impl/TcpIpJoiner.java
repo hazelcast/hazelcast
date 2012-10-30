@@ -82,13 +82,17 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public static class MasterQuestion extends AbstractRemotelyProcessable {
         public void process() {
-            final Joiner joiner = getNode().getJoiner();
+            final Joiner joiner = node.getJoiner();
+            final Connection conn = getConnection();
+            final Address endpoint = conn.getEndPoint();
+            boolean shouldApprove = false;
             if (joiner instanceof TcpIpJoiner) {
                 TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
-                boolean shouldApprove = (!(tcpIpJoiner.askingForApproval || node.isMaster()));
-                getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
-                                                       getConnection());
+                final Address masterAddress = node.getMasterAddress();
+                shouldApprove = !tcpIpJoiner.askingForApproval && !node.isMaster()
+                                && (masterAddress == null || masterAddress.equals(endpoint));
             }
+            node.clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove), conn);
         }
     }
 

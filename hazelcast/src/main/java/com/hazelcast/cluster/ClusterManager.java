@@ -481,9 +481,9 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 }
             }
             node.setMasterAddress(master.address);
-            final Connection connMaster = node.connectionManager.getOrConnect(master.address);
-            if (connMaster != null) {
-                sendJoinRequest(master.address, true);
+            node.connectionManager.getOrConnect(master.address);
+            if (!sendJoinRequest(master.address, true)) {
+                logger.log(Level.WARNING, "Could not create connection to possible master " + master.address);
             }
         }
     }
@@ -909,7 +909,12 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        return sendProcessableTo(node.createJoinInfo(withCredentials), toAddress);
+        logger.log(Level.INFO, "Sending join request to " + toAddress);
+        final boolean send = sendProcessableTo(node.createJoinInfo(withCredentials), toAddress);
+        if (!send) {
+            logger.log(Level.WARNING, "Could not send join request to " + toAddress);
+        }
+        return send;
     }
 
     public void registerScheduledAction(ScheduledAction scheduledAction) {
