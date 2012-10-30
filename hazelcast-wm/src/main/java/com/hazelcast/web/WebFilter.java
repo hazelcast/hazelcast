@@ -21,6 +21,7 @@ import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.Clock;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -451,7 +452,6 @@ public class WebFilter implements Filter {
         public void invalidate() {
             originalSession.invalidate();
             destroySession(this, true);
-            timestamp.destroy();
         }
 
         public boolean isNew() {
@@ -482,10 +482,7 @@ public class WebFilter implements Filter {
                 if (data == null) {
                     return currentSessionData != null;
                 }
-                if (currentSessionData == null) {
-                    return true;
-                }
-                return !data.equals(currentSessionData);
+                return currentSessionData == null || !data.equals(currentSessionData);
             } finally {
                 currentSessionData = data;
             }
@@ -515,6 +512,7 @@ public class WebFilter implements Filter {
 
         void destroy() {
             valid = false;
+            timestamp.destroy();
         }
 
         public boolean isValid() {
@@ -522,8 +520,7 @@ public class WebFilter implements Filter {
         }
 
         void setAccessed() {
-            // timestamp.set(Hazelcast.getCluster().getClusterTime()); ???
-            timestamp.set(System.currentTimeMillis());
+            timestamp.set(Clock.currentTimeMillis());
         }
 
         long getLastAccessed() {
