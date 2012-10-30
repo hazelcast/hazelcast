@@ -94,7 +94,10 @@ public class TcpIpJoiner extends AbstractJoiner {
             final ILogger logger = node.getLogger(getClass().getName());
             if (joiner instanceof TcpIpJoiner) {
                 TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
-                approvedAsMaster = !tcpIpJoiner.claimingMaster && !node.isMaster();
+                final Address endpoint = getCaller();
+                final Address masterAddress = node.getMasterAddress();
+                approvedAsMaster = !tcpIpJoiner.claimingMaster && !node.isMaster()
+                                   && (masterAddress == null || masterAddress.equals(endpoint));
             } else {
                 approvedAsMaster = false;
                 logger.log(Level.WARNING, "This node requires MulticastJoin strategy!");

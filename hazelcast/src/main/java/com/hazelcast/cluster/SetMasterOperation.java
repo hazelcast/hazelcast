@@ -41,7 +41,7 @@ public class SetMasterOperation extends Operation implements JoinOperation {
     }
 
     public void run() {
-        ClusterService cm = (ClusterService) getService();
+        ClusterService clusterService = getService();
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
         Node node = nodeService.getNode();
         ILogger logger = nodeService.getLogger(SetMasterOperation.class.getName());
@@ -57,9 +57,9 @@ public class SetMasterOperation extends Operation implements JoinOperation {
                 }
             }
             node.setMasterAddress(masterAddress);
-            final Connection connMaster = node.connectionManager.getOrConnect(masterAddress);
-            if (connMaster != null) {
-                cm.sendJoinRequest(masterAddress, true);
+            node.connectionManager.getOrConnect(masterAddress);
+            if (!clusterService.sendJoinRequest(masterAddress, true)) {
+                logger.log(Level.WARNING, "Could not create connection to possible master " + masterAddress);
             }
         }
     }
