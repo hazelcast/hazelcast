@@ -7,7 +7,15 @@ Bundle-ManifestVersion: 2
 Bundle-Name: hazelcast-all
 Bundle-SymbolicName: hazelcast-all
 Bundle-Version: 2.4.1.SNAPSHOT
-Import-Package: javax.xml.parsers, javax.xml.transform, org.w3c.dom, javax.xml.transform.dom, javax.xml.transform.stream, javax.crypto, javax.crypto.spec, javax.crypto.interfaces
+Import-Package: javax.xml.parsers, javax.xml.transform,
+ org.w3c.dom, javax.xml.transform.dom, javax.xml.transform.stream,
+ javax.xml.xpath, javax.xml.namespace,
+ javax.crypto, javax.crypto.spec, javax.crypto.interfaces,
+ javax.management,javax.net.ssl,
+ javax.security.auth,javax.security.auth.login,
+ org.apache.log4j;resolution:=optional,
+ org.apache.log4j.spi;resolution:=optional,
+ org.slf4j;resolution:=optional
 Bundle-ClassPath: .
 Bundle-Vendor: Hazel Ltd.
 Bundle-ActivationPolicy: lazy
