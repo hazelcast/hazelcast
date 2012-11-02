@@ -26,7 +26,9 @@ public class ExecutorConfig implements DataSerializable {
 
     public final static int DEFAULT_CORE_POOL_SIZE = 40;
     public final static int DEFAULT_MAX_POOL_SIZE = 40;
+    public final static int DEFAULT_CAPACITY = Integer.MAX_VALUE;
     public final static int DEFAULT_KEEP_ALIVE_SECONDS = 300;
+    public final static ExecutorType DEFAULT_EXECUTOR_TYPE = ExecutorType.Parallel;
 
     private String name = "default";
 
@@ -34,7 +36,16 @@ public class ExecutorConfig implements DataSerializable {
 
     private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
 
+    private int capacity = DEFAULT_CAPACITY;
+
     private int keepAliveSeconds = DEFAULT_KEEP_ALIVE_SECONDS;
+
+    private ExecutorType executorType = DEFAULT_EXECUTOR_TYPE;
+
+
+    public enum ExecutorType {
+        BlockingParallel, Parallel, Queued
+    }
 
     public ExecutorConfig() {
     }
@@ -70,7 +81,7 @@ public class ExecutorConfig implements DataSerializable {
      * @param corePoolSize the corePoolSize to set
      */
     public ExecutorConfig setCorePoolSize(final int corePoolSize) {
-        if (corePoolSize <= 0) {
+        if (corePoolSize < 0) {
             throw new IllegalArgumentException("corePoolSize must be positive");
         }
         this.corePoolSize = corePoolSize;
@@ -95,6 +106,21 @@ public class ExecutorConfig implements DataSerializable {
         return this;
     }
 
+
+    /**
+     * @return the size of the work queue
+     */
+    public int getCapacity() {
+        return capacity;
+    }
+
+    /**
+     * @param capacity the size of the work queue
+     */
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+
     /**
      * @return the keepAliveSeconds
      */
@@ -113,11 +139,27 @@ public class ExecutorConfig implements DataSerializable {
         return this;
     }
 
+    /**
+     * @return the executor type
+     */
+    public ExecutorType getExecutorType() {
+        return executorType;
+    }
+
+    /**
+     * @param executorType set the type of executor to use
+     */
+    public void setExecutorType(ExecutorType executorType) {
+        this.executorType = executorType;
+    }
+
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(corePoolSize);
         out.writeInt(maxPoolSize);
         out.writeInt(keepAliveSeconds);
+        out.writeInt(capacity);
+        out.writeUTF(executorType.name());
     }
 
     public void readData(DataInput in) throws IOException {
@@ -125,6 +167,8 @@ public class ExecutorConfig implements DataSerializable {
         corePoolSize = in.readInt();
         maxPoolSize = in.readInt();
         keepAliveSeconds = in.readInt();
+        capacity = in.readInt();
+        executorType = ExecutorType.valueOf(in.readUTF());
     }
 
     @Override
