@@ -16,12 +16,14 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.Instance;
+
 /**
  * Marker interface for service proxies.
  *
  * @mdogan 9/18/12
  */
 
-public interface ServiceProxy {
+public interface ServiceProxy extends Instance {
 
 }

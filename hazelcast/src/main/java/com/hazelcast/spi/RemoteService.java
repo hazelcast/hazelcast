@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.spi;
 
-public interface StreamResponseHandler {
-    void handleStreamResponse(Object response);
+import java.util.Collection;
+
+/**
+ * @mdogan 10/31/12
+ */
+public interface RemoteService {
+
+    ServiceProxy createProxy(Object...params);
+
+    Collection<ServiceProxy> getProxies();
 }

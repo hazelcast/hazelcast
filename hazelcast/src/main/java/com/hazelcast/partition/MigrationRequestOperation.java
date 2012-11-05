@@ -135,7 +135,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
                 partitionId, replicaIndex, migrationType);
         final Collection<Operation> tasks = new LinkedList<Operation>();
-        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class, true)) {
+        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 final Operation op = service.prepareMigrationOperation(event);

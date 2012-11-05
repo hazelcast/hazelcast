@@ -16,9 +16,9 @@
 
 package com.hazelcast.impl.base;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.impl.IGetAwareProxy;
-import com.hazelcast.impl.MProxy;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -93,7 +93,7 @@ public class KeyValue implements Map.Entry, DataSerializable {
     public Object setValue(Object newValue) {
         if (name == null) throw new UnsupportedOperationException();
         this.objValue = value;
-        return ((MProxy) instance.getOrCreateInstance(name)).put(key, newValue);
+        return ((MapProxy) instance.getOrCreateInstance(name)).put(key, newValue);
     }
 
     public void setName(HazelcastInstanceImpl factoryImpl, String name) {

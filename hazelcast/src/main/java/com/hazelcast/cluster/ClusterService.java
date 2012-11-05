@@ -722,7 +722,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             }
             setMembers(memberMap);
 
-            Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class, true);
+            Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class);
             for (MemberImpl member : newMembers) {
                 for (MembershipAwareService service : services) {
                     service.memberAdded(member);
@@ -748,7 +748,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 }
                 setMembers(newMembers);
 
-                Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class, true);
+                Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class);
                 for (MembershipAwareService service : services) {
                     service.memberRemoved(deadMember);
                 }
@@ -925,10 +925,6 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     public Cluster getClusterProxy() {
-        return new ClusterProxy(this);
-    }
-
-    public ServiceProxy createProxy() {
         return new ClusterProxy(this);
     }
 

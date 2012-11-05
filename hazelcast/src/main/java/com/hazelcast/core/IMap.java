@@ -443,56 +443,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     void set(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
-     * Tries to acquire the lock for the specified key and returns
-     * the value of the key if lock is required in time.
-     * <p>If the lock is not available then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of two things happens:
-     * <ul>
-     * <li>The lock is acquired by the current thread; or
-     * <li>The specified waiting time elapses
-     * </ul>
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>
-     * This method returns a clone of original value, modifying the returned value does not change
-     * the actual value in the map. One should put modified value back to make changes visible to all nodes.
-     * <pre>
-     *      V value = map.get(key);
-     *      value.updateSomeProperty();
-     *      map.put(key, value);
-     * </pre>
-     * </p>
-     *
-     * @param key      key of the entry
-     * @param time     maximum time to wait for the lock
-     * @param timeunit time unit of the <tt>time</tt> argument.
-     * @return value of the key in this map
-     * @throws java.util.concurrent.TimeoutException
-     *          if lock cannot be acquired in time.
-     */
-    V tryLockAndGet(K key, long time, TimeUnit timeunit) throws TimeoutException;
-
-    /**
-     * Puts the key and value into this map and unlocks the key
-     * if the calling thread owns the lock.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
-     *
-     * @param key   key of the entry
-     * @param value value of the entry
-     */
-    void putAndUnlock(K key, V value);
-
-    /**
      * Acquires the lock for the specified key.
      * <p>If the lock is not available then
      * the current thread becomes disabled for thread scheduling

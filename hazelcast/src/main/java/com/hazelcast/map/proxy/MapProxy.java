@@ -14,31 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.proxy;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.core.IMap;
+import com.hazelcast.spi.ServiceProxy;
 
-public class PutTransientOperation extends BasePutOperation {
+/**
+ * @mdogan 11/5/12
+ */
+public interface MapProxy<K, V> extends IMap<K, V>, ServiceProxy {
 
-    public PutTransientOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
-        super(name, dataKey, value, txnId, ttl);
-    }
-
-    public PutTransientOperation() {
-    }
-
-    @Override
-    void initFlags() {
-        STORE = false;
-        LOAD_OLD = false;
-        RETURN_OLD_VALUE = false;
-    }
-
-
-
-
-    @Override
-    public String toString() {
-        return "PutTransientOperation{" + name + "}";
-    }
 }

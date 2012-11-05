@@ -19,22 +19,20 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.management.ThreadMonitoringService;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.core.PartitionService;
-import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceProxy;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
@@ -50,8 +48,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     public final Node node;
 
     final ILogger logger;
-
-    final ConcurrentMap<String, Instance> proxies = new ConcurrentHashMap<String, Instance>(100);
 
     final List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
 
@@ -112,7 +108,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return getOrCreateInstance(Prefix.MAP + name);
+//        return getOrCreateInstance(Prefix.MAP + name);
+        return (IMap<K, V>) getServiceProxy(MapService.class, name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
@@ -169,7 +166,15 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Collection<Instance> getInstances() {
-        return new ArrayList<Instance>(proxies.values());
+        final Collection<Instance> instances = new LinkedList<Instance>();
+        Collection<RemoteService> services = node.nodeService.getServices(RemoteService.class);
+        for (RemoteService service : services) {
+            final Collection<ServiceProxy> proxies = service.getProxies();
+            if (proxies != null && !proxies.isEmpty()) {
+                instances.addAll(proxies);
+            }
+        }
+        return instances;
     }
 
     public Config getConfig() {
@@ -192,23 +197,23 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return lifecycleService;
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends ManagedService> serviceClass) {
-        Collection services = node.nodeService.getServices(serviceClass, false);
+    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, String name) {
+        Collection services = node.nodeService.getServices(serviceClass);
         for (Object service : services) {
             if (serviceClass.isAssignableFrom(service.getClass())) {
-                return (S) ((ManagedService) service).createProxy();
+                return (S) ((RemoteService) service).createProxy(name);
             }
         }
         throw new IllegalArgumentException();
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(final String serviceName) {
+    public <S extends ServiceProxy> S getServiceProxy(final String serviceName, String name) {
         Object service = node.nodeService.getService(serviceName);
         if (service == null) {
             throw new NullPointerException();
         }
-        if (service instanceof ManagedService) {
-            return (S) ((ManagedService) service).createProxy();
+        if (service instanceof RemoteService) {
+            return (S) ((RemoteService) service).createProxy(name);
         }
         throw new IllegalArgumentException();
     }
@@ -231,7 +236,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public <I> I getOrCreateInstance(String name) {
         boolean created = false;
-        Instance proxy = proxies.get(name);
+        Instance proxy = null; //proxies.get(name);
         if (proxy == null) {
             created = true;
             if (name.startsWith(Prefix.QUEUE)) {
@@ -239,7 +244,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             } else if (name.startsWith(Prefix.TOPIC)) {
 //                proxy = proxyFactory.createTopicProxy(name);
             } else if (name.startsWith(Prefix.MAP)) {
-                proxy = proxyFactory.createMapProxy(name);
+//                proxy = proxyFactory.createMapProxy(name);
             } else if (name.startsWith(Prefix.AS_LIST)) {
 //                proxy = proxyFactory.createListProxy(name);
             } else if (name.startsWith(Prefix.MULTIMAP)) {
@@ -257,11 +262,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             } else if (name.equals("lock")) {
 //                proxy = proxyFactory.createLockProxy(proxyKey.key);
             }
-            final Instance anotherProxy = proxies.putIfAbsent(name, proxy);
-            if (anotherProxy != null) {
-                created = false;
-                proxy = anotherProxy;
-            }
+//            final Instance anotherProxy = proxies.putIfAbsent(name, proxy);
+//            if (anotherProxy != null) {
+//                created = false;
+//                proxy = anotherProxy;
+//            }
         }
         if (created) {
             logger.log(Level.FINEST, "Instance created " + name);
@@ -271,7 +276,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public void destroyInstance(final String name) {
-        Instance proxy = proxies.remove(name);
+        Instance proxy = null; //proxies.remove(name);
         if (proxy != null) {
             logger.log(Level.FINEST, "Instance destroyed " + name);
             destroyInstanceClusterWide(proxy);
@@ -329,13 +334,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
     }
 
-    public Collection<Instance> getProxies() {
-        return proxies.values();
-    }
-
     void shutdown() {
         managementService.unregister();
-        proxies.clear();
         node.shutdown(false, true);
         serializerRegistry.destroy();
         HazelcastInstanceFactory.remove(this);

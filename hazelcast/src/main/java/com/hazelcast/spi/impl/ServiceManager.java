@@ -27,13 +27,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.annotation.PrivateApi;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -66,6 +65,7 @@ class ServiceManager {
             if (servicesConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService));
+                registerService(QueueService.NAME, new QueueService());
                 // TODO: add other services
                 // ...
                 // ...
@@ -100,7 +100,9 @@ class ServiceManager {
     }
 
     synchronized void stopServices() {
-        final Collection<ManagedService> managedServices = getServices(ManagedService.class, false);
+        final List<ManagedService> managedServices = getServices(ManagedService.class);
+        // reverse order to stop CoreServices last.
+        Collections.reverse(managedServices);
         services.clear();
         for (ManagedService service : managedServices) {
             destroyService(service);
@@ -146,22 +148,20 @@ class ServiceManager {
         return (T) services.get(serviceName);
     }
 
-    <S> Collection<S> getServices(Class<S> serviceClass, boolean coreServicesFirst) {
+    /**
+     * Returns a list of services matching provides service class/interface.
+     * <br></br>
+     * <b>CoreServices will be placed at the beginning of the list.</b>
+     *
+     */
+    <S> List<S> getServices(Class<S> serviceClass) {
         final LinkedList<S> result = new LinkedList<S>();
         for (Object service : services.values()) {
             if (serviceClass.isAssignableFrom(service.getClass())) {
                 if (service instanceof CoreService) {
-                    if (coreServicesFirst) {
-                        result.addFirst((S) service);
-                    } else {
-                        result.addLast((S) service);
-                    }
+                    result.addFirst((S) service);
                 } else {
-                    if (coreServicesFirst) {
-                        result.addLast((S) service);
-                    } else {
-                        result.addFirst((S) service);
-                    }
+                    result.addLast((S) service);
                 }
             }
         }

@@ -19,14 +19,13 @@ package com.hazelcast.cluster;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.spi.ServiceProxy;
 
 import java.util.Set;
 
 /**
  * @mdogan 8/26/12
  */
-public class ClusterProxy implements Cluster, ServiceProxy {
+public class ClusterProxy implements Cluster {
 
     private final ClusterService clusterService;
 

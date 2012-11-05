@@ -25,8 +25,6 @@ public interface ManagedService {
 
     void init(NodeService nodeService, Properties properties);
 
-    ServiceProxy createProxy();
-
     void destroy();
 
 }

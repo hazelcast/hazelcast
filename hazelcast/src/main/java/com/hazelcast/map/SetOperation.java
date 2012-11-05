@@ -20,7 +20,7 @@ import com.hazelcast.nio.Data;
 
 public class SetOperation extends BasePutOperation {
 
-    public SetOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
+    public SetOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, txnId, ttl);
     }
 

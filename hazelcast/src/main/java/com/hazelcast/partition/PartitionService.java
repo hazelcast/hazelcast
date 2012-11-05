@@ -966,10 +966,6 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
         return proxy;
     }
 
-    public ServiceProxy createProxy() {
-        return proxy;
-    }
-
     private void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationStatus status) {
         final Collection<MemberImpl> members = node.clusterService.getMemberList();
         for (MemberImpl member : members) {

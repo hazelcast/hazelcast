@@ -17,6 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.impl.Record;
+import com.hazelcast.map.MapPartition;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 

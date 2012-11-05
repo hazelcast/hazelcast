@@ -356,7 +356,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 memberState.addPartition(partition.getPartitionId());
             }
         }
-        Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getProxies());
+        Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getInstances());
 //        ExecutorManager executorManager = factory.node.executorManager;
 //        ExecutorManager executorManager = instance.node.executorManager;
 //        memberState.putInternalThroughputStats(executorManager.getInternalThroughputMap());
@@ -461,7 +461,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     private Set<String> getLongInstanceNames() {
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
-        Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getProxies());
+        Collection<Instance> proxyObjects = new ArrayList<Instance>(instance.getInstances());
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MULTIMAP);
         collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);

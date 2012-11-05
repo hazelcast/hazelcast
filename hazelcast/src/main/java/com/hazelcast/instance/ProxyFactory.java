@@ -16,14 +16,13 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.impl.MProxy;
 import com.hazelcast.transaction.TransactionImpl;
 
 public interface ProxyFactory {
 
 //    void checkProxy(ProxyKey proxyKey);
 
-    MProxy createMapProxy(String name);
+//    MProxy createMapProxy(String name);
 
 //    QProxy createQueueProxy(String name);
 //

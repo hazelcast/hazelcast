@@ -21,7 +21,6 @@ import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.impl.MProxy;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
@@ -537,12 +536,12 @@ public class TransactionImpl implements Transaction {
         }
 
         public void rollbackMap() {
-            MProxy mapProxy = null;
-            Object proxy = instance.getOrCreateInstance(name);
-            if (proxy instanceof MProxy) {
-                mapProxy = (MProxy) proxy;
-            }
-            if (mapProxy != null) mapProxy.unlock(key);
+//            MProxy mapProxy = null;
+//            Object proxy = instance.getOrCreateInstance(name);
+//            if (proxy instanceof MProxy) {
+//                mapProxy = (MProxy) proxy;
+//            }
+//            if (mapProxy != null) mapProxy.unlock(key);
         }
 
         public void rollbackQueue() {

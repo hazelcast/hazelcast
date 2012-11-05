@@ -79,16 +79,18 @@ public class Packet implements SocketWritable, CallStateAware {
         }
 
         if (!isStatusSet(ST_SIZE)) {
-            if (!writeInt(destination, value.size())) {
+            if (!writeInt(destination, value != null ? value.size() : 0)) {
                 return false;
             }
             setStatus(ST_SIZE);
         }
 
         if (isStatusSet(ST_SIZE) && !isStatusSet(ST_VALUE)) {
-            IOUtil.copyToHeapBuffer(value.buffer, destination);
-            if (value.buffer.hasRemaining()) {
-                return false;
+            if (value != null) {
+                IOUtil.copyToHeapBuffer(value.buffer, destination);
+                if (value.buffer.hasRemaining()) {
+                    return false;
+                }
             }
             setStatus(ST_VALUE);
         }

@@ -18,7 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.impl.MProxy;
+import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 
@@ -48,7 +48,7 @@ public class SimpleMapEntry implements MapEntry {
     }
 
     public Object setValue(Object newValue) {
-        return ((MProxy) instance.getOrCreateInstance(name)).put(key, newValue);
+        return ((MapProxy) instance.getOrCreateInstance(name)).put(key, newValue);
     }
 
     public long getCost() {

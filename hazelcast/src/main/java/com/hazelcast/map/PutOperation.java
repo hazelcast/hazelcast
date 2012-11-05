@@ -16,17 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
-import com.hazelcast.impl.Record;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.nio.Data;
-
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class PutOperation extends BasePutOperation {
 
-    public PutOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
+    public PutOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, txnId, ttl);
     }
 

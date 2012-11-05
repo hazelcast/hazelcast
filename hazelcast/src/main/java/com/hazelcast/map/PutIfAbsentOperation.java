@@ -19,14 +19,13 @@ package com.hazelcast.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class PutIfAbsentOperation extends BasePutOperation {
 
     boolean absent = true;
 
-    public PutIfAbsentOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
+    public PutIfAbsentOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, txnId, ttl);
     }
 

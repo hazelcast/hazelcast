@@ -19,23 +19,25 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.proxy.DataMapProxy;
+import com.hazelcast.map.proxy.MapProxy;
+import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
 import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.AbstractOperation;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService, TransactionalService {
+public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
+        TransactionalService, RemoteService {
+
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
     private final ILogger logger;
@@ -43,6 +45,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final PartitionContainer[] partitionContainers;
     private final NodeService nodeService;
     private final ConcurrentMap<Long, BlockingQueue<Boolean>> backupCalls = new ConcurrentHashMap<Long, BlockingQueue<Boolean>>(1000);
+    private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
 
     public MapService(final NodeService nodeService) {
         this.nodeService = nodeService;
@@ -169,8 +172,18 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return MAP_SERVICE_NAME;
     }
 
-    public MapProxy createProxy() {
-        return new MapProxy(this, nodeService);
+    public MapProxy createProxy(Object... params) {
+        final String name = String.valueOf(params[0]);
+        if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
+            return new DataMapProxy(name, this, nodeService);
+        }
+        final MapProxy proxy = new ObjectMapProxy(name, this, nodeService);
+        final MapProxy currentProxy = proxies.putIfAbsent(name, proxy);
+        return currentProxy != null ? currentProxy : proxy;
+    }
+
+    public Collection<ServiceProxy> getProxies() {
+        return new HashSet<ServiceProxy>(proxies.values());
     }
 
     public void memberAdded(final MemberImpl member) {

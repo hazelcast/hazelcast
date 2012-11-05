@@ -27,7 +27,6 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BasePutOperation extends LockAwareOperation {
     Object key;
-    Object value;
     Record record;
     int backupCount;
     long version;
@@ -47,10 +46,9 @@ public abstract class BasePutOperation extends LockAwareOperation {
     boolean SEND_BACKUPS = true;
     boolean TRANSACTION_ENABLED = true;
 
-    public BasePutOperation(String name, Data dataKey, Object value, String txnId, long ttl) {
-        super(name, dataKey, toData(value), ttl);
+    public BasePutOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
+        super(name, dataKey, value, ttl);
         setTxnId(txnId);
-        this.value = value;
         initFlags();
     }
 

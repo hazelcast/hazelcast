@@ -336,9 +336,15 @@ public class NodeServiceImpl implements NodeService {
         return serviceManager.getService(serviceName);
     }
 
+    /**
+     * Returns a list of services matching provides service class/interface.
+     * <br></br>
+     * <b>CoreServices will be placed at the beginning of the list.</b>
+     *
+     */
     @PrivateApi
-    public <S> Collection<S> getServices(Class<S> serviceClass, boolean coreServicesFirst) {
-        return serviceManager.getServices(serviceClass, coreServicesFirst);
+    public <S> Collection<S> getServices(Class<S> serviceClass) {
+        return serviceManager.getServices(serviceClass);
     }
 
     @PrivateApi

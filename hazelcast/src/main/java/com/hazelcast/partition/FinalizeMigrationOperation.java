@@ -73,7 +73,7 @@ public class FinalizeMigrationOperation extends AbstractOperation implements Par
     protected Collection<MigrationAwareService> getServices() {
         Collection<MigrationAwareService> services = new LinkedList<MigrationAwareService>();
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class, true)) {
+        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 services.add(service);

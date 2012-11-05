@@ -16,8 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.impl.MProxy;
-import com.hazelcast.impl.MProxyImpl;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,9 +30,9 @@ public class DefaultProxyFactory implements ProxyFactory {
         this.instance = instance;
     }
 
-    public MProxy createMapProxy(String name) {
-        return new MProxyImpl(name, instance);
-    }
+//    public MProxy createMapProxy(String name) {
+//        return new MProxyImpl(name, instance);
+//    }
 
 //    public QProxy createQueueProxy(String name) {
 //        return new QProxyImpl(name, factory);
