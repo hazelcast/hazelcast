@@ -16,8 +16,10 @@
 
 package com.hazelcast.hibernate;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.GroupProperties;
 
 public final class HazelcastTimestamper {
 
@@ -35,5 +37,19 @@ public final class HazelcastTimestamper {
             // HazelcastInstance is instance of HazelcastClient.
         }
         return CacheEnvironment.getDefaultCacheTimeoutInMillis();
+    }
+
+    public static long getMaxOperationTimeout(HazelcastInstance instance) {
+        String maxOpTimeoutProp = null;
+        try {
+            Config config = instance.getConfig();
+            maxOpTimeoutProp = config.getProperty(GroupProperties.PROP_MAX_OPERATION_TIMEOUT);
+        } catch (UnsupportedOperationException ignored) {
+            // HazelcastInstance is instance of HazelcastClient.
+        }
+        if (maxOpTimeoutProp != null) {
+            return Long.parseLong(maxOpTimeoutProp);
+        }
+        return Long.MAX_VALUE;
     }
 }

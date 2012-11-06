@@ -37,6 +37,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Date;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
@@ -90,6 +91,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     public void testNativeClient() throws Exception {
         HazelcastInstance main = Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         Properties props = getDefaultProperties();
+        props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
         props.setProperty(CacheEnvironment.USE_NATIVE_CLIENT, "true");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_GROUP, "dev-custom");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_PASSWORD, "dev-pass");
@@ -107,6 +109,13 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         main.getLifecycleService().shutdown();
         Thread.sleep(1000 * 2); // let client to reconnect
         assertEquals(1, hz.getCluster().getMembers().size());
+
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+        session.save(new DummyEntity(1L, "dummy", 0, new Date()));
+        tx.commit();
+        session.close();
+
         sf.close();
         Hazelcast.shutdownAll();
     }
