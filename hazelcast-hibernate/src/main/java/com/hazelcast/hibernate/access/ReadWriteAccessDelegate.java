@@ -16,11 +16,10 @@
 
 package com.hazelcast.hibernate.access;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.hibernate.CacheEnvironment;
+import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.region.HazelcastRegion;
-import com.hazelcast.instance.GroupProperties;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 import org.hibernate.cache.entry.CacheEntry;
@@ -47,13 +46,8 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
         super(hazelcastRegion, props);
         lockTimeout = CacheEnvironment.getLockTimeoutInSeconds(props);
         explicitVersionCheckEnabled = CacheEnvironment.isExplicitVersionCheckEnabled(props);
-        Config config = hazelcastRegion.getInstance().getConfig();
-        final String maxOpTimeoutProp = config.getProperty(GroupProperties.PROP_MAX_OPERATION_TIMEOUT);
-        if (maxOpTimeoutProp != null && maxOpTimeoutProp.length() > 0) {
-            tryLockAndGetTimeout = Math.min(Long.parseLong(maxOpTimeoutProp), TRY_LOCK_AND_GET_TIMEOUT);
-        } else {
-            tryLockAndGetTimeout = TRY_LOCK_AND_GET_TIMEOUT;
-        }
+        final long maxOperationTimeout = HazelcastTimestamper.getMaxOperationTimeout(hazelcastRegion.getInstance());
+        tryLockAndGetTimeout = Math.min(maxOperationTimeout, TRY_LOCK_AND_GET_TIMEOUT);
     }
 
     public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
@@ -98,14 +92,20 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
             if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
                 try {
                     final CacheEntry currentEntry = (CacheEntry) value;
-                    final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key,
-                            tryLockAndGetTimeout, TimeUnit.MILLISECONDS);
-                    if (previousEntry == null ||
-                            versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                        getCache().putAndUnlock(key, value);
-                        return true;
+                    if (getCache().tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
+                        try {
+                            final CacheEntry previousEntry = (CacheEntry) getCache().get(key);
+                            if (previousEntry == null ||
+                                    versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                                getCache().put(key, value);
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        } finally {
+                            getCache().unlock(key);
+                        }
                     } else {
-                        getCache().unlock(key);
                         return false;
                     }
                 } catch (HazelcastException e) {
