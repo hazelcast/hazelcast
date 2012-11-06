@@ -21,7 +21,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
@@ -35,13 +34,14 @@ import java.util.logging.Level;
  */
 public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implements AccessDelegate<T> {
 
-    protected final ILogger LOG = Logger.getLogger(getClass().getName());
+    protected final ILogger LOG;
     private final T hazelcastRegion;
     protected final Comparator<Object> versionComparator;
 
     protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
         super();
         this.hazelcastRegion = hazelcastRegion;
+        LOG = hazelcastRegion.getLogger();
         if (hazelcastRegion instanceof AbstractTransactionalDataRegion) {
             this.versionComparator = ((AbstractTransactionalDataRegion) hazelcastRegion)
                     .getCacheDataDescription().getVersionComparator();

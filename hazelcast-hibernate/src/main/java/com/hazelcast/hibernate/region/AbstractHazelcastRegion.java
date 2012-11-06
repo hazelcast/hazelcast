@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.HazelcastTimestamper;
+import com.hazelcast.logging.ILogger;
 import org.hibernate.cache.CacheException;
 
 import java.util.Map;
@@ -124,5 +125,9 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
 
     public final HazelcastInstance getInstance() {
         return instance;
+    }
+
+    public final ILogger getLogger() {
+        return instance.getLoggingService().getLogger(getClass().getName());
     }
 }
