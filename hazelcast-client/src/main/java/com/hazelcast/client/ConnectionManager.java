@@ -280,7 +280,7 @@ public class ConnectionManager implements MembershipListener {
 
     protected Connection getNextConnection() {
         InetSocketAddress address = clusterMembers.get(0);
-        return new Connection(address, connectionIdGenerator.incrementAndGet());
+        return new Connection(config.getConnectionTimeout(), address, connectionIdGenerator.incrementAndGet());
     }
 
     public void memberAdded(MembershipEvent membershipEvent) {

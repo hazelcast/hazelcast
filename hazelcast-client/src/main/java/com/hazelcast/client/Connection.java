@@ -41,6 +41,8 @@ public class Connection {
     boolean headersWritten = false;
     boolean headerRead = false;
 
+    private final int timeout;
+
     /**
      * Creates the Socket to the given host and port
      *
@@ -50,12 +52,13 @@ public class Connection {
      * @throws IOException
      */
     public Connection(String host, int port, int id) {
-        this(new InetSocketAddress(host, port), id);
+        this(0, new InetSocketAddress(host, port), id);
     }
 
-    public Connection(InetSocketAddress address, int id) {
+    public Connection(int timeout, InetSocketAddress address, int id) {
         this.id = id;
         this.address = address;
+        this.timeout=timeout
         try {
             final InetSocketAddress isa = new InetSocketAddress(address.getAddress(), address.getPort());
             final Socket socket = new Socket();
@@ -65,7 +68,7 @@ public class Connection {
                 socket.setSoLinger(true, 5);
 //                socket.setSendBufferSize(BUFFER_SIZE);
 //                socket.setReceiveBufferSize(BUFFER_SIZE);
-                socket.connect(isa, 3000);
+                socket.connect(isa, timeout);
             } catch (IOException e) {
                 socket.close();
                 throw e;
