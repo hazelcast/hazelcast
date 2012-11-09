@@ -58,7 +58,7 @@ public class Connection {
     public Connection(int timeout, InetSocketAddress address, int id) {
         this.id = id;
         this.address = address;
-        this.timeout=timeout
+        this.timeout=timeout;
         try {
             final InetSocketAddress isa = new InetSocketAddress(address.getAddress(), address.getPort());
             final Socket socket = new Socket();
