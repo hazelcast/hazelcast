@@ -98,7 +98,7 @@ public class ConnectionManager implements MembershipListener {
                 } catch (IOException ignored) {
                 }
             }
-        }, TIMEOUT / 10, TIMEOUT / 10);
+        }, TIMEOUT, TIMEOUT / 10);
     }
 
     public Connection getInitConnection() throws IOException {
