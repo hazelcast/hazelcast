@@ -63,4 +63,8 @@ public class Services {
         services.put(service.getName(), service);
         return this;
     }
+
+    public ServiceConfig getServiceConfig(String name) {
+        return services.get(name);
+    }
 }
