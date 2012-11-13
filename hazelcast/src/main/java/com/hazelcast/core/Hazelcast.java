@@ -533,7 +533,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance() {
-        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy();
+        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null);
     }
 
     /**
@@ -562,7 +562,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newLiteMemberHazelcastInstance() {
-        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null,true);
+        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null, true);
     }
 
     /**

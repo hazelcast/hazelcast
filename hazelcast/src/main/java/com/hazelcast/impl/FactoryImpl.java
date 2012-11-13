@@ -96,11 +96,7 @@ public class FactoryImpl implements HazelcastInstance {
             return factory != null ? factory.hazelcastInstanceProxy : null;
         }
     }
-    public static HazelcastInstanceProxy newHazelcastInstanceProxy() {
-         Config config = new XmlConfigBuilder().build();
 
-        return newHazelcastInstanceProxy(config, config.isLiteMember());
-    }   
     public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
@@ -113,7 +109,7 @@ public class FactoryImpl implements HazelcastInstance {
             config = new XmlConfigBuilder().build();
         }
 
-        if(liteMember != null){
+        if (liteMember != null) {
             config.setLiteMember(liteMember);
         }
 
