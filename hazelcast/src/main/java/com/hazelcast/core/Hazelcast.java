@@ -67,7 +67,7 @@ public final class Hazelcast {
                 throw new IllegalStateException("Default Hazelcast instance is already initialized.");
             }
             defaultConfig = config;
-            HazelcastInstance defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config,null);
+            HazelcastInstance defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
             defaultInstance.set(defaultInstanceObject);
             return defaultInstanceObject;
         }
@@ -93,7 +93,7 @@ public final class Hazelcast {
                 defaultInstanceObject = defaultInstance.get();
                 if (defaultInstanceObject == null
                         || !defaultInstanceObject.getLifecycleService().isRunning()) {
-                    defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(defaultConfig,null);
+                    defaultInstanceObject = com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(defaultConfig);
                     defaultInstance.set(defaultInstanceObject);
                     return defaultInstanceObject;
                 } else {
@@ -504,7 +504,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
-        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config, null);
+        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
     }
 
     /**
@@ -533,7 +533,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance() {
-        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null, null);
+        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy();
     }
 
     /**
