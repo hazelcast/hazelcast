@@ -16,11 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import com.hazelcast.nio.DataSerializable;
 
 public class Join implements DataSerializable {
 
@@ -29,6 +28,8 @@ public class Join implements DataSerializable {
     private TcpIpConfig tcpIpConfig = new TcpIpConfig();
 
     private AwsConfig awsConfig = new AwsConfig();
+
+    private GenericConfig genericConfig = new GenericConfig();
 
     /**
      * @return the multicastConfig
@@ -75,11 +76,28 @@ public class Join implements DataSerializable {
         return this;
     }
 
+    /**
+     * @return the genericConfig
+     */
+    public GenericConfig getGenericConfig() {
+        return genericConfig;
+    }
+
+    /**
+     * @param genericConfig the GenericConfig to set
+     */
+    public Join setGenericConfig(final GenericConfig genericConfig) {
+        this.genericConfig = genericConfig;
+        return this;
+    }
+
+    @Override
     public void writeData(DataOutput out) throws IOException {
         multicastConfig.writeData(out);
         tcpIpConfig.writeData(out);
     }
 
+    @Override
     public void readData(DataInput in) throws IOException {
         multicastConfig = new MulticastConfig();
         multicastConfig.readData(in);

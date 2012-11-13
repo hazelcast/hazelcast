@@ -367,6 +367,14 @@
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="generic">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="class-name" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="merge-policy" default="hz.ADD_NEW_ENTRY">
         <xs:annotation>
             <xs:documentation>

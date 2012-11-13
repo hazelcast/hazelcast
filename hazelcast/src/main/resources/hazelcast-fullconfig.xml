@@ -113,6 +113,10 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+            <generic enabled="false">
+                <!--fully qualified class name of the custom Joiner. -->
+                <class-name>com.example.hz.CustomJoiner</class-name>
+            </generic>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
