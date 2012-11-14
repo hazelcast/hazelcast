@@ -20,8 +20,6 @@ import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
 
-import static com.hazelcast.impl.ClusterOperation.*;
-
 public class AtomicNumberClientProxy implements AtomicNumber {
     private final String name;
     private final PacketProxyHelper proxyHelper;
@@ -32,12 +30,15 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public long addAndGet(long delta) {
-        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_ADD_AND_GET, 0L, delta);
+//        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_ADD_AND_GET, 0L, delta);
+        return 0;
     }
 
     public boolean compareAndSet(long expect, long update) {
-        return (Boolean) proxyHelper.doOp(ATOMIC_NUMBER_COMPARE_AND_SET, expect, update);
+//        return (Boolean) proxyHelper.doOp(ATOMIC_NUMBER_COMPARE_AND_SET, expect, update);
+        return false;
     }
+
 
     public long decrementAndGet() {
         return addAndGet(-1L);
@@ -48,11 +49,13 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public long getAndAdd(long delta) {
-        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_ADD, 0L, delta);
+//        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_ADD, 0L, delta);
+        return 0;
     }
 
     public long getAndSet(long newValue) {
-        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_SET, 0L, newValue);
+//        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_SET, 0L, newValue);
+        return 0;
     }
 
     public long incrementAndGet() {

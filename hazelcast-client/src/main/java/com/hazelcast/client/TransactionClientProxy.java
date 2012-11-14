@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.nio.protocol.Command;
 
 public class TransactionClientProxy implements Transaction {

@@ -39,13 +39,13 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     private final String name;
-    private final PacketProxyHelper proxyHelper;
+//    private final PacketProxyHelper proxyHelper;
     private final ProtocolProxyHelper protocolProxyHelper;
     private final HazelcastClient client;
 
     public MultiMapClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        this.proxyHelper = new PacketProxyHelper(name, client);
+//        this.proxyHelper = new PacketProxyHelper(name, client);
         protocolProxyHelper = new ProtocolProxyHelper(name, client);
         this.client = client;
     }
@@ -66,7 +66,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         check(listener);
         Boolean noEntryListenerRegistered = entryListenerManager().noListenerRegistered(key, name, includeValue);
         if (noEntryListenerRegistered == null) {
-            proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+//            proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
             if(key==null)
                 protocolProxyHelper.doCommand(Command.MMREMOVELISTENER, getName(), null);
             else
@@ -76,22 +76,22 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         if (noEntryListenerRegistered.booleanValue()) {
 //            Call c = entryListenerManager().createNewAddListenerCall(proxyHelper, key, includeValue);
 //            proxyHelper.doCall(c);
-            if(key==null)
-            protocolProxyHelper.doCommand(Command.MMADDLISTENER, )
+//            if(key==null)
+//            protocolProxyHelper.doCommand(Command.MMADDLISTENER, )
         }
         entryListenerManager().registerListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
-        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
+//        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
         entryListenerManager().removeListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
-        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
+//        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
         entryListenerManager().removeListener(name, key, listener);
     }
 
@@ -214,7 +214,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+//        proxyHelper.destroy();
     }
 
     public Object getId() {
