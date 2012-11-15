@@ -72,8 +72,11 @@ public class SystemLogService {
 
     private final Node node;
 
+    private final boolean SYSTEM_LOG_ENABLED;
+
     public SystemLogService(Node node) {
         this.node = node;
+        SYSTEM_LOG_ENABLED = node.groupProperties.SYSTEM_LOG_ENABLED.getBoolean();
     }
 
     public String getCurrentLevel() {
@@ -110,7 +113,7 @@ public class SystemLogService {
 
 
     public CallState getOrCreateCallState(long callId, Address callerAddress, int callerThreadId) {
-        if (currentLevel == Level.NONE || callerAddress == null) return null;
+        if (!SYSTEM_LOG_ENABLED || currentLevel == Level.NONE || callerAddress == null) return null;
         CallKey callKey = new CallKey(callerAddress, callerThreadId);
         CallState callBefore = mapCallStates.get(callKey);
         if (callBefore == null) {
@@ -131,12 +134,12 @@ public class SystemLogService {
     }
 
     public CallState getCallState(Address callerAddress, int callerThreadId) {
-        if (currentLevel == Level.NONE) return null;
+        if (!SYSTEM_LOG_ENABLED || currentLevel == Level.NONE) return null;
         return mapCallStates.get(new CallKey(callerAddress, callerThreadId));
     }
 
     public CallState getCallStateForCallId(long callId, Address callerAddress, int callerThreadId) {
-        if (currentLevel == Level.NONE) return null;
+        if (!SYSTEM_LOG_ENABLED || currentLevel == Level.NONE) return null;
         CallState callState = mapCallStates.get(new CallKey(callerAddress, callerThreadId));
         if (callState != null && callState.getCallId() == callId) {
             return callState;
@@ -192,7 +195,7 @@ public class SystemLogService {
     }
 
     public void logConnection(String str) {
-        if (currentLevel != Level.NONE) {
+        if (SYSTEM_LOG_ENABLED && currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.CONNECTION);
             connectionLogs.offer(systemLog);
@@ -200,7 +203,7 @@ public class SystemLogService {
     }
 
     public void logPartition(String str) {
-        if (currentLevel != Level.NONE) {
+        if (SYSTEM_LOG_ENABLED && currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.PARTITION);
             partitionLogs.offer(systemLog);
@@ -208,7 +211,7 @@ public class SystemLogService {
     }
 
     public void logNode(String str) {
-        if (currentLevel != Level.NONE) {
+        if (SYSTEM_LOG_ENABLED && currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.NODE);
             nodeLogs.offer(systemLog);
@@ -216,7 +219,7 @@ public class SystemLogService {
     }
 
     public void logJoin(String str) {
-        if (currentLevel != Level.NONE) {
+        if (SYSTEM_LOG_ENABLED && currentLevel != Level.NONE) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.JOIN);
             joinLogs.offer(systemLog);
@@ -224,15 +227,15 @@ public class SystemLogService {
     }
 
     public boolean shouldLog(Level level) {
-        return currentLevel != Level.NONE && currentLevel.ordinal() >= level.ordinal();
+        return SYSTEM_LOG_ENABLED && currentLevel != Level.NONE && currentLevel.ordinal() >= level.ordinal();
     }
 
     public boolean shouldTrace() {
-        return currentLevel != Level.NONE && currentLevel.ordinal() >= Level.TRACE.ordinal();
+        return SYSTEM_LOG_ENABLED && currentLevel != Level.NONE && currentLevel.ordinal() >= Level.TRACE.ordinal();
     }
 
     public boolean shouldInfo() {
-        return currentLevel != Level.NONE && currentLevel.ordinal() >= Level.INFO.ordinal();
+        return SYSTEM_LOG_ENABLED && currentLevel != Level.NONE && currentLevel.ordinal() >= Level.INFO.ordinal();
     }
 
     public void info(CallStateAware callStateAware, SystemLog callStateLog) {
@@ -268,7 +271,7 @@ public class SystemLogService {
     }
 
     public void logObject(CallStateAware callStateAware, Level level, Object obj) {
-        if (currentLevel.ordinal() >= level.ordinal()) {
+        if (SYSTEM_LOG_ENABLED && currentLevel.ordinal() >= level.ordinal()) {
             if (callStateAware != null) {
                 CallState callState = callStateAware.getCallState();
                 if (callState != null) {
@@ -279,7 +282,7 @@ public class SystemLogService {
     }
 
     public void logState(CallStateAware callStateAware, Level level, SystemLog callStateLog) {
-        if (currentLevel.ordinal() >= level.ordinal()) {
+        if (SYSTEM_LOG_ENABLED && currentLevel.ordinal() >= level.ordinal()) {
             if (callStateAware != null) {
                 CallState callState = callStateAware.getCallState();
                 if (callState != null) {
