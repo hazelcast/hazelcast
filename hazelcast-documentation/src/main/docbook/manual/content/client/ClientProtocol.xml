@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<sect1 xml:id="ClientProtocol" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
+    <title>Client Protocol Specification</title>
+    <para>Hazelcast Client Protocol is a TCP protocol that is designed to be simple and yet powerful.
+        A client opens a connection to Hazelcast server (default port is 5701) and sends the request command.
+        Upon receiving the command, server will execute it and send the response back to the client. Each connection
+        needs to send the protocol type first and then authenticate using AUTH command before sending any other command.
+        After protocol is set and AUTH is done then the client can use the same connection to send infinite number of
+        other commands over the same connection.
+    </para>
+
+    <para>
+        <emphasis role="bold">Request Protocol</emphasis>
+    </para>
+    <para>
+        General structure of protocol is as follows:
+        <programlisting language="java"><![CDATA[
+        COMMAND <arg1>…<argN> #M\r\n
+        <s1>…<sM>\r\n
+        B1B2…. BM\r\n]]></programlisting>
+
+        Notice that the protocol consists of 3 lines. The first two lines are interpreted as text and there is a new
+        line character after each. The first line is called "command line", second is "size line" and the rest is binary
+        data.
+    </para>
+
+    <para>
+        Command line specifies the command and some arguments for that command that can be defined as string.
+        These are in general arguments like strings, boolean, integers and longs. The last argument defines the
+        number of binary arguments. If there is no argument then it is ok to not provide it or one can simply provide
+        #0.
+        In case of #0 then next lines can be omitted. That is the client or server will only send the commandline as
+        part
+        of the protocol
+    </para>
+    <para>
+        Size line defines the size of the binary arguments with space in between.
+        This way server is able to parse the binary data.
+    </para>
+
+    <para>Here is a sample put command
+        <programlisting language="java"><![CDATA[
+        MPUT myMap 0 #2
+        5 7
+        myKeymyValue]]></programlisting>
+    </para>
+
+
+    <sect2 xml:id="Extension" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>Entensions</title>
+
+        <para>
+            <para>
+                <emphasis role="bold">Thread id extension</emphasis>
+            </para>
+
+            The default protocol doesn't let you to implement a thread safe client implementation. This extension will
+            let
+            you to pass a thread id together with a flag. Flag will be returned in the response as is and can be used as
+            a
+            call id. If thread id is passed, only the same thread can unlock the locks. Basically hazelcast will treat
+            each
+            thread as a different caller on the client side. However with default protocol Hazelcast assumes that there
+            is
+            only one caller on the client side.
+
+            <para>
+        <programlisting language="java"><![CDATA[
+        <thread_id> COMMAND <flag> <arg1>…<argN> #M\r\n
+        <s1>…<sM>\r\n
+        B1B2…. BM\r\n]]></programlisting>
+
+            </para>
+                             å
+        </para>
+
+        <para>
+            <para>
+                <emphasis role="bold">Noreply extension</emphasis>
+            </para>
+
+            All commands in Hazelcast do return a response from server. However there are several commands where you may
+            skip the response by adding "noreply" at the end of the arguments. For those commands server will not return
+            a response. Check the command description to see if it supports noreply. Both normal and extended protocols
+            support noreply independently.
+
+            <para>
+        <programlisting language="java"><![CDATA[
+        MPUT myMap 0 noreply #2
+        5 7
+        myKeymyValue]]></programlisting>
+            </para>
+        </para>
+
+    </sect2>
+
+
+    <sect2 xml:id="CommonArgs" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>Protocol common arguments</title>
+
+
+        <para>
+            <emphasis role="bold">flag</emphasis>
+            Flag is any string value that will be returned by server on answer.
+            Server doesn't care about the value that is set here. It will return it back on response
+            object.
+            This argument can be used as call_id to match the responses to calls.
+        </para>
+
+        <para>
+            <emphasis role="bold">noreply</emphasis>
+            Is an optianal argument and is provied as it is, "noreply". If provided, server will
+            not send the response back to client. Commands that retrieve data from server do not have
+            <emphasis role="bold">noreply</emphasis>
+            as option.
+            Must be the last argument before
+            <emphasis role="bold">#N</emphasis>
+            argument.
+        </para>
+
+        <para>
+            <emphasis role="bold">name</emphasis>
+            Is the name of the data structure. Distributed objects that require name must set this
+            argument accordingly.
+            Note that almost all commands do require it
+        </para>
+    </sect2>
+
+
+    <sect2 xml:id="Response" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>Response</title>
+
+        <para>
+            Responses from server will use the same protocol. The command on response will either be
+            <emphasis role="bold">OK</emphasis>
+            or
+            <emphasis role="bold">ERROR</emphasis>
+            followed by<emphasis role="bold">flag</emphasis>.
+        </para>
+
+        <para>
+            <emphasis role="bold">A status reply</emphasis>
+        </para>
+
+        <para>
+            without any value will be
+
+            <programlisting language="java"><![CDATA[
+        OK \r\n
+        ]]></programlisting>
+
+            An error reply will be as follows:
+
+            <programlisting language="java"><![CDATA[
+        ERROR  <error reason> \r\n
+        ]]></programlisting>
+
+            Error's will happen only if the request doesn't contain the proper arguments.
+        </para>
+    </sect2>
+</sect1>

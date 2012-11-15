@@ -74,9 +74,12 @@ public class HazelcastClientLockTest extends HazelcastClientTestBase {
 
             public void run() {
                 assertFalse(lock.tryLock());
+                System.out.println(System.currentTimeMillis() + ": Unlocing the latch");
                 unlockLatch.countDown();
                 try {
-                    assertTrue(lock.tryLock(10, TimeUnit.SECONDS));
+                    Boolean tryLock = lock.tryLock(10, TimeUnit.SECONDS);
+                    System.out.println(System.currentTimeMillis() + ": Tried lock " + tryLock);
+                    assertTrue(tryLock);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

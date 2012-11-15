@@ -99,6 +99,11 @@ public class NodeIOService implements IOService {
         node.nodeService.handleOperation(packet);
     }
 
+    public void handleClientCommand(Protocol p) {
+//        node.clientHandlerService.handle(p);
+    }
+
+
     public TextCommandService getTextCommandService() {
         return node.getTextCommandService();
     }

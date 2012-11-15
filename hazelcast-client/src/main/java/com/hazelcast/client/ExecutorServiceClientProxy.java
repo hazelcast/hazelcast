@@ -20,23 +20,22 @@ import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.executor.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.hazelcast.nio.IOUtil.toObject;
 import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ExecutorServiceClientProxy implements ExecutorService {
 
-    final ProxyHelper proxyHelper;
+    final PacketProxyHelper proxyHelper;
     final ExecutorService callBackExecutors = Executors.newFixedThreadPool(5);
 
     public ExecutorServiceClientProxy(HazelcastClient client, String name) {
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new PacketProxyHelper(name, client);
     }
 
     public void shutdown() {
@@ -78,7 +77,6 @@ public class ExecutorServiceClientProxy implements ExecutorService {
         }
         return submit(dt, cdt);
     }
-
 //    private <T> void check(Object o) {
 //        if (o == null) {
 //            throw new NullPointerException("Object cannot be null.");
@@ -89,86 +87,89 @@ public class ExecutorServiceClientProxy implements ExecutorService {
 //    }
 
     private Future submit(final DistributedTask dt, final ClientDistributedTask cdt) {
-        final Packet request = proxyHelper.prepareRequest(ClusterOperation.EXECUTE, cdt, null);
-        final InnerFutureTask inner = (InnerFutureTask) dt.getInner();
-        final Call call = new Call(ProxyHelper.newCallId(), request) {
-            public void onDisconnect(final Member member) {
-                setResponse(new MemberLeftException(member));
-            }
+//        final Packet request = proxyHelper.prepareRequest(ClusterOperation.EXECUTE, cdt, null);
+//        final InnerFutureTask inner = (InnerFutureTask) dt.getInner();
+//        request.setCallId(PacketProxyHelper.newCallId());
+//        final Call call = new Call(request.getCallId(), request) {
+//            public void onDisconnect(final Member member) {
+//                setResponse(new MemberLeftException(member));
+//            }
+//
+//            public void setResponse(Object response) {
+//                super.setResponse(response);
+//                if (dt.getExecutionCallback() != null) {
+//                    callBackExecutors.execute(new Runnable() {
+//                        public void run() {
+//                            ((InnerFutureTask) dt.getInner()).innerDone();
+//                            dt.getExecutionCallback().done(dt);
+//                        }
+//                    });
+//                }
+//            }
+//        };
+//        inner.setExecutionManagerCallback(new ExecutionManagerCallback() {
+//            private volatile boolean cancelled = false;
+//
+//            public boolean cancel(boolean mayInterruptIfRunning) {
+//                cancelled = (Boolean) proxyHelper.doOp(ClusterOperation.CANCEL_EXECUTION, call.getId(), mayInterruptIfRunning);
+//                return cancelled;
+//                return false;
+//            }
+//
+//            public void get() throws InterruptedException, ExecutionException {
+//                if (cancelled) throw new CancellationException();
+//                try {
+//                    Object response = call.getResponse();
+//                    handle(response);
+//                } catch (Throwable e) {
+//                    handle(e);
+//                }
+//            }
+//
+//            public void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
+//                if (cancelled) throw new CancellationException();
+//                try {
+//                    Object response = call.getResponse(timeout, unit);
+//                    handle(response);
+//                } catch (Throwable e) {
+//                    handle(e);
+//                }
+//            }
 
-            public void setResponse(Object response) {
-                super.setResponse(response);
-                if (dt.getExecutionCallback() != null) {
-                    callBackExecutors.execute(new Runnable() {
-                        public void run() {
-                            ((InnerFutureTask) dt.getInner()).innerDone();
-                            dt.getExecutionCallback().done(dt);
-                        }
-                    });
-                }
-            }
-        };
-        inner.setExecutionManagerCallback(new ExecutionManagerCallback() {
-            private volatile boolean cancelled = false;
-
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                cancelled = (Boolean) proxyHelper.doOp(ClusterOperation.CANCEL_EXECUTION, call.getId(), mayInterruptIfRunning);
-                return cancelled;
-            }
-
-            public void get() throws InterruptedException, ExecutionException {
-                if (cancelled) throw new CancellationException();
-                try {
-                    Object response = call.getResponse();
-                    handle(response);
-                } catch (Throwable e) {
-                    handle(e);
-                }
-            }
-
-            public void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
-                if (cancelled) throw new CancellationException();
-                try {
-                    Object response = call.getResponse(timeout, unit);
-                    handle(response);
-                } catch (Throwable e) {
-                    handle(e);
-                }
-            }
-
-            private void handle(Object response) {
-                Object result = response;
-                if (response == null) {
-                    inner.innerSetException(new TimeoutException(), false);
-                } else {
-                    if (response instanceof Packet) {
-                        Packet responsePacket = (Packet) response;
-                        result = toObject(responsePacket.getValue());
-                    }
-                    if (result instanceof MemberLeftException) {
-                        MemberLeftException memberLeftException = (MemberLeftException) result;
-                        inner.innerSetMemberLeft(memberLeftException.getMember());
-                    } else if (result instanceof Throwable) {
-                        inner.innerSetException((Throwable) result, true);
-                    } else {
-                        if (dt instanceof MultiTask) {
-                            if (result != null) {
-                                Collection colResults = (Collection) result;
-                                for (Object obj : colResults) {
-                                    inner.innerSet(obj);
-                                }
-                            } else {
-                                inner.innerSet(result);
-                            }
-                        } else {
-                            inner.innerSet(result);
-                        }
-                    }
-                }
-                inner.innerDone();
-            }
-        });
-        proxyHelper.sendCall(call);
+//    }
+//            private void handle(Object response) {
+//                Object result = response;
+//                if (response == null) {
+//                    inner.innerSetException(new TimeoutException(), false);
+//                } else {
+//                    if (response instanceof Packet) {
+//                        Packet responsePacket = (Packet) response;
+//                        result = toObject(responsePacket.getValue());
+//                    }
+//                    if (result instanceof MemberLeftException) {
+//                        MemberLeftException memberLeftException = (MemberLeftException) result;
+//                        inner.innerSetMemberLeft(memberLeftException.getMember());
+//                    } else if (result instanceof Throwable) {
+//                        inner.innerSetException((Throwable) result, true);
+//                    } else {
+//                        if (dt instanceof MultiTask) {
+//                            if (result != null) {
+//                                Collection colResults = (Collection) result;
+//                                for (Object obj : colResults) {
+//                                    inner.innerSet(obj);
+//                                }
+//                            } else {
+//                                inner.innerSet(result);
+//                            }
+//                        } else {
+//                            inner.innerSet(result);
+//                        }
+//                    }
+//                }
+//                inner.innerDone();
+//            }
+//        });
+//        proxyHelper.sendCall(call);
         return dt;
     }
 

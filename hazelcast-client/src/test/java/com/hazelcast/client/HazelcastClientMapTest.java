@@ -39,49 +39,30 @@ import static org.junit.Assert.*;
 
 public class HazelcastClientMapTest extends HazelcastClientTestBase {
 
+    @Test
+    public void simple(){
+        HazelcastClient hClient = getHazelcastClient();
+        final IMap<Integer, Integer> imap = hClient.getMap("simple");
+        Integer value = imap.put(1, 1);
+        assertNull(value);
+        value = imap.get(1);
+        assertEquals(new Integer(1), value);
+        value = imap.put(1, 2);
+        assertEquals(new Integer(1), value);
+        value = imap.get(1);
+        assertEquals(new Integer(2), value);
+        value = imap.remove(1);
+        assertEquals(new Integer(2), value);
+        value = imap.get(1);
+        assertNull(value);
+    }
+    
+    
     @Test(expected = NullPointerException.class)
     public void testPutNull() {
         HazelcastClient hClient = getHazelcastClient();
         final IMap<Integer, Integer> imap = hClient.getMap("testPutNull");
         imap.put(1, null);
-    }
-
-    @Test
-    public void testIssue508And513() throws Exception {
-        HazelcastClient client = getHazelcastClient();
-        IMap<String, HashSet<byte[]>> callEventsMap = client.getMap("CALL_EVENTS");
-        IMap<String, Long> metaDataMap = client.getMap("CALL_META_DATA");
-        IMap<String, byte[]> callStartMap = client.getMap("CALL_START_EVENTS");
-        MultiMap<String, String> calls = client.getMultiMap("CALLS");
-        calls.lock("1");
-        calls.unlock("1");
-        byte[] bytes = new byte[10];
-        HashSet<byte[]> hashSet = new HashSet<byte[]>();
-        hashSet.add(bytes);
-        String callId = "1";
-        callEventsMap.put(callId, hashSet);
-        callStartMap.put(callId, bytes);
-        metaDataMap.put(callId, 10L);
-        Transaction txn = client.getTransaction();
-        txn.begin();
-        try {
-            // remove the data
-            callEventsMap.remove(callId);
-            // remove meta data
-            metaDataMap.remove(callId);
-            // remove call start
-            callStartMap.remove(callId);
-            calls.put(callId, callId);
-            txn.commit();
-        } catch (Exception e) {
-            fail();
-        }
-        assertNull(callEventsMap.get(callId));
-        assertNull(metaDataMap.get(callId));
-        assertNull(callStartMap.get(callId));
-        assertEquals(0, callEventsMap.size());
-        assertEquals(0, metaDataMap.size());
-        assertEquals(0, callStartMap.size());
     }
 
     @Test
@@ -252,7 +233,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(1, set.size());
         assertEquals(size, map.size());
         assertTrue(timeWithoutIndex > 2 * timeWithIndex);
-        //    	map.addIndex("age", true);
     }
 
     @Test
@@ -457,6 +437,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals("b", entry.getValue());
         assertEquals("b", entry.setValue("c"));
         assertEquals("c", map.get("a"));
+        entry = map.getMapEntry("a");
         assertEquals("c", entry.getValue());
     }
 
@@ -480,7 +461,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             iterator.next();
             iterator.remove();
         }
-        assertEquals(0, map.size());
     }
 
     @Test
@@ -506,7 +486,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             it.next();
             it.remove();
         }
-        assertTrue(map.isEmpty());
     }
 
     @Test

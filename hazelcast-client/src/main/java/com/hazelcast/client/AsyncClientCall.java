@@ -82,8 +82,8 @@ public class AsyncClientCall<V> implements Future<V> {
             } else {
                 throw new ExecutionException((Throwable) result);
             }
-        } else if (result instanceof Packet) {
-            setResult(ProxyHelper.getValue((Packet) result));
+//        } else if (result instanceof Packet) {
+//            setResult(PacketProxyHelper.getValue((Packet) result));
         } else {
             setResult(result);
         }

@@ -97,17 +97,17 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
         if (versionComparator != null) {
             if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
                 try {
-                    final CacheEntry currentEntry = (CacheEntry) value;
-                    final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key,
-                            tryLockAndGetTimeout, TimeUnit.MILLISECONDS);
-                    if (previousEntry == null ||
-                            versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                        getCache().putAndUnlock(key, value);
-                        return true;
-                    } else {
-                        getCache().unlock(key);
-                        return false;
-                    }
+//                    final CacheEntry currentEntry = (CacheEntry) value;
+//                    final CacheEntry previousEntry = (CacheEntry) getCache().tryLockAndGet(key,
+//                            tryLockAndGetTimeout, TimeUnit.MILLISECONDS);
+//                    if (previousEntry == null ||
+//                            versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+//                        getCache().putAndUnlock(key, value);
+//                        return true;
+//                    } else {
+//                        getCache().unlock(key);
+//                        return false;
+//                    }
                 } catch (HazelcastException e) {
                     LOG.log(Level.FINEST, "Skipping version check and put: " + e.getMessage());
                     return false;

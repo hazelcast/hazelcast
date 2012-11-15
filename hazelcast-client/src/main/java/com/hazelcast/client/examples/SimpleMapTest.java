@@ -27,12 +27,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class SimpleMapTest {
 
-    public static int THREAD_COUNT = 40;
+    public static int THREAD_COUNT = 1;
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
-    public static int GET_PERCENTAGE = 40;
-    public static int PUT_PERCENTAGE = 40;
+    public static int GET_PERCENTAGE = 0;
+    public static int PUT_PERCENTAGE = 100;
     final static Stats stats = new Stats();
 
     public static void main(String[] args) {
@@ -73,12 +73,14 @@ public class SimpleMapTest {
                     IMap<String, byte[]> map = hazelcast.getMap("default");
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
+                        byte[] value = String.valueOf(System.nanoTime()).getBytes();
+//                        byte[] value = new byte[VALUE_SIZE];
                         int operation = ((int) (Math.random() * 100));
                         if (operation < GET_PERCENTAGE) {
                             map.get(String.valueOf(key));
                             stats.gets.incrementAndGet();
                         } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
-                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                            map.put(String.valueOf(key), value);
                             stats.puts.incrementAndGet();
                         } else {
                             map.remove(String.valueOf(key));

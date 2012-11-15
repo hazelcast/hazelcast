@@ -38,12 +38,12 @@ public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory 
     }
 
     public Connection getConnection() throws ResourceException {
-        log(this, "getConnection");
+        log(this, "getConn");
         return (Connection) cm.allocateConnection(mcf, null);
     }
 
     public Connection getConnection(ConnectionSpec connSpec) throws ResourceException {
-        log(this, "getConnection spec: " + connSpec);
+        log(this, "getConn spec: " + connSpec);
         return (Connection) cm.allocateConnection(mcf, null);
     }
 

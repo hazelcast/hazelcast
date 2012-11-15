@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceProxy;
 
 import java.io.IOException;
@@ -89,9 +90,10 @@ public class HazelcastClient implements HazelcastInstance {
         //empty check
         connectionManager = new ConnectionManager(this, config, lifecycleService);
         connectionManager.setBinder(new DefaultClientBinder(this));
-        out = new OutRunnable(this, calls, new PacketWriter());
-        in = new InRunnable(this, out, calls, new PacketReader());
+        out = new OutRunnable(this, calls, new ProtocolWriter());
+        in = new InRunnable(this, out, calls, new ProtocolReader());
         listenerManager = new ListenerManager(this, serializerRegistry);
+
         try {
             final Connection c = connectionManager.getInitConnection();
             if (c == null) {
@@ -341,6 +343,14 @@ public class HazelcastClient implements HazelcastInstance {
 
     public LifecycleService getLifecycleService() {
         return lifecycleService;
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, String name) {
+        return null;
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(String serviceName, String name) {
+        return null;
     }
 
     public <S extends ServiceProxy> S getServiceProxy(final Class<? extends ManagedService> serviceClass) {

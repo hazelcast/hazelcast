@@ -17,21 +17,23 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.monitor.LocalLockStats;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
+import static com.hazelcast.nio.IOUtil.toData;
 
 public class LockClientProxy implements ILock {
-    final ProxyHelper proxyHelper;
+    final ProtocolProxyHelper protocolProxyHelper;
     final Object lockObject;
 
     public LockClientProxy(Object object, HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+        protocolProxyHelper = new ProtocolProxyHelper("", client);
         lockObject = object;
         check(lockObject);
     }
@@ -41,43 +43,34 @@ public class LockClientProxy implements ILock {
     }
 
     public void lockInterruptibly() throws InterruptedException {
-        throw new UnsupportedOperationException("lockInterruptibly is not implemented!");
+        throw new UnsupportedOperationException("Is not implemented!");
     }
 
     public void lock() {
-        doLock(-1, null);
+        protocolProxyHelper.doCommand(Command.LOCK,new String[]{}, toData(lockObject));
     }
 
     public boolean isLocked() {
-        ClusterOperation operation = ClusterOperation.LOCK_IS_LOCKED;
-        Packet request = proxyHelper.prepareRequest(operation, lockObject, null);
-        Packet response = proxyHelper.callAndGetResult(request);
-        return (Boolean)proxyHelper.getValue(response);
+        Protocol protocol = protocolProxyHelper.doCommand(Command.ISLOCKED, new String[]{}, toData(lockObject));
+        return Boolean.valueOf(protocol.args[0]);
     }
 
     public boolean tryLock() {
-        return (Boolean) doLock(0, null);
+        Protocol protocol = protocolProxyHelper.doCommand(Command.TRYLOCK, new String[]{}, toData(lockObject));
+        return Boolean.valueOf(protocol.args[0]);
     }
 
     public boolean tryLock(long time, TimeUnit timeunit) {
-        ProxyHelper.checkTime(time, timeunit);
-        return (Boolean) doLock(time, timeunit);
+        Protocol protocol = protocolProxyHelper.doCommand(Command.TRYLOCK, new String[]{String.valueOf(timeunit.toMillis(time))}, toData(lockObject));
+        return Boolean.valueOf(protocol.args[0]);
     }
 
     public void unlock() {
-        proxyHelper.doOp(ClusterOperation.LOCK_UNLOCK, lockObject, null);
+        protocolProxyHelper.doCommand(Command.UNLOCK,new String[]{}, toData(lockObject));
     }
 
     public void forceUnlock() {
-        proxyHelper.doOp(ClusterOperation.LOCK_FORCE_UNLOCK, lockObject, null);
-    }
-
-    private Object doLock(long timeout, TimeUnit timeUnit) {
-        ClusterOperation operation = ClusterOperation.LOCK_LOCK;
-        Packet request = proxyHelper.prepareRequest(operation, lockObject, null);
-        request.setTimeout(timeUnit == null ? timeout : timeUnit.toMillis(timeout));
-        Packet response = proxyHelper.callAndGetResult(request);
-        return proxyHelper.getValue(response);
+        protocolProxyHelper.doCommand(Command.FORCEUNLOCK,new String[]{}, toData(lockObject));
     }
 
     public Condition newCondition() {
@@ -89,7 +82,7 @@ public class LockClientProxy implements ILock {
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        protocolProxyHelper.doCommand(Command.DESTROY, InstanceType.LOCK.name(), toData(lockObject));
     }
 
     public Object getId() {

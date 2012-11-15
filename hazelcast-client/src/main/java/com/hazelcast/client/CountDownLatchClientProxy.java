@@ -21,16 +21,16 @@ import com.hazelcast.monitor.LocalCountDownLatchStats;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.impl.ClusterOperation.*;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class CountDownLatchClientProxy implements ICountDownLatch {
     private final String name;
-    private final ProxyHelper proxyHelper;
+    private final PacketProxyHelper proxyHelper;
 
     public CountDownLatchClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
     public void await() throws InstanceDestroyedException, MemberLeftException, InterruptedException {
@@ -39,7 +39,8 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
 
     public boolean await(long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException, InterruptedException {
         try {
-            return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_AWAIT, null, null, timeout, unit);
+            return false;
+//            return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_AWAIT, null, null, timeout, unit);
         } catch (RuntimeException re) {
             Throwable e = re.getCause();
             if (e instanceof InstanceDestroyedException) {
@@ -56,15 +57,17 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
     }
 
     public void countDown() {
-        proxyHelper.doOp(COUNT_DOWN_LATCH_COUNT_DOWN, null, null);
+//        proxyHelper.doOp(COUNT_DOWN_LATCH_COUNT_DOWN, null, null);
     }
 
     public int getCount() {
-        return (Integer) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_COUNT, null, null);
+        return 0;
+//        return (Integer) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_COUNT, null, null);
     }
 
     public Member getOwner() {
-        return (Member) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_OWNER, null, null);
+        return null;
+//        return (Member) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_OWNER, null, null);
     }
 
     public boolean hasCount() {
@@ -72,7 +75,8 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
     }
 
     public boolean setCount(int count) {
-        return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_SET_COUNT, null, count);
+        return false;
+//        return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_SET_COUNT, null, count);
     }
 
     public void destroy() {

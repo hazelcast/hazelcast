@@ -24,8 +24,10 @@
 //import com.hazelcast.impl.base.Pairs;
 //import com.hazelcast.logging.ILogger;
 //import com.hazelcast.nio.*;
+//import com.hazelcast.nio.protocol.Command;
 //import com.hazelcast.partition.Partition;
 //import com.hazelcast.partition.PartitionService;
+//import com.hazelcast.query.Expression;
 //import com.hazelcast.query.Predicate;
 //import com.hazelcast.security.Credentials;
 //import com.hazelcast.security.UsernamePasswordCredentials;
@@ -37,8 +39,10 @@
 //import java.io.DataOutput;
 //import java.io.IOException;
 //import java.net.Socket;
+//import java.nio.ByteBuffer;
 //import java.util.*;
 //import java.util.concurrent.*;
+//import java.util.concurrent.atomic.AtomicLong;
 //import java.util.logging.Level;
 //
 //import static com.hazelcast.impl.BaseManager.getInstanceType;
@@ -51,6 +55,7 @@
 //    private final Node node;
 //    private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
 //    private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[ClusterOperation.LENGTH];
+//    private final ClientOperationHandler[] commandHandlers = new ClientOperationHandler[Command.LENGTH];
 //    private final ClientOperationHandler unknownOperationHandler = new UnknownClientOperationHandler();
 //    private final ILogger logger;
 //    private final int THREAD_COUNT;
@@ -62,7 +67,89 @@
 //        this.node = node;
 //        this.logger = node.getLogger(this.getClass().getName());
 //        node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
-//        registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
+//        registerHandler(Command.UNKNOWN, unknownOperationHandler);
+//        registerHandler(Command.AUTH, new ClientAuthenticateHandler());
+//        registerHandler(Command.MGET, new MapGetHandler());
+//        registerHandler(Command.MSIZE, new MapSizeHandler());
+//        registerHandler(Command.MGETALL, new MapGetAllHandler());
+//        registerHandler(Command.MPUT, new MapPutHandler());
+//        registerHandler(Command.MTRYPUT, new MapTryPutHandler());
+//        registerHandler(Command.MSET, new MapSetHandler());
+//        registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler());
+//        registerHandler(Command.MPUTANDUNLOCK, new MapPutAndUnlockHandler());
+//        registerHandler(Command.MTRYLOCKANDGET, new MapTryLockAndGetHandler());
+//        registerHandler(Command.MADDLISTENER, new MapAddListenerHandler());
+//        registerHandler(Command.MREMOVELISTENER, new MapRemoveListenerHandler());
+//        registerHandler(Command.ADDLISTENER, new AddListenerHandler());
+//        registerHandler(Command.REMOVELISTENER, new RemoveListenerHandler());
+//        registerHandler(Command.KEYSET, new MapIterateKeysHandler());
+//        registerHandler(Command.MENTRYSET, new MapIterateEntriesHandler());
+//        registerHandler(Command.MGETENTRY, new GetMapEntryHandler());
+//        registerHandler(Command.MLOCK, new MapLockHandler());
+//        registerHandler(Command.MTRYLOCK, new MapLockHandler());
+//        registerHandler(Command.MTRYREMOVE, new MapTryRemoveHandler());
+//        registerHandler(Command.MLOCKMAP, new MapLockMapHandler());
+//        registerHandler(Command.MUNLOCKMAP, new MapUnlockMapHandler());
+//        registerHandler(Command.MFORCEUNLOCK, new MapForceUnlockHandler());
+//        registerHandler(Command.MISKEYLOCKED, new MapIsKeyLockedHandler());
+//        registerHandler(Command.MUNLOCK, new MapUnlockHandler());
+//        registerHandler(Command.MPUTALL, new MapPutAllHandler());
+//        registerHandler(Command.MREMOVE, new MapRemoveHandler());
+//        registerHandler(Command.MREMOVEITEM, new MapItemRemoveHandler());
+//        registerHandler(Command.MCONTAINSKEY, new MapContainsHandler());
+//        registerHandler(Command.MCONTAINSVALUE, new MapContainsValueHandler());
+//        registerHandler(Command.MPUTIFABSENT, new MapPutIfAbsentHandler());
+//        registerHandler(Command.MREMOVEIFSAME, new MapRemoveIfSameHandler());
+//        registerHandler(Command.MREPLACEIFNOTNULL, new MapReplaceIfNotNullHandler());
+//        registerHandler(Command.MREPLACEIFSAME, new MapReplaceIfSameHandler());
+//        registerHandler(Command.MFLUSH, new MapFlushHandler());
+//        registerHandler(Command.MMPUT, new MapPutMultiHandler());
+//        registerHandler(Command.MMREMOVE, new MapRemoveMultiHandler());
+//        registerHandler(Command.MMVALUECOUNT, new MapValueCountHandler());
+//        registerHandler(Command.MEVICT, new MapEvictHandler());
+//        registerHandler(Command.MFLUSH, new MapFlushHandler());
+//        registerHandler(Command.MADDINDEX, new AddIndexHandler());
+//        registerHandler(Command.SADD, new SetAddHandler());
+//        registerHandler(Command.LADD, new ListAddHandler());
+//        registerHandler(Command.ADDANDGET, new AtomicLongAddAndGetHandler());
+//        registerHandler(Command.COMPAREANDSET, new AtomicLongCompareAndSetHandler());
+//        registerHandler(Command.GETANDSET, new AtomicLongGetAndSetHandler());
+//        registerHandler(Command.GETANDADD, new AtomicLongGetAndAddHandler());
+//        registerHandler(Command.QOFFER, new QueueOfferHandler());
+//        registerHandler(Command.QPOLL, new QueuePollHandler());
+//        registerHandler(Command.QTAKE, new QueuePollHandler());
+//        registerHandler(Command.QSIZE, new QueueSizeHandler());
+//        registerHandler(Command.QPEEK, new QueuePeekHandler());
+//        registerHandler(Command.QPUT, new QueueOfferHandler());
+//        registerHandler(Command.QREMOVE, new QueueRemoveHandler());
+//        registerHandler(Command.QREMCAPACITY, new QueueRemainingCapacityHandler());
+//        registerHandler(Command.QENTRIES, new QueueEntriesHandler());
+//        registerHandler(Command.QADDLISTENER, new QueueAddListenerHandler());
+//        registerHandler(Command.QREMOVELISTENER, new QueueRemoveListenerHandler());
+//        registerHandler(Command.TRXBEGIN, new TransactionBeginHandler());
+//        registerHandler(Command.TRXCOMMIT, new TransactionCommitHandler());
+//        registerHandler(Command.TRXROLLBACK, new TransactionRollbackHandler());
+//        registerHandler(Command.NEWID, new NewIdHandler());
+//        registerHandler(Command.INSTANCES, new GetInstancesHandler());
+//        registerHandler(Command.MEMBERS, new GetMembersHandler());
+//        registerHandler(Command.CLUSTERTIME, new GetClusterTimeHandler());
+//        registerHandler(Command.PARTITIONS, new GetPartitionsHandler());
+//        registerHandler(Command.CDLAWAIT, new CountDownLatchAwaitHandler());
+//        registerHandler(Command.CDLCOUNTDOWN, new CountDownLatchCountDownHandler());
+//        registerHandler(Command.CDLGETCOUNT, new CountDownLatchGetCountHandler());
+//        registerHandler(Command.CDLGETOWNER, new CountDownLatchGetOwnerHandler());
+//        registerHandler(Command.CDLSETCOUNT, new CountDownLatchSetCountHandler());
+//        registerHandler(Command.LOCK_LOCK, new LockOperationHandler());
+//        registerHandler(Command.LOCK_TRYLOCK, new LockOperationHandler());
+//        registerHandler(Command.LOCK_UNLOCK, new UnlockOperationHandler());
+//        registerHandler(Command.LOCK_FORCE_UNLOCK, new UnlockOperationHandler());
+//        ;
+//        registerHandler(Command.LOCK_IS_LOCKED, new IsLockedOperationHandler());
+//        registerHandler(Command.TPUBLISH, new TopicPublishHandler());
+//        registerHandler(Command.TADDLISTENER, new TopicAddListenerHandler());
+//        registerHandler(Command.DESTROY, new DestroyHandler());
+////        SEMATTACHDETACHPERMITS, SEMCANCELACQUIRE, SEMDESTROY, SEM_DRAIN_PERMITS, SEMGETATTACHEDPERMITS,
+////                SEMGETAVAILPERMITS, SEMREDUCEPERMITS, SEMRELEASE, SEMTRYACQUIRE,
 //        registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
 //        registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
 //        registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
@@ -158,8 +245,61 @@
 //        clientOperationHandlers[operation] = handler;
 //    }
 //
+//    void registerHandler(Command command, ClientOperationHandler handler) {
+//        commandHandlers[command.getValue()] = handler;
+//    }
+//
+//    public void handle(Protocol protocol) {
+//        checkFirstCall();
+//        ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
+//        CallContext callContext = clientEndpoint.getCallContext(protocol.threadId != -1 ? protocol.threadId : clientEndpoint.hashCode());
+//        CommandHandler handler = commandHandlers[protocol.command.getValue()];
+//        if (handler == null) {
+//            handler = unknownOperationHandler;
+//        }
+//        if (!clientEndpoint.isAuthenticated() && !Command.AUTH.equals(protocol.command)) {
+//            checkAuth(protocol.conn);
+//            return;
+//        }
+//        ClientRequestHandler clientRequestHandler = new ClientProtocolRequestHandler(node, protocol, callContext,
+//                handler, clientEndpoint.getSubject(), protocol.conn);
+//        int hash = hash(callContext.getThreadId(), THREAD_COUNT);
+//        workers[hash].addWork(clientRequestHandler);
+//    }
+//
 //    // always called by InThread
 //    public void handle(Packet packet) {
+//        checkFirstCall();
+//        ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
+//        CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
+//        ClientOperationHandler handler = clientOperationHandlers[packet.operation.getValue()];
+//        if (handler == null) {
+//            handler = unknownOperationHandler;
+//        }
+//        if (!clientEndpoint.isAuthenticated() && packet.operation != CLIENT_AUTHENTICATE) {
+//            checkAuth(packet.conn);
+//            return;
+//        }
+//        ClientRequestHandler clientRequestHandler = new ClientPacketRequestHandler(node, packet, callContext,
+//                handler, clientEndpoint.getSubject(), packet.conn);
+//        clientEndpoint.addRequest(clientRequestHandler);
+//        if (packet.operation == CONCURRENT_MAP_UNLOCK) {
+//            node.executorManager.executeNow(clientRequestHandler);
+//        } else {
+//            int hash = hash(callContext.getThreadId(), THREAD_COUNT);
+//            workers[hash].addWork(clientRequestHandler);
+//        }
+//    }
+//
+//    private void checkAuth(Connection conn) {
+//        logger.log(Level.SEVERE, "A Client " + conn + " must authenticate before any operation.");
+//        node.clientHandlerService.removeClientEndpoint(conn);
+//        if (conn != null)
+//            conn.close();
+//        return;
+//    }
+//
+//    private void checkFirstCall() {
 //        if (firstCall) {
 //            String threadNamePrefix = node.getThreadPoolNamePrefix("client.service");
 //            for (int i = 0; i < THREAD_COUNT; i++) {
@@ -167,28 +307,6 @@
 //                new Thread(node.threadGroup, worker, threadNamePrefix + i).start();
 //            }
 //            firstCall = false;
-//        }
-//        ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
-//        CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-//        ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
-//        if (clientOperationHandler == null) {
-//            clientOperationHandler = unknownOperationHandler;
-//        }
-//        if (packet.operation != CLIENT_AUTHENTICATE && !clientEndpoint.isAuthenticated()) {
-//            logger.log(Level.SEVERE, "A Client " + packet.conn + " must authenticate before any operation.");
-//            node.clientHandlerService.removeClientEndpoint(packet.conn);
-//            if (packet.conn != null)
-//                packet.conn.close();
-//            return;
-//        }
-//        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext,
-//                clientOperationHandler, clientEndpoint.getSubject());
-//        clientEndpoint.addRequest(clientRequestHandler);
-//        if (packet.operation == CONCURRENT_MAP_UNLOCK) {
-//            node.executorManager.executeNow(clientRequestHandler);
-//        } else {
-//            int hash = hash(callContext.getThreadId(), THREAD_COUNT);
-//            workers[hash].addWork(clientRequestHandler);
 //        }
 //    }
 //
@@ -228,9 +346,6 @@
 //                }
 //                try {
 //                    r.run();
-//                } catch (OutOfMemoryError e) {
-//                    OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-//                    throw e;
 //                } catch (Throwable ignored) {
 //                }
 //            }
@@ -270,7 +385,6 @@
 //        if (clientEndpoint != null) {
 //            node.executorManager.executeNow(new FallThroughRunnable() {
 //                public void doRun() {
-//                    logger.log(Level.INFO, "Client {" + connection + "} has been removed.");
 //                    clientEndpoint.connectionRemoved(connection);
 //                    if (node.securityContext != null) {
 //                        try {
@@ -304,6 +418,30 @@
 //                throw new RuntimeException();
 //            }
 //        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data item = new Data(protocol.buffers[0].array());
+//            IQueue<Data> queue = node.factory.getQueue(name);
+//            boolean result = false;
+//            try {
+//                if (Command.QPUT.equals(protocol.command)) {
+//                    queue.put(item);
+//                    result = true;
+//                } else {
+//                    long timeout = Long.valueOf(protocol.args[1]);
+//                    if (timeout == 0) {
+//                        result = queue.offer(item);
+//                    } else {
+//                        result = queue.offer(item, timeout, TimeUnit.MILLISECONDS);
+//                    }
+//                }
+//                return protocol.success(String.valueOf(result));
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
 //    }
 //
 //    private class QueuePollHandler extends ClientQueueOperationHandler {
@@ -321,6 +459,28 @@
 //                throw new RuntimeException(e);
 //            }
 //        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            IQueue<Data> queue = node.factory.getQueue(name);
+//            Data result;
+//            try {
+//                if (Command.QTAKE.equals(protocol.command)) {
+//                    result = queue.take();
+//                } else {
+//                    long timeout = Long.valueOf(protocol.args[1]);
+//                    if (timeout == 0) {
+//                        result = queue.poll();
+//                    } else {
+//                        result = queue.poll(timeout, TimeUnit.MILLISECONDS);
+//                    }
+//                }
+//                return protocol.success(result == null ? null : ByteBuffer.wrap(result.buffer));
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
 //    }
 //
 //    private class QueueRemoveHandler extends ClientQueueOperationHandler {
@@ -331,17 +491,39 @@
 //                return (Data) queue.remove();
 //            }
 //        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data item = new Data(protocol.buffers[0].array());
+//            IQueue<Data> queue = node.factory.getQueue(name);
+//            boolean removed = queue.remove(item);
+//            return protocol.success(String.valueOf(removed));
+//        }
 //    }
 //
 //    private class QueuePeekHandler extends ClientQueueOperationHandler {
 //        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
 //            return (Data) queue.peek();
 //        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data entry = (Data) node.factory.getQueue(name).peek();
+//            return protocol.success(ByteBuffer.wrap(entry.buffer));
+//        }
 //    }
 //
 //    private class QueueSizeHandler extends ClientQueueOperationHandler {
 //        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
 //            return toData(queue.size());
+//        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            return protocol.success(String.valueOf(node.factory.getQueue(name).size()));
 //        }
 //    }
 //
@@ -351,14 +533,27 @@
 //            topic.publish(packet.getKeyData());
 //        }
 //
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data data = new Data(protocol.buffers[0].array());
+//            node.factory.getTopic(name).publish(data);
+//            return protocol.success();
+//        }
+//
 //        @Override
-//        protected void sendResponse(Packet request) {
+//        protected void sendResponse(SocketWritable request, Connection conn) {
 //        }
 //    }
 //
 //    private class QueueRemainingCapacityHandler extends ClientQueueOperationHandler {
 //        public Data processQueueOp(IQueue<Object> queue, Data key, Data value) {
 //            return toData(queue.remainingCapacity());
+//        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            return protocol.success(String.valueOf(node.factory.getQueue(name).remainingCapacity()));
 //        }
 //    }
 //
@@ -371,6 +566,17 @@
 //            }
 //            return toData(keys);
 //        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data[] entries = node.factory.getQueue(name).toArray(new Data[0]);
+//            ByteBuffer[] buffers = new ByteBuffer[entries.length];
+//            for (int i = 0; i < entries.length; i++) {
+//                buffers[i] = ByteBuffer.wrap(entries[i].buffer);
+//            }
+//            return protocol.success(buffers);
+//        }
 //    }
 //
 //    private class RemotelyProcessHandler extends ClientOperationHandler {
@@ -379,7 +585,7 @@
 //        }
 //
 //        @Override
-//        protected void sendResponse(Packet request) {
+//        protected void sendResponse(SocketWritable request, Connection conn) {
 //        }
 //    }
 //
@@ -388,12 +594,47 @@
 //            Instance instance = (Instance) factory.getOrCreateProxyByName(packet.name);
 //            instance.destroy();
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String type = protocol.args[0];
+//            String name = protocol.args[1];
+//            if (InstanceType.MAP.toString().equalsIgnoreCase(type)) {
+//                node.factory.getMap(name).destroy();
+//            } else if (InstanceType.QUEUE.toString().equalsIgnoreCase(type)) {
+//                node.factory.getQueue(name).destroy();
+//            } else if (InstanceType.SET.toString().equalsIgnoreCase(type)) {
+//                node.factory.getSet(name).destroy();
+//            } else if (InstanceType.LIST.toString().equalsIgnoreCase(type)) {
+//                node.factory.getList(name).destroy();
+//            } else if (InstanceType.MULTIMAP.toString().equalsIgnoreCase(type)) {
+//                node.factory.getMultiMap(name).destroy();
+//            } else if (InstanceType.TOPIC.toString().equalsIgnoreCase(type)) {
+//                node.factory.getTopic(name).destroy();
+//            } else if (InstanceType.ATOMIC_NUMBER.toString().equalsIgnoreCase(type)) {
+//                node.factory.getAtomicNumber(name).destroy();
+//            } else if (InstanceType.ID_GENERATOR.toString().equalsIgnoreCase(type)) {
+//                node.factory.getIdGenerator(name).destroy();
+//            } else if (InstanceType.LOCK.toString().equalsIgnoreCase(type)) {
+//                node.factory.getLock(name).destroy();
+//            } else if (InstanceType.SEMAPHORE.toString().equalsIgnoreCase(type)) {
+//                node.factory.getSemaphore(name).destroy();
+//            } else if (InstanceType.COUNT_DOWN_LATCH.toString().equalsIgnoreCase(type)) {
+//                node.factory.getCountDownLatch(name).destroy();
+//            } else {
+//                return protocol.error(null, "unknown", "type");
+//            }
+//            return protocol.success();
+//        }
 //    }
 //
 //    private class NewIdHandler extends ClientOperationHandler {
 //        public void processCall(Node node, Packet packet) {
 //            IdGenerator idGen = (IdGenerator) factory.getOrCreateProxyByName(packet.name);
 //            packet.setValue(toData(idGen.newId()));
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            return protocol.success(String.valueOf(node.factory.getIdGenerator(protocol.args[0]).newId()));
 //        }
 //    }
 //
@@ -402,12 +643,25 @@
 //            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
 //            packet.setValue(toData(multiMap.put(packet.getKeyData(), packet.getValueData())));
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data key = new Data(protocol.buffers[0].array());
+//            Data value = new Data(protocol.buffers[1].array());
+//            return protocol.success(String.valueOf(node.factory.getMultiMap(name).put(key, value)));
+//        }
 //    }
 //
 //    private class MapValueCountHandler extends ClientOperationHandler {
 //        public void processCall(Node node, Packet packet) {
 //            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
 //            packet.setValue(toData(multiMap.valueCount(packet.getKeyData())));
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data key = new Data(protocol.buffers[0].array());
+//            return protocol.success(String.valueOf(node.factory.getMultiMap(name).valueCount(key)));
 //        }
 //    }
 //
@@ -421,6 +675,17 @@
 //            } else {
 //                packet.setValue(toData(multiMap.remove(packet.getKeyData(), packet.getValueData())));
 //            }
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data key = new Data(protocol.buffers[0].array());
+//            Data value = null;
+//            if (protocol.buffers.length > 1) {
+//                value = new Data(protocol.buffers[1].array());
+//                return protocol.success(String.valueOf(node.factory.getMap(name).remove(key, value)));
+//            }
+//            return protocol.success(String.valueOf(node.factory.getMap(name).remove(key)));
 //        }
 //    }
 //
@@ -489,7 +754,10 @@
 //                        } catch (ExecutionException e) {
 //                            packet.setValue(toData(e));
 //                        }
-//                        sendResponse(packet);
+//                        packet.lockAddress = null;
+//                        packet.responseType = RESPONSE_SUCCESS;
+//                        packet.operation = RESPONSE;
+//                        sendResponse(packet, packet.conn);
 //                    }
 //                });
 //                executorService.execute(task);
@@ -498,7 +766,10 @@
 //                        "exception during handling " + packet.operation + ": " + e.getMessage(), e);
 //                packet.clearForResponse();
 //                packet.setValue(toData(e));
-//                sendResponse(packet);
+//                packet.lockAddress = null;
+//                packet.responseType = RESPONSE_SUCCESS;
+//                packet.operation = RESPONSE;
+//                sendResponse(packet, packet.conn);
 //            }
 //        }
 //    }
@@ -521,6 +792,18 @@
 //            }
 //            packet.setValue(toData(keys));
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            Collection<Instance> collection = factory.getInstances();
+//            String[] args = new String[2 * collection.size()];
+//            int i = 0;
+//            for (Instance instance : collection) {
+//                InstanceType instanceType = instance.getInstanceType();
+//                args[i++] = instanceType.toString();
+//                args[i++] = instance.getId().toString().substring(instanceType.prefix().length());
+//            }
+//            return protocol.success(args);
+//        }
 //    }
 //
 //    private class GetMembersHandler extends ClientOperationHandler {
@@ -536,6 +819,17 @@
 //                Keys keys = new Keys(setData);
 //                packet.setValue(toData(keys));
 //            }
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            Collection<Member> collection = factory.getCluster().getMembers();
+//            String[] args = new String[collection.size()];
+//            int i = 0;
+//            for (Member member : collection) {
+//                MemberImpl m = (MemberImpl) member;
+//                args[i++] = m.getAddress().getHost() + ":" + m.getAddress().getPort();
+//            }
+//            return protocol.success(args);
 //        }
 //    }
 //
@@ -558,6 +852,23 @@
 //                packet.setValue(toData(keys));
 //            }
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            PartitionService partitionService = factory.getPartitionService();
+//            List<String> args = new ArrayList<String>();
+//            if (protocol.buffers.length > 0) {
+//                Partition partition = partitionService.getPartition(new Data(protocol.buffers[0].array()));
+//                args.add(String.valueOf(partition.getPartitionId()));
+//                args.add(partition.getOwner().getInetSocketAddress().toString());
+//            } else {
+//                Set<Partition> set = partitionService.getPartitions();
+//                for (Partition partition : set) {
+//                    args.add(String.valueOf(partition.getPartitionId()));
+//                    args.add(partition.getOwner().getInetSocketAddress().toString());
+//                }
+//            }
+//            return protocol.success(args.toArray(new String[0]));
+//        }
 //    }
 //
 //    abstract private class AtomicLongClientHandler extends ClientOperationHandler {
@@ -568,6 +879,17 @@
 //            final Long value = (Long) toObject(packet.getValueData());
 //            final Long expectedValue = (Long) toObject(packet.getKeyData());
 //            packet.setValue(toData(processCall(atomicLong, value, expectedValue)));
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            long value = Long.valueOf(protocol.args[1]);
+//            long expectedValue = 0;
+//            if (protocol.args.length > 2) {
+//                expectedValue = Long.valueOf(protocol.args[2]);
+//            }
+//            Object response = processCall((AtomicNumberProxy) node.factory.getAtomicNumber(name), value, expectedValue);
+//            return protocol.success(response.toString());
 //        }
 //    }
 //
@@ -596,18 +918,45 @@
 //    }
 //
 //    abstract private class CountDownLatchClientHandler extends ClientOperationHandler {
-//        abstract void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value);
+//        abstract Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) throws Exception;
 //
 //        public void processCall(Node node, Packet packet) {
 //            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
 //            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
 //            final Integer value = (Integer) toObject(packet.getValueData());
-//            processCall(packet, cdlProxy, value);
+//            Object result = null;
+//            try {
+//                result = processCall(cdlProxy, value, packet.conn.getEndPoint());
+//                if (result != null) packet.setValue(toData(result));
+//            } catch (Exception e) {
+//                packet.setValue(toData(new ClientServiceException(e)));
+//            }
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Integer value = protocol.args.length > 1 ? Integer.valueOf(protocol.args[1]) : 0;
+//            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
+//            Object response = null;
+//            try {
+//                response = processCall(cdlProxy, value, protocol.conn.getEndPoint());
+//            } catch (Exception e) {
+//                return protocol.error(null, e.getMessage());
+//            }
+//            if (response == null) return protocol.success();
+//            else return protocol.success(response.toString());
 //        }
 //    }
 //
 //    private class CountDownLatchAwaitHandler extends CountDownLatchClientHandler {
-//        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+//        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) throws Exception {
+//            return cdlProxy.await(value, TimeUnit.MILLISECONDS);
+//        }
+//
+//        public void processCall(Node node, Packet packet) {
+//            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
+//            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
+//            final Integer value = (Integer) toObject(packet.getValueData());
 //            try {
 //                packet.setValue(toData(cdlProxy.await(packet.timeout, TimeUnit.MILLISECONDS)));
 //            } catch (Throwable e) {
@@ -617,28 +966,49 @@
 //    }
 //
 //    private class CountDownLatchCountDownHandler extends CountDownLatchClientHandler {
-//        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
+//        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) {
 //            cdlProxy.countDown();
+//            return null;
 //        }
 //    }
 //
 //    private class CountDownLatchGetCountHandler extends CountDownLatchClientHandler {
-//        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
-//            packet.setValue(toData(cdlProxy.getCount()));
+//        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) {
+//            return cdlProxy.getCount();
 //        }
 //    }
 //
 //    private class CountDownLatchGetOwnerHandler extends CountDownLatchClientHandler {
-//        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value) {
-//            packet.setValue(toData(cdlProxy.getOwner()));
+//        Object processCall(CountDownLatchProxy cdlProxy, Integer value, Address address) {
+//            return cdlProxy.getOwner();
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Integer value = protocol.args.length > 1 ? Integer.valueOf(protocol.args[1]) : 0;
+//            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) node.factory.getCountDownLatch(name);
+//            Member m = cdlProxy.getOwner();
+//            return protocol.success(m.getInetSocketAddress().toString());
 //        }
 //    }
 //
 //    private class CountDownLatchSetCountHandler extends CountDownLatchClientHandler {
-//        void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer count) {
-//            Address ownerAddress = packet.conn.getEndPoint();
-//            packet.setValue(toData(cdlProxy.setCount(count, ownerAddress)));
+//        Object processCall(CountDownLatchProxy cdlProxy, Integer count, Address address) {
+//            boolean isSet = cdlProxy.setCount(count, address);
+//            return isSet;
 //        }
+////        @Override
+////        public void processCall(Node node, Packet packet) {
+////            final String name = packet.name.substring(Prefix.COUNT_DOWN_LATCH.length());
+////            final CountDownLatchProxy cdlProxy = (CountDownLatchProxy) factory.getCountDownLatch(name);
+////            final Integer value = (Integer) toObject(packet.getValueData());
+////            try {
+////                Address ownerAddress = packet.conn.getEndPoint();
+////                packet.setValue(toData(cdlProxy.setCount(value, ownerAddress)));
+////            } catch (Throwable e) {
+////                packet.setValue(toData(new ClientServiceException(e)));
+////            }
+////        }
 //    }
 //
 //    public static class CountDownLatchLeave implements RemotelyProcessable {
@@ -838,22 +1208,49 @@
 //            long clusterTime = cluster.getClusterTime();
 //            packet.setValue(toData(clusterTime));
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            return protocol.success(String.valueOf(node.factory.getCluster().getClusterTime()));
+//        }
 //    }
 //
 //    class ClientAuthenticateHandler extends ClientOperationHandler {
 //        public void processCall(Node node, Packet packet) {
 //            final Credentials credentials = (Credentials) toObject(packet.getValueData());
-//            boolean authenticated = false;
-//            final Socket socket = packet.conn.getSocketChannelWrapper().socket();
+//            boolean authenticated = doAuthenticate(node, credentials, packet.conn);
+//            packet.clearForResponse();
+//            packet.setValue(toData(authenticated));
+//        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            Credentials credentials;
+//            String[] args = protocol.args;
+//            if (node.securityContext == null) {
+//                if (args.length < 2) {
+//                    throw new RuntimeException("Should provide both username and password");
+//                }
+//                credentials = new UsernamePasswordCredentials(args[0], args[1]);
+//            } else {
+//                credentials = (Credentials) toObject(new Data(protocol.buffers[0].array()));
+//            }
+//            boolean authenticated = doAuthenticate(node, credentials, protocol.conn);
+//            return authenticated ? protocol.success() : protocol.error(null);
+//        }
+//
+//        private boolean doAuthenticate(Node node, Credentials credentials, Connection conn) {
+//            boolean authenticated;
 //            if (credentials == null) {
 //                authenticated = false;
 //                logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
 //            } else if (node.securityContext != null) {
-//                credentials.setEndpoint(socket.getInetAddress().getHostAddress());
+//                final Socket endpointSocket = conn.getSocketChannelWrapper().socket();
+//                // TODO: check!!!
+//                credentials.setEndpoint(endpointSocket.getInetAddress().getHostAddress());
 //                try {
 //                    LoginContext lc = node.securityContext.createClientLoginContext(credentials);
 //                    lc.login();
-//                    getClientEndpoint(packet.conn).setLoginContext(lc);
+//                    getClientEndpoint(conn).setLoginContext(lc);
 //                    authenticated = true;
 //                } catch (LoginException e) {
 //                    logger.log(Level.WARNING, e.getMessage(), e);
@@ -873,21 +1270,20 @@
 //                            "Current credentials type is: " + credentials.getClass().getName());
 //                }
 //            }
-//            logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + packet.conn
+//            logger.log((authenticated ? Level.INFO : Level.WARNING), "received auth from " + conn
 //                    + ", " + (authenticated ?
 //                    "successfully authenticated" : "authentication failed"));
-//            packet.clearForResponse();
-//            packet.setValue(toData(authenticated));
 //            if (!authenticated) {
-//                node.clientHandlerService.removeClientEndpoint(packet.conn);
+//                node.clientHandlerService.removeClientEndpoint(conn);
 //            } else {
-//                ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(packet.conn);
+//                ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(conn);
 //                clientEndpoint.authenticated();
-//                Bind bind = new Bind(new Address(socket.getInetAddress(), socket.getPort()));
-//                bind.setConnection(packet.conn);
+//                Bind bind = new Bind(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(), conn.getSocketChannelWrapper().socket().getPort()));
+//                bind.setConnection(conn);
 //                bind.setNode(node);
 //                node.clusterService.enqueueAndWait(bind);
 //            }
+//            return authenticated;
 //        }
 //    }
 //
@@ -909,6 +1305,21 @@
 //            map.addIndex((String) toObject(key), (Boolean) toObject(value));
 //            return null;
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            IMap map = node.factory.getMap(name);
+//            if (protocol.hasBuffer()) {
+//                Boolean ordered = Boolean.valueOf(protocol.args[1]);
+//                Expression e = (Expression) toObject(new Data(protocol.buffers[0].array()));
+//                map.addIndex(e, ordered);
+//            } else {
+//                String attribute = protocol.args[1];
+//                Boolean ordered = Boolean.valueOf(protocol.args[2]);
+//                map.addIndex(attribute, ordered);
+//            }
+//            return protocol.success();
+//        }
 //    }
 //
 //    private class MapPutAllHandler extends ClientMapOperationHandler {
@@ -919,22 +1330,53 @@
 //                node.concurrentMapManager.doPutAll(mproxy.getLongName(), pairs);
 //            } catch (Exception e) {
 //                logger.log(Level.SEVERE, e.getMessage(), e);
+//            } finally {
+//                return null;
 //            }
-//            return null;
+//        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            int size = protocol.buffers != null && protocol.buffers.length > 0 ? protocol.buffers.length : 0;
+//            Map map = new HashMap();
+//            for (int i = 0; i < size; i++) {
+//                map.put(new Data(protocol.buffers[i].array()), new Data(protocol.buffers[++i].array()));
+//            }
+//            node.factory.getMap(name).putAll(map);
+//            return protocol.success();
 //        }
 //    }
 //
 //    private class MapPutHandler extends ClientMapOperationHandlerWithTTL {
 //
+//        AtomicLong counter = new AtomicLong();
+//        AtomicLong time = new AtomicLong();
+//
 //        @Override
 //        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+//            counter.incrementAndGet();
 //            MProxy mproxy = (MProxy) map;
 //            Object v = value;
 //            if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
 //                v = toObject(value);
 //            }
 //            if (ttl <= 0) {
-//                return (Data) map.put(key, v);
+//                Data result = (Data) map.put(key, v);
+////                long begin;
+////                if (value.buffer.length > 20)
+////                    begin = Long.valueOf(new String(value.buffer, 6, value.buffer.length - 6));
+////                else
+////                    begin = Long.valueOf(new String(value.buffer));
+////
+////                time.addAndGet(System.nanoTime() - begin);
+////                if (counter.get() % 100000 == 0) {
+////                    long c = counter.getAndSet(0);
+////                    System.out.println("counter = " + c);
+////                    System.out.println("Average time = " + (time.getAndSet(0) / c));
+////                }
+////                System.out.println("Doing a put" + map.getName() + ">> key " + toObject(key));
+//                return result;
 //            } else {
 //                return (Data) map.put(key, v, ttl, TimeUnit.MILLISECONDS);
 //            }
@@ -977,6 +1419,15 @@
 //            }
 //            return toData(map.tryPut(key, v, ttl, TimeUnit.MILLISECONDS));
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String[] args = protocol.args;
+//            final IMap<Object, Object> map = (IMap) factory.getMap(args[0]);
+//            final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
+//            Data value = processMapOp(map, new Data(protocol.buffers[0].array()), new Data(protocol.buffers[1].array()), ttl);
+//            Boolean bValue = (Boolean) toObject(value);
+//            return protocol.success(String.valueOf(bValue));
+//        }
 //    }
 //
 //    private class MapPutAndUnlockHandler extends ClientMapOperationHandlerWithTTL {
@@ -1000,6 +1451,21 @@
 //            } catch (TimeoutException e) {
 //                return toData(new DistributedTimeoutException());
 //            }
+//        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String[] args = protocol.args;
+//            String name = args[0];
+//            final long ttl = Integer.parseInt(args[1]);
+//            final IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            Data value;
+//            try {
+//                value = (Data) map.tryRemove(new Data(protocol.buffers[0].array()), ttl, TimeUnit.MILLISECONDS);
+//            } catch (TimeoutException e) {
+//                return protocol.success("timeout");
+//            }
+//            return protocol.success((value == null) ? null : ByteBuffer.wrap(value.buffer));
 //        }
 //    }
 //
@@ -1028,6 +1494,15 @@
 //            }
 //        }
 //
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            long ttl = protocol.args.length > 1 ? Long.valueOf(protocol.args[1]) : 0;
+//            Data key = new Data(protocol.buffers[0].array());
+//            Data value = new Data(protocol.buffers[1].array());
+//            Data oldValue = processMapOp(node.factory.getMap(name), key, value, ttl);
+//            return protocol.success(oldValue == null ? null : ByteBuffer.wrap(oldValue.buffer));
+//        }
+//
 //        public void processCall(Node node, Packet packet) {
 //            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
 //            long ttl = packet.timeout;
@@ -1045,15 +1520,57 @@
 //            packet.clearForResponse();
 //            packet.setValue(toData(pairs));
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            int size = protocol.hasBuffer() ? protocol.buffers.length : 0;
+//            Set<Object> set = new HashSet<Object>();
+//            for (int i = 0; i < size; i++) {
+//                set.add(new Data(protocol.buffers[i].array()));
+//            }
+//            Map<Object, Object> map = node.factory.getMap(name).getAll(set);
+//            ByteBuffer[] buffers = new ByteBuffer[size*2];
+//            int i = 0;
+//            for (Object k : set) {
+//                buffers[i++] = ByteBuffer.wrap(((Data)k).buffer);
+//                Object v = map.get(k);
+//                if (v == null) {
+//                    buffers[i++] = ByteBuffer.wrap(new byte[0]);
+//                } else {
+//                    buffers[i++] = ByteBuffer.wrap(((Data) v).buffer);
+//                }
+//            }
+//            return protocol.success(buffers);
+//        }
 //    }
 //
 //    private class GetMapEntryHandler extends ClientMapOperationHandler {
+//
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 //            return toData(map.getMapEntry(key));
+//        }
+//
+//        public Protocol processMapOp(Protocol protocol, IMap<Object, Object> map, Data key, Data value) {
+//            MapEntry<Object, Object> mapEntry = map.getMapEntry(key);
+//            if (mapEntry == null)
+//                return protocol.success();
+//            else
+//                return protocol.success(ByteBuffer.wrap(((Data) mapEntry.getValue()).buffer),
+//                        String.valueOf(mapEntry.getCost()), String.valueOf(mapEntry.getCreationTime()),
+//                        String.valueOf(mapEntry.getExpirationTime()), String.valueOf(mapEntry.getHits()),
+//                        String.valueOf(mapEntry.getLastAccessTime()), String.valueOf(mapEntry.getLastStoredTime()),
+//                        String.valueOf(mapEntry.getLastUpdateTime()), String.valueOf(mapEntry.getVersion()), String.valueOf(mapEntry.isValid()));
 //        }
 //    }
 //
 //    private class MapGetHandler extends ClientOperationHandler {
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            byte[] key = protocol.buffers[0].array();
+//            Data value = (Data) node.factory.getMap(name).get(new Data(key));
+//            return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
+//        }
 //
 //        public void processCall(Node node, Packet packet) {
 //            InstanceType instanceType = getInstanceType(packet.name);
@@ -1081,11 +1598,23 @@
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 //            return toData(map.remove(key, value));
 //        }
+//
+//        public Protocol processMapOp(Protocol protocol, IMap<Object, Object> map, Data key, Data value) {
+//            Boolean removed = map.remove(key, value);
+//            return protocol.success(String.valueOf(removed));
+//        }
 //    }
 //
 //    private class MapEvictHandler extends ClientMapOperationHandler {
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 //            return toData(map.evict(key));
+//        }
+//
+//        @Override
+//        public Protocol processMapOp(Protocol protocol, IMap<Object, Object> map, Data key, Data value) {
+//            Data result = processMapOp(map, key, value);
+//            boolean evicted = (Boolean) toObject(result);
+//            return protocol.success(String.valueOf(evicted));
 //        }
 //    }
 //
@@ -1111,6 +1640,32 @@
 //            boolean replaced = map.replace(key, expected, newValue);
 //            return toData(replaced);
 //        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data key = null;
+//            Data oldValue = null;
+//            Data newValue = null;
+//            if (protocol.buffers != null && protocol.buffers.length > 0) {
+//                key = new Data(protocol.buffers[0].array());
+//                if (protocol.buffers.length > 1) {
+//                    oldValue = new Data(protocol.buffers[1].array());
+//                    if (protocol.buffers.length > 2) {
+//                        newValue = new Data(protocol.buffers[2].array());
+//                    } else {
+//                        return protocol.error(null, "New value is missing");
+//                    }
+//                } else {
+//                    return protocol.error(null, "old value is missing");
+//                }
+//            } else {
+//                return protocol.error(null, "key is missing");
+//            }
+//            IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            boolean replaced = map.replace(key, oldValue, newValue);
+//            return protocol.success(String.valueOf(replaced));
+//        }
 //    }
 //
 //    private class MapContainsHandler extends ClientOperationHandler {
@@ -1127,11 +1682,28 @@
 //                packet.setValue(toData(multiMap.containsKey(packet.getKeyData())));
 //            }
 //        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data key = new Data(protocol.buffers[0].array());
+//            IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            boolean contains = map.containsKey(key);
+//            return protocol.success(String.valueOf(contains));
+//        }
 //    }
 //
 //    private class MapContainsValueHandler extends ClientOperationHandler {
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 //            return toData(map.containsValue(value));
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data value = new Data(protocol.buffers[0].array());
+//            IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            boolean contains = map.containsValue(value);
+//            return protocol.success(String.valueOf(contains));
 //        }
 //
 //        public void processCall(Node node, Packet packet) {
@@ -1151,6 +1723,12 @@
 //    }
 //
 //    private class MapSizeHandler extends ClientCollectionOperationHandler {
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            IMap<Object, Object> map = node.factory.getMap(name);
+//            return protocol.success(String.valueOf(map.size()));
+//        }
+//
 //        @Override
 //        public void doListOp(Node node, Packet packet) {
 //            IList<Object> list = (IList) factory.getOrCreateProxyByName(packet.name);
@@ -1187,6 +1765,36 @@
 //        }
 //
 //        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            long timeout = -1;
+//            if (protocol.command.equals(Command.MTRYLOCK)) {
+//                if (protocol.args.length > 0)
+//                    timeout = Long.valueOf(protocol.args[1]);
+//                else
+//                    timeout = 0;
+//            }
+//            boolean locked = true;
+//            Data key = null;
+//            if (protocol.buffers != null && protocol.buffers.length > 0) {
+//                key = new Data(protocol.buffers[0].array());
+//            }
+//            IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            if (key == null) {
+//                map.lockMap(timeout, TimeUnit.MILLISECONDS);
+//            } else {
+//                if (timeout == -1) {
+//                    map.lock(key);
+//                } else if (timeout == 0) {
+//                    locked = map.tryLock(key);
+//                } else {
+//                    locked = map.tryLock(key, timeout, TimeUnit.MILLISECONDS);
+//                }
+//            }
+//            return protocol.success(String.valueOf(locked));
+//        }
+//
+//        @Override
 //        public void processCall(Node node, Packet packet) {
 //            Instance.InstanceType type = getInstanceType(packet.name);
 //            long timeout = packet.timeout;
@@ -1215,6 +1823,19 @@
 //    private class MapIsKeyLockedHandler extends ClientMapOperationHandler {
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 //            throw new RuntimeException("Shouldn't invoke this method");
+//        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            Data key = null;
+//            if (protocol.buffers.length > 0) {
+//                key = new Data(protocol.buffers[0].array());
+//            } else {
+//                protocol.error(null, "key", "is", "missing");
+//            }
+//            IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            return protocol.success(String.valueOf(map.isLocked(key)));
 //        }
 //
 //        @Override
@@ -1260,6 +1881,15 @@
 //        }
 //
 //        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            long timeout = Long.valueOf(protocol.args[1]);
+//            IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            boolean islocked = map.lockMap(timeout, TimeUnit.MILLISECONDS);
+//            return protocol.success(String.valueOf(islocked));
+//        }
+//
+//        @Override
 //        public void processCall(Node node, Packet packet) {
 //            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
 //            long timeout = packet.timeout;
@@ -1274,6 +1904,14 @@
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 //            map.unlockMap();
 //            return null;
+//        }
+//
+//        @Override
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            IMap<Object, Object> map = (IMap) factory.getMap(name);
+//            processMapOp(map, null, null);
+//            return protocol.success();
 //        }
 //
 //        @Override
@@ -1307,6 +1945,27 @@
 //            packet.clearForResponse();
 //            packet.setValue(value);
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            ILock lock = node.factory.getLock(name);
+//            try {
+//                if (Command.LOCK_TRYLOCK.equals(protocol.command)) {
+//                    if (protocol.args.length > 1) {
+//                        return protocol.success(String.valueOf(lock.tryLock(Long.valueOf(protocol.args[1]),
+//                                TimeUnit.MILLISECONDS)));
+//                    } else {
+//                        return protocol.success(String.valueOf(lock.tryLock()));
+//                    }
+//                } else {
+//                    lock.unlock();
+//                    return protocol.success();
+//                }
+//            } catch (InterruptedException e) {
+//                logger.log(Level.FINEST, "Lock interrupted!");
+//                return protocol.success("interrupted");
+//            }
+//        }
 //    }
 //
 //    private class IsLockedOperationHandler extends ClientOperationHandler {
@@ -1317,6 +1976,12 @@
 //            value = toData(lock.isLocked());
 //            packet.clearForResponse();
 //            packet.setValue(value);
+//        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            ILock lock = node.factory.getLock(name);
+//            return protocol.success(String.valueOf(lock.isLocked()));
 //        }
 //    }
 //
@@ -1332,6 +1997,17 @@
 //            packet.clearForResponse();
 //            packet.setValue(null);
 //        }
+//
+//        public Protocol processCall(Node node, Protocol protocol) {
+//            String name = protocol.args[0];
+//            ILock lock = node.factory.getLock(name);
+//            if (Command.LOCK_UNLOCK.equals(protocol.command)) {
+//                lock.unlock();
+//            } else if (Command.LOCK_FORCE_UNLOCK.equals(protocol.command)) {
+//                lock.forceUnlock();
+//            }
+//            return protocol.success();
+//        }
 //    }
 //
 //    private class TransactionBeginHandler extends ClientTransactionOperationHandler {
@@ -1346,364 +2022,4 @@
 //        }
 //    }
 //
-//    private class TransactionRollbackHandler extends ClientTransactionOperationHandler {
-//        public void processTransactionOp(Transaction transaction) {
-//            transaction.rollback();
-//        }
-//    }
-//
-//    private class MapIterateEntriesHandler extends ClientCollectionOperationHandler {
-//        public Data getMapKeys(final IMap<Object, Object> map, final Data key, final Data value) {
-//            Entries entries = null;
-//            if (value == null) {
-//                entries = (Entries) map.entrySet();
-//            } else {
-//                final Predicate p = (Predicate) toObject(value);
-//                entries = (Entries) map.entrySet(p);
-//            }
-//            final Collection<Map.Entry> colEntries = entries.getKeyValues();
-//            final Keys keys = new Keys(new ArrayList<Data>(colEntries.size() << 1));
-//            for (final Object obj : colEntries) {
-//                final KeyValue entry = (KeyValue) obj;
-//                keys.add(toData(entry));
-//            }
-//            return toData(keys);
-//        }
-//
-//        @Override
-//        public void doListOp(final Node node, final Packet packet) {
-//            IMap mapProxy = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
-//            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
-//        }
-//
-//        @Override
-//        public void doMapOp(final Node node, final Packet packet) {
-//            packet.setValue(getMapKeys((IMap) factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData()));
-//        }
-//
-//        @Override
-//        public void doSetOp(final Node node, final Packet packet) {
-//            final SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
-//            final MProxy mapProxy = collectionProxy.getMProxy();
-//            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData()));
-//        }
-//
-//        @Override
-//        public void doMultiMapOp(final Node node, final Packet packet) {
-//            final MultiMapProxy multiMap = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
-//            final MProxy mapProxy = multiMap.getMProxy();
-//            final Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData());
-//            packet.clearForResponse();
-//            packet.setValue(value);
-//        }
-//
-//        @Override
-//        public void doQueueOp(final Node node, final Packet packet) {
-//            final IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
-//        }
-//    }
-//
-//    private class MapIterateKeysHandler extends ClientCollectionOperationHandler {
-//        public Data getMapKeys(IMap<Object, Object> map, Data key, Data value, Collection<Data> collection) {
-//            Entries entries = null;
-//            if (value == null) {
-//                entries = (Entries) map.keySet();
-//            } else {
-//                Predicate p = (Predicate) toObject(value);
-//                entries = (Entries) map.keySet(p);
-//            }
-//            Collection<Map.Entry> colEntries = entries.getKeyValues();
-//            Keys keys = new Keys(collection);
-//            for (Object obj : colEntries) {
-//                KeyValue entry = (KeyValue) obj;
-//                keys.add(entry.getKeyData());
-//            }
-//            return toData(keys);
-//        }
-//
-//        @Override
-//        public void doListOp(Node node, Packet packet) {
-//            IMap mapProxy = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + Prefix.QUEUE + packet.name);
-//            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new ArrayList<Data>()));
-//        }
-//
-//        @Override
-//        public void doMapOp(Node node, Packet packet) {
-//            packet.setValue(getMapKeys((IMap) factory.getOrCreateProxyByName(packet.name), packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
-//        }
-//
-//        @Override
-//        public void doSetOp(Node node, Packet packet) {
-//            SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
-//            MProxy mapProxy = collectionProxy.getMProxy();
-//            packet.setValue(getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>()));
-//        }
-//
-//        public void doMultiMapOp(Node node, Packet packet) {
-//            MultiMapProxy multiMap = (MultiMapProxy) factory.getOrCreateProxyByName(packet.name);
-//            MProxy mapProxy = multiMap.getMProxy();
-//            Data value = getMapKeys(mapProxy, packet.getKeyData(), packet.getValueData(), new HashSet<Data>());
-//            packet.clearForResponse();
-//            packet.setValue(value);
-//        }
-//
-//        public void doQueueOp(Node node, Packet packet) {
-//            IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
-//        }
-//    }
-//
-//    private class AddListenerHandler extends ClientOperationHandler {
-//        public void processCall(Node node, final Packet packet) {
-//            final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
-//            boolean includeValue = (int) packet.longValue == 1;
-//            if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
-//                IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
-//                clientEndpoint.addThisAsListener(map, packet.getKeyData(), includeValue);
-//            } else if (getInstanceType(packet.name).equals(InstanceType.MULTIMAP)) {
-//                MultiMap<Object, Object> multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
-//                clientEndpoint.addThisAsListener(multiMap, packet.getKeyData(), includeValue);
-//            } else if (getInstanceType(packet.name).equals(InstanceType.LIST)) {
-//                ListProxyImpl listProxy = (ListProxyImpl) factory.getOrCreateProxyByName(packet.name);
-//                IMap map = (IMap) factory.getOrCreateProxyByName(Prefix.MAP + (String) listProxy.getId());
-//                clientEndpoint.addThisAsListener(map, null, includeValue);
-//            } else if (getInstanceType(packet.name).equals(InstanceType.SET)) {
-//                SetProxy collectionProxy = (SetProxy) factory.getOrCreateProxyByName(packet.name);
-//                IMap map = collectionProxy.getMProxy();
-//                clientEndpoint.addThisAsListener(map, null, includeValue);
-//            } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
-//                IQueue<Object> queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
-//                final String packetName = packet.name;
-//                ItemListener itemListener = new ClientItemListener(clientEndpoint, packetName);
-//                queue.addItemListener(itemListener, includeValue);
-//                clientEndpoint.queueItemListeners.put(queue, itemListener);
-//            } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
-//                ITopic<Object> topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
-//                final String packetName = packet.name;
-//                MessageListener messageListener = new ClientMessageListener(clientEndpoint, packetName);
-//                topic.addMessageListener(messageListener);
-//                clientEndpoint.messageListeners.put(topic, messageListener);
-//            }
-//            packet.clearForResponse();
-//        }
-//    }
-//
-//    public interface ClientListener {
-//
-//    }
-//
-//    public class ClientItemListener implements ItemListener, ClientListener {
-//        final ClientEndpoint clientEndpoint;
-//        final String name;
-//
-//        ClientItemListener(ClientEndpoint clientEndpoint, String name) {
-//            this.clientEndpoint = clientEndpoint;
-//            this.name = name;
-//        }
-//
-//        public void itemAdded(ItemEvent itemEvent) {
-//            Packet p = new Packet();
-//            DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
-//            p.set(name, ClusterOperation.EVENT, dataAwareItemEvent.getItemData(), true);
-//            clientEndpoint.sendPacket(p);
-//        }
-//
-//        public void itemRemoved(ItemEvent itemEvent) {
-//            Packet p = new Packet();
-//            DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) itemEvent;
-//            p.set(name, ClusterOperation.EVENT, dataAwareItemEvent.getItemData(), false);
-//            clientEndpoint.sendPacket(p);
-//        }
-//    }
-//
-//    public class ClientMessageListener implements MessageListener, ClientListener {
-//        final ClientEndpoint clientEndpoint;
-//        final String name;
-//
-//        ClientMessageListener(ClientEndpoint clientEndpoint, String name) {
-//            this.clientEndpoint = clientEndpoint;
-//            this.name = name;
-//        }
-//
-//        public void onMessage(Message msg) {
-//            Packet p = new Packet();
-//            DataMessage dataMessage = (DataMessage) msg;
-//            p.set(name, ClusterOperation.EVENT, dataMessage.getMessageData(), null);
-//            clientEndpoint.sendPacket(p);
-//        }
-//    }
-//
-//    private class RemoveListenerHandler extends ClientOperationHandler {
-//        public void processCall(Node node, Packet packet) {
-//            ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
-//            if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
-//                IMap map = (IMap) factory.getOrCreateProxyByName(packet.name);
-//                clientEndpoint.removeThisListener(map, packet.getKeyData());
-//            }
-//            if (getInstanceType(packet.name).equals(InstanceType.MULTIMAP)) {
-//                MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
-//                clientEndpoint.removeThisListener(multiMap, packet.getKeyData());
-//            } else if (getInstanceType(packet.name).equals(InstanceType.TOPIC)) {
-//                ITopic topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
-//                topic.removeMessageListener(clientEndpoint.messageListeners.remove(topic));
-//            } else if (getInstanceType(packet.name).equals(InstanceType.QUEUE)) {
-//                IQueue queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
-//                queue.removeItemListener(clientEndpoint.queueItemListeners.remove(queue));
-//            }
-//        }
-//    }
-//
-//    private class ListAddHandler extends ClientOperationHandler {
-//        @Override
-//        public void processCall(Node node, Packet packet) {
-//            IList list = (IList) factory.getOrCreateProxyByName(packet.name);
-//            Boolean value = list.add(packet.getKeyData());
-//            packet.clearForResponse();
-//            packet.setValue(toData(value));
-//        }
-//    }
-//
-//    private class SetAddHandler extends ClientOperationHandler {
-//        @Override
-//        public void processCall(Node node, Packet packet) {
-//            ISet list = (ISet) factory.getOrCreateProxyByName(packet.name);
-//            boolean value = list.add(packet.getKeyData());
-//            packet.clearForResponse();
-//            packet.setValue(toData(value));
-//        }
-//    }
-//
-//    private class MapItemRemoveHandler extends ClientOperationHandler {
-//        public void processCall(Node node, Packet packet) {
-//            Collection collection = (Collection) factory.getOrCreateProxyByName(packet.name);
-//            Data value = toData(collection.remove(packet.getKeyData()));
-//            packet.clearForResponse();
-//            packet.setValue(value);
-//        }
-//    }
-//
-//    public abstract class ClientOperationHandler {
-//        public abstract void processCall(Node node, Packet packet);
-//
-//        public void handle(Node node, Packet packet) {
-//            try {
-//                processCall(node, packet);
-//            } catch (RuntimeException e) {
-//                logger.log(Level.WARNING,
-//                        "exception during handling " + packet.operation + ": " + e.getMessage(), e);
-//                packet.clearForResponse();
-//                packet.setValue(toData(new ClientServiceException(e)));
-//            }
-//            sendResponse(packet);
-//        }
-//
-//        protected void sendResponse(Packet request) {
-//            request.lockAddress = null;
-//            request.operation = RESPONSE;
-//            request.responseType = RESPONSE_SUCCESS;
-//            if (request.conn != null && request.conn.live()) {
-//                request.conn.getWriteHandler().enqueueSocketWritable(request);
-//            } else {
-//                logger.log(Level.WARNING, "unable to send response " + request);
-//            }
-//        }
-//    }
-//
-//    private final class UnknownClientOperationHandler extends ClientOperationHandler {
-//        public void processCall(Node node, Packet packet) {
-//            final String error = "Unknown Client Operation, can not handle " + packet.operation;
-//            if (node.isActive()) {
-//                throw new RuntimeException(error);
-//            } else {
-//                logger.log(Level.WARNING, error);
-//            }
-//        }
-//    }
-//
-//    private abstract class ClientMapOperationHandler extends ClientOperationHandler {
-//        public abstract Data processMapOp(IMap<Object, Object> map, Data key, Data value);
-//
-//        public void processCall(Node node, Packet packet) {
-//            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
-//            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData());
-//            packet.clearForResponse();
-//            packet.setValue(value);
-//        }
-//    }
-//
-//    private abstract class ClientMapOperationHandlerWithTTL extends ClientOperationHandler {
-//        public void processCall(Node node, final Packet packet) {
-//            final IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
-//            final long ttl = packet.timeout;
-//            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), ttl);
-//            packet.clearForResponse();
-//            packet.setValue(value);
-//        }
-//
-//        protected abstract Data processMapOp(IMap<Object, Object> map, Data keyData, Data valueData, long ttl);
-//    }
-//
-//    private abstract class ClientQueueOperationHandler extends ClientOperationHandler {
-//        public abstract Data processQueueOp(IQueue<Object> queue, Data key, Data value);
-//
-//        public void processCall(Node node, Packet packet) {
-//            IQueue<Object> queue = (IQueue) factory.getOrCreateProxyByName(packet.name);
-//            Data value = processQueueOp(queue, packet.getKeyData(), packet.getValueData());
-//            packet.clearForResponse();
-//            packet.setValue(value);
-//        }
-//    }
-//
-//    private abstract class ClientCollectionOperationHandler extends ClientOperationHandler {
-//        public abstract void doMapOp(Node node, Packet packet);
-//
-//        public abstract void doListOp(Node node, Packet packet);
-//
-//        public abstract void doSetOp(Node node, Packet packet);
-//
-//        public abstract void doMultiMapOp(Node node, Packet packet);
-//
-//        public abstract void doQueueOp(Node node, Packet packet);
-//
-//        @Override
-//        public void processCall(Node node, Packet packet) {
-//            InstanceType instanceType = getInstanceType(packet.name);
-//            if (instanceType.equals(InstanceType.LIST)) {
-//                doListOp(node, packet);
-//            } else if (instanceType.equals(InstanceType.SET)) {
-//                doSetOp(node, packet);
-//            } else if (instanceType.equals(InstanceType.MAP)) {
-//                doMapOp(node, packet);
-//            } else if (instanceType.equals(InstanceType.MULTIMAP)) {
-//                doMultiMapOp(node, packet);
-//            } else if (instanceType.equals(InstanceType.QUEUE)) {
-//                doQueueOp(node, packet);
-//            }
-//        }
-//    }
-//
-//    private abstract class ClientTransactionOperationHandler extends ClientOperationHandler {
-//        public abstract void processTransactionOp(Transaction transaction);
-//
-//        public void processCall(Node node, Packet packet) {
-//            Transaction transaction = factory.getTransaction();
-//            processTransactionOp(transaction);
-//        }
-//    }
-//
-//    private class ClientServiceMembershipListener implements MembershipListener {
-//        public void memberAdded(MembershipEvent membershipEvent) {
-//            notifyEndPoints(membershipEvent);
-//        }
-//
-//        public void memberRemoved(MembershipEvent membershipEvent) {
-//            notifyEndPoints(membershipEvent);
-//        }
-//
-//        void notifyEndPoints(MembershipEvent membershipEvent) {
-//            for (ClientEndpoint endpoint : mapClientEndpoints.values()) {
-//                Packet membershipEventPacket = endpoint.createMembershipEventPacket(membershipEvent);
-//                endpoint.sendPacket(membershipEventPacket);
-//            }
-//        }
-//    }
-//}
+//    private class TransactionR

@@ -57,6 +57,33 @@ public interface Instance {
             }
         }
 
+        public String prefix() {
+            switch (this) {
+                case MAP:
+                    return Prefix.MAP;
+                case QUEUE:
+                    return Prefix.QUEUE;
+                case LIST:
+                    return Prefix.AS_LIST;
+                case SET:
+                    return Prefix.SET;
+                case TOPIC:
+                    return Prefix.TOPIC;
+                case MULTIMAP:
+                    return Prefix.AS_MULTIMAP;
+                case ID_GENERATOR:
+                    return Prefix.IDGEN;
+                case COUNT_DOWN_LATCH:
+                    return Prefix.COUNT_DOWN_LATCH;
+                case SEMAPHORE:
+                    return Prefix.SEMAPHORE;
+                case ATOMIC_NUMBER:
+                    return Prefix.ATOMIC_NUMBER;
+                default:
+                    return "";
+            }
+        }
+
         public int getTypeId() {
             return typeId;
         }

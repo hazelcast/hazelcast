@@ -16,11 +16,15 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.Call;
+import com.hazelcast.client.ClientRunnable;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Instance;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.ArrayList;
@@ -68,22 +72,40 @@ public class ListenerManager extends ClientRunnable {
             if (obj == null) {
                 return;
             }
-            if (obj instanceof Packet) {
-                Packet packet = (Packet) obj;
-                if (packet.getName() == null) {
-                    Object eventType = toObject(packet.getValue());
-                    if (new Integer(0).equals(eventType) || new Integer(2).equals(eventType)) {
-                        instanceListenerManager.notifyListeners(packet);
-                    } else {
-                        membershipListenerManager.notifyListeners(packet);
-                    }
-                } else if (Prefix.getInstanceType(packet.getName()).equals(Instance.InstanceType.TOPIC)) {
-                    messageListenerManager.notifyMessageListeners(packet);
-                } else if (Prefix.getInstanceType(packet.getName()).equals(Instance.InstanceType.QUEUE)) {
-                    queueItemListenerManager.notifyListeners(packet);
-                } else {
-                    entryListenerManager.notifyListeners(packet);
+//            if (obj instanceof Packet) {
+//                Packet packet = (Packet) obj;
+//                if (packet.getName() == null) {
+//                    Object eventType = toObject(packet.getValue());
+//                    if (new Integer(0).equals(eventType) || new Integer(2).equals(eventType)) {
+//                        instanceListenerManager.notifyListeners(packet);
+//                    } else {
+//                        membershipListenerManager.notifyListeners(packet);
+//                    }
+//                } else if (Prefix.getInstanceType(packet.getName()).equals(Instance.InstanceType.TOPIC)) {
+//                    messageListenerManager.notifyMessageListeners(packet);
+//                } else if (Prefix.getInstanceType(packet.getName()).equals(Instance.InstanceType.QUEUE)) {
+//                    queueItemListenerManager.notifyListeners(packet);
+//                } else {
+//                    entryListenerManager.notifyListeners(packet);
+//                }
+//            }
+            if (obj instanceof Protocol) {
+                Protocol protocol = (Protocol) obj;
+//                String type = protocol.args[0];
+                if (Command.EVENT.equals(protocol.command)) {
+                    entryListenerManager.notifyListeners(protocol);
+                } else if (Command.QEVENT.equals(protocol.command)) {
+                    queueItemListenerManager.notifyListeners(protocol);
+                } else if (Command.MESSAGE.equals(protocol.command)) {
+                    messageListenerManager.notifyMessageListeners(protocol);
                 }
+//                if (packet.getName() == null) {
+//                    Object eventType = toObject(packet.getValue());
+//                    if (new Integer(0).equals(eventType) || new Integer(2).equals(eventType)) {
+//                        instanceListenerManager.notifyListeners(packet);
+//                    } else {
+//                        membershipListenerManager.notifyListeners(packet);
+//                    }
             } else if (obj instanceof Runnable) {
                 ((Runnable) obj).run();
             }

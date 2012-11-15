@@ -23,7 +23,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.instance.GroupProperties;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -43,8 +42,8 @@ public class HazelcastClientClusterTest {
 
     @BeforeClass
     public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+//        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+//        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -350,9 +349,9 @@ public class HazelcastClientClusterTest {
         @Override
         public String toString() {
             return "OrderKey{" +
-                   "customerId=" + customerId +
-                   ", orderId=" + orderId +
-                   '}';
+                    "customerId=" + customerId +
+                    ", orderId=" + orderId +
+                    '}';
         }
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
@@ -57,20 +56,20 @@ public class MembershipListenerManager {
         return memberShipListeners.isEmpty();
     }
 
-    public void notifyListeners(Packet packet) {
-        if (memberShipListeners.size() > 0) {
-            Member member = (Member) toObject(packet.getKey());
-            Integer type = (Integer) toObject(packet.getValue());
-            MembershipEvent event = new MembershipEvent(client.getCluster(), member, type);
-            if (type.equals(MembershipEvent.MEMBER_ADDED)) {
-                for (MembershipListener membershipListener : memberShipListeners) {
-                    membershipListener.memberAdded(event);
-                }
-            } else {
-                for (MembershipListener membershipListener : memberShipListeners) {
-                    membershipListener.memberRemoved(event);
-                }
-            }
-        }
-    }
+//    public void notifyListeners(Packet packet) {
+//        if (memberShipListeners.size() > 0) {
+//            Member member = (Member) toObject(packet.getKey());
+//            Integer type = (Integer) toObject(packet.getValue());
+//            MembershipEvent event = new MembershipEvent(client.getCluster(), member, type);
+//            if (type.equals(MembershipEvent.MEMBER_ADDED)) {
+//                for (MembershipListener membershipListener : memberShipListeners) {
+//                    membershipListener.memberAdded(event);
+//                }
+//            } else {
+//                for (MembershipListener membershipListener : memberShipListeners) {
+//                    membershipListener.memberRemoved(event);
+//                }
+//            }
+//        }
+//    }
 }

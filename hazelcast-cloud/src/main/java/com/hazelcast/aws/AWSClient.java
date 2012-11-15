@@ -27,7 +27,7 @@ public class AWSClient {
     private String endpoint;
     private final AwsConfig awsConfig;
 
-    public AWSClient(AwsConfig awsConfig) {
+    public AWSClient(AwsConfig awsConfig, String endpoint) {
         this.awsConfig = awsConfig;
         endpoint = awsConfig.getHostHeader();
     }

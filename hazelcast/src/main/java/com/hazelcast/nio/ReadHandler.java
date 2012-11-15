@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.protocol.SocketProtocolReader;
 import com.hazelcast.util.Clock;
 import com.hazelcast.nio.ascii.SocketTextReader;
 
@@ -45,7 +46,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     public final void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
-            String message = "We are being to asked to read, but connection is not live so we won't";
+            String message = "We are being asked to read, but connection is not live so we won't";
             logger.log(Level.FINEST, message);
             systemLogService.logConnection(message);
             return;
@@ -62,6 +63,10 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     if ("HZC".equals(protocol)) {
                         writeHandler.setProtocol("HZC");
                         socketReader = new SocketPacketReader(socketChannel, connection);
+                    } else if ("P01".equals(protocol)) {
+                        System.out.println("Protocol is P01");
+                        writeHandler.setProtocol("P01");
+                        socketReader = new SocketProtocolReader(connection);
                     } else {
                         writeHandler.setProtocol("TEXT");
                         buffer.put(protocolBuffer.array());

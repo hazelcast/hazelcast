@@ -16,15 +16,13 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.Call;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.*;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.Keys;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.*;
@@ -33,19 +31,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.nio.IOUtil.toByteArray;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class EntryListenerManager {
 
     private final SerializerRegistry serializerRegistry;
     private final Object NULL_KEY = new Object();
-
     private final ConcurrentMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>> entryListeners =
             new ConcurrentHashMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>>();
 
-    public EntryListenerManager(final SerializerRegistry serializerRegistry) {this.serializerRegistry
-            = serializerRegistry;}
+    public EntryListenerManager(final SerializerRegistry serializerRegistry) {
+        this.serializerRegistry
+                = serializerRegistry;
+    }
 
     public synchronized void registerListener(String name, Object key, boolean includeValue, EntryListener<?, ?> entryListener) {
         ConcurrentHashMap<Object, List<EntryListenerHolder>> map = entryListeners.get(name);
@@ -109,32 +107,55 @@ public class EntryListenerManager {
         return Boolean.TRUE;
     }
 
-    public void notifyListeners(Packet packet) {
-        Object keyObj = toObject(packet.getKey());
-        Object value = toObject(packet.getValue());
+//    public void notifyListeners(Packet packet) {
+//        Object keyObj = toObject(packet.getKey());
+//        Object value = toObject(packet.getValue());
+//        Data newValue = null;
+//        Data oldValue = null;
+//        if (value instanceof Keys) {
+//            final Keys values = (Keys) value;
+//            final Iterator<Data> it = values.getKeys().iterator();
+//            newValue = it.hasNext() ? new Data(it.next().buffer) : null;
+//            oldValue = it.hasNext() ? new Data(it.next().buffer) : null;
+//        } else {
+//            newValue = new Data(packet.getValue());
+//        }
+//        final DataAwareEntryEvent event = new DataAwareEntryEvent(null,
+//                (int) packet.getLongValue(),
+//                packet.getName(),
+//                new Data(packet.getKey()),
+//                newValue,
+//                oldValue,
+//                true, serializerRegistry);
+//        String name = packet.getName();
+//        Object key = toKey(keyObj);
+//        if (entryListeners.get(name) != null) {
+//            notifyListeners(event, entryListeners.get(name).get(NULL_KEY));
+//            if (key != NULL_KEY) {
+//                notifyListeners(event, entryListeners.get(name).get(key));
+//            }
+//        }
+//    }
+//
+    public void notifyListeners(Protocol protocol) {
+        Data key = new Data(protocol.buffers[0].array());
         Data newValue = null;
         Data oldValue = null;
-        if (value instanceof Keys) {
-            final Keys values = (Keys) value;
-            final Iterator<Data> it = values.getKeys().iterator();
-            newValue = it.hasNext() ? new Data(it.next().buffer) : null;
-            oldValue = it.hasNext() ? new Data(it.next().buffer) : null;
-        } else {
-            newValue = new Data(packet.getValue());
+        if (protocol.buffers.length > 1) {
+            newValue = new Data(protocol.buffers[1].array());
+            if (protocol.buffers.length > 2) {
+                oldValue = new Data(protocol.buffers[2].array());
+            }
         }
-        final DataAwareEntryEvent event = new DataAwareEntryEvent(null,
-                (int) packet.getLongValue(),
-                packet.getName(),
-                new Data(packet.getKey()),
-                newValue,
-                oldValue,
-                true, serializerRegistry);
-        String name = packet.getName();
-        Object key = toKey(keyObj);
+        String name = protocol.args[1];
+        String eventType = protocol.args[2];
+        EntryEventType entryEventType = EntryEventType.valueOf(eventType);
+        final DataAwareEntryEvent event =
+                new DataAwareEntryEvent(null, entryEventType.getType(), name, key, newValue, oldValue, false, serializerRegistry);
         if (entryListeners.get(name) != null) {
             notifyListeners(event, entryListeners.get(name).get(NULL_KEY));
             if (key != NULL_KEY) {
-                notifyListeners(event, entryListeners.get(name).get(key));
+                notifyListeners(event, entryListeners.get(name).get(toObject(key)));
             }
         }
     }
@@ -145,7 +166,7 @@ public class EntryListenerManager {
         }
         DataAwareEntryEvent eventNoValue = event.getValue() != null ?
                 new DataAwareEntryEvent(event.getMember(), event.getEventType().getType(), event.getName(),
-                                        event.getKeyData(), null, null, false, serializerRegistry) :
+                        event.getKeyData(), null, null, false, serializerRegistry) :
                 event;
         switch (event.getEventType()) {
             case ADDED:
@@ -172,9 +193,10 @@ public class EntryListenerManager {
     }
 
     public Call createNewAddListenerCall(final ProxyHelper proxyHelper, final Object key, boolean includeValue) {
-        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByteArray(key), null);
-        request.setLongValue(includeValue ? 1 : 0);
-        return proxyHelper.createCall(request);
+//        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, toByteArray(key), null);
+//        request.setLongValue(includeValue ? 1 : 0);
+//        return proxyHelper.createCall(request);
+        return null;
     }
 
     public Collection<Call> calls(final HazelcastClient client) {
@@ -189,7 +211,7 @@ public class EntryListenerManager {
                     includeValue |= entryListenerHolder.includeValue;
                     if (includeValue) break;
                 }
-                final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+                final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
                 calls.add(createNewAddListenerCall(proxyHelper, key, includeValue));
             }
         }

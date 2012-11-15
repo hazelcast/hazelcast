@@ -100,7 +100,7 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
-    //    public final ClientHandlerService clientHandlerService;
+//    public final ClientHandlerService clientHandlerService;
 
     //    public final ClientServiceImpl clientService;
 
