@@ -696,6 +696,18 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>string</td>
                 <td>null</td>
             </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.system.log.enabled</literal>
+                </td>
+                <td>
+                    Enable system logs
+                </td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+
+
         </tbody>
     </table>
 

@@ -93,6 +93,7 @@ public class GroupProperties {
     public static final String PROP_PARTITION_TABLE_SEND_INTERVAL = "hazelcast.partition.table.send.interval";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
     public static final String PROP_FORCE_THROW_INTERRUPTED_EXCEPTION = "hazelcast.force.throw.interrupted.exception";
+    public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
@@ -245,6 +246,8 @@ public class GroupProperties {
 
     public final GroupProperty FORCE_THROW_INTERRUPTED_EXCEPTION;
 
+    public final GroupProperty SYSTEM_LOG_ENABLED;
+
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
@@ -327,6 +330,7 @@ public class GroupProperties {
         PARTITION_TABLE_SEND_INTERVAL = new GroupProperty(config, PROP_PARTITION_TABLE_SEND_INTERVAL, "10");
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");
         FORCE_THROW_INTERRUPTED_EXCEPTION = new GroupProperty(config, PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "false");
+        SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
