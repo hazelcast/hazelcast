@@ -23,7 +23,7 @@
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Listener Configurations</title>
     <para>
-        Hazelcast provides various event listener extensions to receive specific event types. These are
+        Hazelcast provides various event listener extensions to receive specific event types. These are:
         <itemizedlist>
             <listitem>
                 <para>

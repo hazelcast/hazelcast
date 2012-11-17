@@ -29,7 +29,7 @@
         Partitioning (aka Split-Brain Syndrome).
     </para>
     <para>Since it is a network failure, there is no way to avoid it programatically and your
-        application will run as two separate independent clusters but we should be able answer the
+        application will run as two separate independent clusters but we should be able to answer the
         following questions: "What will happen after the network failure is fixed and connectivity
         is restored between these two clusters? Will these two clusters merge into one again? If
         they do, how are the data conflicts resolved, because you might end up having two different
@@ -48,7 +48,7 @@
                 </para>
             </listitem>
             <listitem>
-                <para>Each member of the merging cluster will do the followings</para>
+                <para>Each member of the merging cluster will do the following:</para>
                 <itemizedlist>
                     <listitem>
                         <para>pause
@@ -100,7 +100,7 @@
         as
         <literal>hz.NO_MERGE, hz.ADD_NEW_ENTRY and hz.LATEST_UPDATE</literal>
         but you can develop
-        your own merge policy by implementing<literal>com.hazelcast.merge.MergePolicy</literal>. You
+        your own merge policy by implementing <literal>com.hazelcast.merge.MergePolicy</literal>. You
         should register your custom merge policy in the configuration so that Hazelcast can find it
         by name.
         <programlisting language="java"><![CDATA[
