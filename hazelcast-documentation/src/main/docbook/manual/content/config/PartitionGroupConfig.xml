@@ -31,7 +31,8 @@
     </para>
 
     <para>
-        You can group nodes in same JVM (or physical machine) or nodes located in the same chassis. Or you can group nodes to create identical capacity. We call these groups as <literal>partition groups</literal>. This way partitions are assigned to those partition groups instead of single nodes. And backups of these partitions are located in another partition group.
+        You can group nodes in the same JVM (or physical machine) or nodes located in the same chassis. Or you can group nodes to create identical capacity. 
+        We call these groups <literal>partition groups</literal>. This way partitions are assigned to those partition groups instead of single nodes. And backups of these partitions are located in another partition group.
     </para>
 
     <para>When you enable partition grouping, Hazelcast presents two choices to configure partition groups at the moments.
