@@ -311,6 +311,23 @@ public class HazelcastTest {
     }
 
     @Test
+    public void testMapClearQuick() {
+        Config config = Hazelcast.getDefaultInstance().getConfig();
+        config.getMapConfig("testMapClear").setClearQuick(true);
+        IMap<String, String> map = Hazelcast.getMap("testMapClearQuick");
+        String value = map.put("Hello", "World");
+        assertEquals(null, value);
+        map.clear();
+        assertEquals(0, map.size());
+        value = map.put("Hello", "World");
+        assertEquals(null, value);
+        assertEquals("World", map.get("Hello"));
+        assertEquals(1, map.size());
+        map.remove("Hello");
+        assertEquals(0, map.size());
+    }
+
+    @Test
     public void testMapRemove() {
         IMap<String, String> map = Hazelcast.getMap("testMapRemove");
         map.put("Hello", "World");

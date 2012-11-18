@@ -141,6 +141,7 @@ public class ConcurrentMapManager extends BaseManager {
         registerPacketProcessor(CONCURRENT_MAP_CONTAINS_VALUE, new ContainsValueOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_VALUE_COUNT, new ValueCountOperationHandler());
         registerPacketProcessor(CONCURRENT_MAP_INVALIDATE, new InvalidateOperationHandler());
+        registerPacketProcessor(CONCURRENT_MAP_CLEAR_QUICK, new ClearQuickOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_ADD_AND_GET, new AtomicNumberAddAndGetOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_COMPARE_AND_SET, new AtomicNumberCompareAndSetOperationHandler());
         registerPacketProcessor(ATOMIC_NUMBER_GET_AND_ADD, new AtomicNumberGetAndAddOperationHandler());
@@ -2252,6 +2253,49 @@ public class ConcurrentMapManager extends BaseManager {
                 oldValue, record.getValueData(), record.getListeners(), callerAddress);
     }
 
+    public class MClearQuick extends MultiCall<Boolean> {
+        final String name;
+        boolean result;
+
+
+        public MClearQuick(String name ) {
+            this.name = name;
+        }
+
+        @Override
+        SubCall createNewTargetAwareOp(Address target) {
+            return new MTargetClearQuickMap(target);
+        }
+
+        @Override
+        boolean onResponse(Object response) {
+            return true;
+        }
+
+        @Override
+        Object returnResult() {
+            return result;
+        }
+
+        @Override
+        void onComplete() {
+            this.result = true;
+        }
+
+        @Override
+        protected boolean excludeLiteMember() {
+            return true;
+        }
+
+        class MTargetClearQuickMap extends SubCall {
+            public MTargetClearQuickMap(Address target) {
+                super(target);
+                setLocal(CONCURRENT_MAP_CLEAR_QUICK, name, null, null, 0, -1);
+                request.setBooleanRequest();
+            }
+        }
+    }
+
     public class MContainsValue extends MultiCall<Boolean> {
         boolean contains = false;
         final String name;
@@ -2565,6 +2609,26 @@ public class ConcurrentMapManager extends BaseManager {
         protected void onNoTimeToSchedule(Request request) {
             request.response = Boolean.FALSE;
             returnResponse(request);
+        }
+    }
+
+    class ClearQuickOperationHandler extends MigrationAwareOperationHandler {
+
+        @Override
+        void doOperation(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            cmap.clearQuick();
+            request.response = true;
+            returnResponse(request);
+        }
+
+        public void handle(Request request) {
+            CMap cmap = getOrCreateMap(request.name);
+            if (cmap.isNotLocked(request)) {
+                doOperation(request);
+            } else {
+                returnRedoResponse(request, REDO_MAP_LOCKED);
+            }
         }
     }
 

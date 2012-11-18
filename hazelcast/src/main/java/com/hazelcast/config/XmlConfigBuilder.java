@@ -682,6 +682,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.setCacheValue(checkTrue(value));
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
+            }  else if ("clear-quick".equals(nodeName)) {
+                mapConfig.setClearQuick(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
                 WanReplicationRef wanReplicationRef = new WanReplicationRef();
                 final String wanName = getAttribute(n, "name");
