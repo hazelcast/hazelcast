@@ -27,8 +27,11 @@
         also get the set of cluster members.
 
         <programlisting language="java"><![CDATA[import com.hazelcast.core.*;
+import com.hazelcast.config.Config;
 
-Cluster cluster = Hazelcast.getCluster();
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+Cluster cluster = hz.getCluster();
 cluster.addMembershipListener(new MembershipListener(){
     public void memberAdded(MembershipEvent membersipEvent) {
         System.out.println("MemberAdded " + membersipEvent);

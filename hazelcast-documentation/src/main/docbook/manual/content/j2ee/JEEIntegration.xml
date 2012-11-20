@@ -35,10 +35,12 @@
 <%
 UserTransaction txn = null;
 Connection conn = null;
-Queue queue = Hazelcast.getQueue ("default");
-Map map     = Hazelcast.getMap   ("default");
-Set set     = Hazelcast.getSet   ("default");
-List list   = Hazelcast.getList  ("default");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+Queue queue = hz.getQueue ("default");
+Map map     = hz.getMap   ("default");
+Set set     = hz.getSet   ("default");
+List list   = hz.getList  ("default");
 
 try { 
     Context context = new InitialContext(); 

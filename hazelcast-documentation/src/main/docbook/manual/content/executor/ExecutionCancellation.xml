@@ -61,7 +61,9 @@
         and upon
         catching it we interruptibly cancel the execution for saving some CPU cycles.
         <programlisting language="java"><![CDATA[long fib(int n) throws Exception {
-    ExecutorService es = Hazelcast.getExecutorService();
+    Config cfg = new Config();
+    HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+    ExecutorService es = hz.getExecutorService();
     Future future = es.submit(new Fibonacci(n));  
     try {
         return future.get(3, TimeUnit.SECONDS);

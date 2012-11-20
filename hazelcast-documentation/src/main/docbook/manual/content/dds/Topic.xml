@@ -36,12 +36,15 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Topic;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.config.Config;
 
 public class Sample implements MessageListener<MyEvent> {
 
     public static void main(String[] args) {
         Sample sample = new Sample();
-        ITopic topic = Hazelcast.getTopic ("default");
+        Config cfg = new Config();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+        ITopic topic = hz.getTopic ("default");
         topic.addMessageListener(sample);
         topic.publish (new MyEvent());
     }
