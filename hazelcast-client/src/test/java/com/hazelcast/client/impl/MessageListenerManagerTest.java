@@ -18,7 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -85,11 +85,13 @@ public class MessageListenerManagerTest {
         assertFalse(manager.noListenerRegistered(name));
         new Thread(new Runnable() {
             public void run() {
-                SerializationHelper serializer = new SerializationHelper(serializerRegistry);
+
+//                SerializationHelper serializer = new SerializationHelper(serializerRegistry);
 //                Packet packet = new Packet();
 //                packet.setName(name);
 //                packet.setKey(serializer.toByteArray(myMessage));
 //                manager.notifyMessageListeners(packet);
+
             }
         }).start();
         assertTrue(latch.await(10, TimeUnit.DAYS));

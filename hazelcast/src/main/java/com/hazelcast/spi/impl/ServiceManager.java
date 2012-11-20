@@ -27,7 +27,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
+
 //import com.hazelcast.queue.QueueService;
+
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -66,6 +68,7 @@ class ServiceManager {
                 logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService));
 //                registerService(QueueService.NAME, new QueueService());
+
                 // TODO: add other services
                 // ...
                 // ...
@@ -149,7 +152,7 @@ class ServiceManager {
     }
 
     /**
-     * Returns a list of services matching provides service class/interface.
+     * Returns a list of services matching provided service class/interface.
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
      *

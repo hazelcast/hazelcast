@@ -21,7 +21,7 @@ import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializationHelper;
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.HashMap;
@@ -83,7 +83,7 @@ public final class ThreadContext {
 
     private final Thread thread;
 
-    private final SerializationHelper serializationHelper = new SerializationHelper(this);
+    private final Serializer serializer = new Serializer(this);
 
     private final Map<String, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts
             = new HashMap<String, HazelcastInstanceThreadContext>(2);
@@ -139,19 +139,19 @@ public final class ThreadContext {
     }
 
     public byte[] toByteArray(Object obj) {
-        return serializationHelper.toByteArray(obj);
+        return serializer.toByteArray(obj);
     }
 
     public Data toData(Object obj) {
-        return serializationHelper.writeObject(obj);
+        return serializer.writeObject(obj);
     }
 
     public Object toObject(Data data) {
-        return serializationHelper.readObject(data);
+        return serializer.readObject(data);
     }
 
     public Object toObject(byte[] data) {
-        return serializationHelper.toObject(data);
+        return serializer.toObject(data);
     }
 
     public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(HazelcastInstanceImpl instance) {
@@ -211,7 +211,7 @@ public final class ThreadContext {
     }
 
     private void destroy() {
-        serializationHelper.destroy();
+        serializer.destroy();
         mapHazelcastInstanceContexts.clear();
         attachment = null;
         currentInstance = null;
