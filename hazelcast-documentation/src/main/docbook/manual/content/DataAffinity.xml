@@ -30,18 +30,23 @@
     </para>
     <programlisting language="java">
         <![CDATA[
-Hazelcast.getMap("mapa").put("key1", value);
-Hazelcast.getMap("mapb").get("key1");
-Hazelcast.getMap("mapc").remove("key1");
+Config cfg = new Config();
+HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+Map mapa = instance.getMap("mapa");
+Map mapb = instance.getMap("mapb");
+Map mapc = instance.getMap("mapc");
+mapa.put("key1", value);
+mapb.get("key1");
+mapc.remove("key1");
 // since map names are different, operation will be manipulating
 // different entries, but the operation will take place on the
 // same member since the keys ("key1") are the same
 
-Hazelcast.getLock ("key1").lock();
+instance.getLock ("key1").lock();
 // lock operation will still execute on the same member of the cluster
 // since the key ("key1") is same
 
-Hazelcast.getExecutorService().execute(new DistributedTask(runnable, "key1"));
+instance.getExecutorService().execute(new DistributedTask(runnable, "key1"));
 // distributed execution will execute the 'runnable' on the same member
 // since "key1" is passed as the key.
     ]]></programlisting>
@@ -94,8 +99,10 @@ public class OrderKey implements Serializable, PartitionAware {
     entry and its <literal>Order</literal>s are going to be stored on the same node.
     </para>
     <programlisting language="java"><![CDATA[
-Map mapCustomers = Hazelcast.getMap("customers")
-Map mapOrders = Hazelcast.getMap("orders")
+Config cfg = new Config();
+HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+Map mapCustomers = instance.getMap("customers")
+Map mapOrders = instance.getMap("orders")
 // create the customer entry with customer id = 1
 mapCustomers.put(1, customer);
 // now create the orders for this customer
@@ -115,7 +122,7 @@ mapOrders.put(new OrderKey(23, 1), order);
     <programlisting language="java">
         <![CDATA[
 public static int removeOrder(long customerId, long orderId) throws Exception {
-    IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
+    IMap<Long, Customer> mapCustomers = instance.getMap("customers");
     mapCustomers.lock (customerId);
     Customer customer = mapCustomers. get(customerId);
     customer.removeOrder (orderId);
@@ -179,7 +186,7 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
     Here is a sample code:
     <programlisting language="java"><![CDATA[
 public static int removeOrder(long customerId, long orderId) throws Exception {
-    ExecutorService es = Hazelcast.getExecutorService();
+    ExecutorService es = instance.getExecutorService();
     OrderDeletionTask task = new OrderDeletionTask(customerId, orderId);
     Future future = es.submit(task);
     int remainingOrders = future.get();

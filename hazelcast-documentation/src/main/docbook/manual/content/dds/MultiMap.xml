@@ -32,9 +32,13 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Hazelcast;
 import java.util.Collection;
+import com.hazelcast.config.Config;
+
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
 
 // a multimap to hold <customerId, Order> pairs
-MultiMap<String, Order> mmCustomerOrders = Hazelcast.getMultiMap("customerOrders");
+MultiMap<String, Order> mmCustomerOrders = hz.getMultiMap("customerOrders");
 mmCustomerOrders.put("1", new Order ("iPhone", 340));
 mmCustomerOrders.put("1", new Order ("MacBook", 1200));
 mmCustomerOrders.put("1", new Order ("iPod", 79));

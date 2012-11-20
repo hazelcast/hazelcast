@@ -33,9 +33,12 @@
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.DistributedTask;
 import java.util.concurrent.ExecutorService;    
-import java.util.concurrent.Future; 
-        
-ExecutorService es = Hazelcast.getExecutorService();
+import java.util.concurrent.Future;
+import com.hazelcast.config.Config;
+
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+ExecutorService es = hz.getExecutorService();
 DistributedTask<String> task = new DistributedTask<String>(new Fibonacci(10));
 task.setExecutionCallback(new ExecutionCallback<Long> () {
     public void done (Future<Long> future) { 

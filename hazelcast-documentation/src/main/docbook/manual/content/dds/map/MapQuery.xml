@@ -75,7 +75,9 @@ public boolean isActive() {
         <programlisting language="java"><![CDATA[import com.hazelcast.core.IMap;
 import com.hazelcast.query.SqlPredicate;
 
-IMap map = Hazelcast.getMap("employee");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+IMap map = hz.getMap("employee");
 
 Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AND age < 30"));
 ]]></programlisting>
@@ -272,8 +274,12 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.EntryObject;
+import com.hazelcast.config.Config;
 
-IMap map = Hazelcast.getMap("employee");
+
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+IMap map = hz.getMap("employee");
 
 EntryObject e = new PredicateBuilder().getEntryObject();
 Predicate predicate = e.is("active").and(e.get("age").lessThan(30));

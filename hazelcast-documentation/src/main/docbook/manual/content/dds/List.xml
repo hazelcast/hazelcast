@@ -26,8 +26,12 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.List;
 import java.util.Iterator;
+import com.hazelcast.config.Config;
 
-java.util.List list = Hazelcast.getList("IBM-Quote-Frequency");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+
+java.util.List list = hz.getList("IBM-Quote-Frequency");
 list.add(new Price(10));
 list.add(new Price(11));
 list.add(new Price(12));

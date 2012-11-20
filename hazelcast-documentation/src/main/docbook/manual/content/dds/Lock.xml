@@ -24,9 +24,12 @@
     <title>Distributed Lock</title>
     <para>
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+import com.hazelcast.config.Config;
 import java.util.concurrent.locks.Lock;
 
-Lock lock = Hazelcast.getLock(myLockedObject);
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+Lock lock = hz.getLock(myLockedObject);
 lock.lock();
 try {
     // do something here
