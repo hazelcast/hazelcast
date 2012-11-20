@@ -30,11 +30,11 @@ import com.hazelcast.nio.HazelcastSerializationException;
 import java.io.NotSerializableException;
 import java.util.logging.Level;
 
-public final class SerializationHelper {
+public final class Serializer {
 
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
 
-    private static final ILogger logger = Logger.getLogger(SerializationHelper.class.getName());
+    private static final ILogger logger = Logger.getLogger(Serializer.class.getName());
 
     private final ThreadContext context;
     private final SerializerRegistry defaultRegistry;
@@ -42,15 +42,15 @@ public final class SerializationHelper {
     private final SerializationBuffer[] bufferPool = new SerializationBuffer[maxDepth];
     private int depth = 0;
 
-    public SerializationHelper(SerializerRegistry registry) {
+    public Serializer(SerializerRegistry registry) {
         this(registry, null);
     }
 
-    public SerializationHelper(ThreadContext ctx) {
+    public Serializer(ThreadContext ctx) {
         this(null, ctx);
     }
 
-    private SerializationHelper(SerializerRegistry registry, ThreadContext ctx) {
+    private Serializer(SerializerRegistry registry, ThreadContext ctx) {
         this.context = ctx;
         this.defaultRegistry = registry;
     }
