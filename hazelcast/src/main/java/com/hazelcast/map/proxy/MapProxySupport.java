@@ -121,7 +121,7 @@ abstract class MapProxySupport {
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         int partitionId = nodeService.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutTransientOperation putOperation = new PutTransientOperation(name, key, value, txnId, ttl);
+        PutTransientOperation putOperation = new PutTransientOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
         putOperation.setValidateTarget(true);
         long backupCallId = mapService.createNewBackupCallQueue();
         putOperation.setBackupCallId(backupCallId);

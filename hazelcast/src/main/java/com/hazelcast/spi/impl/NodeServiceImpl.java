@@ -21,7 +21,6 @@ import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
@@ -41,20 +40,15 @@ import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class NodeServiceImpl implements NodeService {
 
-    private final Workers workers;
-    private final ExecutorService executorService;
-    private final ExecutorService eventExecutorService;
-    private final ScheduledExecutorService scheduledExecutorService;
     private final Node node;
     private final ILogger logger;
+    private final ExecutorServiceManager executorServiceManager;
     private final int partitionCount;
-    private final ThreadGroup partitionThreadGroup;
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
     private final AtomicLong localIdGen = new AtomicLong();
     private final ServiceManager serviceManager;
@@ -62,22 +56,8 @@ public class NodeServiceImpl implements NodeService {
     public NodeServiceImpl(Node node) {
         this.node = node;
         logger = node.getLogger(NodeService.class.getName());
-        final ClassLoader classLoader = node.getConfig().getClassLoader();
-        executorService = new ThreadPoolExecutor(
-                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
-                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getThreadPoolNamePrefix("cached"), classLoader));
-        eventExecutorService = Executors.newSingleThreadExecutor(
-                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getThreadPoolNamePrefix("event"), node.getConfig().getClassLoader()));
-        scheduledExecutorService = Executors.newScheduledThreadPool(2,
-                new ExecutorThreadFactory(node.threadGroup,
-                        node.hazelcastInstance,
-                        node.getThreadPoolNamePrefix("scheduled"), classLoader));
-        partitionThreadGroup = new ThreadGroup(node.threadGroup, "partitionThreads");
-        workers = new Workers(partitionThreadGroup, "workers", 2);
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
+        executorServiceManager = new ExecutorServiceManager(this);
         serviceManager = new ServiceManager(this);
     }
 
@@ -157,9 +137,9 @@ public class NodeServiceImpl implements NodeService {
     }
 
     void invoke(final InvocationImpl inv) {
-        if (Thread.currentThread().getThreadGroup() == partitionThreadGroup) {
+        if (executorServiceManager.isPartitionThread()) {
             throw new HazelcastException(Thread.currentThread()
-                    + " cannot make another call: "
+                    + " cannot make remote call: "
                     + inv.getOperation()
                     + " currentOp:" + ThreadContext.get().getCurrentOperation());
         }
@@ -201,14 +181,14 @@ public class NodeServiceImpl implements NodeService {
 
     public void runLocally(final Operation op) {
         final int partitionId = op.getPartitionId();
-        final ExecutorService executor = getExecutor(partitionId);
+        final ExecutorService executor = executorServiceManager.getExecutor(partitionId);
         executor.execute(new OperationExecutor(op));
     }
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
         final int partitionId = packet.getPartitionId();
-        final Executor executor = getExecutor(partitionId);
+        final Executor executor = executorServiceManager.getExecutor(partitionId);
         executor.execute(new RemoteOperationExecutor(packet));
     }
 
@@ -290,18 +270,6 @@ public class NodeServiceImpl implements NodeService {
     public boolean send(final Operation op, final int partitionId, final Connection connection) {
         Data opData = toData(op);
         return node.clusterService.send(new Packet(opData, partitionId, connection), connection);
-    }
-
-    private ExecutorService getExecutor(int partitionId) {
-        if (partitionId >= 0) {
-            return workers.getExecutor(partitionId);
-        } else if (partitionId == EXECUTOR_THREAD_ID) {
-            return executorService;
-        } else if (partitionId == EVENT_THREAD_ID) {
-            return eventExecutorService;
-        } else {
-            throw new IllegalArgumentException("Illegal partition id: " + partitionId);
-        }
     }
 
     @PrivateApi
@@ -389,27 +357,27 @@ public class NodeServiceImpl implements NodeService {
 
     @PrivateApi
     public ExecutorService getEventService() {
-        return eventExecutorService;
+        return executorServiceManager.getEventExecutor();
     }
 
     public Future<?> submit(Runnable task) {
-        return executorService.submit(task);
+        return executorServiceManager.getCachedExecutor().submit(task);
     }
 
     public void execute(final Runnable command) {
-        executorService.execute(command);
+        executorServiceManager.getCachedExecutor().execute(command);
     }
 
     public void schedule(final Runnable command, long delay, TimeUnit unit) {
-        scheduledExecutorService.schedule(command, delay, unit);
+        executorServiceManager.getScheduledExecutor().schedule(command, delay, unit);
     }
 
     public void scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        scheduledExecutorService.scheduleAtFixedRate(command, initialDelay, period, unit);
+        executorServiceManager.getScheduledExecutor().scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     public void scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, period, unit);
+        executorServiceManager.getScheduledExecutor().scheduleWithFixedDelay(command, initialDelay, period, unit);
     }
 
     public Data toData(final Object object) {
@@ -437,68 +405,8 @@ public class NodeServiceImpl implements NodeService {
     @PrivateApi
     public void shutdown() {
         serviceManager.stopServices();
-        workers.shutdownNow();
-        executorService.shutdownNow();
-        scheduledExecutorService.shutdownNow();
-        eventExecutorService.shutdownNow();
-        try {
-            scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
-        }
-        try {
-            executorService.awaitTermination(3, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
-        }
-        workers.awaitTermination(3);
+        executorServiceManager.shutdownNow();
         mapCalls.clear();
-    }
-
-    private class Workers {
-        final ThreadGroup partitionThreadGroup;
-        final int threadCount;
-        final ExecutorService[] workers;
-        final AtomicInteger threadNumber = new AtomicInteger();
-
-        Workers(ThreadGroup partitionThreadGroup, String threadName, int threadCount) {
-            this.partitionThreadGroup = partitionThreadGroup;
-            this.threadCount = threadCount;
-            workers = new ExecutorService[threadCount];
-            for (int i = 0; i < threadCount; i++) {
-                workers[i] = newSingleThreadExecutorService(threadName);
-            }
-        }
-
-        ExecutorService getExecutor(int partitionId) {
-            return workers[partitionId % threadCount];
-        }
-
-        ExecutorService newSingleThreadExecutorService(final String threadName) {
-            return new ThreadPoolExecutor(
-                    1, 1, 0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    new ExecutorThreadFactory(partitionThreadGroup, node.hazelcastInstance, node.getThreadPoolNamePrefix(threadName),
-                            threadNumber, node.getConfig().getClassLoader()),
-                    new RejectedExecutionHandler() {
-                        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        }
-                    }
-            );
-        }
-
-        void shutdownNow() {
-            for (ExecutorService worker : workers) {
-                worker.shutdownNow();
-            }
-        }
-
-        void awaitTermination(int timeoutSeconds) {
-            for (ExecutorService worker : workers) {
-                try {
-                    worker.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
-                } catch (InterruptedException ignored) {
-                }
-            }
-        }
     }
 
     private class OperationExecutor implements Runnable {
@@ -570,9 +478,6 @@ public class NodeServiceImpl implements NodeService {
             final Address caller = packet.getConn().getEndPoint();
             try {
                 setOp((Operation) toObject(data));
-//                if (op != null) {
-//                    throw new IllegalArgumentException();
-//                }
                 op.setNodeService(NodeServiceImpl.this).setCaller(caller).setPartitionId(partitionId);
                 op.setConnection(packet.getConn());
                 ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op);

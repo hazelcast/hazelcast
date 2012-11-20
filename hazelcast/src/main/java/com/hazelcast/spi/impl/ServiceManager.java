@@ -149,7 +149,7 @@ class ServiceManager {
     }
 
     /**
-     * Returns a list of services matching provides service class/interface.
+     * Returns a list of services matching provided service class/interface.
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
      *
