@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapServiceConfig;
+import com.hazelcast.core.ClientService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService {
+        TransactionalService, RemoteService, ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 

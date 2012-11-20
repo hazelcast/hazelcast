@@ -24,6 +24,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.spi.ClientProtocolService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -100,7 +101,8 @@ public class NodeIOService implements IOService {
     }
 
     public void handleClientCommand(Protocol p) {
-//        node.clientHandlerService.handle(p);
+        //TODO command name is not serviceName. A mapper should be introduced.
+        node.clientCommandService.handle(p);
     }
 
 
