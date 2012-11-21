@@ -106,6 +106,8 @@ public class CMap {
 
     private boolean cacheValue;
 
+    private boolean clearQuick = false;
+
     private volatile boolean ttlPerRecord = false;
 
     private volatile boolean dirty = false;
@@ -340,6 +342,7 @@ public class CMap {
                 : EvictionPolicy.NONE;
         readBackupData = mapConfig.isReadBackupData();
         cacheValue = mapConfig.isCacheValue();
+        clearQuick = mapConfig.isClearQuick();
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
         if (MaxSizeConfig.POLICY_MAP_SIZE_PER_JVM.equals(maxSizeConfig.getMaxSizePolicy())) {
             maxSizePolicy = new MaxSizePerJVMPolicy(maxSizeConfig);
@@ -449,6 +452,10 @@ public class CMap {
 
     public boolean isCacheValue() {
         return cacheValue;
+    }
+
+    public boolean isClearQuick() {
+        return clearQuick;
     }
 
     public boolean isReadBackupData() {
@@ -1644,6 +1651,14 @@ public class CMap {
                 record.invalidate();
             }
         }
+        if (nearCache != null) {
+            nearCache.reset();
+        }
+        mapRecords.clear();
+        mapIndexService.clear();
+    }
+
+    void clearQuick() {
         if (nearCache != null) {
             nearCache.reset();
         }

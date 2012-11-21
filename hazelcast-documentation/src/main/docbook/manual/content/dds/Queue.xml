@@ -27,8 +27,11 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import com.hazelcast.config.Config;
 
-BlockingQueue<MyTask> q = Hazelcast.getQueue("tasks");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+BlockingQueue<MyTask> q = hz.getQueue("tasks");
 q.put(new MyTask());
 MyTask task = q.take();
 

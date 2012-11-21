@@ -27,7 +27,7 @@
     Hazelcast provides distributed second level cache for
     your Hibernate entities, collections and queries. Hazelcast has two implementations of Hibernate
     2nd level cache, one for hibernate-pre-3.3 and one for hibernate-3.3.x versions. In your
-    Hibernate configuration file (ex: hibernate.cfg.xml), add these properties;
+    Hibernate configuration file (ex: hibernate.cfg.xml), add these properties:
     <itemizedlist>
         <listitem>
             <para>To enable use of second level cache
@@ -60,11 +60,17 @@
         <listitem>
             <para>You can define custom named Hazelcast configuration xml file with one of these
                 Hibernate configuration properties.
-                <programlisting language="xml"><![CDATA[<property name="hibernate.cache.provider_configuration_file_resource_path">hazelcast-custom-config.xml</property>
-]]></programlisting>
+                <programlisting language="xml">
+<![CDATA[<property name="hibernate.cache.provider_configuration_file_resource_path">
+     hazelcast-custom-config.xml
+</property>]]>
+                </programlisting>
                 or
-                <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.configuration_file_path">hazelcast-custom-config.xml</property>
-]]></programlisting>
+                <programlisting language="xml">
+<![CDATA[<property name="hibernate.cache.hazelcast.configuration_file_path">
+     hazelcast-custom-config.xml
+</property>]]>
+                </programlisting>
             </para>
         </listitem>
         <listitem>
@@ -83,12 +89,11 @@
                     over LiteMember property.)</emphasis>
                 <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.use_native_client">true</property>
 ]]></programlisting>
-                To setup Native Client properly, you should add Hazelcast<emphasis role="bold"
-                        >group-name</emphasis>,
-                <emphasis role="bold">group-password</emphasis>
-                and
-                <emphasis role="bold">cluster member address</emphasis>
-                properties. Native Client
+                To setup Native Client properly, you should add Hazelcast 
+                <emphasis role="bold">group-name</emphasis>, 
+                <emphasis role="bold">group-password</emphasis> and
+                <emphasis role="bold">cluster member address</emphasis> properties. 
+                Native Client
                 will connect to defined member and will get addresses of all members in the cluster.
                 If the connected member will die or leave the cluster, client will automatically
                 switch to another member in the cluster.
@@ -108,28 +113,31 @@
         </listitem>
         <listitem>
             <para>If you are using one of Hibernate pre-3.3 version, add following property.
-                <programlisting language="xml"><![CDATA[<property name="hibernate.cache.provider_class">com.hazelcast.hibernate.provider.HazelcastCacheProvider</property>
-]]></programlisting>
+                <programlisting language="xml">
+<![CDATA[<property name="hibernate.cache.provider_class">
+     com.hazelcast.hibernate.provider.HazelcastCacheProvider
+</property>]]>
+				</programlisting>
             </para>
         </listitem>
         <listitem>
             <para>If you are using Hibernate 3.3.x (or newer) version, you can choose to use either
                 configuration property above (Hibernate has a built-in bridge to use old-style cache
                 implementations) or following property.
-                <programlisting language="xml"><![CDATA[<property name="hibernate.cache.region.factory_class">com.hazelcast.hibernate.HazelcastCacheRegionFactory</property>
-]]></programlisting>
+                <programlisting language="xml">
+<![CDATA[<property name="hibernate.cache.region.factory_class">
+     com.hazelcast.hibernate.HazelcastCacheRegionFactory
+</property>]]>
+				</programlisting>
             </para>
         </listitem>
     </itemizedlist>
     Hazelcast creates a seperate distributed map for each Hibernate cache region. So
-    these regions can be configured easily via Hazelcast map configuration. You can define<emphasis
-            role="bold">backup</emphasis>,<emphasis role="bold">eviction</emphasis>,
-    <emphasis
-            role="bold">TTL
-    </emphasis>
-    and
-    <emphasis role="bold">Near Cache</emphasis>
-    properties.
+    these regions can be configured easily via Hazelcast map configuration. You can define 
+    <emphasis role="bold">backup</emphasis>,
+    <emphasis role="bold">eviction</emphasis>,
+    <emphasis role="bold">TTL</emphasis> and
+    <emphasis role="bold">Near Cache</emphasis> properties.
     <itemizedlist>
         <listitem>
             <para>
@@ -147,25 +155,24 @@
             </para>
         </listitem>
     </itemizedlist>
-    Hibernate has four cache concurrency
-    strategies:<emphasis>read-only</emphasis>,<emphasis>read-write</emphasis>,
-    <emphasis>nonstrict-read-write</emphasis>
-    and<emphasis>transactional</emphasis>. But
-    Hibernate does not forces cache providers to support all strategies. And Hazelcast supports
-    first three (<emphasis role="bold">read-only</emphasis>,<emphasis role="bold"
-            >read-write</emphasis>,<emphasis role="bold">nonstrict-read-write</emphasis>) of these four
-    strategies. Hazelcast has not support for
-    <emphasis>transactional</emphasis>
-    strategy yet.
+    Hibernate has four cache concurrency strategies:
+    <emphasis>read-only</emphasis>, 
+    <emphasis>read-write</emphasis>, 
+    <emphasis>nonstrict-read-write</emphasis> and
+    <emphasis>transactional</emphasis>. 
+    But Hibernate does not forces cache providers to support all strategies. And Hazelcast supports
+    first three (<emphasis role="bold">read-only</emphasis>, 
+    	<emphasis role="bold">read-write</emphasis>, 
+    	<emphasis role="bold">nonstrict-read-write</emphasis>) of these four strategies. 
+    	Hazelcast has no support for<emphasis>transactional</emphasis> strategy yet.
     <itemizedlist>
         <listitem>
             <para>If you are using xml based class configurations, you should add a
-                <emphasis>cache</emphasis>
-                element into your configuration with
-                <emphasis>usage</emphasis>
-                attribute with one
-                of<emphasis>read-only</emphasis>,<emphasis>read-write</emphasis>,<emphasis>
-                    nonstrict-read-write</emphasis>.
+                <emphasis>cache</emphasis> element into your configuration with
+                <emphasis>usage</emphasis> attribute with one of 
+                <emphasis>read-only</emphasis>, 
+                <emphasis>read-write</emphasis>, 
+                <emphasis>nonstrict-read-write</emphasis>.
                 <programlisting language="xml"><![CDATA[<class name="eg.Immutable" mutable="false">
     <cache usage="read-only"/>
     .... 
@@ -184,14 +191,12 @@
         </listitem>
         <listitem>
             <para>If you are using Hibernate-Annotations then you can add
-                <emphasis>class-cache</emphasis>
-                or
-                <emphasis>collection-cache</emphasis>
-                element into your Hibernate configuration file with
-                <emphasis>usage</emphasis>
-                attribute with one of<emphasis>read
-                    only</emphasis>,<emphasis>read/write</emphasis>,<emphasis>nonstrict
-                    read/write</emphasis>.
+                <emphasis>class-cache</emphasis> or
+                <emphasis>collection-cache</emphasis> element into your Hibernate configuration file with
+                <emphasis>usage</emphasis> attribute with one of 
+                <emphasis>read only</emphasis>,
+                <emphasis>read/write</emphasis>,
+                <emphasis>nonstrict read/write</emphasis>.
                 <programlisting language="xml"><![CDATA[<class-cache usage="read-only" class="eg.Immutable"/>
 <class-cache usage="read-write" class="eg.Cat"/>
 <collection-cache collection="eg.Cat.kittens" usage="read-write"/>
@@ -213,7 +218,7 @@ public class Cat implements Serializable {
             </para>
         </listitem>
     </itemizedlist>
-    And now last thing you should be aware of is to drop
+    The last thing you should be aware of is to drop
     hazelcast-hibernate-&lt;version&gt;.jar into your classpath.
 
     <itemizedlist>
@@ -226,7 +231,7 @@ public class Cat implements Serializable {
             </para>
             <para>Using
                 <code>com.hazelcast.hibernate.instance.HazelcastAccessor</code>
-                you can access underlying
+                you can access the underlying
                 <code>HazelcastInstance</code>
                 used by Hibernate SessionFactory.
                 <programlisting language="java"><![CDATA[SessionFactory sessionFactory = ...;
@@ -255,14 +260,12 @@ HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(ses
                     <literal>HazelcastInstance</literal>
                 </emphasis>
             </para>
-            <para>Instead of creating a new
-                <literal>HazelcastInstance</literal>
-                for each<literal>SessionFactory</literal>,
+            <para>
+            	Instead of creating a new <literal>HazelcastInstance</literal> for each <literal>SessionFactory</literal>,
                 an existing instance can be used by setting
                 <literal>hibernate.cache.hazelcast.instance_name</literal>
-                Hibernate
-                property to<literal>HazelcastInstance</literal>'s name.
-                For more information see<link xlink:href="#NamedHazelcastInstance">Named HazelcastInstance</link>.
+                Hibernate property to <literal>HazelcastInstance</literal>'s name.
+                For more information see <link xlink:href="#NamedHazelcastInstance">Named HazelcastInstance</link>.
             </para>
         </listitem>
 
@@ -282,7 +285,7 @@ HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(ses
                     should not
                     be set to false.)
                 </emphasis>
-                Default value is<literal>true</literal>.
+                Default value is <literal>true</literal>.
             </para>
         </listitem>
     </itemizedlist>

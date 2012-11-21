@@ -116,7 +116,7 @@ public class ClientConfigBuilder {
         if (props.containsKey(ADDRESSES)) {
             final String addressesProp = props.getProperty(ADDRESSES);
             if (addressesProp != null) {
-                final String[] addresses = addressesProp.split("[,: ]");
+                final String[] addresses = addressesProp.split("[,; ]");
                 for (String address : addresses) {
                     address = address.trim();
                     if (address.length() > 0) {

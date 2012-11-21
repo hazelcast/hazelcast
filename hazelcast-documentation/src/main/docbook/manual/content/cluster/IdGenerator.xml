@@ -34,7 +34,9 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Hazelcast;
 
-IdGenerator idGenerator = Hazelcast.getIdGenerator("customer-ids");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+IdGenerator idGenerator = hz.getIdGenerator("customer-ids");
 long id = idGenerator.newId();
 ]]></programlisting>
 

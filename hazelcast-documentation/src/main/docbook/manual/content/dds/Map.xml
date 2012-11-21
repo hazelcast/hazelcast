@@ -35,8 +35,11 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.Map;
 import java.util.Collection;
+import com.hazelcast.config.Config;
 
-Map<String, Customer> mapCustomers = Hazelcast.getMap("customers");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+Map<String, Customer> mapCustomers = hz.getMap("customers");
 mapCustomers.put("1", new Customer("Joe", "Smith"));
 mapCustomers.put("2", new Customer("Ali", "Selam"));
 mapCustomers.put("3", new Customer("Avi", "Noyan"));
