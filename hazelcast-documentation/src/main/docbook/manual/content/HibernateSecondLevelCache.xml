@@ -243,9 +243,9 @@ HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(ses
                 </emphasis>
             </para>
             <para>Lock timeout value can be set using
-                <literal>hibernate.cache.hazelcast.lock_timeout_in_seconds</literal>
+                <literal>hibernate.cache.hazelcast.lock_timeout</literal>
                 Hibernate property.
-                Value should be in seconds and default value is 300 seconds.
+                Value should be in milliseconds and default value is 10000 ms (10 seconds).
             </para>
         </listitem>
 

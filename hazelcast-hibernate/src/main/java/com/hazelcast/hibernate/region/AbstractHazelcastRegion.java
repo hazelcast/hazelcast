@@ -18,8 +18,8 @@ package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.HazelcastTimestamper;
+import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.logging.ILogger;
 import org.hibernate.cache.CacheException;
 
@@ -29,10 +29,10 @@ import java.util.Properties;
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
-abstract class AbstractHazelcastRegion implements HazelcastRegion {
+abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements HazelcastRegion<Cache> {
 
     private final HazelcastInstance instance;
-    private final IMap cache;
+//    private final IMap cache;
     private final String regionName;
     private final int timeout;
     protected final Properties props;
@@ -40,24 +40,24 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
     protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName, final Properties props) {
         super();
         this.instance = instance;
-        this.cache = instance.getMap(regionName);
+//        this.cache = instance.getMap(regionName);
         this.regionName = regionName;
         this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);
         this.props = props;
     }
 
-    public final IMap getCache() {
-        return cache;
-    }
+//    public final RegionCache getCache() {
+//        return cache;
+//    }
 
-    public final void clearCache() {
+//    public final void clearCache() {
         // clear all cache and destroy proxies
         // when a new operation done over this proxy
         // Hazelcast will initialize and create map again.
-        cache.destroy();
+//        cache.destroy();
         // create Hazelcast internal proxies, has no effect on map operations
-        instance.getMap(regionName);
-    }
+//        instance.getMap(regionName);
+//    }
 
     public void destroy() throws CacheException {
 //    	Destroy of the region should not propagate 
@@ -92,14 +92,15 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
      * @return a rough estimate of number of bytes used by this region.
      */
     public long getSizeInMemory() {
-        long size = 0;
-        for (final Object key : getCache().keySet()) {
-            final MapEntry entry = getCache().getMapEntry(key);
-            if (entry != null) {
-                size += entry.getCost();
-            }
-        }
-        return size;
+//        long size = 0;
+//        for (final Object key : getCache().keySet()) {
+//            final MapEntry entry = getCache().getMapEntry(key);
+//            if (entry != null) {
+//                size += entry.getCost();
+//            }
+//        }
+//        return size;
+        return getCache().getSizeInMemory();
     }
 
     public final int getTimeout() {
@@ -116,11 +117,11 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
      * @return the internal <code>IMap</code> used for this region.
      */
     public Map toMap() {
-        return getCache();
+        return getCache().asMap();
     }
 
     public boolean contains(Object key) {
-        return getCache().containsKey(key);
+        return getCache().contains(key);
     }
 
     public final HazelcastInstance getInstance() {

@@ -56,7 +56,7 @@ public final class HazelcastCache implements Cache {
         this.cache = instance.getMap(regionName);
         this.regionName = regionName;
         this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);
-        this.lockTimeout = CacheEnvironment.getLockTimeoutInSeconds(props);
+        this.lockTimeout = CacheEnvironment.getLockTimeoutInMillis(props);
     }
 
     public void clear() throws CacheException {
@@ -110,8 +110,8 @@ public final class HazelcastCache implements Cache {
 
     public void lock(final Object key) throws CacheException {
         if (lockTimeout > 0) {
-            if (!cache.tryLock(key, lockTimeout, TimeUnit.SECONDS)) {
-                throw new CacheException("Cache lock could not be acquired! Wait-time: " + lockTimeout + " seconds");
+            if (!cache.tryLock(key, lockTimeout, TimeUnit.MILLISECONDS)) {
+                throw new CacheException("Cache lock could not be acquired! Wait-time: " + lockTimeout + " milliseconds");
             }
         } else {
             cache.lock(key);

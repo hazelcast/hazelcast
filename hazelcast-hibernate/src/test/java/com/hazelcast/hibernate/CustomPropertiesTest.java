@@ -140,9 +140,9 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     public void testTimeout() throws InterruptedException {
         Properties props = getDefaultProperties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
-        props.put(CacheEnvironment.LOCK_TIMEOUT, "3");
+        props.put(CacheEnvironment.LOCK_TIMEOUT_SECONDS, "3");
         final SessionFactory sf = createSessionFactory(props);
-        assertEquals(3, CacheEnvironment.getLockTimeoutInSeconds(props));
+        assertEquals(3000, CacheEnvironment.getLockTimeoutInMillis(props));
         final HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         final Long id = new Long(1L);
         DummyEntity e = new DummyEntity(id, "", 0, null);

@@ -34,7 +34,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 
 public class TopicManager extends BaseManager {
 
-    final boolean FLOW_CONTROL_ENABLED;
+    private final boolean FLOW_CONTROL_ENABLED;
 
     TopicManager(Node node) {
         super(node);
@@ -88,15 +88,15 @@ public class TopicManager extends BaseManager {
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        if (FLOW_CONTROL_ENABLED) {
-            while (node.connectionManager.getTotalWriteQueueSize() > 10000) {
-                try {
-                    //noinspection BusyWait
-                    Thread.sleep(10);
-                } catch (InterruptedException ignored) {
-                }
-            }
-        }
+//        if (FLOW_CONTROL_ENABLED) {
+//            while (node.connectionManager.getTotalWriteQueueSize() > 10000) {
+//                try {
+//                    //noinspection BusyWait
+//                    Thread.sleep(10);
+//                } catch (InterruptedException ignored) {
+//                }
+//            }
+//        }
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
     }
 

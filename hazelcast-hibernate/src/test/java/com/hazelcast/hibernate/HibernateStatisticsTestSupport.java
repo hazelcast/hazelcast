@@ -25,7 +25,6 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cache.StandardQueryCache;
 import org.hibernate.stat.Statistics;
 import org.junit.After;
 import org.junit.Before;
@@ -43,7 +42,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     @Before
     public void postConstruct() {
-        Hazelcast.shutdownAll();
+        Hazelcast.newHazelcastInstance();
         sf = createSessionFactory(getCacheProperties());
         stats = sf.getStatistics();
     }
@@ -52,7 +51,9 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
     public void preDestroy() {
         if (sf != null) {
             sf.close();
+            sf = null;
         }
+        Hazelcast.shutdownAll();
     }
 
     protected HazelcastInstance getHazelcastInstance() {
@@ -125,7 +126,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         Map<?, ?> propCollCache = hz.getMap(DummyEntity.class.getName() + ".properties");
         assertEquals((childCount + 1) * count, stats.getEntityInsertCount());
         // twice put of entity and properties (on load and update) and once put of collection
-        assertEquals((childCount + 1) * count * 2 + count, stats.getSecondLevelCachePutCount());
+        assertEquals((childCount + 1) * count * 2, stats.getSecondLevelCachePutCount());
         assertEquals(childCount * count, stats.getEntityLoadCount());
         assertEquals(count, stats.getSecondLevelCacheHitCount());
         // collection cache miss
@@ -142,7 +143,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     @Test
     public void testQuery() {
-        final HazelcastInstance hz = getHazelcastInstance();
         final int entityCount = 10;
         final int queryCount = 5;
         insertDummyEntities(entityCount);
@@ -179,11 +179,10 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         assertEquals(entityCount * (queryCount - 1) * 2, stats.getSecondLevelCacheHitCount());
         // collection cache miss
         assertEquals(entityCount, stats.getSecondLevelCacheMissCount());
-        assertEquals(1, hz.getMap(StandardQueryCache.class.getName()).size());
         stats.logSummary();
     }
 
-    private List<DummyEntity> executeQuery() {
+    protected List<DummyEntity> executeQuery() {
         Session session = sf.openSession();
         try {
             Query query = session.createQuery("from " + DummyEntity.class.getName());

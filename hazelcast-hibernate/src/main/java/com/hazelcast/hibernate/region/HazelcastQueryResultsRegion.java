@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.timestamp;
+package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.region.AbstractGeneralRegion;
-import org.hibernate.cache.TimestampsRegion;
+import com.hazelcast.hibernate.local.LocalRegionCache;
+import org.hibernate.cache.QueryResultsRegion;
 
 import java.util.Properties;
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-public class HazelcastTimestampsRegion extends AbstractGeneralRegion implements TimestampsRegion {
+public class HazelcastQueryResultsRegion extends AbstractGeneralRegion<LocalRegionCache> implements QueryResultsRegion {
 
-    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name, final Properties props) {
-        super(instance, name, props);
+    public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name, final Properties props) {
+        // Note: We can pass HazelcastInstance as null, because instead of invalidation
+        // timestamps cache can take care of outdated queries.
+        super(instance, name, props, new LocalRegionCache(name, null, null));
     }
 }

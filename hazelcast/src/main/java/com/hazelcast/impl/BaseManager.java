@@ -1208,6 +1208,14 @@ public abstract class BaseManager {
                     // and an EntryListener whose include-value is false. 
                     enqueueEvent(eventType, name, key, /*(includeValue) ? value : null*/ value, callerAddress, true);
                 } else {
+                    final Connection conn = node.connectionManager.getConnection(toAddress);
+                    if (conn != null && conn.getWriteHandler().size() > 1000) { // TODO: flow control
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Event[" + eventType + "] for " + name
+                                      + " could not be send, connection queue of " + toAddress + " is full!");
+                        }
+                        continue;
+                    }
                     final Packet packet = obtainPacket();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
                     packet.lockAddress = callerAddress;

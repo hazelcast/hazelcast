@@ -35,17 +35,17 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
     }
 
     public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
-        return putInToCache(key, value);
+        return put(key, value, version, null, null);
     }
 
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
                                final SoftLock lock) throws CacheException {
-        return putInToCache(key, value);
+        return put(key, value, currentVersion, previousVersion, lock);
     }
 
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
                                final boolean minimalPutOverride) throws CacheException {
-        return putInToCache(key, value);
+        return put(key, value, version, null, null);
     }
 
     public SoftLock lockItem(Object key, Object version) throws CacheException {

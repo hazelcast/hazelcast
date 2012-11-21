@@ -17,7 +17,7 @@
 package com.hazelcast.hibernate.access;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IMap;
+import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import com.hazelcast.logging.ILogger;
@@ -26,7 +26,6 @@ import org.hibernate.cache.access.SoftLock;
 
 import java.util.Comparator;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
@@ -35,7 +34,8 @@ import java.util.logging.Level;
 public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implements AccessDelegate<T> {
 
     protected final ILogger LOG;
-    private final T hazelcastRegion;
+    protected final T hazelcastRegion;
+    protected final RegionCache cache;
     protected final Comparator<Object> versionComparator;
 
     protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
@@ -48,20 +48,17 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         } else {
             this.versionComparator = null;
         }
+        cache = hazelcastRegion.getCache();
     }
 
     public final T getHazelcastRegion() {
         return hazelcastRegion;
     }
 
-    public final IMap getCache() {
-        return hazelcastRegion.getCache();
-    }
-
-    protected boolean putInToCache(final Object key, final Object value) {
+    protected boolean put(final Object key, final Object value,
+                          final Object currentVersion, final Object previousVersion, final SoftLock lock) {
         try {
-            getCache().set(key, value, 0, TimeUnit.SECONDS);
-            return true;
+            return cache.put(key, value, currentVersion, previousVersion, lock);
         } catch (HazelcastException e) {
             LOG.log(Level.FINEST, "Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             return false;
@@ -70,7 +67,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 
     public Object get(final Object key, final long txTimestamp) throws CacheException {
         try {
-            return getCache().get(key);
+            return cache.get(key);
         } catch (HazelcastException e) {
             LOG.log(Level.FINEST, "Could not read from Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             return null;
@@ -84,14 +81,14 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 
     public void remove(final Object key) throws CacheException {
         try {
-            getCache().remove(key);
+            cache.remove(key);
         } catch (HazelcastException e) {
             throw new CacheException("Operation timeout during remove operation from cache!", e);
         }
     }
 
     public void removeAll() throws CacheException {
-        hazelcastRegion.clearCache();
+        cache.clear();
     }
 
     public void evict(final Object key) throws CacheException {
@@ -99,7 +96,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     }
 
     public void evictAll() throws CacheException {
-        hazelcastRegion.clearCache();
+        cache.clear();
     }
 
     /**
