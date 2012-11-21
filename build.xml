@@ -15,7 +15,7 @@
   -->
 
 <project basedir="." name="hazelcast" default="jar">
-    <property name="version" value="2.4.1-SNAPSHOT"/>
+    <property name="version" value="2.4.1-SNAPSHOT3"/>
 
     <property name="core.src.dir" value="hazelcast/src/main/java"/>
     <property name="core.classes.dir" value="hazelcast/target/classes"/>
@@ -174,7 +174,7 @@
                 <![CDATA[<h1>Hazelcast ${version}</h1>]]>
             </doctitle>
             <bottom><![CDATA[<i>Copyright © 2008-2012 Hazel Ltd. All Rights Reserved.</i>]]></bottom>
-            <link offline="false" href="http://docs.oracle.com/javase/1.5.0/docs/api/" packagelistLoc="C:\tmp"/>
+            <link offline="false" href="http://docs.oracle.com/javase/1.5.0/docs/api/" packagelistLoc="Cache:\tmp"/>
             <link href="http://docs.oracle.com/javase/1.5.0/docs/api/"/>
             <link href="http://java.sun.com/products/servlet/2.3/javadoc/"/>
         </javadoc>
