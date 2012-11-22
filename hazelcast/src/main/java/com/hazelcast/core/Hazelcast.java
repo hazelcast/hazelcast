@@ -59,7 +59,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
-        return HazelcastInstanceFactory.newHazelcastInstance(config, null);
+        return HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
     /**
@@ -88,7 +88,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance() {
-        return HazelcastInstanceFactory.newHazelcastInstance(null, null);
+        return HazelcastInstanceFactory.newHazelcastInstance(null);
     }
 
     /**
