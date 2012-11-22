@@ -525,18 +525,19 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
         MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(
                 node.config.getPartitionGroupConfig());
         if (mgf.createMemberGroups(node.getClusterService().getMembers()).size() < 2) return false;
-        boolean needBackup = false;
-        if (immediateTasksQueue.isEmpty()) {
+        final int size = immediateTasksQueue.size();
+        if (size == 0) {
             for (PartitionInfo partition : partitions) {
                 if (partition.getReplicaAddress(1) == null) {
-                    needBackup = true;
-                    logger.log(Level.WARNING, node.getThisAddress()
-                            + " still has no replica for partitionId:" + partition.getPartitionId());
-                    break;
+                    logger.log(Level.WARNING, "Waiting for safe-backup of partition: " + partition.getPartitionId());
+                    return true;
                 }
             }
+        } else {
+            logger.log(Level.WARNING, "Waiting for ongoing immediate migration tasks: " + size);
+            return true;
         }
-        return needBackup || !immediateTasksQueue.isEmpty();
+        return false;
     }
 
     private boolean shouldCheckRepartitioning() {
