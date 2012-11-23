@@ -23,7 +23,7 @@ import java.util.Collection;
  */
 public interface RemoteService {
 
-    ServiceProxy createProxy(Object...params);
+    ServiceProxy getProxy(Object... params);
 
     Collection<ServiceProxy> getProxies();
 }

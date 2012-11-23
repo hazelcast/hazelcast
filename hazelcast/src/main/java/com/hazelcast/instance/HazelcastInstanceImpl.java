@@ -201,7 +201,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         Collection services = node.nodeService.getServices(serviceClass);
         for (Object service : services) {
             if (serviceClass.isAssignableFrom(service.getClass())) {
-                return (S) ((RemoteService) service).createProxy(name);
+                return (S) ((RemoteService) service).getProxy(name);
             }
         }
         throw new IllegalArgumentException();
@@ -213,7 +213,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             throw new NullPointerException();
         }
         if (service instanceof RemoteService) {
-            return (S) ((RemoteService) service).createProxy(name);
+            return (S) ((RemoteService) service).getProxy(name);
         }
         throw new IllegalArgumentException();
     }

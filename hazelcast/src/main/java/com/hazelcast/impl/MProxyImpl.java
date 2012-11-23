@@ -50,7 +50,7 @@
 //        setName(name);
 //        setHazelcastInstance(instance);
 //        final MapService mapService = instance.node.nodeService.getService(MapService.MAP_SERVICE_NAME);
-//        mapProxy = mapService.createProxy(name);
+//        mapProxy = mapService.getProxy(name);
 //        mapOperationCounter = new MapOperationsCounter();
 //    }
 //
