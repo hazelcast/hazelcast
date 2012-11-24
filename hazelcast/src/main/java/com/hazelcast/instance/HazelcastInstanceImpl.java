@@ -27,6 +27,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
+import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceProxy;
 
@@ -113,7 +114,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return getOrCreateInstance(Prefix.QUEUE + name);
+//        return getOrCreateInstance(Prefix.QUEUE + name);
+        return (IQueue<E>) getServiceProxy(QueueService.class, name);
     }
 
     public <E> ITopic<E> getTopic(String name) {

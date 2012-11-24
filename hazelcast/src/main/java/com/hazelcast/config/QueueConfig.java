@@ -32,6 +32,7 @@ public final class QueueConfig implements DataSerializable {
     private String backingMapRef;
     private int maxSizePerJVM = DEFAULT_MAX_SIZE_PER_JVM;
     private List<ItemListenerConfig> listenerConfigs;
+    private int backupCount;
 
     public QueueConfig() {
     }
@@ -40,6 +41,11 @@ public final class QueueConfig implements DataSerializable {
         this.name = config.name;
         this.backingMapRef = config.backingMapRef;
         this.maxSizePerJVM = config.maxSizePerJVM;
+        this.backupCount = 1;
+    }
+
+    public int getBackupCount(){
+        return backupCount;
     }
 
     /**

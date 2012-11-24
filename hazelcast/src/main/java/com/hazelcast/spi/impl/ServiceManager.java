@@ -27,6 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -64,6 +65,7 @@ class ServiceManager {
             if (servicesConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService));
+                registerService(QueueService.NAME, new QueueService(nodeService));
                 // TODO: add other services
                 // ...
                 // ...
