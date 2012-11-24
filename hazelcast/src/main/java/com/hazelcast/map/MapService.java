@@ -172,14 +172,18 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return MAP_SERVICE_NAME;
     }
 
-    public MapProxy createProxy(Object... params) {
+    public MapProxy getProxy(Object... params) {
         final String name = String.valueOf(params[0]);
         if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
             return new DataMapProxy(name, this, nodeService);
         }
-        final MapProxy proxy = new ObjectMapProxy(name, this, nodeService);
-        final MapProxy currentProxy = proxies.putIfAbsent(name, proxy);
-        return currentProxy != null ? currentProxy : proxy;
+        MapProxy proxy = proxies.get(name);
+        if (proxy == null) {
+            proxy = new ObjectMapProxy(name, this, nodeService);
+            final MapProxy currentProxy = proxies.putIfAbsent(name, proxy);
+            proxy = currentProxy != null ? currentProxy : proxy;
+        }
+        return proxy;
     }
 
     public Collection<ServiceProxy> getProxies() {
