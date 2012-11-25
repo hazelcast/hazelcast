@@ -25,6 +25,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import  com.hazelcast.client.logging.ClientLoggingServiceImpl;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -64,7 +65,7 @@ public class HazelcastClient implements HazelcastInstance {
     final PartitionClientProxy partitionClientProxy;
     final LifecycleServiceClientImpl lifecycleService;
     final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-
+    final LoggingService loggingService;
     final int id;
 
     private final ClientConfig config;
@@ -79,6 +80,11 @@ public class HazelcastClient implements HazelcastInstance {
             config.setCredentials(new UsernamePasswordCredentials(config.getGroupConfig().getName(),
                     config.getGroupConfig().getPassword()));
         }
+        String loggingType = "jdk";
+        if (System.getProperty("hazelcast.logging.type") != null) {
+        	loggingType = System.getProperty("hazelcast.logging.type");
+        } 
+        loggingService = new ClientLoggingServiceImpl(loggingType);
         this.config = config;
         this.id = clientIdCounter.incrementAndGet();
         lifecycleService = new LifecycleServiceClientImpl(this);
@@ -156,7 +162,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public LoggingService getLoggingService() {
-        throw new UnsupportedOperationException();
+        return loggingService;
     }
 
     public <K, V> IMap<K, V> getMap(String name) {

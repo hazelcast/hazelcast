@@ -52,7 +52,7 @@ public class Connection {
      * @throws IOException
      */
     public Connection(String host, int port, int id) {
-        this(0, new InetSocketAddress(host, port), id);
+        this(3000, new InetSocketAddress(host, port), id);
     }
 
     public Connection(int timeout, InetSocketAddress address, int id) {
