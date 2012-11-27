@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 /**
  * Holds the socket to one of the members of Hazelcast Cluster.
@@ -41,24 +40,9 @@ public class Connection {
     boolean headersWritten = false;
     boolean headerRead = false;
 
-    private final int timeout;
-
-    /**
-     * Creates the Socket to the given host and port
-     *
-     * @param host ip address of the host
-     * @param port port of the host
-     * @throws UnknownHostException
-     * @throws IOException
-     */
-    public Connection(String host, int port, int id) {
-        this(0, new InetSocketAddress(host, port), id);
-    }
-
     public Connection(int timeout, InetSocketAddress address, int id) {
         this.id = id;
         this.address = address;
-        this.timeout=timeout;
         try {
             final InetSocketAddress isa = new InetSocketAddress(address.getAddress(), address.getPort());
             final Socket socket = new Socket();

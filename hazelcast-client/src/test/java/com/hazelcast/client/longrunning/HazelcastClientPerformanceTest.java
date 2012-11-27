@@ -27,6 +27,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -169,7 +170,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
         HazelcastClient client = mock(HazelcastClient.class);
         ConnectionManager connectionManager = mock(ConnectionManager.class);
         when(client.getConnectionManager()).thenReturn(connectionManager);
-        Connection connection = new Connection("localhost", 5799, 1);
+        Connection connection = new Connection(3, new InetSocketAddress("localhost", 5799), 1);
         when(connectionManager.getConnection()).thenReturn(connection);
         PacketWriter packetWriter = new PacketWriter();
         packetWriter.setConnection(connection);
