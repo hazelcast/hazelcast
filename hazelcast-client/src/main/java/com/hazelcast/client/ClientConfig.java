@@ -28,7 +28,7 @@ public class ClientConfig {
     private GroupConfig groupConfig = new GroupConfig();
     private final List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
     private Credentials credentials;
-    private int connectionTimeout = 300000;
+    private int connectionTimeout = 30000;
     private int initialConnectionAttemptLimit = 1;
     private int reconnectionAttemptLimit = 1;
     private int reConnectionTimeOut = 5000;

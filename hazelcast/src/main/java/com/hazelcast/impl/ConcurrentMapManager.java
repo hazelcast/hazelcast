@@ -1784,7 +1784,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (oldObject == null) {
                         return Boolean.FALSE;
                     } else {
-                        if (expectedValue.equals(oldValue)) {
+                        if (expectedValue.equals(oldObject)) {
                             txn.attachPutOp(name, key, toData(newValue), false);
                             return Boolean.TRUE;
                         } else {

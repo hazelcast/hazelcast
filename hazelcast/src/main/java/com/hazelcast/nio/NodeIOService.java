@@ -144,7 +144,7 @@ public class NodeIOService implements IOService {
     }
 
     public boolean isSocketBindAny() {
-        return node.groupProperties.SOCKET_BIND_ANY.getBoolean();
+        return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
     }
 
     public boolean isSocketPortAutoIncrement() {

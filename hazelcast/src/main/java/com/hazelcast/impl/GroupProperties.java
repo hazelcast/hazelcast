@@ -41,6 +41,8 @@ public class GroupProperties {
     public static final String PROP_MAX_OPERATION_TIMEOUT = "hazelcast.max.operation.timeout";
     public static final String PROP_MAX_CONCURRENT_OPERATION_LIMIT = "hazelcast.max.concurrent.operation.limit";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
+    public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
+    public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
     public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
@@ -146,7 +148,11 @@ public class GroupProperties {
 
     public final GroupProperty MAX_CONCURRENT_OPERATION_LIMIT;
 
-    public final GroupProperty SOCKET_BIND_ANY;
+//    public final GroupProperty SOCKET_BIND_ANY;
+
+    public final GroupProperty SOCKET_SERVER_BIND_ANY;
+
+    public final GroupProperty SOCKET_CLIENT_BIND_ANY;
 
     public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE; // number of kilobytes
 
@@ -280,7 +286,9 @@ public class GroupProperties {
         BACKUP_REDO_ENABLED = new GroupProperty(config, PROP_BACKUP_REDO_ENABLED, "false");
         MAX_OPERATION_TIMEOUT = new GroupProperty(config, PROP_MAX_OPERATION_TIMEOUT, "300000");
         MAX_CONCURRENT_OPERATION_LIMIT = new GroupProperty(config, PROP_MAX_CONCURRENT_OPERATION_LIMIT, "-1");
-        SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
+        final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
+        SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);
+        SOCKET_CLIENT_BIND_ANY = new GroupProperty(config, PROP_SOCKET_CLIENT_BIND_ANY, SOCKET_BIND_ANY);
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
         SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");
         SOCKET_LINGER_SECONDS = new GroupProperty(config, PROP_SOCKET_LINGER_SECONDS, "0");
@@ -313,12 +321,12 @@ public class GroupProperties {
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
-        MC_ATOMIC_NUMBER_EXCLUDES = new GroupProperty(config, PROP_MC_ATOMIC_NUMBER_EXCLUDES, null);
-        MC_COUNT_DOWN_LATCH_EXCLUDES = new GroupProperty(config, PROP_MC_COUNT_DOWN_LATCH_EXCLUDES, null);
-        MC_MAP_EXCLUDES = new GroupProperty(config, PROP_MC_MAP_EXCLUDES, null);
-        MC_QUEUE_EXCLUDES = new GroupProperty(config, PROP_MC_QUEUE_EXCLUDES, null);
-        MC_SEMAPHORE_EXCLUDES = new GroupProperty(config, PROP_MC_SEMAPHORE_EXCLUDES, null);
-        MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES, null);
+        MC_ATOMIC_NUMBER_EXCLUDES = new GroupProperty(config, PROP_MC_ATOMIC_NUMBER_EXCLUDES);
+        MC_COUNT_DOWN_LATCH_EXCLUDES = new GroupProperty(config, PROP_MC_COUNT_DOWN_LATCH_EXCLUDES);
+        MC_MAP_EXCLUDES = new GroupProperty(config, PROP_MC_MAP_EXCLUDES);
+        MC_QUEUE_EXCLUDES = new GroupProperty(config, PROP_MC_QUEUE_EXCLUDES);
+        MC_SEMAPHORE_EXCLUDES = new GroupProperty(config, PROP_MC_SEMAPHORE_EXCLUDES);
+        MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES);
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
         MC_URL_CHANGE_ENABLED = new GroupProperty(config, PROP_MC_URL_CHANGE_ENABLED, "true");
         CONCURRENT_MAP_SIMPLE_RECORD = new GroupProperty(config, PROP_CONCURRENT_MAP_SIMPLE_RECORD, "false");
@@ -334,7 +342,7 @@ public class GroupProperties {
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
-        ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY, null);
+        ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
         SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");
     }
 
@@ -342,6 +350,14 @@ public class GroupProperties {
 
         private final String name;
         private final String value;
+
+        GroupProperty(Config config, String name) {
+            this(config, name, (String) null);
+        }
+
+        GroupProperty(Config config, String name, GroupProperty defaultValue) {
+            this(config, name, defaultValue != null ? defaultValue.getString() : null);
+        }
 
         GroupProperty(Config config, String name, String defaultValue) {
             this.name = name;

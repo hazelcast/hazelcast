@@ -50,7 +50,7 @@ class AddressPicker {
             final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
             final AddressDefinition bindAddressDef = pickAddress(networkConfig);
             final boolean reuseAddress = networkConfig.isReuseAddress();
-            final boolean bindAny = node.getGroupProperties().SOCKET_BIND_ANY.getBoolean();
+            final boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
             serverSocketChannel = ServerSocketChannel.open();
             final ServerSocket serverSocket = serverSocketChannel.socket();
             /**
