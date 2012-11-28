@@ -34,9 +34,6 @@ public class PutTransientOperation extends BasePutOperation {
         RETURN_OLD_VALUE = false;
     }
 
-
-
-
     @Override
     public String toString() {
         return "PutTransientOperation{" + name + "}";

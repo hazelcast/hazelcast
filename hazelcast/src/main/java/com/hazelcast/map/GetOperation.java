@@ -20,6 +20,9 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 import com.hazelcast.nio.Data;
 
+import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
+
 public class GetOperation extends AbstractNamedKeyBasedOperation {
 
     public GetOperation(String name, Data dataKey) {
@@ -33,8 +36,20 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
         MapService mapService = (MapService) getService();
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
-        getResponseHandler().sendResponse(record == null ? null : record.getValueData());
+        Data result = null;
+        if (record == null && mapPartition.loader != null) {
+            Object key = toObject(dataKey);
+            Object oldValue = mapPartition.loader.load(key);
+            if(oldValue != null)
+                result = toData(oldValue);
+        }
+        else {
+            result = record.getValueData();
+        }
+        getResponseHandler().sendResponse(result);
     }
+
+
 
     @Override
     public String toString() {
