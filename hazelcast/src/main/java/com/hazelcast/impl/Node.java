@@ -314,7 +314,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.INFO, "** setting master address to " + master.toString());
+            logger.log(Level.FINEST, "** setting master address to " + master.toString());
         }
         masterAddress = master;
     }
