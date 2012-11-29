@@ -17,8 +17,6 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -34,7 +32,8 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 public class MigrationOperation extends AbstractOperation {
-    private boolean move;
+    private MigrationType migrationType;
+    private int copyBackReplicaIndex = -1;
     private Collection<Operation> tasks;
     private byte[] bytesRecordSet;
     private Address from;
@@ -43,11 +42,12 @@ public class MigrationOperation extends AbstractOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(int partitionId, int replicaIndex, boolean move,
-                              Collection<Operation> tasks, Address from) throws IOException {
+    public MigrationOperation(int partitionId, int replicaIndex, int copyBackReplicaIndex,
+                              MigrationType migrationType, Collection<Operation> tasks, Address from) throws IOException {
         super();
         setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        this.move = move;
+        this.copyBackReplicaIndex = copyBackReplicaIndex;
+        this.migrationType = migrationType;
         this.from = from;
         this.tasks = tasks;
         this.taskCount = tasks.size();
@@ -99,10 +99,9 @@ public class MigrationOperation extends AbstractOperation {
     private boolean runMigrationTasks() {
         boolean error = false;
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        final MigrationType migrationType = move ? MigrationType.MOVE : MigrationType.COPY;
         final PartitionService partitionService = getService();
-        partitionService.addActiveMigration(new MigrationInfo(getPartitionId(), getReplicaIndex(), move,
-                from, nodeService.getThisAddress()));
+        partitionService.addActiveMigration(new MigrationInfo(getPartitionId(), getReplicaIndex(), copyBackReplicaIndex,
+                migrationType, from, nodeService.getThisAddress()));
 
         for (Operation op : tasks) {
             try {
@@ -110,7 +109,7 @@ public class MigrationOperation extends AbstractOperation {
                 ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),
-                        getReplicaIndex(), migrationType));
+                        getReplicaIndex(), migrationType, copyBackReplicaIndex));
                 op.run();
             } catch (Throwable e) {
                 error = true;
@@ -126,7 +125,8 @@ public class MigrationOperation extends AbstractOperation {
     }
 
     public void writeInternal(DataOutput out) throws IOException {
-        out.writeBoolean(move);
+        MigrationType.writeTo(migrationType, out);
+        out.writeInt(copyBackReplicaIndex);
         out.writeInt(taskCount);
         from.writeData(out);
         out.writeInt(bytesRecordSet.length);
@@ -134,7 +134,8 @@ public class MigrationOperation extends AbstractOperation {
     }
 
     public void readInternal(DataInput in) throws IOException {
-        move = in.readBoolean();
+        migrationType = MigrationType.readFrom(in);
+        copyBackReplicaIndex = in.readInt();
         taskCount = in.readInt();
         from = new Address();
         from.readData(in);
@@ -149,7 +150,8 @@ public class MigrationOperation extends AbstractOperation {
         sb.append("MigrationOperation");
         sb.append("{partitionId=").append(getPartitionId());
         sb.append(", replicaIndex=").append(getReplicaIndex());
-        sb.append(", move=").append(move);
+        sb.append(", migrationType=").append(migrationType);
+        sb.append(", copyBackReplicaIndex=").append(copyBackReplicaIndex);
         sb.append(", from=").append(from);
         sb.append(", taskCount=").append(taskCount);
         sb.append('}');

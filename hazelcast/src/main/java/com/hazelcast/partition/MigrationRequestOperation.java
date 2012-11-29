@@ -18,12 +18,10 @@ package com.hazelcast.partition;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.spi.*;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.DataInput;
@@ -41,7 +39,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
     protected Address to;
     private boolean migration;  // migration or backup
     private boolean diffOnly;
-    private int selfCopyReplicaIndex = -1;
+    private int copyBackReplicaIndex = -1;
 
     public MigrationRequestOperation() {
     }
@@ -60,23 +58,25 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
     }
 
     public MigrationInfo createMigrationInfo() {
-        return new MigrationInfo(getPartitionId(), getReplicaIndex(), isMoving(), from, to);
+        return new MigrationInfo(getPartitionId(), getReplicaIndex(), copyBackReplicaIndex,
+                getMigrationType(), from, to);
     }
 
-    private boolean isMoving() {
-        return migration && selfCopyReplicaIndex < 0;
+    public MigrationType getMigrationType() {
+        return migration ? MigrationType.MOVE :
+               (copyBackReplicaIndex < 0 ? MigrationType.COPY : MigrationType.MOVE_COPY_BACK);
     }
 
     public boolean isMigration() {
         return migration;
     }
 
-    public int getSelfCopyReplicaIndex() {
-        return selfCopyReplicaIndex;
+    public int getCopyBackReplicaIndex() {
+        return copyBackReplicaIndex;
     }
 
-    public void setSelfCopyReplicaIndex(final int selfCopyReplicaIndex) {
-        this.selfCopyReplicaIndex = selfCopyReplicaIndex;
+    public void setCopyBackReplicaIndex(final int copyBackReplicaIndex) {
+        this.copyBackReplicaIndex = copyBackReplicaIndex;
     }
 
     public void setFromAddress(final Address from) {
@@ -113,7 +113,8 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
                 public void run() {
                     try {
                         Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
-                                new MigrationOperation(partitionId, replicaIndex, isMoving(), tasks, from), partitionId)
+                                new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
+                                        getMigrationType(), tasks, from), partitionId)
                                 .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
                                 .build();
                         Future future = inv.invoke();
@@ -131,9 +132,9 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
 
     private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        final MigrationType migrationType = isMoving() ? MigrationType.MOVE : MigrationType.COPY;
+        final MigrationType migrationType = getMigrationType();
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
-                partitionId, replicaIndex, migrationType);
+                partitionId, replicaIndex, migrationType, copyBackReplicaIndex);
         final Collection<Operation> tasks = new LinkedList<Operation>();
         for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
@@ -169,7 +170,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
         to.writeData(out);
         out.writeBoolean(migration);
         out.writeBoolean(diffOnly);
-        out.writeInt(selfCopyReplicaIndex);
+        out.writeInt(copyBackReplicaIndex);
     }
 
     public void readInternal(DataInput in) throws IOException {
@@ -179,7 +180,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
         to.readData(in);
         migration = in.readBoolean();
         diffOnly = in.readBoolean();
-        selfCopyReplicaIndex = in.readInt();
+        copyBackReplicaIndex = in.readInt();
     }
 
     @Override
@@ -192,7 +193,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
         sb.append(", replicaIndex=").append(getReplicaIndex());
         sb.append(", migration=").append(migration);
         sb.append(", diffOnly=").append(diffOnly);
-        sb.append(", selfCopyReplicaIndex=").append(selfCopyReplicaIndex);
+        sb.append(", copyBackReplicaIndex=").append(copyBackReplicaIndex);
         sb.append('}');
         return sb.toString();
     }

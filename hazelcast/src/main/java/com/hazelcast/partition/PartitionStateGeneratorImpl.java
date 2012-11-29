@@ -100,7 +100,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
                     currentOwner = currentPartition.getOwner();
-                    boolean selfCopy = false;
+                    boolean copyBack = false;
                     // an earlier level replica of this partition may be migrated from
                     // target of this copy task. if so, to avoid copy back partition data after migration,
                     // set partition's replica owner to just after earlier replica is migrated.
@@ -109,12 +109,12 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         MigrationRequestOperation task = iter.previous();
                         // task to be attached to must be a migration, not a copy of a backup!
                         if (task.isMigration() && newOwner.equals(task.getFromAddress())) {
-                            selfCopy = true;
-                            task.setSelfCopyReplicaIndex(replicaIndex);
+                            copyBack = true;
+                            task.setCopyBackReplicaIndex(replicaIndex);
                             break;
                         }
                     }
-                    if (!selfCopy) {
+                    if (!copyBack) {
                         // currentOwner set here is not used on operation, just for an info.
                         // actual currentOwner will be determined just before copy.
                         op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, false);

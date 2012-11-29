@@ -41,6 +41,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
+import static com.hazelcast.partition.MigrationEndpoint.*;
+
 public class PartitionService implements MembershipAwareService, CoreService, ManagedService {
     public static final String SERVICE_NAME = "hz:core:partitionService";
 
@@ -426,8 +428,9 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                             final PartitionInfo migratingPartition = getPartition(partitionId);
                             final Address address = migratingPartition.getReplicaAddress(replicaIndex);
                             final boolean success = migrationInfo.getToAddress().equals(address);
-                            final FinalizeMigrationOperation op = new FinalizeMigrationOperation(source,
-                                    migrationInfo.isMoving(), success);
+                            final MigrationEndpoint endpoint = source ? SOURCE : DESTINATION;
+                            final FinalizeMigrationOperation op = new FinalizeMigrationOperation(endpoint,
+                                    migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex(), success);
                             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
                                     .setNodeService(nodeService).setValidateTarget(false).setService(this);
                             nodeService.runLocally(op);
@@ -788,8 +791,8 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                     // if this partition should be copied back,
                     // just set partition's replica address
                     // before data is cleaned up.
-                    if (migrationRequestOp.getSelfCopyReplicaIndex() > -1) {  // valid only for migrations (move)
-                        partition.setReplicaAddress(migrationRequestOp.getSelfCopyReplicaIndex(),
+                    if (migrationRequestOp.getCopyBackReplicaIndex() > -1) {  // valid only for migrations (move)
+                        partition.setReplicaAddress(migrationRequestOp.getCopyBackReplicaIndex(),
                                 migrationInfo.getFromAddress());
                     }
                     finalizeMigration();

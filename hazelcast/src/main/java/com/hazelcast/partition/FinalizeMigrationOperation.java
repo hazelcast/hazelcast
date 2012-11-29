@@ -16,9 +16,9 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.spi.*;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.MigrationServiceEvent;
+import com.hazelcast.spi.PartitionLockFreeOperation;
 import com.hazelcast.spi.impl.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 
@@ -29,31 +29,29 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint.*;
-import static com.hazelcast.spi.MigrationServiceEvent.MigrationType.*;
-
 public class FinalizeMigrationOperation extends AbstractOperation implements PartitionLockFreeOperation {
 
-    private boolean source;     // source of destination
-    private boolean move;       // move or copy
+    private MigrationEndpoint endpoint;     // source of destination
+    private MigrationType type;       // move or copy
+    private int copyBackReplicaIndex;
     private boolean success;
 
     public FinalizeMigrationOperation() {
     }
 
-    public FinalizeMigrationOperation(final boolean source, final boolean move, final boolean success) {
-        this.source = source;
+    public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final MigrationType type,
+                                      final int copyBackReplicaIndex, final boolean success) {
+        this.endpoint = endpoint;
         this.success = success;
-        this.move = move;
+        this.type = type;
+        this.copyBackReplicaIndex = copyBackReplicaIndex;
     }
 
 
     public void run() {
         final Collection<MigrationAwareService> services = getServices();
-        final MigrationEndpoint endpoint = source ? SOURCE : DESTINATION;
-        final MigrationType type = move ? MOVE : COPY;
         final MigrationServiceEvent event = new MigrationServiceEvent(endpoint, getPartitionId(),
-                getReplicaIndex(), type);
+                getReplicaIndex(), type, copyBackReplicaIndex);
         for (MigrationAwareService service : services) {
             try {
                 if (success) {
@@ -86,15 +84,17 @@ public class FinalizeMigrationOperation extends AbstractOperation implements Par
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         success = in.readBoolean();
-        source = in.readBoolean();
-        move = in.readBoolean();
+        copyBackReplicaIndex = in.readInt();
+        endpoint = MigrationEndpoint.readFrom(in);
+        type = MigrationType.readFrom(in);
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(success);
-        out.writeBoolean(source);
-        out.writeBoolean(move);
+        out.writeInt(copyBackReplicaIndex);
+        MigrationEndpoint.writeTo(endpoint, out);
+        MigrationType.writeTo(type, out);
     }
 }

@@ -21,34 +21,24 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * @mdogan 8/11/12
+ * @mdogan 11/29/12
  */
-public enum MigrationStatus {
+public enum MigrationEndpoint {
 
-    STARTED(0),
-    COMPLETED(1),
-    FAILED(-1);
+    SOURCE(0), DESTINATION(1);
 
     private final byte code;
 
-    private MigrationStatus(final int code) {
+    private MigrationEndpoint(final int code) {
         this.code = (byte) code;
     }
 
-    public static void writeTo(MigrationStatus status, DataOutput out) throws IOException {
-        out.writeByte(status.code);
+    public static void writeTo(MigrationEndpoint endpoint, DataOutput out) throws IOException {
+        out.writeByte(endpoint.code);
     }
 
-    public static MigrationStatus readFrom(DataInput in) throws IOException {
+    public static MigrationEndpoint readFrom(DataInput in) throws IOException {
         final byte code = in.readByte();
-        switch (code) {
-            case 0:
-                return STARTED;
-            case 1:
-                return COMPLETED;
-            case -1:
-                return FAILED;
-        }
-        return null;
+        return code == 0 ? SOURCE : DESTINATION;
     }
 }

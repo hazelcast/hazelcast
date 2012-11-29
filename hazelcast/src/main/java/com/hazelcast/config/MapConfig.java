@@ -256,6 +256,10 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
+    }
+
     /**
      * @return the evictionPercentage
      */

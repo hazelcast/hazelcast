@@ -17,16 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.AbstractOperation;
 
@@ -90,9 +91,18 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void commitMigration(MigrationServiceEvent event) {
         logger.log(Level.FINEST, "Committing " + event);
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
-                && event.getMigrationType() == MigrationType.MOVE) {
-            clearPartitionData(event.getPartitionId());
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
+            if (event.getMigrationType() == MigrationType.MOVE) {
+                clearPartitionData(event.getPartitionId());
+            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
+                final PartitionContainer container = partitionContainers[event.getPartitionId()];
+                for (MapPartition mapPartition : container.maps.values()) {
+                    final MapConfig mapConfig = container.getMapConfig(mapPartition.name);
+                    if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
+                        mapPartition.clear();
+                    }
+                }
+            }
         }
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
@@ -46,6 +47,11 @@ public class MapMigrationOperation extends Operation {
         data = new HashMap<String, Map<Data, DataRecordEntry>>(container.maps.size());
         for (Entry<String, MapPartition> entry : container.maps.entrySet()) {
             String name = entry.getKey();
+            final MapConfig mapConfig = container.getMapConfig(name);
+            if (mapConfig.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+
             MapPartition mapPartition = entry.getValue();
             Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(mapPartition.records.size());
             for (Entry<Data, Record> recordEntry : mapPartition.records.entrySet()) {

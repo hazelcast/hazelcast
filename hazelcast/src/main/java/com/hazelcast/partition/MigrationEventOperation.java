@@ -45,14 +45,14 @@ public class MigrationEventOperation extends AbstractOperation {
         super.readInternal(in);
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
-        status = MigrationStatus.get(in.readByte());
+        status = MigrationStatus.readFrom(in);
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         migrationInfo.writeData(out);
-        out.writeByte(status.getCode());
+        MigrationStatus.writeTo(status, out);
     }
 
 }

@@ -3,23 +3,23 @@ package com.hazelcast.queue;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.proxy.QueueProxy;
 import com.hazelcast.spi.*;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/14/12
  * Time: 12:21 AM
- * To change this template use File | Settings | File Templates.
  */
 public class QueueService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService {
 
@@ -63,7 +63,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        System.out.println(event.getPartitionId() + " - " + event.getReplicaIndex());
         if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
             return null; // is it possible
         }
@@ -80,14 +79,14 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
 
     public void commitMigration(MigrationServiceEvent event) {
         logger.log(Level.FINEST, "commit " + event.getPartitionId());
-        if (event.getMigrationEndpoint() == MigrationServiceEvent.MigrationEndpoint.SOURCE
-                && event.getMigrationType() == MigrationServiceEvent.MigrationType.MOVE) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
+                && event.getMigrationType() == MigrationType.MOVE) {
             cleanMigrationData(event.getPartitionId());
         }
     }
 
     public void rollbackMigration(MigrationServiceEvent event) {
-        if (event.getMigrationEndpoint() == MigrationServiceEvent.MigrationEndpoint.DESTINATION) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             cleanMigrationData(event.getPartitionId());
         }
     }
