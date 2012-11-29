@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
@@ -43,7 +44,8 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
                 Object value = mapPartition.loader.load(key);
                 if (value != null) {
                     result = toData(value);
-                    // TODO: create a new record with loaded value and put into map.
+                    record = new DefaultRecord(getPartitionId(), dataKey, result, -1, -1, mapService.nextId());
+                    mapPartition.records.put(dataKey, record);
                 }
             }
         } else {
