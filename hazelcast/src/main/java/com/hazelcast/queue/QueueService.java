@@ -107,7 +107,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public void memberRemoved(MemberImpl member) {
     }
 
-    public ServiceProxy createProxy(Object... params) {
+    public ServiceProxy getProxy(Object... params) {
         final String name = String.valueOf(params[0]);
         if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
             return new DataQueueProxy(name, this, nodeService);
