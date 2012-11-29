@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.impl.Record;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -37,23 +37,24 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
         Data result = null;
-        if (record == null && mapPartition.loader != null) {
-            Object key = toObject(dataKey);
-            Object oldValue = mapPartition.loader.load(key);
-            if(oldValue != null)
-                result = toData(oldValue);
-        }
-        else {
+        if (record == null) {
+            if (mapPartition.loader != null) {
+                Object key = toObject(dataKey);
+                Object value = mapPartition.loader.load(key);
+                if (value != null) {
+                    result = toData(value);
+                    // TODO: create a new record with loaded value and put into map.
+                }
+            }
+        } else {
             result = record.getValueData();
         }
         getResponseHandler().sendResponse(result);
     }
 
-
-
     @Override
     public String toString() {
         return "GetOperation{" +
-                '}';
+               '}';
     }
 }
