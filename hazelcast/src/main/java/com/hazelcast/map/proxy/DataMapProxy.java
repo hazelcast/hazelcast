@@ -108,7 +108,8 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public boolean containsValue(final Object value) {
-        return false;
+        Data v = nodeService.toData(value);
+        return containsValueInternal(v);
     }
 
     public Map<Data, Data> getAll(final Set<Data> keys) {

@@ -59,7 +59,7 @@ abstract class MapProxySupport {
             Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, getOperation, partitionId)
                     .build();
             Future f = invocation.invoke();
-            return  (Data) f.get();
+            return (Data) f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -221,6 +221,17 @@ abstract class MapProxySupport {
     }
 
     protected boolean containsValueInternal(final Data value) {
+        try {
+            ContainsValueOperation containsValueOperation = new ContainsValueOperation(name, value);
+            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation);
+            for (Object result : results.values()) {
+                Boolean contains = (Boolean) nodeService.toObject(result);
+                if (contains)
+                    return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return false;
     }
 
