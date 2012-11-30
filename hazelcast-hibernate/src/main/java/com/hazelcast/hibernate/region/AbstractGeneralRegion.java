@@ -61,7 +61,7 @@ public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends A
 
     public void put(final Object key, final Object value) throws CacheException {
         try {
-            getCache().put(key, value, null, null, null);
+            getCache().put(key, value, null);
         } catch (OperationTimeoutException ignored) {
         }
     }

@@ -22,6 +22,8 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.access.SoftLock;
 import org.hibernate.cache.entry.CacheEntry;
@@ -45,6 +47,7 @@ public class IMapRegionCache implements RegionCache {
     private final int lockTimeout;
     private final long tryLockAndGetTimeout;
     private final boolean explicitVersionCheckEnabled;
+    private final ILogger logger;
 
     public IMapRegionCache(final String name, final HazelcastInstance hazelcastInstance,
                            final Properties props, final CacheDataDescription metadata) {
@@ -56,16 +59,21 @@ public class IMapRegionCache implements RegionCache {
         final long maxOperationTimeout = HazelcastTimestamper.getMaxOperationTimeout(hazelcastInstance);
         tryLockAndGetTimeout = Math.min(maxOperationTimeout, 500);
         explicitVersionCheckEnabled = CacheEnvironment.isExplicitVersionCheckEnabled(props);
+        logger = createLogger(name, hazelcastInstance);
     }
 
     public Object get(final Object key) {
         return map.get(key);
     }
 
-    public boolean put(final Object key, final Object value, final Object currentVersion,
+    public boolean put(final Object key, final Object value, final Object currentVersion) {
+        return update(key, value, currentVersion, null, null);
+    }
+
+    public boolean update(final Object key, final Object value, final Object currentVersion,
                        final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
-            hazelcastInstance.getLoggingService().getLogger(name).log(Level.WARNING, "Cache lock could not be acquired!");
+            logger.log(Level.WARNING, "Cache lock could not be acquired!");
             return false;
         }
         if (versionComparator != null && currentVersion != null) {
@@ -137,6 +145,14 @@ public class IMapRegionCache implements RegionCache {
 
     public Map asMap() {
         return map;
+    }
+
+    private ILogger createLogger(final String name, final HazelcastInstance hazelcastInstance) {
+        try {
+            return hazelcastInstance.getLoggingService().getLogger(name);
+        } catch (UnsupportedOperationException e) {
+            return Logger.getLogger(name);
+        }
     }
 
     private static final SoftLock LOCK_SUCCESS = new SoftLock() {};

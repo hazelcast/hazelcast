@@ -66,12 +66,15 @@ public class LocalRegionCache implements RegionCache {
         return value != null ? value.getValue() : null;
     }
 
-    public boolean put(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+    public boolean put(final Object key, final Object value, final Object currentVersion) {
+        final Value newValue = new Value(currentVersion, value, null, Clock.currentTimeMillis());
+        cache.put(key, newValue);
+        return true;
+    }
 
-//        System.out.println(key + ", " + value + ": " + currentVersion + "/" + previousVersion + " -> " + lock);
+    public boolean update(final Object key, final Object value, final Object currentVersion,
+                       final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
-//            System.out.println("LOCK failure ???");
             return false;
         }
 
@@ -79,7 +82,6 @@ public class LocalRegionCache implements RegionCache {
         if (lock == LOCK_SUCCESS) {
             if (currentValue != null && currentVersion != null
                 && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
-//                System.out.println("Lock current version mismatch !!! ");
                 return false;
             }
         }
@@ -98,20 +100,16 @@ public class LocalRegionCache implements RegionCache {
         return new MessageListener<Object>() {
             public void onMessage(final Message<Object> message) {
                 final Invalidation invalidation = (Invalidation) message.getMessageObject();
-//        System.out.println("invalidation = " + invalidation);
                 if (versionComparator != null) {
                     final Value value = cache.get(invalidation.getKey());
                     if (value != null) {
                         Object currentVersion = value.getVersion();
                         Object newVersion = invalidation.getVersion();
-//                System.out.println("currentVersion = " + currentVersion + " -> newVersion = " + newVersion);
                         if (versionComparator.compare(newVersion, currentVersion) > 0) {
-//                    System.out.println("Invalidating... " + invalidation);
                             cache.remove(invalidation.getKey(), value);
                         }
                     }
                 } else {
-//            System.out.println("Invalidating XXX ... " + invalidation);
                     cache.remove(invalidation.getKey());
                 }
             }
@@ -126,23 +124,18 @@ public class LocalRegionCache implements RegionCache {
         final Value value = cache.get(key);
         if (value == null) {
             if (cache.putIfAbsent(key, new Value(version, null, LOCK_SUCCESS, Clock.currentTimeMillis())) == null) {
-//                System.out.println("locked = " + LOCK_SUCCESS);
                 return LOCK_SUCCESS;
             } else {
-//                System.out.println("put if absent failed !!!");
                 return LOCK_FAILURE;
             }
         } else {
             if (version == null || versionComparator.compare(version, value.getVersion()) >= 0) {
                 if (cache.replace(key, value, value.createLockedValue(LOCK_SUCCESS))) {
-//                    System.out.println("locked = " + LOCK_SUCCESS);
                     return LOCK_SUCCESS;
                 } else {
-//                    System.out.println("replace failed !!!");
                     return LOCK_FAILURE;
                 }
             } else {
-//                System.out.println("version mismatch !!!");
                 return LOCK_FAILURE;
             }
         }
@@ -153,13 +146,7 @@ public class LocalRegionCache implements RegionCache {
         if (value != null) {
             final SoftLock currentLock = value.getLock();
             if (currentLock == lock) {
-                if (cache.replace(key, value, value.createUnlockedValue())) {
-//                    System.out.println("UNlocked ----");
-                } else {
-//                    System.out.println("Unlock replace fail !!!");
-                }
-            } else {
-//                System.out.println("Lock not found !!!");
+                cache.replace(key, value, value.createUnlockedValue());
             }
         }
     }
@@ -182,26 +169,6 @@ public class LocalRegionCache implements RegionCache {
 
     public Map asMap() {
         return cache;
-    }
-
-    public void onMessage(final Message<Invalidation> message) {
-        final Invalidation invalidation = message.getMessageObject();
-//        System.out.println("invalidation = " + invalidation);
-        if (versionComparator != null) {
-            final Value value = cache.get(invalidation.getKey());
-            if (value != null) {
-                Object currentVersion = value.getVersion();
-                Object newVersion = invalidation.getVersion();
-//                System.out.println("currentVersion = " + currentVersion + " -> newVersion = " + newVersion);
-                if (versionComparator.compare(newVersion, currentVersion) > 0) {
-//                    System.out.println("Invalidating... " + invalidation);
-                    cache.remove(invalidation.getKey(), value);
-                }
-            }
-        } else {
-//            System.out.println("Invalidating XXX ... " + invalidation);
-            cache.remove(invalidation.getKey());
-        }
     }
 
     void cleanup() {

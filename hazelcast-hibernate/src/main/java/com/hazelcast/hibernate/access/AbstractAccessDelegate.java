@@ -55,12 +55,21 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         return hazelcastRegion;
     }
 
-    protected boolean put(final Object key, final Object value,
-                          final Object currentVersion, final Object previousVersion, final SoftLock lock) {
+    protected boolean put(final Object key, final Object value, final Object currentVersion) {
         try {
-            return cache.put(key, value, currentVersion, previousVersion, lock);
+            return cache.put(key, value, currentVersion);
         } catch (HazelcastException e) {
             LOG.log(Level.FINEST, "Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            return false;
+        }
+    }
+
+    protected boolean update(final Object key, final Object value,
+                          final Object currentVersion, final Object previousVersion, final SoftLock lock) {
+        try {
+            return cache.update(key, value, currentVersion, previousVersion, lock);
+        } catch (HazelcastException e) {
+            LOG.log(Level.FINEST, "Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             return false;
         }
     }
