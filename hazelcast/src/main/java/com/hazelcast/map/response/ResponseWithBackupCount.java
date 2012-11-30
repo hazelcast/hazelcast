@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.response;
 
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
@@ -24,35 +24,28 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class UpdateResponse implements DataSerializable {
-    Data oldValue;
+public class ResponseWithBackupCount implements DataSerializable {
     long version;
     int backupCount;
 
-    public UpdateResponse() {
+    public ResponseWithBackupCount() {
     }
 
-    public UpdateResponse(Data oldValue, long version, int backupCount) {
-        this.oldValue = oldValue;
+    public ResponseWithBackupCount(long version, int backupCount) {
         this.version = version;
         this.backupCount = backupCount;
     }
 
     public void writeData(DataOutput out) throws IOException {
-        IOUtil.writeNullableData(out, oldValue);
         out.writeLong(version);
         out.writeInt(backupCount);
     }
 
     public void readData(DataInput in) throws IOException {
-        oldValue = IOUtil.readNullableData(in);
         version = in.readLong();
         backupCount = in.readInt();
     }
 
-    public Data getOldValue() {
-        return oldValue;
-    }
 
     public long getVersion() {
         return version;
@@ -64,9 +57,8 @@ public class UpdateResponse implements DataSerializable {
 
     @Override
     public String toString() {
-        return "UpdateResponse{" +
-                "oldValue=" + oldValue +
-                ", version=" + version +
+        return "ResponseWithBackupCount{" +
+                "version=" + version +
                 ", backupCount=" + backupCount +
                 '}';
     }

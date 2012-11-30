@@ -20,6 +20,9 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.map.*;
+import com.hazelcast.map.response.ResponseWithBackupCount;
+import com.hazelcast.map.response.SuccessResponse;
+import com.hazelcast.map.response.UpdateResponse;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Expression;
@@ -194,7 +197,30 @@ abstract class MapProxySupport {
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
-        return false;
+        int partitionId = nodeService.getPartitionId(key);
+        TransactionImpl txn = nodeService.getTransaction();
+        String txnId = prepareTransaction(partitionId);
+        RemoveIfSameOperation removeOperation = new RemoveIfSameOperation(name, key, value, txnId);
+        removeOperation.setValidateTarget(true);
+
+        long backupCallId = mapService.createNewBackupCallQueue();
+        removeOperation.setBackupCallId(backupCallId);
+        removeOperation.setServiceName(MAP_SERVICE_NAME);
+        try {
+            Object returnObj = invoke(removeOperation, partitionId);
+            if (returnObj == null) {
+                return false;
+            }
+            SuccessResponse response = (SuccessResponse) returnObj;
+            if(response.isSuccess())
+            checkBackups(partitionId, removeOperation, response);
+
+            return response.isSuccess();
+        } catch (Throwable throwable) {
+            throw (RuntimeException) throwable;
+        } finally {
+            mapService.removeBackupCallQueue(backupCallId);
+        }
     }
 
     protected Object tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
@@ -401,9 +427,9 @@ abstract class MapProxySupport {
         return txnId;
     }
 
-    protected void checkBackups(int partitionId, BackupAwareOperation operation, UpdateResponse updateResponse)
+    protected void checkBackups(int partitionId, BackupAwareOperation operation, ResponseWithBackupCount response)
             throws InterruptedException, ExecutionException, TimeoutException {
-        int backupCount = updateResponse.getBackupCount();
+        int backupCount = response.getBackupCount();
         if (backupCount > 0) {
             boolean backupsComplete = true;
             for (int i = 0; i < backupCount; i++) {
@@ -417,14 +443,14 @@ abstract class MapProxySupport {
                 final Future[] backupResponses = new Future[backupCount];
                 for (int i = 0; i < backupCount; i++) {
                     GenericBackupOperation backupOp = new GenericBackupOperation(name, operation,
-                            updateResponse.getVersion());
+                            response.getVersion());
                     backupOp.setInvocation(true);
                     Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp, partitionId)
                             .setReplicaIndex(i).build();
                     backupResponses[i] = backupInv.invoke();
                 }
-                for (Future response : backupResponses) {
-                    response.get(5, TimeUnit.SECONDS);
+                for (Future backupResponse : backupResponses) {
+                    backupResponse.get(5, TimeUnit.SECONDS);
                 }
             }
         }

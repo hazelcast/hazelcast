@@ -17,9 +17,15 @@
 package com.hazelcast.map;
 
 import com.hazelcast.impl.Record;
+import com.hazelcast.map.response.SuccessResponse;
+import com.hazelcast.map.response.UpdateResponse;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.NodeService;
 import com.hazelcast.spi.ResponseHandler;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -30,7 +36,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
     int backupCount;
     long version;
 
-    Data valueData;
+    Data valueToCompare;
     PartitionContainer pc;
     ResponseHandler responseHandler;
     MapPartition mapPartition;
@@ -44,9 +50,17 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
     boolean RETURN_OLD_VALUE = true;
     boolean SEND_BACKUPS = true;
     boolean TRANSACTION_ENABLED = true;
+    boolean VALUE_BASED = false;
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
+        setTxnId(txnId);
+        initFlags();
+    }
+
+    public BaseRemoveOperation(String name, Data dataKey, Data valueParam, String txnId) {
+        super(name, dataKey);
+        this.valueToCompare = valueParam;
         setTxnId(txnId);
         initFlags();
     }
@@ -82,7 +96,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
             if (mapPartition.loader != null) {
                 key = toObject(dataKey);
                 Object oldValue = mapPartition.loader.load(key);
-                valueData = toData(oldValue);
+                dataValue = toData(oldValue);
             }
         }
     }
@@ -118,16 +132,17 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
         if (record == null) {
             load();
         } else {
-            valueData = record.getValueData();
+            dataValue = record.getValueData();
         }
     }
 
     protected void sendResponse() {
-        if (RETURN_RESPONSE){
-            if (RETURN_OLD_VALUE){
-                responseHandler.sendResponse(new UpdateResponse(valueData, version, backupCount));
-            }
-            else {
+        if (RETURN_RESPONSE) {
+            if (VALUE_BASED) {
+                responseHandler.sendResponse(new SuccessResponse(true, version, backupCount));
+            } else if (RETURN_OLD_VALUE) {
+                responseHandler.sendResponse(new UpdateResponse(dataValue, version, backupCount));
+            } else {
                 responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
             }
         }
@@ -141,6 +156,12 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
             return;
         }
         prepareValue();
+        if (VALUE_BASED) {
+            if (!nodeService.toObject(valueToCompare).equals(nodeService.toObject(dataValue))) {
+                responseHandler.sendResponse(new SuccessResponse(false, version, backupCount));
+                return;
+            }
+        }
         remove();
         store();
         sendBackups();
@@ -154,6 +175,18 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
     private int getClusterSize() {
         return getNodeService().getCluster().getMembers().size();
     }
+
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
+        valueToCompare.writeData(out);
+    }
+
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
+        valueToCompare = new Data();
+        valueToCompare.readData(in);
+    }
+
 
     @Override
     public String toString() {

@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
+import com.hazelcast.map.response.UpdateResponse;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.NodeService;
 import com.hazelcast.spi.ResponseHandler;

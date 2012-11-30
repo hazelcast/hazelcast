@@ -149,6 +149,22 @@ public class MapTest {
         assertEquals(map.size(), 1);
     }
 
+    @Test
+    public void testMapRemoveIfSame() {
+        IMap<String, String> map = getInstance().getMap("testMapRemoveIfSame");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(map.remove("key1","value1"), true );
+        assertEquals(map.size(), 2);
+        assertEquals(map.remove("key1","value1"), false );
+        assertEquals(map.remove("key2","value1"), false );
+        assertEquals(map.size(), 2);
+        assertEquals(map.remove("key3","value2"), false);
+        assertEquals(map.remove("key3","value3"), true);
+        assertEquals(map.size(), 1);
+    }
+
 
     @Test
     public void testMapSet() {
@@ -175,6 +191,24 @@ public class MapTest {
         assertEquals(map.containsKey("key2"), true);
         assertEquals(map.containsKey("key5"), false);
     }
+
+    @Test
+    public void testMapContainsValue() {
+        IMap<String, String> map = getInstance().getMap("testMapContainsValue");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(map.containsValue("value1"), true);
+        assertEquals(map.containsValue("value5"), false);
+        map.remove("key1");
+        assertEquals(map.containsValue("value1"), false);
+        map.put("keyX","value1");
+        assertEquals(map.containsValue("value1"), true);
+        assertEquals(map.containsValue("value2"), true);
+        assertEquals(map.containsValue("value3"), true);
+        assertEquals(map.containsValue("value4"), false);
+    }
+
 
 
     @Test

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.map.response.UpdateResponse;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
