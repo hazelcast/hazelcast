@@ -28,22 +28,12 @@ import java.util.concurrent.TimeUnit;
  */
 public final class CleanupService {
 
+    private final String name;
     private final ScheduledExecutorService executor;
 
     public CleanupService(final String name) {
-        executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-            public Thread newThread(final Runnable r) {
-                return new Thread(r, name + ".hibernate.cleanup") {
-                    public void run() {
-                        try {
-                            super.run();
-                        } catch (OutOfMemoryError e) {
-                            OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-                        }
-                    }
-                };
-            }
-        });
+        this.name = name;
+        executor = Executors.newSingleThreadScheduledExecutor(new CleanupThreadFactory());
     }
 
     public void registerCache(final LocalRegionCache cache) {
@@ -56,5 +46,29 @@ public final class CleanupService {
 
     public void stop() {
         executor.shutdownNow();
+    }
+
+    private class CleanupThreadFactory implements ThreadFactory {
+
+        public Thread newThread(final Runnable r) {
+            final Thread thread = new CleanupThread(r, name + ".hibernate.cleanup");
+            thread.setDaemon(true);
+            return thread;
+        }
+    }
+
+    private class CleanupThread extends Thread {
+
+        private CleanupThread(final Runnable target, final String name) {
+            super(target, name);
+        }
+
+        public void run() {
+            try {
+                super.run();
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            }
+        }
     }
 }
