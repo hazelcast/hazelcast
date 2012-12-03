@@ -17,8 +17,8 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.spi.impl.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
 
 import java.io.DataInput;
@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * @mdogan 8/2/12
  */
-public class JoinCheckOperation extends Operation implements JoinOperation {
+public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
     private JoinInfo joinInfo;
 

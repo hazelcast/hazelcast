@@ -25,6 +25,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * TODO: Things to resolve:
@@ -36,10 +38,10 @@ public class PartitionContainer {
     private final Config config;
     private final MapService mapService;
     final PartitionInfo partitionInfo;
-    final Map<String, MapPartition> maps = new HashMap<String, MapPartition>(1000);
-    final Map<String, TransactionLog> transactions = new HashMap<String, TransactionLog>(1000);
-    final Map<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations = new HashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
-    final Map<Long, GenericBackupOperation> waitingBackupOps = new HashMap<Long, GenericBackupOperation>(1000);
+    final ConcurrentMap<String, MapPartition> maps = new ConcurrentHashMap<String, MapPartition>(1000);
+    final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
+    final ConcurrentMap<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations = new ConcurrentHashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
+    final ConcurrentMap<Long, GenericBackupOperation> waitingBackupOps = new ConcurrentHashMap<Long, GenericBackupOperation>(1000);
     long version = 0;
 
     public PartitionContainer(Config config, final MapService mapService, final PartitionInfo partitionInfo) {
@@ -97,7 +99,8 @@ public class PartitionContainer {
         MapPartition mapPartition = maps.get(name);
         if (mapPartition == null) {
             mapPartition = new MapPartition(name, PartitionContainer.this);
-            maps.put(name, mapPartition);
+            final MapPartition currentMapPartition = maps.putIfAbsent(name, mapPartition);
+            mapPartition = currentMapPartition == null ? mapPartition : currentMapPartition;
         }
         return mapPartition;
     }

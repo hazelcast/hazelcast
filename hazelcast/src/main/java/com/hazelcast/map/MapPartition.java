@@ -19,18 +19,18 @@ package com.hazelcast.map;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.PartitionInfo;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class MapPartition {
     final String name;
     final PartitionInfo partitionInfo;
     final PartitionContainer partitionContainer;
-    final Map<Data, Record> records = new HashMap<Data, Record>(1000);
-    final Map<Data, LockInfo> locks = new HashMap<Data, LockInfo>(100);
+    final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
+    final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
     final MapLoader loader;
     final MapStore store;
     final long writeDelayMillis = 0;

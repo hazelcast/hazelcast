@@ -41,6 +41,9 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 public class NodeServiceImpl implements NodeService {
@@ -49,6 +52,7 @@ public class NodeServiceImpl implements NodeService {
     private final ILogger logger;
     private final ExecutorServiceManager executorServiceManager;
     private final int partitionCount;
+    private final Lock[] locks = new Lock[100000];
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
     private final AtomicLong localIdGen = new AtomicLong();
     private final ServiceManager serviceManager;
@@ -56,6 +60,9 @@ public class NodeServiceImpl implements NodeService {
     public NodeServiceImpl(Node node) {
         this.node = node;
         logger = node.getLogger(NodeService.class.getName());
+        for (int i = 0; i < locks.length; i++) {
+            locks[i] = new ReentrantLock();
+        }
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         executorServiceManager = new ExecutorServiceManager(this);
         serviceManager = new ServiceManager(this);
@@ -101,8 +108,6 @@ public class NodeServiceImpl implements NodeService {
                 failedPartitions.add(partitionId);
             }
         }
-//        System.err.println("failedPartitions = " + failedPartitions);
-//        Thread.sleep(500);
         for (Integer failedPartition : failedPartitions) {
             Invocation inv = createInvocationBuilder(serviceName,
                     new OperationWrapper(operationData), failedPartition).build();
@@ -137,14 +142,13 @@ public class NodeServiceImpl implements NodeService {
     }
 
     void invoke(final InvocationImpl inv) {
-        if (executorServiceManager.isPartitionThread()) {
+        final Operation currentOp = (Operation) ThreadContext.get().getCurrentOperation();
+        final Operation op = inv.getOperation();
+        if (currentOp != null && currentOp instanceof KeyOperation && op instanceof KeyOperation) {
             throw new HazelcastException(Thread.currentThread()
-                    + " cannot make remote call: "
-                    + inv.getOperation()
-                    + " currentOp:" + ThreadContext.get().getCurrentOperation());
+                    + " cannot make remote call: " + inv.getOperation() + " currentOp:" + currentOp);
         }
         final Address target = inv.getTarget();
-        final Operation op = inv.getOperation();
         final int partitionId = inv.getPartitionId();
         final int replicaIndex = inv.getReplicaIndex();
         final String serviceName = inv.getServiceName();
@@ -153,7 +157,7 @@ public class NodeServiceImpl implements NodeService {
         checkInvocation(inv);
         if (getThisAddress().equals(target)) {
             ResponseHandlerFactory.setLocalResponseHandler(inv);
-            runLocally(op);
+            executeOperation(op);
         } else {
             Call call = new Call(target, inv);
             long callId = registerCall(call);
@@ -180,15 +184,19 @@ public class NodeServiceImpl implements NodeService {
     }
 
     public void runLocally(final Operation op) {
-        final int partitionId = op.getPartitionId();
-        final ExecutorService executor = executorServiceManager.getExecutor(partitionId);
-        executor.execute(new OperationExecutor(op));
+        final Executor executor = executorServiceManager.getCachedExecutor();
+//        final ExecutorService executor = executorServiceManager.getExecutor(partitionId);
+//        executor.execute(new Runnable() {
+//            public void run() {
+                executeOperation(op);
+//            }
+//        });
     }
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
-        final int partitionId = packet.getPartitionId();
-        final Executor executor = executorServiceManager.getExecutor(partitionId);
+        final Executor executor = executorServiceManager.getCachedExecutor();
+//        final Executor executor = executorServiceManager.getExecutor(partitionId);
         executor.execute(new RemoteOperationExecutor(packet));
     }
 
@@ -409,49 +417,57 @@ public class NodeServiceImpl implements NodeService {
         mapCalls.clear();
     }
 
-    private class OperationExecutor implements Runnable {
-        protected Operation op;
-
-        private OperationExecutor() {
-        }
-
-        private OperationExecutor(final Operation op) {
-            this.op = op;
-        }
-
-        public void run() {
-            ThreadContext.get().setCurrentOperation(op);
-//                System.err.println(Thread.currentThread().getName() + " executing " +  op.getClass().getName());
-            try {
-                checkOperation(op);
-                op.run();
-            } catch (Throwable e) {
-                handleOperationError(op, e);
-            }
-        }
-
-        public void setOp(final Operation op) {
-            this.op = op;
-        }
-
-        private void checkOperation(final Operation op) {
+    private void executeOperation(final Operation op) {
+        Lock partitionLock = null;
+        Lock keyLock = null;
+        final ThreadContext threadContext = ThreadContext.get();
+        threadContext.setCurrentOperation(op);
+        try {
             final int partitionId = op.getPartitionId();
-            if (partitionId >= 0) {
-                PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-                Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
-                if (!isPartitionLockFreeOperation(op) && node.partitionService.isPartitionLocked(partitionId)) {
-                    throw new PartitionMigratingException(getThisAddress(), owner, partitionId,
-                            op.getClass().getName(), op.getServiceName());
+            if (op instanceof PartitionOperation) {
+                if (partitionId < 0) {
+                    throw new IllegalArgumentException();
                 }
-                final boolean shouldValidateTarget = op.shouldValidateTarget();
-                if (shouldValidateTarget && !getThisAddress().equals(owner)) {
-                    throw new WrongTargetException(getThisAddress(), owner, partitionId,
-                            op.getClass().getName(), op.getServiceName());
+                PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+                if (op instanceof PartitionWriteOperation) {
+                    partitionLock = partitionInfo.getWriteLock();
+                    partitionLock.lock();
+                } else {
+                    Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
+                    partitionLock = partitionInfo.getReadLock();
+                    if (!partitionLock.tryLock()) {
+                        partitionLock = null;
+                        throw new PartitionMigratingException(getThisAddress(), owner, partitionId,
+                                op.getClass().getName(), op.getServiceName());
+                    }
+                    final boolean shouldValidateTarget = op.shouldValidateTarget();
+                    if (shouldValidateTarget && !getThisAddress().equals(owner)) {
+                        throw new WrongTargetException(getThisAddress(), owner, partitionId,
+                                op.getClass().getName(), op.getServiceName());
+                    }
+                    if (!(op instanceof BackupOperation) && op instanceof KeyOperation) {
+                        final int hash = ((KeyOperation) op).getKeyHash();
+                        keyLock = locks[Math.abs(hash) % locks.length];
+                        keyLock.lock();
+                    }
                 }
             }
-        }
-
-        private void handleOperationError(final Operation op, final Throwable e) {
+            final ResponseHandler original = op.getResponseHandler();
+            final AtomicReference<Object> response = new AtomicReference<Object>();
+            final ResponseHandler rh = new ResponseHandler() {
+                public void sendResponse(final Object obj) {
+                    response.set(obj);
+                }
+            };
+            op.setResponseHandler(rh);
+            op.run();
+            if (op instanceof BackupAwareOperation) {
+                final BackupAwareOperation bao = (BackupAwareOperation) op;
+                BackupOperation backupOp = bao.createBackupOperation();
+                // TODO: take backups !
+            }
+            original.sendResponse(response.get());
+        } catch (Throwable e) {
             if (e instanceof RetryableException) {
                 logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
                 logger.log(Level.FINEST, e.getMessage(), e);
@@ -462,10 +478,18 @@ public class NodeServiceImpl implements NodeService {
             if (responseHandler != null) {
                 responseHandler.sendResponse(e);
             }
+        } finally {
+            if (keyLock != null) {
+                keyLock.unlock();
+            }
+            if (partitionLock != null) {
+                partitionLock.unlock();
+            }
+            threadContext.setCurrentOperation(null);
         }
     }
 
-    private class RemoteOperationExecutor extends OperationExecutor implements Runnable {
+    private class RemoteOperationExecutor implements Runnable {
         private final Packet packet;
 
         private RemoteOperationExecutor(final Packet packet) {
@@ -477,11 +501,11 @@ public class NodeServiceImpl implements NodeService {
             final Data data = packet.getValue();
             final Address caller = packet.getConn().getEndPoint();
             try {
-                setOp((Operation) toObject(data));
+                final Operation op = (Operation) toObject(data);
                 op.setNodeService(NodeServiceImpl.this).setCaller(caller).setPartitionId(partitionId);
                 op.setConnection(packet.getConn());
                 ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op);
-                super.run();
+                executeOperation(op);
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 // TODO: send error response operation !
@@ -494,10 +518,10 @@ public class NodeServiceImpl implements NodeService {
 
     private static final ClassLoader thisClassLoader = NodeService.class.getClassLoader();
 
-    private static boolean isPartitionLockFreeOperation(Operation op) {
-        return op instanceof PartitionLockFreeOperation
-               && op.getClass().getClassLoader() == thisClassLoader;
-    }
+//    private static boolean isPartitionLockFreeOperation(Operation op) {
+//        return op instanceof PartitionLockFreeOperation
+//               && op.getClass().getClassLoader() == thisClassLoader;
+//    }
 
     private static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation

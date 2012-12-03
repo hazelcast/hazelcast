@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -27,7 +28,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class GenericBackupOperation extends AbstractNamedKeyBasedOperation implements Comparable<GenericBackupOperation> {
+public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
+        implements Comparable<GenericBackupOperation>, BackupOperation {
 
     enum BackupOpType {
         PUT,

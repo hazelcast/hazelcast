@@ -20,6 +20,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PartitionInfo {
     public static final int MAX_REPLICA_COUNT = MapConfig.MAX_BACKUP_COUNT + 1;
@@ -27,6 +30,9 @@ public class PartitionInfo {
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
     private final PartitionListener partitionListener;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock readLock = lock.readLock();
+    private final Lock writeLock = lock.writeLock();
 
     public PartitionInfo(int partitionId, PartitionListener partitionListener) {
         this.partitionId = partitionId;
@@ -137,6 +143,14 @@ public class PartitionInfo {
             }
         }
         return -1;
+    }
+
+    public Lock getReadLock() {
+        return readLock;
+    }
+
+    public Lock getWriteLock() {
+        return writeLock;
     }
 
     @Override

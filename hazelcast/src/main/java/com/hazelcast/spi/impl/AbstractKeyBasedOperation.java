@@ -17,13 +17,14 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.KeyOperation;
 import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class AbstractKeyBasedOperation extends Operation {
+public abstract class AbstractKeyBasedOperation extends Operation implements KeyOperation {
     protected Data dataKey = null;
     protected int threadId = -1;
     protected long timeout = -1;
@@ -53,6 +54,10 @@ public abstract class AbstractKeyBasedOperation extends Operation {
 
     public void setTimeout(long timeout) {
         this.timeout = timeout;
+    }
+
+    public int getKeyHash() {
+        return dataKey != null ? dataKey.getPartitionHash() : 0;
     }
 
     public void writeInternal(DataOutput out) throws IOException {

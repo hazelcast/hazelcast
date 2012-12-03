@@ -72,8 +72,8 @@ public abstract class BasePutOperation extends LockAwareOperation {
 
     protected void init() {
         responseHandler = getResponseHandler();
-        mapService = (MapService) getService();
-        nodeService = (NodeService) getNodeService();
+        mapService = getService();
+        nodeService = getNodeService();
         pc = mapService.getPartitionContainer(getPartitionId());
         mapPartition = pc.getMapPartition(name);
     }

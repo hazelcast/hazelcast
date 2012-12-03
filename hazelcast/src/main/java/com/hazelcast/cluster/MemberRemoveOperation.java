@@ -16,14 +16,14 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.spi.Operation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MemberRemoveOperation extends Operation {
+public class MemberRemoveOperation extends AbstractOperation {
 
     private Address deadAddress = null;
 

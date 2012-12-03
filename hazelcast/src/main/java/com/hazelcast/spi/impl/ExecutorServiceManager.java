@@ -4,7 +4,6 @@ import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.spi.NodeService;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,8 +17,8 @@ final class ExecutorServiceManager {
     private final ExecutorService cachedExecutorService;
     private final ExecutorService eventExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final ExecutorService[] partitionExecutors;
-    private final int partitionThreadCount; // TODO: should be configurable
+//    private final ExecutorService[] partitionExecutors;
+//    private final int partitionThreadCount; // TODO: should be configurable
 
     ExecutorServiceManager(final NodeServiceImpl nodeService) {
         this.nodeService = nodeService;
@@ -39,35 +38,35 @@ final class ExecutorServiceManager {
                         node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("scheduled"), classLoader));
 
-        final int count = node.groupProperties.PARTITION_THREAD_COUNT.getInteger();
-        partitionThreadCount = count > 0 ? count : Runtime.getRuntime().availableProcessors();
-        partitionExecutors = new ExecutorService[partitionThreadCount];
-        final ThreadFactory partitionThreadFactory = new PartitionThreadFactory("partition");
-        for (int i = 0; i < partitionThreadCount; i++) {
-            partitionExecutors[i] = new ThreadPoolExecutor (
-                    1, 1, 0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    partitionThreadFactory,
-                    new RejectedExecutionHandler() {
-                        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        }
-                    }
-            );
-        }
+//        final int count = node.groupProperties.PARTITION_THREAD_COUNT.getInteger();
+//        partitionThreadCount = count > 0 ? count : Runtime.getRuntime().availableProcessors();
+//        partitionExecutors = new ExecutorService[partitionThreadCount];
+//        final ThreadFactory partitionThreadFactory = new PartitionThreadFactory("partition");
+//        for (int i = 0; i < partitionThreadCount; i++) {
+//            partitionExecutors[i] = new ThreadPoolExecutor (
+//                    1, 1, 0L, TimeUnit.MILLISECONDS,
+//                    new LinkedBlockingQueue<Runnable>(),
+//                    partitionThreadFactory,
+//                    new RejectedExecutionHandler() {
+//                        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+//                        }
+//                    }
+//            );
+//        }
     }
 
-    ExecutorService getExecutor(int partitionId) {
-        if (partitionId >= 0) {
-            return partitionExecutors[partitionId % partitionThreadCount];
-        } else if (partitionId == NodeService.EXECUTOR_THREAD_ID) {
-            return cachedExecutorService;
-        } else if (partitionId == NodeService.EVENT_THREAD_ID) {
-            return eventExecutorService;
-        } else {
-            throw new IllegalArgumentException("Illegal partition/thread id: " + partitionId);
-        }
-    }
-
+//    ExecutorService getExecutor(int partitionId) {
+//        if (partitionId >= 0) {
+//            return partitionExecutors[partitionId % partitionThreadCount];
+//        } else if (partitionId == NodeService.EXECUTOR_THREAD_ID) {
+//            return cachedExecutorService;
+//        } else if (partitionId == NodeService.EVENT_THREAD_ID) {
+//            return eventExecutorService;
+//        } else {
+//            throw new IllegalArgumentException("Illegal partition/thread id: " + partitionId);
+//        }
+//    }
+//
     ExecutorService getEventExecutor() {
         return eventExecutorService;
     }
@@ -85,9 +84,9 @@ final class ExecutorServiceManager {
     }
 
     void shutdownNow() {
-        for (ExecutorService worker : partitionExecutors) {
-            worker.shutdownNow();
-        }
+//        for (ExecutorService worker : partitionExecutors) {
+//            worker.shutdownNow();
+//        }
         cachedExecutorService.shutdownNow();
         scheduledExecutorService.shutdownNow();
         eventExecutorService.shutdownNow();
@@ -99,12 +98,12 @@ final class ExecutorServiceManager {
             cachedExecutorService.awaitTermination(3, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
-        for (ExecutorService worker : partitionExecutors) {
-            try {
-                worker.awaitTermination(3, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
-        }
+//        for (ExecutorService worker : partitionExecutors) {
+//            try {
+//                worker.awaitTermination(3, TimeUnit.SECONDS);
+//            } catch (InterruptedException ignored) {
+//            }
+//        }
     }
 
     private final class PartitionThreadFactory implements ThreadFactory {

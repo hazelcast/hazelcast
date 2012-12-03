@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-public class MigrationOperation extends AbstractOperation {
+public class MigrationOperation extends AbstractOperation implements PartitionWriteOperation {
     private MigrationType migrationType;
     private int copyBackReplicaIndex = -1;
     private Collection<Operation> tasks;

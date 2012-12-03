@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends Operation implements PartitionLockFreeOperation {
+public class MigrationRequestOperation extends Operation implements PartitionWriteOperation {
     protected Address from;
     protected Address to;
     private boolean migration;  // migration or backup
@@ -95,36 +95,43 @@ public class MigrationRequestOperation extends Operation implements PartitionLoc
         if (from == null) {
             getLogger().log(Level.FINEST, "From address is null => " + toString());
         }
-        final PartitionService pm = (PartitionService) getService();
+        final PartitionService partitionService = getService();
         try {
-            Member target = pm.getMember(to);
+            Member target = partitionService.getMember(to);
             if (target == null) {
                 getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
                 responseHandler.sendResponse(Boolean.FALSE);
                 return;
             }
 
-            PartitionService partitionService = getService();
             partitionService.addActiveMigration(createMigrationInfo());
             final NodeService nodeService = getNodeService();
             final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             final Collection<Operation> tasks = prepareMigrationTasks(partitionId, replicaIndex);
-            nodeService.execute(new Runnable() {
-                public void run() {
-                    try {
-                        Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
-                                new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
-                                        getMigrationType(), tasks, from), partitionId)
-                                .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
-                                .build();
-                        Future future = inv.invoke();
-                        Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
-                        responseHandler.sendResponse(result);
-                    } catch (Throwable e) {
-                        onError(responseHandler, e);
-                    }
-                }
-            });
+//            nodeService.execute(new Runnable() {
+//                public void run() {
+//                    try {
+//                        Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
+//                                new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
+//                                        getMigrationType(), tasks, from), partitionId)
+//                                .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
+//                                .build();
+//                        Future future = inv.invoke();
+//                        Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
+//                        responseHandler.sendResponse(result);
+//                    } catch (Throwable e) {
+//                        onError(responseHandler, e);
+//                    }
+//                }
+//            });
+            Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
+                    new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
+                            getMigrationType(), tasks, from), partitionId)
+                    .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
+                    .build();
+            Future future = inv.invoke();
+            Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
+            responseHandler.sendResponse(result);
         } catch (Throwable e) {
             onError(responseHandler, e);
         }
