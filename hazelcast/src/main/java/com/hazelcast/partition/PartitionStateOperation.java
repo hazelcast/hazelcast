@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class PartitionStateOperation extends AbstractOperation {
+public class PartitionStateOperation extends AbstractOperation implements Runnable {
     private PartitionRuntimeState partitionState;
 
 //    public PartitionStateOperation(final Collection<MemberImpl> members,
@@ -59,7 +59,7 @@ public class PartitionStateOperation extends AbstractOperation {
         partitionState.setEndpoint(getCaller());
         PartitionService partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);
-        getResponseHandler().sendResponse(null);
+//        getResponseHandler().sendResponse(null);
     }
 
     public void readInternal(DataInput in) throws IOException {

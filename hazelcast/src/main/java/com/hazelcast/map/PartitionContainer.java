@@ -40,7 +40,8 @@ public class PartitionContainer {
     final PartitionInfo partitionInfo;
     final ConcurrentMap<String, MapPartition> maps = new ConcurrentHashMap<String, MapPartition>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
-    final ConcurrentMap<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations = new ConcurrentHashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
+    final ConcurrentMap<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations
+            = new ConcurrentHashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
     final ConcurrentMap<Long, GenericBackupOperation> waitingBackupOps = new ConcurrentHashMap<Long, GenericBackupOperation>(1000);
     long version = 0;
 
@@ -154,7 +155,7 @@ public class PartitionContainer {
         ScheduledOperationKey key = new ScheduledOperationKey(op.getName(), op.getKey());
         Queue<ScheduledOperation> qScheduledOps = mapScheduledOperations.get(key);
         if (qScheduledOps == null) {
-            qScheduledOps = new LinkedList<ScheduledOperation>();
+            qScheduledOps = new LinkedList<ScheduledOperation>(); // TODO: qScheduledOps may need to be thread-safe
             mapScheduledOperations.put(key, qScheduledOps);
         }
         qScheduledOps.add(new ScheduledOperation(op));
@@ -175,7 +176,7 @@ public class PartitionContainer {
                 if (scheduledOp.expired()) {
                     op.onExpire();
                 } else {
-                    op.doRun();
+                    op.doOp();
                 }
                 scheduledOp.setValid(false);
             }

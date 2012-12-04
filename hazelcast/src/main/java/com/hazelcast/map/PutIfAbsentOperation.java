@@ -64,7 +64,7 @@ public class PutIfAbsentOperation extends BasePutOperation {
         }
     }
 
-    public void doRun() {
+    public void doOp() {
         init();
         // todo transaction should be written relating to if absent
         if (prepareTransaction()) {

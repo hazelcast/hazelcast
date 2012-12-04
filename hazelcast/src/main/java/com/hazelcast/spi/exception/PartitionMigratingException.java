@@ -20,17 +20,9 @@ import com.hazelcast.nio.Address;
 
 public class PartitionMigratingException extends RetryableException {
 
-    public PartitionMigratingException(Address thisAddress, Address target) {
-        this(thisAddress, target, -1, null);
-    }
-
-    public PartitionMigratingException(Address thisAddress, Address target, int partitionId, String operationName) {
-        this(thisAddress, target, partitionId, operationName, null);
-    }
-
-    public PartitionMigratingException(Address thisAddress, Address target, int partitionId,
+    public PartitionMigratingException(Address thisAddress, int partitionId,
                                        String operationName, String serviceName) {
-        super("Partition is migrating! this:" + thisAddress + ", target:" + target
+        super("Partition is migrating! this:" + thisAddress
               + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

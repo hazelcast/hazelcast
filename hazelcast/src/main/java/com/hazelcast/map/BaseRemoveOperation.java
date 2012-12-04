@@ -102,15 +102,25 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
     protected void sendBackups() {
         int mapBackupCount = mapPartition.getBackupCount();
         backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
-        if (SEND_BACKUPS) {
-            version = pc.incrementAndGetVersion();
-            if (backupCount > 0) {
-                GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-                op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
-                op.setFirstCallerId(backupCallId, getCaller());
-                nodeService.sendBackups(MapService.MAP_SERVICE_NAME, op, getPartitionId(), mapBackupCount);
-            }
+        GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
+        op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
+        op.setInvocation(true);
+        try {
+            getNodeService().takeSyncBackups(getServiceName(), op, getPartitionId(), backupCount, 10);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+//        int mapBackupCount = mapPartition.getBackupCount();
+//        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
+//        if (SEND_BACKUPS) {
+//            version = pc.incrementAndGetVersion();
+//            if (backupCount > 0) {
+//                GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
+//                op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
+//                op.setFirstCallerId(backupCallId, getCaller());
+//                nodeService.sendAsyncBackups(MapService.MAP_SERVICE_NAME, op, getPartitionId(), mapBackupCount);
+//            }
+//        }
     }
 
     protected void prepareValue() {
@@ -135,7 +145,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
 
 
     // run operation is seperated into methods so each method can be overridden to differentiate put implementation
-    public void doRun() {
+    public void doOp() {
         init();
         if (prepareTransaction()) {
             return;

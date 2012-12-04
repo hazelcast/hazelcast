@@ -41,7 +41,7 @@ public class UnlockOperation extends BackupAwareOperation {
                 GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl, pc.incrementAndGetVersion());
                 backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.UNLOCK);
                 int backupCount = mapPartition.getBackupCount();
-                getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
+                getNodeService().sendAsyncBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
             }
             responseHandler.sendResponse(Boolean.TRUE);
             if (!lock.isLocked()) {

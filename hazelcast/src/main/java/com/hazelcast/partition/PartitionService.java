@@ -445,9 +445,9 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
         }
     }
 
-//    public boolean isPartitionLocked(int partitionId) {
-//        return activeMigrations.containsKey(partitionId);
-//    }
+    public boolean isPartitionMigrating(int partitionId) {
+        return activeMigrations.containsKey(partitionId);
+    }
 
     void addActiveMigration(MigrationInfo migrationInfo) {
         lock.lock();
@@ -730,7 +730,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                         final int partitionId = migrationRequestOp.getPartitionId();
                         fromMember = getMember(partitions[partitionId].getOwner());
                     }
-                    logger.log(Level.WARNING, "Started Migration : " + migrationRequestOp);
+                    logger.log(Level.FINEST, "Started Migration : " + migrationRequestOp);
                     systemLogService.logPartition("Started Migration : " + migrationRequestOp);
                     if (fromMember != null) {
                         migrationRequestOp.setFromAddress(fromMember.getAddress());
@@ -749,7 +749,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                         // Partition is lost! Assign new owner and exit.
                         result = Boolean.TRUE;
                     }
-                    logger.log(Level.WARNING, "Finished Migration : " + migrationRequestOp);
+                    logger.log(Level.FINEST, "Finished Migration : " + migrationRequestOp);
                     systemLogService.logPartition("Finished Migration : " + migrationRequestOp);
                     if (Boolean.TRUE.equals(result)) {
                         processMigrationResult();

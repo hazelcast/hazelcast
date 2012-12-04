@@ -54,9 +54,9 @@ public class MemberInfoUpdateOperation extends Operation implements JoinOperatio
             final ClusterService clusterService = getService();
             clusterService.setMasterTime(masterTime);
             clusterService.updateMembers(getMemberInfos());
-            getResponseHandler().sendResponse(Boolean.TRUE);
-        } else {
-            getResponseHandler().sendResponse(Boolean.FALSE);
+//            getResponseHandler().sendResponse(Boolean.TRUE);
+//        } else {
+//            getResponseHandler().sendResponse(Boolean.FALSE);
         }
     }
 

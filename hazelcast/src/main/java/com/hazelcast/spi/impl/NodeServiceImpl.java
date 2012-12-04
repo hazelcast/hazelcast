@@ -20,7 +20,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
@@ -41,7 +41,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -50,7 +49,9 @@ public class NodeServiceImpl implements NodeService {
 
     private final Node node;
     private final ILogger logger;
-    private final ExecutorServiceManager executorServiceManager;
+    private final ExecutorService cachedExecutorService;
+    private final ExecutorService eventExecutorService;
+    private final ScheduledExecutorService scheduledExecutorService;
     private final int partitionCount;
     private final Lock[] locks = new Lock[100000];
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
@@ -64,7 +65,23 @@ public class NodeServiceImpl implements NodeService {
             locks[i] = new ReentrantLock();
         }
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
-        executorServiceManager = new ExecutorServiceManager(this);
+        final ClassLoader classLoader = node.getConfig().getClassLoader();
+        final ExecutorThreadFactory threadFactory = new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                node.getThreadPoolNamePrefix("cached"), classLoader);
+
+        cachedExecutorService = new ThreadPoolExecutor(
+                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(), threadFactory);
+
+//        cachedExecutorService = Executors.newFixedThreadPool(40, threadFactory);
+
+        eventExecutorService = Executors.newSingleThreadExecutor(
+                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                        node.getThreadPoolNamePrefix("event"), node.getConfig().getClassLoader()));
+        scheduledExecutorService = Executors.newScheduledThreadPool(2,
+                new ExecutorThreadFactory(node.threadGroup,
+                        node.hazelcastInstance,
+                        node.getThreadPoolNamePrefix("scheduled"), classLoader));
         serviceManager = new ServiceManager(this);
     }
 
@@ -144,10 +161,10 @@ public class NodeServiceImpl implements NodeService {
     void invoke(final InvocationImpl inv) {
         final Operation currentOp = (Operation) ThreadContext.get().getCurrentOperation();
         final Operation op = inv.getOperation();
-        if (currentOp != null && currentOp instanceof KeyOperation && op instanceof KeyOperation) {
-            throw new HazelcastException(Thread.currentThread()
-                    + " cannot make remote call: " + inv.getOperation() + " currentOp:" + currentOp);
-        }
+//        if (currentOp != null && !(op instanceof BackupOperation)) {
+//            throw new HazelcastException(Thread.currentThread()
+//                    + " cannot make remote call: " + inv.getOperation() + " currentOp:" + currentOp);
+//        }
         final Address target = inv.getTarget();
         final int partitionId = inv.getPartitionId();
         final int replicaIndex = inv.getReplicaIndex();
@@ -184,18 +201,18 @@ public class NodeServiceImpl implements NodeService {
     }
 
     public void runLocally(final Operation op) {
-        final Executor executor = executorServiceManager.getCachedExecutor();
+        final ExecutorService executor = cachedExecutorService;
 //        final ExecutorService executor = executorServiceManager.getExecutor(partitionId);
-//        executor.execute(new Runnable() {
-//            public void run() {
+        executor.execute(new Runnable() {
+            public void run() {
                 executeOperation(op);
-//            }
-//        });
+            }
+        });
     }
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
-        final Executor executor = executorServiceManager.getCachedExecutor();
+        final Executor executor = cachedExecutorService;
 //        final Executor executor = executorServiceManager.getExecutor(partitionId);
         executor.execute(new RemoteOperationExecutor(packet));
     }
@@ -209,7 +226,7 @@ public class NodeServiceImpl implements NodeService {
         return op;
     }
 
-    public void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
+    public void takeSyncBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException {
         op.setServiceName(serviceName);
         backupCount = Math.min(getClusterService().getSize() - 1, backupCount);
@@ -222,6 +239,7 @@ public class NodeServiceImpl implements NodeService {
                 if (replicaTarget != null) {
                     if (replicaTarget.equals(getThisAddress())) {
                         // Normally shouldn't happen!!
+                        throw new IllegalStateException("Normally shouldn't happen!!");
                     } else {
                         backupOps.add(createInvocationBuilder(serviceName, op, partitionId).setReplicaIndex(replicaIndex)
                                 .build().invoke());
@@ -234,7 +252,7 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    public void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount) {
+    public void sendAsyncBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount) {
         op.setServiceName(serviceName);
         backupCount = Math.min(getClusterService().getSize() - 1, backupCount);
         if (backupCount > 0) {
@@ -268,7 +286,7 @@ public class NodeServiceImpl implements NodeService {
     public boolean send(final Operation op, final int partitionId, final Address target) {
         if (target == null || getThisAddress().equals(target)) {
             op.setNodeService(this);
-            op.run();
+            executeOperation(op); // TODO: not sure what to do here...
             return true;
         } else {
             return send(op, partitionId, node.getConnectionManager().getOrConnect(target));
@@ -365,27 +383,27 @@ public class NodeServiceImpl implements NodeService {
 
     @PrivateApi
     public ExecutorService getEventService() {
-        return executorServiceManager.getEventExecutor();
+        return eventExecutorService; // ??
     }
 
     public Future<?> submit(Runnable task) {
-        return executorServiceManager.getCachedExecutor().submit(task);
+        return cachedExecutorService.submit(task);
     }
 
     public void execute(final Runnable command) {
-        executorServiceManager.getCachedExecutor().execute(command);
+        cachedExecutorService.execute(command);
     }
 
     public void schedule(final Runnable command, long delay, TimeUnit unit) {
-        executorServiceManager.getScheduledExecutor().schedule(command, delay, unit);
+        scheduledExecutorService.schedule(command, delay, unit);
     }
 
     public void scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        executorServiceManager.getScheduledExecutor().scheduleAtFixedRate(command, initialDelay, period, unit);
+        scheduledExecutorService.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     public void scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        executorServiceManager.getScheduledExecutor().scheduleWithFixedDelay(command, initialDelay, period, unit);
+        scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, period, unit);
     }
 
     public Data toData(final Object object) {
@@ -413,60 +431,61 @@ public class NodeServiceImpl implements NodeService {
     @PrivateApi
     public void shutdown() {
         serviceManager.stopServices();
-        executorServiceManager.shutdownNow();
+        cachedExecutorService.shutdown();
+        scheduledExecutorService.shutdownNow();
+        eventExecutorService.shutdownNow();
+        try {
+            cachedExecutorService.awaitTermination(3, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.log(Level.FINEST, e.getMessage(), e);
+        }
         mapCalls.clear();
     }
 
-    private void executeOperation(final Operation op) {
+    public void executeOperation(final Operation op) {
         Lock partitionLock = null;
         Lock keyLock = null;
         final ThreadContext threadContext = ThreadContext.get();
         threadContext.setCurrentOperation(op);
         try {
             final int partitionId = op.getPartitionId();
-            if (op instanceof PartitionOperation) {
+            if (op instanceof PartitionAwareOperation) {
                 if (partitionId < 0) {
                     throw new IllegalArgumentException();
                 }
+                if (!isPartitionLockFreeOperation(op) && node.partitionService.isPartitionMigrating(partitionId)) {
+                    throw new PartitionMigratingException(getThisAddress(), partitionId,
+                            op.getClass().getName(), op.getServiceName());
+                }
                 PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-                if (op instanceof PartitionWriteOperation) {
+                if (op instanceof PartitionLevelOperation) {
                     partitionLock = partitionInfo.getWriteLock();
                     partitionLock.lock();
                 } else {
-                    Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     partitionLock = partitionInfo.getReadLock();
                     if (!partitionLock.tryLock()) {
                         partitionLock = null;
-                        throw new PartitionMigratingException(getThisAddress(), owner, partitionId,
+                        throw new PartitionMigratingException(getThisAddress(), partitionId,
                                 op.getClass().getName(), op.getServiceName());
                     }
+                    final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     final boolean shouldValidateTarget = op.shouldValidateTarget();
                     if (shouldValidateTarget && !getThisAddress().equals(owner)) {
                         throw new WrongTargetException(getThisAddress(), owner, partitionId,
                                 op.getClass().getName(), op.getServiceName());
                     }
-                    if (!(op instanceof BackupOperation) && op instanceof KeyOperation) {
-                        final int hash = ((KeyOperation) op).getKeyHash();
+                    if (!(op instanceof BackupOperation) && op instanceof KeyBasedOperation) {
+                        final int hash = ((KeyBasedOperation) op).getKeyHash();
                         keyLock = locks[Math.abs(hash) % locks.length];
                         keyLock.lock();
                     }
                 }
             }
-            final ResponseHandler original = op.getResponseHandler();
-            final AtomicReference<Object> response = new AtomicReference<Object>();
-            final ResponseHandler rh = new ResponseHandler() {
-                public void sendResponse(final Object obj) {
-                    response.set(obj);
-                }
-            };
-            op.setResponseHandler(rh);
+
             op.run();
-            if (op instanceof BackupAwareOperation) {
-                final BackupAwareOperation bao = (BackupAwareOperation) op;
-                BackupOperation backupOp = bao.createBackupOperation();
-                // TODO: take backups !
-            }
-            original.sendResponse(response.get());
+//            if (responseHandler != null) {
+//                responseHandler.sendResponse(response);
+//            }
         } catch (Throwable e) {
             if (e instanceof RetryableException) {
                 logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
@@ -518,10 +537,10 @@ public class NodeServiceImpl implements NodeService {
 
     private static final ClassLoader thisClassLoader = NodeService.class.getClassLoader();
 
-//    private static boolean isPartitionLockFreeOperation(Operation op) {
-//        return op instanceof PartitionLockFreeOperation
-//               && op.getClass().getClassLoader() == thisClassLoader;
-//    }
+    private static boolean isPartitionLockFreeOperation(Operation op) {
+        return op instanceof PartitionLockFreeOperation
+               && op.getClass().getClassLoader() == thisClassLoader;
+    }
 
     private static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation

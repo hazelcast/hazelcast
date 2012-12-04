@@ -16,13 +16,15 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.MigrationServiceEvent;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionLevelOperation;
 import com.hazelcast.spi.impl.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ import java.util.logging.Level;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-public class MigrationOperation extends AbstractOperation implements PartitionWriteOperation {
+public class MigrationOperation extends AbstractOperation implements PartitionLevelOperation {
     private MigrationType migrationType;
     private int copyBackReplicaIndex = -1;
     private Collection<Operation> tasks;
@@ -106,11 +108,11 @@ public class MigrationOperation extends AbstractOperation implements PartitionWr
         for (Operation op : tasks) {
             try {
                 nodeService.setOperationContext(op, op.getServiceName(), from, -1).setPartitionId(getPartitionId());
-                ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
+//                ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),
                         getReplicaIndex(), migrationType, copyBackReplicaIndex));
-                op.run();
+                ((Runnable) op).run();
             } catch (Throwable e) {
                 error = true;
                 getLogger().log(Level.SEVERE, e.getMessage(), e);

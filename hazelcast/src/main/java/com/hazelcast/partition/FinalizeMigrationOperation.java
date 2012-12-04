@@ -18,6 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.MigrationServiceEvent;
+import com.hazelcast.spi.PartitionLevelOperation;
 import com.hazelcast.spi.PartitionLockFreeOperation;
 import com.hazelcast.spi.impl.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
@@ -29,7 +30,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
-public class FinalizeMigrationOperation extends AbstractOperation implements PartitionLockFreeOperation {
+public class FinalizeMigrationOperation extends AbstractOperation implements PartitionLockFreeOperation,
+        PartitionLevelOperation {
 
     private MigrationEndpoint endpoint;     // source of destination
     private MigrationType type;       // move or copy

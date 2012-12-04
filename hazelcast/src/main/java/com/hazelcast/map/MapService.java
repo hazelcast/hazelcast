@@ -143,7 +143,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), partitionId,
+            nodeService.takeSyncBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -155,7 +155,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), partitionId,
+            nodeService.takeSyncBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -167,7 +167,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), partitionId,
+            nodeService.takeSyncBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -226,21 +226,31 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
             final CountDownLatch latch = new CountDownLatch(ownedPartitions.size());
             for (Integer partitionId : ownedPartitions) {
-                Operation op = new AbstractOperation() {
-                    public void run() {
-                        try {
-                            getPartitionContainer(getPartitionId()).invalidateExpiredScheduledOps();
-                        } finally {
-                            latch.countDown();
-                        }
-                    }
-                };
-                op.setPartitionId(partitionId).setValidateTarget(false);
-                nodeService.runLocally(op);
+                Operation op = new CleanupOperation(latch);
+                op.setPartitionId(partitionId).setService(MapService.this).setValidateTarget(false);
+//                nodeService.runLocally(op);
             }
             try {
                 latch.await(5, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
+            }
+        }
+    }
+
+    private static class CleanupOperation extends AbstractOperation implements Runnable, PartitionAwareOperation {
+        final CountDownLatch latch;
+
+        private CleanupOperation(final CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        public void run() {
+            try {
+                MapService service = getService();
+                final PartitionContainer partitionContainer = service.getPartitionContainer(getPartitionId());
+                partitionContainer.invalidateExpiredScheduledOps();
+            } finally {
+                latch.countDown();
             }
         }
     }

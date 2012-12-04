@@ -50,10 +50,10 @@ public interface NodeService {
 
     boolean send(Operation op, int partitionId, Connection connection);
 
-    void takeBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
+    void takeSyncBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException;
 
-    void sendBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount);
+    void sendAsyncBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount);
 
     Address getThisAddress();
 

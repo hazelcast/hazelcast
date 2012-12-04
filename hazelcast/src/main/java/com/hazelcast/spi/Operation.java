@@ -42,28 +42,6 @@ public abstract class Operation implements Runnable, DataSerializable {
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
 
-    final public void writeData(DataOutput out) throws IOException {
-        IOUtil.writeNullableString(out, serviceName);
-        out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
-        out.writeLong(callId);
-        out.writeBoolean(validateTarget);
-        writeInternal(out);
-    }
-
-    final public void readData(DataInput in) throws IOException {
-        serviceName = IOUtil.readNullableString(in);
-        partitionId = in.readInt();
-        replicaIndex = in.readInt();
-        callId = in.readLong();
-        validateTarget = in.readBoolean();
-        readInternal(in);
-    }
-
-    protected abstract void writeInternal(DataOutput out) throws IOException;
-
-    protected abstract void readInternal(DataInput in) throws IOException;
-
     public String getServiceName() {
         return serviceName;
     }
@@ -159,4 +137,26 @@ public abstract class Operation implements Runnable, DataSerializable {
     public final ResponseHandler getResponseHandler() {
         return responseHandler;
     }
+
+    public final void writeData(DataOutput out) throws IOException {
+        IOUtil.writeNullableString(out, serviceName);
+        out.writeInt(partitionId);
+        out.writeInt(replicaIndex);
+        out.writeLong(callId);
+        out.writeBoolean(validateTarget);
+        writeInternal(out);
+    }
+
+    public final void readData(DataInput in) throws IOException {
+        serviceName = IOUtil.readNullableString(in);
+        partitionId = in.readInt();
+        replicaIndex = in.readInt();
+        callId = in.readLong();
+        validateTarget = in.readBoolean();
+        readInternal(in);
+    }
+
+    protected abstract void writeInternal(DataOutput out) throws IOException;
+
+    protected abstract void readInternal(DataInput in) throws IOException;
 }

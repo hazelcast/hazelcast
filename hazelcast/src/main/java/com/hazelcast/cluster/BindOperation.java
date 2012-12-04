@@ -24,7 +24,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class BindOperation extends AbstractOperation implements JoinOperation {
+public class BindOperation extends AbstractOperation implements JoinOperation, Runnable {
 
     private Address localAddress;
     private Address targetAddress;

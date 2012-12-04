@@ -74,7 +74,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
                 migrationData.put(name, container);
             }
         }
-        return new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+//        return new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+        return null;
     }
 
     public void commitMigration(MigrationServiceEvent event) {

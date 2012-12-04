@@ -50,10 +50,10 @@ public abstract class LockAwareOperation extends BackupAwareOperation {
             }
             return;
         }
-        doRun();
+        doOp();
     }
 
-    abstract void doRun();
+    abstract void doOp();
 
     protected void onNoTimeToSchedule() {
         onExpire();

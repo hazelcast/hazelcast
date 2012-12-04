@@ -18,11 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -90,7 +90,8 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
         if (backupOpType == BackupOpType.PUT) {
             Record record = mapPartition.records.get(dataKey);
             if (record == null) {
-                record = new DefaultRecord(mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
+                record = new DefaultRecord(mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1,
+                        mapService.nextId());
                 mapPartition.records.put(dataKey, record);
             } else {
                 record.setValueData(dataValue);
@@ -117,10 +118,10 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
     }
 
     void sendResponse() {
-        int partitionId = getPartitionId();
         if (invocation) {
             getResponseHandler().sendResponse(Boolean.TRUE);
         } else {
+            int partitionId = getPartitionId();
             final AsyncBackupResponse backupResponse = new AsyncBackupResponse();
             backupResponse.setServiceName(MapService.MAP_SERVICE_NAME).setCallId(firstCallerId)
                     .setPartitionId(partitionId).setReplicaIndex(0);

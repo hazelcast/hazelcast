@@ -17,6 +17,7 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.map.*;
@@ -61,7 +62,7 @@ abstract class MapProxySupport {
             Future f = invocation.invoke();
             return  (Data) f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw new HazelcastException(throwable);
         }
     }
 
@@ -84,7 +85,7 @@ abstract class MapProxySupport {
             checkBackups(partitionId, putOperation, updateResponse);
             return updateResponse.getOldValue();
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
+            throw new HazelcastException(throwable);
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
         }
@@ -112,7 +113,7 @@ abstract class MapProxySupport {
             }
             return result;
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
+            throw new HazelcastException(throwable);
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
         }
@@ -131,7 +132,7 @@ abstract class MapProxySupport {
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             checkBackups(partitionId, putOperation, updateResponse);
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
+            throw new HazelcastException(throwable);
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
         }
@@ -162,7 +163,7 @@ abstract class MapProxySupport {
             UpdateResponse updateResponse = (UpdateResponse) returnObj;
             checkBackups(partitionId, setOperation, updateResponse);
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
+            throw new HazelcastException(throwable);
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
         }
@@ -187,7 +188,7 @@ abstract class MapProxySupport {
             checkBackups(partitionId, removeOperation, updateResponse);
             return updateResponse.getOldValue();
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
+            throw new HazelcastException(throwable);
         } finally {
             mapService.removeBackupCallQueue(backupCallId);
         }
@@ -392,31 +393,31 @@ abstract class MapProxySupport {
 
     protected void checkBackups(int partitionId, BackupAwareOperation operation, UpdateResponse updateResponse)
             throws InterruptedException, ExecutionException, TimeoutException {
-        int backupCount = updateResponse.getBackupCount();
-        if (backupCount > 0) {
-            boolean backupsComplete = true;
-            for (int i = 0; i < backupCount; i++) {
-                BlockingQueue backupResponses = mapService.getBackupCallQueue(operation.getBackupCallId());
-                Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
-                if (backupResponse == null) {
-                    backupsComplete = false;
-                }
-            }
-            if (!backupsComplete) {
-                final Future[] backupResponses = new Future[backupCount];
-                for (int i = 0; i < backupCount; i++) {
-                    GenericBackupOperation backupOp = new GenericBackupOperation(name, operation,
-                            updateResponse.getVersion());
-                    backupOp.setInvocation(true);
-                    Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp, partitionId)
-                            .setReplicaIndex(i).build();
-                    backupResponses[i] = backupInv.invoke();
-                }
-                for (Future response : backupResponses) {
-                    response.get(5, TimeUnit.SECONDS);
-                }
-            }
-        }
+//        int backupCount = updateResponse.getBackupCount();
+//        if (backupCount > 0) {
+//            boolean backupsComplete = true;
+//            for (int i = 0; i < backupCount; i++) {
+//                BlockingQueue backupResponses = mapService.getBackupCallQueue(operation.getBackupCallId());
+//                Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
+//                if (backupResponse == null) {
+//                    backupsComplete = false;
+//                }
+//            }
+//            if (!backupsComplete) {
+//                final Future[] backupResponses = new Future[backupCount];
+//                for (int i = 0; i < backupCount; i++) {
+//                    GenericBackupOperation backupOp = new GenericBackupOperation(name, operation,
+//                            updateResponse.getVersion());
+//                    backupOp.setInvocation(true);
+//                    Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp, partitionId)
+//                            .setReplicaIndex(i).build();
+//                    backupResponses[i] = backupInv.invoke();
+//                }
+//                for (Future response : backupResponses) {
+//                    response.get(5, TimeUnit.SECONDS);
+//                }
+//            }
+//        }
     }
 
     protected long getTTLInMillis(final long ttl, final TimeUnit timeunit) {
