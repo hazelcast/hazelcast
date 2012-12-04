@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;

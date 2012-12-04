@@ -27,7 +27,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
@@ -85,12 +85,13 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public static class MasterClaim extends AbstractOperation implements JoinOperation {
 
+        private transient boolean approvedAsMaster = false;
+
         public void run() {
             final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
             Node node = nodeService.getNode();
-            ResponseHandler responseHandler = getResponseHandler();
+//            ResponseHandler responseHandler = getResponseHandler();
             Joiner joiner = node.getJoiner();
-            boolean approvedAsMaster = false;
             final ILogger logger = node.getLogger(getClass().getName());
             if (joiner instanceof TcpIpJoiner) {
                 TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
@@ -103,7 +104,17 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.WARNING, "This node requires MulticastJoin strategy!");
             }
             logger.log(Level.FINEST, "Sending '" + approvedAsMaster + "' for master claim of node: " + getCaller());
-            responseHandler.sendResponse(approvedAsMaster);
+//            responseHandler.sendResponse(approvedAsMaster);
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        @Override
+        public Object getResponse() {
+            return approvedAsMaster;
         }
     }
 

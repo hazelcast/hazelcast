@@ -20,7 +20,7 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.MigrationServiceEvent;
 import com.hazelcast.spi.PartitionLevelOperation;
 import com.hazelcast.spi.PartitionLockFreeOperation;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.DataInput;

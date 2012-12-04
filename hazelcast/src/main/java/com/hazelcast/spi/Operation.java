@@ -27,7 +27,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class Operation implements Runnable, DataSerializable {
+public abstract class Operation implements DataSerializable {
 
     //serialized
     private String serviceName = null;
@@ -41,6 +41,26 @@ public abstract class Operation implements Runnable, DataSerializable {
     private transient Address caller;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
+
+    public abstract void beforeRun() throws Exception;
+
+    public abstract void run() throws Exception;
+
+    public abstract void afterRun() throws Exception;
+
+    public abstract boolean returnsResponse();
+
+    public abstract Object getResponse();
+
+    public abstract int getSyncBackupCount();
+
+    public abstract int getAsyncBackupCount();
+
+    public abstract BackupOperation getBackupOperation();
+
+    public final boolean needsBackup() {
+        return getSyncBackupCount() > 0 || getAsyncBackupCount() > 0;
+    }
 
     public String getServiceName() {
         return serviceName;

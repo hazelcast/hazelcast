@@ -38,7 +38,7 @@ public interface NodeService {
     public static final int EXECUTOR_THREAD_ID = -1;
     public static final int EVENT_THREAD_ID = -2;
 
-    void runLocally(Operation op);
+    void runOperation(Operation op) throws Exception;
 
     Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception;
 

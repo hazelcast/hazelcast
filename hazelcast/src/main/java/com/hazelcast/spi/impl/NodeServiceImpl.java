@@ -34,6 +34,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.ResponseHandlerFactory.ResponseHandlerDelegate;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.io.IOException;
@@ -78,6 +79,7 @@ public class NodeServiceImpl implements NodeService {
         eventExecutorService = Executors.newSingleThreadExecutor(
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("event"), node.getConfig().getClassLoader()));
+
         scheduledExecutorService = Executors.newScheduledThreadPool(2,
                 new ExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
@@ -200,20 +202,18 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    public void runLocally(final Operation op) {
-        final ExecutorService executor = cachedExecutorService;
-//        final ExecutorService executor = executorServiceManager.getExecutor(partitionId);
-        executor.execute(new Runnable() {
-            public void run() {
-                executeOperation(op);
-            }
-        });
+    public void runOperation(final Operation op) throws Exception {
+        final ResponseHandlerDelegate responseHolder = new ResponseHandlerDelegate(op);
+        executeOperation(op);
+        final Object response = responseHolder.getResponse();
+        if (response instanceof Exception) {
+            throw (Exception) response;
+        }
     }
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
         final Executor executor = cachedExecutorService;
-//        final Executor executor = executorServiceManager.getExecutor(partitionId);
         executor.execute(new RemoteOperationExecutor(packet));
     }
 
@@ -442,7 +442,8 @@ public class NodeServiceImpl implements NodeService {
         mapCalls.clear();
     }
 
-    public void executeOperation(final Operation op) {
+    private void executeOperation(final Operation op) {
+        final ResponseHandler responseHandler = op.getResponseHandler();
         Lock partitionLock = null;
         Lock keyLock = null;
         final ThreadContext threadContext = ThreadContext.get();
@@ -481,11 +482,20 @@ public class NodeServiceImpl implements NodeService {
                     }
                 }
             }
-
+            op.beforeRun();
             op.run();
-//            if (responseHandler != null) {
-//                responseHandler.sendResponse(response);
-//            }
+            if (op.needsBackup()) {
+                final int syncBackup = op.getSyncBackupCount();
+                final int asyncBackup = op.getAsyncBackupCount();
+                final BackupOperation backupOp = op.getBackupOperation();
+                if (backupOp != null) {
+                    // TODO: send backups !!!
+                }
+            }
+            if (responseHandler != null && op.returnsResponse()) {
+                responseHandler.sendResponse(op.getResponse());
+            }
+            op.afterRun();
         } catch (Throwable e) {
             if (e instanceof RetryableException) {
                 logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
@@ -493,8 +503,8 @@ public class NodeServiceImpl implements NodeService {
             } else {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
-            final ResponseHandler responseHandler = op.getResponseHandler();
-            if (responseHandler != null) {
+//            final ResponseHandler responseHandler = op.getResponseHandler();
+            if (responseHandler != null && op.returnsResponse()) {
                 responseHandler.sendResponse(e);
             }
         } finally {
@@ -524,6 +534,8 @@ public class NodeServiceImpl implements NodeService {
                 op.setNodeService(NodeServiceImpl.this).setCaller(caller).setPartitionId(partitionId);
                 op.setConnection(packet.getConn());
                 ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op);
+//                ResponseHandler responseHandler = ResponseHandlerFactory.createRemoteResponseHandler(
+//                        NodeServiceImpl.this, op);
                 executeOperation(op);
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);

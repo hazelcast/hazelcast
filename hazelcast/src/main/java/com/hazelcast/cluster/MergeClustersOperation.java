@@ -17,7 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

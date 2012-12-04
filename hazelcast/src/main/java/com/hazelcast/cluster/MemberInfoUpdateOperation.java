@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class MemberInfoUpdateOperation extends Operation implements JoinOperation {
+public class MemberInfoUpdateOperation extends AbstractOperation implements JoinOperation {
 
     private static final long serialVersionUID = -2311579721761844861L;
 
@@ -54,10 +54,12 @@ public class MemberInfoUpdateOperation extends Operation implements JoinOperatio
             final ClusterService clusterService = getService();
             clusterService.setMasterTime(masterTime);
             clusterService.updateMembers(getMemberInfos());
-//            getResponseHandler().sendResponse(Boolean.TRUE);
-//        } else {
-//            getResponseHandler().sendResponse(Boolean.FALSE);
         }
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     protected boolean isValid() {

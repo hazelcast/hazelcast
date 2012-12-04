@@ -28,7 +28,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.util.Clock;
 
@@ -433,7 +433,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                                     migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex(), success);
                             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
                                     .setNodeService(nodeService).setValidateTarget(false).setService(this);
-                            nodeService.runLocally(op);
+                            nodeService.runOperation(op);
                         }
                     } catch (Exception e) {
                         logger.log(Level.WARNING, e.getMessage(), e);
@@ -573,7 +573,16 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
         public void run() {
             final PartitionService service = getService();
             service.firstArrangement();
-            getResponseHandler().sendResponse(Boolean.TRUE);
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        @Override
+        public Object getResponse() {
+            return Boolean.TRUE;
         }
     }
 

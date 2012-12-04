@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionLockFreeOperation;
 
@@ -28,7 +29,7 @@ import java.io.IOException;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class Response extends AbstractOperation implements PartitionLockFreeOperation {
+public class Response extends Operation implements PartitionLockFreeOperation {
     private Object result = null;
     private Data resultData = null;
     private boolean exception = false;
@@ -56,8 +57,10 @@ public class Response extends AbstractOperation implements PartitionLockFreeOper
         }
     }
 
-    public void run() {
+    @Override
+    public void beforeRun() throws Exception {
         if (opBeforeData != null) {
+            final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
             Operation op = (Operation) toObject(opBeforeData);
             op.setCallId(getCallId())
                     .setService(getService())
@@ -65,11 +68,43 @@ public class Response extends AbstractOperation implements PartitionLockFreeOper
                     .setCaller(getCaller())
                     .setCallId(getCallId())
                     .setNodeService(getNodeService());
-            op.run();
+            nodeService.runOperation(op);
         }
-        long callId = getCallId();
+    }
+
+    public void run() throws Exception {
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        nodeService.notifyCall(callId, Response.this);
+        long callId = getCallId();
+        nodeService.notifyCall(callId, this);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
+    public Object getResponse() {
+        return null;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public BackupOperation getBackupOperation() {
+        return null;
     }
 
     public boolean isException() {
@@ -79,6 +114,8 @@ public class Response extends AbstractOperation implements PartitionLockFreeOper
     public Data getResultData() {
         return resultData;
     }
+
+
 
     public Object getResult() {
         if (result == null) {

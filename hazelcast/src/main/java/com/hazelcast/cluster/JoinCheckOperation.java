@@ -17,9 +17,8 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.impl.Response;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,6 +30,8 @@ import java.io.IOException;
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
     private JoinInfo joinInfo;
+
+    private transient JoinInfo response;
 
     public JoinCheckOperation() {
     }
@@ -51,10 +52,18 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
             }
         }
         if (ok) {
-            getResponseHandler().sendResponse(new Response(node.createJoinInfo()));
-        } else {
-            getResponseHandler().sendResponse(null);
+            response = node.createJoinInfo();
         }
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override

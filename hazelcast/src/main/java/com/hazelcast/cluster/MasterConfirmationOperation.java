@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.util.logging.Level;
 

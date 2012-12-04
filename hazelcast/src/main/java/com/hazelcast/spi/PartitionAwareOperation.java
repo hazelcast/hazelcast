@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi;
 
-import com.hazelcast.spi.Operation;
+/**
+ * @mdogan 12/3/12
+ */
+public interface PartitionAwareOperation {
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+    int getPartitionId();
 
-public abstract class AbstractOperation extends Operation {
-
-    @Override
-    protected void writeInternal(DataOutput out) throws IOException {
-    }
-
-    @Override
-    protected void readInternal(DataInput in) throws IOException {
-    }
 }

@@ -25,6 +25,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class GetOperation extends AbstractNamedKeyBasedOperation {
 
+    private transient Data result;
+
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
@@ -36,7 +38,6 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
         MapService mapService = (MapService) getService();
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
-        Data result = null;
         if (record == null) {
             if (mapPartition.loader != null) {
                 Object key = toObject(dataKey);
@@ -49,7 +50,17 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
         } else {
             result = record.getValueData();
         }
-        getResponseHandler().sendResponse(result);
+//        getResponseHandler().sendResponse(result);
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return result;
     }
 
     @Override

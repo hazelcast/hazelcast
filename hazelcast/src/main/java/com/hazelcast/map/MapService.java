@@ -29,7 +29,7 @@ import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -228,7 +228,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             for (Integer partitionId : ownedPartitions) {
                 Operation op = new CleanupOperation(latch);
                 op.setPartitionId(partitionId).setService(MapService.this).setValidateTarget(false);
-//                nodeService.runLocally(op);
+                try {
+                    nodeService.runOperation(op);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                }
             }
             try {
                 latch.await(5, TimeUnit.SECONDS);
@@ -237,14 +241,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
-    private static class CleanupOperation extends AbstractOperation implements Runnable, PartitionAwareOperation {
+    private static class CleanupOperation extends AbstractOperation implements PartitionAwareOperation {
         final CountDownLatch latch;
 
         private CleanupOperation(final CountDownLatch latch) {
             this.latch = latch;
         }
 
-        public void run() {
+        public void run() throws Exception {
             try {
                 MapService service = getService();
                 final PartitionContainer partitionContainer = service.getPartitionContainer(getPartitionId());
@@ -252,6 +256,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             } finally {
                 latch.countDown();
             }
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
         }
     }
 }

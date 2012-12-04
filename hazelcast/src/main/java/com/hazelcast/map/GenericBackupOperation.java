@@ -119,7 +119,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
 
     void sendResponse() {
         if (invocation) {
-            getResponseHandler().sendResponse(Boolean.TRUE);
+//            getResponseHandler().sendResponse(Boolean.TRUE);
         } else {
             int partitionId = getPartitionId();
             final AsyncBackupResponse backupResponse = new AsyncBackupResponse();

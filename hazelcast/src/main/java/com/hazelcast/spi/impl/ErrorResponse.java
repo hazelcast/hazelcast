@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeService;
-import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -29,7 +29,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 10/19/12
  */
-public class ErrorResponse extends Operation {
+public class ErrorResponse extends AbstractOperation {
 
     private Address endPoint;
     private Throwable error;
@@ -46,6 +46,11 @@ public class ErrorResponse extends Operation {
         NodeService nodeService = getNodeService();
         nodeService.getLogger(NodeService.class.getName()).log(Level.SEVERE,
                 "Error while executing operation on " + endPoint, error);
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override

@@ -11,6 +11,8 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
  */
 public class QueueSizeOperation extends AbstractNamedOperation {
 
+    private transient int size;
+
     public QueueSizeOperation(){
 
     }
@@ -21,7 +23,16 @@ public class QueueSizeOperation extends AbstractNamedOperation {
 
     public void run() {
         QueueService queueService = getService();
-        int size = queueService.getQueue(name).size();
-        getResponseHandler().sendResponse(size);
+        size = queueService.getQueue(name).size();
+    }
+
+    @Override
+    public Object getResponse() {
+        return size;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 }

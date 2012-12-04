@@ -36,11 +36,11 @@ public final class DataSerializerMapHook implements DataSerializerHook {
                 return new PutOperation();
             }
         });
-//        factories.put(RemoveOperation.class.getName(), new DataSerializableFactory() {
-//            public DataSerializable create() {
-//                return new RemoveOperation();
-//            }
-//        });
+        factories.put(RemoveOperation.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new RemoveOperation();
+            }
+        });
         factories.put(UpdateResponse.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
                 return new UpdateResponse();

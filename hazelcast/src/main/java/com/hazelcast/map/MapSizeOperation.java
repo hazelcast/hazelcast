@@ -16,10 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 public class MapSizeOperation extends AbstractNamedOperation {
+
+    private transient int size;
 
     public MapSizeOperation(String name) {
         super(name);
@@ -32,6 +34,17 @@ public class MapSizeOperation extends AbstractNamedOperation {
         ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        responseHandler.sendResponse(mapPartition.records.size());
+//        responseHandler.sendResponse(mapPartition.records.size());
+        size = mapPartition.records.size();
+    }
+
+    @Override
+    public Object getResponse() {
+        return size;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 }

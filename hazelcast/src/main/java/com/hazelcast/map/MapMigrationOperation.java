@@ -20,8 +20,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -33,7 +33,7 @@ import java.util.Map.Entry;
 /**
  * @mdogan 7/24/12
  */
-public class MapMigrationOperation extends Operation {
+public class MapMigrationOperation extends AbstractOperation {
 
     private Map<String, Map<Data, DataRecordEntry>> data;
     private boolean diff;

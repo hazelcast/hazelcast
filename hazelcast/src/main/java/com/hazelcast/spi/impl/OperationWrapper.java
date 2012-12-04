@@ -17,13 +17,13 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeService;
 import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
  * @mdogan 10/1/12
@@ -33,6 +33,8 @@ class OperationWrapper extends Operation {
 
     private Data operationData;
 
+    private transient Operation operation;
+
     public OperationWrapper() {
     }
 
@@ -40,21 +42,60 @@ class OperationWrapper extends Operation {
         this.operationData = operationData;
     }
 
-    public void run() {
+    @Override
+    public void beforeRun() throws Exception {
         NodeService nodeService = getNodeService();
-        try {
-            Operation operation = (Operation) nodeService.toObject(operationData);
-            operation.setNodeService(nodeService)
-                    .setCaller(getCaller())
-                    .setPartitionId(getPartitionId())
-                    .setReplicaIndex(getReplicaIndex())
-                    .setResponseHandler(getResponseHandler())
-                    .setService(getService());
+        operation = (Operation) nodeService.toObject(operationData);
+        operation.setNodeService(nodeService)
+                .setCaller(getCaller())
+                .setPartitionId(getPartitionId())
+                .setReplicaIndex(getReplicaIndex())
+                .setResponseHandler(getResponseHandler())
+                .setService(getService());
+        operation.beforeRun();
+    }
+
+    public void run() throws Exception {
+        if (operation != null) {
             operation.run();
-        } catch (Exception e) {
-            nodeService.getLogger(OperationWrapper.class.getName()).log(Level.WARNING, e.getMessage(), e);
-            getResponseHandler().sendResponse(e);
         }
+    }
+
+    @Override
+    public Object getResponse() {
+        return operation != null ? operation.getResponse() : null;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return operation != null && operation.returnsResponse();
+    }
+
+    @Override
+    public BackupOperation getBackupOperation() {
+        return operation != null ? operation.getBackupOperation() : null;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return operation != null ? operation.getAsyncBackupCount() : 0;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return operation != null ? operation.getSyncBackupCount() : 0;
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (operation != null) {
+            operation.afterRun();
+        }
+    }
+
+    @Override
+    public boolean shouldValidateTarget() {
+        return operation != null && operation.shouldValidateTarget();
     }
 
     @Override

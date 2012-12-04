@@ -1,8 +1,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.BackedOperation;
+import com.hazelcast.spi.BackupOperation;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,7 +10,7 @@ import com.hazelcast.spi.impl.BackedOperation;
  * Time: 12:14 AM
  * To change this template use File | Settings | File Templates.
  */
-public class OfferOperation extends QueueDataOperation implements BackedOperation {
+public class OfferOperation extends QueueDataOperation {
 
     public OfferOperation(){
 
@@ -24,10 +23,10 @@ public class OfferOperation extends QueueDataOperation implements BackedOperatio
     public void run() {
         QueueService queueService = getService();
         boolean ok = queueService.getQueue(name).offer(data);
-        getResponseHandler().sendResponse(ok);
+//        getResponseHandler().sendResponse(ok);
     }
 
-    public Operation getBackupOperation() {
-        return this;
+    public BackupOperation getBackupOperation() {
+        return null;
     }
 }

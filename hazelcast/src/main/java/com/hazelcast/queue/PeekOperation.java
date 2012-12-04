@@ -36,7 +36,7 @@ public class PeekOperation extends AbstractNamedOperation {
         else {
             data = queueService.getQueue(name).peek();
         }
-        getResponseHandler().sendResponse(data);
+//        getResponseHandler().sendResponse(data);
     }
 
     @Override

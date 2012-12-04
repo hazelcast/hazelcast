@@ -73,6 +73,12 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
         this.backupCallId = backupCallId;
     }
 
+    // TODO: remove this !!!
+    @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);

@@ -16,14 +16,14 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ResponseHandler;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapTxnBackupCommitOperation extends Operation {
+public class MapTxnBackupCommitOperation extends AbstractOperation {
     String txnId;
 
     public MapTxnBackupCommitOperation(String txnId) {

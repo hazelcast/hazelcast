@@ -17,14 +17,14 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class BindOperation extends AbstractOperation implements JoinOperation, Runnable {
+public class BindOperation extends AbstractOperation implements JoinOperation {
 
     private Address localAddress;
     private Address targetAddress;
@@ -46,6 +46,11 @@ public class BindOperation extends AbstractOperation implements JoinOperation, R
     public void run() {
         NodeServiceImpl ns = (NodeServiceImpl) getNodeService();
         ns.getNode().getConnectionManager().bind(getConnection(), localAddress, targetAddress, replyBack);
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override

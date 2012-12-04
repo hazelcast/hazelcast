@@ -1,21 +1,22 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/21/12
  * Time: 11:23 AM
- * To change this template use File | Settings | File Templates.
  */
-public class QueueMigrationOperation extends Operation {
+
+public class QueueMigrationOperation extends AbstractOperation {
 
     Map<String, QueueContainer> migrationData;
 

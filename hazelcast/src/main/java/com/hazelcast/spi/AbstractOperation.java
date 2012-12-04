@@ -14,33 +14,52 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
-
-import com.hazelcast.spi.AbstractOperation;
+package com.hazelcast.spi;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class AbstractNamedOperation extends AbstractOperation {
-    protected String name;
+public abstract class AbstractOperation extends Operation {
 
-    protected AbstractNamedOperation(String name) {
-        this.name = name;
+    @Override
+    public void afterRun() {
     }
 
-    public AbstractNamedOperation() {
+    @Override
+    public void beforeRun() {
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public int getSyncBackupCount() {
+        return 0;
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
-        out.writeUTF(name);
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
     }
 
-    public void readInternal(DataInput in) throws IOException {
-        name = in.readUTF();
+    @Override
+    public BackupOperation getBackupOperation() {
+        return null;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return null;
+    }
+
+    @Override
+    protected void writeInternal(DataOutput out) throws IOException {
+    }
+
+    @Override
+    protected void readInternal(DataInput in) throws IOException {
     }
 }

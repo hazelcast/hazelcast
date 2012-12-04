@@ -16,16 +16,16 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.exception.TransactionException;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class CommitOperation extends Operation {
+public class CommitOperation extends AbstractOperation {
     String txnId = null;
 
     public CommitOperation(String txnId) {

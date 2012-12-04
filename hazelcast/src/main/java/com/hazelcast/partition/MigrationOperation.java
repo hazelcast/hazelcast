@@ -23,7 +23,7 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.MigrationServiceEvent;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionLevelOperation;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.*;
@@ -40,6 +40,8 @@ public class MigrationOperation extends AbstractOperation implements PartitionLe
     private byte[] bytesRecordSet;
     private Address from;
     private int taskCount;
+
+    private transient boolean success = false;
 
     public MigrationOperation() {
     }
@@ -84,18 +86,27 @@ public class MigrationOperation extends AbstractOperation implements PartitionLe
                         "\nfrom: " + from + ", partition: " + getPartitionId()
                         + ", replica: " + getReplicaIndex());
             }
-            final boolean result = runMigrationTasks();
-            getResponseHandler().sendResponse(result);
+            success = runMigrationTasks();
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof IllegalStateException) {
                 level = Level.FINEST;
             }
             getLogger().log(level, e.getMessage(), e);
-            getResponseHandler().sendResponse(Boolean.FALSE);
+            success = false;
         } finally {
             IOUtil.closeResource(in);
         }
+    }
+
+    @Override
+    public Object getResponse() {
+        return success;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     private boolean runMigrationTasks() {
@@ -112,7 +123,7 @@ public class MigrationOperation extends AbstractOperation implements PartitionLe
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),
                         getReplicaIndex(), migrationType, copyBackReplicaIndex));
-                ((Runnable) op).run();
+                nodeService.runOperation(op);
             } catch (Throwable e) {
                 error = true;
                 getLogger().log(Level.SEVERE, e.getMessage(), e);

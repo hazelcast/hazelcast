@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
-
-import com.hazelcast.spi.AbstractOperation;
+package com.hazelcast.spi;
 
 /**
- * @mdogan 7/25/12
+ * @mdogan 12/3/12
  */
-public class HeartbeatOperation extends AbstractOperation {
+public interface PartitionLevelOperation extends PartitionAwareOperation {
 
-    public void run() {
-        // do nothing ...
-    }
 }

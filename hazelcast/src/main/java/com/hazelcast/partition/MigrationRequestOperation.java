@@ -34,12 +34,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends Operation implements PartitionLevelOperation {
+public class MigrationRequestOperation extends AbstractOperation implements PartitionLevelOperation {
     protected Address from;
     protected Address to;
     private boolean migration;  // migration or backup
     private boolean diffOnly;
     private int copyBackReplicaIndex = -1;
+
+    private transient boolean success = false;
 
     public MigrationRequestOperation() {
     }
@@ -86,10 +88,11 @@ public class MigrationRequestOperation extends Operation implements PartitionLev
     public void run() {
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
-        final ResponseHandler responseHandler = getResponseHandler();
+//        final ResponseHandler responseHandler = getResponseHandler();
         if (to.equals(from)) {
             getLogger().log(Level.FINEST, "To and from addresses are same! => " + toString());
-            responseHandler.sendResponse(Boolean.FALSE);
+//            responseHandler.sendResponse(Boolean.FALSE);
+            success = false;
             return;
         }
         if (from == null) {
@@ -100,7 +103,8 @@ public class MigrationRequestOperation extends Operation implements PartitionLev
             Member target = partitionService.getMember(to);
             if (target == null) {
                 getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
-                responseHandler.sendResponse(Boolean.FALSE);
+//                responseHandler.sendResponse(Boolean.FALSE);
+                success = false;
                 return;
             }
 
@@ -130,11 +134,21 @@ public class MigrationRequestOperation extends Operation implements PartitionLev
                     .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
                     .build();
             Future future = inv.invoke();
-            Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
-            responseHandler.sendResponse(result);
+            success = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
+//            responseHandler.sendResponse(result);
         } catch (Throwable e) {
-            onError(responseHandler, e);
+            onError(e);
         }
+    }
+
+    @Override
+    public Object getResponse() {
+        return success;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
@@ -156,7 +170,7 @@ public class MigrationRequestOperation extends Operation implements PartitionLev
         return tasks;
     }
 
-    private void onError(final ResponseHandler responseHandler, Throwable e) {
+    private void onError(Throwable e) {
         Level level = Level.WARNING;
         if (e instanceof ExecutionException) {
             e = e.getCause();
@@ -165,7 +179,8 @@ public class MigrationRequestOperation extends Operation implements PartitionLev
             level = Level.FINEST;
         }
         getLogger().log(level, e.getMessage(), e);
-        responseHandler.sendResponse(Boolean.FALSE);
+//        responseHandler.sendResponse(Boolean.FALSE);
+        success = false;
     }
 
     private ILogger getLogger() {

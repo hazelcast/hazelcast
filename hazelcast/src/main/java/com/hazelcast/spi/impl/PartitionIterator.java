@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
@@ -57,17 +58,17 @@ class PartitionIterator extends AbstractOperation {
                         .setReplicaIndex(getReplicaIndex())
                         .setResponseHandler(r)
                         .setService(getService());
-                nodeService.runLocally(op);
+                nodeService.runOperation(op);
                 responses.put(partitionId, r);
             }
             for (Map.Entry<Integer, ResponseQueue> partitionResponse : responses.entrySet()) {
                 Object result = partitionResponse.getValue().get();
                 results.put(partitionResponse.getKey(), result);
             }
-            getResponseHandler().sendResponse(results);
+//            getResponseHandler().sendResponse(results);
         } catch (Exception e) {
             nodeService.getLogger(PartitionIterator.class.getName()).log(Level.WARNING, e.getMessage(), e);
-            getResponseHandler().sendResponse(e);
+//            getResponseHandler().sendResponse(e);
         }
     }
 

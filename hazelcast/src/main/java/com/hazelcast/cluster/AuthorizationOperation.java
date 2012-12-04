@@ -17,7 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,6 +27,7 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
 
     private String groupName;
     private String groupPassword;
+    private Boolean response = Boolean.TRUE;
 
     public AuthorizationOperation() {
     }
@@ -38,13 +39,21 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
 
     public void run() {
         GroupConfig groupConfig = getNodeService().getConfig().getGroupConfig();
-        Boolean response = Boolean.TRUE;
         if (!groupName.equals(groupConfig.getName())) {
             response = Boolean.FALSE;
         } else if (!groupPassword.equals(groupConfig.getPassword())) {
             response = Boolean.FALSE;
         }
-        getResponseHandler().sendResponse(response);
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
