@@ -8,11 +8,6 @@ import com.hazelcast.spi.AbstractOperation;
 abstract class AbstractClusterOperation extends AbstractOperation implements JoinOperation {
 
     @Override
-    public boolean needsBackup() {
-        return false;
-    }
-
-    @Override
     public boolean returnsResponse() {
         return false;
     }

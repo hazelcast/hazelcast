@@ -91,11 +91,6 @@ public final class MultiResponse extends AbstractOperation {
     }
 
     @Override
-    public boolean needsBackup() {
-        return false;
-    }
-
-    @Override
     public boolean validatesTarget() {
         return false;
     }

@@ -47,7 +47,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         this.dataValue = dataValue;
     }
 
-    public GenericBackupOperation(String name, BackupAwareOperation op) {
+    public GenericBackupOperation(String name, TTLAwareOperation op) {
         super(name, op.getKey());
         this.ttl = op.ttl;
         this.dataValue = op.getValue();
@@ -104,12 +104,6 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
     public boolean returnsResponse() {
         return true;
     }
-
-    @Override
-    public boolean needsBackup() {
-        return false;
-    }
-
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {

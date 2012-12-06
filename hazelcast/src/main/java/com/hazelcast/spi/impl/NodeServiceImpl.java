@@ -451,7 +451,7 @@ public class NodeServiceImpl implements NodeService {
             }
             op.beforeRun();
             op.run();
-            if (op.needsBackup()) {
+            if (op instanceof BackupAwareOperation) {
                 final Collection<Future> sync = new LinkedList<Future>();
                 final Collection<Future> async = new LinkedList<Future>();
                 final Object response = sendBackups(op, sync, async);
@@ -529,15 +529,17 @@ public class NodeServiceImpl implements NodeService {
     private Object sendBackups(final Operation op, final Collection<Future> syncBackups,
                                  final Collection<Future> asyncBackups)
             throws ExecutionException, TimeoutException, InterruptedException {
+
+        final BackupAwareOperation backupAwareOperation = (BackupAwareOperation) op;
         final int maxBackups = getClusterService().getSize() - 1;
-        final int syncBackupCount = op.getSyncBackupCount() > 0
-                                    ? Math.min(maxBackups, op.getSyncBackupCount()) : 0;
-        final int asyncBackupCount = op.getAsyncBackupCount() > 0
-                                     ? Math.min(maxBackups - syncBackupCount, op.getAsyncBackupCount()) : 0;
+        final int syncBackupCount = backupAwareOperation.getSyncBackupCount() > 0
+                                    ? Math.min(maxBackups, backupAwareOperation.getSyncBackupCount()) : 0;
+        final int asyncBackupCount = backupAwareOperation.getAsyncBackupCount() > 0
+                                     ? Math.min(maxBackups - syncBackupCount, backupAwareOperation.getAsyncBackupCount()) : 0;
 
         if (syncBackupCount + asyncBackupCount > 0) {
             Operation backupResponse = null;
-            final Operation backupOp = op.getBackupOperation();
+            final Operation backupOp = backupAwareOperation.getBackupOperation();
             if (backupOp == null) {
                 throw new NullPointerException();
             }

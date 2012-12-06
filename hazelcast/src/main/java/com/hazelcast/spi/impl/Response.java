@@ -68,11 +68,6 @@ public final class Response extends AbstractOperation {
         return false;
     }
 
-    @Override
-    public boolean needsBackup() {
-        return false;
-    }
-
     public boolean isException() {
         return exception;
     }

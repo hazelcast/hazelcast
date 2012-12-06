@@ -30,7 +30,7 @@ import java.io.IOException;
  * @mdogan 10/1/12
  */
 
-class OperationWrapper extends AbstractOperation {
+public class OperationWrapper extends AbstractOperation {
 
     private Data operationData;
 
@@ -71,11 +71,6 @@ class OperationWrapper extends AbstractOperation {
 
     @Override
     public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
-    public boolean needsBackup() {
         return false;
     }
 

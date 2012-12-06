@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.nio.Data;
 
-public class UnlockOperation extends BackupAwareOperation {
+public class UnlockOperation extends TTLAwareOperation {
 
     public UnlockOperation(String name, Data dataKey) {
         super(name, dataKey);

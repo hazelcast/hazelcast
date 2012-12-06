@@ -31,21 +31,6 @@ public abstract class AbstractOperation extends Operation {
     }
 
     @Override
-    public int getSyncBackupCount() {
-        return 0;
-    }
-
-    @Override
-    public int getAsyncBackupCount() {
-        return 0;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return null;
-    }
-
-    @Override
     public boolean returnsResponse() {
         return true;
     }

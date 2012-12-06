@@ -24,22 +24,22 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperation {
+public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
 
     Data dataValue = null;
     long ttl = -1; // how long should this item live? -1 means forever
     String txnId = null;
 
-    public BackupAwareOperation(String name, Data dataKey) {
+    public TTLAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public BackupAwareOperation(String name, Data dataKey, long ttl) {
+    public TTLAwareOperation(String name, Data dataKey, long ttl) {
         super(name, dataKey);
         this.ttl = ttl;
     }
 
-    public BackupAwareOperation(String name, Data dataKey, Data dataValue, long ttl) {
+    public TTLAwareOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name, dataKey);
         this.ttl = ttl;
         this.dataValue = dataValue;
@@ -61,7 +61,7 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
         this.txnId = txnId;
     }
 
-    public BackupAwareOperation() {
+    public TTLAwareOperation() {
     }
 
     @Override

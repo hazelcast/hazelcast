@@ -52,16 +52,6 @@ public abstract class Operation implements DataSerializable {
 
     public abstract Object getResponse();
 
-    public abstract int getSyncBackupCount();
-
-    public abstract int getAsyncBackupCount();
-
-    public abstract Operation getBackupOperation();
-
-    public boolean needsBackup() {
-        return getSyncBackupCount() > 0 || getAsyncBackupCount() > 0;
-    }
-
     public String getServiceName() {
         return serviceName;
     }

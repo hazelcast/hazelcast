@@ -20,6 +20,7 @@ import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
@@ -27,7 +28,7 @@ import com.hazelcast.spi.ResponseHandler;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public abstract class BasePutOperation extends LockAwareOperation {
+public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
     Object key;
     Record record;
@@ -142,19 +143,16 @@ public abstract class BasePutOperation extends LockAwareOperation {
         return oldValueData;
     }
 
-    @Override
     public Operation getBackupOperation() {
         final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
         op.setBackupOpType(BackupOpType.PUT);
         return op;
     }
 
-    @Override
     public int getAsyncBackupCount() {
         return 0;
     }
 
-    @Override
     public int getSyncBackupCount() {
         return mapPartition.getBackupCount();
     }

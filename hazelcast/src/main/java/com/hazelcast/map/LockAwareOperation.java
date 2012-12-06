@@ -20,7 +20,7 @@ import com.hazelcast.nio.Data;
 
 import java.util.concurrent.TimeoutException;
 
-public abstract class LockAwareOperation extends BackupAwareOperation {
+public abstract class LockAwareOperation extends TTLAwareOperation {
 
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
