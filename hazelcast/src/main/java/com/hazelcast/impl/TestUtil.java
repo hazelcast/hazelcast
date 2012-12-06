@@ -94,7 +94,6 @@ public class TestUtil {
         }
 
         public void migrationFailed(final MigrationEvent migrationEvent) {
-
         }
 
         public boolean await(int time, TimeUnit timeUnit) throws InterruptedException {
@@ -556,25 +555,25 @@ public class TestUtil {
         java.sql.Date sqlDate;
         State state;
 
-        public Employee(long id, String name, int age, boolean live, double price, State state) {
+        public Employee(long id, String name, int age, boolean live, double salary, State state) {
             this.state = state;
         }
 
-        public Employee(long id, String name, int age, boolean live, double price) {
-            this(id, name, null, age, live, price);
+        public Employee(long id, String name, int age, boolean live, double salary) {
+            this(id, name, null, age, live, salary);
         }
 
-        public Employee(String name, int age, boolean live, double price) {
-            this(-1, name, age, live, price);
+        public Employee(String name, int age, boolean live, double salary) {
+            this(-1, name, age, live, salary);
         }
 
-        public Employee(long id, String name, String city, int age, boolean live, double price) {
+        public Employee(long id, String name, String city, int age, boolean live, double salary) {
             this.id = id;
             this.name = name;
             this.city = city;
             this.age = age;
             this.active = live;
-            this.salary = price;
+            this.salary = salary;
             this.createDate = new Date();
             this.date = new Timestamp(createDate.getTime());
             this.sqlDate = new java.sql.Date(createDate.getTime());

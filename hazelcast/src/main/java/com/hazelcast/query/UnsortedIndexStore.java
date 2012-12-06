@@ -25,14 +25,29 @@ import java.util.concurrent.ConcurrentMap;
 
 public class UnsortedIndexStore implements IndexStore {
     private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
+    private boolean doubleValue = true;
 
     public void getSubRecordsBetween(MultiResultSet results, Long from, Long to) {
         Set<Long> values = mapRecords.keySet();
-        for (Long value : values) {
-            if (value >= from && value <= to) {
-                ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                if (records != null) {
-                    results.addResultSet(value, records.values());
+        if (doubleValue) {
+            double f = Double.longBitsToDouble(from);
+            double t = Double.longBitsToDouble(to);
+            for (Long value : values) {
+                double v = Double.longBitsToDouble(value);
+                if (v >= f && v <= t) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addResultSet(value, records.values());
+                    }
+                }
+            }
+        } else {
+            for (Long value : values) {
+                if (value >= from && value <= to) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addResultSet(value, records.values());
+                    }
                 }
             }
         }
@@ -42,22 +57,42 @@ public class UnsortedIndexStore implements IndexStore {
         Set<Long> values = mapRecords.keySet();
         for (Long value : values) {
             boolean valid = false;
-            switch (predicateType) {
-                case LESSER:
-                    valid = value < searchedValue;
-                    break;
-                case LESSER_EQUAL:
-                    valid = value <= searchedValue;
-                    break;
-                case GREATER:
-                    valid = value > searchedValue;
-                    break;
-                case GREATER_EQUAL:
-                    valid = value >= searchedValue;
-                    break;
-                case NOT_EQUAL:
-                    valid = value.longValue() != searchedValue.longValue();
-                    break;
+            if (doubleValue && (searchedValue < 0 && value < 0)) {
+                switch (predicateType) {
+                    case LESSER:
+                        valid = value > searchedValue;
+                        break;
+                    case LESSER_EQUAL:
+                        valid = value >= searchedValue;
+                        break;
+                    case GREATER:
+                        valid = value < searchedValue;
+                        break;
+                    case GREATER_EQUAL:
+                        valid = value <= searchedValue;
+                        break;
+                    case NOT_EQUAL:
+                        valid = value.longValue() != searchedValue.longValue();
+                        break;
+                }
+            } else {
+                switch (predicateType) {
+                    case LESSER:
+                        valid = value < searchedValue;
+                        break;
+                    case LESSER_EQUAL:
+                        valid = value <= searchedValue;
+                        break;
+                    case GREATER:
+                        valid = value > searchedValue;
+                        break;
+                    case GREATER_EQUAL:
+                        valid = value >= searchedValue;
+                        break;
+                    case NOT_EQUAL:
+                        valid = value.longValue() != searchedValue.longValue();
+                        break;
+                }
             }
             if (valid) {
                 ConcurrentMap<Long, Record> records = mapRecords.get(value);

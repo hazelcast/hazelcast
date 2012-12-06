@@ -90,6 +90,22 @@ public class QueryTest extends TestUtil {
     }
 
     @Test
+    public void negativeDouble() {
+        final IMap<String, Employee> map = Hazelcast.getMap("default");
+        map.addIndex("salary", false);
+        map.put("" + 4, new Employee(1, "default", 1, true, -70D));
+        map.put("" + 3, new Employee(1, "default", 1, true, -60D));
+        map.put("" + 1, new Employee(1, "default", 1, true, -10D));
+        map.put("" + 2, new Employee(2, "default", 2, true, 10D));
+        Predicate predicate = new SqlPredicate("salary >= -60");
+        Collection<Employee> values = map.values(predicate);
+        assertEquals(3, values.size());
+        predicate = new SqlPredicate("salary between -20 and 20");
+        values = map.values(predicate);
+        assertEquals(2, values.size());
+    }
+
+    @Test
     public void issue393SqlEq() {
         final IMap<String, Value> map = Hazelcast.getMap("default");
         map.addIndex("name", true);
@@ -812,7 +828,7 @@ public class QueryTest extends TestUtil {
     }
 
     /**
-     *  Github issues 98 and 131
+     * Github issues 98 and 131
      */
     @Test
     public void testPredicateStringAttribute() {
@@ -821,7 +837,7 @@ public class QueryTest extends TestUtil {
     }
 
     /**
-     *  Github issues 98 and 131
+     * Github issues 98 and 131
      */
     @Test
     public void testPredicateStringAttributesWithIndex() {
@@ -840,12 +856,10 @@ public class QueryTest extends TestUtil {
         map.put(7, new Value("prs"));
         map.put(8, new Value("def"));
         map.put(9, new Value("qwx"));
-
         assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
         assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
         assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
         assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
-
         assertEquals(8, map.values(new PredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
         assertEquals(9, map.values(new PredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
         assertEquals(7, map.values(new PredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
@@ -877,21 +891,18 @@ public class QueryTest extends TestUtil {
         map.put(4, cal.getTime());
         cal.set(2000, 5, 5);
         map.put(5, cal.getTime());
-
         cal.set(2011, 0, 1);
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").greaterThan(cal.getTime())).size());
         assertEquals(3, map.values(new SqlPredicate("this > 'Sat Jan 01 11:43:05 EET 2011'")).size());
-
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("this").lessThan(cal.getTime())).size());
         assertEquals(2, map.values(new SqlPredicate("this < 'Sat Jan 01 11:43:05 EET 2011'")).size());
-
         cal.set(2003, 10, 10);
         Date d1 = cal.getTime();
         cal.set(2012, 1, 10);
         Date d2 = cal.getTime();
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
         assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
-                                                    " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
+                " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
     @Test
@@ -911,7 +922,6 @@ public class QueryTest extends TestUtil {
         map.put(1, NodeType.MEMBER);
         map.put(2, NodeType.LITE_MEMBER);
         map.put(3, NodeType.JAVA_CLIENT);
-
         assertEquals(NodeType.MEMBER, map.values(new SqlPredicate("this=MEMBER")).iterator().next());
         assertEquals(2, map.values(new SqlPredicate("this in (MEMBER, LITE_MEMBER)")).size());
         assertEquals(NodeType.JAVA_CLIENT,
@@ -921,7 +931,6 @@ public class QueryTest extends TestUtil {
                 .get("this").equal(NodeType.CSHARP_CLIENT)).size());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject()
                 .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
-
     }
 
     @Test

@@ -151,6 +151,7 @@ public class Index {
                 returnType = getIndexType(extractedValue.getClass());
             }
         }
+        System.out.println("return type is " + returnType);
     }
 
     public byte getIndexType() {
