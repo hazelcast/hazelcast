@@ -26,19 +26,19 @@ import java.io.IOException;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public final class Response<T> extends AbstractOperation {
+public final class Response extends AbstractOperation {
 
-    private T result = null;
+    private Object result = null;
     private boolean exception = false;
 
     public Response() {
     }
 
-    public Response(T result) {
+    public Response(Object result) {
         this(result, (result instanceof Throwable));
     }
 
-    public Response(T result, boolean exception) {
+    public Response(Object result, boolean exception) {
         this.result = result;
         this.exception = exception;
     }
@@ -77,7 +77,7 @@ public final class Response<T> extends AbstractOperation {
         return exception;
     }
 
-    public T getResult() {
+    public Object getResult() {
         return result;
     }
 
@@ -97,7 +97,7 @@ public final class Response<T> extends AbstractOperation {
         if (isData) {
             Data data = new Data();
             data.readData(in);
-            result = (T) data;
+            result = data;
         } else {
             result = IOUtil.readObject(in);
         }

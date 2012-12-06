@@ -43,12 +43,16 @@ public final class MultiResponse extends AbstractOperation {
         operationData = new Data[responses.length];
         for (int i = 0; i < responses.length; i++) {
             if (responses[i] instanceof MultiResponse) {
-               //
+                MultiResponse mr = (MultiResponse) responses[i];
+                Data[] newOperationData = new Data[operationData.length + mr.operationData.length - 1];
+                System.arraycopy(operationData, 0, newOperationData, 0, i);
+                System.arraycopy(mr.operationData, 0, newOperationData, i, mr.operationData.length);
+                operationData = newOperationData;
             }
             else if (responses[i] instanceof Operation) {
                 operationData[i] = IOUtil.toData(responses[i]);
             } else {
-                operationData[i] = IOUtil.toData(new Response<Object>(responses[i]));
+                operationData[i] = IOUtil.toData(new Response(responses[i]));
             }
         }
     }
