@@ -423,6 +423,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     V replace(K key, V value);
 
     /**
+     * Puts an entry into this map with ttl (time to live) set to 0.
+     * This means that the entry lives forever. Similar to put operation except that set
+     * doesn't return the old value which is more efficient.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param key      key of the entry
+     * @param value    value of the entry
+     */
+    void set(K key, V value);
+
+    /**
      * Puts an entry into this map with a given ttl (time to live) value.
      * Entry will expire and get evicted after the ttl. If ttl is 0, then
      * the entry lives forever. Similar to put operation except that set
@@ -438,7 +453,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param ttl      maximum time for this entry to stay in the map
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
-     * @return old value of the entry
      */
     void set(K key, V value, long ttl, TimeUnit timeunit);
 
