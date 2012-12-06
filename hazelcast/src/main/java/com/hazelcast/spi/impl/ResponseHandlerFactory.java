@@ -87,7 +87,7 @@ public final class ResponseHandlerFactory {
             if (obj instanceof Operation) {
                 response = (Operation) obj;
             } else {
-                response = new Response<Object>(obj);
+                response = new Response(obj);
             }
             response.setCallId(callId);
             nodeService.send(response, partitionId, conn);
