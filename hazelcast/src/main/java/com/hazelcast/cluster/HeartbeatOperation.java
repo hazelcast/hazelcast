@@ -16,12 +16,10 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.spi.AbstractOperation;
-
 /**
  * @mdogan 7/25/12
  */
-public class HeartbeatOperation extends AbstractOperation {
+public class HeartbeatOperation extends AbstractClusterOperation implements JoinOperation {
 
     public void run() {
         // do nothing ...

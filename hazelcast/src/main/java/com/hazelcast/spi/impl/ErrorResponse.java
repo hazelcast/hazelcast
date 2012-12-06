@@ -54,7 +54,7 @@ public class ErrorResponse extends AbstractOperation {
     }
 
     @Override
-    public boolean shouldValidateTarget() {
+    public boolean validatesTarget() {
         return false;
     }
 

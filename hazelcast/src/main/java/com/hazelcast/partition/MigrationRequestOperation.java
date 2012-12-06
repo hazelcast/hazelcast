@@ -34,7 +34,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends AbstractOperation implements PartitionLevelOperation {
+public class MigrationRequestOperation extends AbstractOperation
+        implements PartitionLevelOperation, MigrationCycleOperation {
     protected Address from;
     protected Address to;
     private boolean migration;  // migration or backup

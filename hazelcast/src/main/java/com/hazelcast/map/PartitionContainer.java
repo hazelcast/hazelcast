@@ -20,11 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.PartitionInfo;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -43,46 +45,11 @@ public class PartitionContainer {
     final ConcurrentMap<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations
             = new ConcurrentHashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
     final ConcurrentMap<Long, GenericBackupOperation> waitingBackupOps = new ConcurrentHashMap<Long, GenericBackupOperation>(1000);
-    long version = 0;
 
     public PartitionContainer(Config config, final MapService mapService, final PartitionInfo partitionInfo) {
         this.config = config;
         this.mapService = mapService;
         this.partitionInfo = partitionInfo;
-    }
-
-    long incrementAndGetVersion() {
-        version++;
-        return version;
-    }
-
-    void handleBackupOperation(GenericBackupOperation op) {
-        if (op.version == version + 1) {
-            op.backupAndReturn();
-            version++;
-            while (waitingBackupOps.size() > 0) {
-                GenericBackupOperation backupOp = waitingBackupOps.remove(version + 1);
-                if (backupOp != null) {
-                    backupOp.doBackup();
-                    version++;
-                } else {
-                    return;
-                }
-            }
-        } else if (op.version <= version) {
-            op.sendResponse();
-        } else {
-            waitingBackupOps.put(op.version, op);
-            op.sendResponse();
-        }
-        if (waitingBackupOps.size() > 3) {
-            Set<GenericBackupOperation> ops = new TreeSet<GenericBackupOperation>(waitingBackupOps.values());
-            for (GenericBackupOperation backupOp : ops) {
-                backupOp.doBackup();
-                version = backupOp.version;
-            }
-            waitingBackupOps.clear();
-        }
     }
 
     void onDeadAddress(Address deadAddress) {

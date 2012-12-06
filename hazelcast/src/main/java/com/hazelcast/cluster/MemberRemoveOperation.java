@@ -17,13 +17,12 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MemberRemoveOperation extends AbstractOperation {
+public class MemberRemoveOperation extends AbstractClusterOperation {
 
     private Address deadAddress = null;
 

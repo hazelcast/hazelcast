@@ -22,6 +22,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import java.io.IOException;
 
 final class Call {
+
     private final Address target;
     private final Callback callback;
 
@@ -30,7 +31,7 @@ final class Call {
         this.callback = callback;
     }
 
-    public void offerResponse(Response response) {
+    public void offerResponse(Object response) {
         callback.notify(response);
     }
 
@@ -43,8 +44,8 @@ final class Call {
     @Override
     public String toString() {
         return "Call{" +
-                "target=" + target +
-                ", callback=" + callback +
-                '}';
+               "target=" + target +
+               ", callback=" + callback +
+               '}';
     }
 }

@@ -23,11 +23,11 @@ import java.io.IOException;
 public abstract class AbstractOperation extends Operation {
 
     @Override
-    public void afterRun() {
+    public void afterRun() throws Exception {
     }
 
     @Override
-    public void beforeRun() {
+    public void beforeRun() throws Exception {
     }
 
     @Override
@@ -41,7 +41,7 @@ public abstract class AbstractOperation extends Operation {
     }
 
     @Override
-    public BackupOperation getBackupOperation() {
+    public Operation getBackupOperation() {
         return null;
     }
 

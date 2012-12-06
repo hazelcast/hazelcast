@@ -16,14 +16,11 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.MigrationServiceEvent;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionLevelOperation;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.*;
@@ -33,7 +30,11 @@ import java.util.logging.Level;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-public class MigrationOperation extends AbstractOperation implements PartitionLevelOperation {
+public class MigrationOperation extends AbstractOperation
+        implements PartitionLevelOperation, MigrationCycleOperation {
+
+    private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ErrorResponseHandler();
+
     private MigrationType migrationType;
     private int copyBackReplicaIndex = -1;
     private Collection<Operation> tasks;
@@ -118,15 +119,19 @@ public class MigrationOperation extends AbstractOperation implements PartitionLe
 
         for (Operation op : tasks) {
             try {
-                nodeService.setOperationContext(op, op.getServiceName(), from, -1).setPartitionId(getPartitionId());
-//                ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
+                op.setNodeService(nodeService).setCaller(from)
+                        .setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
+                op.setResponseHandler(ERROR_RESPONSE_HANDLER);
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),
                         getReplicaIndex(), migrationType, copyBackReplicaIndex));
-                nodeService.runOperation(op);
+//                nodeService.runOperation(op);
+                op.beforeRun();
+                op.run();
+                op.afterRun();
             } catch (Throwable e) {
                 error = true;
-                getLogger().log(Level.SEVERE, e.getMessage(), e);
+                getLogger().log(Level.SEVERE, "While executing " + op, e);
                 break;
             }
         }
@@ -135,6 +140,12 @@ public class MigrationOperation extends AbstractOperation implements PartitionLe
 
     private ILogger getLogger() {
         return getNodeService().getLogger(MigrationOperation.class.getName());
+    }
+
+    private static class ErrorResponseHandler implements ResponseHandler {
+        public void sendResponse(final Object obj) {
+            throw new HazelcastException("Migration operations can not send response!");
+        }
     }
 
     public void writeInternal(DataOutput out) throws IOException {

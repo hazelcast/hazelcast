@@ -17,16 +17,15 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.util.logging.Level;
 
 /**
  * @mdogan 9/14/12
  */
-public class AuthenticationFailureOperation extends AbstractOperation
+public class AuthenticationFailureOperation extends AbstractClusterOperation
         implements JoinOperation {
 
     public void run() {

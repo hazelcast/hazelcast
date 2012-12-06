@@ -28,7 +28,6 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
 
     Data dataValue = null;
     long ttl = -1; // how long should this item live? -1 means forever
-    long backupCallId = -1;
     String txnId = null;
 
     public BackupAwareOperation(String name, Data dataKey) {
@@ -54,10 +53,6 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
         return ttl;
     }
 
-    public long getBackupCallId() {
-        return backupCallId;
-    }
-
     public String getTxnId() {
         return txnId;
     }
@@ -69,22 +64,11 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
     public BackupAwareOperation() {
     }
 
-    public void setBackupCallId(long backupCallId) {
-        this.backupCallId = backupCallId;
-    }
-
-    // TODO: remove this !!!
-    @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
-        out.writeLong(backupCallId);
         boolean txnal = (txnId != null);
         out.writeBoolean(txnal);
         if (txnal) {
@@ -97,7 +81,6 @@ public abstract class BackupAwareOperation extends AbstractNamedKeyBasedOperatio
         super.readInternal(in);
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
-        backupCallId = in.readLong();
         boolean txnal = in.readBoolean();
         if (txnal) {
             txnId = in.readUTF();

@@ -17,5 +17,6 @@
 package com.hazelcast.spi.impl;
 
 interface Callback {
+
     void notify(Object result);
 }

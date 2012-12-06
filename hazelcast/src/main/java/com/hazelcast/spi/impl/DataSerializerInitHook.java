@@ -37,6 +37,12 @@ public final class DataSerializerInitHook implements DataSerializerHook {
             }
         });
 
+        factories.put(MultiResponse.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new MultiResponse();
+            }
+        });
+
         factories.put(PartitionIterator.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
                 return new PartitionIterator();

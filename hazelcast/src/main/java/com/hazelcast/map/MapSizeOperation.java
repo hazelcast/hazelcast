@@ -16,10 +16,10 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class MapSizeOperation extends AbstractNamedOperation {
+public class MapSizeOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
     private transient int size;
 
@@ -31,10 +31,8 @@ public class MapSizeOperation extends AbstractNamedOperation {
     }
 
     public void run() {
-        ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
-//        responseHandler.sendResponse(mapPartition.records.size());
         size = mapPartition.records.size();
     }
 

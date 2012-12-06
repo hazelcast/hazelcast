@@ -21,13 +21,12 @@ import com.hazelcast.instance.NodeType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class JoinRequest extends AbstractOperation implements JoinOperation {
+public class JoinRequest extends AbstractClusterOperation implements JoinOperation {
 
     protected NodeType nodeType = NodeType.MEMBER;
     public Address address;
@@ -60,10 +59,6 @@ public class JoinRequest extends AbstractOperation implements JoinOperation {
     public void run() {
         ClusterService cm = (ClusterService) getService();
         cm.handleJoinRequest(this);
-    }
-
-    public boolean returnsResponse() {
-        return false;
     }
 
     public void readInternal(DataInput in) throws IOException {

@@ -18,64 +18,45 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionLockFreeOperation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class Response extends Operation implements PartitionLockFreeOperation {
-    private Object result = null;
-    private Data resultData = null;
+public final class Response<T> extends AbstractOperation {
+
+    private T result = null;
     private boolean exception = false;
-    private Data opBeforeData = null;
 
     public Response() {
     }
 
-    public Response(Object result) {
+    public Response(T result) {
         this(result, (result instanceof Throwable));
     }
 
-    public Response(Object result, boolean exception) {
-        this(null, result, exception);
-    }
-
-    public Response(Operation opBefore, Object result, boolean exception) {
+    public Response(T result, boolean exception) {
         this.result = result;
         this.exception = exception;
-        try {
-            this.resultData = toData(result);
-            this.opBeforeData = toData(opBefore);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     public void beforeRun() throws Exception {
-        if (opBeforeData != null) {
-            final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-            Operation op = (Operation) toObject(opBeforeData);
-            op.setCallId(getCallId())
-                    .setService(getService())
-                    .setPartitionId(getPartitionId())
-                    .setCaller(getCaller())
-                    .setCallId(getCallId())
-                    .setNodeService(getNodeService());
-            nodeService.runOperation(op);
-        }
     }
 
     public void run() throws Exception {
         final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        long callId = getCallId();
-        nodeService.notifyCall(callId, this);
+        final long callId = getCallId();
+        final Object response;
+        if (exception) {
+            response = toObject(result);
+        } else {
+            response = result;
+        }
+        nodeService.notifyCall(callId, response);
     }
 
     @Override
@@ -88,59 +69,46 @@ public class Response extends Operation implements PartitionLockFreeOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
-    public int getSyncBackupCount() {
-        return 0;
-    }
-
-    @Override
-    public int getAsyncBackupCount() {
-        return 0;
-    }
-
-    @Override
-    public BackupOperation getBackupOperation() {
-        return null;
+    public boolean needsBackup() {
+        return false;
     }
 
     public boolean isException() {
         return exception;
     }
 
-    public Data getResultData() {
-        return resultData;
-    }
-
-
-
-    public Object getResult() {
-        if (result == null) {
-            result = toObject(resultData);
-        }
+    public T getResult() {
         return result;
     }
 
     public void writeInternal(DataOutput out) throws IOException {
-        IOUtil.writeNullableData(out, opBeforeData);
-        IOUtil.writeNullableData(out, resultData);
+        final boolean isData = result instanceof Data;
+        out.writeBoolean(isData);
+        if (isData) {
+            ((Data) result).writeData(out);
+        } else {
+            IOUtil.writeObject(out, result);
+        }
         out.writeBoolean(exception);
     }
 
     public void readInternal(DataInput in) throws IOException {
-        opBeforeData = IOUtil.readNullableData(in);
-        resultData = IOUtil.readNullableData(in);
+        final boolean isData = in.readBoolean();
+        if (isData) {
+            Data data = new Data();
+            data.readData(in);
+            result = (T) data;
+        } else {
+            result = IOUtil.readObject(in);
+        }
         exception = in.readBoolean();
     }
 
     @Override
     public String toString() {
         return "Response{" +
-                "result=" + getResult() +
-                ", exception=" + exception +
-                '}';
+               "result=" + getResult() +
+               ", exception=" + exception +
+               '}';
     }
 }

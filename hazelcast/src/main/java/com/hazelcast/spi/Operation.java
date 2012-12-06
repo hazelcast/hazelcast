@@ -33,8 +33,8 @@ public abstract class Operation implements DataSerializable {
     private String serviceName = null;
     private int partitionId;
     private int replicaIndex;
-    private long callId;
-    private boolean validateTarget = false;
+    private long callId = -1;
+    private boolean validateTarget = true;
     // injected
     private transient NodeService nodeService = null;
     private transient Object service;
@@ -56,9 +56,9 @@ public abstract class Operation implements DataSerializable {
 
     public abstract int getAsyncBackupCount();
 
-    public abstract BackupOperation getBackupOperation();
+    public abstract Operation getBackupOperation();
 
-    public final boolean needsBackup() {
+    public boolean needsBackup() {
         return getSyncBackupCount() > 0 || getAsyncBackupCount() > 0;
     }
 
@@ -98,7 +98,7 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public boolean shouldValidateTarget() {
+    public boolean validatesTarget() {
         return validateTarget;
     }
 
@@ -118,9 +118,11 @@ public abstract class Operation implements DataSerializable {
 
     public final <T> T getService() {
         if (service == null) {
-            service = ((NodeServiceImpl) nodeService).getService(serviceName);
+            // one might have overridden getServiceName() method...
+            final String name = serviceName != null ? serviceName : getServiceName();
+            service = ((NodeServiceImpl) nodeService).getService(name);
             if (service == null) {
-                throw new HazelcastException(serviceName + " not found!");
+                throw new HazelcastException("Service with name '" + name + "' not found!");
             }
         }
         return (T) service;

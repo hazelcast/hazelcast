@@ -17,17 +17,16 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
-public class MergeClustersOperation extends AbstractOperation {
+public class MergeClustersOperation extends AbstractClusterOperation {
 
     private Address newTargetAddress = null;
 

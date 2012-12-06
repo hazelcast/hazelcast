@@ -39,15 +39,14 @@ public class LockOperation extends LockAwareOperation {
         int partitionId = getPartitionId();
         ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
-        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
         MapPartition mapPartition = mapService.getMapPartition(partitionId, name);
         LockInfo lock = mapPartition.getOrCreateLock(getKey());
         boolean locked = lock.lock(getCaller(), threadId, ttl);
         if (locked) {
-            GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl, pc.incrementAndGetVersion());
+            GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
             backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
             int backupCount = mapPartition.getBackupCount();
-            getNodeService().sendAsyncBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
+//            getNodeService().sendAsyncBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
         }
         responseHandler.sendResponse(locked);
     }

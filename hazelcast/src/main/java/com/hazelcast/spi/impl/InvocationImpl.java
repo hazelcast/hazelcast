@@ -53,16 +53,12 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     }
 
     public void notify(Object result) {
-        if (result instanceof Response) {
-            Response response = (Response) result;
-            if (response.isException()) {
-                setResult(response.getResult());
-            } else {
-                setResult(response.getResultData());
-            }
-        } else {
-            setResult(result);
-        }
+//        if (response.isException()) {
+//            setResult(IOUtil.toObject(result));
+//        } else {
+//            setResult(result);
+//        }
+        setResult(result);
     }
 
     protected abstract Address getTarget();

@@ -73,10 +73,9 @@ public class PutIfAbsentOperation extends BasePutOperation {
         prepareRecord();
         if (absent) {
             store();
-            sendBackups();
+//            sendBackups();
         }
-
-        sendResponse();
+//        sendResponse();
     }
 
 

@@ -19,14 +19,13 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 
 import java.util.logging.Level;
 
 /**
  * @mdogan 9/28/12
  */
-public class MasterConfirmationOperation extends AbstractOperation {
+public class MasterConfirmationOperation extends AbstractClusterOperation {
 
     public void run() {
         final Address endpoint = getCaller();

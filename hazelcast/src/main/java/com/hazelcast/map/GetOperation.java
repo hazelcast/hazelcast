@@ -50,7 +50,6 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
         } else {
             result = record.getValueData();
         }
-//        getResponseHandler().sendResponse(result);
     }
 
     @Override

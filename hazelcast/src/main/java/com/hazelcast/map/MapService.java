@@ -45,7 +45,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
     private final NodeService nodeService;
-    private final ConcurrentMap<Long, BlockingQueue<Boolean>> backupCalls = new ConcurrentHashMap<Long, BlockingQueue<Boolean>>(1000);
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
 
     public MapService(final NodeService nodeService) {
@@ -123,27 +122,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         container.transactions.clear(); // TODO: not sure?
     }
 
-    public long createNewBackupCallQueue() {
-        long backupCallId = nextId();
-        backupCalls.put(backupCallId, new LinkedBlockingQueue<Boolean>());
-        return backupCallId;
-    }
-
-    public BlockingQueue getBackupCallQueue(long backupCallId) {
-        return backupCalls.get(backupCallId);
-    }
-
-    public void removeBackupCallQueue(long backupCallId) {
-        backupCalls.remove(backupCallId);
-    }
-
     public void prepare(String txnId, int partitionId) throws TransactionException {
         System.out.println(nodeService.getThisAddress() + " MapService prepare " + txnId);
         PartitionContainer pc = partitionContainers[partitionId];
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeSyncBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), partitionId,
+            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -155,7 +140,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeSyncBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), partitionId,
+            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -167,7 +152,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeSyncBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), partitionId,
+            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);

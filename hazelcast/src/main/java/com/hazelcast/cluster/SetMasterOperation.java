@@ -20,7 +20,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 
 import java.io.DataInput;
@@ -28,7 +27,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
-public class SetMasterOperation extends AbstractOperation implements JoinOperation {
+public class SetMasterOperation extends AbstractClusterOperation implements JoinOperation {
 
     protected Address masterAddress;
 

@@ -21,6 +21,7 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
 import static com.hazelcast.nio.IOUtil.toData;
@@ -30,8 +31,6 @@ public abstract class BasePutOperation extends LockAwareOperation {
 
     Object key;
     Record record;
-    int backupCount;
-    long version;
 
     Data oldValueData;
     PartitionContainer pc;
@@ -102,29 +101,6 @@ public abstract class BasePutOperation extends LockAwareOperation {
         }
     }
 
-    protected void sendBackups() {
-        int mapBackupCount = mapPartition.getBackupCount();
-        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
-        GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-        op.setBackupOpType(BackupOpType.PUT);
-        op.setInvocation(true);
-        try {
-            getNodeService().takeSyncBackups(getServiceName(), op, getPartitionId(), backupCount, 10);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-//        if (SEND_BACKUPS) {
-//            version = pc.incrementAndGetVersion();
-//            if (backupCount > 0) {
-//                GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-//                op.setBackupOpType(GenericBackupOperation.BackupOpType.PUT);
-//                op.setFirstCallerId(backupCallId, getCaller());
-//                nodeService.sendAsyncBackups(MapService.MAP_SERVICE_NAME, op, getPartitionId(), mapBackupCount);
-//            }
-//        }
-    }
-
     protected void prepareRecord() {
         record = mapPartition.records.get(dataKey);
         if (record == null) {
@@ -139,15 +115,15 @@ public abstract class BasePutOperation extends LockAwareOperation {
         record.setDirty(true);
     }
 
-    protected void sendResponse() {
-        if (RETURN_RESPONSE) {
-            if (RETURN_OLD_VALUE) {
-                responseHandler.sendResponse(new UpdateResponse(oldValueData, version, backupCount));
-            } else {
-                responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
-            }
-        }
-    }
+//    protected void sendResponse() {
+//        if (RETURN_RESPONSE) {
+//            if (RETURN_OLD_VALUE) {
+//                responseHandler.sendResponse(new UpdateResponse(oldValueData, version, backupCount));
+//            } else {
+//                responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
+//            }
+//        }
+//    }
 
     // run operation is seperated into methods so each method can be overridden to differentiate put implementation
     public void doOp() {
@@ -157,12 +133,30 @@ public abstract class BasePutOperation extends LockAwareOperation {
         }
         prepareRecord();
         store();
-        sendBackups();
-        sendResponse();
+//        sendBackups();
+//        sendResponse();
     }
 
-    protected int getClusterSize() {
-        return getNodeService().getCluster().getMembers().size();
+    @Override
+    public Object getResponse() {
+        return oldValueData;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
+        op.setBackupOpType(BackupOpType.PUT);
+        return op;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return mapPartition.getBackupCount();
     }
 
     @Override

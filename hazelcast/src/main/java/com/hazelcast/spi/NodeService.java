@@ -19,16 +19,18 @@ package com.hazelcast.spi;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.transaction.TransactionImpl;
-import com.hazelcast.map.GenericBackupOperation;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @mdogan 8/24/12
@@ -50,10 +52,8 @@ public interface NodeService {
 
     boolean send(Operation op, int partitionId, Connection connection);
 
-    void takeSyncBackups(String serviceName, Operation op, int partitionId, int backupCount, int timeoutSeconds)
+    void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException;
-
-    void sendAsyncBackups(String serviceName, GenericBackupOperation op, int partitionId, int backupCount);
 
     Address getThisAddress();
 

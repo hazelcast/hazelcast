@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeService;
 import com.hazelcast.spi.Operation;
@@ -28,9 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ResponseHandlerFactory {
 
-//    public static void setNoReplyResponseHandler(NodeService nodeservice, Operation op) {
-//        op.setResponseHandler(new NoReplyResponseHandler(nodeservice, op));
-//    }
+    public static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
 
     public static void setLocalResponseHandler(InvocationImpl inv) {
         inv.getOperation().setResponseHandler(createLocalResponseHandler(inv));
@@ -45,28 +44,23 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op) {
+        if (op.getCallId() == -1) {
+            if (op.returnsResponse()) {
+                throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
+            }
+            return NO_RESPONSE_HANDLER;
+        }
         return new RemoteInvocationResponseHandler(nodeService, op.getConnection(), op.getPartitionId(), op.getCallId());
     }
 
-//    private static class NoReplyResponseHandler implements ResponseHandler {
-//        private final NodeService nodeService;
-//        private final Operation operation;
-//
-//        private NoReplyResponseHandler(NodeService nodeService, Operation operation) {
-//            this.nodeService = nodeService;
-//            this.operation = operation;
-//        }
-//
-//        public void sendResponse(final Object obj) {
-//            if (obj instanceof Throwable) {
-//                nodeService.getLogger(getClass().getName())
-//                        .log(Level.WARNING, "Error while executing operation: " + operation, (Throwable) obj);
-//            } else {
-//                throw new IllegalStateException("Can not send response for NoReply operation: "
-//                        + operation);
-//            }
-//        }
-//    }
+    public static ResponseHandler createEmptyResponseHandler() {
+        return NO_RESPONSE_HANDLER;
+    }
+
+    private static class NoResponseHandler implements ResponseHandler {
+        public void sendResponse(final Object obj) {
+        }
+    }
 
     private static class RemoteInvocationResponseHandler implements ResponseHandler {
 
@@ -84,17 +78,19 @@ public final class ResponseHandlerFactory {
             this.callId = callId;
         }
 
-        public void sendResponse(Object response) {
+        public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
                 throw new IllegalStateException("Response already sent for call: " + callId
                                                 + " to " + conn.getEndPoint());
             }
-            if (!(response instanceof Operation)) {
-                response = new Response(response);
+            final Operation response;
+            if (obj instanceof Operation) {
+                response = (Operation) obj;
+            } else {
+                response = new Response<Object>(obj);
             }
-            Operation responseOp = (Operation) response;
-            responseOp.setCallId(callId);
-            nodeService.send(responseOp, partitionId, conn);
+            response.setCallId(callId);
+            nodeService.send(response, partitionId, conn);
         }
     }
 
@@ -112,28 +108,6 @@ public final class ResponseHandlerFactory {
                 throw new IllegalStateException("Response already sent for invocation: " + invocation);
             }
             invocation.notify(obj);
-        }
-    }
-
-    static class ResponseHandlerDelegate implements ResponseHandler {
-
-        private final Operation operation;
-        private Object response;
-
-        ResponseHandlerDelegate(final Operation operation) {
-            this.operation = operation;
-        }
-
-        public void sendResponse(final Object obj) {
-            response = obj;
-            final ResponseHandler responseHandler = operation.getResponseHandler();
-            if (responseHandler != null) {
-                responseHandler.sendResponse(obj);
-            }
-        }
-
-        public Object getResponse() {
-            return response;
         }
     }
 

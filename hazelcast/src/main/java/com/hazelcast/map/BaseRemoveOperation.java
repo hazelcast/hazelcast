@@ -17,8 +17,10 @@
 package com.hazelcast.map;
 
 import com.hazelcast.impl.Record;
+import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
 import static com.hazelcast.nio.IOUtil.toData;
@@ -27,8 +29,6 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public abstract class BaseRemoveOperation extends LockAwareOperation {
     Object key;
     Record record;
-    int backupCount;
-    long version;
 
     Data valueData;
     PartitionContainer pc;
@@ -99,17 +99,17 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
         }
     }
 
-    protected void sendBackups() {
-        int mapBackupCount = mapPartition.getBackupCount();
-        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
-        GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-        op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
-        op.setInvocation(true);
-        try {
-            getNodeService().takeSyncBackups(getServiceName(), op, getPartitionId(), backupCount, 10);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//    protected void sendBackups() {
+//        int mapBackupCount = mapPartition.getBackupCount();
+//        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
+//        GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
+//        op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
+//        op.setInvocation(true);
+//        try {
+//            getNodeService().takeBackups(getServiceName(), op, getPartitionId(), 0, backupCount, 10);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 //        int mapBackupCount = mapPartition.getBackupCount();
 //        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
 //        if (SEND_BACKUPS) {
@@ -121,7 +121,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
 //                nodeService.sendAsyncBackups(MapService.MAP_SERVICE_NAME, op, getPartitionId(), mapBackupCount);
 //            }
 //        }
-    }
+//    }
 
     protected void prepareValue() {
         record = mapPartition.records.get(dataKey);
@@ -132,16 +132,16 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
         }
     }
 
-    protected void sendResponse() {
-        if (RETURN_RESPONSE){
-            if (RETURN_OLD_VALUE){
-                responseHandler.sendResponse(new UpdateResponse(valueData, version, backupCount));
-            }
-            else {
-                responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
-            }
-        }
-    }
+//    protected void sendResponse() {
+//        if (RETURN_RESPONSE){
+//            if (RETURN_OLD_VALUE){
+//                responseHandler.sendResponse(new UpdateResponse(valueData, version, backupCount));
+//            }
+//            else {
+//                responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
+//            }
+//        }
+//    }
 
 
     // run operation is seperated into methods so each method can be overridden to differentiate put implementation
@@ -153,8 +153,30 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
         prepareValue();
         remove();
         store();
-        sendBackups();
-        sendResponse();
+//        sendBackups();
+//        sendResponse();
+    }
+
+    @Override
+    public Object getResponse() {
+        return valueData;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
+        op.setBackupOpType(BackupOpType.REMOVE);
+        return op;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return mapPartition.getBackupCount();
     }
 
     private void remove() {
