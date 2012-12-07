@@ -38,12 +38,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public Queue<Data> getQueue(final String name) {
+        return getContainer(name).dataQueue;
+    }
+
+    public QueueContainer getContainer(final String name){
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(nodeService.getPartitionId(nodeService.toData(name)));
+            container = new QueueContainer(nodeService.getPartitionId(nodeService.toData(name)), nodeService.getConfig().getQueueConfig(name));
             containerMap.put(name, container);
         }
-        return container.dataQueue;
+        return container;
     }
 
     public void addContainer(String name, QueueContainer container) {

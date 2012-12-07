@@ -1,6 +1,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -19,12 +20,10 @@ public class OfferOperation extends QueueDataOperation {
     }
 
     public void run() {
-        QueueService queueService = getService();
-        boolean ok = queueService.getQueue(name).offer(data);
-//        getResponseHandler().sendResponse(ok);
+        response = container.dataQueue.offer(data);
     }
 
     public Operation getBackupOperation() {
-        return new PeekOperation();
+        return new QueueBackupOperation(new OfferOperation(name, data));
     }
 }

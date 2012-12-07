@@ -45,7 +45,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public boolean offer(Data data, long ttl, TimeUnit timeUnit) throws InterruptedException {
-        return offerInternal(data,ttl,timeUnit);
+        return false;
     }
 
     public Data take() throws InterruptedException {
@@ -146,9 +146,5 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
 
     public boolean retainAll(Collection<?> objects) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void clear() {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

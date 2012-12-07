@@ -14,40 +14,16 @@ import java.io.IOException;
  * Time: 3:56 AM
  * To change this template use File | Settings | File Templates.
  */
-public class PeekOperation extends AbstractNamedOperation {
-
-    private boolean poll;
+public class PeekOperation extends QueueOperation {
 
     public PeekOperation(){
-
     }
 
-    public PeekOperation(final String name, final boolean poll){
+    public PeekOperation(final String name){
         super(name);
-        this.poll = poll;
     }
 
     public void run() {
-        QueueService queueService = getService();
-        Data data = null;
-        if(poll){
-            data = queueService.getQueue(name).poll();
-        }
-        else {
-            data = queueService.getQueue(name).peek();
-        }
-//        getResponseHandler().sendResponse(data);
-    }
-
-    @Override
-    public void writeInternal(DataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeBoolean(poll);
-    }
-
-    @Override
-    public void readInternal(DataInput in) throws IOException {
-        super.readInternal(in);
-        poll = in.readBoolean();
+        response = container.dataQueue.peek();
     }
 }

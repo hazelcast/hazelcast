@@ -8,21 +8,19 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/23/12
  * Time: 3:52 AM
- * To change this template use File | Settings | File Templates.
  */
-public abstract class QueueDataOperation extends AbstractNamedOperation {
+public abstract class QueueDataOperation extends QueueKeyBasedOperation {
 
-    protected Data data;
+    Data data;
 
-    public QueueDataOperation(){
+    protected QueueDataOperation() {
     }
 
     public QueueDataOperation(final String name, final Data data){
-        this.name = name;
+        super(name);
         this.data = data;
     }
 

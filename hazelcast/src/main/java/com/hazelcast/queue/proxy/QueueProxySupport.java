@@ -2,10 +2,7 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.Data;
-import com.hazelcast.queue.OfferOperation;
-import com.hazelcast.queue.PeekOperation;
-import com.hazelcast.queue.QueueService;
-import com.hazelcast.queue.QueueSizeOperation;
+import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeService;
@@ -15,11 +12,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/14/12
  * Time: 12:47 AM
- * To change this template use File | Settings | File Templates.
  */
 abstract class QueueProxySupport {
 
@@ -37,39 +32,22 @@ abstract class QueueProxySupport {
         this.config = nodeService.getConfig().getQueueConfig(name);
     }
 
-    protected boolean offerInternal(Data data, long ttl, TimeUnit timeUnit) {
+    protected boolean offerInternal(Data data) {
+        checkNull(data);
         try {
-            int backupCount = getBackupCount();
-            boolean result = true;
-            final Future[] futures = new Future[backupCount+1];
-            for(int i=0; i <= backupCount; i++){
-                OfferOperation offerOperation = new OfferOperation(name, data);
-                offerOperation.setValidateTarget(true);
-                offerOperation.setServiceName(QueueService.NAME);
-                InvocationBuilder builder = nodeService.createInvocationBuilder(QueueService.NAME, offerOperation, getPartitionId());
-                builder.setReplicaIndex(i);
-                Invocation inv =  builder.build();
-                futures[i] = inv.invoke();
-            }
-            for (Future f: futures){
-                Object r = f.get();
-                result = result && (Boolean)nodeService.toObject(r);
-                if(!result){
-                    break;
-                }
-            }
-            return result;
+            OfferOperation operation = new OfferOperation(name, data);
+            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeService.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
     public int size() {
-        QueueSizeOperation sizeOperation = new QueueSizeOperation(name);
-        sizeOperation.setValidateTarget(true);
-        sizeOperation.setServiceName(QueueService.NAME);
         try {
-            Invocation invocation = nodeService.createInvocationBuilder(QueueService.NAME, sizeOperation, getPartitionId()).build();
+            QueueSizeOperation operation = new QueueSizeOperation(name);
+            Invocation invocation = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future future = invocation.invoke();
             Object result = future.get();
             return (Integer) nodeService.toObject(result);
@@ -79,40 +57,58 @@ abstract class QueueProxySupport {
         return 0;
     }
 
-    protected Data peekInternal(boolean poll){
+    public void clear() {
         try {
-            int backupCount = getBackupCount();
-            final Future<Data>[] futures = new Future[backupCount+1];
-            for(int i=0; i <= backupCount; i++){
-                PeekOperation peekOperation = new PeekOperation(name, poll);
-                peekOperation.setValidateTarget(true);
-                peekOperation.setServiceName(QueueService.NAME);
-                InvocationBuilder builder = nodeService.createInvocationBuilder(QueueService.NAME, peekOperation, getPartitionId());
-                builder.setReplicaIndex(i);
-                Invocation inv = builder.build();
-                futures[i] = inv.invoke();
-            }
-            Data result = null;
-            for(int i=0; i <= backupCount; i++){
-                Data r = futures[i].get();
-                if(i == 0){
-                    result = r;
-                }
-            }
-            return result;
+            ClearOperation operation = new ClearOperation(name);
+            Invocation invocation = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future future = invocation.invoke();
+            future.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected Data peekInternal() {
+        try {
+            PeekOperation operation = new PeekOperation(name);
+            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future<Data> f = inv.invoke();
+            return f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
+    protected Data pollInternal(){
+        try {
+            PollOperation operation = new PollOperation(name);
+            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future<Data> f = inv.invoke();
+            return f.get();
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    protected boolean removeInternal(Data data){
+        try {
+            RemoveOperation operation = new RemoveOperation(name, data);
+            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean)nodeService.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
 
     private int getPartitionId() {
         return partitionId;
     }
 
-    private int getBackupCount(){
-        int queueBackupCount = config.getBackupCount();
-        return Math.min(nodeService.getCluster().getMembers().size() - 1, queueBackupCount);
+    private void checkNull(Data data){
+        if(data == null){
+            throw new NullPointerException();
+        }
     }
 
 

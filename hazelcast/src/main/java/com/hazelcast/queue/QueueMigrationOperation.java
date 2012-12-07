@@ -32,7 +32,9 @@ public class QueueMigrationOperation extends AbstractOperation {
         QueueService service = getService();
         for(Map.Entry<String, QueueContainer> entry: migrationData.entrySet()){
             String name = entry.getKey();
-            service.addContainer(name, entry.getValue());
+            QueueContainer container = entry.getValue();
+            container.config = getNodeService().getConfig().getQueueConfig(name);
+            service.addContainer(name, container);
         }
     }
 
@@ -57,7 +59,7 @@ public class QueueMigrationOperation extends AbstractOperation {
         for(int i=0; i<mapSize; i++){
             String name = in.readUTF();
             int partitionId = in.readInt();
-            QueueContainer container = new QueueContainer(partitionId);
+            QueueContainer container = new QueueContainer(partitionId, null);
             int size = in.readInt();
             for(int j=0; j<size; j++){
                 Data data = new Data();
