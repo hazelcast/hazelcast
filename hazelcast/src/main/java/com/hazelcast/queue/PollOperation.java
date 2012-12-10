@@ -33,7 +33,7 @@ public class PollOperation extends TimedQueueOperation implements WaitSupport, N
     }
 
     public boolean shouldWait() {
-        return getTimeoutMillis() > 0 && container.dataQueue.size() == 0;
+        return getTimeoutMillis() != 0 && container.dataQueue.size() == 0;
     }
 
     public long getWaitTimeoutMillis() {

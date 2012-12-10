@@ -21,10 +21,7 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
 
-import java.util.Iterator;
-import java.util.Queue;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class WaitNotifyService {
@@ -46,10 +43,9 @@ public class WaitNotifyService {
                         long waitTime = 1000;
                         while (waitTime > 0) {
                             long begin = System.currentTimeMillis();
-                            System.out.println(delayQueue.size() + " waiting for " + waitTime);
                             WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
-                            System.out.println("delayed-running  " + waitingOp);
                             if (waitingOp != null) {
+                                System.out.println("delayed-running  " + waitingOp);
                                 if (waitingOp.isValid()) {
                                     waitingOpProcessor.process(waitingOp);
                                 }
@@ -68,6 +64,7 @@ public class WaitNotifyService {
                                 }
                                 WaitingOp waitingOp = it.next();
                                 if (waitingOp.isValid() && waitingOp.expired()) {
+                                    System.out.println("delayed-running2 " + waitingOp);
                                     waitingOpProcessor.process(waitingOp);
                                 }
                             }
@@ -99,7 +96,7 @@ public class WaitNotifyService {
             delayQueue.offer(waitingOp);
         }
         q.offer(waitingOp);
-        System.out.println(delayQueue.size() + " scheduled " + q.size());
+        System.out.println(delayQueue.size() + " scheduled " + q.size() + " > " + so);
     }
 
     // runs after queue lock
@@ -107,7 +104,7 @@ public class WaitNotifyService {
         Object key = notifier.getNotifiedKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
         if (q == null) return;
-        System.out.println("notifying " + key);
+        System.out.println(new Date() + " notifying " + key);
         WaitingOp so = q.peek();
         while (so != null) {
             if (so.isValid()) {
@@ -115,6 +112,7 @@ public class WaitNotifyService {
                     // expired
                     so.expire();
                 } else {
+                    System.out.println(so.getOperation() + " notify shouldWait " + so.shouldWait());
                     if (so.shouldWait()) {
                         return;
                     }
@@ -226,7 +224,7 @@ public class WaitNotifyService {
         }
 
         public boolean shouldWait() {
-            return false;
+            return so.shouldWait();
         }
 
         public long getDelay(TimeUnit unit) {

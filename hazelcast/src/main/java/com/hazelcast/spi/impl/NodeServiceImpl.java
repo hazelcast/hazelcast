@@ -419,6 +419,9 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private void executeOperation(final Operation op) {
+        if (op instanceof KeyBasedOperation) {
+            System.out.println("Process without lock " + op);
+        }
         final ThreadContext threadContext = ThreadContext.get();
         threadContext.setCurrentOperation(op);
         ResponseHandler responseHandler = op.getResponseHandler();
@@ -487,7 +490,9 @@ public class NodeServiceImpl implements NodeService {
         final Object parentOperation = threadContext.getCurrentOperation();
         threadContext.setCurrentOperation(op);
         ResponseHandler responseHandler = op.getResponseHandler();
-        System.out.println("Process Under lock " + op);
+        if (op instanceof KeyBasedOperation) {
+            System.out.println("Process Under lock " + op);
+        }
         try {
             op.beforeRun();
             if (op instanceof WaitSupport) {
