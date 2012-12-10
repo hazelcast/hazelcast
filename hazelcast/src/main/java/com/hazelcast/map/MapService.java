@@ -29,10 +29,12 @@ import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
-import com.hazelcast.spi.AbstractOperation;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -60,8 +62,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeService.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-
-        nodeService.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
+//        nodeService.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -90,7 +91,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void commitMigration(MigrationServiceEvent event) {
         logger.log(Level.FINEST, "Committing " + event);
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             if (event.getMigrationType() == MigrationType.MOVE) {
                 clearPartitionData(event.getPartitionId());
             } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
@@ -186,7 +187,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void memberAdded(final MemberImpl member) {
-
     }
 
     public void memberRemoved(final MemberImpl member) {
@@ -197,7 +197,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void destroy() {
-
     }
 
     private class CleanupTask implements Runnable {

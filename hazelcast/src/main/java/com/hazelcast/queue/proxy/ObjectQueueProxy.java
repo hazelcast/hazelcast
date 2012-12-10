@@ -1,6 +1,5 @@
 package com.hazelcast.queue.proxy;
 
-import com.hazelcast.core.Instance;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
@@ -11,8 +10,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 /**
  * Created with IntelliJ IDEA.
@@ -34,7 +31,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public boolean add(E e) {
         final boolean res = offer(e);
-        if(!res){
+        if (!res) {
             throw new IllegalStateException();
         }
         return res;
@@ -53,10 +50,6 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public E take() throws InterruptedException {
-        return null;
-    }
-
-    public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
         return null;
     }
 
@@ -83,20 +76,28 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public E remove() {
         final E res = poll();
-        if(res == null){
+        if (res == null) {
             throw new NoSuchElementException();
         }
         return res;
     }
 
-    public E poll() {
-        final Data data = pollInternal();
+    public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        final Data data = pollInternal(timeUnit.toMillis(timeout));
         return (E) nodeService.toObject(data);
+    }
+
+    public E poll() {
+        try {
+            return poll(0, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
     }
 
     public E element() {
         final E res = peek();
-        if(res == null){
+        if (res == null) {
             throw new NoSuchElementException();
         }
         return res;
@@ -167,5 +168,4 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         sb.append('}');
         return sb.toString();
     }
-
 }

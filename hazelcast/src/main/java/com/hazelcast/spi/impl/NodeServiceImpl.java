@@ -58,6 +58,7 @@ public class NodeServiceImpl implements NodeService {
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
     private final AtomicLong localIdGen = new AtomicLong();
     private final ServiceManager serviceManager;
+    private final WaitNotifyService waitNotifyService;
 
     public NodeServiceImpl(Node node) {
         this.node = node;
@@ -69,22 +70,31 @@ public class NodeServiceImpl implements NodeService {
         final ClassLoader classLoader = node.getConfig().getClassLoader();
         final ExecutorThreadFactory threadFactory = new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                 node.getThreadPoolNamePrefix("cached"), classLoader);
-
         cachedExecutorService = new ThreadPoolExecutor(
                 3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(), threadFactory);
-
 //        cachedExecutorService = Executors.newFixedThreadPool(40, threadFactory);
-
         eventExecutorService = Executors.newSingleThreadExecutor(
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("event"), node.getConfig().getClassLoader()));
-
         scheduledExecutorService = Executors.newScheduledThreadPool(2,
                 new ExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("scheduled"), classLoader));
         serviceManager = new ServiceManager(this);
+        waitNotifyService = new WaitNotifyService(new WaitNotifyService.WaitingOpProcessor() {
+            public void process(final WaitNotifyService.WaitingOp so) throws Exception {
+                cachedExecutorService.execute(new Runnable() {
+                    public void run() {
+                        executeOperation(so);
+                    }
+                });
+            }
+
+            public void processUnderExistingLock(Operation operation) {
+                NodeServiceImpl.this.processUnderExistingLock(operation);
+            }
+        });
     }
 
     public void start() {
@@ -301,7 +311,6 @@ public class NodeServiceImpl implements NodeService {
      * Returns a list of services matching provides service class/interface.
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
-     *
      */
     @PrivateApi
     public <S> Collection<S> getServices(Class<S> serviceClass) {
@@ -410,11 +419,11 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private void executeOperation(final Operation op) {
-        final ResponseHandler responseHandler = op.getResponseHandler();
-        Lock partitionLock = null;
-        Lock keyLock = null;
         final ThreadContext threadContext = ThreadContext.get();
         threadContext.setCurrentOperation(op);
+        ResponseHandler responseHandler = op.getResponseHandler();
+        Lock partitionLock = null;
+        Lock keyLock = null;
         try {
             final int partitionId = op.getPartitionId();
             if (op instanceof PartitionAwareOperation) {
@@ -449,34 +458,16 @@ public class NodeServiceImpl implements NodeService {
                     }
                 }
             }
-            op.beforeRun();
-            op.run();
-            if (op instanceof BackupAwareOperation) {
-                final Collection<Future> sync = new LinkedList<Future>();
-                final Collection<Future> async = new LinkedList<Future>();
-                final Object response = sendBackups(op, sync, async);
-                waitResponses(sync);
-                if (responseHandler != null && op.returnsResponse()) {
-                    responseHandler.sendResponse(response);
-                }
-                waitResponses(async);
-
-            } else {
-                if (responseHandler != null && op.returnsResponse()) {
-                    responseHandler.sendResponse(op.getResponse());
-                }
-            }
-            op.afterRun();
+            processUnderExistingLock(op);
         } catch (Throwable e) {
             if (e instanceof RetryableException) {
                 logger.log(Level.WARNING, "While executing op: " + op + " -> "
-                                          + e.getClass() + ": " + e.getMessage());
+                        + e.getClass() + ": " + e.getMessage());
                 logger.log(Level.FINEST, e.getMessage(), e);
             } else {
                 logger.log(Level.SEVERE, "While executing op: " + op + " -> "
                         + e.getMessage(), e);
             }
-//            final ResponseHandler responseHandler = op.getResponseHandler();
             if (responseHandler != null && op.returnsResponse()) {
                 responseHandler.sendResponse(e);
             }
@@ -488,6 +479,58 @@ public class NodeServiceImpl implements NodeService {
                 partitionLock.unlock();
             }
             threadContext.setCurrentOperation(null);
+        }
+    }
+
+    void processUnderExistingLock(Operation op) {
+        final ThreadContext threadContext = ThreadContext.get();
+        final Object parentOperation = threadContext.getCurrentOperation();
+        threadContext.setCurrentOperation(op);
+        ResponseHandler responseHandler = op.getResponseHandler();
+        System.out.println("Process Under lock " + op);
+        try {
+            op.beforeRun();
+            if (op instanceof WaitSupport) {
+                WaitSupport so = (WaitSupport) op;
+                System.out.println(op + " should wait " + so.shouldWait());
+                if (so.shouldWait()) {
+                    waitNotifyService.wait(so);
+                    return;
+                }
+            }
+            op.run();
+            if (op instanceof BackupAwareOperation) {
+                final Collection<Future> sync = new LinkedList<Future>();
+                final Collection<Future> async = new LinkedList<Future>();
+                final Object response = sendBackups(op, sync, async);
+                waitResponses(sync);
+                if (responseHandler != null && op.returnsResponse()) {
+                    responseHandler.sendResponse(response);
+                }
+                waitResponses(async);
+            } else {
+                if (responseHandler != null && op.returnsResponse()) {
+                    responseHandler.sendResponse(op.getResponse());
+                }
+            }
+            op.afterRun();
+            if (op instanceof Notifier) {
+                waitNotifyService.notify((Notifier) op);
+            }
+        } catch (Exception e) {
+            if (e instanceof RetryableException) {
+                logger.log(Level.WARNING, "While executing op: " + op + " -> "
+                        + e.getClass() + ": " + e.getMessage());
+                logger.log(Level.FINEST, e.getMessage(), e);
+            } else {
+                logger.log(Level.SEVERE, "While executing op: " + op + " -> "
+                        + e.getMessage(), e);
+            }
+            if (responseHandler != null && op.returnsResponse()) {
+                responseHandler.sendResponse(e);
+            }
+        } finally {
+            threadContext.setCurrentOperation(parentOperation);
         }
     }
 
@@ -527,16 +570,14 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private Object sendBackups(final Operation op, final Collection<Future> syncBackups,
-                                 final Collection<Future> asyncBackups)
+                               final Collection<Future> asyncBackups)
             throws ExecutionException, TimeoutException, InterruptedException {
-
         final BackupAwareOperation backupAwareOperation = (BackupAwareOperation) op;
         final int maxBackups = getClusterService().getSize() - 1;
         final int syncBackupCount = backupAwareOperation.getSyncBackupCount() > 0
-                                    ? Math.min(maxBackups, backupAwareOperation.getSyncBackupCount()) : 0;
+                ? Math.min(maxBackups, backupAwareOperation.getSyncBackupCount()) : 0;
         final int asyncBackupCount = backupAwareOperation.getAsyncBackupCount() > 0
-                                     ? Math.min(maxBackups - syncBackupCount, backupAwareOperation.getAsyncBackupCount()) : 0;
-
+                ? Math.min(maxBackups - syncBackupCount, backupAwareOperation.getAsyncBackupCount()) : 0;
         if (syncBackupCount + asyncBackupCount > 0) {
             Operation backupResponse = null;
             final Operation backupOp = backupAwareOperation.getBackupOperation();
@@ -546,7 +587,6 @@ public class NodeServiceImpl implements NodeService {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-
             for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
                 final Address target = partitionInfo.getReplicaAddress(replicaIndex);
                 if (target != null) {
@@ -575,8 +615,8 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
             return op.returnsResponse()
-                   ? (backupResponse == null ? op.getResponse() : new MultiResponse(backupResponse, op.getResponse()))
-                   : null;
+                    ? (backupResponse == null ? op.getResponse() : new MultiResponse(backupResponse, op.getResponse()))
+                    : null;
         } else {
             return op.returnsResponse() ? op.getResponse() : null;
         }
@@ -610,13 +650,13 @@ public class NodeServiceImpl implements NodeService {
 
     private static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation
-               && op.getClass().getClassLoader() == thisClassLoader
-               && op.getClass().getName().startsWith("com.hazelcast.partition");
+                && op.getClass().getClassLoader() == thisClassLoader
+                && op.getClass().getName().startsWith("com.hazelcast.partition");
     }
 
     private static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation
-               && op.getClass().getClassLoader() == thisClassLoader
-               && op.getClass().getName().startsWith("com.hazelcast.cluster");
+                && op.getClass().getClassLoader() == thisClassLoader
+                && op.getClass().getName().startsWith("com.hazelcast.cluster");
     }
 }

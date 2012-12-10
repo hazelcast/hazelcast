@@ -1,12 +1,11 @@
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.KeyBasedOperation;
 
 /**
  * @ali 12/6/12
  */
-public abstract class QueueKeyBasedOperation extends QueueOperation implements KeyBasedOperation, BackupAwareOperation {
+public abstract class QueueKeyBasedOperation extends QueueOperation implements KeyBasedOperation {
 
     protected QueueKeyBasedOperation() {
     }

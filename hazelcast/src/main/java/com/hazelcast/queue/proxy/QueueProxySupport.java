@@ -4,12 +4,9 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeService;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * User: ali
@@ -79,9 +76,10 @@ abstract class QueueProxySupport {
         }
     }
 
-    protected Data pollInternal(){
+    protected Data pollInternal(long timeout) {
         try {
-            PollOperation operation = new PollOperation(name);
+            System.out.println(name + " poll " + timeout);
+            PollOperation operation = new PollOperation(name, timeout);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future<Data> f = inv.invoke();
             return f.get();
@@ -90,12 +88,12 @@ abstract class QueueProxySupport {
         }
     }
 
-    protected boolean removeInternal(Data data){
+    protected boolean removeInternal(Data data) {
         try {
             RemoveOperation operation = new RemoveOperation(name, data);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
-            return (Boolean)nodeService.toObject(f.get());
+            return (Boolean) nodeService.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -105,11 +103,9 @@ abstract class QueueProxySupport {
         return partitionId;
     }
 
-    private void checkNull(Data data){
-        if(data == null){
+    private void checkNull(Data data) {
+        if (data == null) {
             throw new NullPointerException();
         }
     }
-
-
 }
