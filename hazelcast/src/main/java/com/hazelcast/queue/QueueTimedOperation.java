@@ -20,29 +20,27 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class TimedQueueOperation extends QueueKeyBasedOperation {
+public abstract class QueueTimedOperation extends QueueBackupAwareOperation {
 
     private long timeoutMillis;
 
-    protected TimedQueueOperation() {
+    protected QueueTimedOperation() {
     }
 
-    public long getTimeoutMillis() {
-        return timeoutMillis;
-    }
-
-    protected TimedQueueOperation(String name, long timeoutMillis) {
+    protected QueueTimedOperation(String name, long timeoutMillis) {
         super(name);
         this.timeoutMillis = timeoutMillis;
     }
 
-    @Override
+    public long getWaitTimeoutMillis() {
+        return timeoutMillis;
+    }
+
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(timeoutMillis);
     }
 
-    @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         timeoutMillis = in.readLong();
