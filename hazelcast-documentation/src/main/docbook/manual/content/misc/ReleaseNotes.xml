@@ -28,6 +28,27 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.4.1</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para>Added Hibernate 2nd level cache local/invalidation mode.
+                    See <code>com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory</code>.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Added quick clear feature for maps.
+                </para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=15&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>304, 308, 312, 315, 321, 322, 323, 328, 331, 333, 334, 337, 338, 339, 347, 349, 351,
+                353, 354, 356, 368</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.4</emphasis>
         <itemizedlist>
             <listitem>

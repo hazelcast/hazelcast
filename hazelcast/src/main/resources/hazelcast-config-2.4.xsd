@@ -69,6 +69,7 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
+                <xs:element ref="clear-quick" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>
@@ -988,6 +989,7 @@
     </xs:element>
     <xs:element name="cache-value" type="xs:boolean" />
     <xs:element name="read-backup-data" type="xs:boolean" />
+    <xs:element name="clear-quick" type="xs:boolean" default="false" />
     <xs:element name="security">
         <xs:complexType>
             <xs:sequence>
