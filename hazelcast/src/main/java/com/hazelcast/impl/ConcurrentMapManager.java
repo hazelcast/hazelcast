@@ -1079,9 +1079,9 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             final CMap cMap = maps.get(name);
-            cMap.incrementGetCount();
             Data dataKey = null;
             if (cMap != null) {
+                cMap.incrementGetCount();
                 NearCache nearCache = cMap.nearCache;
                 if (nearCache != null) {
                     Object value = nearCache.get(key);

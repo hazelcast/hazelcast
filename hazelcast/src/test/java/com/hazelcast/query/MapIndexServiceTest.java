@@ -57,7 +57,7 @@ public class MapIndexServiceTest extends TestUtil {
         Expression salaryExpression = Predicates.get("salary");
         mapIndexService.addIndex(nameExpression, false, 0);
         mapIndexService.addIndex(ageExpression, true, 1);
-        mapIndexService.addIndex(salaryExpression, true, 2);
+        mapIndexService.addIndex(salaryExpression, false, 2);
         assertTrue(indexes.containsKey(nameExpression));
         assertTrue(indexes.containsKey(ageExpression));
         assertTrue(indexes.containsKey(salaryExpression));
@@ -100,7 +100,7 @@ public class MapIndexServiceTest extends TestUtil {
         Expression salaryExpression = Predicates.get("salary");
         mapIndexService.addIndex(nameExpression, false, 0);
         mapIndexService.addIndex(ageExpression, true, 1);
-        mapIndexService.addIndex(salaryExpression, true, 2);
+        mapIndexService.addIndex(salaryExpression, false, 2);
         assertTrue(indexes.containsKey(nameExpression));
         assertTrue(indexes.containsKey(ageExpression));
         assertTrue(indexes.containsKey(salaryExpression));

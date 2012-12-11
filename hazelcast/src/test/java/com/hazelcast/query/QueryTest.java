@@ -532,7 +532,7 @@ public class QueryTest extends TestUtil {
         imap.clear();
         imap = h1.getMap("employees2");
         imap.addIndex("name", false);
-        imap.addIndex("salary", true);
+        imap.addIndex("salary", false);
         imap.addIndex("active", false);
         for (int i = 0; i < 50000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
