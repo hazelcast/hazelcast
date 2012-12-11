@@ -558,7 +558,7 @@ public class BlockingQueueManager extends BaseManager {
         if (bq != null && bq.mapListeners.size() > 0) {
             enqueueAndReturn(new Processable() {
                 public void process() {
-                    fireMapEvent(bq.mapListeners, name, type.getType(), itemData, thisAddress);
+                    fireEvent(bq.mapListeners, name, type.getType(), itemData, thisAddress);
                 }
             });
         }

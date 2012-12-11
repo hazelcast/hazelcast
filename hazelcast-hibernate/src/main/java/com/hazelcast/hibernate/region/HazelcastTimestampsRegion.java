@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.entity;
+package com.hazelcast.hibernate.region;
 
-import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.RegionCache;
+import org.hibernate.cache.TimestampsRegion;
 
 import java.util.Properties;
 
-/**
- * Makes <b>READ COMMITTED</b> consistency guarantees even in a clustered environment.
- *
- * @author Leo Kim (lkim@limewire.com)
- */
-final class ReadWriteAccessStrategy extends AbstractEntityRegionAccessStrategy {
-    ReadWriteAccessStrategy(final HazelcastEntityRegion entityRegion, final Properties props) {
-        super(new ReadWriteAccessDelegate<HazelcastEntityRegion>(entityRegion, props));
+public class HazelcastTimestampsRegion<Cache extends RegionCache>
+        extends AbstractGeneralRegion<Cache> implements TimestampsRegion {
+
+    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name,
+                                     final Properties props, final Cache cache) {
+        super(instance, name, props, cache);
     }
+
 }

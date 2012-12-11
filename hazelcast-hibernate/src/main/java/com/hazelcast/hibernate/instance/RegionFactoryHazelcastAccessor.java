@@ -17,7 +17,7 @@
 package com.hazelcast.hibernate.instance;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.AbstractHazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import org.hibernate.cache.CacheProvider;
 import org.hibernate.cache.RegionFactory;
@@ -40,8 +40,8 @@ final class RegionFactoryHazelcastAccessor extends HazelcastAccessor {
                 return ((HazelcastCacheProvider) provider).getHazelcastInstance();
             }
             logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheProvider!");
-        } else if (rf instanceof HazelcastCacheRegionFactory) {
-            return ((HazelcastCacheRegionFactory) rf).getHazelcastInstance();
+        } else if (rf instanceof AbstractHazelcastCacheRegionFactory) {
+            return ((AbstractHazelcastCacheRegionFactory) rf).getHazelcastInstance();
         } else {
             logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
         }

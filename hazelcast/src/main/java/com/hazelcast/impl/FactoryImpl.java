@@ -590,10 +590,15 @@ public class FactoryImpl implements HazelcastInstance {
                 return;
             }
             if (!cmap.isMapForQueue() && cmap.notInitialized()) {
+                int k = 0;
                 while (!node.concurrentMapManager.partitionServiceImpl.allPartitionsOwned()) {
                     try {
                         Thread.sleep(250);
-                        logger.log(Level.FINEST, "Waiting for all partitions to be owned...");
+                        Level level = Level.FINEST;
+                        if (++k % 20 == 0) {
+                            level = Level.WARNING;
+                        }
+                        logger.log(level, "Waiting for all partitions to be owned...");
                     } catch (InterruptedException e) {
                         return;
                     }

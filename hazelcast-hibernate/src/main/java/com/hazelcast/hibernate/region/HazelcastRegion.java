@@ -17,20 +17,18 @@
 package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.logging.ILogger;
 import org.hibernate.cache.Region;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
-public interface HazelcastRegion extends Region {
+public interface HazelcastRegion<Cache extends RegionCache> extends Region {
 
     HazelcastInstance getInstance();
 
-    IMap getCache();
-
-    void clearCache();
+    Cache getCache();
 
     ILogger getLogger();
 }
