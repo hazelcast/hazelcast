@@ -183,7 +183,7 @@ public class NodeIOService implements IOService {
         if (deadEndpoint != null) {
             node.nodeService.execute(new Runnable() {
                 public void run() {
-                    node.clusterService.disconnectExistingCalls(deadEndpoint);
+                    node.nodeService.onMemberDisconnect(deadEndpoint);
                 }
             });
         }

@@ -450,21 +450,22 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
     }
 
     void addActiveMigration(MigrationInfo migrationInfo) {
-        lock.lock();
-        try {
-            activeMigrations.put(migrationInfo.getPartitionId(), migrationInfo);
-        } finally {
-            lock.unlock();
-        }
+//        lock.lock();
+//        try {
+        activeMigrations.put(migrationInfo.getPartitionId(), migrationInfo);
+//        } finally {
+//            lock.unlock();
+//        }
     }
 
-    void removeActiveMigration(int partitionId) {
-        lock.lock();
-        try {
-            activeMigrations.remove(partitionId);
-        } finally {
-            lock.unlock();
-        }
+    MigrationInfo removeActiveMigration(int partitionId) {
+//        lock.lock();
+//        try {
+        return activeMigrations.remove(partitionId);
+
+//        } finally {
+//            lock.unlock();
+//        }
     }
 
     private void addCompletedMigration(MigrationInfo migrationInfo) {
