@@ -87,6 +87,11 @@ public class FinalizeMigrationOperation extends AbstractOperation
     }
 
     @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         success = in.readBoolean();

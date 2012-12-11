@@ -303,8 +303,6 @@ public class NodeServiceImpl implements NodeService {
         if (call != null) {
             call.offerResponse(response);
         } else {
-//            logger.log(Level.SEVERE, "NO CALL WITH ID: " + callId + ", RESPONSE: " + response,
-//                    new HazelcastException());
             throw new HazelcastException("No call with id: " + callId + ", Response: " + response);
         }
     }
@@ -575,7 +573,7 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private void waitFutureResponses(final Collection<Future> futures) {
-        int size = futures.size();
+        int size = futures != null ? futures.size() : 0;
         while (size > 0) {
             for (Future f : futures) {
                 if (!f.isDone()) {
