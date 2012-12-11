@@ -31,10 +31,7 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheKey;
 import org.hibernate.cfg.Environment;
 import org.hibernate.engine.SessionFactoryImplementor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.Date;
@@ -136,6 +133,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         hz.getLifecycleService().shutdown();
     }
 
+    @Ignore
     @Test(expected = CacheException.class)
     public void testTimeout() throws InterruptedException {
         Properties props = getDefaultProperties();
@@ -158,8 +156,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
                         DummyEntity.class.getName(), EntityMode.POJO, sfi);
                 assertTrue(hz.getMap(DummyEntity.class.getName()).tryLock(key));
             }
-
-            ;
         }.start();
         Thread.sleep(1000);
         session = sf.openSession();

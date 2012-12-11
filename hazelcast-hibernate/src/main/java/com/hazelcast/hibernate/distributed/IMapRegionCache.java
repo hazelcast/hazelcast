@@ -112,7 +112,9 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public void unlock(final Object key, SoftLock lock) {
-        map.unlock(key);
+        if (lock == LOCK_SUCCESS) {
+            map.unlock(key);
+        }
     }
 
     public boolean contains(final Object key) {

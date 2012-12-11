@@ -21,11 +21,13 @@ import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import com.hazelcast.impl.GroupProperties;
 import org.hibernate.cfg.Environment;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
 @RunWith(TestBlockJUnit4ClassRunner.class)
+@Ignore
 public class CacheProviderDefaultTest extends HibernateStatisticsTestSupport {
 
     @BeforeClass
