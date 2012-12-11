@@ -25,7 +25,11 @@ import java.util.concurrent.ConcurrentMap;
 
 public class UnsortedIndexStore implements IndexStore {
     private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
-    private boolean doubleValue = true;
+    private volatile boolean doubleValue = false;
+
+    public void setDoubleValue(boolean doubleValue) {
+        this.doubleValue = doubleValue;
+    }
 
     public void getSubRecordsBetween(MultiResultSet results, Long from, Long to) {
         Set<Long> values = mapRecords.keySet();
@@ -57,42 +61,43 @@ public class UnsortedIndexStore implements IndexStore {
         Set<Long> values = mapRecords.keySet();
         for (Long value : values) {
             boolean valid = false;
-            if (doubleValue && (searchedValue < 0 && value < 0)) {
+            if (doubleValue) {
+                double v = Double.longBitsToDouble(value);
+                double searchedV = Double.longBitsToDouble(searchedValue);
                 switch (predicateType) {
                     case LESSER:
-                        valid = value > searchedValue;
+                        valid = v < searchedV;
                         break;
                     case LESSER_EQUAL:
-                        valid = value >= searchedValue;
+                        valid = v <= searchedV;
                         break;
                     case GREATER:
-                        valid = value < searchedValue;
+                        valid = v > searchedV;
                         break;
                     case GREATER_EQUAL:
-                        valid = value <= searchedValue;
+                        valid = v >= searchedV;
                         break;
                     case NOT_EQUAL:
-                        valid = value.longValue() != searchedValue.longValue();
+                        valid = v != searchedV;
                         break;
                 }
-            } else {
-                switch (predicateType) {
-                    case LESSER:
-                        valid = value < searchedValue;
-                        break;
-                    case LESSER_EQUAL:
-                        valid = value <= searchedValue;
-                        break;
-                    case GREATER:
-                        valid = value > searchedValue;
-                        break;
-                    case GREATER_EQUAL:
-                        valid = value >= searchedValue;
-                        break;
-                    case NOT_EQUAL:
-                        valid = value.longValue() != searchedValue.longValue();
-                        break;
-                }
+            }
+            switch (predicateType) {
+                case LESSER:
+                    valid = value < searchedValue;
+                    break;
+                case LESSER_EQUAL:
+                    valid = value <= searchedValue;
+                    break;
+                case GREATER:
+                    valid = value > searchedValue;
+                    break;
+                case GREATER_EQUAL:
+                    valid = value >= searchedValue;
+                    break;
+                case NOT_EQUAL:
+                    valid = value.longValue() != searchedValue.longValue();
+                    break;
             }
             if (valid) {
                 ConcurrentMap<Long, Record> records = mapRecords.get(value);

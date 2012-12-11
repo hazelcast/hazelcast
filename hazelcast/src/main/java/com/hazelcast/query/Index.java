@@ -60,7 +60,7 @@ public class Index {
 
     public void index(Long newValue, Record record) {
         if (expression != null && returnType == -1) {
-            returnType = record.getIndexTypes()[attributeIndex];
+            setReturnType(record.getIndexTypes()[attributeIndex]);
         }
         final Long recordId = record.getId();
         Long oldValue = recordValues.get(recordId);
@@ -83,13 +83,24 @@ public class Index {
         }
     }
 
+    void setReturnType(byte returnType) {
+        this.returnType = returnType;
+        if (returnType == TYPE_DOUBLE) {
+            if (indexStore instanceof SortedIndexStore) {
+                throw new RuntimeException("Double type indexes cannot be sorted!");
+            }
+            UnsortedIndexStore unsortedIndexStore = (UnsortedIndexStore) indexStore;
+            unsortedIndexStore.setDoubleValue(true);
+        }
+    }
+
     public Long extractLongValue(Object value) {
         Object extractedValue = expression.getValue(value);
-        setIndexType(extractedValue);
+        setReturnType(extractedValue);
         if (extractedValue == null) {
             return Long.MIN_VALUE;
         } else {
-            returnType = getIndexType(extractedValue.getClass());
+            setReturnType(getIndexType(extractedValue.getClass()));
             if (!checkedStrength) {
                 if (extractedValue instanceof Boolean || extractedValue instanceof Number) {
                     strong = true;
@@ -141,17 +152,16 @@ public class Index {
         return results;
     }
 
-    void setIndexType(Object extractedValue) {
+    void setReturnType(Object extractedValue) {
         if (returnType == -1) {
             if (expression instanceof Predicates.GetExpressionImpl) {
                 Predicates.GetExpressionImpl ex = (Predicates.GetExpressionImpl) expression;
-                returnType = getIndexType(ex.getter.getReturnType());
+                setReturnType(getIndexType(ex.getter.getReturnType()));
             } else {
                 if (extractedValue == null) throw new RuntimeException("Indexed value cannot be null!");
-                returnType = getIndexType(extractedValue.getClass());
+                setReturnType(getIndexType(extractedValue.getClass()));
             }
         }
-        System.out.println("return type is " + returnType);
     }
 
     public byte getIndexType() {
