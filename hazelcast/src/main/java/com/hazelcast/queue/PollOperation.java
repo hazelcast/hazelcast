@@ -43,4 +43,11 @@ public class PollOperation extends TimedQueueOperation implements WaitSupport, N
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
     }
+
+    public String toString() {
+        QueueService queueService = getService();
+        QueueContainer c = queueService.getContainer(name);
+        int size = (c == null) ? 0 : c.dataQueue.size();
+        return size + "_P_" + Integer.toHexString(hashCode());
+    }
 }

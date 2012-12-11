@@ -69,6 +69,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+        System.out.println("MIGRRrrrrr");
+        System.out.println("MIGRRrrrrr");
+        System.out.println("MIGRRrrrrr");
+        System.out.println("MIGRRrrrrr");
+        System.out.println("MIGRRrrrrr");
         if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
             return null; // is it possible
         }
@@ -80,8 +85,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
                 migrationData.put(name, container);
             }
         }
-//        return new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
-        return null;
+        return new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+//        return null;
     }
 
     public void commitMigration(MigrationServiceEvent event) {

@@ -29,8 +29,13 @@ public class QueueMigrationOperation extends AbstractOperation {
     }
 
     public void run() {
+        System.out.println("QUEUEE MIGRATED!!!!");
+        System.out.println("QUEUEE MIGRATED!!!!");
+        System.out.println("QUEUEE MIGRATED!!!!");
+        System.out.println("QUEUEE MIGRATED!!!!");
+        System.out.println("QUEUEE MIGRATED!!!!");
         QueueService service = getService();
-        for(Map.Entry<String, QueueContainer> entry: migrationData.entrySet()){
+        for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
             container.config = getNodeService().getConfig().getQueueConfig(name);
@@ -40,13 +45,13 @@ public class QueueMigrationOperation extends AbstractOperation {
 
     protected void writeInternal(DataOutput out) throws IOException {
         out.writeInt(migrationData.size());
-        for(Map.Entry<String,QueueContainer> entry: migrationData.entrySet()){
+        for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
             QueueContainer container = entry.getValue();
             out.writeInt(container.partitionId);
             out.writeInt(container.dataQueue.size());
             Iterator<Data> iterator = container.dataQueue.iterator();
-            while (iterator.hasNext()){
+            while (iterator.hasNext()) {
                 Data data = iterator.next();
                 data.writeData(out);
             }
@@ -56,12 +61,12 @@ public class QueueMigrationOperation extends AbstractOperation {
     protected void readInternal(DataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, QueueContainer>(mapSize);
-        for(int i=0; i<mapSize; i++){
+        for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             int partitionId = in.readInt();
             QueueContainer container = new QueueContainer(partitionId, null);
             int size = in.readInt();
-            for(int j=0; j<size; j++){
+            for (int j = 0; j < size; j++) {
                 Data data = new Data();
                 data.readData(in);
                 container.dataQueue.offer(data);

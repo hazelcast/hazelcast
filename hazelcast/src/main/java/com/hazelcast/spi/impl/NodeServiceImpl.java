@@ -29,6 +29,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.queue.OfferOperation;
+import com.hazelcast.queue.PollOperation;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -419,9 +421,6 @@ public class NodeServiceImpl implements NodeService {
     }
 
     private void executeOperation(final Operation op) {
-        if (op instanceof KeyBasedOperation) {
-            System.out.println("Process without lock " + op);
-        }
         final ThreadContext threadContext = ThreadContext.get();
         threadContext.setCurrentOperation(op);
         ResponseHandler responseHandler = op.getResponseHandler();
@@ -485,13 +484,18 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
+    int offerCount = 0;
+    int pollCount = 0;
+
     void processUnderExistingLock(Operation op) {
+        if (op instanceof OfferOperation) System.out.println(" Offer count " + ++offerCount);
+        if (op instanceof PollOperation) System.out.println("Poll count " + ++pollCount);
         final ThreadContext threadContext = ThreadContext.get();
         final Object parentOperation = threadContext.getCurrentOperation();
         threadContext.setCurrentOperation(op);
         ResponseHandler responseHandler = op.getResponseHandler();
         if (op instanceof KeyBasedOperation) {
-            System.out.println("Process Under lock " + op);
+            System.out.println("Process under lock " + op);
         }
         try {
             op.beforeRun();

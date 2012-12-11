@@ -21,7 +21,10 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.*;
 
 public class WaitNotifyService {
@@ -104,7 +107,8 @@ public class WaitNotifyService {
         Object key = notifier.getNotifiedKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
         if (q == null) return;
-        System.out.println(new Date() + " notifying " + key);
+//        System.out.println(new Date() + " notifying " + key);
+        System.out.println(q.size() + " >>>> " + q);
         WaitingOp so = q.peek();
         while (so != null) {
             if (so.isValid()) {
@@ -259,6 +263,10 @@ public class WaitNotifyService {
 
         public void expire() {
             so.onWaitExpire();
+        }
+
+        public String toString() {
+            return "W_" + Integer.toHexString(op.hashCode());
         }
     }
 }

@@ -37,6 +37,7 @@ abstract class QueueProxySupport {
             Future f = inv.invoke();
             return (Boolean) nodeService.toObject(f.get());
         } catch (Throwable throwable) {
+            throwable.printStackTrace();
             throw new RuntimeException(throwable);
         }
     }
@@ -78,12 +79,12 @@ abstract class QueueProxySupport {
 
     protected Data pollInternal(long timeout) {
         try {
-            System.out.println(name + " poll " + timeout);
             PollOperation operation = new PollOperation(name, timeout);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future<Data> f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
+            throwable.printStackTrace();
             throw new RuntimeException(throwable);
         }
     }
