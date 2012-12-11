@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
 public class PutOperation extends BasePutOperation {
@@ -27,9 +28,23 @@ public class PutOperation extends BasePutOperation {
     public PutOperation() {
     }
 
-    @Override
-    void initFlags() {
-      // use default flags
+    public void doOp() {
+        init();
+        if (prepareTransaction()) {
+            return;
+        }
+        record = mapPartition.records.get(dataKey);
+        if (record == null) {
+            load();
+            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
+            mapPartition.records.put(dataKey, record);
+        } else {
+            oldValueData = record.getValueData();
+            record.setValueData(dataValue);
+        }
+        record.setActive();
+        record.setDirty(true);
+        store();
     }
 
 

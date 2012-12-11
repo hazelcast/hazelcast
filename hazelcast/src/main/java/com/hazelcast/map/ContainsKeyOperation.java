@@ -24,6 +24,8 @@ import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
 
+    boolean containsKey;
+
     public ContainsKeyOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
@@ -34,7 +36,12 @@ public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
     public void run() {
         MapService mapService = (MapService) getService();
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        getResponseHandler().sendResponse(mapPartition.records.containsKey(dataKey));
+        containsKey = mapPartition.records.containsKey(dataKey);
+    }
+
+    @Override
+    public Object getResponse() {
+        return containsKey;
     }
 
     @Override

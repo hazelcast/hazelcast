@@ -74,7 +74,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public V putIfAbsent(final K k, final V v, final long ttl, final TimeUnit timeunit) {
         final Data key = nodeService.toData(k);
         final Data value = nodeService.toData(v);
-        final Data result = putInternal(key, value, ttl, timeunit);
+        final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
         return toObject(result);
     }
 
