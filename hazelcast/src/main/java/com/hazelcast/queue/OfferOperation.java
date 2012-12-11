@@ -31,15 +31,15 @@ import java.io.IOException;
  * Date: 11/14/12
  * Time: 12:14 AM
  */
-public class OfferOperation extends QueueBackupAwareOperation implements WaitSupport, Notifier {
+public class OfferOperation extends QueueTimedOperation implements WaitSupport, Notifier {
 
     private Data data;
 
     public OfferOperation() {
     }
 
-    public OfferOperation(final String name, final Data data) {
-        super(name);
+    public OfferOperation(final String name, final long timeout, final Data data) {
+        super(name, timeout);
         this.data = data;
     }
 
@@ -52,7 +52,7 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
     }
 
     public Object getNotifiedKey() {
-        return getName() + ":take";
+        return getName() + ":poll";
     }
 
     public Object getWaitKey() {
@@ -60,12 +60,8 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
     }
 
     public boolean shouldWait() {
-//        return container.dataQueue.size() >= Queue.MaxSize;
-        return false;
-    }
-
-    public long getWaitTimeoutMillis() {
-        return 0;
+        QueueContainer container = getContainer();
+        return container.config.getMaxSizePerJVM() <= container.dataQueue.size();
     }
 
     public void onWaitExpire() {

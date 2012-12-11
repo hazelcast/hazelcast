@@ -26,7 +26,7 @@ import java.util.List;
 
 public final class QueueConfig implements DataSerializable {
 
-    public final static int DEFAULT_MAX_SIZE_PER_JVM = 0;
+    public final static int DEFAULT_MAX_SIZE_PER_JVM = 1000;
 
     private String name;
     private String backingMapRef;
@@ -41,7 +41,8 @@ public final class QueueConfig implements DataSerializable {
     public QueueConfig(QueueConfig config) {
         this.name = config.name;
         this.backingMapRef = config.backingMapRef;
-        this.maxSizePerJVM = config.maxSizePerJVM;
+//        this.maxSizePerJVM = config.maxSizePerJVM; //TODO change name and value from config
+        this.maxSizePerJVM = 3;
         this.syncBackupCount = 1;
         this.asyncBackupCount = 1;
     }

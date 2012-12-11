@@ -45,7 +45,7 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public Object getWaitKey() {
-        return getName() + ":take";
+        return getName() + ":poll";
     }
 
     public boolean shouldWait() {

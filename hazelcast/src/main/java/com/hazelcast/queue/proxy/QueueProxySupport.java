@@ -45,10 +45,10 @@ abstract class QueueProxySupport {
         this.config = nodeService.getConfig().getQueueConfig(name);
     }
 
-    protected boolean offerInternal(Data data) {
+    protected boolean offerInternal(Data data, long timeout) {
         checkNull(data);
         try {
-            OfferOperation operation = new OfferOperation(name, data);
+            OfferOperation operation = new OfferOperation(name, timeout, data);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeService.toObject(f.get());
@@ -106,6 +106,7 @@ abstract class QueueProxySupport {
     }
 
     protected boolean removeInternal(Data data) {
+        checkNull(data);
         try {
             RemoveOperation operation = new RemoveOperation(name, data);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();

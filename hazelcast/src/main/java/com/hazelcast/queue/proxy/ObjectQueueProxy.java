@@ -28,11 +28,9 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/14/12
  * Time: 13:23 AM
- * To change this template use File | Settings | File Templates.
  */
 public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy<E> {
 
@@ -54,19 +52,24 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean offer(E e) {
-        final Data data = nodeService.toData(e);
-        return offerInternal(data);
+        try {
+            return offer(e, 0, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            return false;
+        }
     }
 
     public void put(E e) throws InterruptedException {
+        offer(e, -1, TimeUnit.MILLISECONDS);
     }
 
     public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
-        return false;
+        final Data data = nodeService.toData(e);
+        return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
     public E take() throws InterruptedException {
-        return null;
+        return poll(-1, TimeUnit.MILLISECONDS);
     }
 
     public int remainingCapacity() {

@@ -202,7 +202,7 @@ public class WaitNotifyService {
             this.op = (Operation) so;
             this.so = so;
             this.queue = queue;
-            this.expirationTime = System.currentTimeMillis() + so.getWaitTimeoutMillis();
+            this.expirationTime = so.getWaitTimeoutMillis() < 0 ? -1 : System.currentTimeMillis() + so.getWaitTimeoutMillis();
         }
 
         public Operation getOperation() {
@@ -218,7 +218,7 @@ public class WaitNotifyService {
         }
 
         public boolean expired() {
-            return System.currentTimeMillis() >= expirationTime;
+            return expirationTime != -1 && System.currentTimeMillis() >= expirationTime;
         }
 
         public boolean shouldWait() {
