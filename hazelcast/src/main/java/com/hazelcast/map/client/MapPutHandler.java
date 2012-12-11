@@ -15,13 +15,7 @@
  *
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.map.client;
 
-import com.hazelcast.client.ClientCommandHandler;
-
-import java.util.Collection;
-import java.util.Map;
-
-public interface ClientProtocolService {
-    Map<String, ClientCommandHandler> getCommandMap();
+public class MapPutHandler {
 }

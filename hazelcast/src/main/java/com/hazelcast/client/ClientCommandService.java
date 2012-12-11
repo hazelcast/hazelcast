@@ -24,13 +24,18 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.spi.ClientProtocolService;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 public class ClientCommandService {
 
     private final Node node;
     private final ILogger logger;
+    private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
+    private ConcurrentHashMap<String, ClientCommandHandler> services = new ConcurrentHashMap<String, ClientCommandHandler>();
 
     public ClientCommandService(Node node) {
         this.node = node;
@@ -49,8 +54,13 @@ public class ClientCommandService {
         node.nodeService.execute(clientRequestHandler);
     }
 
-    ClientEndpoint getClientEndpoint(Connection connection) {
-        return null;
+    public ClientEndpoint getClientEndpoint(Connection conn) {
+        ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
+        if (clientEndpoint == null) {
+            clientEndpoint = new ClientEndpoint(node, conn);
+            mapClientEndpoints.put(conn, clientEndpoint);
+        }
+        return clientEndpoint;
     }
 
     private void checkAuth(Connection conn) {
@@ -61,6 +71,17 @@ public class ClientCommandService {
         return;
     }
 
-    private void removeClientEndpoint(Connection conn) {
+    public void removeClientEndpoint(Connection conn) {
+        mapClientEndpoints.remove(conn);
+    }
+
+    public void register(ClientProtocolService service) {
+        Map<String, ClientCommandHandler> commandMap = service.getCommandMap();
+        System.out.println("commandMap = " + commandMap);
+        services.putAll(commandMap);
+    }
+
+    public ClientCommandHandler getService(Protocol protocol) {
+        return services.get(protocol.command.name());
     }
 }

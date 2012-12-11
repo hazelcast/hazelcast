@@ -16,11 +16,12 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapServiceConfig;
-import com.hazelcast.core.ClientService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
@@ -47,6 +48,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final NodeService nodeService;
     private final ConcurrentMap<Long, BlockingQueue<Boolean>> backupCalls = new ConcurrentHashMap<Long, BlockingQueue<Boolean>>(1000);
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
+    private Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
 
     public MapService(final NodeService nodeService) {
         this.nodeService = nodeService;
@@ -61,8 +63,16 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeService.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-
         nodeService.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
+        registerClientOperationHandlers();
+    }
+
+    private void registerClientOperationHandlers() {
+        registerHandler("MGET", new MapGetHandler(this));
+    }
+
+    void registerHandler(String command, ClientCommandHandler handler) {
+        commandHandlers.put(command, handler);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -188,7 +198,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void memberAdded(final MemberImpl member) {
-
     }
 
     public void memberRemoved(final MemberImpl member) {
@@ -199,7 +208,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void destroy() {
+    }
 
+    public Map<String, ClientCommandHandler> getCommandMap() {
+        return commandHandlers;
     }
 
     private class CleanupTask implements Runnable {

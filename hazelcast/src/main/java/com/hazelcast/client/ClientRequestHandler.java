@@ -32,7 +32,7 @@ public class ClientRequestHandler implements Runnable {
     private final Protocol protocol;
     private final CallContext callContext;
     private final Node node;
-    //    private final ClientHandlerService.ClientOperationHandler clientOperationHandler;
+    //    private final ClientHandlerService.ClientCommandHandler clientOperationHandler;
     private volatile Thread runningThread = null;
     private volatile boolean valid = true;
     private final ILogger logger;
@@ -42,7 +42,6 @@ public class ClientRequestHandler implements Runnable {
         this.protocol = protocol;
         this.callContext = callContext;
         this.node = node;
-//        this.clientOperationHandler = clientOperationHandler;
         this.logger = node.getLogger(ClientRequestHandler.class.getName());
         this.subject = subject;
     }
@@ -55,7 +54,10 @@ public class ClientRequestHandler implements Runnable {
             final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
                 public Void run() {
                     Connection connection = protocol.conn;
-//                    clientOperationHandler.handle(node, packet);
+                    ClientCommandHandler clientOperationHandler = node.clientCommandService.getService(protocol);
+                    System.out.println(protocol);
+                    System.out.println(clientOperationHandler);
+                    clientOperationHandler.handle(node, protocol);
                     node.clientCommandService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);
                     return null;
                 }
@@ -68,7 +70,6 @@ public class ClientRequestHandler implements Runnable {
         } catch (Throwable e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             if (node.isActive()) {
-//                throw (RuntimeException) e;
                 Util.throwUncheckedException(e);
             }
         } finally {

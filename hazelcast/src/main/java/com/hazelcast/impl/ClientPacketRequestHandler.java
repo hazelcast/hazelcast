@@ -16,7 +16,7 @@
 //
 //package com.hazelcast.impl;
 //
-//import com.hazelcast.impl.ClientHandlerService.ClientOperationHandler;
+//import com.hazelcast.impl.ClientHandlerService.ClientCommandHandler;
 //import com.hazelcast.logging.ILogger;
 //import com.hazelcast.nio.Connection;
 //import com.hazelcast.nio.Packet;
@@ -27,10 +27,10 @@
 //
 //public class ClientPacketRequestHandler extends ClientRequestHandler {
 //    private final Packet packet;
-//    private final ClientHandlerService.ClientOperationHandler clientOperationHandler;
+//    private final ClientHandlerService.ClientCommandHandler clientOperationHandler;
 //
 //    public ClientPacketRequestHandler(Node node, Packet packet, CallContext callContext,
-//                                      ClientOperationHandler clientOperationHandler, Subject subject, Connection connection) {
+//                                      ClientCommandHandler clientOperationHandler, Subject subject, Connection connection) {
 //
 //        super(callContext, subject, node, connection);
 //        this.packet = packet;

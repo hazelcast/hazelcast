@@ -29,7 +29,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
 
 //import com.hazelcast.queue.QueueService;
-
+import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -144,6 +144,10 @@ class ServiceManager {
             } catch (Throwable t) {
                 logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
             }
+        }
+        if (service instanceof ClientProtocolService){
+            nodeService.getNode().clientCommandService.register((ClientProtocolService)service);
+
         }
     }
 

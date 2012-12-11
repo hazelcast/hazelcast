@@ -16,6 +16,9 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.cluster.client.ClientAuthenticateHandler;
+import com.hazelcast.cluster.client.GetMembersHandler;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
@@ -24,6 +27,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeType;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.nio.*;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
@@ -46,7 +50,8 @@ import java.util.logging.Level;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public final class ClusterService implements ConnectionListener, MembershipAwareService, CoreService, ManagedService {
+public final class ClusterService implements ConnectionListener, MembershipAwareService, CoreService, ManagedService,
+        ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -96,6 +101,8 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
+    private Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
+
     public ClusterService(final Node node) {
         this.node = node;
         nodeService = node.nodeService;
@@ -139,6 +146,17 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 sendMemberListToOthers();
             }
         }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
+
+        registerClientOperationHandlers();
+    }
+
+    private void registerClientOperationHandlers() {
+        registerHandler("AUTH", new ClientAuthenticateHandler(nodeService));
+        registerHandler("MEMBERS", new GetMembersHandler(nodeService));
+    }
+
+    void registerHandler(String command, ClientCommandHandler handler) {
+        commandHandlers.put(command, handler);
     }
 
     public boolean isJoinInProgress() {
@@ -939,5 +957,10 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         }
         sb.append("\n}\n");
         return sb.toString();
+    }
+
+
+    public Map<String, ClientCommandHandler> getCommandMap() {
+        return commandHandlers;
     }
 }
