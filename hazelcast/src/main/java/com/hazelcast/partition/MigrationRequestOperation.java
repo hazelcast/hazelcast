@@ -67,7 +67,7 @@ public class MigrationRequestOperation extends AbstractOperation
 
     public MigrationType getMigrationType() {
         return migration ? MigrationType.MOVE :
-               (copyBackReplicaIndex < 0 ? MigrationType.COPY : MigrationType.MOVE_COPY_BACK);
+                (copyBackReplicaIndex < 0 ? MigrationType.COPY : MigrationType.MOVE_COPY_BACK);
     }
 
     public boolean isMigration() {
@@ -108,7 +108,6 @@ public class MigrationRequestOperation extends AbstractOperation
                 success = false;
                 return;
             }
-
             partitionService.addActiveMigration(createMigrationInfo());
             final NodeService nodeService = getNodeService();
             final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
@@ -153,6 +152,17 @@ public class MigrationRequestOperation extends AbstractOperation
     }
 
     private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
+        System.out.println("PREPaRE>>>>>>>");
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
         final MigrationType migrationType = getMigrationType();
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,

@@ -29,8 +29,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.queue.OfferOperation;
-import com.hazelcast.queue.PollOperation;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -185,7 +183,13 @@ public class NodeServiceImpl implements NodeService {
         final String serviceName = inv.getServiceName();
         op.setNodeService(this).setServiceName(serviceName).setCaller(getThisAddress())
                 .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        checkInvocation(inv);
+        if (target == null) {
+            throw new WrongTargetException(getThisAddress(), target, partitionId,
+                    op.getClass().getName(), serviceName);
+        }
+        if (!isJoinOperation(op) && getClusterService().getMember(target) == null) {
+            throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
+        }
         if (getThisAddress().equals(target)) {
             ResponseHandlerFactory.setLocalResponseHandler(inv);
             executeOperation(op);
@@ -197,20 +201,6 @@ public class NodeServiceImpl implements NodeService {
             if (!sent) {
                 inv.setResult(new RetryableException(new IOException("Packet not sent!")));
             }
-        }
-    }
-
-    private void checkInvocation(InvocationImpl inv) {
-        final Address target = inv.getTarget();
-        final Operation op = inv.getOperation();
-        final int partitionId = inv.getPartitionId();
-        final String serviceName = inv.getServiceName();
-        if (target == null) {
-            throw new WrongTargetException(getThisAddress(), target, partitionId,
-                    op.getClass().getName(), serviceName);
-        }
-        if (!isJoinOperation(op) && getClusterService().getMember(target) == null) {
-            throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
     }
 
@@ -262,6 +252,7 @@ public class NodeServiceImpl implements NodeService {
 
     public boolean send(final Operation op, final int partitionId, final Address target) {
         if (target == null || getThisAddress().equals(target)) {
+            System.out.println("tARGET >>> " + target + "  get this " + getThisAddress());
             op.setNodeService(this);
             executeOperation(op); // TODO: not sure what to do here...
             return true;
@@ -484,24 +475,15 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    int offerCount = 0;
-    int pollCount = 0;
-
     void processUnderExistingLock(Operation op) {
-        if (op instanceof OfferOperation) System.out.println(" Offer count " + ++offerCount);
-        if (op instanceof PollOperation) System.out.println("Poll count " + ++pollCount);
         final ThreadContext threadContext = ThreadContext.get();
         final Object parentOperation = threadContext.getCurrentOperation();
         threadContext.setCurrentOperation(op);
         ResponseHandler responseHandler = op.getResponseHandler();
-        if (op instanceof KeyBasedOperation) {
-            System.out.println("Process under lock " + op);
-        }
         try {
             op.beforeRun();
             if (op instanceof WaitSupport) {
                 WaitSupport so = (WaitSupport) op;
-                System.out.println(op + " should wait " + so.shouldWait());
                 if (so.shouldWait()) {
                     waitNotifyService.wait(so);
                     return;
