@@ -8,11 +8,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/23/12
  * Time: 3:56 AM
- * To change this template use File | Settings | File Templates.
  */
 public class PeekOperation extends QueueOperation {
 
@@ -24,6 +22,6 @@ public class PeekOperation extends QueueOperation {
     }
 
     public void run() {
-        response = container.dataQueue.peek();
+        response = getContainer().dataQueue.peek();
     }
 }
