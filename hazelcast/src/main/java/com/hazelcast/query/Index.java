@@ -117,7 +117,7 @@ public class Index {
         recordValues.put(recordId, newValue);
     }
 
-    private void removeRecordIndex(Long oldValue, Long recordId) {
+    void removeRecordIndex(Long oldValue, Long recordId) {
         recordValues.remove(recordId);
         indexStore.removeRecordIndex(oldValue, recordId);
     }

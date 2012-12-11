@@ -44,6 +44,9 @@ public class MapIndexService {
     public void remove(Record record) {
         Record existingRecord = records.remove(record.getId());
         if (existingRecord != null) {
+            for (Index index : mapIndexes.values()) {
+                index.removeRecordIndex(record.getIndexes()[index.getAttributeIndex()], record.getId());
+            }
             size.decrementAndGet();
         }
     }

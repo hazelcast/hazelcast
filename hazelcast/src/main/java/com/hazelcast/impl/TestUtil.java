@@ -249,6 +249,23 @@ public class TestUtil {
 
         protected AbstractValue() {
         }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final AbstractValue that = (AbstractValue) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
     }
 
     @Ignore
@@ -281,6 +298,43 @@ public class TestUtil {
 
         public int getIndex() {
             return index;
+        }
+
+        public void setIndex(final int index) {
+            this.index = index;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            final Value value = (Value) o;
+
+            if (index != value.index) return false;
+            if (type != null ? !type.equals(value.type) : value.type != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = super.hashCode();
+            result = 31 * result + (type != null ? type.hashCode() : 0);
+            result = 31 * result + index;
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Value");
+            sb.append("{name=").append(name);
+            sb.append(", index=").append(index);
+            sb.append(", type=").append(type);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
