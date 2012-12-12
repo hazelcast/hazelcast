@@ -23,11 +23,13 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -86,13 +88,14 @@ public class NodeServiceImpl implements NodeService {
             public void process(final WaitNotifyService.WaitingOp so) throws Exception {
                 cachedExecutorService.execute(new Runnable() {
                     public void run() {
-                        executeOperation(so);
+                        runOperation(so);
                     }
                 });
             }
 
             public void processUnderExistingLock(Operation operation) {
-                NodeServiceImpl.this.processUnderExistingLock(operation);
+                final NodeServiceImpl nodeService = NodeServiceImpl.this;
+                nodeService.runOperationUnderExistingLock(operation);
             }
         });
     }
@@ -192,7 +195,7 @@ public class NodeServiceImpl implements NodeService {
         }
         if (getThisAddress().equals(target)) {
             ResponseHandlerFactory.setLocalResponseHandler(inv);
-            executeOperation(op);
+            runOperation(op);
         } else {
             Call call = new Call(target, inv);
             long callId = registerCall(call);
@@ -204,9 +207,9 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    public void runOperation(final Operation op) throws Exception {
-        executeOperation(op);
-    }
+//    public void runOperation(final Operation op) throws Exception {
+//        executeOperation(op);
+//    }
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
@@ -254,7 +257,7 @@ public class NodeServiceImpl implements NodeService {
         if (target == null || getThisAddress().equals(target)) {
             System.out.println("tARGET >>> " + target + "  get this " + getThisAddress());
             op.setNodeService(this);
-            executeOperation(op); // TODO: not sure what to do here...
+            runOperation(op); // TODO: not sure what to do here...
             return true;
         } else {
             return send(op, partitionId, node.getConnectionManager().getOrConnect(target));
@@ -267,10 +270,21 @@ public class NodeServiceImpl implements NodeService {
     }
 
     @PrivateApi
-    public void disconnectExistingCalls(Address deadAddress) {
+    public void onMemberLeft(MemberImpl member) {
+
+        onMemberDisconnect(member.getAddress());
+    }
+
+    @PrivateApi
+    public void onMemberDisconnect(Address deadAddress) {
         for (Call call : mapCalls.values()) {
             call.onDisconnect(deadAddress);
         }
+    }
+
+    @PrivateApi
+    public void onPartitionMigrate(MigrationInfo migrationInfo) {
+
     }
 
     private long registerCall(Call call) {
@@ -289,8 +303,6 @@ public class NodeServiceImpl implements NodeService {
         if (call != null) {
             call.offerResponse(response);
         } else {
-//            logger.log(Level.SEVERE, "NO CALL WITH ID: " + callId + ", RESPONSE: " + response,
-//                    new HazelcastException());
             throw new HazelcastException("No call with id: " + callId + ", Response: " + response);
         }
     }
@@ -411,10 +423,9 @@ public class NodeServiceImpl implements NodeService {
         mapCalls.clear();
     }
 
-    private void executeOperation(final Operation op) {
+    public void runOperation(final Operation op) {
         final ThreadContext threadContext = ThreadContext.get();
         threadContext.setCurrentOperation(op);
-        ResponseHandler responseHandler = op.getResponseHandler();
         Lock partitionLock = null;
         Lock keyLock = null;
         try {
@@ -451,19 +462,9 @@ public class NodeServiceImpl implements NodeService {
                     }
                 }
             }
-            processUnderExistingLock(op);
+            runOperationUnderExistingLock(op);
         } catch (Throwable e) {
-            if (e instanceof RetryableException) {
-                logger.log(Level.WARNING, "While executing op: " + op + " -> "
-                        + e.getClass() + ": " + e.getMessage());
-                logger.log(Level.FINEST, e.getMessage(), e);
-            } else {
-                logger.log(Level.SEVERE, "While executing op: " + op + " -> "
-                        + e.getMessage(), e);
-            }
-            if (responseHandler != null && op.returnsResponse()) {
-                responseHandler.sendResponse(e);
-            }
+            handleOperationError(op, e);
         } finally {
             if (keyLock != null) {
                 keyLock.unlock();
@@ -475,11 +476,10 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    void processUnderExistingLock(Operation op) {
+    void runOperationUnderExistingLock(Operation op) {
         final ThreadContext threadContext = ThreadContext.get();
         final Object parentOperation = threadContext.getCurrentOperation();
         threadContext.setCurrentOperation(op);
-        ResponseHandler responseHandler = op.getResponseHandler();
         try {
             op.beforeRun();
             if (op instanceof WaitSupport) {
@@ -491,42 +491,89 @@ public class NodeServiceImpl implements NodeService {
             }
             op.run();
             if (op instanceof BackupAwareOperation) {
-                final Collection<Future> sync = new LinkedList<Future>();
-                final Collection<Future> async = new LinkedList<Future>();
-                final Object response = sendBackups(op, sync, async);
-                waitResponses(sync);
-                if (responseHandler != null && op.returnsResponse()) {
-                    responseHandler.sendResponse(response);
-                }
-                waitResponses(async);
+                handleBackupAndSendResponse(op);
             } else {
-                if (responseHandler != null && op.returnsResponse()) {
-                    responseHandler.sendResponse(op.getResponse());
-                }
+                sendResponse(op, op.getResponse());
             }
             op.afterRun();
             if (op instanceof Notifier) {
                 waitNotifyService.notify((Notifier) op);
             }
-        } catch (Exception e) {
-            if (e instanceof RetryableException) {
-                logger.log(Level.WARNING, "While executing op: " + op + " -> "
-                        + e.getClass() + ": " + e.getMessage());
-                logger.log(Level.FINEST, e.getMessage(), e);
-            } else {
-                logger.log(Level.SEVERE, "While executing op: " + op + " -> "
-                        + e.getMessage(), e);
-            }
-            if (responseHandler != null && op.returnsResponse()) {
-                responseHandler.sendResponse(e);
-            }
+        } catch (Throwable e) {
+            handleOperationError(op, e);
         } finally {
             threadContext.setCurrentOperation(parentOperation);
         }
     }
 
-    private void waitResponses(final Collection<Future> futures) {
-        int size = futures.size();
+    private void handleBackupAndSendResponse(Operation op) throws Exception {
+        Object response = null;
+        final BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+        final int maxBackups = getClusterService().getSize() - 1;
+
+        final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
+                ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
+
+        final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
+                ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+
+        Collection<Future> syncBackups = null;
+        Collection<Future> asyncBackups = null;
+
+        final Operation backupOp;
+        Operation backupResponse = null;
+        if ((syncBackupCount + asyncBackupCount > 0) && (backupOp = backupAwareOp.getBackupOperation()) != null) {
+            final String serviceName = op.getServiceName();
+            final int partitionId = op.getPartitionId();
+            final PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+
+            if (syncBackupCount > 0) {
+                syncBackups = new ArrayList<Future>(syncBackupCount);
+                for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
+                    final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+                    if (target != null) {
+                        if (target.equals(getThisAddress())) {
+                            throw new IllegalStateException("Normally shouldn't happen!!");
+                        } else {
+                            if (op.returnsResponse() && target.equals(op.getCaller())) {
+                                backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
+                                backupResponse = backupOp;    // TODO: fix me! what if backup migrates after response is returned?
+                            } else {
+                                syncBackups.add(createInvocationBuilder(serviceName, backupOp, partitionId)
+                                        .setReplicaIndex(replicaIndex).build().invoke());
+                            }
+                        }
+                    }
+                }
+            }
+            if (asyncBackupCount > 0) {
+                asyncBackups = new ArrayList<Future>(asyncBackupCount);
+                for (int replicaIndex = syncBackupCount + 1; replicaIndex <= asyncBackupCount; replicaIndex++) {
+                    final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+                    if (target != null) {
+                        if (target.equals(getThisAddress())) {
+                            throw new IllegalStateException("Normally shouldn't happen!!");
+                        } else {
+                            asyncBackups.add(createInvocationBuilder(serviceName, backupOp, partitionId)
+                                    .setReplicaIndex(replicaIndex).build().invoke());
+                        }
+                    }
+                }
+            }
+            response = op.returnsResponse()
+                    ? (backupResponse == null ? op.getResponse() : new MultiResponse(backupResponse, op.getResponse()))
+                    : null;
+        } else {
+            response = op.returnsResponse() ? op.getResponse() : null;
+        }
+
+        waitFutureResponses(syncBackups);
+        sendResponse(op, response);
+        waitFutureResponses(asyncBackups);
+    }
+
+    private void waitFutureResponses(final Collection<Future> futures) {
+        int size = futures != null ? futures.size() : 0;
         while (size > 0) {
             for (Future f : futures) {
                 if (!f.isDone()) {
@@ -543,35 +590,42 @@ public class NodeServiceImpl implements NodeService {
         }
     }
 
-    private void waitResponses2(final Collection<Future> futures) {
-        while (futures.size() > 0) {
-            final Iterator<Future> iter = futures.iterator();
-            while (iter.hasNext()) {
-                final Future f = iter.next();
-                try {
-                    f.get(1, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (f.isDone()) {
-                    iter.remove();
-                }
+    private void handleOperationError(Operation op, Throwable e) {
+        if (e instanceof RetryableException) {
+            logger.log(Level.WARNING, "While executing op: " + op + " -> "
+                    + e.getClass() + ": " + e.getMessage());
+            logger.log(Level.FINEST, e.getMessage(), e);
+        } else {
+            logger.log(Level.SEVERE, "While executing op: " + op + " -> "
+                    + e.getMessage(), e);
+        }
+        sendResponse(op, e);
+    }
+
+    private void sendResponse(Operation op, Object response) {
+        if (op.returnsResponse()) {
+            ResponseHandler responseHandler = op.getResponseHandler();
+            if (responseHandler == null) {
+                throw new IllegalStateException("ResponseHandler should not be null!");
             }
+            responseHandler.sendResponse(response);
         }
     }
 
     private Object sendBackups(final Operation op, final Collection<Future> syncBackups,
-                               final Collection<Future> asyncBackups)
-            throws ExecutionException, TimeoutException, InterruptedException {
-        final BackupAwareOperation backupAwareOperation = (BackupAwareOperation) op;
+                               final Collection<Future> asyncBackups) throws Exception {
+
+        final BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
         final int maxBackups = getClusterService().getSize() - 1;
-        final int syncBackupCount = backupAwareOperation.getSyncBackupCount() > 0
-                ? Math.min(maxBackups, backupAwareOperation.getSyncBackupCount()) : 0;
-        final int asyncBackupCount = backupAwareOperation.getAsyncBackupCount() > 0
-                ? Math.min(maxBackups - syncBackupCount, backupAwareOperation.getAsyncBackupCount()) : 0;
+
+        final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
+                ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
+        final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
+                ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+
         if (syncBackupCount + asyncBackupCount > 0) {
             Operation backupResponse = null;
-            final Operation backupOp = backupAwareOperation.getBackupOperation();
+            final Operation backupOp = backupAwareOp.getBackupOperation();
             if (backupOp == null) {
                 throw new NullPointerException();
             }
@@ -629,7 +683,7 @@ public class NodeServiceImpl implements NodeService {
                 op.setNodeService(NodeServiceImpl.this).setCaller(caller).setPartitionId(partitionId);
                 op.setConnection(packet.getConn());
                 ResponseHandlerFactory.setRemoteResponseHandler(NodeServiceImpl.this, op);
-                executeOperation(op);
+                runOperation(op);
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 send(new ErrorResponse(getThisAddress(), e), EXECUTOR_THREAD_ID, packet.getConn());

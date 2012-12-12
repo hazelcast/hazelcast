@@ -66,7 +66,12 @@ public class FinalizeMigrationOperation extends AbstractOperation
             }
         }
         PartitionService partitionService = getService();
-        partitionService.removeActiveMigration(getPartitionId());
+        MigrationInfo migrationInfo = partitionService.removeActiveMigration(getPartitionId());
+
+        if (success) {
+            NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+            nodeService.onPartitionMigrate(migrationInfo);
+        }
     }
 
     protected Collection<MigrationAwareService> getServices() {
@@ -79,6 +84,11 @@ public class FinalizeMigrationOperation extends AbstractOperation
             }
         }
         return services;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override

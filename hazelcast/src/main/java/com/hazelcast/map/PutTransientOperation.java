@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
 public class PutTransientOperation extends BasePutOperation {
@@ -27,11 +28,25 @@ public class PutTransientOperation extends BasePutOperation {
     public PutTransientOperation() {
     }
 
+    public void doOp() {
+        init();
+        if (prepareTransaction()) {
+            return;
+        }
+        record = mapPartition.records.get(dataKey);
+        if (record == null) {
+            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
+            mapPartition.records.put(dataKey, record);
+        } else {
+            record.setValueData(dataValue);
+        }
+        record.setActive();
+        record.setDirty(true);
+    }
+
     @Override
-    void initFlags() {
-        STORE = false;
-        LOAD_OLD = false;
-        RETURN_OLD_VALUE = false;
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override

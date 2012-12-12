@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
+import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class PutIfAbsentOperation extends BasePutOperation {
@@ -32,13 +33,23 @@ public class PutIfAbsentOperation extends BasePutOperation {
     public PutIfAbsentOperation() {
     }
 
-    @Override
-    void initFlags() {
-        // use default flags
+    protected void load() {
+        if (mapPartition.loader != null) {
+            if (key == null) {
+                key = toObject(dataKey);
+            }
+            Object oldValue = mapPartition.loader.load(key);
+            oldValueData = toData(oldValue);
+            absent = oldValue == null;
+        }
     }
 
-
-    protected void prepareRecord() {
+    public void doOp() {
+        init();
+        // todo transaction should be written related to if absent
+        if (prepareTransaction()) {
+            return;
+        }
         record = mapPartition.records.get(dataKey);
         if (record == null) {
             load();
@@ -52,30 +63,9 @@ public class PutIfAbsentOperation extends BasePutOperation {
             oldValueData = record.getValueData();
             absent = false;
         }
-    }
-
-    protected void load() {
-        if (mapPartition.loader != null) {
-            if (key == null) {
-                key = toObject(dataKey);
-            }
-            Object oldValue = mapPartition.loader.load(key);
-            absent = oldValue == null;
-        }
-    }
-
-    public void doOp() {
-        init();
-        // todo transaction should be written relating to if absent
-        if (prepareTransaction()) {
-            return;
-        }
-        prepareRecord();
         if (absent) {
             store();
-//            sendBackups();
         }
-//        sendResponse();
     }
 
 

@@ -90,14 +90,11 @@ abstract class MapProxySupport {
         int partitionId = nodeService.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
-
-
-        Data result = null;
         try {
             Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-//            result = invoke(operation, partitionId);
-            return result;
+            Future f = invocation.invoke();
+            return (Data) f.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -136,8 +133,9 @@ abstract class MapProxySupport {
         SetOperation setOperation = new SetOperation(name, key, value, txnId, ttl);
         setOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-
-//            Object returnObj = invoke(setOperation, partitionId);
+            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, setOperation, partitionId)
+                    .build();
+            invocation.invoke();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }

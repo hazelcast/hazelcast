@@ -385,7 +385,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             MemberImpl deadMember = getMember(deadAddress);
             if (deadMember != null) {
                 removeMember(deadMember);
-                disconnectExistingCalls(deadAddress);
+                nodeService.onMemberLeft(deadMember);
                 logger.log(Level.INFO, this.toString());
             }
         } finally {
@@ -424,15 +424,6 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             node.setMasterAddress(null);
         }
         logger.log(Level.FINEST, "Now Master " + node.getMasterAddress());
-    }
-
-    public void disconnectExistingCalls(Address deadAddress) {
-        lock.lock();
-        try {
-            nodeService.disconnectExistingCalls(deadAddress);
-        } finally {
-            lock.unlock();
-        }
     }
 
     @ExecutedBy(ThreadType.EXECUTOR_THREAD)
