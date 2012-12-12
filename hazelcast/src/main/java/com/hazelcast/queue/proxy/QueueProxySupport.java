@@ -17,12 +17,19 @@
 package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeService;
+import com.hazelcast.util.ConcurrentHashSet;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * User: ali
@@ -31,13 +38,13 @@ import java.util.concurrent.Future;
  */
 abstract class QueueProxySupport {
 
-    protected final String name;
-    protected final QueueService queueService;
-    protected final NodeService nodeService;
-    protected final int partitionId;
-    protected final QueueConfig config;
+    final String name;
+    final QueueService queueService;
+    final NodeService nodeService;
+    final int partitionId;
+    final QueueConfig config;
 
-    protected QueueProxySupport(final String name, final QueueService queueService, NodeService nodeService) {
+    QueueProxySupport(final String name, final QueueService queueService, NodeService nodeService) {
         this.name = name;
         this.queueService = queueService;
         this.nodeService = nodeService;
@@ -45,7 +52,7 @@ abstract class QueueProxySupport {
         this.config = nodeService.getConfig().getQueueConfig(name);
     }
 
-    protected boolean offerInternal(Data data, long timeout) {
+    boolean offerInternal(Data data, long timeout) {
         checkNull(data);
         try {
             OfferOperation operation = new OfferOperation(name, timeout, data);
@@ -60,7 +67,7 @@ abstract class QueueProxySupport {
 
     public int size() {
         try {
-            QueueSizeOperation operation = new QueueSizeOperation(name);
+            SizeOperation operation = new SizeOperation(name);
             Invocation invocation = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future future = invocation.invoke();
             Object result = future.get();
@@ -82,7 +89,7 @@ abstract class QueueProxySupport {
         }
     }
 
-    protected Data peekInternal() {
+    Data peekInternal() {
         try {
             PeekOperation operation = new PeekOperation(name);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
@@ -93,7 +100,7 @@ abstract class QueueProxySupport {
         }
     }
 
-    protected Data pollInternal(long timeout) {
+    Data pollInternal(long timeout) {
         try {
             PollOperation operation = new PollOperation(name, timeout);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
@@ -105,10 +112,21 @@ abstract class QueueProxySupport {
         }
     }
 
-    protected boolean removeInternal(Data data) {
+    boolean removeInternal(Data data) {
         checkNull(data);
         try {
             RemoveOperation operation = new RemoveOperation(name, data);
+            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeService.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    boolean containsInternal(Set<Data> dataSet) {
+        try {
+            ContainsOperation operation = new ContainsOperation(name, dataSet);
             Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeService.toObject(f.get());
@@ -126,4 +144,6 @@ abstract class QueueProxySupport {
             throw new NullPointerException();
         }
     }
+
+
 }

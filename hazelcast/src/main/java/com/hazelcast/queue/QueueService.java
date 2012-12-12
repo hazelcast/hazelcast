@@ -16,6 +16,9 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
@@ -53,14 +56,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         this.logger = nodeService.getLogger(QueueService.class.getName());
     }
 
-    public Queue<Data> getQueue(final String name) {
-        return getContainer(name).dataQueue;
-    }
-
     public QueueContainer getContainer(final String name) {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(nodeService.getPartitionId(nodeService.toData(name)), nodeService.getConfig().getQueueConfig(name));
+            container = new QueueContainer(this, nodeService.getPartitionId(nodeService.toData(name)), nodeService.getConfig().getQueueConfig(name), name);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
@@ -147,4 +146,5 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public Collection<ServiceProxy> getProxies() {
         return new HashSet<ServiceProxy>(proxies.values());
     }
+
 }

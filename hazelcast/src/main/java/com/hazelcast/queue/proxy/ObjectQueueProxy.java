@@ -22,9 +22,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeService;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,7 +37,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        System.out.println(queueService.getQueue("ali").size());
+        //TODO what to do
         return null;
     }
 
@@ -73,7 +71,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public int remainingCapacity() {
-        return Integer.MAX_VALUE;
+        return config.getMaxSize() - size();
     }
 
     public boolean remove(Object o) {
@@ -82,7 +80,10 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean contains(Object o) {
-        return false;
+        final Data data = nodeService.toData(o);
+        Set<Data> dataSet = new HashSet<Data>(1);
+        dataSet.add(data);
+        return containsInternal(dataSet);
     }
 
     public int drainTo(Collection<? super E> objects) {
@@ -144,7 +145,14 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean containsAll(Collection<?> objects) {
-        return false;
+        Iterator iter = objects.iterator();
+        Set<Data> dataSet = new HashSet<Data>(objects.size());
+        while (iter.hasNext()){
+            Object o = iter.next();
+            final Data data = nodeService.toData(o);
+            dataSet.add(data);
+        }
+        return containsInternal(dataSet);
     }
 
     public boolean addAll(Collection<? extends E> es) {

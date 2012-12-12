@@ -31,7 +31,7 @@ public class PollBackupOperation extends QueueOperation implements BackupOperati
     }
 
     public void run() throws Exception {
-        getContainer().dataQueue.poll();
+        getContainer().poll();
         response = Boolean.TRUE;
     }
 }

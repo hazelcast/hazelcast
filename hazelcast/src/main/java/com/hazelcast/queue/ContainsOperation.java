@@ -17,43 +17,48 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * @ali 12/6/12
+ * @ali 12/12/12
  */
-public class RemoveOperation extends QueueBackupAwareOperation {
+public class ContainsOperation extends QueueOperation {
 
-    private Data data;
+    private Set<Data> dataSet;
 
-    public RemoveOperation() {
+    public ContainsOperation() {
     }
 
-    public RemoveOperation(String name, Data data) {
+    public ContainsOperation(String name, Set<Data> dataSet){
         super(name);
-        this.data = data;
+        this.dataSet = dataSet;
     }
 
     public void run() throws Exception {
-        response = getContainer().remove(data);
-    }
-
-    public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, data);
+        response = getContainer().contains(dataSet);
     }
 
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        data.writeData(out);
+        out.writeInt(dataSet.size());
+        for (Data data: dataSet){
+            data.writeData(out);
+        }
     }
 
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        data = new Data();
-        data.readData(in);
+        int size = in.readInt();
+        dataSet = new HashSet<Data>(size);
+        for (int i=0; i<size; i++){
+            Data data = new Data();
+            data.readData(in);
+            dataSet.add(data);
+        }
     }
 }

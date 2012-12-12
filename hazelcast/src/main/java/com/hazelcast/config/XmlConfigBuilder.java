@@ -600,11 +600,13 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
-            if ("backing-map-ref".equals(nodeName)) {
-                qConfig.setBackingMapRef(value);
-            } else if ("max-size-per-jvm".equals(nodeName)) {
-                qConfig.setMaxSizePerJVM(getIntegerValue("max-size-per-jvm", value,
-                        QueueConfig.DEFAULT_MAX_SIZE_PER_JVM));
+            if ("queue-max-size".equals(nodeName)) {
+                qConfig.setMaxSize(getIntegerValue("queue-max-size", value,
+                        QueueConfig.DEFAULT_MAX_SIZE));
+            } else if ("queue-sync-backup-count".equals(nodeName)) {
+                qConfig.setSyncBackupCount(getIntegerValue("queue-sync-backup-count", value, QueueConfig.DEFAULT_SYNC_BACKUP_COUNT));
+            } else if ("queue-async-backup-count".equals(nodeName)) {
+                qConfig.setSyncBackupCount(getIntegerValue("queue-async-backup-count", value, QueueConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             } else if ("item-listeners".equals(nodeName)) {
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("item-listener".equals(cleanNodeName(listenerNode))) {

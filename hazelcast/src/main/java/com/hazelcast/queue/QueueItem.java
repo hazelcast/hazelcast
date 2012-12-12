@@ -16,21 +16,27 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.Data;
+
 /**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
+ * @ali 12/12/12
  */
-public class PeekOperation extends QueueOperation {
+public class QueueItem {
 
-    public PeekOperation(){
+    final Data data;
+
+    QueueItem(Data data){
+        this.data = data;
     }
 
-    public PeekOperation(final String name){
-        super(name);
-    }
-
-    public void run() {
-        response = getContainer().peek();
+    public boolean equals(Object obj) {
+        if (obj instanceof QueueItem){
+            QueueItem other = (QueueItem)obj;
+            data.equals(other.data);
+        }
+        else if (obj instanceof Data){
+            data.equals(obj);
+        }
+        return false;
     }
 }

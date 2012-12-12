@@ -17,7 +17,6 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
@@ -44,7 +43,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public void run() {
-        response = getContainer().dataQueue.offer(data);
+        response = getContainer().offer(data);
     }
 
     public Operation getBackupOperation() {
@@ -61,7 +60,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
 
     public boolean shouldWait() {
         QueueContainer container = getContainer();
-        return container.config.getMaxSizePerJVM() <= container.dataQueue.size();
+        return getWaitTimeoutMillis() != 0 && container.config.getMaxSize() <= container.size();
     }
 
     public void onWaitExpire() {

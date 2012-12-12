@@ -23,17 +23,16 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
  * Date: 11/19/12
  * Time: 11:37 AM
  */
-public class QueueSizeOperation extends QueueOperation {
+public class SizeOperation extends QueueOperation {
 
-    public QueueSizeOperation(){
+    public SizeOperation(){
     }
 
-    public QueueSizeOperation(String name){
+    public SizeOperation(String name){
         super(name);
     }
 
     public void run() {
-        QueueService queueService = getService();
-        response = queueService.getQueue(name).size();
+        response = getContainer().size();
     }
 }

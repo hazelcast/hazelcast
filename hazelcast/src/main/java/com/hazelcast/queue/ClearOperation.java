@@ -16,9 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -34,7 +31,7 @@ public class ClearOperation extends QueueBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        getContainer().dataQueue.clear();
+        getContainer().clear();
         response = true;
     }
 

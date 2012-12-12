@@ -33,7 +33,7 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public void run() {
-        response = getContainer().dataQueue.poll();
+        response = getContainer().poll();
     }
 
     public Operation getBackupOperation() {
@@ -49,7 +49,7 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public boolean shouldWait() {
-        return getWaitTimeoutMillis() != 0 && getContainer().dataQueue.size() == 0;
+        return getWaitTimeoutMillis() != 0 && getContainer().size() == 0;
     }
 
     public void onWaitExpire() {
