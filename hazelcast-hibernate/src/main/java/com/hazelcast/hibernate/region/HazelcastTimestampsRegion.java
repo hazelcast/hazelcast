@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.timestamp;
+package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.region.AbstractGeneralRegion;
+import com.hazelcast.hibernate.RegionCache;
 import org.hibernate.cache.TimestampsRegion;
 
 import java.util.Properties;
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-public class HazelcastTimestampsRegion extends AbstractGeneralRegion implements TimestampsRegion {
+public class HazelcastTimestampsRegion<Cache extends RegionCache>
+        extends AbstractGeneralRegion<Cache> implements TimestampsRegion {
 
-    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name, final Properties props) {
-        super(instance, name, props);
+    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name,
+                                     final Properties props, final Cache cache) {
+        super(instance, name, props, cache);
     }
+
 }

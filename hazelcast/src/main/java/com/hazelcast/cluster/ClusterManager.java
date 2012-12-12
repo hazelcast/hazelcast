@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -539,7 +539,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
             removeMember(deadMember);
             node.getClusterImpl().setMembers(lsMembers);
             node.concurrentMapManager.syncForDead(deadMember);
-            node.blockingQueueManager.syncForDead(deadMember);
+            node.blockingQueueManager.syncForDead(deadAddress);
             node.listenerManager.syncForDead(deadAddress);
             node.topicManager.syncForDead(deadAddress);
             // node.getClusterImpl().setMembers(lsMembers); // shifted up to get members in syncForDead methods

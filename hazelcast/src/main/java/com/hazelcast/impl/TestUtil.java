@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,6 @@ public class TestUtil {
         }
 
         public void migrationFailed(final MigrationEvent migrationEvent) {
-
         }
 
         public boolean await(int time, TimeUnit timeUnit) throws InterruptedException {
@@ -250,6 +249,23 @@ public class TestUtil {
 
         protected AbstractValue() {
         }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final AbstractValue that = (AbstractValue) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
     }
 
     @Ignore
@@ -282,6 +298,43 @@ public class TestUtil {
 
         public int getIndex() {
             return index;
+        }
+
+        public void setIndex(final int index) {
+            this.index = index;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            final Value value = (Value) o;
+
+            if (index != value.index) return false;
+            if (type != null ? !type.equals(value.type) : value.type != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = super.hashCode();
+            result = 31 * result + (type != null ? type.hashCode() : 0);
+            result = 31 * result + index;
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Value");
+            sb.append("{name=").append(name);
+            sb.append(", index=").append(index);
+            sb.append(", type=").append(type);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
@@ -556,25 +609,25 @@ public class TestUtil {
         java.sql.Date sqlDate;
         State state;
 
-        public Employee(long id, String name, int age, boolean live, double price, State state) {
+        public Employee(long id, String name, int age, boolean live, double salary, State state) {
             this.state = state;
         }
 
-        public Employee(long id, String name, int age, boolean live, double price) {
-            this(id, name, null, age, live, price);
+        public Employee(long id, String name, int age, boolean live, double salary) {
+            this(id, name, null, age, live, salary);
         }
 
-        public Employee(String name, int age, boolean live, double price) {
-            this(-1, name, age, live, price);
+        public Employee(String name, int age, boolean live, double salary) {
+            this(-1, name, age, live, salary);
         }
 
-        public Employee(long id, String name, String city, int age, boolean live, double price) {
+        public Employee(long id, String name, String city, int age, boolean live, double salary) {
             this.id = id;
             this.name = name;
             this.city = city;
             this.age = age;
             this.active = live;
-            this.salary = price;
+            this.salary = salary;
             this.createDate = new Date();
             this.date = new Timestamp(createDate.getTime());
             this.sqlDate = new java.sql.Date(createDate.getTime());

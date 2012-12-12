@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1193,7 +1193,8 @@ public abstract class BaseManager {
         return node.clusterService.getPacketProcessor(operation);
     }
 
-    public void sendEvents(int eventType, String name, Data key, Data value, Map<Address, Boolean> mapListeners, Address callerAddress) {
+    public void sendEvents(int eventType, String name, Data key, Data value, Map<Address, Boolean> mapListeners,
+                           Address callerAddress, boolean fireAndForget) {
         if (mapListeners != null) {
             checkServiceThread();
             final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
@@ -1208,6 +1209,25 @@ public abstract class BaseManager {
                     // and an EntryListener whose include-value is false. 
                     enqueueEvent(eventType, name, key, /*(includeValue) ? value : null*/ value, callerAddress, true);
                 } else {
+                    final Connection conn = node.connectionManager.getConnection(toAddress);
+                    if (conn != null && conn.getWriteHandler().size() > 10000) {
+                        // flow control
+                        if (fireAndForget) {
+                            if (logger.isLoggable(Level.FINEST)) {
+                                logger.log(Level.FINEST, "Event[" + eventType + "] for " + name
+                                          + " could not be send, packet queue of " + toAddress + " is full!");
+                            }
+                            continue;
+                        } else {
+                            while (conn.getWriteHandler().size() > 10000) {
+                                try {
+                                    //noinspection BusyWait
+                                    Thread.sleep(10);
+                                } catch (InterruptedException ignored) {
+                                }
+                            }
+                        }
+                    }
                     final Packet packet = obtainPacket();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
                     packet.lockAddress = callerAddress;
@@ -1402,19 +1422,25 @@ public abstract class BaseManager {
         return hash1 * 29 + hash2;
     }
 
-    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data value, Address callerAddress) {
-        fireMapEvent(mapListeners, name, eventType, null, value, callerAddress);
+    void fireEvent(final Map<Address, Boolean> mapListeners, final String name,
+                   final int eventType, final Data value, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, null, null, value, null, callerAddress, true);
     }
 
-    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data oldValue, final Data value, Address callerAddress) {
-        fireMapEvent(mapListeners, name, eventType, null, oldValue, value, null, callerAddress);
+    void fireEvent(final Map<Address, Boolean> mapListeners, final String name,
+                      final int eventType, final Data value, Address callerAddress, boolean fireAndForget) {
+        fireMapEvent(mapListeners, name, eventType, null, null, value, null, callerAddress, fireAndForget);
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Data key, final Data oldValue, final Data value,
                       Map<Address, Boolean> keyListeners, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, key, oldValue, value, keyListeners, callerAddress, true);
+    }
+
+    private void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
+                      final int eventType, final Data key, final Data oldValue, final Data value,
+                      Map<Address, Boolean> keyListeners, Address callerAddress, boolean fireAndForget) {
         if (keyListeners == null && (mapListeners == null || mapListeners.size() == 0)) {
             return;
         }
@@ -1451,7 +1477,7 @@ public abstract class BaseManager {
                 }
                 packetValue = toData(keys);
             }
-            sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress);
+            sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress, fireAndForget);
         } catch (final Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }

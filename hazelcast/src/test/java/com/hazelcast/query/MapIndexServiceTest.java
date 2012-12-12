@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class MapIndexServiceTest extends TestUtil {
         Expression salaryExpression = Predicates.get("salary");
         mapIndexService.addIndex(nameExpression, false, 0);
         mapIndexService.addIndex(ageExpression, true, 1);
-        mapIndexService.addIndex(salaryExpression, true, 2);
+        mapIndexService.addIndex(salaryExpression, false, 2);
         assertTrue(indexes.containsKey(nameExpression));
         assertTrue(indexes.containsKey(ageExpression));
         assertTrue(indexes.containsKey(salaryExpression));
@@ -100,7 +100,7 @@ public class MapIndexServiceTest extends TestUtil {
         Expression salaryExpression = Predicates.get("salary");
         mapIndexService.addIndex(nameExpression, false, 0);
         mapIndexService.addIndex(ageExpression, true, 1);
-        mapIndexService.addIndex(salaryExpression, true, 2);
+        mapIndexService.addIndex(salaryExpression, false, 2);
         assertTrue(indexes.containsKey(nameExpression));
         assertTrue(indexes.containsKey(ageExpression));
         assertTrue(indexes.containsKey(salaryExpression));

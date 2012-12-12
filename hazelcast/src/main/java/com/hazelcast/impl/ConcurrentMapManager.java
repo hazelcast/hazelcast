@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1079,9 +1079,9 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             final CMap cMap = maps.get(name);
-            cMap.incrementGetCount();
             Data dataKey = null;
             if (cMap != null) {
+                cMap.incrementGetCount();
                 NearCache nearCache = cMap.nearCache;
                 if (nearCache != null) {
                     Object value = nearCache.get(key);

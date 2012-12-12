@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,7 +291,7 @@ public class ClientHandlerService implements ConnectionListener {
                 } else if (millis == 0) {
                     return (Data) queue.poll();
                 } else {
-                    return (Data) queue.poll((Long) millis, TimeUnit.MILLISECONDS);
+                    return (Data) queue.poll(millis, TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -617,40 +617,40 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
-    public static class CountDownLatchLeave implements RemotelyProcessable {
-        Address deadAddress;
-        transient Node node;
-
-        public CountDownLatchLeave(Address deadAddress) {
-            this.deadAddress = deadAddress;
-        }
-
-        public CountDownLatchLeave() {
-        }
-
-        public void setConnection(Connection conn) {
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            deadAddress.writeData(out);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            (deadAddress = new Address()).readData(in);
-        }
-
-        public Node getNode() {
-            return node;
-        }
-
-        public void setNode(Node node) {
-            this.node = node;
-        }
-
-        public void process() {
-            node.concurrentMapManager.syncForDeadCountDownLatches(deadAddress);
-        }
-    }
+//    public static class CountDownLatchLeave implements RemotelyProcessable {
+//        Address deadAddress;
+//        transient Node node;
+//
+//        public CountDownLatchLeave(Address deadAddress) {
+//            this.deadAddress = deadAddress;
+//        }
+//
+//        public CountDownLatchLeave() {
+//        }
+//
+//        public void setConnection(Connection conn) {
+//        }
+//
+//        public void writeData(DataOutput out) throws IOException {
+//            deadAddress.writeData(out);
+//        }
+//
+//        public void readData(DataInput in) throws IOException {
+//            (deadAddress = new Address()).readData(in);
+//        }
+//
+//        public Node getNode() {
+//            return node;
+//        }
+//
+//        public void setNode(Node node) {
+//            this.node = node;
+//        }
+//
+//        public void process() {
+//            node.concurrentMapManager.syncForDeadCountDownLatches(deadAddress);
+//        }
+//    }
 
     abstract private class SemaphoreClientOperationHandler extends ClientOperationHandler {
         abstract void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag);
@@ -1680,6 +1680,42 @@ public class ClientHandlerService implements ConnectionListener {
                 Packet membershipEventPacket = endpoint.createMembershipEventPacket(membershipEvent);
                 endpoint.sendPacket(membershipEventPacket);
             }
+        }
+    }
+
+    public static class ClientDisconnect implements RemotelyProcessable {
+        Address deadAddress;
+        transient Node node;
+
+        public ClientDisconnect(Address deadAddress) {
+            this.deadAddress = deadAddress;
+        }
+
+        public ClientDisconnect() {
+        }
+
+        public void setConnection(Connection conn) {
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            deadAddress.writeData(out);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            (deadAddress = new Address()).readData(in);
+        }
+
+        public Node getNode() {
+            return node;
+        }
+
+        public void setNode(Node node) {
+            this.node = node;
+        }
+
+        public void process() {
+            node.blockingQueueManager.syncForDead(deadAddress);
+            node.concurrentMapManager.syncForDeadCountDownLatches(deadAddress);
         }
     }
 }

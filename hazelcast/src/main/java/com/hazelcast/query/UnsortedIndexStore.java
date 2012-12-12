@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,33 @@ import java.util.concurrent.ConcurrentMap;
 
 public class UnsortedIndexStore implements IndexStore {
     private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
+    private volatile boolean doubleValue = false;
+
+    public void setDoubleValue(boolean doubleValue) {
+        this.doubleValue = doubleValue;
+    }
 
     public void getSubRecordsBetween(MultiResultSet results, Long from, Long to) {
         Set<Long> values = mapRecords.keySet();
-        for (Long value : values) {
-            if (value >= from && value <= to) {
-                ConcurrentMap<Long, Record> records = mapRecords.get(value);
-                if (records != null) {
-                    results.addResultSet(value, records.values());
+        if (doubleValue) {
+            double f = Double.longBitsToDouble(from);
+            double t = Double.longBitsToDouble(to);
+            for (Long value : values) {
+                double v = Double.longBitsToDouble(value);
+                if (v >= f && v <= t) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addResultSet(value, records.values());
+                    }
+                }
+            }
+        } else {
+            for (Long value : values) {
+                if (value >= from && value <= to) {
+                    ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                    if (records != null) {
+                        results.addResultSet(value, records.values());
+                    }
                 }
             }
         }
@@ -42,6 +61,27 @@ public class UnsortedIndexStore implements IndexStore {
         Set<Long> values = mapRecords.keySet();
         for (Long value : values) {
             boolean valid = false;
+            if (doubleValue) {
+                double v = Double.longBitsToDouble(value);
+                double searchedV = Double.longBitsToDouble(searchedValue);
+                switch (predicateType) {
+                    case LESSER:
+                        valid = v < searchedV;
+                        break;
+                    case LESSER_EQUAL:
+                        valid = v <= searchedV;
+                        break;
+                    case GREATER:
+                        valid = v > searchedV;
+                        break;
+                    case GREATER_EQUAL:
+                        valid = v >= searchedV;
+                        break;
+                    case NOT_EQUAL:
+                        valid = v != searchedV;
+                        break;
+                }
+            }
             switch (predicateType) {
                 case LESSER:
                     valid = value < searchedValue;
