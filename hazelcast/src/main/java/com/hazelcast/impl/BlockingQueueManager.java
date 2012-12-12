@@ -114,9 +114,9 @@ public class BlockingQueueManager extends BaseManager {
         node.listenerManager.removeAllRegisteredListeners(name);
     }
 
-    public void syncForDead(MemberImpl deadMember) {
+    public void syncForDead(Address deadAddress) {
         for (BQ queue : mapBQ.values()) {
-            queue.invalidateScheduledActionsFor(deadMember);
+            queue.invalidateScheduledActionsFor(deadAddress);
         }
     }
 
@@ -1106,15 +1106,15 @@ public class BlockingQueueManager extends BaseManager {
             return new LocalQueueStatsImpl(ownedCount, backupCount, minAge, maxAge, aveAge);
         }
 
-        public void invalidateScheduledActionsFor(MemberImpl deadMember) {
+        public void invalidateScheduledActionsFor(Address deadAddress) {
             for (PollAction pollAction : pollWaitList) {
-                if (deadMember.address.equals(pollAction.getRequest().caller)) {
+                if (deadAddress.equals(pollAction.getRequest().caller)) {
                     pollAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(pollAction);
                 }
             }
             for (ScheduledAction offerAction : offerWaitList) {
-                if (deadMember.address.equals(offerAction.getRequest().caller)) {
+                if (deadAddress.equals(offerAction.getRequest().caller)) {
                     offerAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(offerAction);
                 }

@@ -62,6 +62,9 @@ public class ClusterQueueTest {
         }
     }
 
+    /**
+     * Test for issue 730. (google)
+     */
     @Test
     public void testDeadTaker() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
