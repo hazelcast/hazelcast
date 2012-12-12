@@ -171,7 +171,7 @@ public class PartitionManager {
 
     private void sendPartitionRuntimeState() {
         if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()
-            || !concurrentMapManager.node.joined()) {
+                || !concurrentMapManager.node.joined()) {
             return;
         }
         if (!migrationActive.get()) {
@@ -535,9 +535,15 @@ public class PartitionManager {
         } else {
             final Address master = concurrentMapManager.getMasterAddress();
             if (sender == null || !sender.equals(master)) {
-                logger.log(Level.WARNING, "Received a ClusterRuntimeState, but its sender doesn't seem master!" +
-                        " => Sender: " + sender + ", Master: " + master + "! " +
-                        "(Ignore if master node has changed recently.)");
+                if (concurrentMapManager.getMember(sender) == null) {
+                    logger.log(Level.SEVERE, "Received a ClusterRuntimeState from an unknown member!" +
+                            " => Sender: " + sender + ", Master: " + master + "! ");
+                    return;
+                } else {
+                    logger.log(Level.WARNING, "Received a ClusterRuntimeState, but its sender doesn't seem master!" +
+                            " => Sender: " + sender + ", Master: " + master + "! " +
+                            "(Ignore if master node has changed recently.)");
+                }
             }
         }
         PartitionInfo[] newPartitions = runtimeState.getPartitions();
@@ -606,8 +612,8 @@ public class PartitionManager {
         // volatile read
         final MigratingPartition currentMigratingPartition = migratingPartition;
         return currentMigratingPartition != null
-               && currentMigratingPartition.getPartitionId() == partitionId
-               && currentMigratingPartition.getReplicaIndex() == replicaIndex;
+                && currentMigratingPartition.getPartitionId() == partitionId
+                && currentMigratingPartition.getReplicaIndex() == replicaIndex;
     }
 
     public PartitionInfo getPartition(int partitionId) {
