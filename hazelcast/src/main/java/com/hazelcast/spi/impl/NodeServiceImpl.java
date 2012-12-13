@@ -56,7 +56,8 @@ public class NodeServiceImpl implements NodeService {
     private final ExecutorService eventExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
     private final int partitionCount;
-    private final Lock[] locks = new Lock[100000];
+    private final Lock[] ownerLocks = new Lock[100000];
+    private final Lock[] backupLocks = new Lock[1000];
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
     private final AtomicLong localIdGen = new AtomicLong();
     private final ServiceManager serviceManager;
@@ -65,8 +66,12 @@ public class NodeServiceImpl implements NodeService {
     public NodeServiceImpl(Node node) {
         this.node = node;
         logger = node.getLogger(NodeService.class.getName());
-        for (int i = 0; i < locks.length; i++) {
-            locks[i] = new ReentrantLock();
+        for (int i = 0; i < ownerLocks.length; i++) {
+            ownerLocks[i] = new ReentrantLock();
+        }
+
+        for (int i = 0; i < backupLocks.length; i++) {
+            backupLocks[i] = new ReentrantLock();
         }
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         final ClassLoader classLoader = node.getConfig().getClassLoader();
@@ -444,7 +449,7 @@ public class NodeServiceImpl implements NodeService {
                     partitionLock.lock();
                 } else {
                     partitionLock = partitionInfo.getReadLock();
-                    if (!partitionLock.tryLock()) {
+                    if (!partitionLock.tryLock(500, TimeUnit.MILLISECONDS)) {
                         partitionLock = null;
                         throw new PartitionMigratingException(getThisAddress(), partitionId,
                                 op.getClass().getName(), op.getServiceName());
@@ -455,9 +460,13 @@ public class NodeServiceImpl implements NodeService {
                         throw new WrongTargetException(getThisAddress(), owner, partitionId,
                                 op.getClass().getName(), op.getServiceName());
                     }
-                    if (!(op instanceof BackupOperation) && op instanceof KeyBasedOperation) {
+                    if (op instanceof KeyBasedOperation) {
                         final int hash = ((KeyBasedOperation) op).getKeyHash();
-                        keyLock = locks[Math.abs(hash) % locks.length];
+                        Lock[] lockGroup = ownerLocks;
+                        if (op instanceof BackupOperation) {
+                            lockGroup = backupLocks;
+                        }
+                        keyLock = lockGroup[Math.abs(hash) % lockGroup.length];
                         keyLock.lock();
                     }
                 }

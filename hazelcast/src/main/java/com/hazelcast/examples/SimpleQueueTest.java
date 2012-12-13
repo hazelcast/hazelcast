@@ -20,6 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,15 +30,18 @@ public class SimpleQueueTest {
     public static final int STATS_SECONDS = 10;
 
     public static void main(String[] args) {
-        int threadCount = 20;
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
+        System.setProperty("hazelcast.config", "/java/workspace/hazelcast/hazelcast/src/main/resources/hazelcast.xml");
+        int threadCount = 10;
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         final Stats stats = new Stats();
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         for (int i = 0; i < threadCount; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    Queue<byte[]> queue = hz.getQueue("default");
+                    Random random = new Random();
                     while (true) {
+                        int ran = random.nextInt(100);
+                        Queue<byte[]> queue = hz.getQueue("default"+ran);
                         for (int j = 0; j < 1000; j++) {
                             queue.offer(new byte[VALUE_SIZE]);
                             stats.offers.incrementAndGet();

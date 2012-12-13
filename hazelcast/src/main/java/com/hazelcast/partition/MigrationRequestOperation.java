@@ -152,17 +152,6 @@ public class MigrationRequestOperation extends AbstractOperation
     }
 
     private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
         final MigrationType migrationType = getMigrationType();
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,

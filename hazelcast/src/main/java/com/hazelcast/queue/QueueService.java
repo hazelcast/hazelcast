@@ -84,11 +84,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        System.out.println("MIGRRrrrrr");
-        System.out.println("MIGRRrrrrr");
-        System.out.println("MIGRRrrrrr");
-        System.out.println("MIGRRrrrrr");
-        System.out.println("MIGRRrrrrr");
         if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
             return null; // is it possible
         }
@@ -96,32 +91,32 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
-            if (container.partitionId == event.getPartitionId()) {
+            if (container.partitionId == event.getPartitionId() && container.config.getTotalBackupCount() >= event.getReplicaIndex()) {
                 migrationData.put(name, container);
             }
         }
         return new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
-//        return null;
     }
 
     public void commitMigration(MigrationServiceEvent event) {
-        logger.log(Level.FINEST, "commit " + event.getPartitionId());
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
-                && event.getMigrationType() == MigrationType.MOVE) {
-            cleanMigrationData(event.getPartitionId());
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
+            if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK){
+                cleanMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
+            }
         }
     }
 
     public void rollbackMigration(MigrationServiceEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            cleanMigrationData(event.getPartitionId());
+            cleanMigrationData(event.getPartitionId(), -1);
         }
     }
 
-    private void cleanMigrationData(int partitionId) {
+    private void cleanMigrationData(int partitionId, int copyBack) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            if (iterator.next().getValue().partitionId == partitionId) {
+            QueueContainer container = iterator.next().getValue();
+            if (container.partitionId == partitionId && (copyBack ==-1 || container.config.getTotalBackupCount() < copyBack)) {
                 iterator.remove();
             }
         }

@@ -45,11 +45,6 @@ public class QueueMigrationOperation extends AbstractOperation {
     }
 
     public void run() {
-        System.out.println("QUEUEE MIGRATED!!!!");
-        System.out.println("QUEUEE MIGRATED!!!!");
-        System.out.println("QUEUEE MIGRATED!!!!");
-        System.out.println("QUEUEE MIGRATED!!!!");
-        System.out.println("QUEUEE MIGRATED!!!!");
         QueueService service = getService();
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();

@@ -606,7 +606,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("queue-sync-backup-count".equals(nodeName)) {
                 qConfig.setSyncBackupCount(getIntegerValue("queue-sync-backup-count", value, QueueConfig.DEFAULT_SYNC_BACKUP_COUNT));
             } else if ("queue-async-backup-count".equals(nodeName)) {
-                qConfig.setSyncBackupCount(getIntegerValue("queue-async-backup-count", value, QueueConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                qConfig.setAsyncBackupCount(getIntegerValue("queue-async-backup-count", value, QueueConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             } else if ("item-listeners".equals(nodeName)) {
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("item-listener".equals(cleanNodeName(listenerNode))) {

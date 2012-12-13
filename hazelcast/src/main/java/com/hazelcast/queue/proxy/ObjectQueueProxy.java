@@ -38,6 +38,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public LocalQueueStats getLocalQueueStats() {
         //TODO what to do
+        System.out.println(queueService.getContainer("ali").size());
         return null;
     }
 

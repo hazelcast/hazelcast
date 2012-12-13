@@ -28,12 +28,12 @@ public final class QueueConfig implements DataSerializable {
 
     public final static int DEFAULT_MAX_SIZE = 0;
     public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
-    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 1;
+    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;
     private List<ItemListenerConfig> listenerConfigs;
-    private int syncBackupCount;
-    private int asyncBackupCount;
+    private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize;
 
     public QueueConfig() {
@@ -56,6 +56,10 @@ public final class QueueConfig implements DataSerializable {
         }
         this.maxSize = maxSize;
         return this;
+    }
+
+    public int getTotalBackupCount(){
+        return syncBackupCount + asyncBackupCount;
     }
 
     public int getSyncBackupCount() {
@@ -117,7 +121,7 @@ public final class QueueConfig implements DataSerializable {
         out.writeUTF(name);
         out.writeInt(syncBackupCount);
         out.writeInt(asyncBackupCount);
-        out.writeLong(maxSize);
+        out.writeInt(maxSize);
     }
 
     public void readData(DataInput in) throws IOException {
