@@ -238,6 +238,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 return;
             }
             try {
+                boolean firstError = true;
                 while (running.get()) {
                     try {
                         URL url = new URL(webServerUrl + "collector.do");
@@ -252,7 +253,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         out.flush();
                         connection.getInputStream();
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
+                        if(firstError) {
+                            logger.log(Level.SEVERE, "Can not connect to Management Center. Check url connectivity:" + webServerUrl);
+                            firstError = false;
+                        }
+                        else {
+                            logger.log(Level.FINEST, e.getMessage(), e);
+                        }
                     }
                     Thread.sleep(updateIntervalMs);
                 }
