@@ -50,6 +50,14 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
         return new OfferBackupOperation(name, data);
     }
 
+    public boolean shouldBackup() {
+        return true;
+    }
+
+    public boolean shouldNotify() {
+        return true;
+    }
+
     public Object getNotifiedKey() {
         return getName() + ":poll";
     }

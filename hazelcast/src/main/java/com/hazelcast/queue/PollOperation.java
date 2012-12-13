@@ -36,8 +36,16 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
         response = getContainer().poll();
     }
 
+    public boolean shouldBackup() {
+        return true;
+    }
+
     public Operation getBackupOperation() {
         return new PollBackupOperation(name);
+    }
+
+    public boolean shouldNotify() {
+        return true;
     }
 
     public Object getNotifiedKey() {

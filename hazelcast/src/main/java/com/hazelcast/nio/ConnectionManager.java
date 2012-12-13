@@ -238,7 +238,7 @@ public class ConnectionManager {
         //make sure bind packet is the first packet sent to the end point.
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
         final Data bindData = IOUtil.toData(bind);
-        connection.getWriteHandler().enqueueSocketWritable(new Packet(bindData, -1, connection));
+        connection.getWriteHandler().enqueueSocketWritable(new Packet(bindData, connection));
         //now you can send anything...
     }
 

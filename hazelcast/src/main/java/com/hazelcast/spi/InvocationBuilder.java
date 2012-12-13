@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.spi.impl.PartitionInvocationImpl;
@@ -28,7 +27,7 @@ public class InvocationBuilder {
     private final String serviceName;
     private final Operation op;
     private final int partitionId;
-    private Address target;
+    private final Address target;
     private int replicaIndex = 0;
     private int tryCount = 100;
     private long tryPauseMillis = 500;
@@ -38,18 +37,17 @@ public class InvocationBuilder {
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
+        this.target = null;
     }
 
-    public InvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op,
-                             int partitionId, int replicaIndex, int tryCount, long tryPauseMillis) {
+    public InvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op, Address target) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
-        this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
-        this.tryCount = tryCount;
-        this.tryPauseMillis = tryPauseMillis;
+        this.partitionId = -1;
+        this.target = target;
     }
+
 
     public InvocationBuilder setReplicaIndex(int replicaIndex) {
         this.replicaIndex = replicaIndex;
@@ -66,21 +64,12 @@ public class InvocationBuilder {
         return this;
     }
 
-    public InvocationBuilder setTarget(final Address target) {
-        this.target = target;
-        return this;
-    }
-
     public String getServiceName() {
         return serviceName;
     }
 
     public Operation getOp() {
         return op;
-    }
-
-    public PartitionInfo getPartitionInfo() {
-        return partitionId > -1 ? nodeService.getPartitionInfo(partitionId) : null;
     }
 
     public int getReplicaIndex() {
@@ -99,11 +88,15 @@ public class InvocationBuilder {
         return target;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     public Invocation build() {
         if (target == null) {
             return new PartitionInvocationImpl(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
         } else {
-            return new TargetInvocationImpl(nodeService, serviceName, op, partitionId, replicaIndex, target, tryCount, tryPauseMillis);
+            return new TargetInvocationImpl(nodeService, serviceName, op, target, tryCount, tryPauseMillis);
         }
     }
 }

@@ -177,6 +177,10 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         return mapPartition.getBackupCount();
     }
 
+    public boolean shouldBackup() {
+        return true;
+    }
+
     private void remove() {
         mapPartition.records.remove(dataKey);
     }

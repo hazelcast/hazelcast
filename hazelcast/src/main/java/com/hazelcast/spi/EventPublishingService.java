@@ -14,32 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
-
-import com.hazelcast.spi.Operation;
+package com.hazelcast.spi;
 
 /**
- * @ali 12/6/12
+ * @mdogan 12/12/12
  */
-public class ClearOperation extends QueueBackupAwareOperation {
+public interface EventPublishingService {
 
-    public ClearOperation() {
-    }
 
-    public ClearOperation(String name) {
-        super(name);
-    }
-
-    public void run() throws Exception {
-        getContainer().clear();
-        response = true;
-    }
-
-    public Operation getBackupOperation() {
-        return new ClearBackupOperation(name);
-    }
-
-    public boolean shouldBackup() {
-        return true;
-    }
 }

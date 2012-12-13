@@ -189,13 +189,13 @@ abstract class MapProxySupport {
     public int size() {
         try {
             MapSizeOperation mapSizeOperation = new MapSizeOperation(name);
-            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
-            int total = 0;
-            for (Object result : results.values()) {
-                Integer size = (Integer) nodeService.toObject(result);
-                total += size;
-            }
-            return total;
+//            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
+//            int total = 0;
+//            for (Object result : results.values()) {
+//                Integer size = (Integer) nodeService.toObject(result);
+//                total += size;
+//            }
+//            return total;
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -25,12 +25,20 @@ public class Packet implements SocketWritable, CallStateAware {
 
     public static final byte PACKET_VERSION = 1;
 
-    private static final byte ST_PARTITION  = 0x1;
-    private static final byte ST_SIZE       = 0x2;
-    private static final byte ST_VALUE      = 0x4;
+    public static final int HEADER_OP = 0;
+    public static final int HEADER_EVENT = 1;
+//    public static final int HEADER_RESERVED_2 = 2;
+//    public static final int HEADER_RESERVED_3 = 3;
+//    public static final int HEADER_RESERVED_4 = 4;
+//    public static final int HEADER_RESERVED_5 = 5;
+//    public static final int HEADER_RESERVED_6 = 6;
 
+    private static final byte ST_HEADER = 0x1;
+    private static final byte ST_SIZE = 0x2;
+    private static final byte ST_VALUE = 0x4;
+
+    private byte header;
     private DataHolder value;
-    private int partitionId;
 
     private transient byte status = 0x0;
     private transient Connection conn;
@@ -39,22 +47,18 @@ public class Packet implements SocketWritable, CallStateAware {
     public Packet() {
     }
 
-    public Packet(Data value, int partitionId) {
-        this(value, partitionId, null);
+    public Packet(Data value) {
+        this(value, null);
     }
 
-    public Packet(Data value, int partitionId, Connection conn) {
+    public Packet(Data value, Connection conn) {
         this.value = value == null || value.size() == 0 ? null : new DataHolder(value);
-        this.partitionId = partitionId;
         this.conn = conn;
+        setHeader(HEADER_OP, true);
     }
 
     public Data getValue() {
         return value.toData();
-    }
-
-    public int getPartitionId() {
-        return partitionId;
     }
 
     public Connection getConn() {
@@ -65,23 +69,36 @@ public class Packet implements SocketWritable, CallStateAware {
         this.conn = conn;
     }
 
+    public void setHeader(int bit, boolean b) {
+        if (b)
+            header |= 1 << bit;
+        else
+            header &= ~ 1 << bit;
+    }
+
+    public boolean isHeaderSet(int bit) {
+        return (header & 1 << bit) != 0;
+    }
+
     public void onEnqueue() {
 
     }
 
     public final boolean writeTo(ByteBuffer destination) {
         // TODO: think about packet versions
-        if (!isStatusSet(ST_PARTITION)) {
-            if (!writeInt(destination, partitionId)) {
+        if (!isStatusSet(ST_HEADER)) {
+            if (!destination.hasRemaining()) {
                 return false;
             }
-            setStatus(ST_PARTITION);
+            destination.put(header);
+            setStatus(ST_HEADER);
         }
 
         if (!isStatusSet(ST_SIZE)) {
-            if (!writeInt(destination, value != null ? value.size() : 0)) {
+            if (destination.remaining() < 4) {
                 return false;
             }
+            destination.putInt(value != null ? value.size() : 0);
             setStatus(ST_SIZE);
         }
 
@@ -99,12 +116,12 @@ public class Packet implements SocketWritable, CallStateAware {
 
     public final boolean readFrom(ByteBuffer source) {
         // TODO: think about packet versions
-        if (!isStatusSet(ST_PARTITION)) {
-            if (source.remaining() < 4) {
+        if (!isStatusSet(ST_HEADER)) {
+            if (!source.hasRemaining()) {
                 return false;
             }
-            partitionId = source.getInt();
-            setStatus(ST_PARTITION);
+            header = source.get();
+            setStatus(ST_HEADER);
         }
 
         if (!isStatusSet(ST_SIZE)) {
@@ -135,14 +152,6 @@ public class Packet implements SocketWritable, CallStateAware {
 
     private boolean isStatusSet(byte st) {
         return (status & st) != 0;
-    }
-
-    private static boolean writeInt(ByteBuffer destination, int value) {
-        if (destination.remaining() >= 4) {
-            destination.putInt(value);
-            return true;
-        }
-        return false;
     }
 
     public CallState getCallState() {

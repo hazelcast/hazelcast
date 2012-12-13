@@ -20,6 +20,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Iterator;
 import java.util.Queue;
@@ -27,7 +28,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.*;
 
-public class WaitNotifyService {
+@PrivateApi
+class WaitNotifyService {
     private final ConcurrentMap<Object, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<Object, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService esExpirationTaskExecutor = Executors.newSingleThreadExecutor();

@@ -18,11 +18,11 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.SpinLock;
+import com.hazelcast.util.SpinReadWriteLock;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class PartitionInfo {
     public static final int MAX_REPLICA_COUNT = MapConfig.MAX_BACKUP_COUNT + 1;
@@ -30,13 +30,19 @@ public class PartitionInfo {
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
     private final PartitionListener partitionListener;
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Lock readLock = lock.readLock();
-    private final Lock writeLock = lock.writeLock();
+//    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+//    private final Lock readLock = lock.readLock();
+//    private final Lock writeLock = lock.writeLock();
+
+    private final SpinLock readLock;
+    private final SpinLock writeLock;
 
     public PartitionInfo(int partitionId, PartitionListener partitionListener) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
+        SpinReadWriteLock lock = new SpinReadWriteLock(1, TimeUnit.MILLISECONDS);
+        readLock = lock.readLock();
+        writeLock = lock.writeLock();
     }
 
     public PartitionInfo(int partitionId) {
@@ -145,11 +151,20 @@ public class PartitionInfo {
         return -1;
     }
 
-    public Lock getReadLock() {
+//    public Lock getReadLock() {
+//        return readLock;
+//    }
+//
+//    public Lock getWriteLock() {
+//        return writeLock;
+//    }
+
+
+    public SpinLock getReadLock() {
         return readLock;
     }
 
-    public Lock getWriteLock() {
+    public SpinLock getWriteLock() {
         return writeLock;
     }
 

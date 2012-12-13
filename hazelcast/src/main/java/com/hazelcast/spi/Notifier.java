@@ -18,5 +18,7 @@ package com.hazelcast.spi;
 
 public interface Notifier {
 
+    boolean shouldNotify();
+
     Object getNotifiedKey();
 }

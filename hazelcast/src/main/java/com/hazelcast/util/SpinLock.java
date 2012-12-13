@@ -14,32 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.util;
 
-import com.hazelcast.spi.Operation;
+import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 12/6/12
+ * @mdogan 12/13/12
  */
-public class ClearOperation extends QueueBackupAwareOperation {
+public interface SpinLock {
 
-    public ClearOperation() {
-    }
+    void lock();
 
-    public ClearOperation(String name) {
-        super(name);
-    }
+    boolean tryLock(final long time, TimeUnit unit) throws InterruptedException;
 
-    public void run() throws Exception {
-        getContainer().clear();
-        response = true;
-    }
-
-    public Operation getBackupOperation() {
-        return new ClearBackupOperation(name);
-    }
-
-    public boolean shouldBackup() {
-        return true;
-    }
+    void unlock();
 }

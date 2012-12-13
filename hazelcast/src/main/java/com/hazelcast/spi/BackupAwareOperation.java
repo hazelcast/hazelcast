@@ -21,6 +21,8 @@ package com.hazelcast.spi;
  */
 public interface BackupAwareOperation {
 
+    boolean shouldBackup();
+
     int getSyncBackupCount();
 
     int getAsyncBackupCount();

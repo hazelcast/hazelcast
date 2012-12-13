@@ -26,7 +26,6 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.transaction.TransactionImpl;
 
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -37,20 +36,19 @@ import java.util.concurrent.TimeoutException;
  */
 public interface NodeService {
 
-    public static final int EXECUTOR_THREAD_ID = -1;
-    public static final int EVENT_THREAD_ID = -2;
-
     void runOperation(Operation op) throws Exception;
 
-    Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception;
+//    Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception;
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
+    InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
+
     boolean send(Operation op, int partitionId, int replicaIndex);
 
-    boolean send(Operation op, int partitionId, Address target);
+    boolean send(Operation op, Address target);
 
-    boolean send(Operation op, int partitionId, Connection connection);
+    boolean send(Operation op, Connection connection);
 
     void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException;

@@ -42,6 +42,10 @@ public class RemoveOperation extends QueueBackupAwareOperation {
         response = getContainer().remove(data);
     }
 
+    public boolean shouldBackup() {
+        return true;
+    }
+
     public Operation getBackupOperation() {
         return new RemoveBackupOperation(name, data);
     }
