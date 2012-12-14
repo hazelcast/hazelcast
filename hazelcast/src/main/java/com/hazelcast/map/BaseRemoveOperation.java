@@ -38,34 +38,20 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     MapService mapService;
     NodeService nodeService;
 
-    // put flags: put(), set() and other put related operation implemntations will differ according to these flags
-    boolean LOAD_OLD = true;
-    boolean STORE = true;
-    boolean RETURN_RESPONSE = true;
-    boolean RETURN_OLD_VALUE = true;
-    boolean SEND_BACKUPS = true;
-    boolean TRANSACTION_ENABLED = true;
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
         setTxnId(txnId);
-        initFlags();
     }
 
     public BaseRemoveOperation() {
-        initFlags();
     }
 
-    abstract void initFlags();
-
     protected boolean prepareTransaction() {
-        if (TRANSACTION_ENABLED) {
-            if (txnId != null) {
-                pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
-                if (RETURN_RESPONSE)
-                    responseHandler.sendResponse(null);
-                return true;
-            }
+        if (txnId != null) {
+            pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
+            responseHandler.sendResponse(null);
+            return true;
         }
         return false;
     }
@@ -79,50 +65,21 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     protected void load() {
-        if (LOAD_OLD) {
-            if (mapPartition.loader != null) {
-                key = toObject(dataKey);
-                Object oldValue = mapPartition.loader.load(key);
-                valueData = toData(oldValue);
-            }
+        if (mapPartition.loader != null) {
+            key = toObject(dataKey);
+            Object oldValue = mapPartition.loader.load(key);
+            valueData = toData(oldValue);
         }
     }
-
 
     protected void store() {
-        if (STORE) {
-            if (mapPartition.store != null && mapPartition.writeDelayMillis == 0) {
-                if (key == null) {
-                    key = toObject(dataKey);
-                }
-                mapPartition.store.delete(key);
+        if (mapPartition.store != null && mapPartition.writeDelayMillis == 0) {
+            if (key == null) {
+                key = toObject(dataKey);
             }
+            mapPartition.store.delete(key);
         }
     }
-
-//    protected void sendBackups() {
-//        int mapBackupCount = mapPartition.getBackupCount();
-//        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
-//        GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-//        op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
-//        op.setInvocation(true);
-//        try {
-//            getNodeService().takeBackups(getServiceName(), op, getPartitionId(), 0, backupCount, 10);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        int mapBackupCount = mapPartition.getBackupCount();
-//        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
-//        if (SEND_BACKUPS) {
-//            version = pc.incrementAndGetVersion();
-//            if (backupCount > 0) {
-//                GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-//                op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
-//                op.setFirstCallerId(backupCallId, getCaller());
-//                nodeService.sendAsyncBackups(MapService.MAP_SERVICE_NAME, op, getPartitionId(), mapBackupCount);
-//            }
-//        }
-//    }
 
     protected void prepareValue() {
         record = mapPartition.records.get(dataKey);
@@ -133,30 +90,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         }
     }
 
-//    protected void sendResponse() {
-//        if (RETURN_RESPONSE){
-//            if (RETURN_OLD_VALUE){
-//                responseHandler.sendResponse(new UpdateResponse(valueData, version, backupCount));
-//            }
-//            else {
-//                responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
-//            }
-//        }
-//    }
-
-
-    // run operation is seperated into methods so each method can be overridden to differentiate put implementation
-    public void doOp() {
-        init();
-        if (prepareTransaction()) {
-            return;
-        }
-        prepareValue();
-        remove();
-        store();
-//        sendBackups();
-//        sendResponse();
-    }
+    public abstract void doOp();
 
     @Override
     public Object getResponse() {
@@ -177,7 +111,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         return mapPartition.getBackupCount();
     }
 
-    private void remove() {
+    public void remove() {
         mapPartition.records.remove(dataKey);
     }
 

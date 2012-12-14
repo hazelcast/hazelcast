@@ -27,11 +27,15 @@ public class RemoveOperation extends BaseRemoveOperation {
     public RemoveOperation() {
     }
 
-    @Override
-    void initFlags() {
-      // use default flags
+    public void doOp() {
+        init();
+        if (prepareTransaction()) {
+            return;
+        }
+        prepareValue();
+        remove();
+        store();
     }
-
 
     @Override
     public String toString() {
