@@ -57,7 +57,7 @@ class EventService {
         segments = new ConcurrentHashMap<String, EventSegment>();
     }
 
-    void registerListener(String service, Object topic, Address... subscribers) {
+    void registerSubscribers(String service, Object topic, Address... subscribers) {
         Collection<MemberImpl> members = nodeService.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
@@ -161,7 +161,7 @@ class EventService {
 
         public void run() throws Exception {
             EventService eventService = getService();
-            eventService.registerListener(eventServiceName, topic, addresses);
+            eventService.registerSubscribers(eventServiceName, topic, addresses);
         }
 
         @Override

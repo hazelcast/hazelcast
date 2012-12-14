@@ -16,10 +16,13 @@
 
 package com.hazelcast.spi;
 
+import java.util.Collection;
+
 /**
  * @mdogan 12/12/12
  */
-public interface EventPublishingService {
+public interface EventPublishingService<T> {
 
+    void dispatchEvent(EventOperation event, Collection<T> listeners);
 
 }

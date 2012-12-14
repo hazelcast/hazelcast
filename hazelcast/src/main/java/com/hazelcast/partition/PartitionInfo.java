@@ -18,10 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.SpinLock;
-import com.hazelcast.util.SpinReadWriteLock;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class PartitionInfo {
@@ -30,19 +27,10 @@ public class PartitionInfo {
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
     private final PartitionListener partitionListener;
-//    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-//    private final Lock readLock = lock.readLock();
-//    private final Lock writeLock = lock.writeLock();
-
-    private final SpinLock readLock;
-    private final SpinLock writeLock;
 
     public PartitionInfo(int partitionId, PartitionListener partitionListener) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
-        SpinReadWriteLock lock = new SpinReadWriteLock(1, TimeUnit.MILLISECONDS);
-        readLock = lock.readLock();
-        writeLock = lock.writeLock();
     }
 
     public PartitionInfo(int partitionId) {
@@ -83,7 +71,7 @@ public class PartitionInfo {
     }
 
     public Address getReplicaAddress(int index) {
-        return (addresses != null && addresses.length() > index)
+        return (addresses.length() > index)
                 ? addresses.get(index) : null;
     }
 
@@ -113,22 +101,6 @@ public class PartitionInfo {
         return false;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Partition [")
-                .append(partitionId).append("]{\n");
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            Address address = addresses.get(i);
-            if (address != null) {
-                sb.append('\t');
-                sb.append(i).append(":").append(address);
-                sb.append("\n");
-            }
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-
     boolean onDeadAddress(Address deadAddress) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (deadAddress.equals(addresses.get(i))) {
@@ -149,23 +121,6 @@ public class PartitionInfo {
             }
         }
         return -1;
-    }
-
-//    public Lock getReadLock() {
-//        return readLock;
-//    }
-//
-//    public Lock getWriteLock() {
-//        return writeLock;
-//    }
-
-
-    public SpinLock getReadLock() {
-        return readLock;
-    }
-
-    public SpinLock getWriteLock() {
-        return writeLock;
     }
 
     @Override
@@ -196,5 +151,21 @@ public class PartitionInfo {
             result = 31 * result + (address != null ? address.hashCode() : 0);
         }
         return result;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Partition [")
+                .append(partitionId).append("]{\n");
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            Address address = addresses.get(i);
+            if (address != null) {
+                sb.append('\t');
+                sb.append(i).append(":").append(address);
+                sb.append("\n");
+            }
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }
