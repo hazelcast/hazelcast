@@ -24,6 +24,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.EventOperation;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrentHashSet;
@@ -45,14 +46,12 @@ import java.util.logging.Level;
  */
 
 @PrivateApi
-class EventService {
+class EventServiceImpl implements EventService {
 
-    static final String NAME = "hz:core:eventService";
-
-    private final NodeServiceImpl nodeService;
+    private final NodeEngineImpl nodeService;
     private final ConcurrentMap<String, EventSegment> segments;
 
-    EventService(NodeServiceImpl nodeService) {
+    EventServiceImpl(NodeEngineImpl nodeService) {
         this.nodeService = nodeService;
         segments = new ConcurrentHashMap<String, EventSegment>();
     }
@@ -62,7 +61,7 @@ class EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeService.createInvocationBuilder(NAME,
+                Invocation inv = nodeService.getInvocationService().createInvocationBuilder(service,
                         new RegistrationOperation(service, subscribers, topic), member.getAddress()).build();
                 calls.add(inv.invoke());
             }
@@ -74,7 +73,7 @@ class EventService {
             try {
                 call.get(5, TimeUnit.SECONDS);
             } catch (Exception e) {
-                nodeService.getLogger(EventService.class.getName()).log(Level.FINEST, "While registering listener", e);
+                nodeService.getLogger(EventServiceImpl.class.getName()).log(Level.FINEST, "While registering listener", e);
             }
         }
     }
@@ -160,8 +159,8 @@ class EventService {
         }
 
         public void run() throws Exception {
-            EventService eventService = getService();
-            eventService.registerSubscribers(eventServiceName, topic, addresses);
+            EventServiceImpl eventSupport = (EventServiceImpl) getNodeEngine().getEventService();
+            eventSupport.registerSubscribers(eventServiceName, topic, addresses);
         }
 
         @Override

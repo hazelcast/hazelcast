@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
+/**
+ * @mdogan 12/14/12
+ */
+public interface EventService {
 
-public class PartitionInvocationImpl extends InvocationImpl {
-
-    public PartitionInvocationImpl(NodeEngineImpl nodeService, String serviceName, Operation op, int partitionId,
-                                   int replicaIndex, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
-    }
-
-    protected Address getTarget() {
-        return getPartitionInfo().getReplicaAddress(replicaIndex);
-    }
 }

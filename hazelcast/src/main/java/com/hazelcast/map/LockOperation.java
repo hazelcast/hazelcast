@@ -46,7 +46,7 @@ public class LockOperation extends LockAwareOperation {
             GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
             backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
             int backupCount = mapPartition.getBackupCount();
-//            getNodeService().sendAsyncBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
+//            getNodeEngine().sendAsyncBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
         }
         responseHandler.sendResponse(locked);
     }

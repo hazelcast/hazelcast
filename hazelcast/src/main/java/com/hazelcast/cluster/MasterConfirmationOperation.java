@@ -33,7 +33,7 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
             return;
         }
         final ClusterService clusterService = getService();
-        final ILogger logger = getNodeService().getLogger(MasterConfirmationOperation.class.getName());
+        final ILogger logger = getNodeEngine().getLogger(MasterConfirmationOperation.class.getName());
         final MemberImpl member = clusterService.getMember(endpoint);
         if (member != null) {
             if (clusterService.isMaster()) {

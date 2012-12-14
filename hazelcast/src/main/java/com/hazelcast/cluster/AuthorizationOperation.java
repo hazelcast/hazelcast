@@ -38,7 +38,7 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
     }
 
     public void run() {
-        GroupConfig groupConfig = getNodeService().getConfig().getGroupConfig();
+        GroupConfig groupConfig = getNodeEngine().getConfig().getGroupConfig();
         if (!groupName.equals(groupConfig.getName())) {
             response = Boolean.FALSE;
         } else if (!groupPassword.equals(groupConfig.getPassword())) {

@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
@@ -59,12 +59,12 @@ public final class MultiResponse extends AbstractOperation {
 
     @Override
     public void beforeRun() throws Exception {
-        final NodeService nodeService = getNodeService();
+        final NodeEngine nodeEngine = getNodeEngine();
         final int len = operationData.length;
         operations = new Operation[len];
         for (int i = 0; i < len; i++) {
-            final Operation op = (Operation) nodeService.toObject(operationData[i]);
-            op.setNodeService(nodeService)
+            final Operation op = (Operation) nodeEngine.toObject(operationData[i]);
+            op.setNodeEngine(nodeEngine)
                     .setCaller(getCaller())
                     .setCallId(getCallId())
                     .setConnection(getConnection())
@@ -75,11 +75,11 @@ public final class MultiResponse extends AbstractOperation {
 
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
-            final NodeService nodeService = getNodeService();
+            final NodeEngine nodeEngine = getNodeEngine();
             for (int i = 0; i < operations.length; i++) {
                 final Operation op = operations[i];
                 if (op != null) {
-                    nodeService.runOperation(op);
+                    nodeEngine.getInvocationService().runOperation(op);
                 }
             }
         }

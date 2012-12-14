@@ -21,7 +21,7 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,12 +32,12 @@ import java.util.concurrent.TimeoutException;
 
 public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data> {
 
-    public DataMapProxy(final String name, final MapService mapService, NodeService nodeService) {
-        super(name, mapService, nodeService);
+    public DataMapProxy(final String name, final MapService mapService, NodeEngine nodeEngine) {
+        super(name, mapService, nodeEngine);
     }
 
     public Data get(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return getInternal(key);
     }
 
@@ -86,7 +86,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data remove(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return removeInternal(key);
     }
 
@@ -103,7 +103,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public boolean containsKey(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return containsKeyInternal(key);
     }
 

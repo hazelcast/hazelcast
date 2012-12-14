@@ -54,7 +54,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         this.groupName = groupName;
         this.password = password;
         addressQueue.addAll(Arrays.asList(targets));
-        node.nodeService.execute(this);
+        node.nodeService.getExecutionService().execute(this);
     }
 
     /**
@@ -137,7 +137,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         Operation authorizationCall = new AuthorizationOperation(groupName, groupPassword);
-        Future<Boolean> future = node.nodeService.createInvocationBuilder(WanReplicationService.SERVICE_NAME,
+        Future<Boolean> future = node.nodeService.getInvocationService().createInvocationBuilder(WanReplicationService.SERVICE_NAME,
                 authorizationCall, target).setTryCount(1).build().invoke();
         try {
             return future.get();

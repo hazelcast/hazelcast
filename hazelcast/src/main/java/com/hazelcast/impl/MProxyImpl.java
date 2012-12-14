@@ -49,7 +49,7 @@
 //    public MProxyImpl(String name, HazelcastInstanceImpl instance) {
 //        setName(name);
 //        setHazelcastInstance(instance);
-//        final MapService mapService = instance.node.nodeService.getService(MapService.MAP_SERVICE_NAME);
+//        final MapService mapService = instance.node.nodeEngine.getService(MapService.MAP_SERVICE_NAME);
 //        mapProxy = mapService.getProxy(name);
 //        mapOperationCounter = new MapOperationsCounter();
 //    }

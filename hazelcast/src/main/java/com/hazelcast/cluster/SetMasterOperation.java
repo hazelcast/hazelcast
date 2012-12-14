@@ -20,7 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -41,7 +41,7 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
 
     public void run() {
         ClusterService clusterService = getService();
-        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
         Node node = nodeService.getNode();
         ILogger logger = nodeService.getLogger(SetMasterOperation.class.getName());
         if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {

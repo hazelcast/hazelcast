@@ -20,7 +20,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy<E> {
 
-    public ObjectQueueProxy(String name, QueueService queueService, NodeService nodeService) {
-        super(name, queueService, nodeService);
+    public ObjectQueueProxy(String name, QueueService queueService, NodeEngine nodeEngine) {
+        super(name, queueService, nodeEngine);
     }
 
     public LocalQueueStats getLocalQueueStats() {
@@ -63,7 +63,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
-        final Data data = nodeService.toData(e);
+        final Data data = nodeEngine.toData(e);
         return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
@@ -76,12 +76,12 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean remove(Object o) {
-        final Data data = nodeService.toData(o);
+        final Data data = nodeEngine.toData(o);
         return removeInternal(data);
     }
 
     public boolean contains(Object o) {
-        final Data data = nodeService.toData(o);
+        final Data data = nodeEngine.toData(o);
         Set<Data> dataSet = new HashSet<Data>(1);
         dataSet.add(data);
         return containsInternal(dataSet);
@@ -105,7 +105,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
         final Data data = pollInternal(timeUnit.toMillis(timeout));
-        return (E) nodeService.toObject(data);
+        return (E) nodeEngine.toObject(data);
     }
 
     public E poll() {
@@ -126,7 +126,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public E peek() {
         final Data data = peekInternal();
-        return (E) nodeService.toObject(data);
+        return (E) nodeEngine.toObject(data);
     }
 
     public boolean isEmpty() {
@@ -150,7 +150,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         Set<Data> dataSet = new HashSet<Data>(objects.size());
         while (iter.hasNext()){
             Object o = iter.next();
-            final Data data = nodeService.toData(o);
+            final Data data = nodeEngine.toData(o);
             dataSet.add(data);
         }
         return containsInternal(dataSet);

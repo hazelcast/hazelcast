@@ -44,22 +44,21 @@ import java.util.logging.Level;
 @PrivateApi
 class ServiceManager {
 
-    private final NodeServiceImpl nodeService;
+    private final NodeEngineImpl nodeService;
     private final ILogger logger;
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
 
-    ServiceManager(final NodeServiceImpl nodeService) {
+    ServiceManager(final NodeEngineImpl nodeService) {
         this.nodeService = nodeService;
         this.logger = nodeService.getLogger(ServiceManager.class.getName());
     }
 
-    synchronized void startServices() {
+    synchronized void start() {
         final Node node = nodeService.getNode();
         // register core services
         logger.log(Level.FINEST, "Registering core services...");
         registerService(ClusterService.SERVICE_NAME, node.getClusterService());
         registerService(PartitionService.SERVICE_NAME, node.getPartitionService());
-        registerService(EventService.NAME, nodeService.getEventService());
 
         final Services servicesConfig = node.getConfig().getServicesConfig();
         if (servicesConfig != null) {
@@ -100,7 +99,7 @@ class ServiceManager {
         }
     }
 
-    synchronized void stopServices() {
+    synchronized void shutdown() {
         final List<ManagedService> managedServices = getServices(ManagedService.class);
         // reverse order to stop CoreServices last.
         Collections.reverse(managedServices);

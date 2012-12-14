@@ -18,7 +18,7 @@
 //
 //import com.hazelcast.nio.Data;
 //import com.hazelcast.spi.AbstractOperation;
-//import com.hazelcast.spi.NodeService;
+//import com.hazelcast.spi.NodeEngine;
 //import com.hazelcast.spi.Operation;
 //import com.hazelcast.spi.ResponseHandler;
 //import com.hazelcast.util.ResponseQueueFactory;
@@ -45,20 +45,20 @@
 //    }
 //
 //    public void run() {
-//        final NodeService nodeService = getNodeService();
+//        final NodeEngine nodeEngine = getNodeEngine();
 //        try {
 //            Map<Integer, Object> results = new HashMap<Integer, Object>(partitions.size());
 //            Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
 //            for (final int partitionId : partitions) {
-//                Operation op = (Operation) nodeService.toObject(operationData);
+//                Operation op = (Operation) nodeEngine.toObject(operationData);
 //                ResponseQueue r = new ResponseQueue();
-//                op.setNodeService(getNodeService())
+//                op.setNodeEngine(getNodeEngine())
 //                        .setCaller(getCaller())
 //                        .setPartitionId(partitionId)
 //                        .setReplicaIndex(getReplicaIndex())
 //                        .setResponseHandler(r)
 //                        .setService(getService());
-//                nodeService.runOperation(op);
+//                nodeEngine.runOperation(op);
 //                responses.put(partitionId, r);
 //            }
 //            for (Map.Entry<Integer, ResponseQueue> partitionResponse : responses.entrySet()) {
@@ -67,7 +67,7 @@
 //            }
 ////            getResponseHandler().sendResponse(results);
 //        } catch (Exception e) {
-//            nodeService.getLogger(PartitionIterator.class.getName()).log(Level.WARNING, e.getMessage(), e);
+//            nodeEngine.getLogger(PartitionIterator.class.getName()).log(Level.WARNING, e.getMessage(), e);
 ////            getResponseHandler().sendResponse(e);
 //        }
 //    }

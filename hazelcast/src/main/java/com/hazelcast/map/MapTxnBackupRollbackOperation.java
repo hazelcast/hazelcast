@@ -36,7 +36,7 @@ public class MapTxnBackupRollbackOperation extends AbstractOperation {
     public void run() {
         int partitionId = getPartitionId();
         MapService mapService = (MapService) getService();
-        System.out.println(getNodeService().getThisAddress() + " backupRollback " + txnId);
+        System.out.println(getNodeEngine().getThisAddress() + " backupRollback " + txnId);
         PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
         partitionContainer.rollback(txnId);
         ResponseHandler responseHandler = getResponseHandler();

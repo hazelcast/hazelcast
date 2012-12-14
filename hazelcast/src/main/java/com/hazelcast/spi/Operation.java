@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -36,7 +36,7 @@ public abstract class Operation implements DataSerializable {
     private long callId = -1;
     private boolean validateTarget = true;
     // injected
-    private transient NodeService nodeService = null;
+    private transient NodeEngine nodeEngine = null;
     private transient Object service;
     private transient Address caller;
     private transient Connection connection;
@@ -97,12 +97,12 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public final NodeService getNodeService() {
-        return nodeService;
+    public final NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
-    public final Operation setNodeService(NodeService nodeService) {
-        this.nodeService = nodeService;
+    public final Operation setNodeEngine(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
         return this;
     }
 
@@ -110,7 +110,7 @@ public abstract class Operation implements DataSerializable {
         if (service == null) {
             // one might have overridden getServiceName() method...
             final String name = serviceName != null ? serviceName : getServiceName();
-            service = ((NodeServiceImpl) nodeService).getService(name);
+            service = ((NodeEngineImpl) nodeEngine).getService(name);
             if (service == null) {
                 throw new HazelcastException("Service with name '" + name + "' not found!");
             }

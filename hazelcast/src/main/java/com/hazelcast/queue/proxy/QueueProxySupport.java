@@ -17,19 +17,13 @@
 package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeService;
-import com.hazelcast.util.ConcurrentHashSet;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * User: ali
@@ -40,25 +34,25 @@ abstract class QueueProxySupport {
 
     final String name;
     final QueueService queueService;
-    final NodeService nodeService;
+    final NodeEngine nodeEngine;
     final int partitionId;
     final QueueConfig config;
 
-    QueueProxySupport(final String name, final QueueService queueService, NodeService nodeService) {
+    QueueProxySupport(final String name, final QueueService queueService, NodeEngine nodeEngine) {
         this.name = name;
         this.queueService = queueService;
-        this.nodeService = nodeService;
-        this.partitionId = nodeService.getPartitionId(nodeService.toData(name));
-        this.config = nodeService.getConfig().getQueueConfig(name);
+        this.nodeEngine = nodeEngine;
+        this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
+        this.config = nodeEngine.getConfig().getQueueConfig(name);
     }
 
     boolean offerInternal(Data data, long timeout) {
         checkNull(data);
         try {
             OfferOperation operation = new OfferOperation(name, timeout, data);
-            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
-            return (Boolean) nodeService.toObject(f.get());
+            return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throwable.printStackTrace();
             throw new RuntimeException(throwable);
@@ -68,10 +62,10 @@ abstract class QueueProxySupport {
     public int size() {
         try {
             SizeOperation operation = new SizeOperation(name);
-            Invocation invocation = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future future = invocation.invoke();
             Object result = future.get();
-            return (Integer) nodeService.toObject(result);
+            return (Integer) nodeEngine.toObject(result);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -81,7 +75,7 @@ abstract class QueueProxySupport {
     public void clear() {
         try {
             ClearOperation operation = new ClearOperation(name);
-            Invocation invocation = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future future = invocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -92,7 +86,7 @@ abstract class QueueProxySupport {
     Data peekInternal() {
         try {
             PeekOperation operation = new PeekOperation(name);
-            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future<Data> f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
@@ -103,7 +97,7 @@ abstract class QueueProxySupport {
     Data pollInternal(long timeout) {
         try {
             PollOperation operation = new PollOperation(name, timeout);
-            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future<Data> f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
@@ -116,9 +110,9 @@ abstract class QueueProxySupport {
         checkNull(data);
         try {
             RemoveOperation operation = new RemoveOperation(name, data);
-            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
-            return (Boolean) nodeService.toObject(f.get());
+            return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -127,9 +121,9 @@ abstract class QueueProxySupport {
     boolean containsInternal(Set<Data> dataSet) {
         try {
             ContainsOperation operation = new ContainsOperation(name, dataSet);
-            Invocation inv = nodeService.createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
-            return (Boolean) nodeService.toObject(f.get());
+            return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

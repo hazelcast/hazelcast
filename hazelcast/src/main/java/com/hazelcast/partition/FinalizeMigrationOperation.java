@@ -20,7 +20,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.MigrationServiceEvent;
 import com.hazelcast.spi.PartitionLevelOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -61,7 +61,7 @@ public class FinalizeMigrationOperation extends AbstractOperation
                     service.rollbackMigration(event);
                 }
             } catch (Throwable e) {
-                getNodeService().getLogger(FinalizeMigrationOperation.class.getName()).log(Level.WARNING,
+                getNodeEngine().getLogger(FinalizeMigrationOperation.class.getName()).log(Level.WARNING,
                         "Error while finalizing migration -> " + event, e);
             }
         }
@@ -69,14 +69,14 @@ public class FinalizeMigrationOperation extends AbstractOperation
         MigrationInfo migrationInfo = partitionService.removeActiveMigration(getPartitionId());
 
         if (success) {
-            NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+            NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
             nodeService.onPartitionMigrate(migrationInfo);
         }
     }
 
     protected Collection<MigrationAwareService> getServices() {
         Collection<MigrationAwareService> services = new LinkedList<MigrationAwareService>();
-        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
         for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;

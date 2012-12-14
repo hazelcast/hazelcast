@@ -35,7 +35,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.Util;
@@ -72,7 +72,7 @@ public class Node {
 
     private final NodeType localNodeType;
 
-    public final NodeServiceImpl nodeService;
+    public final NodeEngineImpl nodeService;
 
     public final PartitionService partitionService;
 
@@ -150,7 +150,7 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        nodeService = new NodeServiceImpl(this);
+        nodeService = new NodeEngineImpl(this);
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterService = new ClusterService(this);
         partitionService = new PartitionService(this);

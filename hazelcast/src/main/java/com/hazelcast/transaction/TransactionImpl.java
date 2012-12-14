@@ -24,6 +24,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.SimpleMapEntry;
@@ -42,6 +43,7 @@ public class TransactionImpl implements Transaction {
 
     private final long id;
     private final HazelcastInstanceImpl instance;
+    private final NodeEngine nodeEngine;
     private final List<TransactionRecord> transactionRecords = new CopyOnWriteArrayList<TransactionRecord>();
     private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(1);
 
@@ -53,6 +55,7 @@ public class TransactionImpl implements Transaction {
         this.id = txnId;
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(this.getClass().getName());
+        this.nodeEngine = instance.node.nodeService;
     }
 
     public String getTxnId() {
@@ -164,7 +167,7 @@ public class TransactionImpl implements Transaction {
             List<Future> futures = new ArrayList<Future>(participants.size());
             for (TxnParticipant t : participants) {
                 Operation op = new PrepareOperation(txnId);
-                futures.add(instance.node.nodeService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
+                futures.add(nodeEngine.getInvocationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
                         .invoke());
             }
             for (Future future : futures) {
@@ -173,7 +176,7 @@ public class TransactionImpl implements Transaction {
             futures.clear();
             for (TxnParticipant t : participants) {
                 Operation op = new CommitOperation(txnId);
-                futures.add(instance.node.nodeService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
+                futures.add(nodeEngine.getInvocationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
                         .invoke());
             }
             for (Future future : futures) {

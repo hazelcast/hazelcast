@@ -24,6 +24,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,10 +33,12 @@ import java.util.Set;
 
 public class NodeIOService implements IOService {
 
-    final Node node;
+    private final Node node;
+    private final NodeEngineImpl nodeService;
 
     public NodeIOService(Node node) {
         this.node = node;
+        this.nodeService = node.nodeService;
     }
 
     public boolean isActive() {
@@ -96,7 +99,7 @@ public class NodeIOService implements IOService {
         if (member != null) {
             member.didRead();
         }
-        node.nodeService.handleOperation(packet);
+        nodeService.handleOperation(packet);
     }
 
     public TextCommandService getTextCommandService() {
@@ -112,7 +115,7 @@ public class NodeIOService implements IOService {
     }
 
     public void removeEndpoint(final Address endPoint) {
-        node.nodeService.execute(new Runnable() {
+        nodeService.getExecutionService().execute(new Runnable() {
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
@@ -181,9 +184,9 @@ public class NodeIOService implements IOService {
 
     public void disconnectExistingCalls(final Address deadEndpoint) {
         if (deadEndpoint != null) {
-            node.nodeService.execute(new Runnable() {
+            nodeService.getExecutionService().execute(new Runnable() {
                 public void run() {
-                    node.nodeService.onMemberDisconnect(deadEndpoint);
+                    nodeService.onMemberDisconnect(deadEndpoint);
                 }
             });
         }
@@ -211,7 +214,7 @@ public class NodeIOService implements IOService {
     }
 
     public void executeAsync(final Runnable runnable) {
-        node.nodeService.execute(runnable);
+        nodeService.getExecutionService().execute(runnable);
     }
 
     public Collection<Integer> getOutboundPorts() {

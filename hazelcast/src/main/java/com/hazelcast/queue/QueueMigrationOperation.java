@@ -16,14 +16,12 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.Data;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -49,7 +47,7 @@ public class QueueMigrationOperation extends AbstractOperation {
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
-            container.config = getNodeService().getConfig().getQueueConfig(name);
+            container.config = getNodeEngine().getConfig().getQueueConfig(name);
             service.addContainer(name, container);
         }
     }

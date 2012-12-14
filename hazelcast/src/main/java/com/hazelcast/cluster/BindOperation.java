@@ -17,7 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -43,7 +43,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
     }
 
     public void run() {
-        NodeServiceImpl ns = (NodeServiceImpl) getNodeService();
+        NodeEngineImpl ns = (NodeEngineImpl) getNodeEngine();
         ns.getNode().getConnectionManager().bind(getConnection(), localAddress, targetAddress, replyBack);
     }
 

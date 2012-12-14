@@ -46,23 +46,23 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ILogger logger;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
-    private final NodeService nodeService;
+    private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
 
-    public MapService(final NodeService nodeService) {
-        this.nodeService = nodeService;
-        this.logger = nodeService.getLogger(MapService.class.getName());
-        partitionContainers = new PartitionContainer[nodeService.getPartitionCount()];
+    public MapService(final NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(MapService.class.getName());
+        partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
     }
 
-    public void init(NodeService nodeService, Properties properties) {
-        int partitionCount = nodeService.getPartitionCount();
-        final Config config = nodeService.getConfig();
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        int partitionCount = nodeEngine.getPartitionCount();
+        final Config config = nodeEngine.getConfig();
         for (int i = 0; i < partitionCount; i++) {
-            PartitionInfo partition = nodeService.getPartitionInfo(i);
+            PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-//        nodeService.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
+//        nodeEngine.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -82,7 +82,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
             return null;
         }
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
@@ -124,12 +124,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void prepare(String txnId, int partitionId) throws TransactionException {
-        System.out.println(nodeService.getThisAddress() + " MapService prepare " + txnId);
+        System.out.println(nodeEngine.getThisAddress() + " MapService prepare " + txnId);
         PartitionContainer pc = partitionContainers[partitionId];
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
+            nodeEngine.getInvocationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -137,11 +137,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void commit(String txnId, int partitionId) throws TransactionException {
-        System.out.println(nodeService.getThisAddress() + " MapService commit " + txnId);
+        System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
+            nodeEngine.getInvocationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -149,19 +149,19 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void rollback(String txnId, int partitionId) throws TransactionException {
-        System.out.println(nodeService.getThisAddress() + " MapService commit " + txnId);
+        System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
+            nodeEngine.getInvocationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
         }
     }
 
-    public NodeService getNodeService() {
-        return nodeService;
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
     public String getName() {
@@ -171,11 +171,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public MapProxy getProxy(Object... params) {
         final String name = String.valueOf(params[0]);
         if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new DataMapProxy(name, this, nodeService);
+            return new DataMapProxy(name, this, nodeEngine);
         }
         MapProxy proxy = proxies.get(name);
         if (proxy == null) {
-            proxy = new ObjectMapProxy(name, this, nodeService);
+            proxy = new ObjectMapProxy(name, this, nodeEngine);
             final MapProxy currentProxy = proxies.putIfAbsent(name, proxy);
             proxy = currentProxy != null ? currentProxy : proxy;
         }
@@ -203,8 +203,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         public void run() {
             final List<Integer> ownedPartitions = new ArrayList<Integer>();
             for (int i = 0; i < partitionContainers.length; i++) {
-                final PartitionInfo partitionInfo = nodeService.getPartitionInfo(i);
-                if (partitionInfo != null && nodeService.getThisAddress().equals(partitionInfo.getOwner())) {
+                final PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(i);
+                if (partitionInfo != null && nodeEngine.getThisAddress().equals(partitionInfo.getOwner())) {
                     ownedPartitions.add(i);
                 }
             }
@@ -213,7 +213,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 Operation op = new CleanupOperation(latch);
                 op.setPartitionId(partitionId).setService(MapService.this).setValidateTarget(false);
                 try {
-                    nodeService.runOperation(op);
+                    nodeEngine.getInvocationService().runOperation(op);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }

@@ -31,7 +31,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     private static final Object RETRY = new Object();
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
-    protected final NodeServiceImpl nodeService;
+    protected final NodeEngineImpl nodeService;
     protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
@@ -41,7 +41,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     private volatile int invokeCount = 0;
     private volatile boolean done = false;
 
-    InvocationImpl(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
+    InvocationImpl(NodeEngineImpl nodeService, String serviceName, Operation op, int partitionId,
                    int replicaIndex, int tryCount, long tryPauseMillis) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
@@ -66,7 +66,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     public final Future invoke() {
         try {
             invokeCount++;
-            nodeService.invoke(this);
+            nodeService.invocationService.invoke(this);
         } catch (Exception e) {
             if (e instanceof RetryableException) {
                 setResult(e);

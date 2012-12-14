@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -112,20 +112,20 @@ public class MigrationOperation extends AbstractOperation
 
     private boolean runMigrationTasks() {
         boolean error = false;
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
         final PartitionService partitionService = getService();
         partitionService.addActiveMigration(new MigrationInfo(getPartitionId(), getReplicaIndex(), copyBackReplicaIndex,
                 migrationType, from, nodeService.getThisAddress()));
 
         for (Operation op : tasks) {
             try {
-                op.setNodeService(nodeService).setCaller(from)
+                op.setNodeEngine(nodeService).setCaller(from)
                         .setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
                 op.setResponseHandler(ERROR_RESPONSE_HANDLER);
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),
                         getReplicaIndex(), migrationType, copyBackReplicaIndex));
-//                nodeService.runOperation(op);
+//                nodeEngine.runOperation(op);
                 op.beforeRun();
                 op.run();
                 op.afterRun();
@@ -139,7 +139,7 @@ public class MigrationOperation extends AbstractOperation
     }
 
     private ILogger getLogger() {
-        return getNodeService().getLogger(MigrationOperation.class.getName());
+        return getNodeEngine().getLogger(MigrationOperation.class.getName());
     }
 
     private static class ErrorResponseHandler implements ResponseHandler {

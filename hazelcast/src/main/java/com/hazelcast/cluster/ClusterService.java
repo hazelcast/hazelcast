@@ -29,7 +29,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.ExecutedBy;
 import com.hazelcast.spi.annotation.ThreadType;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
 import javax.security.auth.login.LoginContext;
@@ -52,7 +52,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private final Node node;
 
-    private final NodeServiceImpl nodeService;
+    private final NodeEngineImpl nodeService;
 
     private final ILogger logger;
 
@@ -113,28 +113,28 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         node.connectionManager.addConnectionListener(this);
     }
 
-    public void init(final NodeService nodeService, Properties properties) {
+    public void init(final NodeEngine nodeEngine, Properties properties) {
         final long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong();
         final long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong();
-        nodeService.scheduleWithFixedDelay(new SplitBrainHandler(node),
+        nodeEngine.getExecutionService().scheduleWithFixedDelay(new SplitBrainHandler(node),
                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.SECONDS);
 
         final long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
-        nodeService.scheduleWithFixedDelay(new Runnable() {
+        nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 heartBeater();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
 
         final long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
-        nodeService.scheduleWithFixedDelay(new Runnable() {
+        nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
 
         final long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
-        nodeService.scheduleWithFixedDelay(new Runnable() {
+        nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }
@@ -151,7 +151,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     public JoinInfo checkJoinInfo(Address target) {
-        Invocation inv = nodeService.createInvocationBuilder(SERVICE_NAME,
+        Invocation inv = nodeService.getInvocationService().createInvocationBuilder(SERVICE_NAME,
                 new JoinCheckOperation(node.createJoinInfo()), target)
                 .setTryCount(1).build();
         try {
@@ -283,7 +283,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     private void ping(final MemberImpl memberImpl) {
         memberImpl.didPing();
         if (!icmpEnabled) return;
-        node.nodeService.execute(new Runnable() {
+        nodeService.getExecutionService().execute(new Runnable() {
             public void run() {
                 try {
                     final Address address = memberImpl.getAddress();
@@ -666,11 +666,11 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     Future invokeClusterOperation(Operation op, Address target) {
-        return nodeService.createInvocationBuilder(SERVICE_NAME, op, target)
+        return nodeService.getInvocationService().createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(5).build().invoke();
     }
 
-    public NodeServiceImpl getNodeService() {
+    public NodeEngineImpl getNodeService() {
         return nodeService;
     }
 
@@ -760,7 +760,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         for (MemberImpl member : getMemberList()) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
-                Future f = nodeService.createInvocationBuilder(SERVICE_NAME, new MemberRemoveOperation(deadAddress), address)
+                Future f = nodeService.getInvocationService().createInvocationBuilder(SERVICE_NAME, new MemberRemoveOperation(deadAddress), address)
                         .setTryCount(10).setTryPauseMillis(100).build().invoke();
                 responses.add(f);
             }

@@ -44,7 +44,6 @@ public class PartitionContainer {
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
     final ConcurrentMap<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations
             = new ConcurrentHashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
-    final ConcurrentMap<Long, GenericBackupOperation> waitingBackupOps = new ConcurrentHashMap<Long, GenericBackupOperation>(1000);
 
     public PartitionContainer(Config config, final MapService mapService, final PartitionInfo partitionInfo) {
         this.config = config;
@@ -99,7 +98,7 @@ public class PartitionContainer {
         TransactionLog txnLog = transactions.remove(txnId); // TODO: not sure?
         if (txnLog == null) return;
         for (TransactionLogItem txnLogItem : txnLog.changes.values()) {
-            System.out.println(mapService.getNodeService().getThisAddress() + " pc.commit " + txnLogItem);
+            System.out.println(mapService.getNodeEngine().getThisAddress() + " pc.commit " + txnLogItem);
             MapPartition mapPartition = getMapPartition(txnLogItem.getName());
             Data key = txnLogItem.getKey();
             if (txnLogItem.isRemoved()) {

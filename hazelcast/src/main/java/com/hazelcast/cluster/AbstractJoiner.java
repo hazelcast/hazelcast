@@ -204,7 +204,7 @@ public abstract class AbstractJoiner implements Joiner {
     protected void sendClusterMergeToOthers(final Address targetAddress) {
         for (MemberImpl member : node.getClusterService().getMemberList()) {
             if (!member.localMember()) {
-                node.nodeService.createInvocationBuilder(ClusterService.SERVICE_NAME,
+                node.nodeService.getInvocationService().createInvocationBuilder(ClusterService.SERVICE_NAME,
                         new MergeClustersOperation(targetAddress), member.getAddress())
                         .setTryCount(1).build().invoke();
             }

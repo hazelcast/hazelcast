@@ -28,7 +28,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
@@ -88,7 +88,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         private transient boolean approvedAsMaster = false;
 
         public void run() {
-            final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+            final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
             Node node = nodeService.getNode();
 //            ResponseHandler responseHandler = getResponseHandler();
             Joiner joiner = node.getJoiner();
@@ -179,7 +179,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                             for (Address address : colPossibleAddresses) {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.log(Level.FINEST, "Claiming myself as master node!");
-                                    Invocation inv = node.nodeService.createInvocationBuilder(
+                                    Invocation inv = node.nodeService.getInvocationService().createInvocationBuilder(
                                             ClusterService.SERVICE_NAME, new MasterClaim(), address)
                                             .setTryCount(1).build();
                                     responses.add(inv.invoke());

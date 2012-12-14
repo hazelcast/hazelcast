@@ -16,12 +16,8 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.queue.proxy.DataQueueProxy;
@@ -33,7 +29,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 /**
  * User: ali
@@ -42,7 +37,7 @@ import java.util.logging.Level;
  */
 public class QueueService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService {
 
-    private NodeService nodeService;
+    private NodeEngine nodeEngine;
 
     public static final String NAME = "hz:impl:queueService";
 
@@ -51,15 +46,15 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, QueueProxy> proxies = new ConcurrentHashMap<String, QueueProxy>();
 
-    public QueueService(NodeService nodeService) {
-        this.nodeService = nodeService;
-        this.logger = nodeService.getLogger(QueueService.class.getName());
+    public QueueService(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(QueueService.class.getName());
     }
 
     public QueueContainer getContainer(final String name) {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(this, nodeService.getPartitionId(nodeService.toData(name)), nodeService.getConfig().getQueueConfig(name), name);
+            container = new QueueContainer(this, nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), name);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
@@ -72,8 +67,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         containerMap.put(name, container);
     }
 
-    public void init(NodeService nodeService, Properties properties) {
-        this.nodeService = nodeService;
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        this.nodeEngine = nodeEngine;
     }
 
     public void destroy() {
@@ -84,7 +79,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
             return null; // is it possible
         }
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
@@ -131,9 +126,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public ServiceProxy getProxy(Object... params) {
         final String name = String.valueOf(params[0]);
         if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new DataQueueProxy(name, this, nodeService);
+            return new DataQueueProxy(name, this, nodeEngine);
         }
-        final QueueProxy proxy = new ObjectQueueProxy(name, this, nodeService);
+        final QueueProxy proxy = new ObjectQueueProxy(name, this, nodeEngine);
         final QueueProxy currentProxy = proxies.putIfAbsent(name, proxy);
         return currentProxy != null ? currentProxy : proxy;
     }

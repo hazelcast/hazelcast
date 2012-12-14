@@ -22,7 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -109,10 +109,10 @@ public class MigrationRequestOperation extends AbstractOperation
                 return;
             }
             partitionService.addActiveMigration(createMigrationInfo());
-            final NodeService nodeService = getNodeService();
-            final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
+            final NodeEngine nodeEngine = getNodeEngine();
+            final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             final Collection<Operation> tasks = prepareMigrationTasks(partitionId, replicaIndex);
-            Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
+            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
                     new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
                             getMigrationType(), tasks, from), to)
                     .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).build();
@@ -134,7 +134,7 @@ public class MigrationRequestOperation extends AbstractOperation
     }
 
     private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
-        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
         final MigrationType migrationType = getMigrationType();
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
                 partitionId, replicaIndex, migrationType, copyBackReplicaIndex);
@@ -165,7 +165,7 @@ public class MigrationRequestOperation extends AbstractOperation
     }
 
     private ILogger getLogger() {
-        return getNodeService().getLogger(MigrationRequestOperation.class.getName());
+        return getNodeEngine().getLogger(MigrationRequestOperation.class.getName());
     }
 
     public void writeInternal(DataOutput out) throws IOException {

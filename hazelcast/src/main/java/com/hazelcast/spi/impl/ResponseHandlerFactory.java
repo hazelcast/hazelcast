@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
@@ -39,18 +39,18 @@ public final class ResponseHandlerFactory {
         return new LocalInvocationResponseHandler(inv);
     }
 
-    public static void setRemoteResponseHandler(NodeService nodeservice, Operation op) {
+    public static void setRemoteResponseHandler(NodeEngine nodeservice, Operation op) {
         op.setResponseHandler(createRemoteResponseHandler(nodeservice, op));
     }
 
-    public static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op) {
+    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
         if (op.getCallId() == -1) {
             if (op.returnsResponse()) {
                 throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;
         }
-        return new RemoteInvocationResponseHandler(nodeService, op.getConnection(), op.getPartitionId(), op.getCallId());
+        return new RemoteInvocationResponseHandler(nodeEngine, op.getConnection(), op.getPartitionId(), op.getCallId());
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
@@ -64,15 +64,15 @@ public final class ResponseHandlerFactory {
 
     private static class RemoteInvocationResponseHandler implements ResponseHandler {
 
-        private final NodeService nodeService;
+        private final NodeEngine nodeEngine;
         private final Connection conn;
         private final int partitionId;
         private final long callId;
         private final AtomicBoolean sent = new AtomicBoolean(false);
 
-        private RemoteInvocationResponseHandler(NodeService nodeService, Connection conn,
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Connection conn,
                                                 int partitionId, long callId) {
-            this.nodeService = nodeService;
+            this.nodeEngine = nodeEngine;
             this.conn = conn;
             this.partitionId = partitionId;
             this.callId = callId;
@@ -91,7 +91,7 @@ public final class ResponseHandlerFactory {
             }
             response.setCallId(callId);
             response.setPartitionId(partitionId);
-            nodeService.send(response, conn);
+            nodeEngine.getInvocationService().send(response, conn);
         }
     }
 

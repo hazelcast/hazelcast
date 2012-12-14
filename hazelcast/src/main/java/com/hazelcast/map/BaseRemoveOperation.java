@@ -20,7 +20,7 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
@@ -36,7 +36,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     ResponseHandler responseHandler;
     MapPartition mapPartition;
     MapService mapService;
-    NodeService nodeService;
+    NodeEngine nodeEngine;
 
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
@@ -59,7 +59,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     protected void init() {
         responseHandler = getResponseHandler();
         mapService = (MapService) getService();
-        nodeService = (NodeService) getNodeService();
+        nodeEngine = (NodeEngine) getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
         mapPartition = pc.getMapPartition(name);
     }
@@ -120,11 +120,11 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     private int getClusterSize() {
-        return getNodeService().getCluster().getMembers().size();
+        return getNodeEngine().getCluster().getMembers().size();
     }
 
     @Override
     public String toString() {
-        return "BasePutOperation{" + name + "}";
+        return "BaseRemoveOperation{" + name + "}";
     }
 }

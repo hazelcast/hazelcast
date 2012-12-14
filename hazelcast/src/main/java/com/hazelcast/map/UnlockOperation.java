@@ -41,7 +41,7 @@ public class UnlockOperation extends TTLAwareOperation {
                 GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
                 backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.UNLOCK);
                 int backupCount = mapPartition.getBackupCount();
-//                getNodeService().sendAsyncBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
+//                getNodeEngine().sendAsyncBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
             }
             responseHandler.sendResponse(Boolean.TRUE);
             if (!lock.isLocked()) {

@@ -23,7 +23,7 @@ import java.util.Properties;
  */
 public interface ManagedService {
 
-    void init(NodeService nodeService, Properties properties);
+    void init(NodeEngine nodeEngine, Properties properties);
 
     void destroy();
 

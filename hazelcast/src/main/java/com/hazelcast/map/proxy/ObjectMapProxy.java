@@ -22,7 +22,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
 
@@ -38,17 +38,17 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K, V> {
 
-    public ObjectMapProxy(final String name, final MapService mapService, final NodeService nodeService) {
-        super(name, mapService, nodeService);
+    public ObjectMapProxy(final String name, final MapService mapService, final NodeEngine nodeEngine) {
+        super(name, mapService, nodeEngine);
     }
 
     public V get(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return toObject(getInternal(key));
     }
 
     public Future<V> getAsync(final K k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return null;
     }
 
@@ -57,8 +57,8 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V put(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final Data key = nodeService.toData(k);
-        final Data value = nodeService.toData(v);
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
         final Data result = putInternal(key, value, ttl, timeunit);
         return toObject(result);
     }
@@ -72,15 +72,15 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V putIfAbsent(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final Data key = nodeService.toData(k);
-        final Data value = nodeService.toData(v);
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
         final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
         return toObject(result);
     }
 
     public void putTransient(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final Data key = nodeService.toData(k);
-        final Data value = nodeService.toData(v);
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
         putTransientInternal(key, value, ttl, timeunit);
     }
 
@@ -97,20 +97,20 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final Data key = nodeService.toData(k);
-        final Data value = nodeService.toData(v);
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
         setInternal(key, value, ttl, timeunit);
     }
 
     public V remove(Object k) {
-        final Data key = nodeService.toData(k);
+        final Data key = nodeEngine.toData(k);
         final Data result = removeInternal(key);
         return toObject(result);
     }
 
     public boolean remove(final Object k, final Object v) {
-        final Data key = nodeService.toData(k);
-        final Data value = nodeService.toData(v);
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
         return removeInternal(key, value);
     }
 
@@ -123,12 +123,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public boolean containsKey(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return containsKeyInternal(key);
     }
 
     public boolean containsValue(final Object v) {
-        Data value = nodeService.toData(v);
+        Data value = nodeEngine.toData(v);
         return containsValueInternal(value);
     }
 
@@ -257,7 +257,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
-        Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
+        Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();
         Object returnObj;
@@ -265,7 +265,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
             Response r = (Response) response;
             returnObj = r.getResult();
         } else {
-            returnObj = nodeService.toObject(response);
+            returnObj = nodeEngine.toObject(response);
         }
         if (returnObj instanceof Throwable) {
             throw (Throwable) returnObj;

@@ -18,7 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -42,7 +42,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
 
     public void run() {
         final ClusterService service = getService();
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeService.getNode();
         boolean ok = false;
         if (joinInfo != null && node.joined() && node.isActive()) {

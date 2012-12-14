@@ -42,7 +42,7 @@ public class PutBackupOperation extends PutOperation {
 
     public void run() {
         MapService mapService = (MapService) getService();
-        System.out.println(getNodeService().getThisAddress() + " backup " + txnId + " response " + sendResponse);
+        System.out.println(getNodeEngine().getThisAddress() + " backup " + txnId + " response " + sendResponse);
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
         if (record == null) {

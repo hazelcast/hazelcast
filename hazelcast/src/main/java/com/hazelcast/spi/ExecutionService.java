@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public class PartitionInvocationImpl extends InvocationImpl {
+/**
+ * @mdogan 12/14/12
+ */
+public interface ExecutionService {
 
-    public PartitionInvocationImpl(NodeEngineImpl nodeService, String serviceName, Operation op, int partitionId,
-                                   int replicaIndex, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
-    }
+    void execute(Runnable command);
 
-    protected Address getTarget() {
-        return getPartitionInfo().getReplicaAddress(replicaIndex);
-    }
+    Future<?> submit(Runnable task);
+
+    void schedule(Runnable command, long delay, TimeUnit unit);
+
+    void scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    void scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
 }

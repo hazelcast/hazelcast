@@ -36,7 +36,7 @@ public class MapTxnBackupPrepareOperation extends AbstractOperation {
     public void run() {
         int partitionId = getPartitionId();
         MapService mapService = (MapService) getService();
-        System.out.println(getNodeService().getThisAddress() + " backupPrepare " + txnLog.txnId);
+        System.out.println(getNodeEngine().getThisAddress() + " backupPrepare " + txnLog.txnId);
         mapService.getPartitionContainer(partitionId).putTransactionLog(txnLog.txnId, txnLog);
         ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);

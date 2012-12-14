@@ -44,7 +44,7 @@ public final class DataSerializerInitHook implements DataSerializerHook {
             }
         });
 
-        factories.put(EventService.RegistrationOperation.class.getName(), new DataSerializableFactory() {
+        factories.put(EventServiceImpl.RegistrationOperation.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
                 return new RemoveOperation();
             }

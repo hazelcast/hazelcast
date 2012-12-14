@@ -20,7 +20,7 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
@@ -37,7 +37,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     ResponseHandler responseHandler;
     MapPartition mapPartition;
     MapService mapService;
-    NodeService nodeService;
+    NodeEngine nodeEngine;
 
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
@@ -59,7 +59,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     protected void init() {
         responseHandler = getResponseHandler();
         mapService = getService();
-        nodeService = getNodeService();
+        nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
         mapPartition = pc.getMapPartition(name);
     }

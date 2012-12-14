@@ -20,7 +20,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data> {
 
-    public DataQueueProxy(String name, QueueService queueService, NodeService nodeService) {
-        super(name, queueService, nodeService);
+    public DataQueueProxy(String name, QueueService queueService, NodeEngine nodeEngine) {
+        super(name, queueService, nodeEngine);
     }
 
     public LocalQueueStats getLocalQueueStats() {

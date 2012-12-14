@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -40,7 +40,7 @@ public class MergeClustersOperation extends AbstractClusterOperation {
 
     public void run() {
         final Address endpoint = getCaller();
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
+        final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeService.getNode();
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());

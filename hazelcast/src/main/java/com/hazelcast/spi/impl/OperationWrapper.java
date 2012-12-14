@@ -19,7 +19,7 @@
 //import com.hazelcast.nio.Data;
 //import com.hazelcast.nio.IOUtil;
 //import com.hazelcast.spi.AbstractOperation;
-//import com.hazelcast.spi.NodeService;
+//import com.hazelcast.spi.NodeEngine;
 //import com.hazelcast.spi.Operation;
 //
 //import java.io.DataInput;
@@ -50,9 +50,9 @@
 //
 //    @Override
 //    public void beforeRun() throws Exception {
-//        final NodeService nodeService = getNodeService();
-//        operation = (Operation) nodeService.toObject(operationData);
-//        operation.setNodeService(nodeService)
+//        final NodeEngine nodeEngine = getNodeEngine();
+//        operation = (Operation) nodeEngine.toObject(operationData);
+//        operation.setNodeEngine(nodeEngine)
 //                .setCaller(getCaller())
 //                .setCallId(getCallId())
 //                .setConnection(getConnection())
@@ -64,8 +64,8 @@
 //
 //    public void run() throws Exception {
 //        if (operation != null) {
-//            final NodeService nodeService = getNodeService();
-//            nodeService.runOperation(operation);
+//            final NodeEngine nodeEngine = getNodeEngine();
+//            nodeEngine.runOperation(operation);
 //        }
 //    }
 //

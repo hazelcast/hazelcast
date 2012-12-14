@@ -29,14 +29,14 @@ import java.util.TimerTask;
 import java.util.concurrent.*;
 
 @PrivateApi
-class WaitNotifyService {
+class WaitNotifySupport {
     private final ConcurrentMap<Object, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<Object, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService esExpirationTaskExecutor = Executors.newSingleThreadExecutor();
     private final Future expirationTask;
     private final WaitingOpProcessor waitingOpProcessor;
 
-    public WaitNotifyService(final WaitingOpProcessor waitingOpProcessor) {
+    public WaitNotifySupport(final WaitingOpProcessor waitingOpProcessor) {
         this.waitingOpProcessor = waitingOpProcessor;
         expirationTask = esExpirationTaskExecutor.submit(new Runnable() {
             public void run() {
@@ -139,7 +139,7 @@ class WaitNotifyService {
     }
 
     public static void main(String[] args) {
-        final WaitNotifyService ss = new WaitNotifyService(new WaitingOpProcessor() {
+        final WaitNotifySupport ss = new WaitNotifySupport(new WaitingOpProcessor() {
             public void process(WaitingOp so) {
             }
 

@@ -17,13 +17,13 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionInvocationImpl;
 import com.hazelcast.spi.impl.TargetInvocationImpl;
 
 public class InvocationBuilder {
 
-    private final NodeServiceImpl nodeService;
+    private final NodeEngineImpl nodeService;
     private final String serviceName;
     private final Operation op;
     private final int partitionId;
@@ -32,7 +32,7 @@ public class InvocationBuilder {
     private int tryCount = 100;
     private long tryPauseMillis = 500;
 
-    public InvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId) {
+    public InvocationBuilder(NodeEngineImpl nodeService, String serviceName, Operation op, int partitionId) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;
@@ -40,7 +40,7 @@ public class InvocationBuilder {
         this.target = null;
     }
 
-    public InvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op, Address target) {
+    public InvocationBuilder(NodeEngineImpl nodeService, String serviceName, Operation op, Address target) {
         this.nodeService = nodeService;
         this.serviceName = serviceName;
         this.op = op;

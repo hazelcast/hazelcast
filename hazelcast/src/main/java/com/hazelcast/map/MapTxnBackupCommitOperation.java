@@ -34,7 +34,7 @@ public class MapTxnBackupCommitOperation extends AbstractOperation {
     }
 
     public void run() {
-        System.out.println(getNodeService().getThisAddress() + " backupCommit " + txnId);
+        System.out.println(getNodeEngine().getThisAddress() + " backupCommit " + txnId);
         int partitionId = getPartitionId();
         MapService mapService = (MapService) getService();
         PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
