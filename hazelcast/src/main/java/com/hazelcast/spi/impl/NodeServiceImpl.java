@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.WaitNotifyService.WaitingOp;
 import com.hazelcast.spi.impl.WaitNotifyService.WaitingOpProcessor;
 import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.util.SpinLock;
+import com.hazelcast.util.SpinReadWriteLock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ public class NodeServiceImpl implements NodeService {
     private final int partitionCount;
     private final Lock[] ownerLocks = new Lock[100000];
     private final Lock[] backupLocks = new Lock[1000];
+    private final SpinReadWriteLock[] partitionLocks;
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
     private final AtomicLong localIdGen = new AtomicLong();
     private final ServiceManager serviceManager;
@@ -78,6 +80,10 @@ public class NodeServiceImpl implements NodeService {
             backupLocks[i] = new ReentrantLock();
         }
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
+        partitionLocks = new SpinReadWriteLock[partitionCount];
+        for (int i = 0; i < partitionCount; i++) {
+            partitionLocks[i] = new SpinReadWriteLock(1, TimeUnit.MILLISECONDS);
+        }
         final ClassLoader classLoader = node.getConfig().getClassLoader();
         final ExecutorThreadFactory threadFactory = new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                 node.getThreadPoolNamePrefix("cached"), classLoader);
@@ -382,17 +388,18 @@ public class NodeServiceImpl implements NodeService {
                     throw new PartitionMigratingException(getThisAddress(), partitionId,
                             op.getClass().getName(), op.getServiceName());
                 }
-                PartitionInfo partitionInfo = getPartitionInfo(partitionId);
+                SpinReadWriteLock migrationLock = partitionLocks[partitionId];
                 if (op instanceof PartitionLevelOperation) {
-                    partitionLock = partitionInfo.getWriteLock();
+                    partitionLock = migrationLock.writeLock();
                     partitionLock.lock();
                 } else {
-                    partitionLock = partitionInfo.getReadLock();
+                    partitionLock = migrationLock.readLock();
                     if (!partitionLock.tryLock(500, TimeUnit.MILLISECONDS)) {
                         partitionLock = null;
                         throw new PartitionMigratingException(getThisAddress(), partitionId,
                                 op.getClass().getName(), op.getServiceName());
                     }
+                    PartitionInfo partitionInfo = getPartitionInfo(partitionId);
                     final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     final boolean validatesTarget = op.validatesTarget();
                     if (validatesTarget && !getThisAddress().equals(owner)) {

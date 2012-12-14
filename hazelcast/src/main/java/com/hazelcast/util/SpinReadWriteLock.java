@@ -38,7 +38,8 @@ public class SpinReadWriteLock {
     }
 
     public SpinReadWriteLock(int spinInterval, TimeUnit unit) {
-        this.spinInterval = unit.toMillis(spinInterval);
+        final long millis = unit.toMillis(spinInterval);
+        this.spinInterval = millis > 0 ? millis : 1;
     }
 
     public SpinLock readLock() {

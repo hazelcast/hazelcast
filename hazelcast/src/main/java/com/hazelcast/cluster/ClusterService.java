@@ -566,7 +566,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         try {
             joinInProgress = true;
             final FinalizeJoinOperation finalizeJoinOp = new FinalizeJoinOperation(getMemberList(), getClusterTime());
-            if (setJoins != null && setJoins.size() > 0) {
+            if (setJoins.size() > 0) {
                 for (MemberInfo memberJoined : setJoins) {
                     finalizeJoinOp.addMemberInfo(memberJoined);
                 }
@@ -667,7 +667,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     Future invokeClusterOperation(Operation op, Address target) {
         return nodeService.createInvocationBuilder(SERVICE_NAME, op, target)
-                .setTryCount(1).build().invoke();
+                .setTryCount(5).build().invoke();
     }
 
     public NodeServiceImpl getNodeService() {
