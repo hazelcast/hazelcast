@@ -14,26 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.spi;
 
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import java.util.Collection;
 
 /**
- * User: ali
- * Date: 11/19/12
- * Time: 11:37 AM
+ * @mdogan 12/12/12
  */
-public class QueueSizeOperation extends QueueOperation {
+public interface EventPublishingService<T> {
 
-    public QueueSizeOperation(){
-    }
+    void dispatchEvent(EventOperation event, Collection<T> listeners);
 
-    public QueueSizeOperation(String name){
-        super(name);
-    }
-
-    public void run() {
-        QueueService queueService = getService();
-        response = queueService.getQueue(name).size();
-    }
 }

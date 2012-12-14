@@ -14,31 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
-
-import com.hazelcast.spi.KeyBasedOperation;
+package com.hazelcast.spi;
 
 /**
- * @ali 12/6/12
+ * @mdogan 12/12/12
  */
-public abstract class QueueKeyBasedOperation extends QueueOperation implements KeyBasedOperation {
+public interface EventOperation {
 
-    protected QueueKeyBasedOperation() {
-    }
+    String getServiceName();
 
-    protected QueueKeyBasedOperation(String name) {
-        super(name);
-    }
+    Object getTopic();
 
-    public int getKeyHash() {
-        return name.hashCode();
-    }
-
-    public int getSyncBackupCount() {
-        return container.config.getSyncBackupCount();
-    }
-
-    public int getAsyncBackupCount() {
-        return container.config.getAsyncBackupCount();
-    }
 }

@@ -16,21 +16,23 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.spi.impl.AbstractNamedOperation;
+
 /**
  * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
+ * Date: 11/19/12
+ * Time: 11:37 AM
  */
-public class PeekOperation extends QueueOperation {
+public class SizeOperation extends QueueOperation {
 
-    public PeekOperation(){
+    public SizeOperation(){
     }
 
-    public PeekOperation(final String name){
+    public SizeOperation(String name){
         super(name);
     }
 
     public void run() {
-        response = getContainer().peek();
+        response = getContainer().size();
     }
 }

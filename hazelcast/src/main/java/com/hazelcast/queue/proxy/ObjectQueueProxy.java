@@ -22,17 +22,13 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeService;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/14/12
  * Time: 13:23 AM
- * To change this template use File | Settings | File Templates.
  */
 public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy<E> {
 
@@ -41,7 +37,8 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        System.out.println(queueService.getQueue("ali").size());
+        //TODO what to do
+        System.out.println(queueService.getContainer("ali").size());
         return null;
     }
 
@@ -54,23 +51,28 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean offer(E e) {
-        final Data data = nodeService.toData(e);
-        return offerInternal(data);
+        try {
+            return offer(e, 0, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            return false;
+        }
     }
 
     public void put(E e) throws InterruptedException {
+        offer(e, -1, TimeUnit.MILLISECONDS);
     }
 
     public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
-        return false;
+        final Data data = nodeService.toData(e);
+        return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
     public E take() throws InterruptedException {
-        return null;
+        return poll(-1, TimeUnit.MILLISECONDS);
     }
 
     public int remainingCapacity() {
-        return Integer.MAX_VALUE;
+        return config.getMaxSize() - size();
     }
 
     public boolean remove(Object o) {
@@ -79,7 +81,10 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean contains(Object o) {
-        return false;
+        final Data data = nodeService.toData(o);
+        Set<Data> dataSet = new HashSet<Data>(1);
+        dataSet.add(data);
+        return containsInternal(dataSet);
     }
 
     public int drainTo(Collection<? super E> objects) {
@@ -141,7 +146,14 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean containsAll(Collection<?> objects) {
-        return false;
+        Iterator iter = objects.iterator();
+        Set<Data> dataSet = new HashSet<Data>(objects.size());
+        while (iter.hasNext()){
+            Object o = iter.next();
+            final Data data = nodeService.toData(o);
+            dataSet.add(data);
+        }
+        return containsInternal(dataSet);
     }
 
     public boolean addAll(Collection<? extends E> es) {

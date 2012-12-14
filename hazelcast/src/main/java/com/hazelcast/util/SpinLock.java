@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.util;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
+ * @mdogan 12/13/12
  */
-public class PeekOperation extends QueueOperation {
+public interface SpinLock {
 
-    public PeekOperation(){
-    }
+    void lock();
 
-    public PeekOperation(final String name){
-        super(name);
-    }
+    boolean tryLock(final long time, TimeUnit unit) throws InterruptedException;
 
-    public void run() {
-        response = getContainer().peek();
-    }
+    void unlock();
 }

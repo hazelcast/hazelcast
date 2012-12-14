@@ -16,35 +16,49 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.Data;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
-public abstract class TimedQueueOperation extends QueueKeyBasedOperation {
+/**
+ * @ali 12/12/12
+ */
+public class ContainsOperation extends QueueOperation {
 
-    private long timeoutMillis;
+    private Set<Data> dataSet;
 
-    protected TimedQueueOperation() {
+    public ContainsOperation() {
     }
 
-    public long getTimeoutMillis() {
-        return timeoutMillis;
-    }
-
-    protected TimedQueueOperation(String name, long timeoutMillis) {
+    public ContainsOperation(String name, Set<Data> dataSet){
         super(name);
-        this.timeoutMillis = timeoutMillis;
+        this.dataSet = dataSet;
     }
 
-    @Override
+    public void run() throws Exception {
+        response = getContainer().contains(dataSet);
+    }
+
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(timeoutMillis);
+        out.writeInt(dataSet.size());
+        for (Data data: dataSet){
+            data.writeData(out);
+        }
     }
 
-    @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        timeoutMillis = in.readLong();
+        int size = in.readInt();
+        dataSet = new HashSet<Data>(size);
+        for (int i=0; i<size; i++){
+            Data data = new Data();
+            data.readData(in);
+            dataSet.add(data);
+        }
     }
 }

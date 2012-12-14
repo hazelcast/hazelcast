@@ -190,8 +190,9 @@ public class ConfigXmlGenerator {
         final Collection<QueueConfig> qCfgs = config.getQConfigs().values();
         for (QueueConfig q : qCfgs) {
             xml.append("<queue name=\"").append(q.getName()).append("\">");
-            xml.append("<max-size-per-jvm>").append(q.getMaxSizePerJVM()).append("</max-size-per-jvm>");
-            xml.append("<backing-map-ref>").append(q.getBackingMapRef()).append("</backing-map-ref>");
+            xml.append("<queue-max-size>").append(q.getMaxSize()).append("</queue-max-size>");
+            xml.append("<queue-sync-backup-count>").append(q.getSyncBackupCount()).append("</queue-sync-backup-count>");
+            xml.append("<queue-async-backup-count>").append(q.getAsyncBackupCount()).append("</queue-async-backup-count>");
             if (!q.getItemListenerConfigs().isEmpty()) {
                 xml.append("<item-listeners>");
                 for (ItemListenerConfig lc : q.getItemListenerConfigs()) {

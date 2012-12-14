@@ -16,21 +16,22 @@
 
 package com.hazelcast.queue;
 
-/**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
- */
-public class PeekOperation extends QueueOperation {
+import com.hazelcast.spi.BackupOperation;
 
-    public PeekOperation(){
+/**
+ * @ali 12/11/12
+ */
+public class ClearBackupOperation extends QueueOperation implements BackupOperation {
+
+    public ClearBackupOperation() {
     }
 
-    public PeekOperation(final String name){
+    public ClearBackupOperation(String name) {
         super(name);
     }
 
-    public void run() {
-        response = getContainer().peek();
+    public void run() throws Exception {
+        getContainer().clear();
+        response = true;
     }
 }

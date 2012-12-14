@@ -16,30 +16,40 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.nio.Data;
+import com.hazelcast.spi.BackupOperation;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
- * @ali 12/6/12
+ * @ali 12/11/12
  */
-public class ClearOperation extends QueueBackupAwareOperation {
+public class OfferBackupOperation extends QueueOperation implements BackupOperation {
 
-    public ClearOperation() {
+    private Data data;
+
+    public OfferBackupOperation() {
     }
 
-    public ClearOperation(String name) {
+    public OfferBackupOperation(String name, Data data) {
         super(name);
+        this.data = data;
     }
 
     public void run() throws Exception {
-        getContainer().clear();
-        response = true;
+        response = getContainer().offer(data);
     }
 
-    public Operation getBackupOperation() {
-        return new ClearBackupOperation(name);
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
+        data.writeData(out);
     }
 
-    public boolean shouldBackup() {
-        return true;
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
+        data = new Data();
+        data.readData(in);
     }
 }

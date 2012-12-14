@@ -17,28 +17,98 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.spi.Invocation;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * User: ali
  * Date: 11/22/12
  * Time: 11:00 AM
  */
-public class QueueContainer {
+public class QueueContainer implements DataSerializable {
 
-    final Queue<Data> dataQueue = new LinkedList<Data>();
+    private final Queue<QueueItem> itemQueue = new LinkedList<QueueItem>();
 
-    final int partitionId;
+    int partitionId;
 
     QueueConfig config;
 
-    public QueueContainer(int partitionId, QueueConfig config) {
-        this.partitionId = partitionId;
-        this.config = config;
+    String name;
+
+    QueueService queueService;
+
+    public QueueContainer(){
     }
 
+    public QueueContainer(QueueService queueService, int partitionId, QueueConfig config, String name) {
+        this.queueService = queueService;
+        this.partitionId = partitionId;
+        this.config = config;
+        this.name = name;
+    }
+
+    public boolean offer(Data data){
+        QueueItem item = new QueueItem(data);
+        return itemQueue.offer(item);
+    }
+
+    public int size(){
+        return itemQueue.size();
+    }
+
+    public void clear(){
+        itemQueue.clear(); //TODO how about remove event
+    }
+
+    public Data poll(){
+        QueueItem item = itemQueue.poll();
+        return item == null ? null : item.data;
+    }
+
+    public boolean remove(Data data){
+        QueueItem item = new QueueItem(data);
+        return itemQueue.remove(item);
+    }
+
+    public Data peek(){
+        QueueItem item = itemQueue.peek();
+        return item == null ? null : item.data;
+    }
+
+    public boolean contains(Set<Data> dataSet){
+        return itemQueue.containsAll(dataSet);
+    }
+
+    public void writeData(DataOutput out) throws IOException {    //TODO listeners
+        out.writeInt(partitionId);
+        out.writeUTF(name);
+        out.writeInt(itemQueue.size());
+        Iterator<QueueItem> iterator = itemQueue.iterator();
+        while (iterator.hasNext()) {
+            QueueItem item = iterator.next();
+            item.data.writeData(out);
+        }
+    }
+
+    public void readData(DataInput in) throws IOException {
+        partitionId = in.readInt();
+        name = in.readUTF();
+        int size = in.readInt();
+        for (int j = 0; j < size; j++) {
+            Data data = new Data();
+            data.readData(in);
+            QueueItem item = new QueueItem(data);
+            itemQueue.offer(item);
+        }
+    }
 
 }
+

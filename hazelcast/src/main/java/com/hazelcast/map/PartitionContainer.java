@@ -229,9 +229,9 @@ public class PartitionContainer {
                         }
                         itOps.remove();
                     }
-                }
-                if (ops.isEmpty()) {
-                    itKeys.remove();
+                    if (ops.isEmpty()) {
+                        itKeys.remove();
+                    }
                 }
             }
         }

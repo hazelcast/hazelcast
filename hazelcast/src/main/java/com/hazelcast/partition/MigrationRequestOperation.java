@@ -112,30 +112,12 @@ public class MigrationRequestOperation extends AbstractOperation
             final NodeService nodeService = getNodeService();
             final long timeout = nodeService.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             final Collection<Operation> tasks = prepareMigrationTasks(partitionId, replicaIndex);
-//            nodeService.execute(new Runnable() {
-//                public void run() {
-//                    try {
-//                        Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
-//                                new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
-//                                        getMigrationType(), tasks, from), partitionId)
-//                                .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
-//                                .build();
-//                        Future future = inv.invoke();
-//                        Boolean result = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
-//                        responseHandler.sendResponse(result);
-//                    } catch (Throwable e) {
-//                        onError(responseHandler, e);
-//                    }
-//                }
-//            });
             Invocation inv = nodeService.createInvocationBuilder(PartitionService.SERVICE_NAME,
                     new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
-                            getMigrationType(), tasks, from), partitionId)
-                    .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).setTarget(to)
-                    .build();
+                            getMigrationType(), tasks, from), to)
+                    .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).build();
             Future future = inv.invoke();
             success = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
-//            responseHandler.sendResponse(result);
         } catch (Throwable e) {
             onError(e);
         }
@@ -152,17 +134,6 @@ public class MigrationRequestOperation extends AbstractOperation
     }
 
     private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
-        System.out.println("PREPaRE>>>>>>>");
         NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
         final MigrationType migrationType = getMigrationType();
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
@@ -190,7 +161,6 @@ public class MigrationRequestOperation extends AbstractOperation
             level = Level.FINEST;
         }
         getLogger().log(level, e.getMessage(), e);
-//        responseHandler.sendResponse(Boolean.FALSE);
         success = false;
     }
 

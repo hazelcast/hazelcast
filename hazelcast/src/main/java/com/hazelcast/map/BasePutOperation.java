@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
@@ -99,6 +98,10 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public int getSyncBackupCount() {
         return mapPartition.getBackupCount();
+    }
+
+    public boolean shouldBackup() {
+        return true;
     }
 
     @Override

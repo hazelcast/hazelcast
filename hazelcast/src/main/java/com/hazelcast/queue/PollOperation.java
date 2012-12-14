@@ -23,7 +23,7 @@ import com.hazelcast.spi.WaitSupport;
 /**
  * @ali 12/6/12
  */
-public class PollOperation extends TimedQueueOperation implements WaitSupport, Notifier {
+public class PollOperation extends QueueTimedOperation implements WaitSupport, Notifier {
 
     public PollOperation() {
     }
@@ -33,11 +33,19 @@ public class PollOperation extends TimedQueueOperation implements WaitSupport, N
     }
 
     public void run() {
-        response = container.dataQueue.poll();
+        response = getContainer().poll();
+    }
+
+    public boolean shouldBackup() {
+        return true;
     }
 
     public Operation getBackupOperation() {
-        return new QueueBackupOperation(new PollOperation(name, 0));
+        return new PollBackupOperation(name);
+    }
+
+    public boolean shouldNotify() {
+        return true;
     }
 
     public Object getNotifiedKey() {
@@ -45,25 +53,14 @@ public class PollOperation extends TimedQueueOperation implements WaitSupport, N
     }
 
     public Object getWaitKey() {
-        return getName() + ":take";
+        return getName() + ":poll";
     }
 
     public boolean shouldWait() {
-        return getTimeoutMillis() != 0 && container.dataQueue.size() == 0;
-    }
-
-    public long getWaitTimeoutMillis() {
-        return getTimeoutMillis();
+        return getWaitTimeoutMillis() != 0 && getContainer().size() == 0;
     }
 
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
-    }
-
-    public String toString() {
-        QueueService queueService = getService();
-        QueueContainer c = queueService.getContainer(name);
-        int size = (c == null) ? 0 : c.dataQueue.size();
-        return size + "_P_" + Integer.toHexString(hashCode());
     }
 }

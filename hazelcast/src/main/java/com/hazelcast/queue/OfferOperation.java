@@ -21,30 +21,45 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 /**
  * User: ali
  * Date: 11/14/12
  * Time: 12:14 AM
  */
-public class OfferOperation extends QueueDataOperation implements WaitSupport, Notifier {
+public class OfferOperation extends QueueTimedOperation implements WaitSupport, Notifier {
+
+    private Data data;
 
     public OfferOperation() {
     }
 
-    public OfferOperation(final String name, final Data data) {
-        super(name, data);
+    public OfferOperation(final String name, final long timeout, final Data data) {
+        super(name, timeout);
+        this.data = data;
     }
 
     public void run() {
-        response = container.dataQueue.offer(data);
+        response = getContainer().offer(data);
     }
 
     public Operation getBackupOperation() {
-        return new QueueBackupOperation(new OfferOperation(name, data));
+        return new OfferBackupOperation(name, data);
+    }
+
+    public boolean shouldBackup() {
+        return true;
+    }
+
+    public boolean shouldNotify() {
+        return true;
     }
 
     public Object getNotifiedKey() {
-        return getName() + ":take";
+        return getName() + ":poll";
     }
 
     public Object getWaitKey() {
@@ -52,15 +67,22 @@ public class OfferOperation extends QueueDataOperation implements WaitSupport, N
     }
 
     public boolean shouldWait() {
-//        return container.dataQueue.size() >= Queue.MaxSize;
-        return false;
-    }
-
-    public long getWaitTimeoutMillis() {
-        return 0;
+        QueueContainer container = getContainer();
+        return getWaitTimeoutMillis() != 0 && container.config.getMaxSize() <= container.size();
     }
 
     public void onWaitExpire() {
         getResponseHandler().sendResponse(Boolean.FALSE);
+    }
+
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
+        data.writeData(out);
+    }
+
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
+        data = new Data();
+        data.readData(in);
     }
 }

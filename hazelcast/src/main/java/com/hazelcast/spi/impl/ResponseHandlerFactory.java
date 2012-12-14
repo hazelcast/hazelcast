@@ -90,7 +90,8 @@ public final class ResponseHandlerFactory {
                 response = new Response(obj);
             }
             response.setCallId(callId);
-            nodeService.send(response, partitionId, conn);
+            response.setPartitionId(partitionId);
+            nodeService.send(response, conn);
         }
     }
 

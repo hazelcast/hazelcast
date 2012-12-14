@@ -16,21 +16,28 @@
 
 package com.hazelcast.queue;
 
-/**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
- */
-public class PeekOperation extends QueueOperation {
+import com.hazelcast.spi.BackupAwareOperation;
 
-    public PeekOperation(){
+/**
+ * @ali 12/11/12
+ */
+public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation{
+
+    protected QueueBackupAwareOperation() {
     }
 
-    public PeekOperation(final String name){
+    protected QueueBackupAwareOperation(String name) {
         super(name);
     }
 
-    public void run() {
-        response = getContainer().peek();
+    public int getSyncBackupCount() {
+        return getContainer().config.getSyncBackupCount();
     }
+
+    public int getAsyncBackupCount() {
+        return getContainer().config.getAsyncBackupCount();
+    }
+
+
+
 }

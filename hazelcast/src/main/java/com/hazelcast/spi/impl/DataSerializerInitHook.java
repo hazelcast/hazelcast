@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.map.RemoveOperation;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
@@ -43,17 +44,23 @@ public final class DataSerializerInitHook implements DataSerializerHook {
             }
         });
 
-        factories.put(PartitionIterator.class.getName(), new DataSerializableFactory() {
+        factories.put(EventService.RegistrationOperation.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
-                return new PartitionIterator();
+                return new RemoveOperation();
             }
         });
 
-        factories.put(OperationWrapper.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new OperationWrapper();
-            }
-        });
+//        factories.put(PartitionIterator.class.getName(), new DataSerializableFactory() {
+//            public DataSerializable create() {
+//                return new PartitionIterator();
+//            }
+//        });
+
+//        factories.put(OperationWrapper.class.getName(), new DataSerializableFactory() {
+//            public DataSerializable create() {
+//                return new OperationWrapper();
+//            }
+//        });
 
         return factories;
     }

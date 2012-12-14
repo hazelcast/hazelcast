@@ -16,38 +16,33 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-/**
- * User: ali
- * Date: 11/23/12
- * Time: 3:52 AM
- */
-public abstract class QueueDataOperation extends QueueKeyBasedOperation {
+public abstract class QueueTimedOperation extends QueueBackupAwareOperation {
 
-    Data data;
+    private long timeoutMillis;
 
-    protected QueueDataOperation() {
+    protected QueueTimedOperation() {
     }
 
-    public QueueDataOperation(final String name, final Data data){
+    protected QueueTimedOperation(String name, long timeoutMillis) {
         super(name);
-        this.data = data;
+        this.timeoutMillis = timeoutMillis;
+    }
+
+    public long getWaitTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        data.writeData(out);
+        out.writeLong(timeoutMillis);
     }
 
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        data = new Data();
-        data.readData(in);
+        timeoutMillis = in.readLong();
     }
 }

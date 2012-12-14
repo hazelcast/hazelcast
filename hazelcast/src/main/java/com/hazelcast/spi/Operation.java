@@ -31,7 +31,7 @@ public abstract class Operation implements DataSerializable {
 
     //serialized
     private String serviceName = null;
-    private int partitionId;
+    private int partitionId = -1;
     private int replicaIndex;
     private long callId = -1;
     private boolean validateTarget = true;

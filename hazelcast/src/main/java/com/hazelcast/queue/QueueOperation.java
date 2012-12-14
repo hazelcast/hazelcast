@@ -16,15 +16,15 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 /**
  * @ali 12/6/12
  */
-public abstract class QueueOperation extends AbstractNamedOperation {
+public abstract class QueueOperation extends AbstractNamedOperation implements KeyBasedOperation {
 
     transient Object response;
-    transient QueueContainer container;
 
     protected QueueOperation() {
     }
@@ -33,9 +33,9 @@ public abstract class QueueOperation extends AbstractNamedOperation {
         super(name);
     }
 
-    public void beforeRun() {
+    public QueueContainer getContainer() {
         QueueService queueService = getService();
-        container = queueService.getContainer(name);
+        return queueService.getContainer(name);
     }
 
     public Object getResponse() {
@@ -45,4 +45,10 @@ public abstract class QueueOperation extends AbstractNamedOperation {
     public String getServiceName() {
         return QueueService.NAME;
     }
+
+    public int getKeyHash() {
+        return name.hashCode();
+    }
+
+
 }
