@@ -29,9 +29,9 @@ public class AuthenticationFailureOperation extends AbstractClusterOperation
         implements JoinOperation {
 
     public void run() {
-        final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
-        final Node node = nodeService.getNode();
-        final ILogger logger = nodeService.getLogger("com.hazelcast.security");
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final Node node = nodeEngine.getNode();
+        final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.log(Level.SEVERE, "Authentication failed on master node! Node is going to shutdown now!");
         node.shutdown(true, true);
     }

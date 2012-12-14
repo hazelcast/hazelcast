@@ -34,11 +34,11 @@ import java.util.Set;
 public class NodeIOService implements IOService {
 
     private final Node node;
-    private final NodeEngineImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
 
     public NodeIOService(Node node) {
         this.node = node;
-        this.nodeService = node.nodeService;
+        this.nodeEngine = node.nodeEngine;
     }
 
     public boolean isActive() {
@@ -99,7 +99,7 @@ public class NodeIOService implements IOService {
         if (member != null) {
             member.didRead();
         }
-        nodeService.handleOperation(packet);
+        nodeEngine.handleOperation(packet);
     }
 
     public TextCommandService getTextCommandService() {
@@ -115,7 +115,7 @@ public class NodeIOService implements IOService {
     }
 
     public void removeEndpoint(final Address endPoint) {
-        nodeService.getExecutionService().execute(new Runnable() {
+        nodeEngine.getExecutionService().execute(new Runnable() {
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
@@ -184,9 +184,9 @@ public class NodeIOService implements IOService {
 
     public void disconnectExistingCalls(final Address deadEndpoint) {
         if (deadEndpoint != null) {
-            nodeService.getExecutionService().execute(new Runnable() {
+            nodeEngine.getExecutionService().execute(new Runnable() {
                 public void run() {
-                    nodeService.onMemberDisconnect(deadEndpoint);
+                    nodeEngine.onMemberDisconnect(deadEndpoint);
                 }
             });
         }
@@ -214,7 +214,7 @@ public class NodeIOService implements IOService {
     }
 
     public void executeAsync(final Runnable runnable) {
-        nodeService.getExecutionService().execute(runnable);
+        nodeEngine.getExecutionService().execute(runnable);
     }
 
     public Collection<Integer> getOutboundPorts() {

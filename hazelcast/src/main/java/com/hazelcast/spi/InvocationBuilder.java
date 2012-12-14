@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.TargetInvocationImpl;
 
 public class InvocationBuilder {
 
-    private final NodeEngineImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
     private final String serviceName;
     private final Operation op;
     private final int partitionId;
@@ -32,16 +32,16 @@ public class InvocationBuilder {
     private int tryCount = 100;
     private long tryPauseMillis = 500;
 
-    public InvocationBuilder(NodeEngineImpl nodeService, String serviceName, Operation op, int partitionId) {
-        this.nodeService = nodeService;
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
+        this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
         this.target = null;
     }
 
-    public InvocationBuilder(NodeEngineImpl nodeService, String serviceName, Operation op, Address target) {
-        this.nodeService = nodeService;
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
+        this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = -1;
@@ -94,9 +94,9 @@ public class InvocationBuilder {
 
     public Invocation build() {
         if (target == null) {
-            return new PartitionInvocationImpl(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+            return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
         } else {
-            return new TargetInvocationImpl(nodeService, serviceName, op, target, tryCount, tryPauseMillis);
+            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis);
         }
     }
 }

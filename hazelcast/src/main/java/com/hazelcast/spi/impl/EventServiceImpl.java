@@ -48,20 +48,20 @@ import java.util.logging.Level;
 @PrivateApi
 class EventServiceImpl implements EventService {
 
-    private final NodeEngineImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, EventSegment> segments;
 
-    EventServiceImpl(NodeEngineImpl nodeService) {
-        this.nodeService = nodeService;
+    EventServiceImpl(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
         segments = new ConcurrentHashMap<String, EventSegment>();
     }
 
     void registerSubscribers(String service, Object topic, Address... subscribers) {
-        Collection<MemberImpl> members = nodeService.getClusterService().getMemberList();
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeService.getOperationService().createInvocationBuilder(service,
+                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(service,
                         new RegistrationOperation(service, subscribers, topic), member.getAddress()).build();
                 calls.add(inv.invoke());
             }
@@ -73,7 +73,7 @@ class EventServiceImpl implements EventService {
             try {
                 call.get(5, TimeUnit.SECONDS);
             } catch (Exception e) {
-                nodeService.getLogger(EventServiceImpl.class.getName()).log(Level.FINEST, "While registering listener", e);
+                nodeEngine.getLogger(EventServiceImpl.class.getName()).log(Level.FINEST, "While registering listener", e);
             }
         }
     }
@@ -85,7 +85,7 @@ class EventServiceImpl implements EventService {
         if (subscriberList == null) return;
 
         final Data eventData = IOUtil.toData(event);
-        final ClusterService clusterService = nodeService.getClusterService();
+        final ClusterService clusterService = nodeEngine.getClusterService();
         for (Address target : subscriberList) {
             Packet p = new Packet(eventData);
             p.setHeader(Packet.HEADER_EVENT, true);

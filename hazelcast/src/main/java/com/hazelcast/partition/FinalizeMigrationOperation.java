@@ -69,15 +69,15 @@ public class FinalizeMigrationOperation extends AbstractOperation
         MigrationInfo migrationInfo = partitionService.removeActiveMigration(getPartitionId());
 
         if (success) {
-            NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
-            nodeService.onPartitionMigrate(migrationInfo);
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            nodeEngine.onPartitionMigrate(migrationInfo);
         }
     }
 
     protected Collection<MigrationAwareService> getServices() {
         Collection<MigrationAwareService> services = new LinkedList<MigrationAwareService>();
-        NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
-        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        for (Object serviceObject : nodeEngine.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 services.add(service);

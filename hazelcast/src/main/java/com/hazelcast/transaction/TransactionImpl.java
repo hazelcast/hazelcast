@@ -55,7 +55,7 @@ public class TransactionImpl implements Transaction {
         this.id = txnId;
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(this.getClass().getName());
-        this.nodeEngine = instance.node.nodeService;
+        this.nodeEngine = instance.node.nodeEngine;
     }
 
     public String getTxnId() {

@@ -21,9 +21,9 @@ import com.hazelcast.spi.Operation;
 
 public class PartitionInvocationImpl extends InvocationImpl {
 
-    public PartitionInvocationImpl(NodeEngineImpl nodeService, String serviceName, Operation op, int partitionId,
+    public PartitionInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                                    int replicaIndex, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
     }
 
     protected Address getTarget() {

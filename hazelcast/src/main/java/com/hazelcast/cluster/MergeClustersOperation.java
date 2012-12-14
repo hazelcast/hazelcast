@@ -40,8 +40,8 @@ public class MergeClustersOperation extends AbstractClusterOperation {
 
     public void run() {
         final Address endpoint = getCaller();
-        final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
-        final Node node = nodeService.getNode();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final Node node = nodeEngine.getNode();
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
         if (endpoint == null || !endpoint.equals(masterAddress)) {

@@ -88,8 +88,8 @@ public class TcpIpJoiner extends AbstractJoiner {
         private transient boolean approvedAsMaster = false;
 
         public void run() {
-            final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
-            Node node = nodeService.getNode();
+            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            Node node = nodeEngine.getNode();
 //            ResponseHandler responseHandler = getResponseHandler();
             Joiner joiner = node.getJoiner();
             final ILogger logger = node.getLogger(getClass().getName());
@@ -179,7 +179,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                             for (Address address : colPossibleAddresses) {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.log(Level.FINEST, "Claiming myself as master node!");
-                                    Invocation inv = node.nodeService.getOperationService().createInvocationBuilder(
+                                    Invocation inv = node.nodeEngine.getOperationService().createInvocationBuilder(
                                             ClusterService.SERVICE_NAME, new MasterClaim(), address)
                                             .setTryCount(1).build();
                                     responses.add(inv.invoke());

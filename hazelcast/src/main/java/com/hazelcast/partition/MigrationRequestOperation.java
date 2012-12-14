@@ -134,12 +134,12 @@ public class MigrationRequestOperation extends AbstractOperation
     }
 
     private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
-        NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final MigrationType migrationType = getMigrationType();
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
                 partitionId, replicaIndex, migrationType, copyBackReplicaIndex);
         final Collection<Operation> tasks = new LinkedList<Operation>();
-        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
+        for (Object serviceObject : nodeEngine.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 final Operation op = service.prepareMigrationOperation(event);

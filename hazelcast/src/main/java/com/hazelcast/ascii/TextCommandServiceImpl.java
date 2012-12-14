@@ -119,7 +119,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                 }
             }
         }
-        node.nodeService.getExecutionService().execute(new CommandExecutor(command));
+        node.nodeEngine.getExecutionService().execute(new CommandExecutor(command));
     }
 
     public Object get(String mapName, String key) {

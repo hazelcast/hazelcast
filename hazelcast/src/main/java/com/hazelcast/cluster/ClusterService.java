@@ -52,7 +52,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private final Node node;
 
-    private final NodeEngineImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
 
     private final ILogger logger;
 
@@ -98,7 +98,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     public ClusterService(final Node node) {
         this.node = node;
-        nodeService = node.nodeService;
+        nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
@@ -151,7 +151,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     public JoinInfo checkJoinInfo(Address target) {
-        Invocation inv = nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME,
+        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                 new JoinCheckOperation(node.createJoinInfo()), target)
                 .setTryCount(1).build();
         try {
@@ -283,7 +283,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     private void ping(final MemberImpl memberImpl) {
         memberImpl.didPing();
         if (!icmpEnabled) return;
-        nodeService.getExecutionService().execute(new Runnable() {
+        nodeEngine.getExecutionService().execute(new Runnable() {
             public void run() {
                 try {
                     final Address address = memberImpl.getAddress();
@@ -385,7 +385,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             MemberImpl deadMember = getMember(deadAddress);
             if (deadMember != null) {
                 removeMember(deadMember);
-                nodeService.onMemberLeft(deadMember);
+                nodeEngine.onMemberLeft(deadMember);
                 logger.log(Level.INFO, this.toString());
             }
         } finally {
@@ -666,12 +666,12 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     Future invokeClusterOperation(Operation op, Address target) {
-        return nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
+        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(5).build().invoke();
     }
 
-    public NodeEngineImpl getNodeService() {
-        return nodeService;
+    public NodeEngineImpl getnodeEngine() {
+        return nodeEngine;
     }
 
     public void memberAdded(final MemberImpl member) {
@@ -713,7 +713,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
             }
             setMembers(memberMap);
 
-            Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class);
+            Collection<MembershipAwareService> services = nodeEngine.getServices(MembershipAwareService.class);
             for (MemberImpl member : newMembers) {
                 for (MembershipAwareService service : services) {
                     service.memberAdded(member);
@@ -739,7 +739,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
                 }
                 setMembers(newMembers);
 
-                Collection<MembershipAwareService> services = nodeService.getServices(MembershipAwareService.class);
+                Collection<MembershipAwareService> services = nodeEngine.getServices(MembershipAwareService.class);
                 for (MembershipAwareService service : services) {
                     service.memberRemoved(deadMember);
                 }
@@ -760,7 +760,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
         for (MemberImpl member : getMemberList()) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
-                Future f = nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME, new MemberRemoveOperation(deadAddress), address)
+                Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MemberRemoveOperation(deadAddress), address)
                         .setTryCount(10).setTryPauseMillis(100).build().invoke();
                 responses.add(f);
             }
@@ -776,7 +776,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private void sendMembershipEventNotifications(final MemberImpl member, final boolean added) {
         if (listeners.size() > 0) {
-            nodeService.getEventExecutor().execute(new Runnable() {
+            nodeEngine.getEventExecutor().execute(new Runnable() {
                 public void run() {
                     MembershipEvent membershipEvent = new MembershipEvent(getClusterProxy(), member,
                             (added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED));

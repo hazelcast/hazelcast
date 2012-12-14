@@ -48,7 +48,7 @@ import java.util.logging.Level;
  */
 final class OperationServiceImpl implements OperationService {
 
-    private final NodeEngineImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
     private final AtomicLong localIdGen = new AtomicLong();
@@ -57,9 +57,9 @@ final class OperationServiceImpl implements OperationService {
     private final Lock[] backupLocks = new Lock[1000];
     private final SpinReadWriteLock[] partitionLocks;
 
-    OperationServiceImpl(NodeEngineImpl nodeService) {
-        this.nodeService = nodeService;
-        this.node = nodeService.getNode();
+    OperationServiceImpl(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class.getName());
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
@@ -76,11 +76,11 @@ final class OperationServiceImpl implements OperationService {
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
         if (partitionId < 0) throw new IllegalArgumentException("Partition id must be bigger than zero!");
-        return new InvocationBuilder(nodeService, serviceName, op, partitionId);
+        return new InvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        return new InvocationBuilder(nodeService, serviceName, op, target);
+        return new InvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
     void invoke(final InvocationImpl inv) {
@@ -91,13 +91,13 @@ final class OperationServiceImpl implements OperationService {
         final int replicaIndex = inv.getReplicaIndex();
         final String serviceName = inv.getServiceName();
         final Address thisAddress = node.getThisAddress();
-        op.setNodeEngine(nodeService).setServiceName(serviceName).setCaller(thisAddress)
+        op.setNodeEngine(nodeEngine).setServiceName(serviceName).setCaller(thisAddress)
                 .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         if (target == null) {
             throw new WrongTargetException(thisAddress, target, partitionId,
                     op.getClass().getName(), serviceName);
         }
-        if (!isJoinOperation(op) && nodeService.getClusterService().getMember(target) == null) {
+        if (!isJoinOperation(op) && node.getClusterService().getMember(target) == null) {
             throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
         }
         if (thisAddress.equals(target)) {
@@ -166,7 +166,7 @@ final class OperationServiceImpl implements OperationService {
     @PrivateApi
     public void handleOperation(final Packet packet) {
         final Executor executor = packet.isHeaderSet(Packet.HEADER_EVENT)
-                ? nodeService.executionService.eventExecutorService : nodeService.executionService.cachedExecutorService;
+                ? nodeEngine.executionService.eventExecutorService : nodeEngine.executionService.cachedExecutorService;
         executor.execute(new RemoteOperationExecutor(packet));
     }
 
@@ -196,7 +196,7 @@ final class OperationServiceImpl implements OperationService {
                         throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                                 op.getClass().getName(), op.getServiceName());
                     }
-                    PartitionInfo partitionInfo = nodeService.getPartitionInfo(partitionId);
+                    PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
                     final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     final boolean validatesTarget = op.validatesTarget();
                     if (validatesTarget && !node.getThisAddress().equals(owner)) {
@@ -237,7 +237,7 @@ final class OperationServiceImpl implements OperationService {
             if (op instanceof WaitSupport) {
                 WaitSupport so = (WaitSupport) op;
                 if (so.shouldWait()) {
-                    nodeService.waitNotifyService.wait(so);
+                    nodeEngine.waitNotifyService.wait(so);
                     return;
                 }
             }
@@ -256,7 +256,7 @@ final class OperationServiceImpl implements OperationService {
             if (op instanceof Notifier) {
                 final Notifier notifier = (Notifier) op;
                 if (notifier.shouldNotify()) {
-                    nodeService.waitNotifyService.notify(notifier);
+                    nodeEngine.waitNotifyService.notify(notifier);
                 }
             }
         } catch (Throwable e) {
@@ -286,7 +286,7 @@ final class OperationServiceImpl implements OperationService {
         if ((syncBackupCount + asyncBackupCount > 0) && (backupOp = backupAwareOp.getBackupOperation()) != null) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
-            final PartitionInfo partitionInfo = nodeService.getPartitionInfo(partitionId);
+            final PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
 
             if (syncBackupCount > 0) {
                 syncBackups = new ArrayList<Future>(syncBackupCount);
@@ -384,7 +384,7 @@ final class OperationServiceImpl implements OperationService {
         backupCount = Math.min(node.getClusterService().getSize() - 1, backupCount);
         if (backupCount > 0) {
             List<Future> backupOps = new ArrayList<Future>(backupCount);
-            PartitionInfo partitionInfo = nodeService.getPartitionInfo(partitionId);
+            PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
             for (int i = 0; i < backupCount; i++) {
                 int replicaIndex = i + 1;
                 Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
@@ -405,7 +405,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
-        Address target = nodeService.getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
+        Address target = nodeEngine.getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
             logger.log(Level.WARNING, "No target available for partition: "
                     + partitionId + " and replica: " + replicaIndex);
@@ -415,12 +415,12 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public boolean send(final Operation op, final Address target) {
-        if (target == null || nodeService.getThisAddress().equals(target)) {
-            op.setNodeEngine(nodeService);
+        if (target == null || nodeEngine.getThisAddress().equals(target)) {
+            op.setNodeEngine(nodeEngine);
             runOperation(op); // TODO: not sure what to do here...
             return true;
         } else {
-            return send(op, nodeService.getNode().getConnectionManager().getOrConnect(target));
+            return send(op, nodeEngine.getNode().getConnectionManager().getOrConnect(target));
         }
     }
 
@@ -463,13 +463,13 @@ final class OperationServiceImpl implements OperationService {
             final Address caller = packet.getConn().getEndPoint();
             try {
                 final Operation op = (Operation) IOUtil.toObject(data);
-                op.setNodeEngine(nodeService).setCaller(caller);
+                op.setNodeEngine(nodeEngine).setCaller(caller);
                 op.setConnection(packet.getConn());
                 if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
                     op.setResponseHandler(ResponseHandlerFactory.NO_RESPONSE_HANDLER);
-                    nodeService.eventService.onEvent((EventOperation) op);
+                    nodeEngine.eventService.onEvent((EventOperation) op);
                 } else {
-                    ResponseHandlerFactory.setRemoteResponseHandler(nodeService, op);
+                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
                     runOperation(op);
                 }
             } catch (Throwable e) {
@@ -505,7 +505,7 @@ final class OperationServiceImpl implements OperationService {
 
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("NodeServiceImpl");
+        sb.append("nodeEngineImpl");
         sb.append("{node=").append(node);
         sb.append('}');
         return sb.toString();

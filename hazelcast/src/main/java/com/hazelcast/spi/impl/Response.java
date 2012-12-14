@@ -48,7 +48,7 @@ public final class Response extends AbstractOperation {
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final long callId = getCallId();
         final Object response;
         if (exception) {
@@ -56,7 +56,7 @@ public final class Response extends AbstractOperation {
         } else {
             response = result;
         }
-        nodeService.operationService.notifyCall(callId, response);
+        nodeEngine.operationService.notifyCall(callId, response);
     }
 
     @Override

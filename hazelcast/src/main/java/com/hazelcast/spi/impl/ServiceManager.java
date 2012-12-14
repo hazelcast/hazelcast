@@ -44,17 +44,17 @@ import java.util.logging.Level;
 @PrivateApi
 class ServiceManager {
 
-    private final NodeEngineImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
 
-    ServiceManager(final NodeEngineImpl nodeService) {
-        this.nodeService = nodeService;
-        this.logger = nodeService.getLogger(ServiceManager.class.getName());
+    ServiceManager(final NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(ServiceManager.class.getName());
     }
 
     synchronized void start() {
-        final Node node = nodeService.getNode();
+        final Node node = nodeEngine.getNode();
         // register core services
         logger.log(Level.FINEST, "Registering core services...");
         registerService(ClusterService.SERVICE_NAME, node.getClusterService());
@@ -64,8 +64,8 @@ class ServiceManager {
         if (servicesConfig != null) {
             if (servicesConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
-                registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeService));
-                registerService(QueueService.NAME, new QueueService(nodeService));
+                registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeEngine));
+                registerService(QueueService.NAME, new QueueService(nodeEngine));
                 // TODO: add other services
                 // ...
                 // ...
@@ -87,7 +87,7 @@ class ServiceManager {
                         }
                     } else if (serviceConfig instanceof MapServiceConfig) {
                         if (!services.containsKey(MapServiceConfig.SERVICE_NAME)) {
-                            service = new MapService(nodeService);
+                            service = new MapService(nodeEngine);
                         }
                     }
 
@@ -137,7 +137,7 @@ class ServiceManager {
         if (service instanceof ManagedService) {
             try {
                 logger.log(Level.FINEST, "Initializing service -> " + serviceName + ": " + service);
-                ((ManagedService) service).init(nodeService, new Properties());
+                ((ManagedService) service).init(nodeEngine, new Properties());
             } catch (Throwable t) {
                 logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
             }

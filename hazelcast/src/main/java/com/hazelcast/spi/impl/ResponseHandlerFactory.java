@@ -39,8 +39,8 @@ public final class ResponseHandlerFactory {
         return new LocalInvocationResponseHandler(inv);
     }
 
-    public static void setRemoteResponseHandler(NodeEngine nodeservice, Operation op) {
-        op.setResponseHandler(createRemoteResponseHandler(nodeservice, op));
+    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
+        op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
     }
 
     public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {

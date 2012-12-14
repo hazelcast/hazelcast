@@ -51,7 +51,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
     private static final int REPARTITIONING_TASK_REPLICA_THRESHOLD = 2;
 
     private final Node node;
-    private final NodeEngineImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final int partitionCount;
     private final PartitionInfo[] partitions;
@@ -85,7 +85,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
     public PartitionService(final Node node) {
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         this.node = node;
-        this.nodeService = node.nodeService;
+        this.nodeEngine = node.nodeEngine;
         this.logger = this.node.getLogger(PartitionService.class.getName());
         this.partitions = new PartitionInfo[partitionCount];
         this.systemLogService = node.getSystemLogService();
@@ -156,10 +156,10 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
         try {
             if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
                 // since partition threads can not invoke operations...
-                final Future f = nodeService.getExecutionService().submit(new Runnable() {
+                final Future f = nodeEngine.getExecutionService().submit(new Runnable() {
                     public void run() {
                         try {
-                            Future f = nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
+                            Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
                                     node.getMasterAddress()).setTryCount(1).build().invoke();
                             f.get(750, TimeUnit.MILLISECONDS);
                         } catch (Exception e) {
@@ -254,7 +254,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                 final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
                         * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS
                         .getInteger() * 10;
-                nodeService.getExecutionService().schedule(new Runnable() {
+                nodeEngine.getExecutionService().schedule(new Runnable() {
                     public void run() {
                         migrationActive.compareAndSet(false, migrationStatus);
                     }
@@ -360,7 +360,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
                     try {
-                        nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME, op, member.getAddress())
+                        nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, member.getAddress())
                                 .setTryCount(1).build().invoke();
                     } catch (Exception e) {
                         logger.log(Level.FINEST, e.getMessage(), e);
@@ -432,8 +432,8 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                             final FinalizeMigrationOperation op = new FinalizeMigrationOperation(endpoint,
                                     migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex(), success);
                             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
-                                    .setNodeEngine(nodeService).setValidateTarget(false).setService(this);
-                            nodeService.getOperationService().runOperation(op);
+                                    .setNodeEngine(nodeEngine).setValidateTarget(false).setService(this);
+                            nodeEngine.getOperationService().runOperation(op);
                         }
                     } catch (Exception e) {
                         logger.log(Level.WARNING, e.getMessage(), e);
@@ -555,7 +555,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
     }
 
     public final int getPartitionId(Object key) {
-        return getPartitionId(nodeService.toData(key));
+        return getPartitionId(nodeEngine.toData(key));
     }
 
     public int getPartitionCount() {
@@ -744,7 +744,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                     systemLogService.logPartition("Started Migration : " + migrationRequestOp);
                     if (fromMember != null) {
                         migrationRequestOp.setFromAddress(fromMember.getAddress());
-                        Invocation inv = nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME,
+                        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                                 migrationRequestOp, migrationRequestOp.getFromAddress())
                                 .setTryCount(3).setTryPauseMillis(1000)
                                 .setReplicaIndex(migrationRequestOp.getReplicaIndex()).build();
@@ -984,12 +984,12 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
         final Collection<MemberImpl> members = node.clusterService.getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME,
+                nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                         new MigrationEventOperation(status, migrationInfo), member.getAddress())
                         .setTryCount(1).build().invoke();
             }
         }
-        nodeService.getEventExecutor().execute(new Runnable() {
+        nodeEngine.getEventExecutor().execute(new Runnable() {
             public void run() {
                 fireMigrationEvent(migrationInfo, status);
             }

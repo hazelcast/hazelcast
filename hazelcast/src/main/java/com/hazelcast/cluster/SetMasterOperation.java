@@ -41,9 +41,9 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
 
     public void run() {
         ClusterService clusterService = getService();
-        NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
-        Node node = nodeService.getNode();
-        ILogger logger = nodeService.getLogger(SetMasterOperation.class.getName());
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        Node node = nodeEngine.getNode();
+        ILogger logger = nodeEngine.getLogger(SetMasterOperation.class.getName());
         if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
             logger.log(Level.FINEST, "Handling master response: " + this);
             final Address currentMaster = node.getMasterAddress();

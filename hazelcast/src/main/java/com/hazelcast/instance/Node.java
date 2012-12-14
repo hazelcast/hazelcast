@@ -72,7 +72,7 @@ public class Node {
 
     private final NodeType localNodeType;
 
-    public final NodeEngineImpl nodeService;
+    public final NodeEngineImpl nodeEngine;
 
     public final PartitionService partitionService;
 
@@ -150,7 +150,7 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        nodeService = new NodeEngineImpl(this);
+        nodeEngine = new NodeEngineImpl(this);
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterService = new ClusterService(this);
         partitionService = new PartitionService(this);
@@ -306,7 +306,7 @@ public class Node {
     public void start() {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
-        nodeService.start();
+        nodeEngine.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(hazelcastInstance.threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
@@ -392,7 +392,7 @@ public class Node {
 //            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
 //            clientHandlerService.shutdown();
             logger.log(Level.FINEST, "Shutting down the partitionManager");
-            nodeService.shutdown();
+            nodeEngine.shutdown();
             if (multicastService != null) {
                 logger.log(Level.FINEST, "Shutting down the multicast service");
                 multicastService.stop();

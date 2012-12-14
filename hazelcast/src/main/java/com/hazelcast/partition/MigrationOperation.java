@@ -112,14 +112,14 @@ public class MigrationOperation extends AbstractOperation
 
     private boolean runMigrationTasks() {
         boolean error = false;
-        final NodeEngineImpl nodeService = (NodeEngineImpl) getNodeEngine();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final PartitionService partitionService = getService();
         partitionService.addActiveMigration(new MigrationInfo(getPartitionId(), getReplicaIndex(), copyBackReplicaIndex,
-                migrationType, from, nodeService.getThisAddress()));
+                migrationType, from, nodeEngine.getThisAddress()));
 
         for (Operation op : tasks) {
             try {
-                op.setNodeEngine(nodeService).setCaller(from)
+                op.setNodeEngine(nodeEngine).setCaller(from)
                         .setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
                 op.setResponseHandler(ERROR_RESPONSE_HANDLER);
                 MigrationAwareService service = op.getService();
