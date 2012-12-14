@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -302,8 +302,8 @@ public class GroupProperties {
         HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_HEARTBEAT_INTERVAL_SECONDS, "1");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
         MASTER_CONFIRMATION_INTERVAL_SECONDS = new GroupProperty(config, PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "30");
-        MAX_NO_MASTER_CONFIRMATION_SECONDS = new GroupProperty(config, PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "450");
-        MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "600");
+        MAX_NO_MASTER_CONFIRMATION_SECONDS = new GroupProperty(config, PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "300");
+        MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "300");
         ICMP_ENABLED = new GroupProperty(config, PROP_ICMP_ENABLED, "false");
         ICMP_TIMEOUT = new GroupProperty(config, PROP_ICMP_TIMEOUT, "1000");
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");

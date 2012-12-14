@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,6 +239,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 return;
             }
             try {
+                boolean firstError = true;
                 while (running.get()) {
                     try {
                         URL url = new URL(webServerUrl + "collector.do");
@@ -253,7 +254,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         out.flush();
                         connection.getInputStream();
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
+                        if(firstError) {
+                            logger.log(Level.SEVERE, "Can not connect to Management Center. Check url connectivity:" + webServerUrl);
+                            firstError = false;
+                        }
+                        else {
+                            logger.log(Level.FINEST, e.getMessage(), e);
+                        }
                     }
                     Thread.sleep(updateIntervalMs);
                 }

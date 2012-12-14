@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,9 +114,9 @@ public class BlockingQueueManager extends BaseManager {
         node.listenerManager.removeAllRegisteredListeners(name);
     }
 
-    public void syncForDead(MemberImpl deadMember) {
+    public void syncForDead(Address deadAddress) {
         for (BQ queue : mapBQ.values()) {
-            queue.invalidateScheduledActionsFor(deadMember);
+            queue.invalidateScheduledActionsFor(deadAddress);
         }
     }
 
@@ -558,7 +558,7 @@ public class BlockingQueueManager extends BaseManager {
         if (bq != null && bq.mapListeners.size() > 0) {
             enqueueAndReturn(new Processable() {
                 public void process() {
-                    fireMapEvent(bq.mapListeners, name, type.getType(), itemData, thisAddress);
+                    fireEvent(bq.mapListeners, name, type.getType(), itemData, thisAddress);
                 }
             });
         }
@@ -1106,15 +1106,15 @@ public class BlockingQueueManager extends BaseManager {
             return new LocalQueueStatsImpl(ownedCount, backupCount, minAge, maxAge, aveAge);
         }
 
-        public void invalidateScheduledActionsFor(MemberImpl deadMember) {
+        public void invalidateScheduledActionsFor(Address deadAddress) {
             for (PollAction pollAction : pollWaitList) {
-                if (deadMember.address.equals(pollAction.getRequest().caller)) {
+                if (deadAddress.equals(pollAction.getRequest().caller)) {
                     pollAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(pollAction);
                 }
             }
             for (ScheduledAction offerAction : offerWaitList) {
-                if (deadMember.address.equals(offerAction.getRequest().caller)) {
+                if (deadAddress.equals(offerAction.getRequest().caller)) {
                     offerAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(offerAction);
                 }

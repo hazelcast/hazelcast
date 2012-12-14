@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,11 @@ import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -527,7 +532,7 @@ public class QueryTest extends TestUtil {
         imap.clear();
         imap = h1.getMap("employees2");
         imap.addIndex("name", false);
-        imap.addIndex("salary", true);
+        imap.addIndex("salary", false);
         imap.addIndex("active", false);
         for (int i = 0; i < 50000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
@@ -1093,6 +1098,67 @@ public class QueryTest extends TestUtil {
                 fail("Unknown expression: " + e.getKey()
                         + "! Has toString() of GetExpressionImpl changed?");
             }
+        }
+    }
+
+    /**
+     * test for issue #359
+     */
+    @Test
+    public void testIndexCleanupOnMigration() throws InterruptedException {
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        final String mapName = "testIndexCleanupOnMigration";
+        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
+        final int n = 6;
+        final int runCount = 500;
+        ExecutorService ex = Executors.newFixedThreadPool(n);
+        final CountDownLatch latch = new CountDownLatch(n);
+        final AtomicInteger countdown = new AtomicInteger(n * runCount);
+        final Random rand = new Random();
+        for (int i = 0; i < n; i++) {
+            Thread.sleep(rand.nextInt((i + 1) * 100) + 10);
+            ex.execute(new Runnable() {
+                public void run() {
+                    final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+                    final String name = UUID.randomUUID().toString();
+                    final IMap<Object, Value> map = hz.getMap(mapName);
+                    map.put(name, new Value(name, 0));
+                    try {
+                        for (int j = 1; j <= runCount; j++) {
+                            Value v = map.get(name);
+                            v.setIndex(j);
+                            map.put(name, v);
+
+                            try {
+                                Thread.sleep(rand.nextInt(100) + 1);
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                            EntryObject e = new PredicateBuilder().getEntryObject();
+                            Predicate<?, ?> predicate = e.get("name").equal(name);
+                            final Collection<Value> values = map.values(predicate);
+                            assertEquals(1, values.size());
+                            Value v1 = values.iterator().next();
+                            Value v2 = map.get(name);
+                            assertEquals(v1, v2);
+                            countdown.decrementAndGet();
+                        }
+                    } catch (AssertionError e) {
+                            e.printStackTrace();
+                    } catch (Throwable e) {
+                            System.err.println(e.getClass().getName() + "-> " +e.getMessage());
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+        try {
+            assertTrue(latch.await(60, TimeUnit.SECONDS));
+            assertEquals(0, countdown.get());
+        } finally {
+            ex.shutdownNow();
         }
     }
 }
