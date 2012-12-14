@@ -16,13 +16,20 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinOperation;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.executor.ExecutorThreadFactory;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -30,6 +37,9 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.WaitNotifyService.WaitingOp;
+import com.hazelcast.spi.impl.WaitNotifyService.WaitingOpProcessor;
+import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.util.SpinLock;
 import com.hazelcast.util.SpinReadWriteLock;
 

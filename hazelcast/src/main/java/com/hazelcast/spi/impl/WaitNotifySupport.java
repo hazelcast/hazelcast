@@ -16,11 +16,10 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitSupport;
-import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.spi.*;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 
 import java.util.Iterator;
 import java.util.Queue;
@@ -29,14 +28,14 @@ import java.util.TimerTask;
 import java.util.concurrent.*;
 
 @PrivateApi
-class WaitNotifySupport {
+class WaitNotifyService {
     private final ConcurrentMap<Object, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<Object, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService esExpirationTaskExecutor = Executors.newSingleThreadExecutor();
     private final Future expirationTask;
     private final WaitingOpProcessor waitingOpProcessor;
 
-    public WaitNotifySupport(final WaitingOpProcessor waitingOpProcessor) {
+    public WaitNotifyService(final WaitingOpProcessor waitingOpProcessor) {
         this.waitingOpProcessor = waitingOpProcessor;
         expirationTask = esExpirationTaskExecutor.submit(new Runnable() {
             public void run() {
@@ -94,7 +93,7 @@ class WaitNotifySupport {
             }
         }
         long timeout = so.getWaitTimeoutMillis();
-        WaitingOp waitingOp = new WaitingOp(q, so);
+        WaitingOp waitingOp = (so instanceof KeyBasedOperation) ? new KeyBasedWaitingOp(q, so) : new WaitingOp(q, so);
         if (timeout > -1 && timeout < 1500) {
             delayQueue.offer(waitingOp);
         }
@@ -139,7 +138,7 @@ class WaitNotifySupport {
     }
 
     public static void main(String[] args) {
-        final WaitNotifySupport ss = new WaitNotifySupport(new WaitingOpProcessor() {
+        final WaitNotifyService ss = new WaitNotifyService(new WaitingOpProcessor() {
             public void process(WaitingOp so) {
             }
 
@@ -182,6 +181,50 @@ class WaitNotifySupport {
         return mapWaitingOps.get(scheduleQueueKey);
     }
 
+    public void onMemberLeft(Address leftMember) {
+        for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+            Iterator<WaitingOp> it = q.iterator();
+            while (it.hasNext()) {
+                if (Thread.interrupted()) {
+                    return;
+                }
+                WaitingOp waitingOp = it.next();
+                if (waitingOp.isValid()) {
+                    Operation op = waitingOp.getOperation();
+                    if (leftMember.equals(op.getCaller())) {
+                        waitingOp.setValid(false);
+                    }
+                }
+            }
+        }
+    }
+
+    public void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
+        if (migrationInfo.getReplicaIndex() == 0) {
+            if (thisAddress.equals(migrationInfo.getFromAddress())) {
+                int partitionId = migrationInfo.getPartitionId();
+                for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+                    Iterator<WaitingOp> it = q.iterator();
+                    while (it.hasNext()) {
+                        if (Thread.interrupted()) {
+                            return;
+                        }
+                        WaitingOp waitingOp = it.next();
+                        if (waitingOp.isValid()) {
+                            Operation op = waitingOp.getOperation();
+                            if (partitionId == op.getPartitionId()) {
+                                waitingOp.setValid(false);
+                                PartitionMigratingException pme = new PartitionMigratingException(thisAddress, partitionId, op.getClass().getName(), op.getServiceName());
+                                op.getResponseHandler().sendResponse(pme);
+                                it.remove();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     interface WaitingOpProcessor {
         void process(WaitingOp so) throws Exception;
 
@@ -193,7 +236,17 @@ class WaitNotifySupport {
         esExpirationTaskExecutor.shutdown();
     }
 
-    static class WaitingOp extends AbstractOperation implements Delayed {
+    static class KeyBasedWaitingOp extends WaitingOp implements KeyBasedOperation {
+        KeyBasedWaitingOp(Queue<WaitingOp> queue, WaitSupport so) {
+            super(queue, so);
+        }
+
+        public int getKeyHash() {
+            return ((KeyBasedOperation) getOperation()).getKeyHash();
+        }
+    }
+
+    static class WaitingOp extends AbstractOperation implements Delayed, PartitionAwareOperation {
         final Queue<WaitingOp> queue;
         final Operation op;
         final WaitSupport so;
@@ -205,6 +258,7 @@ class WaitNotifySupport {
             this.so = so;
             this.queue = queue;
             this.expirationTime = so.getWaitTimeoutMillis() < 0 ? -1 : System.currentTimeMillis() + so.getWaitTimeoutMillis();
+            this.setPartitionId(op.getPartitionId());
         }
 
         public Operation getOperation() {
