@@ -20,6 +20,7 @@ import com.hazelcast.map.RemoveOperation;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,17 +51,23 @@ public final class DataSerializerInitHook implements DataSerializerHook {
             }
         });
 
-//        factories.put(PartitionIterator.class.getName(), new DataSerializableFactory() {
-//            public DataSerializable create() {
-//                return new PartitionIterator();
-//            }
-//        });
+        factories.put(PartitionIteratingOperation.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new PartitionIteratingOperation();
+            }
+        });
 
-//        factories.put(OperationWrapper.class.getName(), new DataSerializableFactory() {
-//            public DataSerializable create() {
-//                return new OperationWrapper();
-//            }
-//        });
+        factories.put(PartitionResponse.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new PartitionResponse();
+            }
+        });
+
+        factories.put(OperationWrapper.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new OperationWrapper();
+            }
+        });
 
         return factories;
     }

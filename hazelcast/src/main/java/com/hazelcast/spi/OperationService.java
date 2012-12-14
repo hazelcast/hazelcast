@@ -19,6 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -27,11 +28,13 @@ import java.util.concurrent.TimeoutException;
  */
 public interface OperationService {
 
-    void runOperation(Operation op) throws Exception;
+    void runOperation(Operation op);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
+
+    Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception;
 
     boolean send(Operation op, int partitionId, int replicaIndex);
 

@@ -30,13 +30,12 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.SpinLock;
 import com.hazelcast.util.SpinReadWriteLock;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -376,6 +375,76 @@ final class OperationServiceImpl implements OperationService {
             }
             responseHandler.sendResponse(response == null ? op.getResponse() : response);
         }
+    }
+
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
+        if (!(op instanceof PartitionAwareOperation)) {
+            throw new IllegalArgumentException("Operation must be PartitionAwareOperation!");
+        }
+        final Map<Address, ArrayList<Integer>> memberPartitions = getMemberPartitions();
+        final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
+        final Data operationData = nodeEngine.toData(op); // don't use op object in invocations!
+        for (Map.Entry<Address, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
+            final Address target = mp.getKey();
+            final List<Integer> partitions = mp.getValue();
+            final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationData);
+            Invocation inv = createInvocationBuilder(serviceName, pi,
+                    target).setTryCount(5).setTryPauseMillis(300).build();
+            Future future = inv.invoke();
+            responses.put(target, future);
+        }
+        final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionCount());
+        for (Map.Entry<Address, Future> response : responses.entrySet()) {
+            try {
+                PartitionResponse result = (PartitionResponse) IOUtil.toObject(response.getValue().get());
+                partitionResults.putAll(result.asMap());
+            } catch (Throwable t) {
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.WARNING, t.getMessage(), t);
+                } else {
+                    logger.log(Level.WARNING, t.getMessage());
+                }
+                List<Integer> partitions = memberPartitions.get(response.getKey());
+                for (Integer partition : partitions) {
+                    partitionResults.put(partition, t);
+                }
+            }
+        }
+        final List<Integer> failedPartitions = new LinkedList<Integer>();
+        for (Map.Entry<Integer, Object> partitionResult : partitionResults.entrySet()) {
+            int partitionId = partitionResult.getKey();
+            Object result = partitionResult.getValue();
+            if (result instanceof Throwable) {
+                failedPartitions.add(partitionId);
+            }
+        }
+        for (Integer failedPartition : failedPartitions) {
+            Invocation inv = createInvocationBuilder(serviceName,
+                    new OperationWrapper(operationData), failedPartition).build();
+            Future f = inv.invoke();
+            partitionResults.put(failedPartition, f);
+        }
+        for (Integer failedPartition : failedPartitions) {
+            Future f = (Future) partitionResults.get(failedPartition);
+            Object result = f.get();
+            partitionResults.put(failedPartition, result);
+        }
+        return partitionResults;
+    }
+
+    private Map<Address, ArrayList<Integer>> getMemberPartitions() {
+        final int members = node.getClusterService().getSize();
+        Map<Address, ArrayList<Integer>> memberPartitions = new HashMap<Address, ArrayList<Integer>>(members);
+        for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
+            Address owner = node.partitionService.getPartitionOwner(i);
+            ArrayList<Integer> ownedPartitions = memberPartitions.get(owner);
+            if (ownedPartitions == null) {
+                ownedPartitions = new ArrayList<Integer>();
+                memberPartitions.put(owner, ownedPartitions);
+            }
+            ownedPartitions.add(i);
+        }
+        return memberPartitions;
     }
 
     public void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
