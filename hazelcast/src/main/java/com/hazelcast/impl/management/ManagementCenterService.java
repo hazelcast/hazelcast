@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl.management;
 
+import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
@@ -267,7 +268,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     class TaskPoller extends Thread {
-        final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
+        final ConsoleRequest[] consoleRequests = new ConsoleRequest[20];
 
         TaskPoller() {
             super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.Task.Poller"));
@@ -278,6 +279,15 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
             register(new DetectDeadlockRequest());
+            register(new MemberConfigRequest());
+            register(new ClusterPropsRequest());
+            register(new SetLogLevelRequest());
+            register(new GetLogLevelRequest());
+            register(new GetVersionRequest());
+            register(new GetLogsRequest());
+            register(new RunGcRequest());
+            register(new GetMemberSystemPropertiesRequest());
+            register(new GetMapEntryRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {

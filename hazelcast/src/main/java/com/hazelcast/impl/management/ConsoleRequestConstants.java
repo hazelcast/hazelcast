@@ -29,7 +29,15 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_CONSOLE_COMMAND = 5;
     public static final int REQUEST_TYPE_MAP_CONFIG = 6;
     public static final int REQUEST_TYPE_DETECT_DEADLOCK = 7;
-
+    public static final int REQUEST_TYPE_MEMBER_CONFIG = 8;
+    public static final int REQUEST_TYPE_CLUSTER_PROPERTIES = 9;
+    public static final int REQUEST_TYPE_LOG_LEVEL= 10;
+    public static final int REQUEST_TYPE_LOGS = 11;
+    public static final int REQUEST_TYPE_MAP_ENTRY = 12;
+    public static final int REQUEST_TYPE_MEMBER_SYSTEM_PROPERTIES = 13;
+    public static final int REQUEST_TYPE_GET_VERSION = 14;
+    public static final int REQUEST_TYPE_RUN_GC = 15;
+    public static final int REQUEST_TYPE_SET_LOG_LEVEL = 16;
     private ConsoleRequestConstants() {
     }
 }

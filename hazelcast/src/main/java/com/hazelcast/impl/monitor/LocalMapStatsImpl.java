@@ -58,7 +58,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     void writeDataInternal(DataOutput out) throws IOException {
         out.writeLong(lastAccessTime.get());
         out.writeLong(hits.get());
-        out.writeLong(misses.get());
+//        out.writeLong(misses.get());
         out.writeLong(ownedEntryCount);
         out.writeLong(backupEntryCount);
         out.writeLong(markedAsRemovedEntryCount);
@@ -76,7 +76,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     void readDataInternal(DataInput in) throws IOException {
         lastAccessTime.set(in.readLong());
         hits.set(in.readLong());
-        misses.set(in.readLong());
+//        misses.set(in.readLong());
         ownedEntryCount = in.readLong();
         backupEntryCount = in.readLong();
         markedAsRemovedEntryCount = in.readLong();
@@ -230,7 +230,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", lastEvictionTime=" + lastEvictionTime +
                 ", hits=" + hits.get() +
-                ", misses=" + misses.get() +
+//                ", misses=" + misses.get() +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", lockWaitCount=" + lockWaitCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +
