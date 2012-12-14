@@ -230,20 +230,21 @@ public class NodeServiceImpl implements NodeService {
 
     @PrivateApi
     public void onMemberLeft(MemberImpl member) {
-
+        waitNotifyService.onMemberLeft(member.getAddress());
         onMemberDisconnect(member.getAddress());
     }
 
     @PrivateApi
-    public void onMemberDisconnect(Address deadAddress) {
+    public void onMemberDisconnect(Address disconnectedAddress) {
+        waitNotifyService.onMemberLeft(disconnectedAddress);
         for (Call call : mapCalls.values()) {
-            call.onDisconnect(deadAddress);
+            call.onDisconnect(disconnectedAddress);
         }
     }
 
     @PrivateApi
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
-
+        waitNotifyService.onPartitionMigrate(getThisAddress(), migrationInfo);
     }
 
     private long registerCall(Call call) {
@@ -472,16 +473,12 @@ public class NodeServiceImpl implements NodeService {
     private void handleBackupAndSendResponse(BackupAwareOperation backupAwareOp) throws Exception {
         Object response = null;
         final int maxBackups = getClusterService().getSize() - 1;
-
         final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
-
         final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
                 ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
-
         Collection<Future> syncBackups = null;
         Collection<Future> asyncBackups = null;
-
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
         final Operation backupOp;
@@ -490,7 +487,6 @@ public class NodeServiceImpl implements NodeService {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final PartitionInfo partitionInfo = getPartitionInfo(partitionId);
-
             if (syncBackupCount > 0) {
                 syncBackups = new ArrayList<Future>(syncBackupCount);
                 for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
@@ -531,11 +527,9 @@ public class NodeServiceImpl implements NodeService {
                 }
             }
         }
-
         response = op.returnsResponse()
                 ? (backupResponse == null ? op.getResponse() : new MultiResponse(backupResponse, op.getResponse()))
                 : null;
-
         waitFutureResponses(syncBackups);
         sendResponse(op, response);
         waitFutureResponses(asyncBackups);
