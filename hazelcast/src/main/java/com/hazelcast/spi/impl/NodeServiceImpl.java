@@ -671,4 +671,12 @@ public class NodeServiceImpl implements NodeService {
                 && op.getClass().getClassLoader() == thisClassLoader
                 && op.getClass().getName().startsWith("com.hazelcast.cluster");
     }
+
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("NodeServiceImpl");
+        sb.append("{node=").append(node);
+        sb.append('}');
+        return sb.toString();
+    }
 }

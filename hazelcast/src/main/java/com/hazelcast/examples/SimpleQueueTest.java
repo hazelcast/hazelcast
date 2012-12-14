@@ -30,48 +30,50 @@ public class SimpleQueueTest {
     public static final int STATS_SECONDS = 10;
 
     public static void main(String[] args) {
-        System.setProperty("hazelcast.config", "/java/workspace/hazelcast/hazelcast/src/main/resources/hazelcast.xml");
-        int threadCount = 10;
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        final Stats stats = new Stats();
-        ExecutorService es = Executors.newFixedThreadPool(threadCount);
-        for (int i = 0; i < threadCount; i++) {
-            es.submit(new Runnable() {
-                public void run() {
-                    Random random = new Random();
-                    while (true) {
-                        int ran = random.nextInt(100);
-                        Queue<byte[]> queue = hz.getQueue("default"+ran);
-                        for (int j = 0; j < 1000; j++) {
-                            queue.offer(new byte[VALUE_SIZE]);
-                            stats.offers.incrementAndGet();
+        int threadCount = 5;
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
+//        if (hz1.getCluster().getMembers().iterator().next().localMember())
+        {
+            final Stats stats = new Stats();
+            ExecutorService es = Executors.newFixedThreadPool(threadCount);
+            for (int i = 0; i < threadCount; i++) {
+                es.submit(new Runnable() {
+                    public void run() {
+                        Random random = new Random();
+                        while (true) {
+                            int ran = random.nextInt(100);
+                            Queue<byte[]> queue = hz1.getQueue("default"+ran);
+                            for (int j = 0; j < 1000; j++) {
+                                queue.offer(new byte[VALUE_SIZE]);
+                                stats.offers.incrementAndGet();
+                            }
+                            for (int j = 0; j < 1000; j++) {
+                                queue.poll();
+                                stats.polls.incrementAndGet();
+                            }
                         }
-                        for (int j = 0; j < 1000; j++) {
-                            queue.poll();
-                            stats.polls.incrementAndGet();
+                    }
+                });
+            }
+            Executors.newSingleThreadExecutor().submit(new Runnable() {
+                @SuppressWarnings("BusyWait")
+                public void run() {
+                    while (true) {
+                        try {
+                            Thread.sleep(STATS_SECONDS * 1000);
+                            System.out.println("cluster size:"
+                                    + hz1.getCluster().getMembers().size());
+                            Stats currentStats = stats.getAndReset();
+                            System.out.println(currentStats);
+                            System.out.println("Operations per Second : " + currentStats.total()
+                                    / STATS_SECONDS);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     }
                 }
             });
         }
-        Executors.newSingleThreadExecutor().submit(new Runnable() {
-            @SuppressWarnings("BusyWait")
-            public void run() {
-                while (true) {
-                    try {
-                        Thread.sleep(STATS_SECONDS * 1000);
-                        System.out.println("cluster size:"
-                                + hz.getCluster().getMembers().size());
-                        Stats currentStats = stats.getAndReset();
-                        System.out.println(currentStats);
-                        System.out.println("Operations per Second : " + currentStats.total()
-                                / STATS_SECONDS);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
     }
 
     public static class Stats {

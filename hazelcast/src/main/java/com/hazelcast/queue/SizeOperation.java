@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 /**
  * User: ali

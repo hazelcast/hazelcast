@@ -32,6 +32,8 @@ import java.io.IOException;
  */
 public class OfferOperation extends QueueTimedOperation implements WaitSupport, Notifier {
 
+    static int counter = 0;
+
     private Data data;
 
     public OfferOperation() {
@@ -44,6 +46,10 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
 
     public void run() {
         response = getContainer().offer(data);
+        if (counter++ % 10000 == 0){
+            System.out.println(getNodeService());
+        }
+
     }
 
     public Operation getBackupOperation() {
