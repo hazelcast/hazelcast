@@ -61,7 +61,7 @@ class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeService.getInvocationService().createInvocationBuilder(service,
+                Invocation inv = nodeService.getOperationService().createInvocationBuilder(service,
                         new RegistrationOperation(service, subscribers, topic), member.getAddress()).build();
                 calls.add(inv.invoke());
             }

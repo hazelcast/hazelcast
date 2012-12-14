@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 
 import java.util.Iterator;
@@ -181,7 +182,7 @@ class WaitNotifyService {
         return mapWaitingOps.get(scheduleQueueKey);
     }
 
-    public void onMemberLeft(Address leftMember) {
+    public void onMemberDisconnect(Address leftMember) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             Iterator<WaitingOp> it = q.iterator();
             while (it.hasNext()) {
@@ -231,7 +232,7 @@ class WaitNotifyService {
         void processUnderExistingLock(Operation operation);
     }
 
-    public void shutdown() {
+    void shutdown() {
         expirationTask.cancel(true);
         esExpirationTaskExecutor.shutdown();
     }

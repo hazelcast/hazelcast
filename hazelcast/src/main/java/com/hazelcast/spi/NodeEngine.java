@@ -30,7 +30,7 @@ import com.hazelcast.transaction.TransactionImpl;
  */
 public interface NodeEngine {
 
-    InvocationService getInvocationService();
+    OperationService getOperationService();
 
     ExecutionService getExecutionService();
 

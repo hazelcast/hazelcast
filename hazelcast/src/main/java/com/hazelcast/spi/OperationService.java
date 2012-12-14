@@ -25,7 +25,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * @mdogan 12/14/12
  */
-public interface InvocationService {
+public interface OperationService {
 
     void runOperation(Operation op) throws Exception;
 

@@ -79,7 +79,7 @@ public final class MultiResponse extends AbstractOperation {
             for (int i = 0; i < operations.length; i++) {
                 final Operation op = operations[i];
                 if (op != null) {
-                    nodeEngine.getInvocationService().runOperation(op);
+                    nodeEngine.getOperationService().runOperation(op);
                 }
             }
         }

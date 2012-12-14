@@ -30,10 +30,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InvocationService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionImpl;
 
@@ -47,9 +44,10 @@ public class NodeEngineImpl implements NodeEngine {
     private final int partitionCount;
     private final ServiceManager serviceManager;
 
-    final InvocationServiceImpl invocationService;
-    final EventServiceImpl eventService;
+    final OperationServiceImpl operationService;
     final ExecutionServiceImpl executionService;
+    final EventServiceImpl eventService;
+    final WaitNotifyService waitNotifyService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -57,8 +55,9 @@ public class NodeEngineImpl implements NodeEngine {
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
-        invocationService = new InvocationServiceImpl(this);
+        operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
+        waitNotifyService = new WaitNotifyService(new WaitingOpProcessorImpl());
     }
 
     @PrivateApi
@@ -100,8 +99,8 @@ public class NodeEngineImpl implements NodeEngine {
         return eventService;
     }
 
-    public InvocationService getInvocationService() {
-        return invocationService;
+    public OperationService getOperationService() {
+        return operationService;
     }
 
     public ExecutionService getExecutionService() {
@@ -132,7 +131,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void handleOperation(Packet packet) {
-        invocationService.handleOperation(packet);
+        operationService.handleOperation(packet);
     }
 
     @PrivateApi
@@ -166,13 +165,14 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @PrivateApi
-    public void onMemberDisconnect(Address deadAddress) {
-        invocationService.onMemberDisconnect(deadAddress);
+    public void onMemberDisconnect(Address disconnectedAddress) {
+        waitNotifyService.onMemberDisconnect(disconnectedAddress);
+        operationService.onMemberDisconnect(disconnectedAddress);
     }
 
     @PrivateApi
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
-
+        waitNotifyService.onPartitionMigrate(getThisAddress(), migrationInfo);
     }
 
     @PrivateApi
@@ -183,8 +183,24 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void shutdown() {
+        waitNotifyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
-        invocationService.shutdown();
+        operationService.shutdown();
+    }
+
+    private class WaitingOpProcessorImpl implements WaitNotifyService.WaitingOpProcessor {
+
+        public void process(final WaitNotifyService.WaitingOp so) throws Exception {
+            executionService.execute(new Runnable() {
+                public void run() {
+                    operationService.runOperation(so);
+                }
+            });
+        }
+
+        public void processUnderExistingLock(Operation operation) {
+            operationService.runOperationUnderExistingLock(operation);
+        }
     }
 }

@@ -56,7 +56,7 @@ public final class Response extends AbstractOperation {
         } else {
             response = result;
         }
-        nodeService.invocationService.notifyCall(callId, response);
+        nodeService.operationService.notifyCall(callId, response);
     }
 
     @Override

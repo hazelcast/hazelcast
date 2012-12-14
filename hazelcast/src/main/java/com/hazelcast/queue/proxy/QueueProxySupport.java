@@ -50,7 +50,7 @@ abstract class QueueProxySupport {
         checkNull(data);
         try {
             OfferOperation operation = new OfferOperation(name, timeout, data);
-            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
@@ -62,7 +62,7 @@ abstract class QueueProxySupport {
     public int size() {
         try {
             SizeOperation operation = new SizeOperation(name);
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future future = invocation.invoke();
             Object result = future.get();
             return (Integer) nodeEngine.toObject(result);
@@ -75,7 +75,7 @@ abstract class QueueProxySupport {
     public void clear() {
         try {
             ClearOperation operation = new ClearOperation(name);
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future future = invocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -86,7 +86,7 @@ abstract class QueueProxySupport {
     Data peekInternal() {
         try {
             PeekOperation operation = new PeekOperation(name);
-            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future<Data> f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
@@ -97,7 +97,7 @@ abstract class QueueProxySupport {
     Data pollInternal(long timeout) {
         try {
             PollOperation operation = new PollOperation(name, timeout);
-            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future<Data> f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
@@ -110,7 +110,7 @@ abstract class QueueProxySupport {
         checkNull(data);
         try {
             RemoveOperation operation = new RemoveOperation(name, data);
-            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
@@ -121,7 +121,7 @@ abstract class QueueProxySupport {
     boolean containsInternal(Set<Data> dataSet) {
         try {
             ContainsOperation operation = new ContainsOperation(name, dataSet);
-            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {

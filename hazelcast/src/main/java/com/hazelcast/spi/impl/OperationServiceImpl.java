@@ -16,20 +16,13 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.JoinOperation;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.executor.ExecutorThreadFactory;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationCycleOperation;
-import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -37,9 +30,6 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.WaitNotifyService.WaitingOp;
-import com.hazelcast.spi.impl.WaitNotifyService.WaitingOpProcessor;
-import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.util.SpinLock;
 import com.hazelcast.util.SpinReadWriteLock;
 
@@ -56,7 +46,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 12/14/12
  */
-final class InvocationServiceImpl implements InvocationService {
+final class OperationServiceImpl implements OperationService {
 
     private final NodeEngineImpl nodeService;
     private final Node node;
@@ -66,12 +56,11 @@ final class InvocationServiceImpl implements InvocationService {
     private final Lock[] ownerLocks = new Lock[100000];
     private final Lock[] backupLocks = new Lock[1000];
     private final SpinReadWriteLock[] partitionLocks;
-    private final WaitNotifySupport waitNotifySupport;
 
-    InvocationServiceImpl(NodeEngineImpl nodeService) {
+    OperationServiceImpl(NodeEngineImpl nodeService) {
         this.nodeService = nodeService;
         this.node = nodeService.getNode();
-        this.logger = node.getLogger(InvocationService.class.getName());
+        this.logger = node.getLogger(OperationService.class.getName());
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
         }
@@ -83,7 +72,6 @@ final class InvocationServiceImpl implements InvocationService {
         for (int i = 0; i < partitionCount; i++) {
             partitionLocks[i] = new SpinReadWriteLock(1, TimeUnit.MILLISECONDS);
         }
-        waitNotifySupport = new WaitNotifySupport(new WaitingOpProcessorImpl());
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
@@ -249,7 +237,7 @@ final class InvocationServiceImpl implements InvocationService {
             if (op instanceof WaitSupport) {
                 WaitSupport so = (WaitSupport) op;
                 if (so.shouldWait()) {
-                    waitNotifySupport.wait(so);
+                    nodeService.waitNotifyService.wait(so);
                     return;
                 }
             }
@@ -268,7 +256,7 @@ final class InvocationServiceImpl implements InvocationService {
             if (op instanceof Notifier) {
                 final Notifier notifier = (Notifier) op;
                 if (notifier.shouldNotify()) {
-                    waitNotifySupport.notify(notifier);
+                    nodeService.waitNotifyService.notify(notifier);
                 }
             }
         } catch (Throwable e) {
@@ -491,9 +479,9 @@ final class InvocationServiceImpl implements InvocationService {
         }
     }
 
-    void onMemberDisconnect(Address deadAddress) {
+    void onMemberDisconnect(Address disconnectedAddress) {
         for (Call call : mapCalls.values()) {
-            call.onDisconnect(deadAddress);
+            call.onDisconnect(disconnectedAddress);
         }
     }
 
@@ -501,22 +489,7 @@ final class InvocationServiceImpl implements InvocationService {
         mapCalls.clear();
     }
 
-    private class WaitingOpProcessorImpl implements WaitNotifySupport.WaitingOpProcessor {
-
-        public void process(final WaitNotifySupport.WaitingOp so) throws Exception {
-            nodeService.executionService.execute(new Runnable() {
-                public void run() {
-                    runOperation(so);
-                }
-            });
-        }
-
-        public void processUnderExistingLock(Operation operation) {
-            runOperationUnderExistingLock(operation);
-        }
-    }
-
-    private static final ClassLoader thisClassLoader = InvocationService.class.getClassLoader();
+    private static final ClassLoader thisClassLoader = OperationService.class.getClassLoader();
 
     private static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation

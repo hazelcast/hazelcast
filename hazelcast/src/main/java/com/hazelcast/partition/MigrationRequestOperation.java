@@ -112,7 +112,7 @@ public class MigrationRequestOperation extends AbstractOperation
             final NodeEngine nodeEngine = getNodeEngine();
             final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             final Collection<Operation> tasks = prepareMigrationTasks(partitionId, replicaIndex);
-            Invocation inv = nodeEngine.getInvocationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
                     new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
                             getMigrationType(), tasks, from), to)
                     .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).build();

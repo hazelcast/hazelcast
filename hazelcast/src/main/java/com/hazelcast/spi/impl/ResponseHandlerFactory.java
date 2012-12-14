@@ -91,7 +91,7 @@ public final class ResponseHandlerFactory {
             }
             response.setCallId(callId);
             response.setPartitionId(partitionId);
-            nodeEngine.getInvocationService().send(response, conn);
+            nodeEngine.getOperationService().send(response, conn);
         }
     }
 

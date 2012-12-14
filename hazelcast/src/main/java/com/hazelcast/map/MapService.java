@@ -129,7 +129,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeEngine.getInvocationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
+            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -141,7 +141,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeEngine.getInvocationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
+            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -153,7 +153,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeEngine.getInvocationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
+            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -213,7 +213,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 Operation op = new CleanupOperation(latch);
                 op.setPartitionId(partitionId).setService(MapService.this).setValidateTarget(false);
                 try {
-                    nodeEngine.getInvocationService().runOperation(op);
+                    nodeEngine.getOperationService().runOperation(op);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }

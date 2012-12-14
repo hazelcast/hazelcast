@@ -159,7 +159,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                 final Future f = nodeService.getExecutionService().submit(new Runnable() {
                     public void run() {
                         try {
-                            Future f = nodeService.getInvocationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
+                            Future f = nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
                                     node.getMasterAddress()).setTryCount(1).build().invoke();
                             f.get(750, TimeUnit.MILLISECONDS);
                         } catch (Exception e) {
@@ -360,7 +360,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
                     try {
-                        nodeService.getInvocationService().createInvocationBuilder(SERVICE_NAME, op, member.getAddress())
+                        nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME, op, member.getAddress())
                                 .setTryCount(1).build().invoke();
                     } catch (Exception e) {
                         logger.log(Level.FINEST, e.getMessage(), e);
@@ -433,7 +433,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                                     migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex(), success);
                             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
                                     .setNodeEngine(nodeService).setValidateTarget(false).setService(this);
-                            nodeService.getInvocationService().runOperation(op);
+                            nodeService.getOperationService().runOperation(op);
                         }
                     } catch (Exception e) {
                         logger.log(Level.WARNING, e.getMessage(), e);
@@ -744,7 +744,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                     systemLogService.logPartition("Started Migration : " + migrationRequestOp);
                     if (fromMember != null) {
                         migrationRequestOp.setFromAddress(fromMember.getAddress());
-                        Invocation inv = nodeService.getInvocationService().createInvocationBuilder(SERVICE_NAME,
+                        Invocation inv = nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME,
                                 migrationRequestOp, migrationRequestOp.getFromAddress())
                                 .setTryCount(3).setTryPauseMillis(1000)
                                 .setReplicaIndex(migrationRequestOp.getReplicaIndex()).build();
@@ -984,7 +984,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
         final Collection<MemberImpl> members = node.clusterService.getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                nodeService.getInvocationService().createInvocationBuilder(SERVICE_NAME,
+                nodeService.getOperationService().createInvocationBuilder(SERVICE_NAME,
                         new MigrationEventOperation(status, migrationInfo), member.getAddress())
                         .setTryCount(1).build().invoke();
             }

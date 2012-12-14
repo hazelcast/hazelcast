@@ -55,7 +55,7 @@ abstract class MapProxySupport {
         int partitionId = nodeEngine.getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         try {
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future f = invocation.invoke();
             return  (Data) f.get();
@@ -73,7 +73,7 @@ abstract class MapProxySupport {
         String txnId = prepareTransaction(partitionId);
         PutOperation operation = new PutOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
         try {
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future f = invocation.invoke();
             return (Data) f.get();
@@ -91,7 +91,7 @@ abstract class MapProxySupport {
         String txnId = prepareTransaction(partitionId);
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
         try {
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future f = invocation.invoke();
             return (Data) f.get();
@@ -107,7 +107,7 @@ abstract class MapProxySupport {
 
         operation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
 //            Object returnObj = invocation.invoke(operation, partitionId);
         } catch (Throwable throwable) {
@@ -133,7 +133,7 @@ abstract class MapProxySupport {
         SetOperation setOperation = new SetOperation(name, key, value, txnId, ttl);
         setOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, setOperation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, setOperation, partitionId)
                     .build();
             invocation.invoke();
         } catch (Throwable throwable) {
@@ -147,7 +147,7 @@ abstract class MapProxySupport {
         String txnId = prepareTransaction(partitionId);
         RemoveOperation operation = new RemoveOperation(name, key, txnId);
         try {
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future f = invocation.invoke();
             return (Data) f.get();
@@ -173,7 +173,7 @@ abstract class MapProxySupport {
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
         containsKeyOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Invocation invocation = nodeEngine.getInvocationService().createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation,
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation,
                     partitionId).build();
             Future f = invocation.invoke();
             return (Boolean) nodeEngine.toObject(f.get());

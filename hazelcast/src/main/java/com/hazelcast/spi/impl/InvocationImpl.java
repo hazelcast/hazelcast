@@ -66,7 +66,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     public final Future invoke() {
         try {
             invokeCount++;
-            nodeService.invocationService.invoke(this);
+            nodeService.operationService.invoke(this);
         } catch (Exception e) {
             if (e instanceof RetryableException) {
                 setResult(e);
