@@ -382,10 +382,16 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
                 return;
             } else {
                 final Address master = node.getMasterAddress();
-                if (sender == null || master == null || !master.equals(sender)) {
-                    logger.log(Level.WARNING, "Received a PartitionRuntimeState, but its sender doesn't seem master!" +
-                            " => Sender: " + sender + ", Master: " + master + "! " +
-                            "(Ignore if master node has changed recently.)");
+                if (sender == null || !sender.equals(master)) {
+                    if (node.clusterService.getMember(sender) == null) {
+                        logger.log(Level.SEVERE, "Received a ClusterRuntimeState from an unknown member!" +
+                                " => Sender: " + sender + ", Master: " + master + "! ");
+                        return;
+                    } else {
+                        logger.log(Level.WARNING, "Received a ClusterRuntimeState, but its sender doesn't seem master!" +
+                                " => Sender: " + sender + ", Master: " + master + "! " +
+                                "(Ignore if master node has changed recently.)");
+                    }
                 }
             }
             PartitionInfo[] newPartitions = partitionState.getPartitions();
