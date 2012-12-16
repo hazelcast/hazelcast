@@ -58,7 +58,7 @@ abstract class MapProxySupport {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future f = invocation.invoke();
-            return  (Data) f.get();
+            return (Data) f.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -197,14 +197,24 @@ abstract class MapProxySupport {
                 total += size;
             }
             return total;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
         }
-        return 0;
     }
 
     public boolean isEmpty() {
-        return false;
+        try {
+            MapIsEmptyOperation mapIsEmptyOperation = new MapIsEmptyOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapIsEmptyOperation);
+            for (Object result : results.values()) {
+                if (!(Boolean) nodeEngine.toObject(result))
+                    return false;
+            }
+            return true;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected Map<Data, Data> getAllInternal(final Set<Data> keys) {

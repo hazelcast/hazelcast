@@ -34,8 +34,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapTest {
@@ -178,6 +177,27 @@ public class MapTest {
         assertEquals(map.containsKey("key1"), false);
         assertEquals(map.containsKey("key2"), true);
         assertEquals(map.containsKey("key5"), false);
+    }
+
+    @Test
+    public void testMapIsEmpty() {
+        IMap<String, String> map = getInstance().getMap("testMapIsEmpty");
+        assertTrue(map.isEmpty());
+        map.put("key1", "value1");
+        assertFalse(map.isEmpty());
+        map.remove("key1");
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void testMapSize() {
+        IMap map = getInstance().getMap("testMapSize");
+        assertEquals(map.size(),0);
+        map.put(1,1);
+        assertEquals(map.size(),1);
+        map.put(2,2);
+        map.put(3,3);
+        assertEquals(map.size(),3);
     }
 
 
