@@ -437,6 +437,13 @@ final class OperationServiceImpl implements OperationService {
         Map<Address, ArrayList<Integer>> memberPartitions = new HashMap<Address, ArrayList<Integer>>(members);
         for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
             Address owner = node.partitionService.getPartitionOwner(i);
+            while (owner == null) { // partition assignment is not completed yet
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ignored) {
+                }
+                owner = node.partitionService.getPartitionOwner(i);
+            }
             ArrayList<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
                 ownedPartitions = new ArrayList<Integer>();
