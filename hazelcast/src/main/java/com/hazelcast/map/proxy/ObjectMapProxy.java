@@ -137,11 +137,11 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void putAll(final Map<? extends K, ? extends V> m) {
-
     }
 
     public void lock(final K key) {
-
+        Data k = nodeEngine.toData(key);
+        lockInternal(k);
     }
 
     public boolean isLocked(final K key) {
@@ -157,7 +157,8 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void unlock(final K key) {
-
+        Data k = nodeEngine.toData(key);
+        unlockInternal(k);
     }
 
     public void forceUnlock(final K key) {

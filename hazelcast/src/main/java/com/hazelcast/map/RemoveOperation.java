@@ -27,8 +27,11 @@ public class RemoveOperation extends BaseRemoveOperation {
     public RemoveOperation() {
     }
 
-    public void doOp() {
+    public void beforeRun() {
         init();
+    }
+
+    public void doOp() {
         if (prepareTransaction()) {
             return;
         }

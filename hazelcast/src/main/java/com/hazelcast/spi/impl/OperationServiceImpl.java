@@ -438,6 +438,7 @@ final class OperationServiceImpl implements OperationService {
         Map<Address, ArrayList<Integer>> memberPartitions = new HashMap<Address, ArrayList<Integer>>(members);
         for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
             Address owner = node.partitionService.getPartitionOwner(i);
+            // todo inifinite while is not good. convert it to wait 1 minute
             while (owner == null) { // partition assignment is not completed yet
                 try {
                     Thread.sleep(1);
