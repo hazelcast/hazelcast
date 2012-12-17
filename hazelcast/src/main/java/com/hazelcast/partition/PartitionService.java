@@ -43,7 +43,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.partition.MigrationEndpoint.*;
 
-public class PartitionService implements MembershipAwareService, CoreService, ManagedService {
+public class PartitionService implements MembershipAwareService, CoreService, ManagedService,
+        EventPublishingService<MigrationEvent, MigrationListener> {
     public static final String SERVICE_NAME = "hz:core:partitionService";
 
     private static final long REPARTITIONING_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(300); // 5 MINUTES
@@ -69,7 +70,7 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final SystemLogService systemLogService;
 //    private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
-    private final List<MigrationListener> migrationListeners = new CopyOnWriteArrayList<MigrationListener>();
+//    private final List<MigrationListener> migrationListeners = new CopyOnWriteArrayList<MigrationListener>();
 
     // updates will be done under lock, but reads will be multithreaded.
     private volatile boolean initialized = false;
@@ -987,55 +988,75 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
     }
 
     private void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationStatus status) {
-        final Collection<MemberImpl> members = node.clusterService.getMemberList();
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                        new MigrationEventOperation(status, migrationInfo), member.getAddress())
-                        .setTryCount(1).build().invoke();
-            }
-        }
-        nodeEngine.getEventExecutor().execute(new Runnable() {
-            public void run() {
-                fireMigrationEvent(migrationInfo, status);
-            }
-        });
-    }
-
-    @ExecutedBy(ThreadType.EVENT_THREAD)
-    void fireMigrationEvent(MigrationInfo migrationInfo, final MigrationStatus status) {
+//        final Collection<MemberImpl> members = node.clusterService.getMemberList();
+//        for (MemberImpl member : members) {
+//            if (!member.localMember()) {
+//                nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
+//                        new MigrationEventOperation(status, migrationInfo), member.getAddress())
+//                        .setTryCount(1).build().invoke();
+//            }
+//        }
+//        nodeEngine.getEventService().executeEvent(new Runnable() {
+//            public void run() {
+//                fireMigrationEvent(migrationInfo, status);
+//            }
+//        });
         final MemberImpl current = getMember(migrationInfo.getFromAddress());
         final MemberImpl newOwner = getMember(migrationInfo.getToAddress());
-        final MigrationEvent migrationEvent = new MigrationEvent(node, migrationInfo.getPartitionId(), current, newOwner);
-        systemLogService.logPartition("MigrationEvent [" + status + "] " + migrationEvent);
-        callListeners(status, migrationEvent);
+        final MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
+        Collection<EventRegistration> registrations = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrations, event);
     }
 
-    private void callListeners(final MigrationStatus status, final MigrationEvent migrationEvent) {
-        if (migrationEvent == null) {
-            throw new IllegalArgumentException("MigrationEvent is null.");
-        }
-        for (final MigrationListener migrationListener : migrationListeners) {
-            switch (status) {
-                case STARTED:
-                    migrationListener.migrationStarted(migrationEvent);
-                    break;
-                case COMPLETED:
-                    migrationListener.migrationCompleted(migrationEvent);
-                    break;
-                case FAILED:
-                    migrationListener.migrationFailed(migrationEvent);
-                    break;
-            }
-        }
-    }
+//    @ExecutedBy(ThreadType.EVENT_THREAD)
+//    void fireMigrationEvent(MigrationInfo migrationInfo, final MigrationStatus status) {
+//        final MemberImpl current = getMember(migrationInfo.getFromAddress());
+//        final MemberImpl newOwner = getMember(migrationInfo.getToAddress());
+//        final MigrationEvent migrationEvent = new MigrationEvent(node, migrationInfo.getPartitionId(), current, newOwner);
+//        systemLogService.logPartition("MigrationEvent [" + status + "] " + migrationEvent);
+//        callListeners(status, migrationEvent);
+//    }
+
+//    private void callListeners(final MigrationStatus status, final MigrationEvent migrationEvent) {
+//        if (migrationEvent == null) {
+//            throw new IllegalArgumentException("MigrationEvent is null.");
+//        }
+//        for (final MigrationListener migrationListener : migrationListeners) {
+//            switch (status) {
+//                case STARTED:
+//                    migrationListener.migrationStarted(migrationEvent);
+//                    break;
+//                case COMPLETED:
+//                    migrationListener.migrationCompleted(migrationEvent);
+//                    break;
+//                case FAILED:
+//                    migrationListener.migrationFailed(migrationEvent);
+//                    break;
+//            }
+//        }
+//    }
 
     public void addMigrationListener(MigrationListener migrationListener) {
-        migrationListeners.add(migrationListener);
+//        migrationListeners.add(migrationListener);
+        nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, migrationListener);
     }
 
     public void removeMigrationListener(MigrationListener migrationListener) {
-        migrationListeners.remove(migrationListener);
+//        migrationListeners.remove(migrationListener);
+    }
+
+    public void dispatchEvent(MigrationEvent migrationEvent, MigrationListener migrationListener) {
+        switch (migrationEvent.getStatus()) {
+            case STARTED:
+                migrationListener.migrationStarted(migrationEvent);
+                break;
+            case COMPLETED:
+                migrationListener.migrationCompleted(migrationEvent);
+                break;
+            case FAILED:
+                migrationListener.migrationFailed(migrationEvent);
+                break;
+        }
     }
 
     @Override

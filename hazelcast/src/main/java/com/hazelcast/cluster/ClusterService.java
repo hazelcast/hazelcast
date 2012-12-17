@@ -46,7 +46,8 @@ import java.util.logging.Level;
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public final class ClusterService implements ConnectionListener, MembershipAwareService, CoreService, ManagedService {
+public final class ClusterService implements ConnectionListener, MembershipAwareService,
+        CoreService, ManagedService, EventPublishingService<MembershipEvent, MembershipListener> {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -84,7 +85,7 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private final Data heartbeatOperationData;
 
-    private final List<MembershipListener> listeners = new CopyOnWriteArrayList<MembershipListener>();
+//    private final List<MembershipListener> listeners = new CopyOnWriteArrayList<MembershipListener>();
 
     private boolean joinInProgress = false;
 
@@ -310,7 +311,9 @@ public final class ClusterService implements ConnectionListener, MembershipAware
 
     private void sendHeartbeat(Address target) {
         if (target == null) return;
-        send(new Packet(heartbeatOperationData), target);
+        final Packet packet = new Packet(heartbeatOperationData);
+        packet.setHeader(Packet.HEADER_OP, true);
+        send(packet, target);
     }
 
 
@@ -775,21 +778,27 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     private void sendMembershipEventNotifications(final MemberImpl member, final boolean added) {
-        if (listeners.size() > 0) {
-            nodeEngine.getEventExecutor().execute(new Runnable() {
-                public void run() {
-                    MembershipEvent membershipEvent = new MembershipEvent(getClusterProxy(), member,
+//        if (listeners.size() > 0) {
+//            nodeEngine.getEventService().executeEvent(new Runnable() {
+//                public void run() {
+//                    MembershipEvent membershipEvent = new MembershipEvent(getClusterProxy(), member,
+//                            (added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED));
+//                    for (MembershipListener listener : listeners) {
+//                        if (added) {
+//                            listener.memberAdded(membershipEvent);
+//                        } else {
+//                            listener.memberRemoved(membershipEvent);
+//                        }
+//                    }
+//                }
+//            });
+//        }
+
+        MembershipEvent membershipEvent = new MembershipEvent(getClusterProxy(), member,
                             (added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED));
-                    for (MembershipListener listener : listeners) {
-                        if (added) {
-                            listener.memberAdded(membershipEvent);
-                        } else {
-                            listener.memberRemoved(membershipEvent);
-                        }
-                    }
-                }
-            });
-        }
+        final EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        eventService.publishEvent(SERVICE_NAME, registrations, membershipEvent);
     }
 
     protected MemberImpl createMember(Address address, NodeType nodeType, String nodeUuid, String ipV6ScopeId) {
@@ -908,11 +917,20 @@ public final class ClusterService implements ConnectionListener, MembershipAware
     }
 
     public void addMembershipListener(MembershipListener listener) {
-        listeners.add(listener);
+        // listeners.add(listener);
+        nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, listener);
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        listeners.remove(listener);
+        //listeners.remove(listener);
+    }
+
+    public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
+        if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+            listener.memberAdded(event);
+        } else {
+            listener.memberRemoved(event);
+        }
     }
 
     public Cluster getClusterProxy() {

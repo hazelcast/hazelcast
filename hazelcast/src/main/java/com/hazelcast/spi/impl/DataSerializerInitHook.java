@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.map.RemoveOperation;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.spi.impl.EventServiceImpl.*;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
 import java.util.HashMap;
@@ -45,9 +45,27 @@ public final class DataSerializerInitHook implements DataSerializerHook {
             }
         });
 
-        factories.put(EventServiceImpl.RegistrationOperation.class.getName(), new DataSerializableFactory() {
+        factories.put(EventPacket.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
-                return new RemoveOperation();
+                return new EventPacket();
+            }
+        });
+
+        factories.put(RegistrationOperation.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new RegistrationOperation();
+            }
+        });
+
+        factories.put(Registration.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new Registration();
+            }
+        });
+
+        factories.put(EmptyFilter.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new EmptyFilter();
             }
         });
 

@@ -99,7 +99,7 @@ public class NodeIOService implements IOService {
         if (member != null) {
             member.didRead();
         }
-        nodeEngine.handleOperation(packet);
+        nodeEngine.handlePacket(packet);
     }
 
     public TextCommandService getTextCommandService() {

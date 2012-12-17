@@ -17,23 +17,31 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.DataSerializable;
 
-import java.util.EventObject;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * will be moved to com.hazelcast.core package
  */
 
-public class MigrationEvent extends EventObject {
-    final int partitionId;
-    final Member oldOwner;
-    final Member newOwner;
+public class MigrationEvent implements DataSerializable {
+    private int partitionId;
+    private Member oldOwner;
+    private Member newOwner;
+    private MigrationStatus status;
 
-    public MigrationEvent(Object source, int partitionId, Member oldOwner, Member newOwner) {
-        super(source);
+    public MigrationEvent() {
+    }
+
+    public MigrationEvent(int partitionId, Member oldOwner, Member newOwner, MigrationStatus status) {
         this.partitionId = partitionId;
         this.oldOwner = oldOwner;
         this.newOwner = newOwner;
+        this.status = status;
     }
 
     public int getPartitionId() {
@@ -46,6 +54,26 @@ public class MigrationEvent extends EventObject {
 
     public Member getNewOwner() {
         return newOwner;
+    }
+
+    public MigrationStatus getStatus() {
+        return status;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeInt(partitionId);
+        oldOwner.writeData(out);
+        newOwner.writeData(out);
+        MigrationStatus.writeTo(status, out);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        partitionId = in.readInt();
+        oldOwner = new MemberImpl();
+        oldOwner.readData(in);
+        newOwner = new MemberImpl();
+        newOwner.readData(in);
+        status = MigrationStatus.readFrom(in);
     }
 
     @Override

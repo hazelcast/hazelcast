@@ -54,7 +54,6 @@ public class Packet implements SocketWritable, CallStateAware {
     public Packet(Data value, Connection conn) {
         this.value = value == null || value.size() == 0 ? null : new DataHolder(value);
         this.conn = conn;
-        setHeader(HEADER_OP, true);
     }
 
     public Data getValue() {

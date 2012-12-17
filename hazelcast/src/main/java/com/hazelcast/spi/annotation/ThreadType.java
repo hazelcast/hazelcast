@@ -21,5 +21,5 @@ package com.hazelcast.spi.annotation;
  */
 public enum ThreadType {
 
-    EXECUTOR_THREAD, PARTITION_THREAD, EVENT_THREAD, MIGRATION_THREAD
+    EXECUTOR_THREAD, EVENT_THREAD, MIGRATION_THREAD
 }

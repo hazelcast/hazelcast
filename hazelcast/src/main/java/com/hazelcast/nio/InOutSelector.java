@@ -32,26 +32,26 @@ import java.util.logging.Level;
 
 public final class InOutSelector implements Runnable {
 
-    protected final ILogger logger;
+    final static long TEN_SECOND_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
-    protected final Selector selector;
+    private final ILogger logger;
 
-    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
+    private final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
-    protected final ConnectionManager connectionManager;
+    private final ConnectionManager connectionManager;
 
     private final int waitTime;
 
-    protected boolean live = true;
-
-    final static long TEN_SECOND_MILLIS = TimeUnit.SECONDS.toMillis(10);
+    private boolean live = true;
 
     private long lastPublish = 0;
+
+    final Selector selector;
 
     public InOutSelector(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         logger = connectionManager.ioService.getLogger(this.getClass().getName());
-        this.waitTime = 1;
+        this.waitTime = 5000;  // TODO: This value has significant effect on idle CPU usage!
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();
