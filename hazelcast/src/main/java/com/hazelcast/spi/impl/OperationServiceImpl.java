@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
@@ -62,7 +63,8 @@ final class OperationServiceImpl implements OperationService {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class.getName());
-        executor = new FastExecutor(node, 5);
+        executor = new FastExecutor(5, new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                node.getThreadPoolNamePrefix("operation"), node.getConfig().getClassLoader()));
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
         }
@@ -167,7 +169,7 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
-        executor.execute(new RemoteOperationExecutor(packet));
+        executor.execute(new RemoteOperationProcessor(packet));
     }
 
     public void runOperation(final Operation op) {
@@ -358,12 +360,10 @@ final class OperationServiceImpl implements OperationService {
 
     private void handleOperationError(Operation op, Throwable e) {
         if (e instanceof RetryableException) {
-            logger.log(Level.WARNING, "While executing op: " + op + " -> "
-                    + e.getClass() + ": " + e.getMessage());
-            logger.log(Level.FINEST, e.getMessage(), e);
+            final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
+            logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
         } else {
-            logger.log(Level.SEVERE, "While executing op: " + op + " -> "
-                    + e.getMessage(), e);
+            logger.log(Level.SEVERE, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
         sendResponse(op, e);
     }
@@ -529,10 +529,10 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    private class RemoteOperationExecutor implements Runnable {
+    private class RemoteOperationProcessor implements Runnable {
         private final Packet packet;
 
-        private RemoteOperationExecutor(final Packet packet) {
+        private RemoteOperationProcessor(final Packet packet) {
             this.packet = packet;
         }
 

@@ -16,35 +16,25 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.logging.ILogger;
-
 import java.util.Collection;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 /**
  * @mdogan 12/17/12
  */
 public class FastExecutor implements Executor {
 
-    private static final AtomicInteger ID = new AtomicInteger();
-
-    private final ILogger logger;
-    private final Node node;
-    private final BacklogDetector backlogDetector;
+    private final BacklogDetector backlogDetector = new BacklogDetector();
     private final BlockingQueue<Task> queue = new LinkedBlockingQueue<Task>();
     private final Collection<Thread> threads = new ConcurrentHashSet<Thread>();
+    private final ThreadFactory threadFactory;
     private volatile boolean live = true;
 
-    public FastExecutor(Node node, int coreSize) {
-        this.node = node;
-        logger = node.getLogger(FastExecutor.class.getName());
-        backlogDetector = new BacklogDetector(node.threadGroup, getThreadName(node));
-        backlogDetector.start();
+    public FastExecutor(int coreSize, ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+        Thread t = threadFactory.newThread(backlogDetector);
+        threads.add(t);
+        t.start();
         for (int i = 0; i < coreSize; i++) {
             addThread();
         }
@@ -57,7 +47,6 @@ public class FastExecutor implements Executor {
 
     public void shutdown() {
         live = false;
-        backlogDetector.interrupt();
         for (Thread thread : threads) {
             thread.interrupt();
         }
@@ -65,58 +54,33 @@ public class FastExecutor implements Executor {
         threads.clear();
     }
 
-    private String getThreadName(Node node) {
-        return node.getThreadPoolNamePrefix("fast-executor") + ID.getAndIncrement();
-    }
-
     private void addThread() {
-        final Worker worker = new Worker(node.threadGroup, getThreadName(node));
-        worker.start();
-        threads.add(worker);
-        logger.log(Level.INFO, "Added new thread, total: " + threads.size());
+        final Worker worker = new Worker();
+        final Thread thread = threadFactory.newThread(worker);
+        threads.add(thread);
+        thread.start();
     }
 
-    private class Worker extends Thread {
-        private Worker(ThreadGroup group, String name) {
-            super(group, name);
-        }
-
+    private class Worker implements Runnable {
         public void run() {
-            try {
-                ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-                setContextClassLoader(node.getConfig().getClassLoader());
-
-                while (!isInterrupted() && live) {
-                    try {
-                        Task task = queue.take();
-                        task.run();
-                    } catch (InterruptedException e) {
-                        break;
-                    } catch (Exception e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
-                    } catch (OutOfMemoryError e) {
-                        OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-                    }
-                }
-            } finally {
+            final Thread thread = Thread.currentThread();
+            while (!thread.isInterrupted() && live) {
                 try {
-                    ThreadContext.shutdown(this);
-                } catch (Throwable e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    Task task = queue.take();
+                    task.run();
+                } catch (InterruptedException e) {
+                    break;
                 }
             }
         }
     }
 
-    private class BacklogDetector extends Thread {
+    private class BacklogDetector implements Runnable {
         final long diff = TimeUnit.SECONDS.toMillis(1);
 
-        private BacklogDetector(ThreadGroup group, String name) {
-            super(group, name);
-        }
-
         public void run() {
-            while (!isInterrupted() && live) {
+            final Thread thread = Thread.currentThread();
+            while (!thread.isInterrupted() && live) {
                 final Task task = queue.peek();
                 if (task != null) {
                     if (task.creationTime + diff < System.currentTimeMillis()) {
@@ -124,7 +88,7 @@ public class FastExecutor implements Executor {
                     }
                 }
                 try {
-                    sleep(5);
+                    Thread.sleep(5);
                 } catch (InterruptedException e) {
                     return;
                 }

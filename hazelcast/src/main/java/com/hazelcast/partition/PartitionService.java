@@ -595,11 +595,16 @@ public class PartitionService implements MembershipAwareService, CoreService, Ma
     }
 
     private class SendClusterStateTask implements Runnable {
+        private volatile boolean printEmptyLog = false;
         public void run() {
             if (node.isMaster() && node.isActive()) {
                 if ((!scheduledTasksQueue.isEmpty() || !immediateTasksQueue.isEmpty()) && migrationActive.get()) {
                     logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
                                 + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
+                    printEmptyLog = true;
+                } else if (printEmptyLog) {
+                    printEmptyLog = false;
+                    logger.log(Level.INFO, "All migration tasks has been completed, queues are empty.");
                 }
                 sendPartitionRuntimeState();
             }
