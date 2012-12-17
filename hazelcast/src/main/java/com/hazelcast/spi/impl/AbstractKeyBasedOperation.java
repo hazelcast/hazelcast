@@ -32,11 +32,9 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
 
     public AbstractKeyBasedOperation(Data dataKey) {
         this.dataKey = dataKey;
-        threadId = ThreadContext.get().getThreadId();
     }
 
     public AbstractKeyBasedOperation() {
-        threadId = ThreadContext.get().getThreadId();
     }
 
     public Data getKey() {

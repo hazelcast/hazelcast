@@ -55,6 +55,7 @@ abstract class MapProxySupport {
     protected Data getInternal(Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
@@ -73,6 +74,7 @@ abstract class MapProxySupport {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutOperation operation = new PutOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
@@ -91,6 +93,7 @@ abstract class MapProxySupport {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
@@ -105,7 +108,7 @@ abstract class MapProxySupport {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutTransientOperation operation = new PutTransientOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
-
+        operation.setThreadId(ThreadContext.get().getThreadId());
         operation.setServiceName(MAP_SERVICE_NAME);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
@@ -132,6 +135,7 @@ abstract class MapProxySupport {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         SetOperation setOperation = new SetOperation(name, key, value, txnId, ttl);
+        setOperation.setThreadId(ThreadContext.get().getThreadId());
         setOperation.setServiceName(MAP_SERVICE_NAME);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, setOperation, partitionId)
@@ -147,6 +151,7 @@ abstract class MapProxySupport {
         TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = prepareTransaction(partitionId);
         RemoveOperation operation = new RemoveOperation(name, key, txnId);
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
@@ -173,6 +178,7 @@ abstract class MapProxySupport {
         int partitionId = nodeEngine.getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
         containsKeyOperation.setServiceName(MAP_SERVICE_NAME);
+        containsKeyOperation.setThreadId(ThreadContext.get().getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation,
                     partitionId).build();
@@ -229,6 +235,7 @@ abstract class MapProxySupport {
     protected void lockInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
         LockOperation operation = new LockOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
 
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
@@ -242,6 +249,7 @@ abstract class MapProxySupport {
     protected void unlockInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
         UnlockOperation operation = new UnlockOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
 
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
