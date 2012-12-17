@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.executor.ParallelExecutorService;
@@ -99,6 +100,8 @@ public class ExecutorManager extends BaseManager {
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(gp.MAP_LOAD_THREAD_COUNT.getInteger());
         asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(24, 1000);
+        newNamedExecutorService(Prefix.EXECUTOR_SERVICE + "hz.initialization", new ExecutorConfig("hz.initialization",
+                Integer.MAX_VALUE, Integer.MAX_VALUE, 60));
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
