@@ -29,7 +29,6 @@ public class PutTransientOperation extends BasePutOperation {
     }
 
     public void doOp() {
-        init();
         if (prepareTransaction()) {
             return;
         }

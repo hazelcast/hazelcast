@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
@@ -226,7 +227,29 @@ abstract class MapProxySupport {
     }
 
     protected void lockInternal(final Data key) {
+        int partitionId = nodeEngine.getPartitionId(key);
+        LockOperation operation = new LockOperation(name, key);
 
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            invocation.invoke();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected void unlockInternal(final Data key) {
+        int partitionId = nodeEngine.getPartitionId(key);
+        UnlockOperation operation = new UnlockOperation(name, key);
+
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            invocation.invoke();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected boolean isLockedInternal(final Data key) {
@@ -235,10 +258,6 @@ abstract class MapProxySupport {
 
     protected boolean tryLockInternal(final Data key, final long time, final TimeUnit timeunit) {
         return false;
-    }
-
-    protected void unlockInternal(final Data key) {
-
     }
 
     protected void forceUnlockInternal(final Data key) {

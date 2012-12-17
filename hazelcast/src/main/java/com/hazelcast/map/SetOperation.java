@@ -30,7 +30,6 @@ public class SetOperation extends BasePutOperation {
 
     @Override
     public void doOp() {
-        init();
         if (prepareTransaction()) {
             return;
         }

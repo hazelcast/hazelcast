@@ -17,10 +17,13 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.WaitSupport;
 
 import java.util.concurrent.TimeoutException;
 
-public abstract class LockAwareOperation extends TTLAwareOperation {
+public abstract class LockAwareOperation extends TTLAwareOperation implements WaitSupport{
 
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -38,32 +41,32 @@ public abstract class LockAwareOperation extends TTLAwareOperation {
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
-        int partitionId = getPartitionId();
-        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
-        MapPartition mapPartition = pc.getMapPartition(name);
-        if (!mapPartition.canRun(this)) {
-            if (getTimeout() > 0) {
-                pc.scheduleOp(this);
-            } else {
-                onNoTimeToSchedule();
-            }
-            return;
-        }
         doOp();
     }
 
     abstract void doOp();
 
-    protected void onNoTimeToSchedule() {
-        onExpire();
+
+    public boolean shouldWait() {
+        MapService mapService = (MapService) getService();
+        int partitionId = getPartitionId();
+        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
+        MapPartition mapPartition = pc.getMapPartition(name);
+        boolean shouldWait = !mapPartition.canRun(this);
+        return shouldWait;
     }
 
-    protected void onExpire() {
-        if (getTimeout() == 0) {
-            getResponseHandler().sendResponse(Boolean.FALSE);
-        } else {
-            getResponseHandler().sendResponse(new TimeoutException());
-        }
+    public long getWaitTimeoutMillis() {
+        return ttl;
     }
+
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(Boolean.FALSE);
+    }
+
+    public Object getWaitKey() {
+        return getName() + ":lock";
+    }
+
+
 }

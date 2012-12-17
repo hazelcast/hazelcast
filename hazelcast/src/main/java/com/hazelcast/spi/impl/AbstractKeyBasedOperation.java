@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.KeyBasedOperation;
@@ -31,9 +32,11 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
 
     public AbstractKeyBasedOperation(Data dataKey) {
         this.dataKey = dataKey;
+        threadId = ThreadContext.get().getThreadId();
     }
 
     public AbstractKeyBasedOperation() {
+        threadId = ThreadContext.get().getThreadId();
     }
 
     public Data getKey() {
