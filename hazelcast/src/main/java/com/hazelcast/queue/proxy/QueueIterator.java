@@ -14,30 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.queue.proxy;
 
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
+
+import java.util.Iterator;
+import java.util.Set;
 
 /**
- * @ali 12/11/12
+ * @ali 12/18/12
  */
-public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation{
+public class QueueIterator<E> implements Iterator<E> {
 
-    protected QueueBackupAwareOperation() {
+    final Iterator<Data> iter;
+
+    public QueueIterator(Iterator<Data> iter) {
+        this.iter = iter;
     }
 
-    protected QueueBackupAwareOperation(String name) {
-        super(name);
+    public boolean hasNext() {
+        return iter.hasNext();
     }
 
-    public int getSyncBackupCount() {
-        return getContainer().getConfig().getSyncBackupCount();
+    public E next() {
+        Data data = iter.next();
+        return IOUtil.toObject(data);
     }
 
-    public int getAsyncBackupCount() {
-        return getContainer().getConfig().getAsyncBackupCount();
+    public void remove() {
+        iter.remove();
     }
-
-
-
 }

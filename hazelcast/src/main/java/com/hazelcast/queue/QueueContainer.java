@@ -17,11 +17,9 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.Address;
+import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.spi.Invocation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -39,62 +37,132 @@ public class QueueContainer implements DataSerializable {
 
     int partitionId;
 
-    QueueConfig config;
+    private QueueConfig config;
 
     String name;
 
     QueueService queueService;
 
-    public QueueContainer(){
+    final QueueStoreWrapper store = new QueueStoreWrapper();
+
+    long idGen = 0;
+
+    boolean fromBackup;
+
+    public QueueContainer() {
     }
 
     public QueueContainer(QueueService queueService, int partitionId, QueueConfig config, String name) {
         this.queueService = queueService;
         this.partitionId = partitionId;
-        this.config = config;
         this.name = name;
+        setConfig(config);
+        Set<Long> keys = store.loadAllKeys(fromBackup);
+        for (Long key: keys){
+            QueueItem item = new QueueItem(key);
+            itemQueue.offer(item);
+            idGen++;
+        }
     }
 
-    public boolean offer(Data data){
-        QueueItem item = new QueueItem(data);
+    public boolean offer(Data data) {
+        QueueItem item = new QueueItem(idGen++, data);
+        store.store(item.getItemId(), data, fromBackup);
         return itemQueue.offer(item);
     }
 
-    public int size(){
+    public int size() {
         return itemQueue.size();
     }
 
-    public void clear(){
-        itemQueue.clear(); //TODO how about remove event
+    public void clear() {
+        itemQueue.clear(); //TODO how about remove event and store
     }
 
-    public Data poll(){
+    public Data poll() {
         QueueItem item = itemQueue.poll();
-        return item == null ? null : item.data;
+        if (item == null) {
+            return null;
+        }
+        Data data = item.getData();
+        if (data == null) {
+            data = store.load(item.getItemId(), fromBackup);
+        }
+        store.delete(item.getItemId(), fromBackup);
+        return data;
     }
 
-    public boolean remove(Data data){
-        QueueItem item = new QueueItem(data);
-        return itemQueue.remove(item);
+    public boolean remove(Data data) {
+        Iterator<QueueItem> iter = itemQueue.iterator();
+        while (iter.hasNext()){
+            QueueItem item = iter.next();
+            if (item.equals(data)){
+                iter.remove();
+                store.delete(item.getItemId(), fromBackup);
+                return true;
+            }
+        }
+        return false;
     }
 
-    public Data peek(){
+    public Data peek() {
         QueueItem item = itemQueue.peek();
-        return item == null ? null : item.data;
+        if (item == null) {
+            return null;
+        }
+        Data data = item.getData();
+        if (data == null) {
+            data = store.load(item.getItemId(), fromBackup);
+            item.setData(data);
+        }
+        return data;
     }
 
-    public boolean contains(Set<Data> dataSet){
+    //TODO how about persisted data
+    public boolean contains(Set<Data> dataSet) {
         return itemQueue.containsAll(dataSet);
     }
 
-    public void writeData(DataOutput out) throws IOException {    //TODO listeners
+    public List<Data> getAsDataList(){
+        List<Data> dataSet = new ArrayList<Data>(itemQueue.size());
+        for (QueueItem item : itemQueue) {
+            Data data = item.getData();
+            if (data == null){
+                data = store.load(item.getItemId(), fromBackup);
+                item.setData(data);
+            }
+            dataSet.add(data);
+        };
+        return dataSet;
+    }
+
+
+
+
+
+
+    public QueueConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(QueueConfig config) {
+        this.config = new QueueConfig(config);
+        QueueStoreConfig storeConfig = config.getQueueStoreConfig();
+        store.setConfig(storeConfig);
+    }
+
+    public void setFromBackup(boolean fromBackup) {
+        this.fromBackup = fromBackup;
+    }
+
+    public void writeData(DataOutput out) throws IOException {    //TODO listeners  and persisted Data
         out.writeInt(partitionId);
         out.writeUTF(name);
         out.writeInt(itemQueue.size());
         Iterator<QueueItem> iterator = itemQueue.iterator();
         while (iterator.hasNext()) {
             QueueItem item = iterator.next();
-            item.data.writeData(out);
+            item.writeData(out);
         }
     }
 
@@ -103,12 +171,10 @@ public class QueueContainer implements DataSerializable {
         name = in.readUTF();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
-            Data data = new Data();
-            data.readData(in);
-            QueueItem item = new QueueItem(data);
+            QueueItem item = new QueueItem();
+            item.readData(in);
             itemQueue.offer(item);
         }
     }
 
 }
-

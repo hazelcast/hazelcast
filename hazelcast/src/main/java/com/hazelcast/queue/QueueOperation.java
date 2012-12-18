@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
@@ -35,7 +36,11 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
 
     public QueueContainer getContainer() {
         QueueService queueService = getService();
-        return queueService.getContainer(name);
+        boolean fromBackup = false;
+        if (this instanceof BackupOperation){
+            fromBackup = true;
+        }
+        return queueService.getContainer(name, fromBackup);
     }
 
     public Object getResponse() {

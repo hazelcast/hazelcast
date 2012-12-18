@@ -16,28 +16,19 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.BackupAwareOperation;
-
 /**
- * @ali 12/11/12
+ * @ali 12/18/12
  */
-public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation{
+public class IteratorOperation extends QueueOperation {
 
-    protected QueueBackupAwareOperation() {
+    public IteratorOperation() {
     }
 
-    protected QueueBackupAwareOperation(String name) {
+    public IteratorOperation(String name) {
         super(name);
     }
 
-    public int getSyncBackupCount() {
-        return getContainer().getConfig().getSyncBackupCount();
+    public void run() throws Exception {
+        response = getContainer().getAsDataList();
     }
-
-    public int getAsyncBackupCount() {
-        return getContainer().getConfig().getAsyncBackupCount();
-    }
-
-
-
 }

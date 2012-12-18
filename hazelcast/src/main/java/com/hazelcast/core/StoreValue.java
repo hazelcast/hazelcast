@@ -14,30 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.core;
 
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.nio.Data;
 
 /**
- * @ali 12/11/12
+ * @ali 12/17/12
  */
-public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation{
+public interface StoreValue<V> {
 
-    protected QueueBackupAwareOperation() {
-    }
+    V get();
 
-    protected QueueBackupAwareOperation(String name) {
-        super(name);
-    }
+    void set(V v);
 
-    public int getSyncBackupCount() {
-        return getContainer().getConfig().getSyncBackupCount();
-    }
+    Data getData();
 
-    public int getAsyncBackupCount() {
-        return getContainer().getConfig().getAsyncBackupCount();
-    }
-
-
+    void setData(Data data);
 
 }

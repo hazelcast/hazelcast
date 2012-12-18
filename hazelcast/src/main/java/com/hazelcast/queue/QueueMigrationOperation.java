@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
@@ -47,7 +48,9 @@ public class QueueMigrationOperation extends AbstractOperation {
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
-            container.config = getNodeEngine().getConfig().getQueueConfig(name);
+            QueueConfig conf = getNodeEngine().getConfig().getQueueConfig(name);
+            System.out.println(conf.getQueueStoreConfig() + " store");
+            container.setConfig(conf);
             service.addContainer(name, container);
         }
     }

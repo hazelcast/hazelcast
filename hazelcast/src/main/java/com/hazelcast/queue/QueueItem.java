@@ -17,16 +17,48 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * @ali 12/12/12
  */
-public class QueueItem {
+public class QueueItem implements DataSerializable {
 
-    final Data data;
+    private long itemId;
 
-    QueueItem(Data data){
+    private Data data;
+
+    QueueItem(){
+    }
+
+    QueueItem(long itemId){
+        this.itemId = itemId;
+    }
+
+    QueueItem(long itemId, Data data){
+        this.itemId = itemId;
         this.data = data;
+    }
+
+    public Data getData() {
+        return data;
+    }
+
+    public void setData(Data data) {
+        this.data = data;
+    }
+
+    public long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(long itemId) {
+        this.itemId = itemId;
     }
 
     public boolean equals(Object obj) {
@@ -38,5 +70,15 @@ public class QueueItem {
             data.equals(obj);
         }
         return false;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeLong(itemId);
+        IOUtil.writeNullableData(out, data);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        itemId = in.readLong();
+        data = IOUtil.readNullableData(in);
     }
 }
