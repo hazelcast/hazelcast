@@ -38,6 +38,7 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_GET_VERSION = 14;
     public static final int REQUEST_TYPE_RUN_GC = 15;
     public static final int REQUEST_TYPE_SET_LOG_LEVEL = 16;
+    public static final int REQUEST_TYPE_LOG_VERSION_MISMATCH = 17;
     private ConsoleRequestConstants() {
     }
 }

@@ -250,6 +250,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         connection.setReadTimeout(1000);
                         final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
                         TimedMemberState ts = getTimedMemberState();
+                        out.writeUTF(getHazelcastInstance().node.initializer.getVersion());
+                        factory.node.getThisAddress().writeData(out);
+                        out.writeUTF(factory.getConfig().getGroupConfig().getName());
                         ts.writeData(out);
                         out.flush();
                         connection.getInputStream();
@@ -295,6 +298,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
+            register(new logVersionMismatchRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
@@ -631,6 +635,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
                 }
             }
+
             timedMemberState.setExecutorList(getExecutorNames());
             timedMemberState.setMemberState(memberState);
             timedMemberState.setClusterName(groupConfig.getName());
