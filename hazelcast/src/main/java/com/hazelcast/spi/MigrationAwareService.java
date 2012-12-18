@@ -16,24 +16,19 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.spi.annotation.ExecutedBy;
-import com.hazelcast.spi.annotation.ThreadType;
-
 /**
  * @mdogan 7/23/12
  */
 public interface MigrationAwareService {
 
-    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void beforeMigration(MigrationServiceEvent migrationServiceEvent);
 
-    @ExecutedBy(ThreadType.PARTITION_THREAD)
     Operation prepareMigrationOperation(MigrationServiceEvent migrationServiceEvent);
 
-    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void commitMigration(MigrationServiceEvent migrationServiceEvent);
 
-    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void rollbackMigration(MigrationServiceEvent migrationServiceEvent);
+
+    int getMaxBackupCount();
 
 }

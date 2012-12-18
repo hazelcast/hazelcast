@@ -68,7 +68,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
 
     public boolean shouldWait() {
         QueueContainer container = getContainer();
-        return getWaitTimeoutMillis() != 0 && container.config.getMaxSize() <= container.size();
+        return getWaitTimeoutMillis() != 0 && container.getConfig().getMaxSize() <= container.size();
     }
 
     public void onWaitExpire() {

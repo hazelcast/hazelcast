@@ -16,28 +16,39 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.core.StoreValue;
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 
 /**
- * @ali 12/11/12
+ * @ali 12/17/12
  */
-public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation{
+public class QueueStoreValue implements StoreValue {
 
-    protected QueueBackupAwareOperation() {
+    Data data;
+
+    public QueueStoreValue(Object o) {
+        if (o instanceof Data){
+            data = (Data)o;
+        }
+        else {
+            data = IOUtil.toData(o);
+        }
     }
 
-    protected QueueBackupAwareOperation(String name) {
-        super(name);
+    public Object get() {
+        return IOUtil.toObject(data);
     }
 
-    public int getSyncBackupCount() {
-        return getContainer().getConfig().getSyncBackupCount();
+    public void set(Object o) {
+        data = IOUtil.toData(o);
     }
 
-    public int getAsyncBackupCount() {
-        return getContainer().getConfig().getAsyncBackupCount();
+    public Data getData() {
+        return data;
     }
 
-
-
+    public void setData(Data data) {
+        this.data = data;
+    }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.partition;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.*;
@@ -34,65 +33,20 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends AbstractOperation
-        implements PartitionLevelOperation, MigrationCycleOperation {
-    protected Address from;
-    protected Address to;
-    private boolean migration;  // migration or backup
-    private boolean diffOnly;
-    private int copyBackReplicaIndex = -1;
-
-    private transient boolean success = false;
+public class MigrationRequestOperation extends BaseMigrationOperation {
 
     public MigrationRequestOperation() {
     }
 
-    public MigrationRequestOperation(int partitionId, Address from, Address to, int replicaIndex, boolean migration) {
-        this(partitionId, from, to, replicaIndex, migration, false);
-    }
-
-    public MigrationRequestOperation(int partitionId, Address from, Address to, int replicaIndex,
-                                     boolean migration, boolean diffOnly) {
-        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        this.from = from;
-        this.to = to;
-        this.migration = migration;
-        this.diffOnly = diffOnly;
-    }
-
-    public MigrationInfo createMigrationInfo() {
-        return new MigrationInfo(getPartitionId(), getReplicaIndex(), copyBackReplicaIndex,
-                getMigrationType(), from, to);
-    }
-
-    public MigrationType getMigrationType() {
-        return migration ? MigrationType.MOVE :
-                (copyBackReplicaIndex < 0 ? MigrationType.COPY : MigrationType.MOVE_COPY_BACK);
-    }
-
-    public boolean isMigration() {
-        return migration;
-    }
-
-    public int getCopyBackReplicaIndex() {
-        return copyBackReplicaIndex;
-    }
-
-    public void setCopyBackReplicaIndex(final int copyBackReplicaIndex) {
-        this.copyBackReplicaIndex = copyBackReplicaIndex;
-    }
-
-    public void setFromAddress(final Address from) {
-        this.from = from;
+    public MigrationRequestOperation(MigrationInfo migrationInfo) {
+        super(migrationInfo);
     }
 
     public void run() {
-        final int partitionId = getPartitionId();
-        final int replicaIndex = getReplicaIndex();
-//        final ResponseHandler responseHandler = getResponseHandler();
+        final Address from = migrationInfo.getFromAddress();
+        final Address to = migrationInfo.getToAddress();
         if (to.equals(from)) {
             getLogger().log(Level.FINEST, "To and from addresses are same! => " + toString());
-//            responseHandler.sendResponse(Boolean.FALSE);
             success = false;
             return;
         }
@@ -104,18 +58,16 @@ public class MigrationRequestOperation extends AbstractOperation
             Member target = partitionService.getMember(to);
             if (target == null) {
                 getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
-//                responseHandler.sendResponse(Boolean.FALSE);
                 success = false;
                 return;
             }
-            partitionService.addActiveMigration(createMigrationInfo());
+            partitionService.addActiveMigration(migrationInfo);
             final NodeEngine nodeEngine = getNodeEngine();
             final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
-            final Collection<Operation> tasks = prepareMigrationTasks(partitionId, replicaIndex);
+            final Collection<Operation> tasks = prepareMigrationTasks();
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
-                    new MigrationOperation(partitionId, replicaIndex, copyBackReplicaIndex,
-                            getMigrationType(), tasks, from), to)
-                    .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(replicaIndex).build();
+                    new MigrationOperation(migrationInfo, tasks), to)
+                    .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
             Future future = inv.invoke();
             success = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
         } catch (Throwable e) {
@@ -133,11 +85,9 @@ public class MigrationRequestOperation extends AbstractOperation
         return true;
     }
 
-    private Collection<Operation> prepareMigrationTasks(final int partitionId, final int replicaIndex) {
+    private Collection<Operation> prepareMigrationTasks() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final MigrationType migrationType = getMigrationType();
-        final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE,
-                partitionId, replicaIndex, migrationType, copyBackReplicaIndex);
+        final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE, migrationInfo);
         final Collection<Operation> tasks = new LinkedList<Operation>();
         for (Object serviceObject : nodeEngine.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
@@ -164,48 +114,11 @@ public class MigrationRequestOperation extends AbstractOperation
         success = false;
     }
 
-    private ILogger getLogger() {
-        return getNodeEngine().getLogger(MigrationRequestOperation.class.getName());
-    }
-
     public void writeInternal(DataOutput out) throws IOException {
-        from.writeData(out);
-        to.writeData(out);
-        out.writeBoolean(migration);
-        out.writeBoolean(diffOnly);
-        out.writeInt(copyBackReplicaIndex);
+        super.writeInternal(out);
     }
 
     public void readInternal(DataInput in) throws IOException {
-        from = new Address();
-        from.readData(in);
-        to = new Address();
-        to.readData(in);
-        migration = in.readBoolean();
-        diffOnly = in.readBoolean();
-        copyBackReplicaIndex = in.readInt();
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("MigrationRequestOperation");
-        sb.append("{partitionId=").append(getPartitionId());
-        sb.append(", from=").append(from);
-        sb.append(", to=").append(to);
-        sb.append(", replicaIndex=").append(getReplicaIndex());
-        sb.append(", migration=").append(migration);
-        sb.append(", diffOnly=").append(diffOnly);
-        sb.append(", copyBackReplicaIndex=").append(copyBackReplicaIndex);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    public Address getFromAddress() {
-        return from;
-    }
-
-    public Address getToAddress() {
-        return to;
+        super.readInternal(in);
     }
 }

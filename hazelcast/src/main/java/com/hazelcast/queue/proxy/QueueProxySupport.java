@@ -22,6 +22,8 @@ import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -124,6 +126,17 @@ abstract class QueueProxySupport {
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    List<Data> listInternal(){
+        try {
+            IteratorOperation operation = new IteratorOperation(name);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (List<Data>)nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

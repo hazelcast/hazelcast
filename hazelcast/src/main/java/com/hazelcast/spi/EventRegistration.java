@@ -16,11 +16,20 @@
 
 package com.hazelcast.spi;
 
-/**
- * @mdogan 12/12/12
- */
-public interface EventPublishingService<E, T> {
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.DataSerializable;
 
-    void dispatchEvent(E event, T listener);
+/**
+ * @mdogan 12/14/12
+ */
+public interface EventRegistration extends DataSerializable {
+
+    String getId();
+
+    EventFilter getFilter();
+
+    Address getSubscriber();
+
+    boolean isLocal();
 
 }

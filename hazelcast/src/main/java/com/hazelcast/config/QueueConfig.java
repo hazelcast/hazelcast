@@ -35,15 +35,19 @@ public final class QueueConfig implements DataSerializable {
     private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize;
+    private QueueStoreConfig queueStoreConfig;
 
     public QueueConfig() {
     }
 
     public QueueConfig(QueueConfig config) {
+        this();
         this.name = config.name;
         this.syncBackupCount = config.syncBackupCount;
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
+        this.queueStoreConfig = config.queueStoreConfig;
+        this.listenerConfigs = config.listenerConfigs;
     }
 
     public int getMaxSize() {
@@ -78,6 +82,14 @@ public final class QueueConfig implements DataSerializable {
     public QueueConfig setAsyncBackupCount(int asyncBackupCount) {
         this.asyncBackupCount = asyncBackupCount;
         return this;
+    }
+
+    public QueueStoreConfig getQueueStoreConfig() {
+        return queueStoreConfig;
+    }
+
+    public void setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
+        this.queueStoreConfig = queueStoreConfig;
     }
 
     /**
@@ -129,10 +141,5 @@ public final class QueueConfig implements DataSerializable {
         syncBackupCount = in.readInt();
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
-    }
-
-    @Override
-    public String toString() {
-        return "QueueConfig [name=" + this.name + "]";
     }
 }

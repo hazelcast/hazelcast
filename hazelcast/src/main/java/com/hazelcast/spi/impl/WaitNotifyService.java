@@ -16,29 +16,40 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.executor.ExecutorThreadFactory;
+import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 @PrivateApi
 class WaitNotifyService {
     private final ConcurrentMap<Object, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<Object, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
-    private final ExecutorService esExpirationTaskExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService expirationExecutor;
     private final Future expirationTask;
     private final WaitingOpProcessor waitingOpProcessor;
+    private final ILogger logger;
 
-    public WaitNotifyService(final WaitingOpProcessor waitingOpProcessor) {
+    public WaitNotifyService(final NodeEngineImpl nodeEngine, final WaitingOpProcessor waitingOpProcessor) {
         this.waitingOpProcessor = waitingOpProcessor;
-        expirationTask = esExpirationTaskExecutor.submit(new Runnable() {
+        final Node node = nodeEngine.getNode();
+        logger = node.getLogger(WaitNotifyService.class.getName());
+
+        expirationExecutor = Executors.newSingleThreadExecutor(
+                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                        node.getThreadNamePrefix("wait-notify"), node.getConfig().getClassLoader()));
+
+        expirationTask = expirationExecutor.submit(new Runnable() {
             public void run() {
                 while (true) {
                     if (Thread.interrupted()) {
@@ -75,7 +86,7 @@ class WaitNotifyService {
                     } catch (InterruptedException e) {
                         return;
                     } catch (Throwable t) {
-                        t.printStackTrace();
+                        logger.log(Level.WARNING, t.getMessage(), t);
                     }
                 }
             }
@@ -138,46 +149,6 @@ class WaitNotifyService {
         return sb.toString();
     }
 
-    public static void main(String[] args) {
-        final WaitNotifyService ss = new WaitNotifyService(new WaitingOpProcessor() {
-            public void process(WaitingOp so) {
-            }
-
-            public void processUnderExistingLock(Operation operation) {
-            }
-        });
-        final Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                int count = 5000;
-                for (int i = 0; i < count; i++) {
-                    ss.wait(new WaitSupport() {
-                        public Object getWaitKey() {
-                            return "a";
-                        }
-
-                        public boolean shouldWait() {
-                            return false;
-                        }
-
-                        public long getWaitTimeoutMillis() {
-                            return 1200;
-                        }
-
-                        public void onWaitExpire() {
-                            Queue<WaitingOp> q = ss.getScheduleQueue(getWaitKey());
-                            q.remove(this);
-                            System.out.println("invalid");
-                        }
-                    });
-                }
-                System.out.println("offered " + count);
-                System.out.println(ss);
-            }
-        }, 0, 1000);
-    }
-
     private Queue<WaitingOp> getScheduleQueue(Object scheduleQueueKey) {
         return mapWaitingOps.get(scheduleQueueKey);
     }
@@ -215,7 +186,8 @@ class WaitNotifyService {
                             Operation op = waitingOp.getOperation();
                             if (partitionId == op.getPartitionId()) {
                                 waitingOp.setValid(false);
-                                PartitionMigratingException pme = new PartitionMigratingException(thisAddress, partitionId, op.getClass().getName(), op.getServiceName());
+                                PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
+                                        partitionId, op.getClass().getName(), op.getServiceName());
                                 op.getResponseHandler().sendResponse(pme);
                                 it.remove();
                             }
@@ -234,7 +206,7 @@ class WaitNotifyService {
 
     void shutdown() {
         expirationTask.cancel(true);
-        esExpirationTaskExecutor.shutdown();
+        expirationExecutor.shutdown();
     }
 
     static class KeyBasedWaitingOp extends WaitingOp implements KeyBasedOperation {
@@ -258,7 +230,7 @@ class WaitNotifyService {
             this.op = (Operation) so;
             this.so = so;
             this.queue = queue;
-            this.expirationTime = so.getWaitTimeoutMillis() < 0 ? -1 : System.currentTimeMillis() + so.getWaitTimeoutMillis();
+            this.expirationTime = so.getWaitTimeoutMillis() < 0 ? -1 : Clock.currentTimeMillis() + so.getWaitTimeoutMillis();
             this.setPartitionId(op.getPartitionId());
         }
 
@@ -275,7 +247,7 @@ class WaitNotifyService {
         }
 
         public boolean expired() {
-            return expirationTime != -1 && System.currentTimeMillis() >= expirationTime;
+            return expirationTime != -1 && Clock.currentTimeMillis() >= expirationTime;
         }
 
         public boolean shouldWait() {
@@ -283,7 +255,7 @@ class WaitNotifyService {
         }
 
         public long getDelay(TimeUnit unit) {
-            return unit.convert(expirationTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            return unit.convert(expirationTime - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
         }
 
         public int compareTo(Delayed other) {

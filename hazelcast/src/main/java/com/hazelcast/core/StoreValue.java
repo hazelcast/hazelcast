@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.core;
+
+import com.hazelcast.nio.Data;
 
 /**
- * @mdogan 12/12/12
+ * @ali 12/17/12
  */
-public interface EventPublishingService<E, T> {
+public interface StoreValue<V> {
 
-    void dispatchEvent(E event, T listener);
+    V get();
+
+    void set(V v);
+
+    Data getData();
+
+    void setData(Data data);
 
 }

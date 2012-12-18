@@ -31,7 +31,6 @@ import java.util.logging.Level;
 final class ExecutionServiceImpl implements ExecutionService {
 
     final ExecutorService cachedExecutorService;
-    final ExecutorService eventExecutorService;
     final ScheduledExecutorService scheduledExecutorService;
     private final ILogger logger;
 
@@ -42,12 +41,8 @@ final class ExecutionServiceImpl implements ExecutionService {
         final ExecutorThreadFactory threadFactory = new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                 node.getThreadPoolNamePrefix("cached"), classLoader);
         cachedExecutorService = new ThreadPoolExecutor(
-                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                1, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(), threadFactory);
-//        cachedExecutorService = Executors.newFixedThreadPool(40, threadFactory);
-        eventExecutorService = Executors.newSingleThreadExecutor(
-                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getThreadPoolNamePrefix("event"), node.getConfig().getClassLoader()));
         scheduledExecutorService = Executors.newScheduledThreadPool(2,
                 new ExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
@@ -78,7 +73,6 @@ final class ExecutionServiceImpl implements ExecutionService {
     void shutdown() {
         cachedExecutorService.shutdown();
         scheduledExecutorService.shutdownNow();
-        eventExecutorService.shutdownNow();
         try {
             cachedExecutorService.awaitTermination(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {

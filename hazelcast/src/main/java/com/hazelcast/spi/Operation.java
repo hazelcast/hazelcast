@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
@@ -75,6 +76,10 @@ public abstract class Operation implements DataSerializable {
     }
 
     public final Operation setReplicaIndex(int replicaIndex) {
+        if (replicaIndex < 0 || replicaIndex >= PartitionInfo.MAX_REPLICA_COUNT) {
+            throw new IllegalArgumentException("Replica index is out of range [0-"
+                    + (PartitionInfo.MAX_REPLICA_COUNT - 1) + "]");
+        }
         this.replicaIndex = replicaIndex;
         return this;
     }

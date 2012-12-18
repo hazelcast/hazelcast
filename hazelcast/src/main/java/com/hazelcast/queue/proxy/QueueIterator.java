@@ -14,13 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.queue.proxy;
+
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
+
+import java.util.Iterator;
+import java.util.Set;
 
 /**
- * @mdogan 12/12/12
+ * @ali 12/18/12
  */
-public interface EventPublishingService<E, T> {
+public class QueueIterator<E> implements Iterator<E> {
 
-    void dispatchEvent(E event, T listener);
+    final Iterator<Data> iter;
 
+    public QueueIterator(Iterator<Data> iter) {
+        this.iter = iter;
+    }
+
+    public boolean hasNext() {
+        return iter.hasNext();
+    }
+
+    public E next() {
+        Data data = iter.next();
+        return IOUtil.toObject(data);
+    }
+
+    public void remove() {
+        iter.remove();
+    }
 }

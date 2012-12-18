@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionInvocationImpl;
 import com.hazelcast.spi.impl.TargetInvocationImpl;
@@ -50,6 +51,10 @@ public class InvocationBuilder {
 
 
     public InvocationBuilder setReplicaIndex(int replicaIndex) {
+        if (replicaIndex < 0 || replicaIndex >= PartitionInfo.MAX_REPLICA_COUNT) {
+            throw new IllegalArgumentException("Replica index is out of range [0-"
+                    + (PartitionInfo.MAX_REPLICA_COUNT - 1) + "]");
+        }
         this.replicaIndex = replicaIndex;
         return this;
     }

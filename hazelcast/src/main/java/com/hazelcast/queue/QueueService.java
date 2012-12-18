@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -51,7 +50,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         this.logger = nodeEngine.getLogger(QueueService.class.getName());
     }
 
-    public QueueContainer getContainer(final String name) {
+    public QueueContainer getContainer(final String name, boolean fromBackup) {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
             container = new QueueContainer(this, nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), name);
@@ -60,6 +59,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
                 container = existing;
             }
         }
+        container.setFromBackup(fromBackup);
         return container;
     }
 
@@ -86,7 +86,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
-            if (container.partitionId == event.getPartitionId() && container.config.getTotalBackupCount() >= event.getReplicaIndex()) {
+            if (container.partitionId == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
                 migrationData.put(name, container);
             }
         }
@@ -107,20 +107,29 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         }
     }
 
+    public int getMaxBackupCount() {
+        int max = 0;
+        for (QueueContainer container : containerMap.values()) {
+            int c = container.getConfig().getTotalBackupCount();
+            max = Math.max(max,  c);
+        }
+        return max;
+    }
+
     private void cleanMigrationData(int partitionId, int copyBack) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
             QueueContainer container = iterator.next().getValue();
-            if (container.partitionId == partitionId && (copyBack ==-1 || container.config.getTotalBackupCount() < copyBack)) {
+            if (container.partitionId == partitionId && (copyBack ==-1 || container.getConfig().getTotalBackupCount() < copyBack)) {
                 iterator.remove();
             }
         }
     }
 
-    public void memberAdded(MemberImpl member) {
+    public void memberAdded(MembershipServiceEvent membershipEvent) {
     }
 
-    public void memberRemoved(MemberImpl member) {
+    public void memberRemoved(MembershipServiceEvent membershipEvent) {
     }
 
     public ServiceProxy getProxy(Object... params) {

@@ -17,10 +17,10 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 12/12/12
+ * @mdogan 12/14/12
  */
-public interface EventPublishingService<E, T> {
+public interface EventFilter {
 
-    void dispatchEvent(E event, T listener);
+    boolean eval(Object arg);
 
 }

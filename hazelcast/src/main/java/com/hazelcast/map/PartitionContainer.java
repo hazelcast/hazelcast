@@ -24,9 +24,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.PartitionInfo;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -111,4 +108,11 @@ public class PartitionContainer {
     }
 
 
+    public int getMaxBackupCount() {
+        int max = 1;
+        for (MapPartition mapPartition : maps.values()) {
+            max = Math.max(max, mapPartition.getTotalBackupCount());
+        }
+        return max;
+    }
 }

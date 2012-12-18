@@ -16,156 +16,411 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.EventOperation;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.Invocation;
+import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.*;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
 /**
- * @mdogan 12/12/12
+ * @mdogan 12/14/12
  */
 
-@PrivateApi
-class EventServiceImpl implements EventService {
+public class EventServiceImpl implements EventService {
+    public static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
+    private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
-    private final ConcurrentMap<String, EventSegment> segments;
+    private final ConcurrentMap<String, EventServiceSegment> segments;
+    final ExecutorService eventExecutorService;
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        segments = new ConcurrentHashMap<String, EventSegment>();
+        logger = nodeEngine.getLogger(EventService.class.getName());
+        Node node = nodeEngine.getNode();
+        eventExecutorService = Executors.newSingleThreadExecutor(
+                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                        node.getThreadNamePrefix("event"), node.getConfig().getClassLoader()));
+        segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
-    void registerSubscribers(String service, Object topic, Address... subscribers) {
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(service,
-                        new RegistrationOperation(service, subscribers, topic), member.getAddress()).build();
-                calls.add(inv.invoke());
+    public EventRegistration registerListener(String serviceName, String topic, Object listener) {
+        return registerListener(serviceName, topic, new EmptyFilter(), listener);
+    }
+
+    public EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener) {
+        if (listener == null) {
+            throw new IllegalArgumentException("Listener required!");
+        }
+        if (filter == null) {
+            throw new IllegalArgumentException("Filter required");
+        }
+        EventServiceSegment segment = getSegment(serviceName, true);
+        Registration reg = new Registration(createId(serviceName), serviceName, filter,
+                nodeEngine.getThisAddress(), listener);
+
+        if (segment.addRegistration(topic, reg)) {
+            Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+            Collection<Future> calls = new ArrayList<Future>(members.size());
+            for (MemberImpl member : members) {
+                if (!member.localMember()) {
+                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                            new RegistrationOperation(topic, reg), member.getAddress()).build();
+                    calls.add(inv.invoke());
+                }
+            }
+            for (Future f : calls) {
+                try {
+                    f.get(5, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                } catch (TimeoutException ignored) {
+                } catch (ExecutionException e) {
+                    throw new HazelcastException(e);
+                }
+            }
+            return reg;
+        } else {
+            return null;
+        }
+    }
+
+    private String createId(String serviceName) {
+        return serviceName + ":" + UUID.randomUUID().toString();
+    }
+
+    public boolean registerSubscriber(String serviceName, String topic, Registration reg) {
+        EventServiceSegment segment = getSegment(serviceName, true);
+        return segment.addRegistration(topic, reg);
+    }
+
+    public void deregisterListener(String serviceName, String id) {
+
+    }
+
+    public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
+        final EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment != null) {
+            final Collection<Registration> registrations = segment.getRegistrations(topic, false);
+            return registrations != null && !registrations.isEmpty()
+                    ? registrations.toArray(new Registration[registrations.size()])
+                    : EMPTY_REGISTRATIONS;
+        }
+        return EMPTY_REGISTRATIONS;
+    }
+
+    public Collection<EventRegistration> getRegistrations(String serviceName, String topic) {
+        final EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment != null) {
+            final Collection<Registration> registrations = segment.getRegistrations(topic, false);
+            return registrations != null && !registrations.isEmpty()
+                    ? Collections.<EventRegistration>unmodifiableCollection(registrations)
+                    : Collections.<EventRegistration>emptySet();
+        }
+        return Collections.emptySet();
+    }
+
+    public void publishEvent(String serviceName, EventRegistration registration, Object event) {
+        if (!(registration instanceof Registration)) {
+            throw new IllegalArgumentException();
+        }
+        final Registration reg = (Registration) registration;
+        if (reg.isLocal()) {
+            eventExecutorService.execute(new LocalEventDispatcher(serviceName, event, reg.listener));
+        } else {
+            final Address subscriber = registration.getSubscriber();
+            final Data data = IOUtil.toData(new EventPacket(registration.getId(), serviceName, event));
+            final Packet packet = new Packet(data);
+            packet.setHeader(Packet.HEADER_EVENT, true);
+            nodeEngine.getClusterService().send(packet, subscriber);
+        }
+    }
+
+    public void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event) {
+        final Iterator<EventRegistration> iter = registrations.iterator();
+        final Data eventData = IOUtil.toData(event); // TODO: serialization might be optimized
+        while (iter.hasNext()) {
+            EventRegistration registration = iter.next();
+            if (!(registration instanceof Registration)) {
+                throw new IllegalArgumentException();
+            }
+            final Registration reg = (Registration) registration;
+            if (reg.isLocal()) {
+                eventExecutorService.execute(new LocalEventDispatcher(serviceName, event, reg.listener));
+            } else {
+                final Address subscriber = registration.getSubscriber();
+                final Data data = IOUtil.toData(new EventPacket(registration.getId(), serviceName, eventData));
+                final Packet packet = new Packet(data);
+                packet.setHeader(Packet.HEADER_EVENT, true);
+                nodeEngine.getClusterService().send(packet, subscriber);
             }
         }
-        final EventSegment segment = getSegment(service, true);
-        Collection<Address> subscriberList = getSubscribers(topic, segment, true);
-        Collections.addAll(subscriberList, subscribers);
-        for (Future call : calls) {
-            try {
-                call.get(5, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                nodeEngine.getLogger(EventServiceImpl.class.getName()).log(Level.FINEST, "While registering listener", e);
-            }
-        }
     }
 
-    void publishEvent(EventOperation event) {
-        final EventSegment segment = getSegment(event.getServiceName(), false);
-        if (segment == null) return;
-        final Collection<Address> subscriberList = getSubscribers(event.getTopic(), segment, false);
-        if (subscriberList == null) return;
-
-        final Data eventData = IOUtil.toData(event);
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        for (Address target : subscriberList) {
-            Packet p = new Packet(eventData);
-            p.setHeader(Packet.HEADER_EVENT, true);
-            clusterService.send(p, target); // TODO: need flow control
-        }
+    public void executeEvent(Runnable eventRunnable) {
+        eventExecutorService.execute(eventRunnable);
     }
 
-    void onEvent(EventOperation event) {
-        final EventSegment segment = getSegment(event.getServiceName(), false);
-        if (segment == null) return;
-        final Collection<Object> subscriberList = getListeners(event.getTopic(), segment, false);
-        if (subscriberList == null) return;
-
-
-    }
-
-    private Collection<Address> getSubscribers(Object topic, EventSegment segment, boolean forceCreate) {
-        Collection<Address> subscriberList = segment.subscriberMap.get(topic);
-        if (subscriberList == null && forceCreate) {
-            subscriberList = new ConcurrentHashSet<Address>();
-            Collection<Address> current = segment.subscriberMap.putIfAbsent(topic, subscriberList);
-            subscriberList = current == null ? subscriberList : current;
-        }
-        return subscriberList;
-    }
-
-    private Collection<Object> getListeners(Object topic, EventSegment segment, boolean forceCreate) {
-        Collection<Object> listenerList = segment.listenerMap.get(topic);
-        if (listenerList == null && forceCreate) {
-            listenerList = new ConcurrentHashSet<Object>();
-            Collection<Object> current = segment.listenerMap.putIfAbsent(topic, listenerList);
-            listenerList = current == null ? listenerList : current;
-        }
-        return listenerList;
-    }
-
-    private EventSegment getSegment(String service, boolean forceCreate) {
-        EventSegment segment = segments.get(service);
+    private EventServiceSegment getSegment(String service, boolean forceCreate) {
+        EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
-            segment = new EventSegment(service);
-            EventSegment current = segments.putIfAbsent(service, segment);
+            segment = new EventServiceSegment(service);
+            EventServiceSegment current = segments.putIfAbsent(service, segment);
             segment = current == null ? segment : current;
         }
         return segment;
     }
 
+    @PrivateApi
+    public void handleEvent(Packet packet) {
+        eventExecutorService.execute(new EventPacketProcessor(packet));
+    }
 
-    private class EventSegment {
+    void shutdown() {
+        eventExecutorService.shutdownNow();
+        segments.clear();
+    }
+
+    private class EventServiceSegment {
         final String serviceName;
-        final ConcurrentMap<Object, Collection<Address>> subscriberMap = new ConcurrentHashMap<Object, Collection<Address>>();
-        final ConcurrentMap<Object, Collection<Object>> listenerMap = new ConcurrentHashMap<Object, Collection<Object>>();
+        final ConcurrentMap<String, Collection<Registration>> registrations
+                = new ConcurrentHashMap<String, Collection<Registration>>();
 
-        EventSegment(String serviceName) {
+        final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
+
+        EventServiceSegment(String serviceName) {
             this.serviceName = serviceName;
         }
+
+        private Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
+            Collection<Registration> listenerList = registrations.get(topic);
+            if (listenerList == null && forceCreate) {
+                listenerList = new ConcurrentHashSet<Registration>();
+                Collection<Registration> current = registrations.putIfAbsent(topic, listenerList);
+                listenerList = current == null ? listenerList : current;
+            }
+            return listenerList;
+        }
+
+        private boolean addRegistration(String topic, Registration registration) {
+            final Collection<Registration> registrations = getRegistrations(topic, true);
+            if (registrations.add(registration)) {
+                registrationIdMap.put(registration.id, registration);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private class EventPacketProcessor implements Runnable {
+        private Packet packet;
+
+        public EventPacketProcessor(Packet packet) {
+            this.packet = packet;
+        }
+
+        public void run() {
+            Data data = packet.getValue();
+            EventPacket eventPacket = IOUtil.toObject(data);
+            final String serviceName = eventPacket.serviceName;
+            EventPublishingService service = nodeEngine.getService(serviceName);
+            if (service == null) {
+                logger.log(Level.WARNING, "There is no service named: " + serviceName);
+                return;
+            }
+            EventServiceSegment segment = getSegment(serviceName, false);
+            if (segment == null) {
+                logger.log(Level.WARNING, "No service registration found for " + serviceName);
+                return;
+            }
+            Registration registration = segment.registrationIdMap.get(eventPacket.id);
+            if (registration == null) {
+                logger.log(Level.WARNING, "No registration found for " + serviceName + " / " + eventPacket.id);
+                return;
+            }
+            if (!registration.isLocal()) {
+                logger.log(Level.WARNING, "Invalid target for  " + registration);
+                return;
+            }
+            service.dispatchEvent(eventPacket.event, registration.listener);
+        }
+    }
+
+    private class LocalEventDispatcher implements Runnable {
+        final String serviceName;
+        final Object event;
+        final Object listener;
+
+        private LocalEventDispatcher(String serviceName, Object event, Object listener) {
+            this.serviceName = serviceName;
+            this.event = event;
+            this.listener = listener;
+        }
+
+        public void run() {
+            EventPublishingService service = nodeEngine.getService(serviceName);
+            service.dispatchEvent(event, listener);
+        }
+    }
+
+    static class Registration implements EventRegistration {
+        private String id;
+        private String serviceName;
+        private EventFilter filter;
+        private Address subscriber;
+        private transient Object listener;
+
+        public Registration() {
+        }
+
+        public Registration(String id, String serviceName, EventFilter filter, Address subscriber) {
+            this(id, serviceName, filter, subscriber, null);
+        }
+
+        public Registration(String id, String serviceName, EventFilter filter, Address subscriber, Object listener) {
+            this.filter = filter;
+            this.id = id;
+            this.listener = listener;
+            this.serviceName = serviceName;
+            this.subscriber = subscriber;
+        }
+
+        public EventFilter getFilter() {
+            return filter;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public Address getSubscriber() {
+            return subscriber;
+        }
+
+        public boolean isLocal() {
+            return listener != null;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Registration that = (Registration) o;
+
+            if (!serviceName.equals(that.serviceName)) return false;
+            if (!subscriber.equals(that.subscriber)) return false;
+            if (!filter.equals(that.filter)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = serviceName.hashCode();
+            result = 31 * result + filter.hashCode();
+            result = 31 * result + subscriber.hashCode();
+            return result;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(id);
+            out.writeUTF(serviceName);
+            subscriber.writeData(out); // may be transient, subscriber == caller
+            IOUtil.writeObject(out, filter);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            id = in.readUTF();
+            serviceName = in.readUTF();
+            subscriber = new Address();
+            subscriber.readData(in);
+            filter = IOUtil.readObject(in);
+        }
+
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Registration");
+            sb.append("{filter=").append(filter);
+            sb.append(", id='").append(id).append('\'');
+            sb.append(", serviceName='").append(serviceName).append('\'');
+            sb.append(", subscriber=").append(subscriber);
+            sb.append(", listener=").append(listener);
+            sb.append('}');
+            return sb.toString();
+        }
+    }
+
+    static class EventPacket implements DataSerializable {
+
+        String id;
+        String serviceName;
+        Object event;
+
+        EventPacket() {
+        }
+
+        EventPacket(String id, String serviceName, Object event) {
+            this.event = event;
+            this.id = id;
+            this.serviceName = serviceName;
+        }
+
+        public void writeData(DataOutput out) throws IOException {
+            out.writeUTF(id);
+            out.writeUTF(serviceName);
+            IOUtil.writeObject(out, event);
+        }
+
+        public void readData(DataInput in) throws IOException {
+            id = in.readUTF();
+            serviceName = in.readUTF();
+            event = IOUtil.readObject(in);
+        }
+    }
+
+    static class EmptyFilter implements EventFilter, DataSerializable {
+        public boolean eval(Object arg) {
+            return true;
+        }
+        public void writeData(DataOutput out) throws IOException {}
+        public void readData(DataInput in) throws IOException {}
     }
 
     static class RegistrationOperation extends AbstractOperation {
 
-        private String eventServiceName;
-        private Object topic;
-        private Address[] addresses;
+        private String topic;
+        private Registration registration;
+        private boolean response = false;
 
         RegistrationOperation() {
         }
 
-        private RegistrationOperation(String eventServiceName, Address[] addresses, Object topic) {
-            this.eventServiceName = eventServiceName;
-            this.addresses = addresses;
+        private RegistrationOperation(String topic, Registration registration) {
+            this.registration = registration;
             this.topic = topic;
         }
 
         public void run() throws Exception {
-            EventServiceImpl eventSupport = (EventServiceImpl) getNodeEngine().getEventService();
-            eventSupport.registerSubscribers(eventServiceName, topic, addresses);
+            EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
+            response = eventService.registerSubscriber(getServiceName(), topic, registration);
         }
 
         @Override
         public Object getResponse() {
-            return Boolean.TRUE;
+            return response;
         }
 
         @Override
@@ -175,27 +430,15 @@ class EventServiceImpl implements EventService {
 
         @Override
         protected void writeInternal(DataOutput out) throws IOException {
-            out.writeUTF(eventServiceName);
-            IOUtil.writeObject(out, topic);
-            int len = addresses != null ? addresses.length : 0;
-            out.writeInt(len);
-            if (len > 0) {
-                for (Address address : addresses) {
-                    address.writeData(out);
-                }
-            }
+            out.writeUTF(topic);
+            registration.writeData(out);
         }
 
         @Override
         protected void readInternal(DataInput in) throws IOException {
-            eventServiceName = in.readUTF();
-            topic = IOUtil.readObject(in);
-            int len = in.readInt();
-            addresses = new Address[len];
-            for (int i = 0; i < len; i++) {
-                addresses[i] = new Address();
-                addresses[i].readData(in);
-            }
+            topic = in.readUTF();
+            registration = new Registration();
+            registration.readData(in);
         }
     }
 }

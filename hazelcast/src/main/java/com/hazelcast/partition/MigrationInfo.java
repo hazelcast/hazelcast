@@ -29,16 +29,21 @@ public class MigrationInfo implements DataSerializable {
     private Address from;
     private Address to;
     private int replicaIndex;
-    private int copyBackReplicaIndex = -1;
     private MigrationType migrationType;
+    private int copyBackReplicaIndex = -1;
 
     private transient long creationTime = Clock.currentTimeMillis();
 
     public MigrationInfo() {
     }
 
-    public MigrationInfo(int partitionId, int replicaIndex, int copyBackReplicaIndex,
-                         MigrationType migrationType, Address from, Address to) {
+    public MigrationInfo(int partitionId, int replicaIndex, MigrationType migrationType,
+                         Address from, Address to) {
+        this(partitionId, replicaIndex, migrationType, from, to, -1);
+    }
+
+    public MigrationInfo(int partitionId, int replicaIndex, MigrationType migrationType,
+                         Address from, Address to, int copyBackReplicaIndex) {
         this.partitionId = partitionId;
         this.from = from;
         this.to = to;
@@ -47,13 +52,12 @@ public class MigrationInfo implements DataSerializable {
         this.migrationType = migrationType;
     }
 
-    public MigrationInfo(MigrationInfo migrationInfo) {
-        this(migrationInfo.partitionId, migrationInfo.replicaIndex, migrationInfo.copyBackReplicaIndex,
-                migrationInfo.migrationType, migrationInfo.from, migrationInfo.to);
-    }
-
     public Address getFromAddress() {
         return from;
+    }
+
+    void setFromAddress(Address fromAddress) {
+        this.from = fromAddress;
     }
 
     public Address getToAddress() {
@@ -70,6 +74,10 @@ public class MigrationInfo implements DataSerializable {
 
     public int getCopyBackReplicaIndex() {
         return copyBackReplicaIndex;
+    }
+
+    void setCopyBackReplicaIndex(int copyBackReplicaIndex) {
+        this.copyBackReplicaIndex = copyBackReplicaIndex;
     }
 
     public MigrationType getMigrationType() {

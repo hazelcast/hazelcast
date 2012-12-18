@@ -72,7 +72,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
     }
 
     public int getAsyncBackupCount() {
-        return 0;
+        return mapPartition.getAsyncBackupCount();
     }
 
     public Operation getBackupOperation() {

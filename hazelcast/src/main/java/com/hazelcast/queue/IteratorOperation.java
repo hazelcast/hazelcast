@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.queue;
 
 /**
- * @mdogan 12/12/12
+ * @ali 12/18/12
  */
-public interface EventPublishingService<E, T> {
+public class IteratorOperation extends QueueOperation {
 
-    void dispatchEvent(E event, T listener);
+    public IteratorOperation() {
+    }
 
+    public IteratorOperation(String name) {
+        super(name);
+    }
+
+    public void run() throws Exception {
+        response = getContainer().getAsDataList();
+    }
 }

@@ -38,7 +38,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public LocalQueueStats getLocalQueueStats() {
         //TODO what to do
-        System.out.println(queueService.getContainer("ali").size());
+        System.out.println(queueService.getContainer("ali",false).size());
         return null;
     }
 
@@ -134,15 +134,15 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public Iterator<E> iterator() {
-        return null;
+        return new QueueIterator<E>(listInternal().iterator());
     }
 
     public Object[] toArray() {
-        return new Object[0];
+        return listInternal().toArray();
     }
 
     public <T> T[] toArray(T[] ts) {
-        return null;
+        return listInternal().toArray(ts);
     }
 
     public boolean containsAll(Collection<?> objects) {
