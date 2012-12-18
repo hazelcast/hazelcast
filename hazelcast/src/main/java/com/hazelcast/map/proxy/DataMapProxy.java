@@ -90,8 +90,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return removeInternal(key);
     }
 
-    public boolean remove(final Object key, final Object value) {
-        return false;
+    public boolean remove(final Object k, final Object v) {
+        Data key = nodeEngine.toData(k);
+        Data value = nodeEngine.toData(v);
+        return removeInternal(key, value);
     }
 
     public Object tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {

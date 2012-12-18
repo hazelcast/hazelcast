@@ -181,7 +181,6 @@ abstract class MapProxySupport {
 
     protected Data removeInternal(Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
-        TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = prepareTransaction(partitionId);
         RemoveOperation operation = new RemoveOperation(name, key, txnId);
         operation.setThreadId(ThreadContext.get().getThreadId());
@@ -196,7 +195,18 @@ abstract class MapProxySupport {
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
-        return false;
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value, txnId);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Boolean) f.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected Object tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {

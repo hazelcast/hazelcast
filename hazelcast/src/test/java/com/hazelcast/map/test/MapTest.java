@@ -149,6 +149,21 @@ public class MapTest {
         assertEquals(map.size(), 1);
     }
 
+    @Test
+    public void testMapRemoveIfSame() {
+        IMap<String, String> map = getInstance().getMap("testMapRemoveIfSame");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertFalse(map.remove("key1","nan"));
+        assertEquals(map.size(), 3);
+        assertTrue(map.remove("key1","value1"));
+        assertEquals(map.size(), 2);
+        assertTrue(map.remove("key2","value2"));
+        assertTrue(map.remove("key3","value3"));
+        assertEquals(map.size(), 0);
+    }
+
 
     @Test
     public void testMapSet() {

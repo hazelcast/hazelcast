@@ -36,8 +36,10 @@ public class RemoveOperation extends BaseRemoveOperation {
             return;
         }
         prepareValue();
-        remove();
-        store();
+        if (record != null) {
+            remove();
+            store();
+        }
     }
 
     @Override
