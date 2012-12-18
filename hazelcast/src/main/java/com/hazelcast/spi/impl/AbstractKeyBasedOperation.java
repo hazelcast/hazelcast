@@ -29,12 +29,22 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
     protected Data dataKey = null;
     protected int threadId = -1;
     protected long timeout = -1;
+    protected Object keyObject;
+
 
     public AbstractKeyBasedOperation(Data dataKey) {
         this.dataKey = dataKey;
     }
 
     public AbstractKeyBasedOperation() {
+    }
+
+    public Object getKeyObject() {
+        return keyObject;
+    }
+
+    public void setKeyObject(Object keyObject) {
+        this.keyObject = keyObject;
     }
 
     public Data getKey() {

@@ -202,6 +202,30 @@ public class MapTest {
     }
 
     @Test
+    public void testMapReplace() {
+        IMap map = getInstance().getMap("testMapReplace");
+        map.put(1, 1);
+        assertNull(map.replace(2,1));
+        assertNull(map.get(2));
+        map.put(2, 2);
+        assertEquals(2, map.replace(2,3));
+        assertEquals(3, map.get(2));
+    }
+
+    @Test
+    public void testMapReplaceIfSame() {
+        IMap map = getInstance().getMap("testMapReplaceIfSame");
+        map.put(1, 1);
+        assertFalse(map.replace(1,2,3));
+        assertTrue(map.replace(1,1,2));
+        assertEquals(map.get(1), 2);
+        map.put(2, 2);
+        assertTrue(map.replace(2,2,3));
+        assertTrue(map.replace(2,3,4));
+        assertEquals(map.get(2), 4);
+    }
+
+    @Test
     public void testMapLockAndUnlock() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlock");
         map.lock("key1");

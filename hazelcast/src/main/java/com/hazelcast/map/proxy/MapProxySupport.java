@@ -113,7 +113,7 @@ abstract class MapProxySupport {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-//            Object returnObj = invocation.invoke(operation, partitionId);
+            invocation.invoke();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -124,11 +124,33 @@ abstract class MapProxySupport {
     }
 
     protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
-        return false;
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue, txnId);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Boolean) f.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected Data replaceInternal(final Data key, final Data value) {
-        return null;
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        ReplaceOperation operation = new ReplaceOperation(name, key, value, txnId);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Data) f.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
@@ -229,14 +251,12 @@ abstract class MapProxySupport {
     }
 
     protected void putAllInternal(final Map<? extends Data, ? extends Data> m) {
-
     }
 
     protected void lockInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
         LockOperation operation = new LockOperation(name, key);
         operation.setThreadId(ThreadContext.get().getThreadId());
-
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
@@ -250,7 +270,6 @@ abstract class MapProxySupport {
         int partitionId = nodeEngine.getPartitionId(key);
         UnlockOperation operation = new UnlockOperation(name, key);
         operation.setThreadId(ThreadContext.get().getThreadId());
-
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
@@ -277,27 +296,21 @@ abstract class MapProxySupport {
     }
 
     public void unlockMap() {
-
     }
 
     protected void addLocalEntryListenerInternal(final EntryListener<Data, Data> listener) {
-
     }
 
     protected void addEntryListenerInternal(final EntryListener<Data, Data> listener, final boolean includeValue) {
-
     }
 
     protected void removeEntryListenerInternal(final EntryListener<Data, Data> listener) {
-
     }
 
     protected void addEntryListenerInternal(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
-
     }
 
     protected void removeEntryListenerInternal(final EntryListener<Data, Data> listener, final Data key) {
-
     }
 
     protected MapEntry<Data, Data> getMapEntryInternal(final Data key) {
@@ -309,11 +322,9 @@ abstract class MapProxySupport {
     }
 
     public void clear() {
-
     }
 
     public void flush() {
-
     }
 
     protected Set<Data> keySetInternal() {
@@ -361,7 +372,6 @@ abstract class MapProxySupport {
     }
 
     public void destroy() {
-
     }
 
     protected String prepareTransaction(int partitionId) {

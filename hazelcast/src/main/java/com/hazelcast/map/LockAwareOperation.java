@@ -23,6 +23,8 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.nio.IOUtil.toObject;
+
 public abstract class LockAwareOperation extends TTLAwareOperation implements WaitSupport{
 
     protected LockAwareOperation(String name, Data dataKey) {
@@ -65,7 +67,10 @@ public abstract class LockAwareOperation extends TTLAwareOperation implements Wa
     }
 
     public Object getWaitKey() {
-        return getName() + ":lock";
+        if (keyObject == null) {
+            keyObject = toObject(dataKey);
+        }
+        return new MapWaitKey(getName(), keyObject,"lock");
     }
 
 

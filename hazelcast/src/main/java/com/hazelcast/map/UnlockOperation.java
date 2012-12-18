@@ -19,6 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.spi.*;
 import com.hazelcast.nio.Data;
 
+import static com.hazelcast.nio.IOUtil.toObject;
+
 public class UnlockOperation extends TTLAwareOperation implements BackupAwareOperation, Notifier {
 
     PartitionContainer pc;
@@ -85,6 +87,9 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
     }
 
     public Object getNotifiedKey() {
-        return getName() + ":lock";
+        if (keyObject == null) {
+            keyObject = toObject(dataKey);
+        }
+        return new MapWaitKey(getName(), keyObject, "lock");
     }
 }
