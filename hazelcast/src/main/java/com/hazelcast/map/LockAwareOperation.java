@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.WaitSupport;
 
 import java.util.concurrent.TimeoutException;
 
-public abstract class LockAwareOperation extends BackupAwareOperation {
+public abstract class LockAwareOperation extends TTLAwareOperation implements WaitSupport{
 
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -38,32 +41,32 @@ public abstract class LockAwareOperation extends BackupAwareOperation {
     }
 
     public void run() {
+        doOp();
+    }
+
+    abstract void doOp();
+
+
+    public boolean shouldWait() {
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         PartitionContainer pc = mapService.getPartitionContainer(partitionId);
         MapPartition mapPartition = pc.getMapPartition(name);
-        if (!mapPartition.canRun(this)) {
-            if (getTimeout() > 0) {
-                pc.scheduleOp(this);
-            } else {
-                onNoTimeToSchedule();
-            }
-            return;
-        }
-        doRun();
+        boolean shouldWait = !mapPartition.canRun(this);
+        return shouldWait;
     }
 
-    abstract void doRun();
-
-    protected void onNoTimeToSchedule() {
-        onExpire();
+    public long getWaitTimeoutMillis() {
+        return ttl;
     }
 
-    protected void onExpire() {
-        if (getTimeout() == 0) {
-            getResponseHandler().sendResponse(Boolean.FALSE);
-        } else {
-            getResponseHandler().sendResponse(new TimeoutException());
-        }
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(Boolean.FALSE);
     }
+
+    public Object getWaitKey() {
+        return getName() + ":lock";
+    }
+
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class BindOperation extends Operation implements JoinOperation {
+public class BindOperation extends AbstractClusterOperation implements JoinOperation {
 
     private Address localAddress;
     private Address targetAddress;
@@ -44,7 +43,7 @@ public class BindOperation extends Operation implements JoinOperation {
     }
 
     public void run() {
-        NodeServiceImpl ns = (NodeServiceImpl) getNodeService();
+        NodeEngineImpl ns = (NodeEngineImpl) getNodeEngine();
         ns.getNode().getConnectionManager().bind(getConnection(), localAddress, targetAddress, replyBack);
     }
 

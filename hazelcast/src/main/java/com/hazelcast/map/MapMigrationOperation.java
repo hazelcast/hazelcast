@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -33,7 +33,7 @@ import java.util.Map.Entry;
 /**
  * @mdogan 7/24/12
  */
-public class MapMigrationOperation extends Operation {
+public class MapMigrationOperation extends AbstractOperation {
 
     private Map<String, Map<Data, DataRecordEntry>> data;
     private boolean diff;

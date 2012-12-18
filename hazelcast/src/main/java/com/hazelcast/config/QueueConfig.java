@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,26 +26,70 @@ import java.util.List;
 
 public final class QueueConfig implements DataSerializable {
 
-    public final static int DEFAULT_MAX_SIZE_PER_JVM = 0;
+    public final static int DEFAULT_MAX_SIZE = 0;
+    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;
-    private String backingMapRef;
-    private int maxSizePerJVM = DEFAULT_MAX_SIZE_PER_JVM;
     private List<ItemListenerConfig> listenerConfigs;
-    private int backupCount;
+    private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
+    private int maxSize;
+    private QueueStoreConfig queueStoreConfig;
 
     public QueueConfig() {
     }
 
     public QueueConfig(QueueConfig config) {
+        this();
         this.name = config.name;
-        this.backingMapRef = config.backingMapRef;
-        this.maxSizePerJVM = config.maxSizePerJVM;
-        this.backupCount = 1;
+        this.syncBackupCount = config.syncBackupCount;
+        this.asyncBackupCount = config.asyncBackupCount;
+        this.maxSize = config.maxSize;
+        this.queueStoreConfig = config.queueStoreConfig;
+        this.listenerConfigs = config.listenerConfigs;
     }
 
-    public int getBackupCount(){
-        return backupCount;
+    public int getMaxSize() {
+        return maxSize == 0 ? Integer.MAX_VALUE : maxSize;
+    }
+
+    public QueueConfig setMaxSize(int maxSize) {
+        if (maxSize < 0){
+            throw new IllegalArgumentException("Size of the queue can not be a negative value!");
+        }
+        this.maxSize = maxSize;
+        return this;
+    }
+
+    public int getTotalBackupCount(){
+        return syncBackupCount + asyncBackupCount;
+    }
+
+    public int getSyncBackupCount() {
+        return syncBackupCount;
+    }
+
+    public QueueConfig setSyncBackupCount(int syncBackupCount) {
+        this.syncBackupCount = syncBackupCount;
+        return this;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public QueueConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = asyncBackupCount;
+        return this;
+    }
+
+    public QueueStoreConfig getQueueStoreConfig() {
+        return queueStoreConfig;
+    }
+
+    public void setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
+        this.queueStoreConfig = queueStoreConfig;
     }
 
     /**
@@ -61,36 +105,6 @@ public final class QueueConfig implements DataSerializable {
      */
     public QueueConfig setName(String name) {
         this.name = name;
-        if (backingMapRef == null) {
-            backingMapRef = "q:" + name;
-        }
-        return this;
-    }
-
-    /**
-     * @return the maxSizePerJVM
-     */
-    public int getMaxSizePerJVM() {
-        return maxSizePerJVM;
-    }
-
-    /**
-     * @param maxSizePerJVM the maxSizePerJVM to set
-     */
-    public QueueConfig setMaxSizePerJVM(int maxSizePerJVM) {
-        if (maxSizePerJVM < 0) {
-            throw new IllegalArgumentException("queue max size per JVM must be positive");
-        }
-        this.maxSizePerJVM = maxSizePerJVM;
-        return this;
-    }
-
-    public String getBackingMapRef() {
-        return backingMapRef;
-    }
-
-    public QueueConfig setBackingMapRef(String backingMapRef) {
-        this.backingMapRef = backingMapRef;
         return this;
     }
 
@@ -112,27 +126,20 @@ public final class QueueConfig implements DataSerializable {
 
     public boolean isCompatible(final QueueConfig queueConfig) {
         if (queueConfig == null) return false;
-        return (name != null ? name.equals(queueConfig.name) : queueConfig.name == null) &&
-                this.backingMapRef.equals(queueConfig.backingMapRef) &&
-                this.maxSizePerJVM == queueConfig.maxSizePerJVM;
+        return (name != null ? name.equals(queueConfig.name) : queueConfig.name == null);
     }
 
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(backingMapRef);
-        out.writeInt(maxSizePerJVM);
+        out.writeInt(syncBackupCount);
+        out.writeInt(asyncBackupCount);
+        out.writeInt(maxSize);
     }
 
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
-        backingMapRef = in.readUTF();
-        maxSizePerJVM = in.readInt();
-    }
-
-    @Override
-    public String toString() {
-        return "QueueConfig [name=" + this.name
-                + ", backingMapRef=" + this.backingMapRef
-                + ", maxSizePerJVM=" + this.maxSizePerJVM + "]";
+        syncBackupCount = in.readInt();
+        asyncBackupCount = in.readInt();
+        maxSize = in.readInt();
     }
 }

@@ -1,173 +1,199 @@
+/*
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.queue.proxy;
 
-import com.hazelcast.core.Instance;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/14/12
  * Time: 13:23 AM
- * To change this template use File | Settings | File Templates.
  */
 public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy<E> {
 
-    public ObjectQueueProxy(String name, QueueService queueService, NodeService nodeService) {
-        super(name, queueService, nodeService);
+    public ObjectQueueProxy(String name, QueueService queueService, NodeEngine nodeEngine) {
+        super(name, queueService, nodeEngine);
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        //TODO what to do
+        System.out.println(queueService.getContainer("ali",false).size());
+        return null;
     }
 
     public boolean add(E e) {
-        boolean res = offer(e);
-        if(!res){
+        final boolean res = offer(e);
+        if (!res) {
             throw new IllegalStateException();
         }
-        return res;  //To change body of implemented methods use File | Settings | File Templates.
+        return res;
     }
 
     public boolean offer(E e) {
         try {
-            return offer(e,-1,null);
+            return offer(e, 0, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
-            ex.printStackTrace();
+            return false;
         }
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void put(E e) throws InterruptedException {
-        //To change body of implemented methods use File | Settings | File Templates.
+        offer(e, -1, TimeUnit.MILLISECONDS);
     }
 
-    public boolean offer(E e, long ttl, TimeUnit timeUnit) throws InterruptedException {
-        Data data = nodeService.toData(e);
-        return offerInternal(data,ttl, timeUnit);
+    public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
+        final Data data = nodeEngine.toData(e);
+        return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
     public E take() throws InterruptedException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return poll(-1, TimeUnit.MILLISECONDS);
     }
 
     public int remainingCapacity() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return config.getMaxSize() - size();
     }
 
     public boolean remove(Object o) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        final Data data = nodeEngine.toData(o);
+        return removeInternal(data);
     }
 
     public boolean contains(Object o) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        final Data data = nodeEngine.toData(o);
+        Set<Data> dataSet = new HashSet<Data>(1);
+        dataSet.add(data);
+        return containsInternal(dataSet);
     }
 
     public int drainTo(Collection<? super E> objects) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public int drainTo(Collection<? super E> objects, int i) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return 0;
     }
 
     public E remove() {
-        E res = poll();
-        if(res == null){
+        final E res = poll();
+        if (res == null) {
             throw new NoSuchElementException();
         }
         return res;
     }
 
+    public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        final Data data = pollInternal(timeUnit.toMillis(timeout));
+        return (E) nodeEngine.toObject(data);
+    }
+
     public E poll() {
-        Data data = peekInternal(true);
-        return (E) nodeService.toObject(data);
+        try {
+            return poll(0, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
     }
 
     public E element() {
-        E res = peek();
-        if(res == null){
+        final E res = peek();
+        if (res == null) {
             throw new NoSuchElementException();
         }
         return res;
     }
 
     public E peek() {
-        Data data = peekInternal(false);
-        return (E) nodeService.toObject(data);
+        final Data data = peekInternal();
+        return (E) nodeEngine.toObject(data);
     }
 
     public boolean isEmpty() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return size() == 0;
     }
 
     public Iterator<E> iterator() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return new QueueIterator<E>(listInternal().iterator());
     }
 
     public Object[] toArray() {
-        return new Object[0];  //To change body of implemented methods use File | Settings | File Templates.
+        return listInternal().toArray();
     }
 
     public <T> T[] toArray(T[] ts) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return listInternal().toArray(ts);
     }
 
     public boolean containsAll(Collection<?> objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        Iterator iter = objects.iterator();
+        Set<Data> dataSet = new HashSet<Data>(objects.size());
+        while (iter.hasNext()){
+            Object o = iter.next();
+            final Data data = nodeEngine.toData(o);
+            dataSet.add(data);
+        }
+        return containsInternal(dataSet);
     }
 
     public boolean addAll(Collection<? extends E> es) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public boolean removeAll(Collection<?> objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public boolean retainAll(Collection<?> objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void clear() {
-        //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public String getName() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return name;
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void removeItemListener(ItemListener<E> listener) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public InstanceType getInstanceType() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return InstanceType.QUEUE;
     }
 
     public void destroy() {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public Object getId() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return name;
+    }
+
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("IQueue");
+        sb.append("{name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }

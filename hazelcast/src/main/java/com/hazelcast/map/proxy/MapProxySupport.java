@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,26 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
-import com.hazelcast.map.response.ResponseWithBackupCount;
-import com.hazelcast.map.response.SuccessResponse;
-import com.hazelcast.map.response.UpdateResponse;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.Response;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
 
@@ -45,26 +44,25 @@ abstract class MapProxySupport {
 
     protected final String name;
     protected final MapService mapService;
-    protected final NodeService nodeService;
+    protected final NodeEngine nodeEngine;
 
-    protected MapProxySupport(final String name, final MapService mapService, NodeService nodeService) {
+    protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
         this.name = name;
         this.mapService = mapService;
-        this.nodeService = nodeService;
+        this.nodeEngine = nodeEngine;
     }
 
     protected Data getInternal(Data key) {
-        int partitionId = nodeService.getPartitionId(key);
-        GetOperation getOperation = new GetOperation(name, key);
-        getOperation.setValidateTarget(true);
-        getOperation.setServiceName(MAP_SERVICE_NAME);
+        int partitionId = nodeEngine.getPartitionId(key);
+        GetOperation operation = new GetOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
-            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, getOperation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future f = invocation.invoke();
             return (Data) f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw new HazelcastException(throwable);
         }
     }
 
@@ -73,23 +71,17 @@ abstract class MapProxySupport {
     }
 
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeService.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutOperation putOperation = new PutOperation(name, key, value, txnId,
-                getTTLInMillis(ttl, timeunit));
-        putOperation.setValidateTarget(true);
-        long backupCallId = mapService.createNewBackupCallQueue();
-        putOperation.setBackupCallId(backupCallId);
-        putOperation.setServiceName(MAP_SERVICE_NAME);
+        PutOperation operation = new PutOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
-            Object returnObj = invoke(putOperation, partitionId);
-            UpdateResponse updateResponse = (UpdateResponse) returnObj;
-            checkBackups(partitionId, putOperation, updateResponse);
-            return updateResponse.getOldValue();
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Data) f.get();
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
-        } finally {
-            mapService.removeBackupCallQueue(backupCallId);
+            throw new HazelcastException(throwable);
         }
     }
 
@@ -98,45 +90,32 @@ abstract class MapProxySupport {
     }
 
     protected Data putIfAbsentInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeService.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutIfAbsentOperation putOperation = new PutIfAbsentOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
-        putOperation.setValidateTarget(true);
-        long backupCallId = mapService.createNewBackupCallQueue();
-        putOperation.setBackupCallId(backupCallId);
-        putOperation.setServiceName(MAP_SERVICE_NAME);
-        Data result = null;
+        PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
-            Object returnObj = invoke(putOperation, partitionId);
-            UpdateResponse updateResponse = (UpdateResponse) returnObj;
-            result = updateResponse.getOldValue();
-            if (result == null) {
-                checkBackups(partitionId, putOperation, updateResponse);
-            }
-            return result;
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Data) f.get();
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
-        } finally {
-            mapService.removeBackupCallQueue(backupCallId);
+            throw new HazelcastException(throwable);
         }
     }
 
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeService.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutTransientOperation putOperation = new PutTransientOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
-        putOperation.setValidateTarget(true);
-        long backupCallId = mapService.createNewBackupCallQueue();
-        putOperation.setBackupCallId(backupCallId);
-        putOperation.setServiceName(MAP_SERVICE_NAME);
+        PutTransientOperation operation = new PutTransientOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        operation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Object returnObj = invoke(putOperation, partitionId);
-            UpdateResponse updateResponse = (UpdateResponse) returnObj;
-            checkBackups(partitionId, putOperation, updateResponse);
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+//            Object returnObj = invocation.invoke(operation, partitionId);
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
-        } finally {
-            mapService.removeBackupCallQueue(backupCallId);
+            throw new HazelcastException(throwable);
         }
     }
 
@@ -153,74 +132,38 @@ abstract class MapProxySupport {
     }
 
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeService.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         SetOperation setOperation = new SetOperation(name, key, value, txnId, ttl);
-        setOperation.setValidateTarget(true);
-        long backupCallId = mapService.createNewBackupCallQueue();
-        setOperation.setBackupCallId(backupCallId);
+        setOperation.setThreadId(ThreadContext.get().getThreadId());
         setOperation.setServiceName(MAP_SERVICE_NAME);
         try {
-            Object returnObj = invoke(setOperation, partitionId);
-            UpdateResponse updateResponse = (UpdateResponse) returnObj;
-            checkBackups(partitionId, setOperation, updateResponse);
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, setOperation, partitionId)
+                    .build();
+            invocation.invoke();
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
-        } finally {
-            mapService.removeBackupCallQueue(backupCallId);
+            throw new HazelcastException(throwable);
         }
     }
 
     protected Data removeInternal(Data key) {
-        int partitionId = nodeService.getPartitionId(key);
-        TransactionImpl txn = nodeService.getTransaction();
+        int partitionId = nodeEngine.getPartitionId(key);
+        TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = prepareTransaction(partitionId);
-        RemoveOperation removeOperation = new RemoveOperation(name, key, txnId);
-        removeOperation.setValidateTarget(true);
-
-        long backupCallId = mapService.createNewBackupCallQueue();
-        removeOperation.setBackupCallId(backupCallId);
-        removeOperation.setServiceName(MAP_SERVICE_NAME);
+        RemoveOperation operation = new RemoveOperation(name, key, txnId);
+        operation.setThreadId(ThreadContext.get().getThreadId());
         try {
-            Object returnObj = invoke(removeOperation, partitionId);
-            if (returnObj == null) {
-                return null;
-            }
-            UpdateResponse updateResponse = (UpdateResponse) returnObj;
-            checkBackups(partitionId, removeOperation, updateResponse);
-            return updateResponse.getOldValue();
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Data) f.get();
         } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
-        } finally {
-            mapService.removeBackupCallQueue(backupCallId);
+            throw new HazelcastException(throwable);
         }
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
-        int partitionId = nodeService.getPartitionId(key);
-        TransactionImpl txn = nodeService.getTransaction();
-        String txnId = prepareTransaction(partitionId);
-        RemoveIfSameOperation removeOperation = new RemoveIfSameOperation(name, key, value, txnId);
-        removeOperation.setValidateTarget(true);
-
-        long backupCallId = mapService.createNewBackupCallQueue();
-        removeOperation.setBackupCallId(backupCallId);
-        removeOperation.setServiceName(MAP_SERVICE_NAME);
-        try {
-            Object returnObj = invoke(removeOperation, partitionId);
-            if (returnObj == null) {
-                return false;
-            }
-            SuccessResponse response = (SuccessResponse) returnObj;
-            if(response.isSuccess())
-            checkBackups(partitionId, removeOperation, response);
-
-            return response.isSuccess();
-        } catch (Throwable throwable) {
-            throw (RuntimeException) throwable;
-        } finally {
-            mapService.removeBackupCallQueue(backupCallId);
-        }
+        return false;
     }
 
     protected Object tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
@@ -232,54 +175,53 @@ abstract class MapProxySupport {
     }
 
     protected boolean containsKeyInternal(Data key) {
-        int partitionId = nodeService.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
-        containsKeyOperation.setValidateTarget(true);
         containsKeyOperation.setServiceName(MAP_SERVICE_NAME);
+        containsKeyOperation.setThreadId(ThreadContext.get().getThreadId());
         try {
-            Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation,
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, containsKeyOperation,
                     partitionId).build();
             Future f = invocation.invoke();
-            return (Boolean) nodeService.toObject(f.get());
+            return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
     protected boolean containsValueInternal(final Data value) {
-        try {
-            ContainsValueOperation containsValueOperation = new ContainsValueOperation(name, value);
-            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation);
-            for (Object result : results.values()) {
-                Boolean contains = (Boolean) nodeService.toObject(result);
-                if (contains)
-                    return true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         return false;
     }
 
     public int size() {
         try {
             MapSizeOperation mapSizeOperation = new MapSizeOperation(name);
-            mapSizeOperation.setValidateTarget(true);
-            Map<Integer, Object> results = nodeService.invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
             int total = 0;
             for (Object result : results.values()) {
-                Integer size = (Integer) nodeService.toObject(result);
+                Integer size = (Integer) nodeEngine.toObject(result);
                 total += size;
             }
             return total;
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
         }
-        return 0;
     }
 
     public boolean isEmpty() {
-        return false;
+        try {
+            MapIsEmptyOperation mapIsEmptyOperation = new MapIsEmptyOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapIsEmptyOperation);
+            for (Object result : results.values()) {
+                if (!(Boolean) nodeEngine.toObject(result))
+                    return false;
+            }
+            return true;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected Map<Data, Data> getAllInternal(final Set<Data> keys) {
@@ -291,7 +233,31 @@ abstract class MapProxySupport {
     }
 
     protected void lockInternal(final Data key) {
+        int partitionId = nodeEngine.getPartitionId(key);
+        LockOperation operation = new LockOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
 
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            invocation.invoke();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected void unlockInternal(final Data key) {
+        int partitionId = nodeEngine.getPartitionId(key);
+        UnlockOperation operation = new UnlockOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            invocation.invoke();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected boolean isLockedInternal(final Data key) {
@@ -300,10 +266,6 @@ abstract class MapProxySupport {
 
     protected boolean tryLockInternal(final Data key, final long time, final TimeUnit timeunit) {
         return false;
-    }
-
-    protected void unlockInternal(final Data key) {
-
     }
 
     protected void forceUnlockInternal(final Data key) {
@@ -402,58 +364,14 @@ abstract class MapProxySupport {
 
     }
 
-    protected Object invoke(Operation operation, int partitionId) throws Throwable {
-        Invocation invocation = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
-        Future f = invocation.invoke();
-        Object response = f.get();
-        Object returnObj;
-        if (response instanceof Response) {
-            Response r = (Response) response;
-            returnObj = r.getResultData();
-        } else {
-            // including exceptions...
-            returnObj = response;
-        }
-        return returnObj;
-    }
-
     protected String prepareTransaction(int partitionId) {
-        TransactionImpl txn = nodeService.getTransaction();
+        TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
             txnId = txn.getTxnId();
             txn.attachParticipant(MAP_SERVICE_NAME, partitionId);
         }
         return txnId;
-    }
-
-    protected void checkBackups(int partitionId, BackupAwareOperation operation, ResponseWithBackupCount response)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        int backupCount = response.getBackupCount();
-        if (backupCount > 0) {
-            boolean backupsComplete = true;
-            for (int i = 0; i < backupCount; i++) {
-                BlockingQueue backupResponses = mapService.getBackupCallQueue(operation.getBackupCallId());
-                Object backupResponse = backupResponses.poll(3, TimeUnit.SECONDS);
-                if (backupResponse == null) {
-                    backupsComplete = false;
-                }
-            }
-            if (!backupsComplete) {
-                final Future[] backupResponses = new Future[backupCount];
-                for (int i = 0; i < backupCount; i++) {
-                    GenericBackupOperation backupOp = new GenericBackupOperation(name, operation,
-                            response.getVersion());
-                    backupOp.setInvocation(true);
-                    Invocation backupInv = nodeService.createInvocationBuilder(MAP_SERVICE_NAME, backupOp, partitionId)
-                            .setReplicaIndex(i).build();
-                    backupResponses[i] = backupInv.invoke();
-                }
-                for (Future backupResponse : backupResponses) {
-                    backupResponse.get(5, TimeUnit.SECONDS);
-                }
-            }
-        }
     }
 
     protected long getTTLInMillis(final long ttl, final TimeUnit timeunit) {

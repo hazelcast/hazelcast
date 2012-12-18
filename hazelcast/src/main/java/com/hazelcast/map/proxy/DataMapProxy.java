@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,12 +32,12 @@ import java.util.concurrent.TimeoutException;
 
 public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data> {
 
-    public DataMapProxy(final String name, final MapService mapService, NodeService nodeService) {
-        super(name, mapService, nodeService);
+    public DataMapProxy(final String name, final MapService mapService, NodeEngine nodeEngine) {
+        super(name, mapService, nodeEngine);
     }
 
     public Data get(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return getInternal(key);
     }
 
@@ -86,14 +86,12 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data remove(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return removeInternal(key);
     }
 
-    public boolean remove(final Object k, final Object v) {
-        final Data key = nodeService.toData(k);
-        final Data value = nodeService.toData(v);
-        return removeInternal(key, value);
+    public boolean remove(final Object key, final Object value) {
+        return false;
     }
 
     public Object tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
@@ -105,13 +103,12 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public boolean containsKey(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return containsKeyInternal(key);
     }
 
     public boolean containsValue(final Object value) {
-        Data v = nodeService.toData(value);
-        return containsValueInternal(v);
+        return false;
     }
 
     public Map<Data, Data> getAll(final Set<Data> keys) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -255,7 +255,25 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>
                     <literal>hazelcast.socket.bind.any</literal>
                 </td>
-                <td>Bind node socket address to any local address</td>
+                <td>Bind both server-socket and client-sockets to any local interface</td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.socket.server.bind.any</literal>
+                </td>
+                <td>Bind server-socket to any local interface.
+                    If not set, <literal>hazelcast.socket.bind.any</literal> will be used as default.</td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.socket.client.bind.any</literal>
+                </td>
+                <td>Bind client-sockets to any local interface.
+                    If not set, <literal>hazelcast.socket.bind.any</literal> will be used as default.</td>
                 <td>boolean</td>
                 <td>true</td>
             </tr>

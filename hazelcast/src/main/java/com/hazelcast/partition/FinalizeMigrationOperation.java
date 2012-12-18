@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.MigrationServiceEvent;
-import com.hazelcast.spi.PartitionLockFreeOperation;
-import com.hazelcast.spi.impl.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.PartitionLevelOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -29,7 +29,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
-public class FinalizeMigrationOperation extends AbstractOperation implements PartitionLockFreeOperation {
+public class FinalizeMigrationOperation extends AbstractOperation
+        implements PartitionLevelOperation, MigrationCycleOperation {
 
     private MigrationEndpoint endpoint;     // source of destination
     private MigrationType type;       // move or copy
@@ -60,24 +61,34 @@ public class FinalizeMigrationOperation extends AbstractOperation implements Par
                     service.rollbackMigration(event);
                 }
             } catch (Throwable e) {
-                getNodeService().getLogger(FinalizeMigrationOperation.class.getName()).log(Level.WARNING,
+                getNodeEngine().getLogger(FinalizeMigrationOperation.class.getName()).log(Level.WARNING,
                         "Error while finalizing migration -> " + event, e);
             }
         }
         PartitionService partitionService = getService();
-        partitionService.removeActiveMigration(getPartitionId());
+        MigrationInfo migrationInfo = partitionService.removeActiveMigration(getPartitionId());
+
+        if (success) {
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            nodeEngine.onPartitionMigrate(migrationInfo);
+        }
     }
 
     protected Collection<MigrationAwareService> getServices() {
         Collection<MigrationAwareService> services = new LinkedList<MigrationAwareService>();
-        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        for (Object serviceObject : nodeEngine.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 services.add(service);
             }
         }
         return services;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override

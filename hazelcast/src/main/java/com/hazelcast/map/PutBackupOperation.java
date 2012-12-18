@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class PutBackupOperation extends PutOperation {
 
     public void run() {
         MapService mapService = (MapService) getService();
-        System.out.println(getNodeService().getThisAddress() + " backup " + txnId + " response " + sendResponse);
+        System.out.println(getNodeEngine().getThisAddress() + " backup " + txnId + " response " + sendResponse);
         MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
         Record record = mapPartition.records.get(dataKey);
         if (record == null) {

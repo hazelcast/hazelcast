@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.spi.impl.EventServiceImpl.*;
+import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,9 +39,45 @@ public final class DataSerializerInitHook implements DataSerializerHook {
             }
         });
 
-        factories.put(PartitionIterator.class.getName(), new DataSerializableFactory() {
+        factories.put(MultiResponse.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
-                return new PartitionIterator();
+                return new MultiResponse();
+            }
+        });
+
+        factories.put(EventPacket.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new EventPacket();
+            }
+        });
+
+        factories.put(RegistrationOperation.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new RegistrationOperation();
+            }
+        });
+
+        factories.put(Registration.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new Registration();
+            }
+        });
+
+        factories.put(EmptyFilter.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new EmptyFilter();
+            }
+        });
+
+        factories.put(PartitionIteratingOperation.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new PartitionIteratingOperation();
+            }
+        });
+
+        factories.put(PartitionResponse.class.getName(), new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new PartitionResponse();
             }
         });
 

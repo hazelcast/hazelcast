@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import com.hazelcast.spi.Operation;
 
 public class PartitionInvocationImpl extends InvocationImpl {
 
-    public PartitionInvocationImpl(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
+    public PartitionInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                                    int replicaIndex, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
     }
 
     protected Address getTarget() {

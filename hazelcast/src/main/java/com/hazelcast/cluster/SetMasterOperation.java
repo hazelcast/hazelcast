@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,17 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
-public class SetMasterOperation extends Operation implements JoinOperation {
+public class SetMasterOperation extends AbstractClusterOperation implements JoinOperation {
 
     protected Address masterAddress;
 
@@ -42,9 +41,9 @@ public class SetMasterOperation extends Operation implements JoinOperation {
 
     public void run() {
         ClusterService clusterService = getService();
-        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        Node node = nodeService.getNode();
-        ILogger logger = nodeService.getLogger(SetMasterOperation.class.getName());
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        Node node = nodeEngine.getNode();
+        ILogger logger = nodeEngine.getLogger(SetMasterOperation.class.getName());
         if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
             logger.log(Level.FINEST, "Handling master response: " + this);
             final Address currentMaster = node.getMasterAddress();

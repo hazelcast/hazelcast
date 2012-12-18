@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,13 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.spi.annotation.ExecutedBy;
-import com.hazelcast.spi.annotation.ThreadType;
 import com.hazelcast.spi.exception.TransactionException;
 
 public interface TransactionalService {
 
-    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void prepare(String txnId, int partitionId) throws TransactionException;
 
-    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void commit(String txnId, int partitionId) throws TransactionException;
 
-    @ExecutedBy(ThreadType.PARTITION_THREAD)
     void rollback(String txnId, int partitionId) throws TransactionException;
 }

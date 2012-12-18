@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import com.hazelcast.spi.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
@@ -85,12 +85,13 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public static class MasterClaim extends AbstractOperation implements JoinOperation {
 
+        private transient boolean approvedAsMaster = false;
+
         public void run() {
-            final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-            Node node = nodeService.getNode();
-            ResponseHandler responseHandler = getResponseHandler();
+            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            Node node = nodeEngine.getNode();
+//            ResponseHandler responseHandler = getResponseHandler();
             Joiner joiner = node.getJoiner();
-            boolean approvedAsMaster = false;
             final ILogger logger = node.getLogger(getClass().getName());
             if (joiner instanceof TcpIpJoiner) {
                 TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
@@ -103,7 +104,17 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.WARNING, "This node requires MulticastJoin strategy!");
             }
             logger.log(Level.FINEST, "Sending '" + approvedAsMaster + "' for master claim of node: " + getCaller());
-            responseHandler.sendResponse(approvedAsMaster);
+//            responseHandler.sendResponse(approvedAsMaster);
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        @Override
+        public Object getResponse() {
+            return approvedAsMaster;
         }
     }
 
@@ -168,9 +179,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                             for (Address address : colPossibleAddresses) {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.log(Level.FINEST, "Claiming myself as master node!");
-                                    Invocation inv = node.nodeService.createInvocationBuilder(
-                                            ClusterService.SERVICE_NAME,
-                                            new MasterClaim(), -1).setTarget(address).setTryCount(1).build();
+                                    Invocation inv = node.nodeEngine.getOperationService().createInvocationBuilder(
+                                            ClusterService.SERVICE_NAME, new MasterClaim(), address)
+                                            .setTryCount(1).build();
                                     responses.add(inv.invoke());
                                 }
                             }

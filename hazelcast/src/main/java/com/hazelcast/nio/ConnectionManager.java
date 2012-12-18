@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,7 +238,9 @@ public class ConnectionManager {
         //make sure bind packet is the first packet sent to the end point.
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
         final Data bindData = IOUtil.toData(bind);
-        connection.getWriteHandler().enqueueSocketWritable(new Packet(bindData, -1, connection));
+        final Packet packet = new Packet(bindData, connection);
+        packet.setHeader(Packet.HEADER_OP, true);
+        connection.getWriteHandler().enqueueSocketWritable(packet);
         //now you can send anything...
     }
 

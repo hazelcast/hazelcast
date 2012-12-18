@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import java.io.IOException;
 
 final class Call {
+
     private final Address target;
     private final Callback callback;
 
@@ -30,7 +31,7 @@ final class Call {
         this.callback = callback;
     }
 
-    public void offerResponse(Response response) {
+    public void offerResponse(Object response) {
         callback.notify(response);
     }
 
@@ -43,8 +44,8 @@ final class Call {
     @Override
     public String toString() {
         return "Call{" +
-                "target=" + target +
-                ", callback=" + callback +
-                '}';
+               "target=" + target +
+               ", callback=" + callback +
+               '}';
     }
 }

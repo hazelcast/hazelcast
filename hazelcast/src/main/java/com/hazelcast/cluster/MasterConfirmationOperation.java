@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.AbstractOperation;
 
 import java.util.logging.Level;
 
 /**
  * @mdogan 9/28/12
  */
-public class MasterConfirmationOperation extends AbstractOperation {
+public class MasterConfirmationOperation extends AbstractClusterOperation {
 
     public void run() {
         final Address endpoint = getCaller();
@@ -34,7 +33,7 @@ public class MasterConfirmationOperation extends AbstractOperation {
             return;
         }
         final ClusterService clusterService = getService();
-        final ILogger logger = getNodeService().getLogger(MasterConfirmationOperation.class.getName());
+        final ILogger logger = getNodeEngine().getLogger(MasterConfirmationOperation.class.getName());
         final MemberImpl member = clusterService.getMember(endpoint);
         if (member != null) {
             if (clusterService.isMaster()) {

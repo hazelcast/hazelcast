@@ -1,8 +1,22 @@
+/*
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.queue;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.queue.proxy.DataQueueProxy;
@@ -14,7 +28,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 /**
  * User: ali
@@ -23,7 +36,7 @@ import java.util.logging.Level;
  */
 public class QueueService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService {
 
-    private NodeService nodeService;
+    private NodeEngine nodeEngine;
 
     public static final String NAME = "hz:impl:queueService";
 
@@ -32,27 +45,30 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, QueueProxy> proxies = new ConcurrentHashMap<String, QueueProxy>();
 
-    public QueueService(NodeService nodeService) {
-        this.nodeService = nodeService;
-        this.logger = nodeService.getLogger(QueueService.class.getName());
+    public QueueService(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(QueueService.class.getName());
     }
 
-    public Queue<Data> getQueue(final String name) {
+    public QueueContainer getContainer(final String name, boolean fromBackup) {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(nodeService.getPartitionId(nodeService.toData(name)));
-            containerMap.put(name, container);
+            container = new QueueContainer(this, nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), name);
+            QueueContainer existing = containerMap.putIfAbsent(name, container);
+            if (existing != null) {
+                container = existing;
+            }
         }
-        return container.dataQueue;
+        container.setFromBackup(fromBackup);
+        return container;
     }
 
     public void addContainer(String name, QueueContainer container) {
         containerMap.put(name, container);
     }
 
-
-    public void init(NodeService nodeService, Properties properties) {
-        this.nodeService = nodeService;
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        this.nodeEngine = nodeEngine;
     }
 
     public void destroy() {
@@ -63,14 +79,14 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
             return null; // is it possible
         }
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
-            if (container.partitionId == event.getPartitionId()) {
+            if (container.partitionId == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
                 migrationData.put(name, container);
             }
         }
@@ -78,40 +94,50 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public void commitMigration(MigrationServiceEvent event) {
-        logger.log(Level.FINEST, "commit " + event.getPartitionId());
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
-                && event.getMigrationType() == MigrationType.MOVE) {
-            cleanMigrationData(event.getPartitionId());
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
+            if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK){
+                cleanMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
+            }
         }
     }
 
     public void rollbackMigration(MigrationServiceEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            cleanMigrationData(event.getPartitionId());
+            cleanMigrationData(event.getPartitionId(), -1);
         }
     }
 
-    private void cleanMigrationData(int partitionId) {
+    public int getMaxBackupCount() {
+        int max = 0;
+        for (QueueContainer container : containerMap.values()) {
+            int c = container.getConfig().getTotalBackupCount();
+            max = Math.max(max,  c);
+        }
+        return max;
+    }
+
+    private void cleanMigrationData(int partitionId, int copyBack) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            if (iterator.next().getValue().partitionId == partitionId) {
+            QueueContainer container = iterator.next().getValue();
+            if (container.partitionId == partitionId && (copyBack ==-1 || container.getConfig().getTotalBackupCount() < copyBack)) {
                 iterator.remove();
             }
         }
     }
 
-    public void memberAdded(MemberImpl member) {
+    public void memberAdded(MembershipServiceEvent membershipEvent) {
     }
 
-    public void memberRemoved(MemberImpl member) {
+    public void memberRemoved(MembershipServiceEvent membershipEvent) {
     }
 
     public ServiceProxy getProxy(Object... params) {
         final String name = String.valueOf(params[0]);
         if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new DataQueueProxy(name, this, nodeService);
+            return new DataQueueProxy(name, this, nodeEngine);
         }
-        final QueueProxy proxy = new ObjectQueueProxy(name, this, nodeService);
+        final QueueProxy proxy = new ObjectQueueProxy(name, this, nodeEngine);
         final QueueProxy currentProxy = proxies.putIfAbsent(name, proxy);
         return currentProxy != null ? currentProxy : proxy;
     }
@@ -119,4 +145,5 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public Collection<ServiceProxy> getProxies() {
         return new HashSet<ServiceProxy>(proxies.values());
     }
+
 }

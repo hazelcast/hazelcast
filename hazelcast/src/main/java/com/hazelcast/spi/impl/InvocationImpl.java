@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     private static final Object RETRY = new Object();
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
-    protected final NodeServiceImpl nodeService;
+    protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
@@ -41,9 +41,9 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     private volatile int invokeCount = 0;
     private volatile boolean done = false;
 
-    InvocationImpl(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
+    InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                    int replicaIndex, int tryCount, long tryPauseMillis) {
-        this.nodeService = nodeService;
+        this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
@@ -53,16 +53,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     }
 
     public void notify(Object result) {
-        if (result instanceof Response) {
-            Response response = (Response) result;
-            if (response.isException()) {
-                setResult(response.getResult());
-            } else {
-                setResult(response.getResultData());
-            }
-        } else {
-            setResult(result);
-        }
+        setResult(result);
     }
 
     protected abstract Address getTarget();
@@ -70,7 +61,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     public final Future invoke() {
         try {
             invokeCount++;
-            nodeService.invoke(this);
+            nodeEngine.operationService.invoke(this);
         } catch (Exception e) {
             if (e instanceof RetryableException) {
                 setResult(e);
@@ -92,7 +83,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
         try {
             return doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            nodeService.getLogger(getClass().getName()).log(Level.FINEST, e.getMessage(), e);
+            nodeEngine.getLogger(getClass().getName()).log(Level.FINEST, e.getMessage(), e);
             return null;
         }
     }
@@ -154,7 +145,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     }
 
     public PartitionInfo getPartitionInfo() {
-        return nodeService.getPartitionInfo(partitionId);
+        return nodeEngine.getPartitionInfo(partitionId);
     }
 
     public int getReplicaIndex() {

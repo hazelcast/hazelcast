@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
 public class SetOperation extends BasePutOperation {
@@ -28,11 +29,27 @@ public class SetOperation extends BasePutOperation {
     }
 
     @Override
-    void initFlags() {
-        LOAD_OLD = false;
-        RETURN_OLD_VALUE = false;
+    public void doOp() {
+        if (prepareTransaction()) {
+            return;
+        }
+        record = mapPartition.records.get(dataKey);
+        if (record == null) {
+            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
+        } else {
+            record.setValueData(dataValue);
+        }
+        record.setActive();
+        record.setDirty(true);
+        mapPartition.records.put(dataKey, record);
+        store();
     }
 
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
+    }
 
     @Override
     public String toString() {

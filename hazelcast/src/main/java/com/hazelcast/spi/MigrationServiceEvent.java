@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.MigrationType;
 
 import java.util.EventObject;
@@ -35,6 +36,11 @@ public class MigrationServiceEvent extends EventObject {
     private final int replicaIndex;
 
     private final int copyBackReplicaIndex;
+
+    public MigrationServiceEvent(final MigrationEndpoint migrationEndpoint, final MigrationInfo migrationInfo) {
+        this(migrationEndpoint, migrationInfo.getPartitionId(), migrationInfo.getReplicaIndex(),
+                migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex());
+    }
 
     public MigrationServiceEvent(final MigrationEndpoint migrationEndpoint,
                                  final int partitionId, final int replicaIndex,

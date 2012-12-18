@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class GenericBackupOperation extends AbstractNamedKeyBasedOperation implements Comparable<GenericBackupOperation> {
+public class GenericBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
 
     enum BackupOpType {
         PUT,
@@ -39,23 +40,17 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
     Data dataValue = null;
     long ttl = LockOperation.DEFAULT_LOCK_TTL; // how long should the lock live?
     BackupOpType backupOpType = BackupOpType.PUT;
-    Address firstCallerAddress = null;
-    long firstCallerId = -1;
-    boolean invocation = false;
-    long version = 0;
 
-    public GenericBackupOperation(String name, Data dataKey, Data dataValue, long ttl, long version) {
+    public GenericBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name, dataKey);
         this.ttl = ttl;
         this.dataValue = dataValue;
-        this.version = version;
     }
 
-    public GenericBackupOperation(String name, BackupAwareOperation op, long version) {
+    public GenericBackupOperation(String name, TTLAwareOperation op) {
         super(name, op.getKey());
         this.ttl = op.ttl;
         this.dataValue = op.getValue();
-        this.version = version;
     }
 
     public GenericBackupOperation() {
@@ -65,22 +60,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         this.backupOpType = backupOpType;
     }
 
-    public void setFirstCallerId(long firstCallerId, Address firstCallerAddress) {
-        this.firstCallerId = firstCallerId;
-        this.firstCallerAddress = firstCallerAddress;
-    }
-
     public void run() {
-        MapService mapService = (MapService) getService();
-        mapService.getPartitionContainer(getPartitionId()).handleBackupOperation(this);
-    }
-
-    void backupAndReturn() {
-        doBackup();
-        sendResponse();
-    }
-
-    void doBackup() {
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         Address caller = getCaller();
@@ -88,7 +68,8 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         if (backupOpType == BackupOpType.PUT) {
             Record record = mapPartition.records.get(dataKey);
             if (record == null) {
-                record = new DefaultRecord(mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
+                record = new DefaultRecord(mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1,
+                        mapService.nextId());
                 mapPartition.records.put(dataKey, record);
             } else {
                 record.setValueData(dataValue);
@@ -114,22 +95,14 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         }
     }
 
-    void sendResponse() {
-        int partitionId = getPartitionId();
-        if (invocation) {
-            getResponseHandler().sendResponse(Boolean.TRUE);
-        } else {
-            final AsyncBackupResponse backupResponse = new AsyncBackupResponse();
-            backupResponse.setServiceName(MapService.MAP_SERVICE_NAME).setCallId(firstCallerId)
-                    .setPartitionId(partitionId).setReplicaIndex(0);
-            getNodeService().send(backupResponse, partitionId, firstCallerAddress);
-        }
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
     }
 
-    public int compareTo(GenericBackupOperation another) {
-        long thisVal = this.version;
-        long anotherVal = another.version;
-        return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
@@ -138,14 +111,6 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
         out.writeInt(backupOpType.ordinal());
-        out.writeLong(firstCallerId);
-        boolean NULL = (firstCallerAddress == null);
-        out.writeBoolean(NULL);
-        if (!NULL) {
-            firstCallerAddress.writeData(out);
-        }
-        out.writeBoolean(invocation);
-        out.writeLong(version);
     }
 
     @Override
@@ -154,17 +119,5 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
         backupOpType = BackupOpType.values()[in.readInt()];
-        firstCallerId = in.readLong();
-        boolean NULL = in.readBoolean();
-        if (!NULL) {
-            firstCallerAddress = new Address();
-            firstCallerAddress.readData(in);
-        }
-        invocation = in.readBoolean();
-        version = in.readLong();
-    }
-
-    public void setInvocation(boolean invocation) {
-        this.invocation = invocation;
     }
 }

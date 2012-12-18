@@ -1,118 +1,155 @@
+/*
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.Data;
-import com.hazelcast.queue.OfferOperation;
-import com.hazelcast.queue.PeekOperation;
-import com.hazelcast.queue.QueueService;
-import com.hazelcast.queue.QueueSizeOperation;
+import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
-import java.util.concurrent.ExecutionException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/14/12
  * Time: 12:47 AM
- * To change this template use File | Settings | File Templates.
  */
 abstract class QueueProxySupport {
 
-    protected final String name;
-    protected final QueueService queueService;
-    protected final NodeService nodeService;
-    protected final int partitionId;
-    protected final QueueConfig config;
+    final String name;
+    final QueueService queueService;
+    final NodeEngine nodeEngine;
+    final int partitionId;
+    final QueueConfig config;
 
-    protected QueueProxySupport(final String name, final QueueService queueService, NodeService nodeService) {
+    QueueProxySupport(final String name, final QueueService queueService, NodeEngine nodeEngine) {
         this.name = name;
         this.queueService = queueService;
-        this.nodeService = nodeService;
-        this.partitionId = nodeService.getPartitionId(nodeService.toData(name));
-        this.config = nodeService.getConfig().getQueueConfig(name);
+        this.nodeEngine = nodeEngine;
+        this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
+        this.config = nodeEngine.getConfig().getQueueConfig(name);
     }
 
-    protected boolean offerInternal(Data data, long ttl, TimeUnit timeUnit) {
+    boolean offerInternal(Data data, long timeout) {
+        checkNull(data);
         try {
-            int backupCount = getBackupCount();
-            boolean result = true;
-            final Future[] futures = new Future[backupCount+1];
-            for(int i=0; i <= backupCount; i++){
-                OfferOperation offerOperation = new OfferOperation(name, data);
-                offerOperation.setValidateTarget(true);
-                offerOperation.setServiceName(QueueService.NAME);
-                InvocationBuilder builder = nodeService.createInvocationBuilder(QueueService.NAME, offerOperation, getPartitionId());
-                builder.setReplicaIndex(i);
-                Invocation inv =  builder.build();
-                futures[i] = inv.invoke();
-            }
-            for (Future f: futures){
-                Object r = f.get();
-                result = result && (Boolean)nodeService.toObject(r);
-                if(!result){
-                    break;
-                }
-            }
-            return result;
+            OfferOperation operation = new OfferOperation(name, timeout, data);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
+            throwable.printStackTrace();
             throw new RuntimeException(throwable);
         }
     }
 
     public int size() {
-        QueueSizeOperation sizeOperation = new QueueSizeOperation(name);
-        sizeOperation.setValidateTarget(true);
-        sizeOperation.setServiceName(QueueService.NAME);
         try {
-            Invocation invocation = nodeService.createInvocationBuilder(QueueService.NAME, sizeOperation, getPartitionId()).build();
+            SizeOperation operation = new SizeOperation(name);
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future future = invocation.invoke();
             Object result = future.get();
-            return (Integer) nodeService.toObject(result);
+            return (Integer) nodeEngine.toObject(result);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return 0;
     }
 
-    protected Data peekInternal(boolean poll){
+    public void clear() {
         try {
-            int backupCount = getBackupCount();
-            final Future<Data>[] futures = new Future[backupCount+1];
-            for(int i=0; i <= backupCount; i++){
-                PeekOperation peekOperation = new PeekOperation(name, poll);
-                peekOperation.setValidateTarget(true);
-                peekOperation.setServiceName(QueueService.NAME);
-                InvocationBuilder builder = nodeService.createInvocationBuilder(QueueService.NAME, peekOperation, getPartitionId());
-                builder.setReplicaIndex(i);
-                Invocation inv = builder.build();
-                futures[i] = inv.invoke();
-            }
-            Data result = null;
-            for(int i=0; i <= backupCount; i++){
-                Data r = futures[i].get();
-                if(i == 0){
-                    result = r;
-                }
-            }
-            return result;
+            ClearOperation operation = new ClearOperation(name);
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future future = invocation.invoke();
+            future.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    Data peekInternal() {
+        try {
+            PeekOperation operation = new PeekOperation(name);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future<Data> f = inv.invoke();
+            return f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
 
+    Data pollInternal(long timeout) {
+        try {
+            PollOperation operation = new PollOperation(name, timeout);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future<Data> f = inv.invoke();
+            return f.get();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    boolean removeInternal(Data data) {
+        checkNull(data);
+        try {
+            RemoveOperation operation = new RemoveOperation(name, data);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    boolean containsInternal(Set<Data> dataSet) {
+        try {
+            ContainsOperation operation = new ContainsOperation(name, dataSet);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    List<Data> listInternal(){
+        try {
+            IteratorOperation operation = new IteratorOperation(name);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (List<Data>)nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
 
     private int getPartitionId() {
         return partitionId;
     }
 
-    private int getBackupCount(){
-        int queueBackupCount = config.getBackupCount();
-        return Math.min(nodeService.getCluster().getMembers().size() - 1, queueBackupCount);
+    private void checkNull(Data data) {
+        if (data == null) {
+            throw new NullPointerException();
+        }
     }
 
 

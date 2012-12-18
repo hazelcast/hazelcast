@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
@@ -29,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class MemberInfoUpdateOperation extends Operation implements JoinOperation {
+public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation {
 
     private static final long serialVersionUID = -2311579721761844861L;
 
@@ -54,9 +53,6 @@ public class MemberInfoUpdateOperation extends Operation implements JoinOperatio
             final ClusterService clusterService = getService();
             clusterService.setMasterTime(masterTime);
             clusterService.updateMembers(getMemberInfos());
-            getResponseHandler().sendResponse(Boolean.TRUE);
-        } else {
-            getResponseHandler().sendResponse(Boolean.FALSE);
         }
     }
 

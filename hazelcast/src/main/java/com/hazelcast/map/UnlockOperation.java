@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,17 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.*;
 import com.hazelcast.nio.Data;
 
-public class UnlockOperation extends BackupAwareOperation {
+public class UnlockOperation extends TTLAwareOperation implements BackupAwareOperation, Notifier {
+
+    PartitionContainer pc;
+    ResponseHandler responseHandler;
+    MapPartition mapPartition;
+    MapService mapService;
+    NodeEngine nodeEngine;
+    boolean unlocked = false;
 
     public UnlockOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -28,27 +35,56 @@ public class UnlockOperation extends BackupAwareOperation {
     public UnlockOperation() {
     }
 
+    protected void init() {
+        responseHandler = getResponseHandler();
+        mapService = getService();
+        nodeEngine = getNodeEngine();
+        pc = mapService.getPartitionContainer(getPartitionId());
+        mapPartition = pc.getMapPartition(name);
+    }
+
+    public void beforeRun() {
+        init();
+    }
+
     public void run() {
-        // careful: Unlock cannot be scheduled.
-        int partitionId = getPartitionId();
-        ResponseHandler responseHandler = getResponseHandler();
-        MapService mapService = (MapService) getService();
-        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
-        MapPartition mapPartition = mapService.getMapPartition(partitionId, name);
+        doOp();
+    }
+
+    public void doOp() {
         LockInfo lock = mapPartition.getLock(getKey());
-        if (lock != null && lock.testLock(threadId, getCaller())) {
+        if (lock == null)
+            return;
+        if (lock.testLock(threadId, getCaller())) {
             if (lock.unlock(getCaller(), threadId)) {
-                GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl, pc.incrementAndGetVersion());
-                backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.UNLOCK);
-                int backupCount = mapPartition.getBackupCount();
-                getNodeService().sendBackups(MapService.MAP_SERVICE_NAME, backupOp, partitionId, backupCount);
+                unlocked = true;
             }
-            responseHandler.sendResponse(Boolean.TRUE);
-            if (!lock.isLocked()) {
-                pc.onUnlock(lock, name, getKey());
-            }
-        } else {
-            responseHandler.sendResponse(Boolean.FALSE);
         }
+    }
+
+    public boolean shouldBackup() {
+        return unlocked;
+    }
+
+    public int getSyncBackupCount() {
+        return mapPartition.getBackupCount();
+    }
+
+    public int getAsyncBackupCount() {
+        return mapPartition.getAsyncBackupCount();
+    }
+
+    public Operation getBackupOperation() {
+        GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
+        backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.UNLOCK);
+        return backupOp;
+    }
+
+    public boolean shouldNotify() {
+        return unlocked;
+    }
+
+    public Object getNotifiedKey() {
+        return getName() + ":lock";
     }
 }

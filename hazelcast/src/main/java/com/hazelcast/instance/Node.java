@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.Util;
@@ -72,7 +72,7 @@ public class Node {
 
     private final NodeType localNodeType;
 
-    public final NodeServiceImpl nodeService;
+    public final NodeEngineImpl nodeEngine;
 
     public final PartitionService partitionService;
 
@@ -150,7 +150,7 @@ public class Node {
             Util.throwUncheckedException(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        nodeService = new NodeServiceImpl(this);
+        nodeEngine = new NodeEngineImpl(this);
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterService = new ClusterService(this);
         partitionService = new PartitionService(this);
@@ -298,7 +298,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.INFO, "** setting master address to " + master.toString());
+            logger.log(Level.FINEST, "** setting master address to " + master.toString());
         }
         masterAddress = master;
     }
@@ -306,7 +306,7 @@ public class Node {
     public void start() {
         logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
-        nodeService.start();
+        nodeEngine.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(hazelcastInstance.threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
@@ -392,7 +392,7 @@ public class Node {
 //            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
 //            clientHandlerService.shutdown();
             logger.log(Level.FINEST, "Shutting down the partitionManager");
-            nodeService.shutdown();
+            nodeEngine.shutdown();
             if (multicastService != null) {
                 logger.log(Level.FINEST, "Shutting down the multicast service");
                 multicastService.stop();

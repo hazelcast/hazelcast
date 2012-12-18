@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,21 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.impl.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.logging.Level;
 
 /**
  * @mdogan 9/14/12
  */
-public class AuthenticationFailureOperation extends AbstractOperation
+public class AuthenticationFailureOperation extends AbstractClusterOperation
         implements JoinOperation {
 
     public void run() {
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        final Node node = nodeService.getNode();
-        final ILogger logger = nodeService.getLogger("com.hazelcast.security");
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final Node node = nodeEngine.getNode();
+        final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.log(Level.SEVERE, "Authentication failed on master node! Node is going to shutdown now!");
         node.shutdown(true, true);
     }

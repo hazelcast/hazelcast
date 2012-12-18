@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,45 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionInvocationImpl;
 import com.hazelcast.spi.impl.TargetInvocationImpl;
 
 public class InvocationBuilder {
 
-    private final NodeServiceImpl nodeService;
+    private final NodeEngineImpl nodeEngine;
     private final String serviceName;
     private final Operation op;
     private final int partitionId;
-    private Address target;
+    private final Address target;
     private int replicaIndex = 0;
     private int tryCount = 100;
     private long tryPauseMillis = 500;
 
-    public InvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId) {
-        this.nodeService = nodeService;
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
+        this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
+        this.target = null;
     }
 
-    public InvocationBuilder(NodeServiceImpl nodeService, String serviceName, Operation op,
-                             int partitionId, int replicaIndex, int tryCount, long tryPauseMillis) {
-        this.nodeService = nodeService;
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
+        this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
-        this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
-        this.tryCount = tryCount;
-        this.tryPauseMillis = tryPauseMillis;
+        this.partitionId = -1;
+        this.target = target;
     }
+
 
     public InvocationBuilder setReplicaIndex(int replicaIndex) {
+        if (replicaIndex < 0 || replicaIndex >= PartitionInfo.MAX_REPLICA_COUNT) {
+            throw new IllegalArgumentException("Replica index is out of range [0-"
+                    + (PartitionInfo.MAX_REPLICA_COUNT - 1) + "]");
+        }
         this.replicaIndex = replicaIndex;
         return this;
     }
@@ -66,21 +69,12 @@ public class InvocationBuilder {
         return this;
     }
 
-    public InvocationBuilder setTarget(final Address target) {
-        this.target = target;
-        return this;
-    }
-
     public String getServiceName() {
         return serviceName;
     }
 
     public Operation getOp() {
         return op;
-    }
-
-    public PartitionInfo getPartitionInfo() {
-        return partitionId > -1 ? nodeService.getPartitionInfo(partitionId) : null;
     }
 
     public int getReplicaIndex() {
@@ -99,11 +93,15 @@ public class InvocationBuilder {
         return target;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     public Invocation build() {
         if (target == null) {
-            return new PartitionInvocationImpl(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+            return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
         } else {
-            return new TargetInvocationImpl(nodeService, serviceName, op, partitionId, replicaIndex, target, tryCount, tryPauseMillis);
+            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,18 +86,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
-//        new Thread(new Runnable() {
-//            public void run() {
-//                while (true) {
-//                    try {
-//                        Thread.sleep(5000);
-//                        System.out.println(threadMonitoringService);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        }).start();
     }
 
     public ThreadMonitoringService getThreadMonitoringService() {
@@ -169,7 +157,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public Collection<Instance> getInstances() {
         final Collection<Instance> instances = new LinkedList<Instance>();
-        Collection<RemoteService> services = node.nodeService.getServices(RemoteService.class);
+        Collection<RemoteService> services = node.nodeEngine.getServices(RemoteService.class);
         for (RemoteService service : services) {
             final Collection<ServiceProxy> proxies = service.getProxies();
             if (proxies != null && !proxies.isEmpty()) {
@@ -200,7 +188,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, String name) {
-        Collection services = node.nodeService.getServices(serviceClass);
+        Collection services = node.nodeEngine.getServices(serviceClass);
         for (Object service : services) {
             if (serviceClass.isAssignableFrom(service.getClass())) {
                 return (S) ((RemoteService) service).getProxy(name);
@@ -210,7 +198,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <S extends ServiceProxy> S getServiceProxy(final String serviceName, String name) {
-        Object service = node.nodeService.getService(serviceName);
+        Object service = node.nodeEngine.getService(serviceName);
         if (service == null) {
             throw new NullPointerException();
         }
@@ -293,7 +281,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (instanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
             for (final InstanceListener instanceListener : instanceListeners) {
-                node.nodeService.getEventService().execute(new Runnable() {
+                node.nodeEngine.getEventService().executeEvent(new Runnable() {
                     public void run() {
                         instanceListener.instanceCreated(instanceEvent);
                     }
@@ -306,7 +294,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (instanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED, instance);
             for (final InstanceListener instanceListener : instanceListeners) {
-                node.nodeService.getEventService().execute(new Runnable() {
+                node.nodeEngine.getEventService().executeEvent(new Runnable() {
                     public void run() {
                         instanceListener.instanceDestroyed(instanceEvent);
                     }

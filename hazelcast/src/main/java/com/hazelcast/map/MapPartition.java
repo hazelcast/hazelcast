@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,23 @@ package com.hazelcast.map;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.nio.Data;
+import com.hazelcast.partition.PartitionInfo;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class MapPartition {
     final String name;
     final PartitionInfo partitionInfo;
     final PartitionContainer partitionContainer;
-    final Map<Data, Record> records = new HashMap<Data, Record>(1000);
-    final Map<Data, LockInfo> locks = new HashMap<Data, LockInfo>(100);
+    final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
+    final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
     final MapLoader loader;
     final MapStore store;
     final long writeDelayMillis = 0;
     final int backupCount;
+    final int asyncBackupCount;
 
     public MapPartition(String name, PartitionContainer partitionContainer) {
         this.name = name;
@@ -43,6 +44,7 @@ public class MapPartition {
         loader = null;
         store = null;
         backupCount = partitionContainer.getMapConfig(name).getBackupCount();
+        asyncBackupCount = partitionContainer.getMapConfig(name).getAsyncBackupCount();
     }
 
     public LockInfo getOrCreateLock(Data key) {
@@ -64,6 +66,14 @@ public class MapPartition {
 
     public int getBackupCount() {
         return backupCount;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
     }
 
     boolean canRun(LockAwareOperation op) {

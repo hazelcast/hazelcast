@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,12 @@
 
 package com.hazelcast.core;
 
-import java.util.EventObject;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.DataSerializable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * Membership event fired when a new member is added
@@ -24,7 +29,7 @@ import java.util.EventObject;
  *
  * @see MembershipListener
  */
-public class MembershipEvent extends EventObject {
+public class MembershipEvent implements DataSerializable {
 
     private static final long serialVersionUID = -2010865371829087371L;
 
@@ -36,25 +41,18 @@ public class MembershipEvent extends EventObject {
 
     private int eventType;
 
-    public MembershipEvent(Cluster cluster, Member member, int eventType) {
-        super(cluster);
+    public MembershipEvent() {
+    }
+
+    public MembershipEvent(Member member, int eventType) {
         this.member = member;
         this.eventType = eventType;
     }
 
     /**
-     * Returns the cluster of the event.
-     *
-     * @return
-     */
-    public Cluster getCluster() {
-        return (Cluster) getSource();
-    }
-
-    /**
      * Returns the membership event type; #MEMBER_ADDED or #MEMBER_REMOVED
      *
-     * @return the membeship event type
+     * @return the membership event type
      */
     public int getEventType() {
         return eventType;
@@ -67,6 +65,17 @@ public class MembershipEvent extends EventObject {
      */
     public Member getMember() {
         return member;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        member.writeData(out);
+        out.writeInt(eventType);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        member = new MemberImpl();
+        member.readData(in);
+        eventType = in.readInt();
     }
 
     @Override

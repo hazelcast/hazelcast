@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -27,19 +27,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class PartitionStateOperation extends AbstractOperation {
-    private PartitionRuntimeState partitionState;
+public class PartitionStateOperation extends AbstractOperation implements Runnable {
 
-//    public PartitionStateOperation(final Collection<MemberImpl> members,
-//                                   final PartitionInfo[] partitions,
-//                                   final MigrationInfo migrationInfo,
-//                                   final long masterTime, int version) {
-//        final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
-//        for (MemberImpl member : members) {
-//            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
-//        }
-//        partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfo, masterTime, version);
-//    }
+    private PartitionRuntimeState partitionState;
 
     public PartitionStateOperation(final Collection<MemberImpl> members,
                                    final PartitionInfo[] partitions,
@@ -59,7 +49,6 @@ public class PartitionStateOperation extends AbstractOperation {
         partitionState.setEndpoint(getCaller());
         PartitionService partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);
-        getResponseHandler().sendResponse(null);
     }
 
     public void readInternal(DataInput in) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ class AddressPicker {
             final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
             final AddressDefinition bindAddressDef = pickAddress(networkConfig);
             final boolean reuseAddress = networkConfig.isReuseAddress();
-            final boolean bindAny = node.getGroupProperties().SOCKET_BIND_ANY.getBoolean();
+            final boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
             serverSocketChannel = ServerSocketChannel.open();
             final ServerSocket serverSocket = serverSocketChannel.socket();
             /**
