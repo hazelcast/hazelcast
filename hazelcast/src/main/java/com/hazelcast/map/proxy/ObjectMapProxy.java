@@ -63,8 +63,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return toObject(result);
     }
 
-    public boolean tryPut(final K key, final V value, final long timeout, final TimeUnit timeunit) {
-        return false;
+    public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
+        return tryPutInternal(key, value, timeout, timeunit);
     }
 
     public V putIfAbsent(final K k, final V v) {

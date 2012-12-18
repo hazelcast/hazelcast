@@ -59,7 +59,7 @@ public abstract class LockAwareOperation extends TTLAwareOperation implements Wa
     }
 
     public long getWaitTimeoutMillis() {
-        return ttl;
+        return -1;
     }
 
     public void onWaitExpire() {

@@ -205,10 +205,10 @@ public class MapTest {
     public void testMapReplace() {
         IMap map = getInstance().getMap("testMapReplace");
         map.put(1, 1);
-        assertNull(map.replace(2,1));
+        assertNull(map.replace(2, 1));
         assertNull(map.get(2));
         map.put(2, 2);
-        assertEquals(2, map.replace(2,3));
+        assertEquals(2, map.replace(2, 3));
         assertEquals(3, map.get(2));
     }
 
@@ -216,8 +216,8 @@ public class MapTest {
     public void testMapReplaceIfSame() {
         IMap map = getInstance().getMap("testMapReplaceIfSame");
         map.put(1, 1);
-        assertFalse(map.replace(1,2,3));
-        assertTrue(map.replace(1,1,2));
+        assertFalse(map.replace(1, 2, 3));
+        assertTrue(map.replace(1, 1, 2));
         assertEquals(map.get(1), 2);
         map.put(2, 2);
         assertTrue(map.replace(2,2,3));
@@ -258,6 +258,36 @@ public class MapTest {
         map.unlock("key3");
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
+
+
+
+    @Test
+    public void testMapTryPut() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapTryPut");
+        map.lock("key1");
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    assertFalse(map.tryPut("key1", "value1", 1, TimeUnit.SECONDS));
+                    assertNull(map.get("key1"));
+
+                    assertTrue(map.tryPut("key", "value", 1, TimeUnit.SECONDS));
+                    assertEquals(map.get("key"), "value");
+
+                    assertTrue(map.tryPut("key1", "value1", 30, TimeUnit.SECONDS));
+                    assertEquals(map.get("key1"), "value1");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail(e.getMessage());
+                }
+            }
+        });
+        thread.start();
+        Thread.sleep(3000);
+        map.unlock("key1");
+        thread.join();
+    }
+
 
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {

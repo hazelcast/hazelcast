@@ -50,11 +50,11 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data put(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-       return putInternal(key, value, ttl, timeunit);
+        return putInternal(key, value, ttl, timeunit);
     }
 
     public boolean tryPut(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
-        return false;
+        return tryPutInternal(key, value, timeout, timeunit);
     }
 
     public Data putIfAbsent(final Data k, final Data v) {

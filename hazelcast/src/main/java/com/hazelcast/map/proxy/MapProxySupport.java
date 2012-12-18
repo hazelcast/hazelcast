@@ -73,7 +73,7 @@ abstract class MapProxySupport {
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutOperation operation = new PutOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        PutOperation operation = new PutOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadContext.get().getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
@@ -86,13 +86,24 @@ abstract class MapProxySupport {
     }
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
-        return false;
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        TryPutOperation operation = new TryPutOperation(name, key, value, txnId, getTimeInMillis(timeout, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Boolean) f.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected Data putIfAbsentInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadContext.get().getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
@@ -107,7 +118,7 @@ abstract class MapProxySupport {
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
-        PutTransientOperation operation = new PutTransientOperation(name, key, value, txnId, getTTLInMillis(ttl, timeunit));
+        PutTransientOperation operation = new PutTransientOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadContext.get().getThreadId());
         operation.setServiceName(MAP_SERVICE_NAME);
         try {
@@ -260,7 +271,8 @@ abstract class MapProxySupport {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-            invocation.invoke();
+            Future future = invocation.invoke();
+            future.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -273,7 +285,8 @@ abstract class MapProxySupport {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-            invocation.invoke();
+            Future future = invocation.invoke();
+            future.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -384,7 +397,7 @@ abstract class MapProxySupport {
         return txnId;
     }
 
-    protected long getTTLInMillis(final long ttl, final TimeUnit timeunit) {
-        return timeunit != null ? timeunit.toMillis(ttl) : ttl;
+    protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
+        return timeunit != null ? timeunit.toMillis(time) : time;
     }
 }
