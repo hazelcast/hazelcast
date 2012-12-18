@@ -63,11 +63,6 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     public Object getResponse() {
         return locked;
     }

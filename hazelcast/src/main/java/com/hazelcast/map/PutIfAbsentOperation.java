@@ -35,10 +35,10 @@ public class PutIfAbsentOperation extends BasePutOperation {
 
     protected void load() {
         if (mapPartition.loader != null) {
-            if (key == null) {
-                key = toObject(dataKey);
+            if (keyObject == null) {
+                keyObject = toObject(dataKey);
             }
-            Object oldValue = mapPartition.loader.load(key);
+            Object oldValue = mapPartition.loader.load(keyObject);
             oldValueData = toData(oldValue);
             absent = oldValue == null;
         }

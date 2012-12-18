@@ -26,7 +26,6 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    Object key;
     Record record;
 
     Data oldValueData;
@@ -36,6 +35,10 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     MapService mapService;
     NodeEngine nodeEngine;
 
+    public BasePutOperation(String name, Data dataKey, Data value, String txnId) {
+        super(name, dataKey, value, -1);
+        setTxnId(txnId);
+    }
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, ttl);
@@ -72,18 +75,18 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     protected void load() {
         if (mapPartition.loader != null) {
-            key = toObject(dataKey);
-            Object oldValue = mapPartition.loader.load(key);
+            keyObject = toObject(dataKey);
+            Object oldValue = mapPartition.loader.load(keyObject);
             oldValueData = toData(oldValue);
         }
     }
 
     protected void store() {
         if (mapPartition.store != null && mapPartition.writeDelayMillis == 0) {
-            if (key == null) {
-                key = toObject(dataKey);
+            if (keyObject == null) {
+                keyObject = toObject(dataKey);
             }
-            mapPartition.store.store(key, record.getValue());
+            mapPartition.store.store(keyObject, record.getValue());
         }
     }
 

@@ -18,32 +18,39 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.Data;
 
-public class RemoveOperation extends BaseRemoveOperation {
+import static com.hazelcast.nio.IOUtil.toObject;
 
-    public RemoveOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey, txnId);
+public class ReplaceOperationwithOldValue extends BasePutOperation {
+
+    Data testValue;
+    Object testObject;
+
+    public ReplaceOperationwithOldValue(String name, Data dataKey, Data oldValue, Data value, String txnId) {
+        super(name, dataKey, value, txnId);
+        testValue = oldValue;
+        testObject =  toObject(oldValue);
     }
 
-    public RemoveOperation() {
-    }
-
-    public void beforeRun() {
-        init();
+    public ReplaceOperationwithOldValue() {
     }
 
     public void doOp() {
         if (prepareTransaction()) {
             return;
         }
-        prepareValue();
+        record = mapPartition.records.get(dataKey);
         if (record != null) {
-            remove();
-            store();
+            oldValueData = record.getValueData();
+            record.setValueData(dataValue);
         }
+        record.setActive();
+        record.setDirty(true);
+        store();
     }
+
 
     @Override
     public String toString() {
-        return "RemoveOperation{" + name + "}";
+        return "ReplaceOperation{" + name + "}";
     }
 }

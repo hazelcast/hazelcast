@@ -63,8 +63,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return toObject(result);
     }
 
-    public boolean tryPut(final K key, final V value, final long timeout, final TimeUnit timeunit) {
-        return false;
+    public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
+        return tryPutInternal(key, value, timeout, timeunit);
     }
 
     public V putIfAbsent(final K k, final V v) {
@@ -88,12 +90,17 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return null;
     }
 
-    public boolean replace(final K key, final V oldValue, final V newValue) {
-        return false;
+    public boolean replace(final K k, final V o, final V v) {
+        final Data key = nodeEngine.toData(k);
+        final Data oldValue = nodeEngine.toData(o);
+        final Data value = nodeEngine.toData(v);
+        return replaceInternal(key,oldValue,value);
     }
 
-    public V replace(final K key, final V value) {
-        return null;
+    public V replace(final K k, final V v) {
+        final Data key = nodeEngine.toData(k);
+        final Data value = nodeEngine.toData(v);
+        return toObject(replaceInternal(key, value));
     }
 
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
