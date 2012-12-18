@@ -247,7 +247,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 boolean firstError = true;
                 while (running.get()) {
                     if(versionMismatch){
-                        Thread.sleep(1000);
+                        Thread.sleep(1000*60);
                         versionMismatch = false;
                     }
 
