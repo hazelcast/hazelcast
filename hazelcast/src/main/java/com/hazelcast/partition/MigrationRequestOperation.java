@@ -65,11 +65,15 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             final NodeEngine nodeEngine = getNodeEngine();
             final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             final Collection<Operation> tasks = prepareMigrationTasks();
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
-                    new MigrationOperation(migrationInfo, tasks), to)
-                    .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
-            Future future = inv.invoke();
-            success = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
+            if (tasks.size() > 0) {
+                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
+                        new MigrationOperation(migrationInfo, tasks), to)
+                        .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
+                Future future = inv.invoke();
+                success = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
+            } else {
+                success = true;
+            }
         } catch (Throwable e) {
             onError(e);
         }
