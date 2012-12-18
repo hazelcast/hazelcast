@@ -16,7 +16,6 @@
 
 package com.hazelcast.impl.management;
 
-import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
@@ -69,6 +68,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private volatile boolean urlChanged = false;
     private final int updateIntervalMs;
     private final ManagementCenterConfig managementCenterConfig;
+    private boolean versionMismatch = false;
 
     public ManagementCenterService(FactoryImpl factoryImpl) {
         this.factory = factoryImpl;
@@ -228,7 +228,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         return list;
     }
 
+    public void setVersionMismatch(boolean mismatch){
+        versionMismatch = mismatch;
+    }
+
     class StateSender extends Thread {
+
         StateSender() {
             super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.State.Sender"));
         }
@@ -241,6 +246,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             try {
                 boolean firstError = true;
                 while (running.get()) {
+                    if(versionMismatch){
+                        Thread.sleep(1000);
+                        versionMismatch = false;
+                    }
+
                     try {
                         URL url = new URL(webServerUrl + "collector.do");
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -298,7 +308,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
-            register(new logVersionMismatchRequest());
+            register(new LogVersionMismatchRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
