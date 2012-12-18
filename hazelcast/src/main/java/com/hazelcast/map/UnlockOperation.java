@@ -71,7 +71,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
     }
 
     public int getAsyncBackupCount() {
-        return 0;
+        return mapPartition.getAsyncBackupCount();
     }
 
     public Operation getBackupOperation() {

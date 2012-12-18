@@ -35,6 +35,7 @@ public class MapPartition {
     final MapStore store;
     final long writeDelayMillis = 0;
     final int backupCount;
+    final int asyncBackupCount;
 
     public MapPartition(String name, PartitionContainer partitionContainer) {
         this.name = name;
@@ -43,6 +44,7 @@ public class MapPartition {
         loader = null;
         store = null;
         backupCount = partitionContainer.getMapConfig(name).getBackupCount();
+        asyncBackupCount = partitionContainer.getMapConfig(name).getAsyncBackupCount();
     }
 
     public LockInfo getOrCreateLock(Data key) {
@@ -64,6 +66,14 @@ public class MapPartition {
 
     public int getBackupCount() {
         return backupCount;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
     }
 
     boolean canRun(LockAwareOperation op) {

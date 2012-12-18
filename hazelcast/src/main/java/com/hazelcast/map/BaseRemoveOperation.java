@@ -104,7 +104,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public int getAsyncBackupCount() {
-        return 0;
+        return mapPartition.getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {

@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.MigrationType;
 
 import java.util.EventObject;
@@ -35,6 +36,11 @@ public class MigrationServiceEvent extends EventObject {
     private final int replicaIndex;
 
     private final int copyBackReplicaIndex;
+
+    public MigrationServiceEvent(final MigrationEndpoint migrationEndpoint, final MigrationInfo migrationInfo) {
+        this(migrationEndpoint, migrationInfo.getPartitionId(), migrationInfo.getReplicaIndex(),
+                migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex());
+    }
 
     public MigrationServiceEvent(final MigrationEndpoint migrationEndpoint,
                                  final int partitionId, final int replicaIndex,

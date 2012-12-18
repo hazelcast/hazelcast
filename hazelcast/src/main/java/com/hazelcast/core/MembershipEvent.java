@@ -44,7 +44,7 @@ public class MembershipEvent implements DataSerializable {
     public MembershipEvent() {
     }
 
-    public MembershipEvent(Cluster cluster, Member member, int eventType) {
+    public MembershipEvent(Member member, int eventType) {
         this.member = member;
         this.eventType = eventType;
     }

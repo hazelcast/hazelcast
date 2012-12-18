@@ -16,13 +16,12 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class PartitionInfo {
-    public static final int MAX_REPLICA_COUNT = MapConfig.MAX_BACKUP_COUNT + 1;
+    public static final int MAX_REPLICA_COUNT = 7;
 
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);

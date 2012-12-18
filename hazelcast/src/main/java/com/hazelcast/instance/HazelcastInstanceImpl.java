@@ -86,18 +86,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
         managementService.register();
-//        new Thread(new Runnable() {
-//            public void run() {
-//                while (true) {
-//                    try {
-//                        Thread.sleep(5000);
-//                        System.out.println(threadMonitoringService);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        }).start();
     }
 
     public ThreadMonitoringService getThreadMonitoringService() {

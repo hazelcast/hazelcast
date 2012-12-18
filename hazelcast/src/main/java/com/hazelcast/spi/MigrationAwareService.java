@@ -29,4 +29,6 @@ public interface MigrationAwareService {
 
     void rollbackMigration(MigrationServiceEvent migrationServiceEvent);
 
+    int getMaxBackupCount();
+
 }

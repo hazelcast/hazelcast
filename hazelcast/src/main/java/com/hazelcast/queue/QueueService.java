@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -108,6 +107,15 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         }
     }
 
+    public int getMaxBackupCount() {
+        int max = 0;
+        for (QueueContainer container : containerMap.values()) {
+            int c = container.getConfig().getTotalBackupCount();
+            max = Math.max(max,  c);
+        }
+        return max;
+    }
+
     private void cleanMigrationData(int partitionId, int copyBack) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -118,10 +126,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         }
     }
 
-    public void memberAdded(MemberImpl member) {
+    public void memberAdded(MembershipServiceEvent membershipEvent) {
     }
 
-    public void memberRemoved(MemberImpl member) {
+    public void memberRemoved(MembershipServiceEvent membershipEvent) {
     }
 
     public ServiceProxy getProxy(Object... params) {

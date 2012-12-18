@@ -28,18 +28,8 @@ import java.util.Collection;
 import java.util.List;
 
 public class PartitionStateOperation extends AbstractOperation implements Runnable {
-    private PartitionRuntimeState partitionState;
 
-//    public PartitionStateOperation(final Collection<MemberImpl> members,
-//                                   final PartitionInfo[] partitions,
-//                                   final MigrationInfo migrationInfo,
-//                                   final long masterTime, int version) {
-//        final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
-//        for (MemberImpl member : members) {
-//            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
-//        }
-//        partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfo, masterTime, version);
-//    }
+    private PartitionRuntimeState partitionState;
 
     public PartitionStateOperation(final Collection<MemberImpl> members,
                                    final PartitionInfo[] partitions,
@@ -59,7 +49,6 @@ public class PartitionStateOperation extends AbstractOperation implements Runnab
         partitionState.setEndpoint(getCaller());
         PartitionService partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);
-//        getResponseHandler().sendResponse(null);
     }
 
     public void readInternal(DataInput in) throws IOException {

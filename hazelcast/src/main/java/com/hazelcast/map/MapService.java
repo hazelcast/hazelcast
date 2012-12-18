@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
@@ -30,11 +29,12 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -113,6 +113,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
+    public int getMaxBackupCount() {
+        int max = 1;
+        for (PartitionContainer container : partitionContainers) {
+            max = Math.max(max, container.getMaxBackupCount());
+        }
+        return max;
+    }
+
     private void clearPartitionData(final int partitionId) {
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
@@ -186,10 +194,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return new HashSet<ServiceProxy>(proxies.values());
     }
 
-    public void memberAdded(final MemberImpl member) {
+    public void memberAdded(final MembershipServiceEvent membershipEvent) {
     }
 
-    public void memberRemoved(final MemberImpl member) {
+    public void memberRemoved(final MembershipServiceEvent membershipEvent) {
         // submit operations to partition threads to;
         // * release locks
         // * rollback transaction

@@ -99,7 +99,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public int getAsyncBackupCount() {
-        return 0;
+        return mapPartition.getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
