@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.KeyBasedOperation;

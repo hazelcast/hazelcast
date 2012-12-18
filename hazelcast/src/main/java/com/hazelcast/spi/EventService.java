@@ -16,9 +16,26 @@
 
 package com.hazelcast.spi;
 
+import java.util.Collection;
+
 /**
  * @mdogan 12/14/12
  */
 public interface EventService {
 
+    EventRegistration registerListener(String serviceName, String topic, Object listener);
+
+    EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);
+
+    void deregisterListener(String serviceName, String id);
+
+    Collection<EventRegistration> getRegistrations(String serviceName, String topic);
+
+    EventRegistration[] getRegistrationsAsArray(String serviceName, String topic);
+
+    void publishEvent(String serviceName, EventRegistration registration, Object event);
+
+    void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event);
+
+    void executeEvent(Runnable eventRunnable);
 }

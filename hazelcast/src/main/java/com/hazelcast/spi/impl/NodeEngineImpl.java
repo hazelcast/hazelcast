@@ -35,7 +35,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
 
 public class NodeEngineImpl implements NodeEngine {
 
@@ -57,7 +56,7 @@ public class NodeEngineImpl implements NodeEngine {
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
-        waitNotifyService = new WaitNotifyService(new WaitingOpProcessorImpl());
+        waitNotifyService = new WaitNotifyService(this, new WaitingOpProcessorImpl());
     }
 
     @PrivateApi
@@ -130,8 +129,14 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @PrivateApi
-    public void handleOperation(Packet packet) {
-        operationService.handleOperation(packet);
+    public void handlePacket(Packet packet) {
+        if (packet.isHeaderSet(Packet.HEADER_OP)) {
+            operationService.handleOperation(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+            eventService.handleEvent(packet);
+        } else {
+            throw new IllegalArgumentException("Unknown packet type !");
+        }
     }
 
     @PrivateApi
@@ -176,16 +181,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @PrivateApi
-    @Deprecated
-    public ExecutorService getEventExecutor() {
-        return executionService.eventExecutorService;
-    }
-
-    @PrivateApi
     public void shutdown() {
         waitNotifyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
+        eventService.shutdown();
         operationService.shutdown();
     }
 

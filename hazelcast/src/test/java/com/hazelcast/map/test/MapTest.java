@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -192,14 +193,47 @@ public class MapTest {
     @Test
     public void testMapSize() {
         IMap map = getInstance().getMap("testMapSize");
-        assertEquals(map.size(),0);
-        map.put(1,1);
-        assertEquals(map.size(),1);
-        map.put(2,2);
-        map.put(3,3);
-        assertEquals(map.size(),3);
+        assertEquals(map.size(), 0);
+        map.put(1, 1);
+        assertEquals(map.size(), 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        assertEquals(map.size(), 3);
     }
 
+    @Test
+    public void testMapLockAndUnlock() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlock");
+        map.lock("key1");
+        map.lock("key2");
+        map.lock("key3");
+        final CountDownLatch latch = new CountDownLatch(3);
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    map.put("key1", "value1");
+                    latch.countDown();
+                    map.put("key2", "value2");
+                    latch.countDown();
+                    map.put("key3", "value3");
+                    latch.countDown();
+                } catch (Exception e) {
+                    fail(e.getMessage());
+                }
+            }
+        });
+        thread.start();
+        Thread.sleep(1000);
+        assertEquals(3, latch.getCount());
+        map.unlock("key1");
+        Thread.sleep(1000);
+        assertEquals(2, latch.getCount());
+        map.unlock("key2");
+        Thread.sleep(1000);
+        assertEquals(1, latch.getCount());
+        map.unlock("key3");
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+    }
 
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {

@@ -19,10 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.*;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -48,6 +45,11 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     public BasePutOperation() {
     }
 
+
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
+    }
+
     protected boolean prepareTransaction() {
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
@@ -62,6 +64,10 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
         mapPartition = pc.getMapPartition(name);
+    }
+
+    public void beforeRun() {
+        init();
     }
 
     protected void load() {

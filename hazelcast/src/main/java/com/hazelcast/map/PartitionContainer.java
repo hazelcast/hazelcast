@@ -30,20 +30,14 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * TODO: Things to resolve:
- * 1) what will happen to the scheduled ops when a partition migrates?
- * Should we force them to redo or auto-expire each op?
- * 2) when a member dies, each partition should get notified for proper cleanup.
- */
+
 public class PartitionContainer {
     private final Config config;
     private final MapService mapService;
     final PartitionInfo partitionInfo;
     final ConcurrentMap<String, MapPartition> maps = new ConcurrentHashMap<String, MapPartition>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
-    final ConcurrentMap<ScheduledOperationKey, Queue<ScheduledOperation>> mapScheduledOperations
-            = new ConcurrentHashMap<ScheduledOperationKey, Queue<ScheduledOperation>>(1000);
+
 
     public PartitionContainer(Config config, final MapService mapService, final PartitionInfo partitionInfo) {
         this.config = config;
@@ -53,7 +47,6 @@ public class PartitionContainer {
 
     void onDeadAddress(Address deadAddress) {
         // invalidate scheduled operations of dead
-        invalidateScheduledOpsForDeadCaller(deadAddress);
         // invalidate transactions of dead
         // invalidate locks owned by dead
     }
@@ -117,122 +110,5 @@ public class PartitionContainer {
         }
     }
 
-    void scheduleOp(LockAwareOperation op) {
-        ScheduledOperationKey key = new ScheduledOperationKey(op.getName(), op.getKey());
-        Queue<ScheduledOperation> qScheduledOps = mapScheduledOperations.get(key);
-        if (qScheduledOps == null) {
-            qScheduledOps = new LinkedList<ScheduledOperation>(); // TODO: qScheduledOps may need to be thread-safe
-            mapScheduledOperations.put(key, qScheduledOps);
-        }
-        qScheduledOps.add(new ScheduledOperation(op));
-    }
 
-    /**
-     * Should not be called from a schedulable operations as
-     * we might be removing the lock object
-     */
-    void onUnlock(LockInfo lock, String name, Data key) {
-        ScheduledOperationKey scheduledOperationKey = new ScheduledOperationKey(name, key);
-        Queue<ScheduledOperation> scheduledOps = mapScheduledOperations.get(scheduledOperationKey);
-        ScheduledOperation scheduledOp = scheduledOps.peek();
-        LockAwareOperation op = scheduledOp.getOperation();
-        while (!scheduledOp.isValid() || lock.testLock(op.getThreadId(), op.getCaller())) {
-            scheduledOps.poll();
-            if (scheduledOp.isValid()) {
-                if (scheduledOp.expired()) {
-                    op.onExpire();
-                } else {
-                    op.doOp();
-                }
-                scheduledOp.setValid(false);
-            }
-            scheduledOp = scheduledOps.peek();
-            op = scheduledOp.getOperation();
-        }
-        if (scheduledOps.isEmpty()) {
-            mapScheduledOperations.remove(scheduledOperationKey);
-        }
-        if (!lock.isLocked()) {
-            getMapPartition(name).removeLock(key);
-        }
-    }
-
-    /**
-     * MapService should periodically invalidate the expired scheduled ops so that
-     * waiting calls can be notified eventually. We will scan all scheduled ops
-     * every second and notify callers of expired ops. In order to reduce the cost of
-     * scanning, we should store them efficiently. That is why scheduled ops are
-     * stored per partitions, not per map. (imagine having 1000 maps, we don't want
-     * to loops all these maps every second)
-     */
-    void invalidateExpiredScheduledOps() {
-        Iterator<Queue<ScheduledOperation>> it = mapScheduledOperations.values().iterator();
-        while (it.hasNext()) {
-            Queue<ScheduledOperation> qScheduledOps = it.next();
-            Iterator<ScheduledOperation> itOps = qScheduledOps.iterator();
-            while (itOps.hasNext()) {
-                ScheduledOperation so = itOps.next();
-                if (so.isValid() && so.expired()) {
-                    so.getOperation().onExpire();
-                    so.setValid(false);
-                    itOps.remove();
-                }
-            }
-            if (qScheduledOps.isEmpty()) {
-                it.remove();
-            }
-        }
-    }
-
-    /**
-     * When a member dies, all its scheduled ops has to be invalidated
-     *
-     * @param deadAddress
-     */
-    void invalidateScheduledOpsForDeadCaller(Address deadAddress) {
-        Iterator<Queue<ScheduledOperation>> it = mapScheduledOperations.values().iterator();
-        while (it.hasNext()) {
-            Queue<ScheduledOperation> qScheduledOps = it.next();
-            Iterator<ScheduledOperation> itOps = qScheduledOps.iterator();
-            while (itOps.hasNext()) {
-                ScheduledOperation so = itOps.next();
-                if (deadAddress.equals(so.getOperation().getCaller())) {
-                    itOps.remove();
-                }
-            }
-            if (qScheduledOps.isEmpty()) {
-                it.remove();
-            }
-        }
-    }
-
-    /**
-     * Expires all scheduled ops for a given map.
-     * This should be called when a map is destroyed.
-     *
-     * @param mapName name of the destroyed map
-     */
-    void expireScheduledOps(String mapName) {
-        Iterator<ScheduledOperationKey> itKeys = mapScheduledOperations.keySet().iterator();
-        while (itKeys.hasNext()) {
-            ScheduledOperationKey key = itKeys.next();
-            if (key.mapName.equals(mapName)) {
-                Queue<ScheduledOperation> ops = mapScheduledOperations.get(key);
-                if (ops != null) {
-                    Iterator<ScheduledOperation> itOps = ops.iterator();
-                    while (itOps.hasNext()) {
-                        ScheduledOperation so = itOps.next();
-                        if (so.isValid()) {
-                            so.getOperation().onExpire();
-                            so.setValid(false);
-                        }
-                        itOps.remove();
-                    }
-                    if (ops.isEmpty()) {
-                        itKeys.remove();
-                    }
-                }
-            }
-        }
-    }
 }

@@ -293,7 +293,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (instanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
             for (final InstanceListener instanceListener : instanceListeners) {
-                node.nodeEngine.getEventExecutor().execute(new Runnable() {
+                node.nodeEngine.getEventService().executeEvent(new Runnable() {
                     public void run() {
                         instanceListener.instanceCreated(instanceEvent);
                     }
@@ -306,7 +306,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (instanceListeners.size() > 0) {
             final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED, instance);
             for (final InstanceListener instanceListener : instanceListeners) {
-                node.nodeEngine.getEventExecutor().execute(new Runnable() {
+                node.nodeEngine.getEventService().executeEvent(new Runnable() {
                     public void run() {
                         instanceListener.instanceDestroyed(instanceEvent);
                     }

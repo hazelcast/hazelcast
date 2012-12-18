@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.util.FastExecutor;
 import com.hazelcast.util.SpinLock;
 import com.hazelcast.util.SpinReadWriteLock;
 
@@ -55,11 +57,14 @@ final class OperationServiceImpl implements OperationService {
     private final Lock[] ownerLocks = new Lock[100000];
     private final Lock[] backupLocks = new Lock[1000];
     private final SpinReadWriteLock[] partitionLocks;
+    private final FastExecutor executor;
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class.getName());
+        executor = new FastExecutor(5, new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                node.getThreadPoolNamePrefix("operation"), node.getConfig().getClassLoader()));
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
         }
@@ -117,7 +122,7 @@ final class OperationServiceImpl implements OperationService {
         final Operation parentOp = (Operation) ThreadContext.get().getCurrentOperation();
         boolean allowed = true;
         if (parentOp != null) {
-            if (op instanceof BackupOperation) {
+            if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
                 // OK!
             } else if (parentOp instanceof PartitionLevelOperation) {
                 if (op instanceof PartitionLevelOperation
@@ -164,9 +169,7 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
-        final Executor executor = packet.isHeaderSet(Packet.HEADER_EVENT)
-                ? nodeEngine.executionService.eventExecutorService : nodeEngine.executionService.cachedExecutorService;
-        executor.execute(new RemoteOperationExecutor(packet));
+        executor.execute(new RemoteOperationProcessor(packet));
     }
 
     public void runOperation(final Operation op) {
@@ -300,7 +303,7 @@ final class OperationServiceImpl implements OperationService {
                                 backupResponse = backupOp;    // TODO: fix me! what if backup migrates after response is returned?
                             } else {
                                 final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                        .setReplicaIndex(replicaIndex).build().invoke();
+                                        .setReplicaIndex(replicaIndex).setTryCount(10).build().invoke();
                                 if (returnsResponse) {
                                     syncBackups.add(f);
                                 }
@@ -318,7 +321,7 @@ final class OperationServiceImpl implements OperationService {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
                             final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                    .setReplicaIndex(replicaIndex).build().invoke();
+                                    .setReplicaIndex(replicaIndex).setTryCount(10).build().invoke();
                             if (returnsResponse) {
                                 asyncBackups.add(f);
                             }
@@ -357,12 +360,10 @@ final class OperationServiceImpl implements OperationService {
 
     private void handleOperationError(Operation op, Throwable e) {
         if (e instanceof RetryableException) {
-            logger.log(Level.WARNING, "While executing op: " + op + " -> "
-                    + e.getClass() + ": " + e.getMessage());
-            logger.log(Level.FINEST, e.getMessage(), e);
+            final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
+            logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
         } else {
-            logger.log(Level.SEVERE, "While executing op: " + op + " -> "
-                    + e.getMessage(), e);
+            logger.log(Level.SEVERE, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
         sendResponse(op, e);
     }
@@ -437,6 +438,7 @@ final class OperationServiceImpl implements OperationService {
         Map<Address, ArrayList<Integer>> memberPartitions = new HashMap<Address, ArrayList<Integer>>(members);
         for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
             Address owner = node.partitionService.getPartitionOwner(i);
+            // todo inifinite while is not good. convert it to wait 1 minute
             while (owner == null) { // partition assignment is not completed yet
                 try {
                     Thread.sleep(1);
@@ -496,14 +498,14 @@ final class OperationServiceImpl implements OperationService {
             runOperation(op); // TODO: not sure what to do here...
             return true;
         } else {
-            return send(op, nodeEngine.getNode().getConnectionManager().getOrConnect(target));
+            return send(op, node.getConnectionManager().getOrConnect(target));
         }
     }
 
     public boolean send(final Operation op, final Connection connection) {
         Data opData = IOUtil.toData(op);
         final Packet packet = new Packet(opData, connection);
-        packet.setHeader(Packet.HEADER_EVENT, op instanceof EventOperation);
+        packet.setHeader(Packet.HEADER_OP, true);
         return node.clusterService.send(packet, connection);
     }
 
@@ -527,10 +529,10 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    private class RemoteOperationExecutor implements Runnable {
+    private class RemoteOperationProcessor implements Runnable {
         private final Packet packet;
 
-        private RemoteOperationExecutor(final Packet packet) {
+        private RemoteOperationProcessor(final Packet packet) {
             this.packet = packet;
         }
 
@@ -541,13 +543,8 @@ final class OperationServiceImpl implements OperationService {
                 final Operation op = (Operation) IOUtil.toObject(data);
                 op.setNodeEngine(nodeEngine).setCaller(caller);
                 op.setConnection(packet.getConn());
-                if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
-                    op.setResponseHandler(ResponseHandlerFactory.NO_RESPONSE_HANDLER);
-                    nodeEngine.eventService.onEvent((EventOperation) op);
-                } else {
-                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-                    runOperation(op);
-                }
+                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+                runOperation(op);
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 send(new ErrorResponse(node.getThisAddress(), e), packet.getConn());
@@ -562,6 +559,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     void shutdown() {
+        executor.shutdown();
         mapCalls.clear();
     }
 
