@@ -19,8 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.WaitSupport;
 
-import java.util.concurrent.TimeoutException;
-
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class LockAwareOperation extends TTLAwareOperation implements WaitSupport{

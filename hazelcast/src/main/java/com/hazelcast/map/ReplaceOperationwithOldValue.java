@@ -20,18 +20,18 @@ import com.hazelcast.nio.Data;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class ReplaceOperationwithOldValue extends BasePutOperation {
+public class ReplaceOperationWithOldValue extends BasePutOperation {
 
     Data testValue;
     Object testObject;
 
-    public ReplaceOperationwithOldValue(String name, Data dataKey, Data oldValue, Data value, String txnId) {
+    public ReplaceOperationWithOldValue(String name, Data dataKey, Data oldValue, Data value, String txnId) {
         super(name, dataKey, value, txnId);
         testValue = oldValue;
         testObject =  toObject(oldValue);
     }
 
-    public ReplaceOperationwithOldValue() {
+    public ReplaceOperationWithOldValue() {
     }
 
     public void doOp() {

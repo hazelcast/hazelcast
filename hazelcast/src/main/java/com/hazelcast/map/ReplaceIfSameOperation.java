@@ -24,8 +24,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
 public class ReplaceIfSameOperation extends BasePutOperation {
 
     Data testValue;
