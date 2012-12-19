@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 public class SingleResultSet extends AbstractSet<MapEntry> {
     private final ConcurrentMap<Long, ? extends MapEntry> records;
 
-    public SingleResultSet(ConcurrentMap<Long, Record> records) {
+    public SingleResultSet(ConcurrentMap<Long, ? extends MapEntry> records) {
         this.records = records;
     }
 

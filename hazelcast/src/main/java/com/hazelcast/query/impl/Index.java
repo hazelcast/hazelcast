@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Record;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.PredicateType;
 import com.hazelcast.query.impl.Predicates.GetExpressionImpl;
@@ -30,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 public class Index {
     // recordId -- indexValue
     private final ConcurrentMap<Long, Long> recordValues = new ConcurrentHashMap<Long, Long>(100, 0.75f, 1);
-    // indexValue -- Map<recordId, Record>
+    // indexValue -- Map<recordId, IndexEntry>
     private final IndexStore indexStore;
     private final Expression expression;
     private final boolean ordered;
@@ -61,7 +60,7 @@ public class Index {
         }
     }
 
-    public void index(Long newValue, Record record) {
+    public void index(Long newValue, IndexEntry record) {
         if (expression != null && returnType == -1) {
             returnType = record.getIndexTypes()[attributeIndex];
         }
@@ -103,7 +102,7 @@ public class Index {
         }
     }
 
-    private void newRecordIndex(Long newValue, Record record) {
+    private void newRecordIndex(Long newValue, IndexEntry record) {
         Long recordId = record.getId();
         indexStore.newRecordIndex(newValue, record);
         recordValues.put(recordId, newValue);
@@ -250,22 +249,6 @@ public class Index {
 
     public int getAttributeIndex() {
         return attributeIndex;
-    }
-
-    ConcurrentMap<Long, Long> getRecordValues() {
-        return recordValues;
-    }
-
-    ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords() {
-        return indexStore.getMapRecords();
-    }
-
-    public Expression getExpression() {
-        return expression;
-    }
-
-    public boolean isOrdered() {
-        return ordered;
     }
 
     public boolean isStrong() {

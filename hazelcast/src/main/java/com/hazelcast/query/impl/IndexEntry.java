@@ -17,20 +17,11 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.PredicateType;
 
-import java.util.Set;
+public interface IndexEntry extends MapEntry {
+    long getId();
 
-public interface IndexStore {
-    void getSubRecordsBetween(MultiResultSet results, Long from, Long to);
+    boolean isActive();
 
-    void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue);
-
-    void newRecordIndex(Long newValue, IndexEntry record);
-
-    void removeRecordIndex(Long oldValue, Long recordId);
-
-    Set<MapEntry> getRecords(Long value);
-
-    void getRecords(MultiResultSet results, Set<Long> values);
+    byte[] getIndexTypes();
 }

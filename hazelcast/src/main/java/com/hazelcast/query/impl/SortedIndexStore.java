@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Record;
 import com.hazelcast.query.PredicateType;
 import com.hazelcast.util.NavigableSet;
 import com.hazelcast.util.concurrent.ConcurrentSkipListSet;
@@ -27,19 +26,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class SortedIndexStore implements IndexStore {
-    private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
+    private final ConcurrentMap<Long, ConcurrentMap<Long, IndexEntry>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, IndexEntry>>(100, 0.75f, 1);
     private final NavigableSet<Long> sortedSet = new ConcurrentSkipListSet<Long>();
 
     public void getSubRecordsBetween(MultiResultSet results, Long from, Long to) {
         Set<Long> values = sortedSet.subSet(from, to);
         for (Long value : values) {
-            ConcurrentMap<Long, Record> records = mapRecords.get(value);
+            ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
             if (records != null) {
                 results.addResultSet(value, records.values());
             }
         }
         // to wasn't included so include now
-        ConcurrentMap<Long, Record> records = mapRecords.get(to);
+        ConcurrentMap<Long, IndexEntry> records = mapRecords.get(to);
         if (records != null) {
             results.addResultSet(to, records.values());
         }
@@ -66,14 +65,13 @@ public class SortedIndexStore implements IndexStore {
                 notEqual = true;
                 break;
         }
-
         if (values != null) {
             for (Long value : values) {
                 if (notEqual && searchedValue.longValue() == value.longValue()) {
                     // skip this value if predicateType is NOT_EQUAL
                     continue;
                 }
-                ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
                 if (records != null) {
                     results.addResultSet(value, records.values());
                 }
@@ -81,11 +79,11 @@ public class SortedIndexStore implements IndexStore {
         }
     }
 
-    public void newRecordIndex(Long newValue, Record record) {
+    public void newRecordIndex(Long newValue, IndexEntry record) {
         long recordId = record.getId();
-        ConcurrentMap<Long, Record> records = mapRecords.get(newValue);
+        ConcurrentMap<Long, IndexEntry> records = mapRecords.get(newValue);
         if (records == null) {
-            records = new ConcurrentHashMap<Long, Record>(1, 0.75f, 1);
+            records = new ConcurrentHashMap<Long, IndexEntry>(1, 0.75f, 1);
             mapRecords.put(newValue, records);
             sortedSet.add(newValue);
         }
@@ -93,7 +91,7 @@ public class SortedIndexStore implements IndexStore {
     }
 
     public void removeRecordIndex(Long oldValue, Long recordId) {
-        ConcurrentMap<Long, Record> records = mapRecords.get(oldValue);
+        ConcurrentMap<Long, IndexEntry> records = mapRecords.get(oldValue);
         if (records != null) {
             records.remove(recordId);
             if (records.size() == 0) {
@@ -109,15 +107,11 @@ public class SortedIndexStore implements IndexStore {
 
     public void getRecords(MultiResultSet results, Set<Long> values) {
         for (Long value : values) {
-            ConcurrentMap<Long, Record> records = mapRecords.get(value);
+            ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
             if (records != null) {
                 results.addResultSet(value, records.values());
             }
         }
-    }
-
-    public ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords() {
-        return mapRecords;
     }
 
     @Override
