@@ -45,14 +45,14 @@ public class MapMigrationOperation extends AbstractOperation {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         this.diff = diff;
         data = new HashMap<String, Map<Data, DataRecordEntry>>(container.maps.size());
-        for (Entry<String, MapPartition> entry : container.maps.entrySet()) {
+        for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
             final MapConfig mapConfig = container.getMapConfig(name);
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
 
-            MapPartition mapPartition = entry.getValue();
+            DefaultRecordStore mapPartition = entry.getValue();
             Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(mapPartition.records.size());
             for (Entry<Data, Record> recordEntry : mapPartition.records.entrySet()) {
                 map.put(recordEntry.getKey(), new DataRecordEntry(recordEntry.getValue(), true));
@@ -71,7 +71,7 @@ public class MapMigrationOperation extends AbstractOperation {
         for (Entry<String, Map<Data, DataRecordEntry>> dataEntry : data.entrySet()) {
             Map<Data, DataRecordEntry> dataMap = dataEntry.getValue();
             final String mapName = dataEntry.getKey();
-            MapPartition partition = mapService.getMapPartition(getPartitionId(), mapName);
+            DefaultRecordStore partition = mapService.getMapPartition(getPartitionId(), mapName);
             for (Entry<Data, DataRecordEntry> entry : dataMap.entrySet()) {
                 final DataRecordEntry recordEntry = entry.getValue();
                 Record record = new DefaultRecord(getPartitionId(),

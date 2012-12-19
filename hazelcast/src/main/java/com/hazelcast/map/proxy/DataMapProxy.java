@@ -96,8 +96,8 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return removeInternal(key, value);
     }
 
-    public Object tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
-        return null;
+    public Data tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+        return tryRemoveInternal(key, timeout, timeunit);
     }
 
     public Future<Data> removeAsync(final Data key) {

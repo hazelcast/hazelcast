@@ -33,22 +33,21 @@ public class SetOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-        } else {
-            record.setValueData(dataValue);
-        }
-        record.setActive();
-        record.setDirty(true);
-        mapPartition.records.put(dataKey, record);
-        store();
+        recordStore.set(dataKey, dataValue, ttl);
     }
 
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
+    }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public Object getResponse() {
+        return null;
+    }
+
+    public boolean shouldBackup() {
+        return true;
     }
 
     @Override

@@ -16,15 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class PutIfAbsentOperation extends BasePutOperation {
 
-    boolean absent = true;
 
     public PutIfAbsentOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, txnId, ttl);
@@ -33,38 +30,27 @@ public class PutIfAbsentOperation extends BasePutOperation {
     public PutIfAbsentOperation() {
     }
 
-    protected void load() {
-        if (mapPartition.loader != null) {
-            if (keyObject == null) {
-                keyObject = toObject(dataKey);
-            }
-            Object oldValue = mapPartition.loader.load(keyObject);
-            oldValueData = toData(oldValue);
-            absent = oldValue == null;
-        }
-    }
 
     public void doOp() {
-        // todo transaction should be written related to if absent
         if (prepareTransaction()) {
             return;
         }
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            load();
-            if (absent) {
-                record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-                mapPartition.records.put(dataKey, record);
-                record.setActive();
-                record.setDirty(true);
-            }
-        } else {
-            oldValueData = record.getValueData();
-            absent = false;
-        }
-        if (absent) {
-            store();
-        }
+        oldValueData = recordStore.putIfAbsent(dataKey, dataValue, ttl);
+    }
+
+    @Override
+    public Object getResponse() {
+        return oldValueData;
+    }
+
+    public boolean shouldBackup() {
+        return true;
+    }
+
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
     }
 
 

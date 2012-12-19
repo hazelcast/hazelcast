@@ -16,9 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.Record;
-import com.hazelcast.map.MapPartition;
-import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
@@ -35,7 +32,7 @@ public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
 
     public void run() {
         MapService mapService = (MapService) getService();
-        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
+        DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
         containsKey = mapPartition.records.containsKey(dataKey);
     }
 

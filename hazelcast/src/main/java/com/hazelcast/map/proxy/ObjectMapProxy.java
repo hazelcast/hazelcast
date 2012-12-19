@@ -47,11 +47,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return toObject(getInternal(key));
     }
 
-    public Future<V> getAsync(final K k) {
-        Data key = nodeEngine.toData(k);
-        return null;
-    }
-
     public V put(final K k, final V v) {
         return put(k, v, -1, null);
     }
@@ -86,10 +81,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         putTransientInternal(key, value, ttl, timeunit);
     }
 
-    public Future<V> putAsync(final K key, final V value) {
-        return null;
-    }
-
     public boolean replace(final K k, final V o, final V v) {
         final Data key = nodeEngine.toData(k);
         final Data oldValue = nodeEngine.toData(o);
@@ -121,14 +112,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return removeInternal(key, value);
     }
 
-    public Object tryRemove(final K key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
-        return null;
-    }
-
-    public Future<V> removeAsync(final K key) {
-        return null;
-    }
-
     public boolean containsKey(Object k) {
         Data key = nodeEngine.toData(k);
         return containsKeyInternal(key);
@@ -139,16 +122,39 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return containsValueInternal(value);
     }
 
+    public void lock(final K key) {
+        Data k = nodeEngine.toData(key);
+        lockInternal(k);
+    }
+
+    public void unlock(final K key) {
+        Data k = nodeEngine.toData(key);
+        unlockInternal(k);
+    }
+
+    public Object tryRemove(final K key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+        Data k = nodeEngine.toData(key);
+        return toObject(tryRemoveInternal(k, timeout, timeunit));
+    }
+
+    public Future<V> getAsync(final K k) {
+        Data key = nodeEngine.toData(k);
+        return null;
+    }
+
+    public Future<V> putAsync(final K key, final V value) {
+        return null;
+    }
+
+    public Future<V> removeAsync(final K key) {
+        return null;
+    }
+
     public Map<K, V> getAll(final Set<K> keys) {
         return null;
     }
 
     public void putAll(final Map<? extends K, ? extends V> m) {
-    }
-
-    public void lock(final K key) {
-        Data k = nodeEngine.toData(key);
-        lockInternal(k);
     }
 
     public boolean isLocked(final K key) {
@@ -161,11 +167,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) {
         return false;
-    }
-
-    public void unlock(final K key) {
-        Data k = nodeEngine.toData(key);
-        unlockInternal(k);
     }
 
     public void forceUnlock(final K key) {

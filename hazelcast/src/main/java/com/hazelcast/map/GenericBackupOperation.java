@@ -64,7 +64,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         Address caller = getCaller();
-        MapPartition mapPartition = mapService.getMapPartition(partitionId, name);
+        DefaultRecordStore mapPartition = mapService.getMapPartition(partitionId, name);
         if (backupOpType == BackupOpType.PUT) {
             Record record = mapPartition.records.get(dataKey);
             if (record == null) {

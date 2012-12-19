@@ -31,7 +31,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     Data oldValueData;
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    MapPartition mapPartition;
+    DefaultRecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
 
@@ -48,11 +48,6 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     public BasePutOperation() {
     }
 
-
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
     protected boolean prepareTransaction() {
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
@@ -66,34 +61,13 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         mapService = getService();
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        mapPartition = pc.getMapPartition(name);
+        recordStore = pc.getMapPartition(name);
     }
 
     public void beforeRun() {
         init();
     }
 
-    protected void load() {
-        if (mapPartition.loader != null) {
-            keyObject = toObject(dataKey);
-            Object oldValue = mapPartition.loader.load(keyObject);
-            oldValueData = toData(oldValue);
-        }
-    }
-
-    protected void store() {
-        if (mapPartition.store != null && mapPartition.writeDelayMillis == 0) {
-            if (keyObject == null) {
-                keyObject = toObject(dataKey);
-            }
-            mapPartition.store.store(keyObject, record.getValue());
-        }
-    }
-
-    @Override
-    public Object getResponse() {
-        return oldValueData;
-    }
 
     public Operation getBackupOperation() {
         final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
@@ -102,15 +76,11 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public int getAsyncBackupCount() {
-        return mapPartition.getAsyncBackupCount();
+        return recordStore.getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapPartition.getBackupCount();
-    }
-
-    public boolean shouldBackup() {
-        return true;
+        return recordStore.getBackupCount();
     }
 
     @Override

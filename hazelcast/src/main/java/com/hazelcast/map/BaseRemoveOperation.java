@@ -34,7 +34,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     Data valueData;
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    MapPartition mapPartition;
+    DefaultRecordStore mapPartition;
     MapService mapService;
     NodeEngine nodeEngine;
 

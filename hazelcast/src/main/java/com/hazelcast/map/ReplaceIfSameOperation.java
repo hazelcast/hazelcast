@@ -33,7 +33,6 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     public ReplaceIfSameOperation(String name, Data dataKey, Data oldValue, Data value, String txnId) {
         super(name, dataKey, value, txnId);
         testValue = oldValue;
-        System.out.println("testValue:"+testValue);
     }
 
     public ReplaceIfSameOperation() {
@@ -43,23 +42,7 @@ public class ReplaceIfSameOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            load();
-            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-            mapPartition.records.put(dataKey, record);
-        }
-
-        System.out.println("value:"+record.getValue());
-        System.out.println("testObject2:"+ IOUtil.toObject(testValue) );
-        System.out.println("testValue2:"+testValue);
-        if (record != null && record.getValue().equals(IOUtil.toObject(testValue))) {
-            record.setValueData(dataValue);
-            record.setActive();
-            record.setDirty(true);
-            store();
-            replaced = true;
-        }
+        replaced = recordStore.replace(dataKey, testValue, dataValue);
     }
 
     public Object getResponse() {
@@ -69,6 +52,12 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     public boolean shouldBackup() {
         return replaced;
     }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(false);
+    }
+
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {

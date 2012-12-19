@@ -26,14 +26,14 @@ import java.util.Map;
 
 public abstract class AbstractSimpleRecord implements Record {
     protected final long id;
-    protected final Data key;
+    protected final Data keyData;
     protected final short blockId;
     protected volatile boolean active = true;
 
-    public AbstractSimpleRecord(int blockId, long id, Data key) {
+    public AbstractSimpleRecord(int blockId, long id, Data keyData) {
         this.blockId = (short) blockId;
         this.id = id;
-        this.key = key;
+        this.keyData = keyData;
     }
 
     public void runBackupOps() {
@@ -47,7 +47,7 @@ public abstract class AbstractSimpleRecord implements Record {
     }
 
     public Data getKeyData() {
-        return key;
+        return keyData;
     }
 
     public Long[] getIndexes() {

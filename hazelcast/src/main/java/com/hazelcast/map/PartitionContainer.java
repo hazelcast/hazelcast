@@ -32,7 +32,7 @@ public class PartitionContainer {
     private final Config config;
     private final MapService mapService;
     final PartitionInfo partitionInfo;
-    final ConcurrentMap<String, MapPartition> maps = new ConcurrentHashMap<String, MapPartition>(1000);
+    final ConcurrentMap<String, DefaultRecordStore> maps = new ConcurrentHashMap<String, DefaultRecordStore>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
 
 
@@ -48,15 +48,19 @@ public class PartitionContainer {
         // invalidate locks owned by dead
     }
 
+    public MapService getMapService() {
+        return mapService;
+    }
+
     MapConfig getMapConfig(String name) {
         return config.findMatchingMapConfig(name.substring(2));
     }
 
-    public MapPartition getMapPartition(String name) {
-        MapPartition mapPartition = maps.get(name);
+    public DefaultRecordStore getMapPartition(String name) {
+        DefaultRecordStore mapPartition = maps.get(name);
         if (mapPartition == null) {
-            mapPartition = new MapPartition(name, PartitionContainer.this);
-            final MapPartition currentMapPartition = maps.putIfAbsent(name, mapPartition);
+            mapPartition = new DefaultRecordStore(name, PartitionContainer.this);
+            final DefaultRecordStore currentMapPartition = maps.putIfAbsent(name, mapPartition);
             mapPartition = currentMapPartition == null ? mapPartition : currentMapPartition;
         }
         return mapPartition;
@@ -89,7 +93,7 @@ public class PartitionContainer {
         if (txnLog == null) return;
         for (TransactionLogItem txnLogItem : txnLog.changes.values()) {
             System.out.println(mapService.getNodeEngine().getThisAddress() + " pc.commit " + txnLogItem);
-            MapPartition mapPartition = getMapPartition(txnLogItem.getName());
+            DefaultRecordStore mapPartition = getMapPartition(txnLogItem.getName());
             Data key = txnLogItem.getKey();
             if (txnLogItem.isRemoved()) {
                 mapPartition.records.remove(key);
@@ -110,7 +114,7 @@ public class PartitionContainer {
 
     public int getMaxBackupCount() {
         int max = 1;
-        for (MapPartition mapPartition : maps.values()) {
+        for (DefaultRecordStore mapPartition : maps.values()) {
             max = Math.max(max, mapPartition.getTotalBackupCount());
         }
         return max;

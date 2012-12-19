@@ -55,7 +55,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public Object getKey() {
-        return toObject(key);
+        return toObject(keyData);
     }
 
     public Long[] getIndexes() {

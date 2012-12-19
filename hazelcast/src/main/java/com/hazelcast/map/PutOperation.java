@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
 public class PutOperation extends BasePutOperation {
@@ -32,20 +31,23 @@ public class PutOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            load();
-            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-            mapPartition.records.put(dataKey, record);
-        } else {
-            oldValueData = record.getValueData();
-            record.setValueData(dataValue);
-        }
-        record.setActive();
-        record.setDirty(true);
-        store();
+        oldValueData = recordStore.put(dataKey, dataValue, ttl);
     }
 
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
+    }
+
+
+    @Override
+    public Object getResponse() {
+        return oldValueData;
+    }
+
+    public boolean shouldBackup() {
+        return true;
+    }
 
     @Override
     public String toString() {

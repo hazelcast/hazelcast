@@ -16,24 +16,23 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class RemoveIfSameOperation extends BaseRemoveOperation {
+public class TryRemoveOperation extends BaseRemoveOperation {
+    long timeout;
+    boolean successful;
 
-    Data testValue;
-    boolean removed = false;
-
-    public RemoveIfSameOperation(String name, Data dataKey, Data oldValue, String txnId) {
+    public TryRemoveOperation(String name, Data dataKey, String txnId, long timeout) {
         super(name, dataKey, txnId);
-        testValue = oldValue;
+        this.timeout = timeout;
     }
 
-    public RemoveIfSameOperation() {
+    public TryRemoveOperation() {
     }
 
     public void beforeRun() {
@@ -45,42 +44,39 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
             return;
         }
         prepareValue();
-        if (record != null && record.getValue().equals(IOUtil.toObject(testValue))) {
+        if (record != null) {
             remove();
             store();
-            removed = true;
+            successful = true;
         }
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, testValue);
+        out.writeLong(timeout);
     }
 
     @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        testValue = IOUtil.readNullableData(in);
+        timeout = in.readLong();
     }
 
-    public Object getResponse() {
-        return removed;
+    public long getWaitTimeoutMillis() {
+        return timeout;
     }
 
     public boolean shouldBackup() {
-        return removed;
+        return successful;
     }
 
-
-    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
     }
 
-
     @Override
     public String toString() {
-        return "RemoveIfSameOperation{" + name + "}";
+        return "TryRemoveOperation{" + name + "}";
     }
 }

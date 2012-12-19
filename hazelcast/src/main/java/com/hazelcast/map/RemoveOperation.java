@@ -43,6 +43,11 @@ public class RemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
+    }
+
+    @Override
     public String toString() {
         return "RemoveOperation{" + name + "}";
     }

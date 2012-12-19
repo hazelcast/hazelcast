@@ -26,15 +26,16 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public final class DefaultRecord extends AbstractRecord {
 
     private volatile Object valueObject;
-    private volatile Data value;
+    private volatile Data valueData;
+    private volatile Object keyObject;
 
-    public DefaultRecord(int blockId, Data key, Data value, long ttl, long maxIdleMillis, long id) {
+    public DefaultRecord(int blockId, Data key, Data valueData, long ttl, long maxIdleMillis, long id) {
         super(blockId, key, ttl, maxIdleMillis, id);
-        this.value = value;
+        this.valueData = valueData;
     }
 
     public Record copy() {
-        Record recordCopy = new DefaultRecord(blockId, key, value, getRemainingTTL(), getRemainingIdle(), id);
+        Record recordCopy = new DefaultRecord(blockId, keyData, valueData, getRemainingTTL(), getRemainingIdle(), id);
         if (optionalInfo != null) {
             recordCopy.setIndexes(getOptionalInfo().indexes, getOptionalInfo().indexTypes);
             recordCopy.setMultiValues(getOptionalInfo().lsMultiValues);
@@ -48,11 +49,19 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public Data getValueData() {
-        return value;
+        return valueData;
     }
 
     public Object getValue() {
-        return toObject(value);
+        if(valueObject == null)
+            valueObject = toObject(valueData);
+        return valueObject;
+    }
+
+    public Object getKey() {
+        if(keyObject == null)
+            keyObject = toObject(keyData);
+        return keyObject;
     }
 
     public Object setValue(Object value) {
@@ -69,7 +78,7 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public void setValueData(Data value) {
-        this.value = value;
+        this.valueData = value;
         // invalidation should be called after value is set!
         // otherwise a call to getValue() from another thread
         // may cause stale data to be read when cacheValue is true.
@@ -107,11 +116,11 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public boolean hasValueData() {
-        return value != null;
+        return valueData != null;
     }
 
     public void invalidate() {
-        value = null;
+        valueData = null;
         invalidateValueCache();
     }
 }
