@@ -124,7 +124,8 @@ abstract class MapProxySupport {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-            invocation.invoke();
+            Future f = invocation.invoke();
+            f.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -209,8 +210,19 @@ abstract class MapProxySupport {
         }
     }
 
-    protected Object tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
-        return null;
+    protected Data tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        TryRemoveOperation operation = new TryRemoveOperation(name, key, txnId, getTimeInMillis(timeout, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Data) f.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected Future<Data> removeAsyncInternal(final Data key) {

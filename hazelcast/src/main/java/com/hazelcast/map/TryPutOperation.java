@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -40,18 +39,7 @@ public class TryPutOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            load();
-            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-            mapPartition.records.put(dataKey, record);
-        } else {
-            record.setValueData(dataValue);
-        }
-        record.setActive();
-        record.setDirty(true);
-        store();
-        successful = true;
+        successful = recordStore.tryPut(dataKey, dataValue, ttl);
     }
 
     @Override

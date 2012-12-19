@@ -59,7 +59,6 @@ public interface Record extends IndexEntry {
     boolean testLock(int threadId, Address address);
 
     boolean lock(int threadId, Address address);
-//    void addScheduledAction(ScheduledAction scheduledAction);
 
     boolean isRemovable();
 
@@ -156,11 +155,6 @@ public interface Record extends IndexEntry {
     void setRemoveTime(long removeTime);
 
     long getId();
-//    boolean hasScheduledAction();
-//
-//    List<ScheduledAction> getScheduledActions();
-//
-//    void setScheduledActions(List<ScheduledAction> lsScheduledActions);
 
     Map<Address, Boolean> getListeners();
 

@@ -69,7 +69,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return partitionContainers[partitionId];
     }
 
-    public MapPartition getMapPartition(int partitionId, String mapName) {
+    public DefaultRecordStore getMapPartition(int partitionId, String mapName) {
         return getPartitionContainer(partitionId).getMapPartition(mapName);
     }
 
@@ -96,7 +96,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 clearPartitionData(event.getPartitionId());
             } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
                 final PartitionContainer container = partitionContainers[event.getPartitionId()];
-                for (MapPartition mapPartition : container.maps.values()) {
+                for (DefaultRecordStore mapPartition : container.maps.values()) {
                     final MapConfig mapConfig = container.getMapConfig(mapPartition.name);
                     if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
                         mapPartition.clear();
@@ -124,7 +124,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private void clearPartitionData(final int partitionId) {
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
-        for (MapPartition mapPartition : container.maps.values()) {
+        for (DefaultRecordStore mapPartition : container.maps.values()) {
             mapPartition.clear();
         }
         container.maps.clear();

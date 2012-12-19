@@ -25,7 +25,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
 
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    MapPartition mapPartition;
+    DefaultRecordStore mapPartition;
     MapService mapService;
     NodeEngine nodeEngine;
     boolean unlocked = false;

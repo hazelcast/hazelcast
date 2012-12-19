@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -36,14 +35,12 @@ public class ReplaceOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        record = mapPartition.records.get(dataKey);
-        if (record != null) {
-            oldValueData = record.getValueData();
-            record.setValueData(dataValue);
-            record.setActive();
-            record.setDirty(true);
-            store();
-        }
+        oldValueData = recordStore.replace(dataKey, dataValue);
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
     }
 
     public boolean shouldBackup() {
@@ -53,5 +50,10 @@ public class ReplaceOperation extends BasePutOperation {
     @Override
     public String toString() {
         return "ReplaceOperation{" + name + "}";
+    }
+
+    @Override
+    public Object getResponse() {
+        return oldValueData;
     }
 }

@@ -32,24 +32,26 @@ public class PutTransientOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-            mapPartition.records.put(dataKey, record);
-        } else {
-            record.setValueData(dataValue);
-        }
-        record.setActive();
-        record.setDirty(true);
+        recordStore.putTransient(dataKey, dataValue, ttl);
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public Object getResponse() {
+        return null;
+    }
+
+    public boolean shouldBackup() {
+        return true;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
     }
 
     @Override
     public String toString() {
         return "PutTransientOperation{" + name + "}";
     }
+
 }

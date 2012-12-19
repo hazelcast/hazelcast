@@ -32,7 +32,7 @@ public class MapSizeOperation extends AbstractNamedOperation implements Partitio
 
     public void run() {
         MapService mapService = (MapService) getService();
-        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
+        DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
         size = mapPartition.records.size();
     }
 
