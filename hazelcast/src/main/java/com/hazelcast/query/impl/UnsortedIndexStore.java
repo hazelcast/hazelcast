@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Record;
 import com.hazelcast.query.PredicateType;
 
 import java.util.Set;
@@ -25,13 +24,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class UnsortedIndexStore implements IndexStore {
-    private final ConcurrentMap<Long, ConcurrentMap<Long, Record>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, Record>>(100, 0.75f, 1);
+    private final ConcurrentMap<Long, ConcurrentMap<Long, IndexEntry>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, IndexEntry>>(100, 0.75f, 1);
 
     public void getSubRecordsBetween(MultiResultSet results, Long from, Long to) {
         Set<Long> values = mapRecords.keySet();
         for (Long value : values) {
             if (value >= from && value <= to) {
-                ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
                 if (records != null) {
                     results.addResultSet(value, records.values());
                 }
@@ -61,7 +60,7 @@ public class UnsortedIndexStore implements IndexStore {
                     break;
             }
             if (valid) {
-                ConcurrentMap<Long, Record> records = mapRecords.get(value);
+                ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
                 if (records != null) {
                     results.addResultSet(value, records.values());
                 }
@@ -69,18 +68,18 @@ public class UnsortedIndexStore implements IndexStore {
         }
     }
 
-    public void newRecordIndex(Long newValue, Record record) {
+    public void newRecordIndex(Long newValue, IndexEntry record) {
         Long recordId = record.getId();
-        ConcurrentMap<Long, Record> records = mapRecords.get(newValue);
+        ConcurrentMap<Long, IndexEntry> records = mapRecords.get(newValue);
         if (records == null) {
-            records = new ConcurrentHashMap<Long, Record>(1, 0.75f, 1);
+            records = new ConcurrentHashMap<Long, IndexEntry>(1, 0.75f, 1);
             mapRecords.put(newValue, records);
         }
         records.put(recordId, record);
     }
 
     public void removeRecordIndex(Long oldValue, Long recordId) {
-        ConcurrentMap<Long, Record> records = mapRecords.get(oldValue);
+        ConcurrentMap<Long, IndexEntry> records = mapRecords.get(oldValue);
         if (records != null) {
             records.remove(recordId);
             if (records.size() == 0) {
@@ -95,15 +94,11 @@ public class UnsortedIndexStore implements IndexStore {
 
     public void getRecords(MultiResultSet results, Set<Long> values) {
         for (Long value : values) {
-            ConcurrentMap<Long, Record> records = mapRecords.get(value);
+            ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
             if (records != null) {
                 results.addResultSet(value, records.values());
             }
         }
-    }
-
-    public ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords() {
-        return mapRecords;
     }
 
     @Override

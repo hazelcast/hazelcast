@@ -16,16 +16,16 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.query.impl.IndexEntry;
 
 import java.util.Collection;
 import java.util.Map;
 
-public interface Record extends MapEntry {
+public interface Record extends IndexEntry {
 
     /**
      * @return on-heap copy of Record
@@ -59,7 +59,6 @@ public interface Record extends MapEntry {
     boolean testLock(int threadId, Address address);
 
     boolean lock(int threadId, Address address);
-
 //    void addScheduledAction(ScheduledAction scheduledAction);
 
     boolean isRemovable();
@@ -157,7 +156,6 @@ public interface Record extends MapEntry {
     void setRemoveTime(long removeTime);
 
     long getId();
-
 //    boolean hasScheduledAction();
 //
 //    List<ScheduledAction> getScheduledActions();
