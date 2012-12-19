@@ -43,7 +43,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public void run() {
-        response = getContainer().offer(data);
+        response = getContainer().offer(data, false);
     }
 
     public Operation getBackupOperation() {
@@ -51,10 +51,11 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public boolean shouldBackup() {
-        return true;
+        return Boolean.TRUE.equals(response);
     }
 
     public boolean shouldNotify() {
+        //TODO
         return true;
     }
 

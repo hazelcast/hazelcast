@@ -49,7 +49,6 @@ public class QueueMigrationOperation extends AbstractOperation {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
             QueueConfig conf = getNodeEngine().getConfig().getQueueConfig(name);
-            System.out.println(conf.getQueueStoreConfig() + " store");
             container.setConfig(conf);
             service.addContainer(name, container);
         }

@@ -32,22 +32,17 @@ public class QueueStoreWrapper {
 
     boolean enabled = false;
 
-    boolean runOnBackup = false;
-
-    public QueueStoreWrapper(){
+    public QueueStoreWrapper() {
     }
 
     public void setConfig(QueueStoreConfig storeConfig) {
         if (storeConfig == null) {
-            System.out.println("config null");
             return;
         }
-        enabled = storeConfig.isEnabled();
-        String rob = storeConfig.getProperty("run-on-backup");
-        runOnBackup = Boolean.parseBoolean(rob);
         try {
             Class<?> storeClass = Class.forName(storeConfig.getClassName());
             store = (QueueStore) storeClass.newInstance();
+            enabled = storeConfig.isEnabled();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
@@ -61,61 +56,35 @@ public class QueueStoreWrapper {
         return enabled;
     }
 
-    public void store(Long key, Data value, boolean fromBackup) {
-        if (check(fromBackup)) {
-            store.store(key, new QueueStoreValue(value));
-        }
+    public void store(Long key, Data value) {
+        store.store(key, new QueueStoreValue(value));
     }
 
-    public void storeAll(Map map, boolean fromBackup) {
-        if (check(fromBackup)) {
-            store.storeAll(map);
-        }
+    public void storeAll(Map map) {
+        store.storeAll(map);
     }
 
-    public void delete(Long key, boolean fromBackup) {
-        if (check(fromBackup)) {
-            store.delete(key);
-        }
+    public void delete(Long key) {
+        store.delete(key);
     }
 
-    public void deleteAll(Collection keys, boolean fromBackup) {
-        if (check(fromBackup)) {
-            store.deleteAll(keys);
-        }
+    public void deleteAll(Collection keys) {
+        store.deleteAll(keys);
     }
 
-    public Data load(Long key, boolean fromBackup) {
-        if (check(fromBackup)) {
-            QueueStoreValue val = (QueueStoreValue)store.load(key);
-            if (val != null){
-                return val.getData();
-            }
-            return null;
+    public Data load(Long key) {
+        QueueStoreValue val = (QueueStoreValue) store.load(key);
+        if (val != null) {
+            return val.getData();
         }
         return null;
     }
 
-    public Map<Long, QueueStoreValue> loadAll(Collection keys, boolean fromBackup) {
-        if (check(fromBackup)) {
-            return store.loadAll(keys);
-        }
-        return new HashMap<Long, QueueStoreValue>(0);
+    public Map<Long, QueueStoreValue> loadAll(Collection keys) {
+        return store.loadAll(keys);
     }
 
-    public Set<Long> loadAllKeys(boolean fromBackup) {
-        if (check(fromBackup)) {
-            return store.loadAllKeys();
-        }
-        return new HashSet<Long>(0);
-    }
-
-    private boolean check(boolean fromBackup) {
-        if (enabled && store != null){
-            if (runOnBackup || !fromBackup){
-                return true;
-            }
-        }
-        return false;
+    public Set<Long> loadAllKeys() {
+        return store.loadAllKeys();
     }
 }

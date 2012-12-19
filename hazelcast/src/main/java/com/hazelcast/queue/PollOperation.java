@@ -33,7 +33,7 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public void run() {
-        response = getContainer().poll();
+        response = getContainer().poll(false);
     }
 
     public boolean shouldBackup() {

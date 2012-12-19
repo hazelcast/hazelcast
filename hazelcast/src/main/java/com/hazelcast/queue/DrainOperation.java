@@ -17,39 +17,53 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.*;
 
 /**
- * @ali 12/11/12
+ * @ali 12/19/12
  */
-public class OfferBackupOperation extends QueueOperation implements BackupOperation {
+public class DrainOperation extends QueueBackupAwareOperation {
 
-    private Data data;
+    int maxSize = -1;
 
-    public OfferBackupOperation() {
+    //TODO how about waiting polls
+
+    public DrainOperation() {
     }
 
-    public OfferBackupOperation(String name, Data data) {
+    public DrainOperation(String name, int maxSize) {
         super(name);
-        this.data = data;
+        this.maxSize = maxSize;
     }
 
     public void run() throws Exception {
-        response = getContainer().offer(data, true);
+        response = getContainer().drain(maxSize);
+    }
+
+    public boolean shouldBackup() {
+        if (response != null){
+            List<Data> list = (List<Data>)response;
+            return list.size() > 0;
+        }
+        return false;
+    }
+
+    public Operation getBackupOperation() {
+        return new DrainBackupOperation(name, maxSize);
     }
 
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        data.writeData(out);
+        out.writeInt(maxSize);
     }
 
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        data = new Data();
-        data.readData(in);
+        maxSize = in.readInt();
     }
 }

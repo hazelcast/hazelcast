@@ -33,7 +33,7 @@ import java.util.*;
  */
 public class QueueContainer implements DataSerializable {
 
-    private final Queue<QueueItem> itemQueue = new LinkedList<QueueItem>();
+    private final LinkedList<QueueItem> itemQueue = new LinkedList<QueueItem>();
 
     int partitionId;
 
@@ -47,27 +47,29 @@ public class QueueContainer implements DataSerializable {
 
     long idGen = 0;
 
-    boolean fromBackup;
-
     public QueueContainer() {
     }
 
-    public QueueContainer(QueueService queueService, int partitionId, QueueConfig config, String name) {
+    public QueueContainer(QueueService queueService, int partitionId, QueueConfig config, String name, boolean fromBackup) {
         this.queueService = queueService;
         this.partitionId = partitionId;
         this.name = name;
         setConfig(config);
-        Set<Long> keys = store.loadAllKeys(fromBackup);
-        for (Long key: keys){
-            QueueItem item = new QueueItem(key);
-            itemQueue.offer(item);
-            idGen++;
+        if (!fromBackup && store.isEnabled()){
+            Set<Long> keys = store.loadAllKeys();
+            for (Long key : keys) {
+                QueueItem item = new QueueItem(key);
+                itemQueue.offer(item);
+                idGen++;
+            }
         }
     }
 
-    public boolean offer(Data data) {
+    public boolean offer(Data data, boolean fromBackup) {
         QueueItem item = new QueueItem(idGen++, data);
-        store.store(item.getItemId(), data, fromBackup);
+        if (!fromBackup && store.isEnabled()){
+            store.store(item.getItemId(), data);
+        }
         return itemQueue.offer(item);
     }
 
@@ -75,30 +77,43 @@ public class QueueContainer implements DataSerializable {
         return itemQueue.size();
     }
 
-    public void clear() {
-        itemQueue.clear(); //TODO how about remove event and store
+    public void clear(boolean fromBackup) {
+        if (!fromBackup && store.isEnabled()){
+            Set<Long> keySet = new HashSet<Long>(itemQueue.size());
+            Iterator<QueueItem> iter = itemQueue.iterator();
+            while (iter.hasNext()) {
+                QueueItem item = iter.next();
+                keySet.add(item.getItemId());
+            }
+            store.deleteAll(keySet);
+        }
+        itemQueue.clear(); //TODO how about remove event
     }
 
-    public Data poll() {
+    public Data poll(boolean fromBackup) {
         QueueItem item = itemQueue.poll();
         if (item == null) {
             return null;
         }
         Data data = item.getData();
-        if (data == null) {
-            data = store.load(item.getItemId(), fromBackup);
+        if (!fromBackup && store.isEnabled()){
+            if (data == null) {
+                data = store.load(item.getItemId());
+            }
+            store.delete(item.getItemId());
         }
-        store.delete(item.getItemId(), fromBackup);
         return data;
     }
 
-    public boolean remove(Data data) {
+    public boolean remove(Data data, boolean fromBackup) {
         Iterator<QueueItem> iter = itemQueue.iterator();
-        while (iter.hasNext()){
+        while (iter.hasNext()) {
             QueueItem item = iter.next();
-            if (item.equals(data)){
+            if (item.equals(data)) {
+                if (!fromBackup && store.isEnabled()){
+                    store.delete(item.getItemId());
+                }
                 iter.remove();
-                store.delete(item.getItemId(), fromBackup);
                 return true;
             }
         }
@@ -111,34 +126,57 @@ public class QueueContainer implements DataSerializable {
             return null;
         }
         Data data = item.getData();
-        if (data == null) {
-            data = store.load(item.getItemId(), fromBackup);
+        if (store.isEnabled() && data == null){
+            data = store.load(item.getItemId());
             item.setData(data);
         }
         return data;
     }
 
-    //TODO how about persisted data
+    //TODO how about persisted data, should it trigger load all data from store?
     public boolean contains(Set<Data> dataSet) {
-        return itemQueue.containsAll(dataSet);
+        Set<QueueItem> set = new HashSet<QueueItem>(dataSet.size());
+        for (Data data : dataSet) {
+            set.add(new QueueItem(-1, data));
+        }
+        return itemQueue.containsAll(set);
     }
 
-    public List<Data> getAsDataList(){
+    public List<Data> getAsDataList() {
         List<Data> dataSet = new ArrayList<Data>(itemQueue.size());
         for (QueueItem item : itemQueue) {
             Data data = item.getData();
-            if (data == null){
-                data = store.load(item.getItemId(), fromBackup);
+            if (store.isEnabled() && data == null){
+                data = store.load(item.getItemId());
                 item.setData(data);
             }
             dataSet.add(data);
-        };
+        }
         return dataSet;
     }
 
+    public List<Data> drain(int maxSize){
+        if (maxSize < 0 || maxSize > itemQueue.size()){
+            maxSize = itemQueue.size();
+        }
+        ArrayList<Data> list = new ArrayList<Data>(maxSize);
+        for (int i=0; i < maxSize; i++){
+            Data data = poll(false);
+            list.add(data);
+        }
+        return list;
+    }
 
+    public void drainFromBackup(int maxSize){
+        if (maxSize < 0){
+            itemQueue.clear();
+            return;
+        }
+        for (int i=0; i<maxSize; i++){
+            itemQueue.poll();
+        }
 
-
+    }
 
 
     public QueueConfig getConfig() {
@@ -151,11 +189,7 @@ public class QueueContainer implements DataSerializable {
         store.setConfig(storeConfig);
     }
 
-    public void setFromBackup(boolean fromBackup) {
-        this.fromBackup = fromBackup;
-    }
-
-    public void writeData(DataOutput out) throws IOException {    //TODO listeners  and persisted Data
+    public void writeData(DataOutput out) throws IOException {    //TODO listeners
         out.writeInt(partitionId);
         out.writeUTF(name);
         out.writeInt(itemQueue.size());

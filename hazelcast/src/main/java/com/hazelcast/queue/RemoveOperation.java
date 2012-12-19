@@ -39,7 +39,7 @@ public class RemoveOperation extends QueueBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        response = getContainer().remove(data);
+        response = getContainer().remove(data, false);
     }
 
     public boolean shouldBackup() {

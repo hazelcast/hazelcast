@@ -64,10 +64,10 @@ public class QueueItem implements DataSerializable {
     public boolean equals(Object obj) {
         if (obj instanceof QueueItem){
             QueueItem other = (QueueItem)obj;
-            data.equals(other.data);
+            return data.equals(other.data);
         }
         else if (obj instanceof Data){
-            data.equals(obj);
+            return data.equals(obj);
         }
         return false;
     }

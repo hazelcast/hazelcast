@@ -31,7 +31,7 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
     }
 
     public void run() throws Exception {
-        getContainer().clear();
+        getContainer().clear(true);
         response = true;
     }
 }
