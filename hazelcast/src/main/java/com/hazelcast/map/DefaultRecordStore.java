@@ -95,6 +95,73 @@ public class DefaultRecordStore implements RecordStore {
         locks.clear();
     }
 
+    public boolean tryRemove(Data dataKey) {
+        Record record = records.get(dataKey);
+        Data oldValueData = null;
+        boolean removed = false;
+        if (record == null) {
+            if (loader != null) {
+                Object oldValue = loader.load(toObject(dataKey));
+                oldValueData = toData(oldValue);
+            }
+        } else {
+            oldValueData = record.getValueData();
+            records.remove(dataKey);
+            removed = true;
+        }
+        if (oldValueData != null && store != null && writeDelayMillis == 0) {
+            Object key = record.getKey();
+            store.delete(key);
+            removed = true;
+        }
+        return removed;
+    }
+
+    public Data remove(Data dataKey) {
+        Record record = records.get(dataKey);
+        Data oldValueData = null;
+        if (record == null) {
+            if (loader != null) {
+                Object oldValue = loader.load(toObject(dataKey));
+                oldValueData = toData(oldValue);
+            }
+        } else {
+            oldValueData = record.getValueData();
+            records.remove(dataKey);
+        }
+        if (oldValueData != null && store != null && writeDelayMillis == 0) {
+            Object key = record.getKey();
+            store.delete(key);
+        }
+        return oldValueData;
+    }
+
+    public boolean remove(Data dataKey, Data testValue) {
+        Record record = records.get(dataKey);
+        Data oldValueData = null;
+        boolean removed = false;
+        if (record == null) {
+            if (loader != null) {
+                Object oldValue = loader.load(toObject(dataKey));
+                oldValueData = toData(oldValue);
+            }
+            if(oldValueData == null)
+                return false;
+        } else {
+            oldValueData = record.getValueData();
+        }
+
+        if(testValue.equals(oldValueData)) {
+            records.remove(dataKey);
+            if (store != null && writeDelayMillis == 0) {
+                Object key = record.getKey();
+                store.delete(key);
+            }
+            removed = true;
+        }
+        return removed;
+    }
+
     public Data put(Data dataKey, Data dataValue, long ttl) {
         Record record = records.get(dataKey);
         Data oldValueData = null;

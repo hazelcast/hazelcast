@@ -44,12 +44,7 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
         if (prepareTransaction()) {
             return;
         }
-        prepareValue();
-        if (record != null && record.getValue().equals(IOUtil.toObject(testValue))) {
-            remove();
-            store();
-            removed = true;
-        }
+       removed = recordStore.remove(dataKey, testValue);
     }
 
     @Override

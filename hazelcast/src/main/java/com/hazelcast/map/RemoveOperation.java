@@ -35,11 +35,8 @@ public class RemoveOperation extends BaseRemoveOperation {
         if (prepareTransaction()) {
             return;
         }
-        prepareValue();
-        if (record != null) {
-            remove();
-            store();
-        }
+
+        valueData = recordStore.remove(dataKey);
     }
 
     @Override

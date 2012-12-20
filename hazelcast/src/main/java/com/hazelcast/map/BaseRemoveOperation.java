@@ -34,7 +34,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     Data valueData;
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore mapPartition;
+    DefaultRecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
 
@@ -61,34 +61,34 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapService = (MapService) getService();
         nodeEngine = (NodeEngine) getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        mapPartition = pc.getMapPartition(name);
+        recordStore = pc.getMapPartition(name);
     }
 
-    protected void load() {
-            if (mapPartition.loader != null) {
-                key = toObject(dataKey);
-                Object oldValue = mapPartition.loader.load(key);
-            valueData = toData(oldValue);
-        }
-    }
+//    protected void load() {
+//            if (recordStore.loader != null) {
+//                key = toObject(dataKey);
+//                Object oldValue = recordStore.loader.load(key);
+//            valueData = toData(oldValue);
+//        }
+//    }
+//
+//    protected void store() {
+//        if (recordStore.store != null && recordStore.writeDelayMillis == 0) {
+//            if (key == null) {
+//                key = toObject(dataKey);
+//            }
+//            recordStore.store.delete(key);
+//        }
+//    }
 
-    protected void store() {
-        if (mapPartition.store != null && mapPartition.writeDelayMillis == 0) {
-            if (key == null) {
-                key = toObject(dataKey);
-            }
-            mapPartition.store.delete(key);
-        }
-    }
-
-    protected void prepareValue() {
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            load();
-        } else {
-            valueData = record.getValueData();
-        }
-    }
+//    protected void prepareValue() {
+//        record = recordStore.records.get(dataKey);
+//        if (record == null) {
+//            load();
+//        } else {
+//            valueData = record.getValueData();
+//        }
+//    }
 
     public abstract void doOp();
 
@@ -104,11 +104,11 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public int getAsyncBackupCount() {
-        return mapPartition.getAsyncBackupCount();
+        return recordStore.getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapPartition.getBackupCount();
+        return recordStore.getBackupCount();
     }
 
     public boolean shouldBackup() {
@@ -116,12 +116,9 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public void remove() {
-        mapPartition.records.remove(dataKey);
+        recordStore.records.remove(dataKey);
     }
 
-    private int getClusterSize() {
-        return getNodeEngine().getCluster().getMembers().size();
-    }
 
     @Override
     public String toString() {
