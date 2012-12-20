@@ -16,33 +16,53 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class MapSizeOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-    private transient int size;
+public class ContainsValueOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
-    public MapSizeOperation(String name) {
+    private boolean contains = false;
+    private Data testValue;
+
+    public ContainsValueOperation(String name, Data testValue) {
         super(name);
+        this.testValue = testValue;
     }
 
-    public MapSizeOperation() {
+    public ContainsValueOperation() {
     }
 
     public void run() {
         MapService mapService = (MapService) getService();
         DefaultRecordStore recordStore = mapService.getMapPartition(getPartitionId(), name);
-        size = recordStore.size();
+        contains = recordStore.containsValue(testValue);
     }
 
     @Override
     public Object getResponse() {
-        return size;
+        return contains;
     }
 
     @Override
     public boolean returnsResponse() {
         return true;
+    }
+
+    @Override
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
+        IOUtil.writeNullableData(out, testValue);
+    }
+
+    @Override
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
+        testValue = IOUtil.readNullableData(in);
     }
 }

@@ -244,10 +244,6 @@ abstract class MapProxySupport {
         }
     }
 
-    protected boolean containsValueInternal(final Data value) {
-        return false;
-    }
-
     public int size() {
         try {
             MapSizeOperation mapSizeOperation = new MapSizeOperation(name);
@@ -259,6 +255,23 @@ abstract class MapProxySupport {
                 total += size;
             }
             return total;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    public boolean containsValueInternal(Data dataValue) {
+        try {
+            ContainsValueOperation containsValueOperation = new ContainsValueOperation(name, dataValue);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation);
+
+            for (Object result : results.values()) {
+                Boolean contains = (Boolean) nodeEngine.toObject(result);
+                if(contains)
+                    return true;
+            }
+            return false;
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }

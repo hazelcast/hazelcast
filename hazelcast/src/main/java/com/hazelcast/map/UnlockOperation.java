@@ -25,7 +25,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
 
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore mapPartition;
+    DefaultRecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
     boolean unlocked = false;
@@ -42,7 +42,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
         mapService = getService();
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        mapPartition = pc.getMapPartition(name);
+        recordStore = pc.getMapPartition(name);
     }
 
     public void beforeRun() {
@@ -54,14 +54,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
     }
 
     public void doOp() {
-        LockInfo lock = mapPartition.getLock(getKey());
-        if (lock == null)
-            return;
-        if (lock.testLock(threadId, getCaller())) {
-            if (lock.unlock(getCaller(), threadId)) {
-                unlocked = true;
-            }
-        }
+        unlocked = recordStore.unlock(dataKey, getCaller(), threadId);
     }
 
     public boolean shouldBackup() {
@@ -69,11 +62,11 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
     }
 
     public int getSyncBackupCount() {
-        return mapPartition.getBackupCount();
+        return recordStore.getBackupCount();
     }
 
     public int getAsyncBackupCount() {
-        return mapPartition.getAsyncBackupCount();
+        return recordStore.getAsyncBackupCount();
     }
 
     public Operation getBackupOperation() {

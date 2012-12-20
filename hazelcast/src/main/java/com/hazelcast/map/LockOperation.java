@@ -24,7 +24,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
     public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore mapPartition;
+    DefaultRecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
     boolean locked = false;
@@ -46,7 +46,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
         mapService = getService();
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        mapPartition = pc.getMapPartition(name);
+        recordStore = pc.getMapPartition(name);
     }
 
     public void beforeRun() {
@@ -54,8 +54,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
     }
 
     public void doOp() {
-        LockInfo lock = mapPartition.getOrCreateLock(getKey());
-        locked = lock.lock(getCaller(), threadId, ttl);
+        locked = recordStore.lock(getKey(), getCaller(), threadId, ttl);
     }
 
     public boolean shouldBackup() {
@@ -75,11 +74,11 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
 
 
     public int getSyncBackupCount() {
-        return mapPartition.getBackupCount();
+        return recordStore.getBackupCount();
     }
 
     public int getAsyncBackupCount() {
-        return mapPartition.getAsyncBackupCount();
+        return recordStore.getAsyncBackupCount();
     }
 
     public Operation getBackupOperation() {

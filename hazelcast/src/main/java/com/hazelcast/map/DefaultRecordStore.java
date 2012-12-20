@@ -21,6 +21,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.PartitionInfo;
 
@@ -93,6 +94,36 @@ public class DefaultRecordStore implements RecordStore {
     void clear() {
         records.clear();
         locks.clear();
+    }
+
+    public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
+        LockInfo lock = getOrCreateLock(dataKey);
+        return lock.lock(caller, threadId, ttl);
+    }
+
+    public int size() {
+        return records.size();
+    }
+
+    public boolean containsValue(Data dataValue) {
+        for (Record record : records.values()) {
+            Object value = toObject(dataValue);
+            if(record.getValue().equals(value))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean unlock(Data dataKey, Address caller, int threadId) {
+        LockInfo lock = getLock(dataKey);
+        if (lock == null)
+            return false;
+        if (lock.testLock(threadId, caller)) {
+            if (lock.unlock(caller, threadId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean tryRemove(Data dataKey) {

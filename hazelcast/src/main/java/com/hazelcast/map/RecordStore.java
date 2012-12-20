@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
-
-/*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+package com.hazelcast.map;/*
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +34,24 @@ import com.hazelcast.nio.Data;
 
 public interface RecordStore {
 
-    Data put(Data key, Data value, long ttl);
-    Data putIfAbsent(Data key, Data value, long ttl);
-    void putTransient(Data key, Data value, long ttl);
-    boolean tryPut(Data key, Data value, long ttl);
+    boolean tryRemove(Data dataKey);
+
+    Data remove(Data dataKey);
+
+    boolean remove(Data dataKey, Data testValue);
+
+    Data put(Data dataKey, Data dataValue, long ttl);
+
+    Data replace(Data dataKey, Data dataValue);
+
+    boolean replace(Data dataKey, Data oldValue, Data newValue);
+
+    void set(Data dataKey, Data dataValue, long ttl);
+
+    void putTransient(Data dataKey, Data dataValue, long ttl);
+
+    boolean tryPut(Data dataKey, Data dataValue, long ttl);
+
+    Data putIfAbsent(Data dataKey, Data dataValue, long ttl);
+
 }

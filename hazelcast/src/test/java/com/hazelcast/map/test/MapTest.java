@@ -208,7 +208,7 @@ public class MapTest {
 
     @Test
     public void testMapContainsKey() {
-        IMap<String, String> map = getInstance().getMap("testMapRemove");
+        IMap<String, String> map = getInstance().getMap("testMapContainsKey");
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -218,6 +218,20 @@ public class MapTest {
         assertEquals(map.containsKey("key1"), false);
         assertEquals(map.containsKey("key2"), true);
         assertEquals(map.containsKey("key5"), false);
+    }
+
+    @Test
+    public void testMapContainsValue() {
+        IMap<String, String> map = getInstance().getMap("testMapContainsValue");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertTrue(map.containsValue("value1"));
+        assertFalse(map.containsValue("value5"));
+        map.remove("key1");
+        assertFalse(map.containsValue("value1"));
+        assertTrue(map.containsValue("value2"));
+        assertFalse(map.containsValue("value5"));
     }
 
     @Test
