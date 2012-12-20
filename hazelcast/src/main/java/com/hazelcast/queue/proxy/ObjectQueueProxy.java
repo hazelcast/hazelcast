@@ -154,26 +154,19 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean containsAll(Collection<?> objects) {
-        Iterator iter = objects.iterator();
-        Set<Data> dataSet = new HashSet<Data>(objects.size());
-        while (iter.hasNext()){
-            Object o = iter.next();
-            final Data data = nodeEngine.toData(o);
-            dataSet.add(data);
-        }
-        return containsInternal(dataSet);
+        return containsInternal(getDataSet(objects));
     }
 
     public boolean addAll(Collection<? extends E> es) {
-        return false;
+        return addAllInternal(getDataSet(es));
     }
 
     public boolean removeAll(Collection<?> objects) {
-        return false;
+        return compareCollectionInternal(getDataSet(objects), false);
     }
 
     public boolean retainAll(Collection<?> objects) {
-        return false;
+        return compareCollectionInternal(getDataSet(objects), true);
     }
 
     public String getName() {
@@ -203,5 +196,13 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         sb.append("{name='").append(name).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    private Set<Data> getDataSet(Collection<?> objects){
+        Set<Data> dataSet = new HashSet<Data>(objects.size());
+        for (Object o: objects){
+            dataSet.add(IOUtil.toData(o));
+        }
+        return dataSet;
     }
 }

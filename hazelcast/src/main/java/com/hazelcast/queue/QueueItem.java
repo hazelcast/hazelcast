@@ -40,7 +40,7 @@ public class QueueItem implements DataSerializable {
         this.itemId = itemId;
     }
 
-    QueueItem(long itemId, Data data){
+    public QueueItem(long itemId, Data data){
         this.itemId = itemId;
         this.data = data;
     }
@@ -64,10 +64,16 @@ public class QueueItem implements DataSerializable {
     public boolean equals(Object obj) {
         if (obj instanceof QueueItem){
             QueueItem other = (QueueItem)obj;
-            return data.equals(other.data);
+            if (itemId == -1 || other.getItemId() == -1){
+                return data.equals(other.data);
+            }
+            return itemId == other.getItemId();
         }
         else if (obj instanceof Data){
             return data.equals(obj);
+        }
+        else if (obj instanceof Long){
+            return itemId == (Long)obj;
         }
         return false;
     }

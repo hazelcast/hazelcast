@@ -178,6 +178,45 @@ public class QueueContainer implements DataSerializable {
 
     }
 
+    public boolean addAll(Set<Data> dataSet, boolean fromBackup){
+        boolean modified = false;
+        for (Data data: dataSet){
+            modified |= offer(data, fromBackup);
+        }
+        return modified;
+    }
+
+    public Set<Long> compareCollection(Set<Data> dataSet, boolean retain){
+        Iterator<QueueItem> iter = itemQueue.iterator();
+        Set<Long> keySet = new HashSet<Long>();
+        while (iter.hasNext()){
+            QueueItem item = iter.next();
+            Data data = item.getData();
+            if (data == null && store.isEnabled()){
+                data = store.load(item.getItemId());
+                item.setData(data);
+            }
+            boolean contains = dataSet.contains(data);
+            if ((retain && !contains) || (!retain && contains)){
+                keySet.add(item.getItemId());
+                iter.remove();
+            }
+        }
+        return keySet;
+    }
+
+    public void compareCollectionBackup(Set<Long> keySet){
+        Iterator<QueueItem> iter = itemQueue.iterator();
+        while (iter.hasNext()){
+            QueueItem item = iter.next();
+            if (keySet.contains(item.getItemId())){
+                iter.remove();
+            }
+        }
+    }
+
+
+
 
     public QueueConfig getConfig() {
         return config;
@@ -208,6 +247,7 @@ public class QueueContainer implements DataSerializable {
             QueueItem item = new QueueItem();
             item.readData(in);
             itemQueue.offer(item);
+            idGen++;
         }
     }
 
