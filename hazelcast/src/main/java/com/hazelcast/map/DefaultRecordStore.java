@@ -114,6 +114,13 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
+    public boolean isLocked(Data dataKey) {
+        LockInfo lock = getLock(dataKey);
+        if(lock == null)
+            return false;
+        return lock.isLocked();
+    }
+
     public boolean unlock(Data dataKey, Address caller, int threadId) {
         LockInfo lock = getLock(dataKey);
         if (lock == null)

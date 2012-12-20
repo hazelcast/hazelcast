@@ -328,7 +328,17 @@ abstract class MapProxySupport {
     }
 
     protected boolean isLockedInternal(final Data key) {
-        return false;
+        int partitionId = nodeEngine.getPartitionId(key);
+        IsLockedOperation operation = new IsLockedOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
+            return (Boolean)future.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected boolean tryLockInternal(final Data key, final long time, final TimeUnit timeunit) {

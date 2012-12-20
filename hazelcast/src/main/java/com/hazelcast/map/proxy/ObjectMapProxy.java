@@ -142,6 +142,11 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return null;
     }
 
+    public boolean isLocked(final K k) {
+        Data key = nodeEngine.toData(k);
+        return isLockedInternal(key);
+    }
+
     public Future<V> putAsync(final K key, final V value) {
         return null;
     }
@@ -155,10 +160,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void putAll(final Map<? extends K, ? extends V> m) {
-    }
-
-    public boolean isLocked(final K key) {
-        return false;
     }
 
     public boolean tryLock(final K key) {

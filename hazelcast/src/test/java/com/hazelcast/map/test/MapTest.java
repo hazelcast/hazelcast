@@ -313,6 +313,27 @@ public class MapTest {
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 
+    @Test
+    public void testMapIsLocked() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapIsLocked");
+        map.lock("key1");
+        assertTrue(map.isLocked("key1"));
+        assertFalse(map.isLocked("key2"));
+
+        Thread thread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    assertTrue(map.isLocked("key1"));
+                    assertFalse(map.isLocked("key2"));
+                } catch (Exception e) {
+                    fail(e.getMessage());
+                }
+            }
+        });
+        thread.start();
+        thread.join();
+    }
+
 
 
     @Test
