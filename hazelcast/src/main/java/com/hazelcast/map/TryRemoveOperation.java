@@ -43,12 +43,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
         if (prepareTransaction()) {
             return;
         }
-        prepareValue();
-        if (record != null) {
-            remove();
-            store();
-            successful = true;
-        }
+        recordStore.tryRemove(dataKey);
     }
 
     @Override
