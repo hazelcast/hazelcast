@@ -18,6 +18,7 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -152,6 +153,29 @@ abstract class QueueProxySupport {
             throw new RuntimeException(throwable);
         }
     }
+
+    boolean addAllInternal(Set<Data> dataSet){
+        try {
+            AddAllOperation operation = new AddAllOperation(name, dataSet);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    boolean compareCollectionInternal(Set<Data> dataSet, boolean retain){
+        try {
+            CompareCollectionOperation operation = new CompareCollectionOperation(name, dataSet, retain);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
 
     private int getPartitionId() {
         return partitionId;
