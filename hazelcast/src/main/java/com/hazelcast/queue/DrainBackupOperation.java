@@ -18,20 +18,36 @@ package com.hazelcast.queue;
 
 import com.hazelcast.spi.BackupOperation;
 
-/**
- * @ali 12/11/12
- */
-public class PollBackupOperation extends QueueOperation implements BackupOperation {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-    public PollBackupOperation() {
+/**
+ * @ali 12/19/12
+ */
+public class DrainBackupOperation extends QueueOperation implements BackupOperation {
+
+    int maxSize;
+
+    public DrainBackupOperation() {
     }
 
-    public PollBackupOperation(String name) {
+    public DrainBackupOperation(String name, int maxSize) {
         super(name);
+        this.maxSize = maxSize;
     }
 
     public void run() throws Exception {
-        getContainer().poll(true);
-        response = Boolean.TRUE;
+        getContainer().drainFromBackup(maxSize);
+    }
+
+    public void writeInternal(DataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeInt(maxSize);
+    }
+
+    public void readInternal(DataInput in) throws IOException {
+        super.readInternal(in);
+        maxSize = in.readInt();
     }
 }

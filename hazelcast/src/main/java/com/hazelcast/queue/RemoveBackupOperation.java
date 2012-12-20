@@ -39,7 +39,7 @@ public class RemoveBackupOperation extends QueueOperation implements BackupOpera
     }
 
     public void run() throws Exception {
-        response = getContainer().remove(data);
+        response = getContainer().remove(data, true);
     }
 
     public void writeInternal(DataOutput out) throws IOException {

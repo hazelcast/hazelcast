@@ -19,6 +19,7 @@ package com.hazelcast.queue.proxy;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -37,7 +38,6 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        //TODO what to do
         System.out.println(queueService.getContainer("ali",false).size());
         return null;
     }
@@ -88,11 +88,19 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public int drainTo(Collection<? super E> objects) {
-        return 0;
+        return drainTo(objects, -1);
     }
 
     public int drainTo(Collection<? super E> objects, int i) {
-        return 0;
+        if (this.equals(objects)){
+            throw new IllegalArgumentException("Can not drain to same Queue");
+        }
+        List<Data> dataList = drainInternal(i);
+        for (Data data: dataList){
+            E e = IOUtil.toObject(data);
+            objects.add(e);
+        }
+        return dataList.size();
     }
 
     public E remove() {
@@ -105,7 +113,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
         final Data data = pollInternal(timeUnit.toMillis(timeout));
-        return (E) nodeEngine.toObject(data);
+        return IOUtil.toObject(data);
     }
 
     public E poll() {

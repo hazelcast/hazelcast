@@ -53,13 +53,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public QueueContainer getContainer(final String name, boolean fromBackup) {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(this, nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), name);
+            container = new QueueContainer(this, nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), name, fromBackup);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
             }
         }
-        container.setFromBackup(fromBackup);
         return container;
     }
 

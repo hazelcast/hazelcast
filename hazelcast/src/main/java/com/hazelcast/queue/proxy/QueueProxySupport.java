@@ -142,6 +142,17 @@ abstract class QueueProxySupport {
         }
     }
 
+    List<Data> drainInternal(int maxSize){
+        try {
+            DrainOperation operation = new DrainOperation(name, maxSize);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (List<Data>)nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
     private int getPartitionId() {
         return partitionId;
     }
