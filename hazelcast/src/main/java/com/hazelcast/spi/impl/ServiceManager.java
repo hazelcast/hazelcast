@@ -16,11 +16,13 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.atomicNumber.AtomicNumberService;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.CustomServiceConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.Services;
+import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -66,6 +68,7 @@ class ServiceManager {
                 logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeEngine));
                 registerService(QueueService.NAME, new QueueService(nodeEngine));
+                registerService(AtomicNumberService.NAME, new AtomicNumberService());
                 // TODO: add other services
                 // ...
                 // ...
