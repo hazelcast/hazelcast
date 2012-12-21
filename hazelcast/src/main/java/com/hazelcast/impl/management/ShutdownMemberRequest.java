@@ -23,8 +23,6 @@ import java.io.IOException;
 // author: sancar - 21.12.2012
 public class ShutdownMemberRequest implements ConsoleRequest {
 
-    String result;
-
     public ShutdownMemberRequest(){
 
     }
@@ -34,12 +32,12 @@ public class ShutdownMemberRequest implements ConsoleRequest {
     }
 
     public Object readResponse(DataInput in) throws IOException {
-        return result;
+        return in.readUTF();
     }
 
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
         mcs.getHazelcastInstance().shutdown();
-        result = "successful";
+        dos.writeUTF("successful");
     }
 
     public void writeData(DataOutput out) throws IOException {
