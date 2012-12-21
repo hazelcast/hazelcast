@@ -309,6 +309,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
             register(new LogVersionMismatchRequest());
+            register(new ShutdownMemberRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {

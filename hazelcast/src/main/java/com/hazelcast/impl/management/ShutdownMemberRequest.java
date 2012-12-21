@@ -20,23 +20,26 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-// author: sancar - 12.12.2012
-public class RunGcRequest implements ConsoleRequest {
+// author: sancar - 21.12.2012
+public class ShutdownMemberRequest implements ConsoleRequest {
 
-    public RunGcRequest(){
-        super();
+    String result;
+
+    public ShutdownMemberRequest(){
+
     }
 
     public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_RUN_GC;
+        return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_SHUTDOWN;
     }
 
     public Object readResponse(DataInput in) throws IOException {
-        return "Successfully garbage collected.";
+        return result;
     }
 
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
-        System.gc();
+        mcs.getHazelcastInstance().shutdown();
+        result = "successful";
     }
 
     public void writeData(DataOutput out) throws IOException {
