@@ -42,7 +42,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Future<Data> getAsync(final Data key) {
-        return null;
+        return getAsyncInternal(key);
     }
 
     public Data put(final Data k, final Data v) {
@@ -70,7 +70,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Future<Data> putAsync(final Data key, final Data value) {
-        return null;
+        return putAsyncInternal(key, value);
     }
 
     public boolean replace(final Data key, final Data oldValue, final Data newValue) {
@@ -101,7 +101,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Future<Data> removeAsync(final Data key) {
-        return null;
+        return removeAsyncInternal(key);
     }
 
     public boolean containsKey(Object k) {
@@ -115,11 +115,11 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Map<Data, Data> getAll(final Set<Data> keys) {
-        return null;
+        return getAllDataInternal(keys);
     }
 
     public void putAll(final Map<? extends Data, ? extends Data> m) {
-
+        putAllDataInternal(m);
     }
 
     public void lock(final Data key) {
@@ -147,63 +147,64 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public void addLocalEntryListener(final EntryListener<Data, Data> listener) {
-
+        addLocalEntryListenerInternal(listener);
     }
 
     public void addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
-
+        addEntryListenerInternal(listener, includeValue);
     }
 
     public void removeEntryListener(final EntryListener<Data, Data> listener) {
+        removeEntryListenerInternal(listener);
 
     }
 
     public void addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
-
+        addEntryListenerInternal(listener, key, includeValue);
     }
 
     public void removeEntryListener(final EntryListener<Data, Data> listener, final Data key) {
-
+        removeEntryListenerInternal(listener, key);
     }
 
     public MapEntry<Data, Data> getMapEntry(final Data key) {
-        return null;
+        return getMapEntryInternal(key);
     }
 
-    public boolean evict(final Object key) {
-        return false;
+    public boolean evict(final Data key) {
+        return evictInternal(key);
     }
 
     public Set<Data> keySet() {
-        return null;
+        return keySetInternal();
     }
 
     public Collection<Data> values() {
-        return null;
+        return valuesInternal();
     }
 
     public Set<Entry<Data, Data>> entrySet() {
-        return null;
+        return entrySetInternal();
     }
 
     public Set<Data> keySet(final Predicate predicate) {
-        return null;
+        return keySetInternal(predicate);
     }
 
     public Set<Entry<Data, Data>> entrySet(final Predicate predicate) {
-        return null;
+        return entrySetInternal(predicate);
     }
 
     public Collection<Data> values(final Predicate predicate) {
-        return null;
+        return valuesInternal(predicate);
     }
 
     public Set<Data> localKeySet() {
-        return null;
+        return localKeySetInternal();
     }
 
     public Set<Data> localKeySet(final Predicate predicate) {
-        return null;
+        return localKeySetInternal(predicate);
     }
 
     public Object getId() {
@@ -219,6 +220,5 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public void destroy() {
-
     }
 }

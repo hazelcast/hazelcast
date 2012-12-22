@@ -677,7 +677,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param key key to evict
      * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
      */
-    boolean evict(Object key);
+    boolean evict(K key);
 
     /**
      * Returns a set clone of the keys contained in this map.
