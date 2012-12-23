@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.Address;
+
 import java.util.EventObject;
 
 /**
@@ -123,6 +125,10 @@ public class EntryEvent<K, V> extends EventObject {
      */
     public String getName() {
         return name.substring(Prefix.MAP.length());
+    }
+
+    public EntryEvent cloneWithoutValues() {
+        return new EntryEvent<K,V>(getSource(), getMember(), entryEventType.getType(), getKey(), null, null);
     }
 
     @Override

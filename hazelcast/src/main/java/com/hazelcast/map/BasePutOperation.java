@@ -16,19 +16,20 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.*;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
     Record record;
 
-    Data oldValueData;
+    Data dataOldValue;
     PartitionContainer pc;
     ResponseHandler responseHandler;
     DefaultRecordStore recordStore;
@@ -66,6 +67,14 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public void beforeRun() {
         init();
+    }
+
+    public void afterRun() {
+        Member caller = nodeEngine.getCluster().getMember(getCaller());
+        // todo optimize serialization. maybe you should not do here. or you can check if anyone wants values
+        int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
+        EntryEvent event = new EntryEvent(getNodeEngine().getThisAddress().toString(), caller, eventType, nodeEngine.toObject(dataKey), nodeEngine.toObject(dataOldValue), nodeEngine.toObject(dataValue) );
+        mapService.publishEvent(name, dataKey, event);
     }
 
 

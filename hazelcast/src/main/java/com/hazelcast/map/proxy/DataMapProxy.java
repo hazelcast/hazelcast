@@ -151,7 +151,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public void addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
-        addEntryListenerInternal(listener, includeValue);
+        addEntryListenerInternal(listener, null, includeValue);
     }
 
     public void removeEntryListener(final EntryListener<Data, Data> listener) {
@@ -176,7 +176,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Set<Data> keySet() {
-        return keySetInternal();
+        return keySetDataInternal();
     }
 
     public Collection<Data> values() {

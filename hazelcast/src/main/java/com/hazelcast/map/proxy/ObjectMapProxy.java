@@ -199,8 +199,8 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     }
 
-    public void addEntryListener(final EntryListener<K, V> listener, final boolean includeValue) {
-
+    public void addEntryListener(final EntryListener listener, final boolean includeValue) {
+         addEntryListenerInternal(listener, null, includeValue);
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener) {
@@ -208,7 +208,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
-
+        addEntryListenerInternal(listener, nodeEngine.toData(key), includeValue);
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
@@ -232,7 +232,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet() {
-        return null;
+        return keySetObjectInternal();
     }
 
     public Collection<V> values() {

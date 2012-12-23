@@ -221,6 +221,20 @@ public class MapTest {
     }
 
     @Test
+    public void testMapKeySet() {
+        IMap<String, String> map = getInstance().getMap("testMapKeySet");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        HashSet<String> actual = new HashSet<String>();
+        actual.add("value1");
+        actual.add("value2");
+        actual.add("value3");
+//        assertEquals( map.keySet(), actual);
+    }
+
+
+        @Test
     public void testMapContainsValue() {
         IMap<String, String> map = getInstance().getMap("testMapContainsValue");
         map.put("key1", "value1");

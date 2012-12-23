@@ -19,27 +19,25 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
-import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.nio.Data;
+import com.hazelcast.partition.*;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService {
+        TransactionalService, RemoteService, EventPublishingService<EntryEvent, EntryListener> {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
@@ -207,4 +205,42 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void destroy() {
     }
 
+    public void publishEvent(String mapName, Data key, EntryEvent event) {
+        Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
+        Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
+        Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
+        for (EventRegistration candidate : candidates) {
+            EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
+            if (filter.eval(key)) {
+                if (filter.isIncludeValue()) {
+                    registrationsWithValue.add(candidate);
+                } else {
+                    registrationsWithoutValue.add(candidate);
+                }
+            }
+        }
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
+    }
+
+    public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
+        nodeEngine.getEventService().registerListener(MAP_SERVICE_NAME, mapName, eventFilter, entryListener);
+    }
+
+    public void dispatchEvent(EntryEvent event, EntryListener listener) {
+        switch (event.getEventType()) {
+            case ADDED:
+                listener.entryAdded(event);
+                break;
+            case EVICTED:
+                listener.entryEvicted(event);
+                break;
+            case UPDATED:
+                listener.entryUpdated(event);
+                break;
+            case REMOVED:
+                listener.entryRemoved(event);
+                break;
+        }
+    }
 }

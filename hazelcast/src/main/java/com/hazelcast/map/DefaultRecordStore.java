@@ -17,14 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.PartitionInfo;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -162,6 +165,10 @@ public class DefaultRecordStore implements RecordStore {
             removed = true;
         }
         return removed;
+    }
+
+    public Set<Data> keySet() {
+        return records.keySet();
     }
 
     public Data remove(Data dataKey) {
