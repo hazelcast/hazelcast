@@ -74,5 +74,9 @@ Future<String> future = executorService.submit (new Echo("myinput"));
 //when ready, get the result of your execution
 String result = future.get();
 ]]></programlisting>
+
+    If you need access to the current <literal>HazelcastInstance</literal> you are executing the task under, implement the interface <literal>HazelcastInstanceAware</literal>.
+    This will call the method <literal>setHazelcastInstance()</literal> prior to executing your task.
+        
     </para>
 </simplesect>
