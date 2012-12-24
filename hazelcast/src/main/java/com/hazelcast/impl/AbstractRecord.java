@@ -42,8 +42,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     protected volatile long lastUpdateTime = 0;
     protected volatile boolean dirty = false;
 
-    protected volatile DistributedLock lock = null;
-
     protected volatile OptionalInfo optionalInfo = null;
 
     public AbstractRecord(int blockId, Data key, long ttl, long maxIdleMillis, long id) {
@@ -73,28 +71,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
             this.getOptionalInfo().indexes = indexes;
             this.getOptionalInfo().indexTypes = indexTypes;
         }
-    }
-
-    // called from ServiceThread
-    public boolean unlock(int threadId, Address address) {
-        invalidateValueCache();
-        final DistributedLock dl = lock;
-        return dl == null || dl.unlock(address, threadId);
-    }
-
-    public boolean testLock(int threadId, Address address) {
-        final DistributedLock dl = lock;
-        return dl == null || dl.testLock(threadId, address);
-    }
-
-    // called from ServiceThread
-    public boolean lock(int threadId, Address address) {
-        invalidateValueCache();
-        if (lock == null) {
-            lock = new DistributedLock(address, threadId);
-            return true;
-        }
-        return lock.lock(address, threadId);
     }
 
     protected void invalidateValueCache() {
@@ -282,14 +258,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         invalidateValueCache();
     }
 
-    public DistributedLock getLock() {
-        return lock;
-    }
-
-    public void setLock(DistributedLock lock) {
-        this.lock = lock;
-    }
-
     public Collection<ValueHolder> getMultiValues() {
         if (optionalInfo == null) return null;
         return getOptionalInfo().lsMultiValues;
@@ -352,36 +320,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         }
     }
 
-    public boolean isLocked() {
-        final DistributedLock dl = lock;
-        return dl != null && dl.isLocked();
-    }
-
-//    public int getScheduledActionCount() {
-//        if (optionalInfo == null) return 0;
-//        return (getOptionalInfo().lsScheduledActions == null) ? 0 : getOptionalInfo().lsScheduledActions.size();
-//    }
-
-    public int getLockCount() {
-        final DistributedLock dl = lock;
-        return (dl == null) ? 0 : dl.getLockCount();
-    }
-
-    // called from ServiceThread
-    public void clearLock() {
-        lock = null;
-    }
-
-    public Address getLockAddress() {
-        final DistributedLock dl = lock;
-        return (dl == null) ? null : dl.getLockAddress();
-    }
-
-    public long getLockAcquireTime() {
-        final DistributedLock dl = lock;
-        return (dl != null ? dl.getAcquireTime() : -1L);
-    }
-
     public OptionalInfo getOptionalInfo() {
         if (optionalInfo == null) {
             optionalInfo = new OptionalInfo();
@@ -410,7 +348,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     class OptionalInfo {
-
         volatile Collection<ValueHolder> lsMultiValues = null; // multimap values
         Long[] indexes; // indexes of the current value;
         byte[] indexTypes; // index types of the current value;
