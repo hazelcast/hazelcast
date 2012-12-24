@@ -27,10 +27,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -241,7 +238,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Collection<V> values() {
-        return null;
+        Collection<Data> dataSet = valuesInternal();
+        Collection<V> valueSet = new ArrayList<V>();
+        for (Data data : dataSet) {
+            valueSet.add((V) toObject(data));
+        }
+        return valueSet;
     }
 
     public Set<Entry<K, V>> entrySet() {

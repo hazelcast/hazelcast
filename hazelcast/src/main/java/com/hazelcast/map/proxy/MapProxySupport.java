@@ -422,6 +422,22 @@ abstract class MapProxySupport {
         }
     }
 
+    protected Collection<Data> valuesInternal() {
+        try {
+            MapValuesOperation mapValuesOperation = new MapValuesOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapValuesOperation);
+            List<Data> values = new ArrayList<Data>();
+            for (Object result : results.values()) {
+                values.addAll(((MapValueCollection) nodeEngine.toObject(result)).getValues());
+            }
+            return values;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+
     protected void forceUnlockInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
         ForceUnlockOperation operation = new ForceUnlockOperation(name, key);
@@ -471,10 +487,6 @@ abstract class MapProxySupport {
     }
 
     public void flush() {
-    }
-
-    protected Collection<Data> valuesInternal() {
-        return null;
     }
 
     protected Set<Entry<Data, Data>> entrySetInternal() {

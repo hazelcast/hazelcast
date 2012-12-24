@@ -22,40 +22,42 @@ import com.hazelcast.nio.DataSerializable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MapKeySet implements DataSerializable {
+public class MapValueCollection implements DataSerializable {
 
-    Set<Data> keySet;
+    Collection<Data> values;
 
 
-    public MapKeySet(Set<Data> keySet) {
-        this.keySet = keySet;
+    public MapValueCollection(Collection<Data> values) {
+        this.values = values;
     }
 
-    public MapKeySet() {
+    public MapValueCollection() {
     }
 
-    public Set<Data> getKeySet() {
-        return keySet;
+    public Collection<Data> getValues() {
+        return values;
     }
 
     public void writeData(DataOutput out) throws IOException {
-        int size = keySet.size();
+        int size = values.size();
         out.writeInt(size);
-        for (Data o : keySet) {
+        for (Data o : values) {
             o.writeData(out);
         }
     }
 
     public void readData(DataInput in) throws IOException {
         int size = in.readInt();
-        keySet = new HashSet<Data>(size);
+        values = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
-            keySet.add(data);
+            values.add(data);
         }
     }
 
