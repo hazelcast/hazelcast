@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.Operation;
@@ -24,6 +25,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -33,7 +35,7 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
 
     Set<Data> dataSet;
 
-    transient Set<Long> keySet;
+    transient Map<Long, Data> dataMap;
 
     boolean retain;
 
@@ -47,8 +49,15 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        keySet = getContainer().compareCollection(dataSet, retain);
-        response = keySet.size() > 0;
+        dataMap = getContainer().compareCollection(dataSet, retain);
+        response = dataMap.size() > 0;
+    }
+
+    public void afterRun() throws Exception {
+        for (Map.Entry<Long, Data> entry: dataMap.entrySet()){
+            Data data = entry.getValue();
+            publishEvent(ItemEventType.REMOVED, data);
+        }
     }
 
     public boolean shouldBackup() {
@@ -56,7 +65,7 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new CompareCollectionBackupOperation(name, keySet);
+        return new CompareCollectionBackupOperation(name, dataMap.keySet());
     }
 
     public void writeInternal(DataOutput out) throws IOException {

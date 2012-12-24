@@ -16,9 +16,15 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+
+import java.util.Collection;
 
 /**
  * @ali 12/6/12
@@ -53,6 +59,22 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
 
     public int getKeyHash() {
         return name.hashCode();
+    }
+
+    public boolean hasListener(){
+        EventService eventService = getNodeEngine().getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        return registrations.size() > 0;
+    }
+
+    public void publishEvent(ItemEventType eventType, Data data){
+        EventService eventService = getNodeEngine().getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        for (EventRegistration registration: registrations){
+            QueueEventFilter filter = (QueueEventFilter)registration.getFilter();
+            QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType);
+            eventService.publishEvent(getServiceName(), registration, event);
+        }
     }
 
 

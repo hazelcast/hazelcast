@@ -16,6 +16,8 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
@@ -36,8 +38,14 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
         response = getContainer().poll(false);
     }
 
+    public void afterRun() throws Exception {
+        if (response != null){
+            publishEvent(ItemEventType.REMOVED, (Data)response);
+        }
+    }
+
     public boolean shouldBackup() {
-        return true;
+        return response != null;
     }
 
     public Operation getBackupOperation() {

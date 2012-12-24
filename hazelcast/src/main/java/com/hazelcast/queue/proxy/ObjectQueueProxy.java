@@ -20,7 +20,9 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.queue.QueueEventFilter;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
@@ -38,7 +40,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        System.out.println(queueService.getContainer("ali",false).size());
+        System.out.println(queueService.getContainer("ali", false).size());
         return null;
     }
 
@@ -92,11 +94,11 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public int drainTo(Collection<? super E> objects, int i) {
-        if (this.equals(objects)){
+        if (this.equals(objects)) {
             throw new IllegalArgumentException("Can not drain to same Queue");
         }
         List<Data> dataList = drainInternal(i);
-        for (Data data: dataList){
+        for (Data data : dataList) {
             E e = IOUtil.toObject(data);
             objects.add(e);
         }
@@ -174,9 +176,11 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+        queueService.addItemListener(name, listener, includeValue);
     }
 
     public void removeItemListener(ItemListener<E> listener) {
+        queueService.removeItemListener(name, listener);
     }
 
     public InstanceType getInstanceType() {
@@ -198,9 +202,9 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         return sb.toString();
     }
 
-    private Set<Data> getDataSet(Collection<?> objects){
+    private Set<Data> getDataSet(Collection<?> objects) {
         Set<Data> dataSet = new HashSet<Data>(objects.size());
-        for (Object o: objects){
+        for (Object o : objects) {
             dataSet.add(IOUtil.toData(o));
         }
         return dataSet;
