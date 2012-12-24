@@ -263,7 +263,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> localKeySet() {
-        return null;
+        Set<Data> dataSet = localKeySetInternal();
+        HashSet<K> keySet = new HashSet<K>();
+        for (Data data : dataSet) {
+            keySet.add((K) toObject(data));
+        }
+        return keySet;
     }
 
     public Set<K> localKeySet(final Predicate predicate) {

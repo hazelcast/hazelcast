@@ -274,7 +274,7 @@ abstract class MapProxySupport {
         try {
             MapSizeOperation mapSizeOperation = new MapSizeOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation, false);
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) nodeEngine.toObject(result);
@@ -290,7 +290,7 @@ abstract class MapProxySupport {
         try {
             ContainsValueOperation containsValueOperation = new ContainsValueOperation(name, dataValue);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation, false);
 
             for (Object result : results.values()) {
                 Boolean contains = (Boolean) nodeEngine.toObject(result);
@@ -307,7 +307,7 @@ abstract class MapProxySupport {
         try {
             MapIsEmptyOperation mapIsEmptyOperation = new MapIsEmptyOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapIsEmptyOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapIsEmptyOperation, false);
             for (Object result : results.values()) {
                 if (!(Boolean) nodeEngine.toObject(result))
                     return false;
@@ -410,7 +410,23 @@ abstract class MapProxySupport {
         try {
             MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation, false);
+            Set<Data> keySet = new HashSet<Data>();
+            for (Object result : results.values()) {
+                Set keys = ((MapKeySet) nodeEngine.toObject(result)).getKeySet();
+                keySet.addAll(keys);
+            }
+            return keySet;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected Set<Data> localKeySetInternal() {
+        try {
+            MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation, true);
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
                 Set keys = ((MapKeySet) nodeEngine.toObject(result)).getKeySet();
@@ -426,7 +442,7 @@ abstract class MapProxySupport {
         try {
             MapValuesOperation mapValuesOperation = new MapValuesOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapValuesOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapValuesOperation, false);
             List<Data> values = new ArrayList<Data>();
             for (Object result : results.values()) {
                 values.addAll(((MapValueCollection) nodeEngine.toObject(result)).getValues());
@@ -435,6 +451,9 @@ abstract class MapProxySupport {
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
+    }
+
+    public void clearInternal() {
     }
 
 
@@ -483,9 +502,6 @@ abstract class MapProxySupport {
         return false;
     }
 
-    public void clear() {
-    }
-
     public void flush() {
     }
 
@@ -502,10 +518,6 @@ abstract class MapProxySupport {
     }
 
     protected Collection<Data> valuesInternal(final Predicate predicate) {
-        return null;
-    }
-
-    protected Set<Data> localKeySetInternal() {
         return null;
     }
 
