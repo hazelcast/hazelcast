@@ -471,13 +471,6 @@ abstract class MapProxySupport {
         }
     }
 
-    public boolean lockMap(final long time, final TimeUnit timeunit) {
-        return false;
-    }
-
-    public void unlockMap() {
-    }
-
     protected void addLocalEntryListenerInternal(final EntryListener<Data, Data> listener) {
     }
 

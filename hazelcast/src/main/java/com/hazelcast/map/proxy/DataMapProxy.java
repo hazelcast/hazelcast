@@ -150,6 +150,18 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         forceUnlockInternal(key);
     }
 
+    public Set<Data> keySet() {
+        return keySetInternal();
+    }
+
+    public Collection<Data> values() {
+        return valuesInternal();
+    }
+
+    public Set<Entry<Data, Data>> entrySet() {
+        return entrySetInternal();
+    }
+
     public void addLocalEntryListener(final EntryListener<Data, Data> listener) {
         addLocalEntryListenerInternal(listener);
     }
@@ -160,7 +172,6 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     public void removeEntryListener(final EntryListener<Data, Data> listener) {
         removeEntryListenerInternal(listener);
-
     }
 
     public void addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
@@ -177,18 +188,6 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     public boolean evict(final Data key) {
         return evictInternal(key);
-    }
-
-    public Set<Data> keySet() {
-        return keySetInternal();
-    }
-
-    public Collection<Data> values() {
-        return valuesInternal();
-    }
-
-    public Set<Entry<Data, Data>> entrySet() {
-        return entrySetInternal();
     }
 
     public Set<Data> keySet(final Predicate predicate) {

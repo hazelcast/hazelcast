@@ -184,16 +184,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         forceUnlockInternal(k);
     }
 
-    public boolean lockMap(final long time, final TimeUnit timeunit) {
-        return false;
-    }
-
-    public void unlockMap() {
-
-    }
-
     public void addLocalEntryListener(final EntryListener<K, V> listener) {
-
     }
 
     public void addEntryListener(final EntryListener listener, final boolean includeValue) {
