@@ -18,10 +18,7 @@ package com.hazelcast.map.test;
 
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
@@ -419,8 +416,154 @@ public class MapTest {
         assertEquals(m2.get(3), 3);
     }
 
+    @Test
+    public void testMapListenersWithValue() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapListenersWithValue");
+        final Object[] addedKey = new Object[1];
+        final Object[] addedValue = new Object[1];
+        final Object[] updatedKey = new Object[1];
+        final Object[] oldValue = new Object[1];
+        final Object[] newValue = new Object[1];
+        final Object[] removedKey = new Object[1];
+        final Object[] removedValue = new Object[1];
 
-        @Test
+        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                addedKey[0] = event.getKey();
+                addedValue[0] = event.getValue();
+            }
+
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                removedKey[0] = event.getKey();
+                removedValue[0] = event.getOldValue();
+            }
+
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                updatedKey[0] = event.getKey();
+                oldValue[0] = event.getOldValue();
+                newValue[0] = event.getValue();
+            }
+
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+        };
+        map.addEntryListener(listener, true);
+        map.put("key", "value");
+        map.put("key", "value2");
+        map.remove("key");
+        Thread.sleep(1000);
+
+        assertEquals(addedKey[0], "key");
+        assertEquals(addedValue[0], "value");
+        assertEquals(updatedKey[0], "key");
+        assertEquals(oldValue[0], "value");
+        assertEquals(newValue[0], "value2");
+        assertEquals(removedKey[0], "key");
+        assertEquals(removedValue[0], "value2");
+    }
+
+
+    @Test
+    public void testMapListenersWithValueAndKeyFiltered() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapListenersWithValueAndKeyFiltered");
+        final Object[] addedKey = new Object[1];
+        final Object[] addedValue = new Object[1];
+        final Object[] updatedKey = new Object[1];
+        final Object[] oldValue = new Object[1];
+        final Object[] newValue = new Object[1];
+        final Object[] removedKey = new Object[1];
+        final Object[] removedValue = new Object[1];
+
+        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                addedKey[0] = event.getKey();
+                addedValue[0] = event.getValue();
+            }
+
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                removedKey[0] = event.getKey();
+                removedValue[0] = event.getOldValue();
+            }
+
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                updatedKey[0] = event.getKey();
+                oldValue[0] = event.getOldValue();
+                newValue[0] = event.getValue();
+            }
+
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+        };
+        map.addEntryListener(listener, "key", true);
+        map.put("keyx", "valuex");
+        map.put("key", "value");
+        map.put("key", "value2");
+        map.put("keyx", "valuex2");
+        map.put("keyz", "valuez");
+        map.remove("keyx");
+        map.remove("key");
+        map.remove("keyz");
+        Thread.sleep(1000);
+
+        assertEquals(addedKey[0], "key");
+        assertEquals(addedValue[0], "value");
+        assertEquals(updatedKey[0], "key");
+        assertEquals(oldValue[0], "value");
+        assertEquals(newValue[0], "value2");
+        assertEquals(removedKey[0], "key");
+        assertEquals(removedValue[0], "value2");
+    }
+
+
+    @Test
+    public void testMapListenersWithoutValue() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapListenersWithoutValue");
+        final Object[] addedKey = new Object[1];
+        final Object[] addedValue = new Object[1];
+        final Object[] updatedKey = new Object[1];
+        final Object[] oldValue = new Object[1];
+        final Object[] newValue = new Object[1];
+        final Object[] removedKey = new Object[1];
+        final Object[] removedValue = new Object[1];
+
+        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                addedKey[0] = event.getKey();
+                addedValue[0] = event.getValue();
+            }
+
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                removedKey[0] = event.getKey();
+                removedValue[0] = event.getOldValue();
+            }
+
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                updatedKey[0] = event.getKey();
+                oldValue[0] = event.getOldValue();
+                newValue[0] = event.getValue();
+            }
+
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+        };
+        map.addEntryListener(listener, false);
+        map.put("key", "value");
+        map.put("key", "value2");
+        map.remove("key");
+        Thread.sleep(1000);
+
+        assertEquals(addedKey[0], "key");
+        assertEquals(addedValue[0], null);
+        assertEquals(updatedKey[0], "key");
+        assertEquals(oldValue[0], null);
+        assertEquals(newValue[0], null);
+        assertEquals(removedKey[0], "key");
+        assertEquals(removedValue[0], null);
+    }
+
+
+
+    @Test
     public void testGetPutAndSizeWhileStartShutdown() {
 //        IMap<String, String> map = getInstance().getMap("testGetPutAndSizeWhileStartShutdown");
 //        try {
