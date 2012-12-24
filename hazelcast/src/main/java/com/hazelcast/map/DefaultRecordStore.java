@@ -27,6 +27,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.PartitionInfo;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -169,6 +171,14 @@ public class DefaultRecordStore implements RecordStore {
 
     public Set<Data> keySet() {
         return records.keySet();
+    }
+
+    public Collection<Data> values() {
+        Collection<Data> values = new ArrayList<Data>(records.size());
+        for (Record record : records.values()) {
+            values.add(record.getValueData());
+        }
+        return values;
     }
 
     public Data remove(Data dataKey) {

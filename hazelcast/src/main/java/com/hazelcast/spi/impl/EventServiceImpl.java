@@ -71,43 +71,60 @@ public class EventServiceImpl implements EventService {
                 nodeEngine.getThisAddress(), listener);
 
         if (segment.addRegistration(topic, reg)) {
-            Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-            Collection<Future> calls = new ArrayList<Future>(members.size());
-            for (MemberImpl member : members) {
-                if (!member.localMember()) {
-                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                            new RegistrationOperation(topic, reg), member.getAddress()).build();
-                    calls.add(inv.invoke());
-                }
-            }
-            for (Future f : calls) {
-                try {
-                    f.get(5, TimeUnit.SECONDS);
-                } catch (InterruptedException ignored) {
-                } catch (TimeoutException ignored) {
-                } catch (ExecutionException e) {
-                    throw new HazelcastException(e);
-                }
-            }
+            final RegistrationOperation op = new RegistrationOperation(topic, reg);
+            invokeOnOtherNodes(serviceName, op);
             return reg;
         } else {
             return null;
         }
     }
 
-    private String createId(String serviceName) {
-        return serviceName + ":" + UUID.randomUUID().toString();
-    }
-
-    public boolean registerSubscriber(String serviceName, String topic, Registration reg) {
+    private boolean registerSubscriber(String serviceName, String topic, Registration reg) {
         EventServiceSegment segment = getSegment(serviceName, true);
         return segment.addRegistration(topic, reg);
     }
 
     public void deregisterListener(String serviceName, String topic, String id) {
-        EventServiceSegment segment = getSegment(serviceName, false);
-        if(segment != null)
-        segment.removeRegistration(topic, id);
+        final EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment != null) {
+            final Registration reg = segment.removeRegistration(topic, id);
+            if (reg != null) {
+                final DeregistrationOperation op = new DeregistrationOperation(topic, id);
+                invokeOnOtherNodes(serviceName, op);
+            }
+        }
+    }
+
+    private void deregisterSubscriber(String serviceName, String topic, String id) {
+        final EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment != null) {
+            segment.removeRegistration(topic, id);
+        }
+    }
+
+    private void invokeOnOtherNodes(String serviceName, Operation op) {
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Future> calls = new ArrayList<Future>(members.size());
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                        op, member.getAddress()).build();
+                calls.add(inv.invoke());
+            }
+        }
+        for (Future f : calls) {
+            try {
+                f.get(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            } catch (TimeoutException ignored) {
+            } catch (ExecutionException e) {
+                throw new HazelcastException(e);
+            }
+        }
+    }
+
+    private String createId(String serviceName) {
+        return serviceName + ":" + UUID.randomUUID().toString();
     }
 
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
@@ -223,9 +240,15 @@ public class EventServiceImpl implements EventService {
             return false;
         }
 
-        private void removeRegistration(String topic, String id) {
-            Registration registration = registrationIdMap.get(id);
-            registrations.get(topic).remove(registration);
+        private Registration removeRegistration(String topic, String id) {
+            final Registration registration = registrationIdMap.remove(id);
+            if (registration != null) {
+                final Collection<Registration> all = registrations.get(topic);
+                if (all != null) {
+                    all.remove(registration);
+                }
+            }
+            return registration;
         }
     }
 
@@ -410,7 +433,7 @@ public class EventServiceImpl implements EventService {
 
         private String topic;
         private Registration registration;
-        private boolean response = false;
+        private transient boolean response = false;
 
         RegistrationOperation() {
         }
@@ -446,6 +469,47 @@ public class EventServiceImpl implements EventService {
             topic = in.readUTF();
             registration = new Registration();
             registration.readData(in);
+        }
+    }
+
+    static class DeregistrationOperation extends AbstractOperation {
+
+        private String topic;
+        private String id;
+
+        DeregistrationOperation() {
+        }
+
+        private DeregistrationOperation(String topic, String id) {
+            this.topic = topic;
+            this.id = id;
+        }
+
+        public void run() throws Exception {
+            EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
+            eventService.deregisterSubscriber(getServiceName(), topic, id);
+        }
+
+        @Override
+        public Object getResponse() {
+            return true;
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        @Override
+        protected void writeInternal(DataOutput out) throws IOException {
+            out.writeUTF(topic);
+            out.writeUTF(id);
+        }
+
+        @Override
+        protected void readInternal(DataInput in) throws IOException {
+            topic = in.readUTF();
+            id = in.readUTF();
         }
     }
 }

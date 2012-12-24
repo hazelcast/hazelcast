@@ -224,14 +224,31 @@ public class MapTest {
         map.put("key2", "value2");
         map.put("key3", "value3");
         HashSet<String> actual = new HashSet<String>();
+        actual.add("key1");
+        actual.add("key2");
+        actual.add("key3");
+        assertEquals( map.keySet(), actual);
+    }
+
+    @Test
+    public void testMapValues() {
+        IMap<String, String> map = getInstance().getMap("testMapValues");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        map.put("key4", "value3");
+        List<String> values = new ArrayList<String>(map.values());
+        List<String> actual = new ArrayList<String>();
         actual.add("value1");
         actual.add("value2");
         actual.add("value3");
-//        assertEquals( map.keySet(), actual);
+        actual.add("value3");
+        Collections.sort(values);
+        Collections.sort(actual);
+        assertEquals(values, actual);
     }
 
-
-        @Test
+    @Test
     public void testMapContainsValue() {
         IMap<String, String> map = getInstance().getMap("testMapContainsValue");
         map.put("key1", "value1");

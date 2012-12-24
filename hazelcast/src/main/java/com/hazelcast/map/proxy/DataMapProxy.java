@@ -122,6 +122,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         putAllDataInternal(m);
     }
 
+    public void clear() {
+        clearInternal();
+    }
+
     public void lock(final Data key) {
         lockInternal(key);
     }
@@ -176,7 +180,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Set<Data> keySet() {
-        return keySetDataInternal();
+        return keySetInternal();
     }
 
     public Collection<Data> values() {
