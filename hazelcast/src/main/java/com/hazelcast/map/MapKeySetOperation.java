@@ -40,7 +40,7 @@ public class MapKeySetOperation extends AbstractNamedOperation implements Partit
 
     @Override
     public Object getResponse() {
-        return keySet;
+        return new MapKeySet(keySet);
     }
 
     @Override

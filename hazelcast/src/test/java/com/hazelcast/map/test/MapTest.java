@@ -224,10 +224,10 @@ public class MapTest {
         map.put("key2", "value2");
         map.put("key3", "value3");
         HashSet<String> actual = new HashSet<String>();
-        actual.add("value1");
-        actual.add("value2");
-        actual.add("value3");
-//        assertEquals( map.keySet(), actual);
+        actual.add("key1");
+        actual.add("key2");
+        actual.add("key3");
+        assertEquals( map.keySet(), actual);
     }
 
 

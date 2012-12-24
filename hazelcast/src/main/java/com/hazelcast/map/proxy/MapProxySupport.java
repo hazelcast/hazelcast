@@ -406,33 +406,15 @@ abstract class MapProxySupport {
         }
     }
 
-    protected Set<Data> keySetDataInternal() {
+    protected Set<Data> keySetInternal() {
         try {
             MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
-                Set keys = (Set<Data>) nodeEngine.toObject(result);
+                Set keys = ((MapKeySet) nodeEngine.toObject(result)).getKeySet();
                 keySet.addAll(keys);
-            }
-            return keySet;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
-    }
-
-    protected Set keySetObjectInternal() {
-        try {
-            MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
-            Set<Object> keySet = new HashSet<Object>();
-            for (Object result : results.values()) {
-                Set<Data> keys = (Set<Data>) nodeEngine.toObject(result);
-                for (Data key : keys) {
-                    keySet.add(nodeEngine.toObject(key));
-                }
             }
             return keySet;
         } catch (Throwable throwable) {

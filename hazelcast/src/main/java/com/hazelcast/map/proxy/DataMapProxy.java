@@ -176,7 +176,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Set<Data> keySet() {
-        return keySetDataInternal();
+        return keySetInternal();
     }
 
     public Collection<Data> values() {

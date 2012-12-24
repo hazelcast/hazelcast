@@ -232,7 +232,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet() {
-        return keySetObjectInternal();
+        Set<Data> dataSet = keySetInternal();
+        HashSet<K> keySet = new HashSet<K>();
+        for (Data data : dataSet) {
+            keySet.add((K) toObject(data));
+        }
+        return keySet;
     }
 
     public Collection<V> values() {
