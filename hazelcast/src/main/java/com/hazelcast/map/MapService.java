@@ -46,11 +46,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final PartitionContainer[] partitionContainers;
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
+    private final ConcurrentMap<ListenerKey, String> eventRegistrations;
 
     public MapService(final NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
+        eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -224,7 +226,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
-        nodeEngine.getEventService().registerListener(MAP_SERVICE_NAME, mapName, eventFilter, entryListener);
+        EventRegistration registration = nodeEngine.getEventService().registerListener(MAP_SERVICE_NAME, mapName, eventFilter, entryListener);
+        eventRegistrations.put(new ListenerKey(entryListener, ((EntryEventFilter)eventFilter).getKey()), registration.getId());
+
+    }
+
+    public void removeEventListener(EntryListener entryListener, String mapName, Object key) {
+        String registrationId = eventRegistrations.get(new ListenerKey(entryListener, key));
+        nodeEngine.getEventService().deregisterListener(MAP_SERVICE_NAME, mapName, registrationId);
     }
 
     public void dispatchEvent(EntryEvent event, EntryListener listener) {

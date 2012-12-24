@@ -104,8 +104,10 @@ public class EventServiceImpl implements EventService {
         return segment.addRegistration(topic, reg);
     }
 
-    public void deregisterListener(String serviceName, String id) {
-
+    public void deregisterListener(String serviceName, String topic, String id) {
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if(segment != null)
+        segment.removeRegistration(topic, id);
     }
 
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
@@ -219,6 +221,11 @@ public class EventServiceImpl implements EventService {
                 return true;
             }
             return false;
+        }
+
+        private void removeRegistration(String topic, String id) {
+            Registration registration = registrationIdMap.get(id);
+            registrations.get(topic).remove(registration);
         }
     }
 

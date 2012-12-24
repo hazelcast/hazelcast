@@ -203,16 +203,16 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
          addEntryListenerInternal(listener, null, includeValue);
     }
 
-    public void removeEntryListener(final EntryListener<K, V> listener) {
-
-    }
-
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         addEntryListenerInternal(listener, nodeEngine.toData(key), includeValue);
     }
 
-    public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
+    public void removeEntryListener(final EntryListener<K, V> listener) {
+        removeEntryListenerInternal(listener);
+    }
 
+    public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
+        removeEntryListenerInternal(listener, nodeEngine.toData(key));
     }
 
     public MapEntry<K, V> getMapEntry(final K key) {

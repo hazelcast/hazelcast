@@ -464,7 +464,8 @@ abstract class MapProxySupport {
     protected void addLocalEntryListenerInternal(final EntryListener<Data, Data> listener) {
     }
 
-    protected void removeEntryListenerInternal(final EntryListener<Data, Data> listener) {
+    protected void removeEntryListenerInternal(final EntryListener listener) {
+        removeEntryListenerInternal(listener, null);
     }
 
     protected void addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
@@ -472,7 +473,8 @@ abstract class MapProxySupport {
         mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void removeEntryListenerInternal(final EntryListener<Data, Data> listener, final Data key) {
+    protected void removeEntryListenerInternal(final EntryListener listener, final Data key) {
+        mapService.removeEventListener(listener, name, key);
     }
 
     protected MapEntry<Data, Data> getMapEntryInternal(final Data key) {

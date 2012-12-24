@@ -34,6 +34,10 @@ public class EntryEventFilter implements EventFilter {
         return includeValue;
     }
 
+    public Object getKey() {
+        return key;
+    }
+
     public boolean eval(Object arg) {
         return key == null || key.equals(arg);
     }
