@@ -35,12 +35,12 @@ public class PutIfAbsentOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        oldValueData = recordStore.putIfAbsent(dataKey, dataValue, ttl);
+        dataOldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl);
     }
 
     @Override
     public Object getResponse() {
-        return oldValueData;
+        return dataOldValue;
     }
 
     public boolean shouldBackup() {

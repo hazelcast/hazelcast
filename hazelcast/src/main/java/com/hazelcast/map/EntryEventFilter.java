@@ -16,33 +16,25 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.EventFilter;
 
-public class RemoveOperation extends BaseRemoveOperation {
+public class EntryEventFilter implements EventFilter {
 
-    public RemoveOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey, txnId);
+    boolean includeValue = false;
+    Object key = null;
+
+    public EntryEventFilter(boolean includeValue, Object key) {
+        this.includeValue = includeValue;
+        this.key = key;
     }
 
-    public RemoveOperation() {
+    public boolean isIncludeValue() {
+        return includeValue;
     }
 
-
-    public void doOp() {
-        if (prepareTransaction()) {
-            return;
-        }
-
-        dataOldValue = recordStore.remove(dataKey);
-    }
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
-    @Override
-    public String toString() {
-        return "RemoveOperation{" + name + "}";
+    public boolean eval(Object arg) {
+        return key == null || key.equals(arg);
     }
 }

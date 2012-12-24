@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
@@ -24,14 +26,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
     Object key;
     Record record;
 
-    Data valueData;
+    Data dataOldValue;
     PartitionContainer pc;
     ResponseHandler responseHandler;
     DefaultRecordStore recordStore;
@@ -64,37 +65,15 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         recordStore = pc.getMapPartition(name);
     }
 
-//    protected void load() {
-//            if (recordStore.loader != null) {
-//                key = toObject(dataKey);
-//                Object oldValue = recordStore.loader.load(key);
-//            valueData = toData(oldValue);
-//        }
-//    }
-//
-//    protected void store() {
-//        if (recordStore.store != null && recordStore.writeDelayMillis == 0) {
-//            if (key == null) {
-//                key = toObject(dataKey);
-//            }
-//            recordStore.store.delete(key);
-//        }
-//    }
-
-//    protected void prepareValue() {
-//        record = recordStore.records.get(dataKey);
-//        if (record == null) {
-//            load();
-//        } else {
-//            valueData = record.getValueData();
-//        }
-//    }
+    public void beforeRun() {
+        init();
+    }
 
     public abstract void doOp();
 
     @Override
     public Object getResponse() {
-        return valueData;
+        return dataOldValue;
     }
 
     public Operation getBackupOperation() {
@@ -119,6 +98,14 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         recordStore.records.remove(dataKey);
     }
 
+
+    public void afterRun() {
+        Member caller = nodeEngine.getCluster().getMember(getCaller());
+        // todo optimize serialization. maybe you should not do here. or you can check if anyone wants values
+        int eventType = EntryEvent.TYPE_REMOVED;
+        EntryEvent event = new EntryEvent(getNodeEngine().getThisAddress().toString(), caller, eventType, nodeEngine.toObject(dataKey), nodeEngine.toObject(dataOldValue), null );
+        mapService.publishEvent(name, dataKey, event);
+    }
 
     @Override
     public String toString() {

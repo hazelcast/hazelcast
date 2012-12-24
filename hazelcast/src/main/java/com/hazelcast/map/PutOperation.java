@@ -31,7 +31,7 @@ public class PutOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        oldValueData = recordStore.put(dataKey, dataValue, ttl);
+        dataOldValue = recordStore.put(dataKey, dataValue, ttl);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class PutOperation extends BasePutOperation {
 
     @Override
     public Object getResponse() {
-        return oldValueData;
+        return dataOldValue;
     }
 
     public boolean shouldBackup() {

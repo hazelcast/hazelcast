@@ -16,24 +16,21 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionImpl;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -59,15 +56,25 @@ abstract class MapProxySupport {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-            Future f = invocation.invoke();
-            return (Data) f.get();
+            Future invoke = invocation.invoke();
+            return (Data) invoke.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
     }
 
     protected Future<Data> getAsyncInternal(final Data key) {
-        return null;
+        int partitionId = nodeEngine.getPartitionId(key);
+        GetOperation operation = new GetOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future invoke = invocation.invoke();
+            return invoke;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
@@ -120,7 +127,6 @@ abstract class MapProxySupport {
         String txnId = prepareTransaction(partitionId);
         PutTransientOperation operation = new PutTransientOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadContext.get().getThreadId());
-        operation.setServiceName(MAP_SERVICE_NAME);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
@@ -132,7 +138,17 @@ abstract class MapProxySupport {
     }
 
     protected Future<Data> putAsyncInternal(final Data key, final Data value) {
-        return null;
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        PutOperation operation = new PutOperation(name, key, value, txnId, -1);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            return invocation.invoke();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
@@ -226,7 +242,17 @@ abstract class MapProxySupport {
     }
 
     protected Future<Data> removeAsyncInternal(final Data key) {
-        return null;
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        RemoveOperation operation = new RemoveOperation(name, key, txnId);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            return invocation.invoke();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected boolean containsKeyInternal(Data key) {
@@ -268,7 +294,7 @@ abstract class MapProxySupport {
 
             for (Object result : results.values()) {
                 Boolean contains = (Boolean) nodeEngine.toObject(result);
-                if(contains)
+                if (contains)
                     return true;
             }
             return false;
@@ -292,11 +318,36 @@ abstract class MapProxySupport {
         }
     }
 
-    protected Map<Data, Data> getAllInternal(final Set<Data> keys) {
-        return null;
+    // todo optimize this
+    protected Map<Data, Data> getAllDataInternal(final Set<Data> keys) {
+        Map<Data, Data> res = new HashMap(keys.size());
+        for (Data key : keys) {
+            res.put(key, getInternal(key));
+        }
+        return res;
     }
 
-    protected void putAllInternal(final Map<? extends Data, ? extends Data> m) {
+    // todo optimize this
+    protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
+        Map<Object, Object> res = new HashMap(keys.size());
+        for (Data key : keys) {
+            res.put(IOUtil.toObject(key), IOUtil.toObject(getInternal(key)));
+        }
+        return res;
+    }
+
+    // todo optimize these
+    protected void putAllDataInternal(final Map<? extends Data, ? extends Data> m) {
+        for (Entry<? extends Data, ? extends Data> entry : m.entrySet()) {
+            putInternal(entry.getKey(), entry.getValue(), -1, null);
+        }
+    }
+
+    // todo optimize these
+    protected void putAllObjectInternal(final Map<? extends Object, ? extends Object> m) {
+        for (Entry<? extends Object, ? extends Object> entry : m.entrySet()) {
+            putInternal(IOUtil.toData(entry.getKey()), IOUtil.toData(entry.getValue()), -1, null);
+        }
     }
 
     protected void lockInternal(final Data key) {
@@ -335,18 +386,72 @@ abstract class MapProxySupport {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future future = invocation.invoke();
+            return (Boolean) future.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected boolean tryLockInternal(final Data key, final long timeout, final TimeUnit timeunit) {
+        int partitionId = nodeEngine.getPartitionId(key);
+        TryLockOperation operation = new TryLockOperation(name, key,  getTimeInMillis(timeout, timeunit));
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
             return (Boolean)future.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
     }
 
-    protected boolean tryLockInternal(final Data key, final long time, final TimeUnit timeunit) {
-        return false;
+    protected Set<Data> keySetDataInternal() {
+        try {
+            MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
+            Set<Data> keySet = new HashSet<Data>();
+            for (Object result : results.values()) {
+                Set keys = (Set<Data>) nodeEngine.toObject(result);
+                keySet.addAll(keys);
+            }
+            return keySet;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected Set keySetObjectInternal() {
+        try {
+            MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
+            Set<Object> keySet = new HashSet<Object>();
+            for (Object result : results.values()) {
+                Set<Data> keys = (Set<Data>) nodeEngine.toObject(result);
+                for (Data key : keys) {
+                    keySet.add(nodeEngine.toObject(key));
+                }
+            }
+            return keySet;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     protected void forceUnlockInternal(final Data key) {
-
+        int partitionId = nodeEngine.getPartitionId(key);
+        ForceUnlockOperation operation = new ForceUnlockOperation(name, key);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
+            future.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     public boolean lockMap(final long time, final TimeUnit timeunit) {
@@ -359,13 +464,12 @@ abstract class MapProxySupport {
     protected void addLocalEntryListenerInternal(final EntryListener<Data, Data> listener) {
     }
 
-    protected void addEntryListenerInternal(final EntryListener<Data, Data> listener, final boolean includeValue) {
-    }
-
     protected void removeEntryListenerInternal(final EntryListener<Data, Data> listener) {
     }
 
-    protected void addEntryListenerInternal(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
+    protected void addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
+        EventFilter eventFilter = new EntryEventFilter(includeValue, key);
+        mapService.addEventListener(listener, eventFilter, name);
     }
 
     protected void removeEntryListenerInternal(final EntryListener<Data, Data> listener, final Data key) {
@@ -383,10 +487,6 @@ abstract class MapProxySupport {
     }
 
     public void flush() {
-    }
-
-    protected Set<Data> keySetInternal() {
-        return null;
     }
 
     protected Collection<Data> valuesInternal() {

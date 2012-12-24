@@ -17,14 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.partition.PartitionInfo;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -108,7 +111,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean containsValue(Data dataValue) {
         for (Record record : records.values()) {
             Object value = toObject(dataValue);
-            if(record.getValue().equals(value))
+            if (record.getValue().equals(value))
                 return true;
         }
         return false;
@@ -116,7 +119,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean isLocked(Data dataKey) {
         LockInfo lock = getLock(dataKey);
-        if(lock == null)
+        if (lock == null)
             return false;
         return lock.isLocked();
     }
@@ -131,6 +134,15 @@ public class DefaultRecordStore implements RecordStore {
             }
         }
         return false;
+    }
+
+
+    public boolean forceUnlock(Data dataKey) {
+        LockInfo lock = getLock(dataKey);
+        if (lock == null)
+            return false;
+        lock.clear();
+        return true;
     }
 
     public boolean tryRemove(Data dataKey) {
@@ -153,6 +165,10 @@ public class DefaultRecordStore implements RecordStore {
             removed = true;
         }
         return removed;
+    }
+
+    public Set<Data> keySet() {
+        return records.keySet();
     }
 
     public Data remove(Data dataKey) {
@@ -183,13 +199,13 @@ public class DefaultRecordStore implements RecordStore {
                 Object oldValue = loader.load(toObject(dataKey));
                 oldValueData = toData(oldValue);
             }
-            if(oldValueData == null)
+            if (oldValueData == null)
                 return false;
         } else {
             oldValueData = record.getValueData();
         }
 
-        if(testValue.equals(oldValueData)) {
+        if (testValue.equals(oldValueData)) {
             records.remove(dataKey);
             if (store != null && writeDelayMillis == 0) {
                 Object key = record.getKey();

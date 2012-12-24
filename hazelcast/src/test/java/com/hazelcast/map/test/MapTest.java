@@ -29,10 +29,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -221,6 +221,20 @@ public class MapTest {
     }
 
     @Test
+    public void testMapKeySet() {
+        IMap<String, String> map = getInstance().getMap("testMapKeySet");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        HashSet<String> actual = new HashSet<String>();
+        actual.add("value1");
+        actual.add("value2");
+        actual.add("value3");
+//        assertEquals( map.keySet(), actual);
+    }
+
+
+        @Test
     public void testMapContainsValue() {
         IMap<String, String> map = getInstance().getMap("testMapContainsValue");
         map.put("key1", "value1");
@@ -280,15 +294,18 @@ public class MapTest {
     }
 
     @Test
-    public void testMapLockAndUnlock() throws InterruptedException {
+    public void testMapLockAndUnlockAndTryLock() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlock");
         map.lock("key1");
         map.lock("key2");
         map.lock("key3");
+        map.lock("key0");
         final CountDownLatch latch = new CountDownLatch(3);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
+                    assertFalse(map.tryLock("key0"));
+                    assertTrue(map.tryLock("key0", 1500, TimeUnit.MILLISECONDS));
                     map.put("key1", "value1");
                     latch.countDown();
                     map.put("key2", "value2");
@@ -302,6 +319,7 @@ public class MapTest {
         });
         thread.start();
         Thread.sleep(1000);
+        map.unlock("key0");
         assertEquals(3, latch.getCount());
         map.unlock("key1");
         Thread.sleep(1000);
@@ -363,8 +381,46 @@ public class MapTest {
         thread.join();
     }
 
+    @Test
+    public void testGetPutRemoveAsync() {
+        final IMap<Object, Object> map = getInstance().getMap("testGetAsync");
+        Future<Object> ff = map.putAsync(1, 1);
+        try {
+            assertEquals(null, ff.get());
+            assertEquals(1, map.putAsync(1,2).get());
+            assertEquals(2, map.getAsync(1).get());
+            assertEquals(2, map.removeAsync(1).get());
+            assertEquals(0, map.size());
+        } catch (InterruptedException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (ExecutionException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+    }
 
     @Test
+    public void testGetAllPutAll() {
+        final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
+        Map mm = new HashMap();
+        mm.put(1,1);
+        mm.put(2,2);
+        mm.put(3,3);
+        map.putAll(mm);
+        assertEquals(map.size(), 3);
+        assertEquals(map.get(1), 1);
+        assertEquals(map.get(2), 2);
+        assertEquals(map.get(3), 3);
+        Set ss = new HashSet();
+        ss.add(1);
+        ss.add(3);
+        Map m2 = map.getAll(ss);
+        assertEquals(m2.size(), 2);
+        assertEquals(m2.get(1), 1);
+        assertEquals(m2.get(3), 3);
+    }
+
+
+        @Test
     public void testGetPutAndSizeWhileStartShutdown() {
 //        IMap<String, String> map = getInstance().getMap("testGetPutAndSizeWhileStartShutdown");
 //        try {

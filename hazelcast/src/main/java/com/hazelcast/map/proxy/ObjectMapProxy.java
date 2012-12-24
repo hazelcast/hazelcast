@@ -19,6 +19,7 @@ package com.hazelcast.map.proxy;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.ObjectFuture;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
@@ -27,6 +28,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -34,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
+import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K, V> {
@@ -139,7 +142,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public Future<V> getAsync(final K k) {
         Data key = nodeEngine.toData(k);
-        return null;
+        return new ObjectFuture(getAsyncInternal(key));
     }
 
     public boolean isLocked(final K k) {
@@ -147,31 +150,41 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return isLockedInternal(key);
     }
 
-    public Future<V> putAsync(final K key, final V value) {
-        return null;
+    public Future putAsync(final K key, final V value) {
+        Data k = nodeEngine.toData(key);
+        Data v = nodeEngine.toData(value);
+        return new ObjectFuture(putAsyncInternal(k, v));
     }
 
-    public Future<V> removeAsync(final K key) {
-        return null;
+    public Future removeAsync(final K key) {
+        Data k = nodeEngine.toData(key);
+        return new ObjectFuture(removeAsyncInternal(k));
     }
 
     public Map<K, V> getAll(final Set<K> keys) {
-        return null;
+        Set<Data> ks = new HashSet(keys.size());
+        for (K key : keys) {
+            Data k = nodeEngine.toData(key);
+            ks.add(k);
+        }
+        return (Map<K, V>) getAllObjectInternal(ks);
     }
 
     public void putAll(final Map<? extends K, ? extends V> m) {
+        putAllObjectInternal(m);
     }
 
     public boolean tryLock(final K key) {
-        return false;
+        return tryLockInternal(nodeEngine.toData(key), 0, null);
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) {
-        return false;
+        return tryLockInternal(nodeEngine.toData(key), time, timeunit);
     }
 
     public void forceUnlock(final K key) {
-
+        Data k = nodeEngine.toData(key);
+        forceUnlockInternal(k);
     }
 
     public boolean lockMap(final long time, final TimeUnit timeunit) {
@@ -186,8 +199,8 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     }
 
-    public void addEntryListener(final EntryListener<K, V> listener, final boolean includeValue) {
-
+    public void addEntryListener(final EntryListener listener, final boolean includeValue) {
+         addEntryListenerInternal(listener, null, includeValue);
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener) {
@@ -195,7 +208,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
-
+        addEntryListenerInternal(listener, nodeEngine.toData(key), includeValue);
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
@@ -219,7 +232,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet() {
-        return null;
+        return keySetObjectInternal();
     }
 
     public Collection<V> values() {

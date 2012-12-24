@@ -105,7 +105,7 @@ public class LockInfo implements Serializable {
         return lockCount == 0 || getLockThreadId() == threadId && getLockAddress().equals(address);
     }
 
-    void clear() {
+    public void clear() {
         lockThreadId = -1;
         lockCount = 0;
         lockAddress = null;

@@ -35,7 +35,7 @@ public class ReplaceOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        oldValueData = recordStore.replace(dataKey, dataValue);
+        dataOldValue = recordStore.replace(dataKey, dataValue);
     }
 
     @Override
@@ -54,6 +54,6 @@ public class ReplaceOperation extends BasePutOperation {
 
     @Override
     public Object getResponse() {
-        return oldValueData;
+        return dataOldValue;
     }
 }

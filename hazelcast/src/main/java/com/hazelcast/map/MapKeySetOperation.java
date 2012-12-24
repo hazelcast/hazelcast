@@ -17,32 +17,34 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class RemoveOperation extends BaseRemoveOperation {
+import java.util.Set;
 
-    public RemoveOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey, txnId);
+public class MapKeySetOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+    Set<Data> keySet;
+
+    public MapKeySetOperation(String name) {
+        super(name);
     }
 
-    public RemoveOperation() {
+    public MapKeySetOperation() {
     }
 
-
-    public void doOp() {
-        if (prepareTransaction()) {
-            return;
-        }
-
-        dataOldValue = recordStore.remove(dataKey);
-    }
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+    public void run() {
+        MapService mapService = (MapService) getService();
+        DefaultRecordStore recordStore = mapService.getMapPartition(getPartitionId(), name);
+        keySet = recordStore.keySet();
     }
 
     @Override
-    public String toString() {
-        return "RemoveOperation{" + name + "}";
+    public Object getResponse() {
+        return keySet;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 }

@@ -36,10 +36,6 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     public RemoveIfSameOperation() {
     }
 
-    public void beforeRun() {
-        init();
-    }
-
     public void doOp() {
         if (prepareTransaction()) {
             return;
