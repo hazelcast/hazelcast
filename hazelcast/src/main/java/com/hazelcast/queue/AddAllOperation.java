@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.Operation;
@@ -44,6 +45,13 @@ public class AddAllOperation extends QueueBackupAwareOperation {
 
     public void run() throws Exception {
         response = getContainer().addAll(dataSet, false);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        for (Data data: dataSet){
+            publishEvent(ItemEventType.ADDED, data);
+        }
     }
 
     public boolean shouldBackup() {

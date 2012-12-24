@@ -68,7 +68,7 @@ public class QueueMigrationOperation extends AbstractOperation {
         migrationData = new HashMap<String, QueueContainer>(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            QueueContainer container = new QueueContainer();
+            QueueContainer container = new QueueContainer(name);
             container.readData(in);
             migrationData.put(name, container);
         }
