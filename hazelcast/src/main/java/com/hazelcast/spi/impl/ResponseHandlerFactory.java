@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ResponseHandlerFactory {
 
-    public static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
+    private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
 
     public static void setLocalResponseHandler(InvocationImpl inv) {
         inv.getOperation().setResponseHandler(createLocalResponseHandler(inv));
@@ -44,7 +45,7 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
-        if (op.getCallId() == -1) {
+        if (op.getCallId() < 0) {
             if (op.returnsResponse()) {
                 throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
             }
@@ -89,7 +90,7 @@ public final class ResponseHandlerFactory {
             } else {
                 response = new Response(obj);
             }
-            response.setCallId(callId);
+            OperationAccessor.setCallId(response, callId);
             response.setPartitionId(partitionId);
             nodeEngine.getOperationService().send(response, conn);
         }

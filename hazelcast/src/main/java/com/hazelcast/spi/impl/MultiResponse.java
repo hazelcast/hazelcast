@@ -21,6 +21,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -30,11 +31,13 @@ import java.io.IOException;
  * @mdogan 10/1/12
  */
 
-public final class MultiResponse extends AbstractOperation {
+public final class MultiResponse extends AbstractOperation implements ResponseOperation {
 
     private Data[] operationData;
 
     private transient Operation[] operations;
+
+    private transient boolean hasResponse = false;
 
     public MultiResponse() {
     }
@@ -44,17 +47,31 @@ public final class MultiResponse extends AbstractOperation {
         for (int i = 0; i < responses.length; i++) {
             if (responses[i] instanceof MultiResponse) {
                 MultiResponse mr = (MultiResponse) responses[i];
+                if (mr.hasResponse) {
+                    markHasResponse();
+                }
                 Data[] newOperationData = new Data[operationData.length + mr.operationData.length - 1];
                 System.arraycopy(operationData, 0, newOperationData, 0, i);
                 System.arraycopy(mr.operationData, 0, newOperationData, i, mr.operationData.length);
                 operationData = newOperationData;
             }
             else if (responses[i] instanceof Operation) {
+                if (responses[i] instanceof Response) {
+                    markHasResponse();
+                }
                 operationData[i] = IOUtil.toData(responses[i]);
             } else {
+                markHasResponse();
                 operationData[i] = IOUtil.toData(new Response(responses[i]));
             }
         }
+    }
+
+    private void markHasResponse() {
+        if (hasResponse) {
+            throw new IllegalArgumentException("Only and only one Response operation can be sent at a time!");
+        }
+        hasResponse = true;
     }
 
     @Override
@@ -66,9 +83,11 @@ public final class MultiResponse extends AbstractOperation {
             final Operation op = (Operation) nodeEngine.toObject(operationData[i]);
             op.setNodeEngine(nodeEngine)
                     .setCaller(getCaller())
-                    .setCallId(getCallId())
                     .setConnection(getConnection())
                     .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+            if (op instanceof Response) {
+                OperationAccessor.setCallId(op, getCallId());
+            }
             operations[i] = op;
         }
     }

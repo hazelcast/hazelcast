@@ -36,6 +36,10 @@ public abstract class Operation implements DataSerializable {
     private int replicaIndex;
     private long callId = -1;
     private boolean validateTarget = true;
+
+    private long invocationTime = -1;
+    private long callTimeout = Long.MAX_VALUE;
+
     // injected
     private transient NodeEngine nodeEngine = null;
     private transient Object service;
@@ -88,7 +92,8 @@ public abstract class Operation implements DataSerializable {
         return callId;
     }
 
-    public final Operation setCallId(long callId) {
+    // Accessed using OperationAccessor
+    final Operation setCallId(long callId) {
         this.callId = callId;
         return this;
     }
@@ -155,12 +160,32 @@ public abstract class Operation implements DataSerializable {
         return responseHandler;
     }
 
+    public final long getInvocationTime() {
+        return invocationTime;
+    }
+
+    // Accessed using OperationAccessor
+    final void setInvocationTime(long invocationTime) {
+        this.invocationTime = invocationTime;
+    }
+
+    public final long getCallTimeout() {
+        return callTimeout;
+    }
+
+    // Accessed using OperationAccessor
+    final void setCallTimeout(long callTimeout) {
+        this.callTimeout = callTimeout;
+    }
+
     public final void writeData(DataOutput out) throws IOException {
         IOUtil.writeNullableString(out, serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
         out.writeLong(callId);
         out.writeBoolean(validateTarget);
+        out.writeLong(invocationTime);
+        out.writeLong(callTimeout);
         writeInternal(out);
     }
 
@@ -170,6 +195,8 @@ public abstract class Operation implements DataSerializable {
         replicaIndex = in.readInt();
         callId = in.readLong();
         validateTarget = in.readBoolean();
+        invocationTime = in.readLong();
+        callTimeout = in.readLong();
         readInternal(in);
     }
 

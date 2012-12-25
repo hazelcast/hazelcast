@@ -277,7 +277,7 @@ public class ConnectionManager {
 
     public Connection getOrConnect(final Address address, final boolean silent) {
         Connection connection = mapConnections.get(address);
-        if (connection == null) {
+        if (connection == null && live) {
             if (setConnectionInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
                 ioService.executeAsync(new SocketConnector(this, address, silent));
@@ -357,9 +357,8 @@ public class ConnectionManager {
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
         for (int i = 0; i < selectors.length; i++) {
-            InOutSelector s = new InOutSelector(this);
-            selectors[i] = s;
-            new Thread(ioService.getThreadGroup(), s, ioService.getThreadPrefix() + i).start();
+            selectors[i] = new InOutSelector(this, i);
+            selectors[i].start();
         }
         if (serverSocketChannel != null) {
             if (socketAcceptorThread != null) {

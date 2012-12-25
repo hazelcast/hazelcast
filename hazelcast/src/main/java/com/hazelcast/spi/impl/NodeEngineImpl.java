@@ -35,6 +35,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
+import java.util.logging.Level;
 
 public class NodeEngineImpl implements NodeEngine {
 
@@ -180,8 +181,27 @@ public class NodeEngineImpl implements NodeEngine {
         waitNotifyService.onPartitionMigrate(getThisAddress(), migrationInfo);
     }
 
+    /**
+     * Post join operations must be lock free; means no locks at all;
+     * no partition locks, no key-based locks, no service level locks!
+     *
+     * Post join operations should return response, at least a null response.
+     *
+     * Also making post join operation a JoinOperation will help a lot.
+     */
+    @PrivateApi
+    public Operation[] getPostJoinOperations() {
+        final Operation eventPostJoinOp = eventService.getPostJoinOperation();
+        return eventPostJoinOp != null ? new Operation[]{eventPostJoinOp} : null;
+    }
+
+    public long getClusterTime() {
+        return node.getClusterService().getClusterTime();
+    }
+
     @PrivateApi
     public void shutdown() {
+        logger.log(Level.FINEST, "Shutting down services...");
         waitNotifyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();

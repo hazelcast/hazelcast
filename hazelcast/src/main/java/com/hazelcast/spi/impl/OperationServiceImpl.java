@@ -27,16 +27,16 @@ import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.FastExecutor;
 import com.hazelcast.util.SpinLock;
 import com.hazelcast.util.SpinReadWriteLock;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,11 +58,14 @@ final class OperationServiceImpl implements OperationService {
     private final Lock[] backupLocks = new Lock[1000];
     private final SpinReadWriteLock[] partitionLocks;
     private final FastExecutor executor;
+    private final long defaultCallTimeout;
+    private final ConcurrentHashSet<CallKey> executingCalls = new ConcurrentHashSet<CallKey>();
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class.getName());
+        defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
         executor = new FastExecutor(5, new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                 node.getThreadPoolNamePrefix("operation"), node.getConfig().getClassLoader()));
         for (int i = 0; i < ownerLocks.length; i++) {
@@ -87,86 +90,6 @@ final class OperationServiceImpl implements OperationService {
         return new InvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
-    void invoke(final InvocationImpl inv) {
-        final Operation op = inv.getOperation();
-        checkOperation(op);
-        final Address target = inv.getTarget();
-        final int partitionId = inv.getPartitionId();
-        final int replicaIndex = inv.getReplicaIndex();
-        final String serviceName = inv.getServiceName();
-        final Address thisAddress = node.getThisAddress();
-        op.setNodeEngine(nodeEngine).setServiceName(serviceName).setCaller(thisAddress)
-                .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        if (target == null) {
-            throw new WrongTargetException(thisAddress, target, partitionId,
-                    op.getClass().getName(), serviceName);
-        }
-        if (!isJoinOperation(op) && node.getClusterService().getMember(target) == null) {
-            throw new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName);
-        }
-        if (thisAddress.equals(target)) {
-            ResponseHandlerFactory.setLocalResponseHandler(inv);
-            runOperation(op);
-        } else {
-            Call call = new Call(target, inv);
-            long callId = registerCall(call);
-            op.setCallId(callId);
-            boolean sent = send(op, target);
-            if (!sent) {
-                inv.setResult(new RetryableException(new IOException("Packet not sent!")));
-            }
-        }
-    }
-
-    private void checkOperation(Operation op) {
-        final Operation parentOp = (Operation) ThreadContext.get().getCurrentOperation();
-        boolean allowed = true;
-        if (parentOp != null) {
-            if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
-                // OK!
-            } else if (parentOp instanceof PartitionLevelOperation) {
-                if (op instanceof PartitionLevelOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            } else if (parentOp instanceof KeyBasedOperation) {
-                if (op instanceof PartitionLevelOperation) {
-                    allowed = false;
-                } else if (op instanceof KeyBasedOperation
-                        && ((KeyBasedOperation) parentOp).getKeyHash() == ((KeyBasedOperation) op).getKeyHash()
-                        && parentOp.getPartitionId() == op.getPartitionId()) {
-                    // OK!
-                } else if (op instanceof PartitionAwareOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            } else if (parentOp instanceof PartitionAwareOperation) {
-                if (op instanceof PartitionLevelOperation) {
-                    allowed = false;
-                } else if (op instanceof PartitionAwareOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            }
-        }
-        if (!allowed) {
-            throw new HazelcastException("INVOCATION IS NOT ALLOWED! ParentOp: "
-                    + parentOp + ", CurrentOp: " + op);
-        }
-    }
-
     @PrivateApi
     public void handleOperation(final Packet packet) {
         executor.execute(new RemoteOperationProcessor(packet));
@@ -174,10 +97,20 @@ final class OperationServiceImpl implements OperationService {
 
     public void runOperation(final Operation op) {
         final ThreadContext threadContext = ThreadContext.get();
-        threadContext.setCurrentOperation(op);
         SpinLock partitionLock = null;
         Lock keyLock = null;
+        CallKey callKey = null;
         try {
+            if (isCallTimedOut(op)) {
+                Object response = new CallTimeoutException("Call timed out for "
+                        + op.getClass().getName()
+                        + ", call-time: " + op.getInvocationTime()
+                        + ", timeout: " + op.getCallTimeout());
+                op.getResponseHandler().sendResponse(response);
+                return;
+            }
+            threadContext.setCurrentOperation(op);
+            callKey = beforeCallExecution(op);
             final int partitionId = op.getPartitionId();
             if (op instanceof PartitionAwareOperation) {
                 if (partitionId < 0) {
@@ -216,10 +149,11 @@ final class OperationServiceImpl implements OperationService {
                     }
                 }
             }
-            runOperationUnderExistingLock(op);
+            doRunOperation(op);
         } catch (Throwable e) {
             handleOperationError(op, e);
         } finally {
+            afterCallExecution(op, callKey);
             if (keyLock != null) {
                 keyLock.unlock();
             }
@@ -230,10 +164,52 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
+    boolean isCallTimedOut(Operation op) {
+        if (op.returnsResponse()) {
+            final long now = nodeEngine.getClusterTime();
+            final long callTimeout = op.getCallTimeout();
+            final long invocationTime = op.getInvocationTime();
+            if (invocationTime + callTimeout < now) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @PrivateApi
     void runOperationUnderExistingLock(Operation op) {
         final ThreadContext threadContext = ThreadContext.get();
         final Object parentOperation = threadContext.getCurrentOperation();
         threadContext.setCurrentOperation(op);
+        final CallKey callKey = beforeCallExecution(op);
+        try {
+           doRunOperation(op);
+        } finally {
+            afterCallExecution(op, callKey);
+            threadContext.setCurrentOperation(parentOperation);
+        }
+    }
+
+    private CallKey beforeCallExecution(Operation op) {
+        CallKey callKey = null;
+        if (op.getCallId() > -1 && op.returnsResponse()) {
+            callKey = new CallKey(op.getCaller(), op.getCallId());
+            if (!executingCalls.add(callKey)) {
+                logger.log(Level.SEVERE, "Duplicate Call record! -> " + callKey + " == " + op.getClass().getName());
+            }
+        }
+        return callKey;
+    }
+
+    private void afterCallExecution(Operation op, CallKey callKey) {
+        if (callKey != null && op.getCallId() > -1 && op.returnsResponse()) {
+            if (!executingCalls.remove(callKey)) {
+                logger.log(Level.SEVERE, "No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
+            }
+        }
+    }
+
+    private void doRunOperation(Operation op) {
         try {
             op.beforeRun();
             if (op instanceof WaitSupport) {
@@ -263,13 +239,10 @@ final class OperationServiceImpl implements OperationService {
             }
         } catch (Throwable e) {
             handleOperationError(op, e);
-        } finally {
-            threadContext.setCurrentOperation(parentOperation);
         }
     }
 
     private void handleBackupAndSendResponse(BackupAwareOperation backupAwareOp) throws Exception {
-        Object response = null;
         final int maxBackups = node.getClusterService().getSize() - 1;
 
         final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
@@ -331,7 +304,7 @@ final class OperationServiceImpl implements OperationService {
             }
         }
 
-        response = op.returnsResponse()
+        final Object response = op.returnsResponse()
                 ? (backupResponse == null ? op.getResponse() : new MultiResponse(backupResponse, op.getResponse()))
                 : null;
 
@@ -438,7 +411,7 @@ final class OperationServiceImpl implements OperationService {
         Map<Address, ArrayList<Integer>> memberPartitions = new HashMap<Address, ArrayList<Integer>>(members);
         for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
             Address owner = node.partitionService.getPartitionOwner(i);
-            // todo inifinite while is not good. convert it to wait 1 minute
+            // TODO: infinite while is not good. convert it to wait 1 minute
             while (owner == null) { // partition assignment is not completed yet
                 try {
                     Thread.sleep(1);
@@ -509,7 +482,8 @@ final class OperationServiceImpl implements OperationService {
         return node.clusterService.send(packet, connection);
     }
 
-    private long registerCall(Call call) {
+    @PrivateApi
+    long registerCall(Call call) {
         long callId = localIdGen.incrementAndGet();
         mapCalls.put(callId, call);
         return callId;
@@ -529,6 +503,28 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
+    @PrivateApi
+    long getDefaultCallTimeout() {
+        return defaultCallTimeout;
+    }
+
+    @PrivateApi
+    boolean isOperationExecuting(Address caller, long operationCallId) {
+        return executingCalls.contains(new CallKey(caller, operationCallId));
+    }
+
+    void onMemberDisconnect(Address disconnectedAddress) {
+        for (Call call : mapCalls.values()) {
+            call.onDisconnect(disconnectedAddress);
+        }
+    }
+
+    void shutdown() {
+        logger.log(Level.FINEST, "Stopping operation threads...");
+        executor.shutdown();
+        mapCalls.clear();
+    }
+
     private class RemoteOperationProcessor implements Runnable {
         private final Packet packet;
 
@@ -543,38 +539,80 @@ final class OperationServiceImpl implements OperationService {
                 final Operation op = (Operation) IOUtil.toObject(data);
                 op.setNodeEngine(nodeEngine).setCaller(caller);
                 op.setConnection(packet.getConn());
-                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-                runOperation(op);
+                if (op instanceof ResponseOperation) {
+                    processResponse(op);
+                } else {
+                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+                    runOperation(op);
+                }
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 send(new ErrorResponse(node.getThisAddress(), e), packet.getConn());
             }
         }
-    }
 
-    void onMemberDisconnect(Address disconnectedAddress) {
-        for (Call call : mapCalls.values()) {
-            call.onDisconnect(disconnectedAddress);
+        private void processResponse(Operation op) {
+            try {
+                op.beforeRun();
+                op.run();
+                op.afterRun();
+            } catch (Throwable e) {
+                logger.log(Level.SEVERE, "While processing response...", e);
+            }
         }
     }
 
-    void shutdown() {
-        executor.shutdown();
-        mapCalls.clear();
+    private class CallKey {
+        private final Address caller;
+        private final long callId;
+
+        private CallKey(Address caller, long callId) {
+            this.caller = caller;
+            this.callId = callId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CallKey callKey = (CallKey) o;
+
+            if (callId != callKey.callId) return false;
+            if (!caller.equals(callKey.caller)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = caller.hashCode();
+            result = 31 * result + (int) (callId ^ (callId >>> 32));
+            return result;
+        }
+
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("CallKey");
+            sb.append("{caller=").append(caller);
+            sb.append(", callId=").append(callId);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     private static final ClassLoader thisClassLoader = OperationService.class.getClassLoader();
 
     private static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation
-                && op.getClass().getClassLoader() == thisClassLoader
-                && op.getClass().getName().startsWith("com.hazelcast.partition");
+                && op.getClass().getClassLoader() == thisClassLoader;
     }
 
     private static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation
-                && op.getClass().getClassLoader() == thisClassLoader
-                && op.getClass().getName().startsWith("com.hazelcast.cluster");
+                && op.getClass().getClassLoader() == thisClassLoader;
     }
 
     public String toString() {

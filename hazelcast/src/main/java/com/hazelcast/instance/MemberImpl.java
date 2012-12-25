@@ -32,15 +32,15 @@ import java.util.logging.Level;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, DataSerializable {
 
-    protected boolean localMember;
-    protected Address address;
-    protected NodeType nodeType;
-    protected String uuid;
-    protected transient long lastRead = 0;
-    protected transient long lastWrite = 0;
-    @SuppressWarnings("VolatileLongOrDoubleField")
-    protected transient volatile long lastPing = 0;
-    private volatile transient ILogger logger;
+    private boolean localMember;
+    private Address address;
+    private NodeType nodeType;
+    private String uuid;
+
+    private transient volatile long lastRead = 0;
+    private transient volatile long lastWrite = 0;
+    private transient volatile long lastPing = 0;
+    private transient volatile ILogger logger;
 
     public MemberImpl() {
     }

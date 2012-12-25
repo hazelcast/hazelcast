@@ -42,7 +42,11 @@ final class ExecutionServiceImpl implements ExecutionService {
                 node.getThreadPoolNamePrefix("cached"), classLoader);
         cachedExecutorService = new ThreadPoolExecutor(
                 1, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(), threadFactory);
+                new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
+            public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+                logger.log(Level.FINEST, "Node is shutting down; discarding the task: " + r);
+            }
+        });
         scheduledExecutorService = Executors.newScheduledThreadPool(2,
                 new ExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
@@ -71,6 +75,7 @@ final class ExecutionServiceImpl implements ExecutionService {
 
     @PrivateApi
     void shutdown() {
+        logger.log(Level.FINEST, "Stopping executors...");
         cachedExecutorService.shutdown();
         scheduledExecutorService.shutdownNow();
         try {
