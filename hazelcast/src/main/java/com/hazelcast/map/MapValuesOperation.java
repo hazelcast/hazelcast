@@ -20,27 +20,28 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+import java.util.Collection;
 import java.util.Set;
 
-public class MapKeySetOperation extends AbstractNamedOperation implements PartitionAwareOperation {
-    Set<Data> keySet;
+public class MapValuesOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+    Collection<Data> values;
 
-    public MapKeySetOperation(String name) {
+    public MapValuesOperation(String name) {
         super(name);
     }
 
-    public MapKeySetOperation() {
+    public MapValuesOperation() {
     }
 
     public void run() {
         MapService mapService = (MapService) getService();
         DefaultRecordStore recordStore = mapService.getMapPartition(getPartitionId(), name);
-        keySet = recordStore.keySet();
+        values = recordStore.values();
     }
 
     @Override
     public Object getResponse() {
-        return new MapKeySet(keySet);
+        return new MapValueCollection(values);
     }
 
     @Override

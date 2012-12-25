@@ -351,11 +351,11 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op) throws Exception {
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op, boolean local) throws Exception {
         if (!(op instanceof PartitionAwareOperation)) {
             throw new IllegalArgumentException("Operation must be PartitionAwareOperation!");
         }
-        final Map<Address, ArrayList<Integer>> memberPartitions = getMemberPartitions();
+        final Map<Address, ArrayList<Integer>> memberPartitions = getMemberPartitions(local);
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
         final Data operationData = nodeEngine.toData(op); // don't use op object in invocations!
         for (Map.Entry<Address, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
@@ -406,7 +406,7 @@ final class OperationServiceImpl implements OperationService {
         return partitionResults;
     }
 
-    private Map<Address, ArrayList<Integer>> getMemberPartitions() {
+    private Map<Address, ArrayList<Integer>> getMemberPartitions(boolean local) {
         final int members = node.getClusterService().getSize();
         Map<Address, ArrayList<Integer>> memberPartitions = new HashMap<Address, ArrayList<Integer>>(members);
         for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
@@ -419,6 +419,10 @@ final class OperationServiceImpl implements OperationService {
                 }
                 owner = node.partitionService.getPartitionOwner(i);
             }
+
+            if (local && !node.address.equals(owner) )
+                continue;
+
             ArrayList<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
                 ownedPartitions = new ArrayList<Integer>();

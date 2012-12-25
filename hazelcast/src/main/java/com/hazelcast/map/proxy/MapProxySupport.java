@@ -274,7 +274,7 @@ abstract class MapProxySupport {
         try {
             MapSizeOperation mapSizeOperation = new MapSizeOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapSizeOperation, false);
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) nodeEngine.toObject(result);
@@ -290,7 +290,7 @@ abstract class MapProxySupport {
         try {
             ContainsValueOperation containsValueOperation = new ContainsValueOperation(name, dataValue);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation, false);
 
             for (Object result : results.values()) {
                 Boolean contains = (Boolean) nodeEngine.toObject(result);
@@ -307,7 +307,7 @@ abstract class MapProxySupport {
         try {
             MapIsEmptyOperation mapIsEmptyOperation = new MapIsEmptyOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapIsEmptyOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapIsEmptyOperation, false);
             for (Object result : results.values()) {
                 if (!(Boolean) nodeEngine.toObject(result))
                     return false;
@@ -406,14 +406,14 @@ abstract class MapProxySupport {
         }
     }
 
-    protected Set<Data> keySetDataInternal() {
+    protected Set<Data> keySetInternal() {
         try {
             MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation, false);
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
-                Set keys = (Set<Data>) nodeEngine.toObject(result);
+                Set keys = ((MapKeySet) nodeEngine.toObject(result)).getKeySet();
                 keySet.addAll(keys);
             }
             return keySet;
@@ -422,23 +422,40 @@ abstract class MapProxySupport {
         }
     }
 
-    protected Set keySetObjectInternal() {
+    protected Set<Data> localKeySetInternal() {
         try {
             MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
-            Set<Object> keySet = new HashSet<Object>();
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation, true);
+            Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
-                Set<Data> keys = (Set<Data>) nodeEngine.toObject(result);
-                for (Data key : keys) {
-                    keySet.add(nodeEngine.toObject(key));
-                }
+                Set keys = ((MapKeySet) nodeEngine.toObject(result)).getKeySet();
+                keySet.addAll(keys);
             }
             return keySet;
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
     }
+
+    protected Collection<Data> valuesInternal() {
+        try {
+            MapValuesOperation mapValuesOperation = new MapValuesOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapValuesOperation, false);
+            List<Data> values = new ArrayList<Data>();
+            for (Object result : results.values()) {
+                values.addAll(((MapValueCollection) nodeEngine.toObject(result)).getValues());
+            }
+            return values;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    public void clearInternal() {
+    }
+
 
     protected void forceUnlockInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
@@ -452,13 +469,6 @@ abstract class MapProxySupport {
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
-    }
-
-    public boolean lockMap(final long time, final TimeUnit timeunit) {
-        return false;
-    }
-
-    public void unlockMap() {
     }
 
     protected void addLocalEntryListenerInternal(final EntryListener<Data, Data> listener) {
@@ -485,14 +495,7 @@ abstract class MapProxySupport {
         return false;
     }
 
-    public void clear() {
-    }
-
     public void flush() {
-    }
-
-    protected Collection<Data> valuesInternal() {
-        return null;
     }
 
     protected Set<Entry<Data, Data>> entrySetInternal() {
@@ -508,10 +511,6 @@ abstract class MapProxySupport {
     }
 
     protected Collection<Data> valuesInternal(final Predicate predicate) {
-        return null;
-    }
-
-    protected Set<Data> localKeySetInternal() {
         return null;
     }
 

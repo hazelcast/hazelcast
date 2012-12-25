@@ -201,31 +201,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     @Test
-    public void lockMap() throws InterruptedException {
-        HazelcastClient hClient = getHazelcastClient();
-        final IMap<String, String> map = hClient.getMap("lockMap");
-        final CountDownLatch unlockLatch = new CountDownLatch(1);
-        final CountDownLatch latch = new CountDownLatch(1);
-        map.put("a", "b");
-        map.lockMap(1, TimeUnit.SECONDS);
-        assertTrue(map.tryPut("a", "c", 10, TimeUnit.MILLISECONDS));
-        new Thread(new Runnable() {
-            public void run() {
-                assertFalse(map.lockMap(10, TimeUnit.MILLISECONDS));
-                unlockLatch.countDown();
-                assertTrue(map.lockMap(Long.MAX_VALUE, TimeUnit.SECONDS));
-                latch.countDown();
-                //map.unlockMap();
-            }
-        }).start();
-        assertTrue(unlockLatch.await(10, TimeUnit.SECONDS));
-        Thread.sleep(2000);
-        map.unlockMap();
-        assertEquals("c", map.getMapEntry("a").getValue());
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-    }
-
-    @Test
     public void addIndex() {
         HazelcastClient hClient = getHazelcastClient();
         IMap map = hClient.getMap("addIndex");

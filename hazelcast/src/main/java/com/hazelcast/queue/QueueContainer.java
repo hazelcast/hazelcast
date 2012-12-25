@@ -35,25 +35,26 @@ public class QueueContainer implements DataSerializable {
 
     private final LinkedList<QueueItem> itemQueue = new LinkedList<QueueItem>();
 
-    int partitionId;
+    private int partitionId;
 
     private QueueConfig config;
 
-    String name;
+    private String name;
 
-    QueueService queueService;
+    private QueueService queueService;
 
-    final QueueStoreWrapper store = new QueueStoreWrapper();
+    private final QueueStoreWrapper store = new QueueStoreWrapper();
 
-    long idGen = 0;
+    private long idGen = 0;
 
-    public QueueContainer() {
+    public QueueContainer(String name) {
+        this.name = name;
     }
 
     public QueueContainer(QueueService queueService, int partitionId, QueueConfig config, String name, boolean fromBackup) {
+        this(name);
         this.queueService = queueService;
         this.partitionId = partitionId;
-        this.name = name;
         setConfig(config);
         if (!fromBackup && store.isEnabled()){
             Set<Long> keys = store.loadAllKeys();
@@ -87,8 +88,10 @@ public class QueueContainer implements DataSerializable {
             }
             store.deleteAll(keySet);
         }
-        itemQueue.clear(); //TODO how about remove event
+        itemQueue.clear();
     }
+
+
 
     public Data poll(boolean fromBackup) {
         QueueItem item = itemQueue.poll();
@@ -105,6 +108,14 @@ public class QueueContainer implements DataSerializable {
         return data;
     }
 
+    /**
+     * iterates all items, checks equality with data
+     * This method does not trigger store load.
+     *
+     * @param data
+     * @param fromBackup
+     * @return
+     */
     public boolean remove(Data data, boolean fromBackup) {
         Iterator<QueueItem> iter = itemQueue.iterator();
         while (iter.hasNext()) {
@@ -133,7 +144,11 @@ public class QueueContainer implements DataSerializable {
         return data;
     }
 
-    //TODO how about persisted data, should it trigger load all data from store?
+    /**
+     * This method does not trigger store load.
+     * @param dataSet
+     * @return
+     */
     public boolean contains(Set<Data> dataSet) {
         Set<QueueItem> set = new HashSet<QueueItem>(dataSet.size());
         for (Data data : dataSet) {
@@ -142,6 +157,11 @@ public class QueueContainer implements DataSerializable {
         return itemQueue.containsAll(set);
     }
 
+    /**
+     * This method triggers store load.
+     *
+     * @return
+     */
     public List<Data> getAsDataList() {
         List<Data> dataSet = new ArrayList<Data>(itemQueue.size());
         for (QueueItem item : itemQueue) {
@@ -186,9 +206,16 @@ public class QueueContainer implements DataSerializable {
         return modified;
     }
 
-    public Set<Long> compareCollection(Set<Data> dataSet, boolean retain){
+    /**
+     * This method triggers store load
+     *
+     * @param dataSet
+     * @param retain
+     * @return
+     */
+    public Map<Long, Data> compareCollection(Set<Data> dataSet, boolean retain){
         Iterator<QueueItem> iter = itemQueue.iterator();
-        Set<Long> keySet = new HashSet<Long>();
+        Map<Long, Data> keySet = new HashMap<Long, Data>();
         while (iter.hasNext()){
             QueueItem item = iter.next();
             Data data = item.getData();
@@ -198,7 +225,7 @@ public class QueueContainer implements DataSerializable {
             }
             boolean contains = dataSet.contains(data);
             if ((retain && !contains) || (!retain && contains)){
-                keySet.add(item.getItemId());
+                keySet.put(item.getItemId(), data);
                 iter.remove();
             }
         }
@@ -215,8 +242,9 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-
-
+    public int getPartitionId() {
+        return partitionId;
+    }
 
     public QueueConfig getConfig() {
         return config;
@@ -230,7 +258,6 @@ public class QueueContainer implements DataSerializable {
 
     public void writeData(DataOutput out) throws IOException {    //TODO listeners
         out.writeInt(partitionId);
-        out.writeUTF(name);
         out.writeInt(itemQueue.size());
         Iterator<QueueItem> iterator = itemQueue.iterator();
         while (iterator.hasNext()) {
@@ -241,7 +268,6 @@ public class QueueContainer implements DataSerializable {
 
     public void readData(DataInput in) throws IOException {
         partitionId = in.readInt();
-        name = in.readUTF();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
             QueueItem item = new QueueItem();

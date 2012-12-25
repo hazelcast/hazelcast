@@ -27,10 +27,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -187,16 +184,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         forceUnlockInternal(k);
     }
 
-    public boolean lockMap(final long time, final TimeUnit timeunit) {
-        return false;
-    }
-
-    public void unlockMap() {
-
-    }
-
     public void addLocalEntryListener(final EntryListener<K, V> listener) {
-
     }
 
     public void addEntryListener(final EntryListener listener, final boolean includeValue) {
@@ -232,11 +220,21 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet() {
-        return keySetObjectInternal();
+        Set<Data> dataSet = keySetInternal();
+        HashSet<K> keySet = new HashSet<K>();
+        for (Data data : dataSet) {
+            keySet.add((K) toObject(data));
+        }
+        return keySet;
     }
 
     public Collection<V> values() {
-        return null;
+        Collection<Data> dataSet = valuesInternal();
+        Collection<V> valueSet = new ArrayList<V>();
+        for (Data data : dataSet) {
+            valueSet.add((V) toObject(data));
+        }
+        return valueSet;
     }
 
     public Set<Entry<K, V>> entrySet() {
@@ -256,7 +254,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> localKeySet() {
-        return null;
+        Set<Data> dataSet = localKeySetInternal();
+        HashSet<K> keySet = new HashSet<K>();
+        for (Data data : dataSet) {
+            keySet.add((K) toObject(data));
+        }
+        return keySet;
     }
 
     public Set<K> localKeySet(final Predicate predicate) {

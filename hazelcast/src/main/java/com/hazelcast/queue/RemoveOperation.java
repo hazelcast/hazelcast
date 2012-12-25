@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Operation;
 
@@ -42,8 +43,14 @@ public class RemoveOperation extends QueueBackupAwareOperation {
         response = getContainer().remove(data, false);
     }
 
+    public void afterRun() throws Exception {
+        if(Boolean.TRUE.equals(response)){
+            publishEvent(ItemEventType.REMOVED, data);
+        }
+    }
+
     public boolean shouldBackup() {
-        return true;
+        return Boolean.TRUE.equals(response);
     }
 
     public Operation getBackupOperation() {
