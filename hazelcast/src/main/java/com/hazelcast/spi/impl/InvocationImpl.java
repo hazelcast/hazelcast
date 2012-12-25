@@ -334,7 +334,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                 '}';
     }
 
-    static class IsStillExecuting extends AbstractOperation {
+    public static class IsStillExecuting extends AbstractOperation {
 
         private long operationCallId;
 

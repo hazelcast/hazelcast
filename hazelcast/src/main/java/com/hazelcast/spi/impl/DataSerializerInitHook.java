@@ -19,10 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.spi.impl.EventServiceImpl.EmptyFilter;
-import com.hazelcast.spi.impl.EventServiceImpl.EventPacket;
-import com.hazelcast.spi.impl.EventServiceImpl.Registration;
-import com.hazelcast.spi.impl.EventServiceImpl.RegistrationOperation;
+import com.hazelcast.spi.impl.EventServiceImpl.*;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
 import java.util.HashMap;
@@ -54,18 +51,6 @@ public final class DataSerializerInitHook implements DataSerializerHook {
             }
         });
 
-        factories.put(RegistrationOperation.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new RegistrationOperation();
-            }
-        });
-
-        factories.put(DeregistrationOperation.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new DeregistrationOperation();
-            }
-        });
-
         factories.put(Registration.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
                 return new Registration();
@@ -93,12 +78,6 @@ public final class DataSerializerInitHook implements DataSerializerHook {
         factories.put(OperationWrapper.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
                 return new OperationWrapper();
-            }
-        });
-
-        factories.put(InvocationImpl.IsStillExecuting.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new InvocationImpl.IsStillExecuting();
             }
         });
 
