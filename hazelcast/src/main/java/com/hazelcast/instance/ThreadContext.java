@@ -92,9 +92,6 @@ public final class ThreadContext {
 
     private SerializerRegistry currentSerializerRegistry;
 
-    // TODO: remove
-    private Object attachment;
-
     private Object currentOperation = null;
 
     private ThreadContext(Thread thread) {
@@ -188,14 +185,6 @@ public final class ThreadContext {
         return getCallContext().getThreadId();
     }
 
-    public <T> T getAttachment() {
-        return (T) attachment;
-    }
-
-    public void setAttachment(final Object attachment) {
-        this.attachment = attachment;
-    }
-
     public Object getCurrentOperation() {
         return currentOperation;
     }
@@ -213,7 +202,6 @@ public final class ThreadContext {
     private void destroy() {
         serializer.destroy();
         mapHazelcastInstanceContexts.clear();
-        attachment = null;
         currentInstance = null;
         currentSerializerRegistry = null;
     }

@@ -391,7 +391,7 @@ public class Node {
             }
 //            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
 //            clientHandlerService.shutdown();
-            logger.log(Level.FINEST, "Shutting down the partitionManager");
+            logger.log(Level.FINEST, "Shutting down the node engine");
             nodeEngine.shutdown();
             if (multicastService != null) {
                 logger.log(Level.FINEST, "Shutting down the multicast service");

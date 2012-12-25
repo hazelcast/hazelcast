@@ -23,6 +23,10 @@ import java.util.Collection;
  */
 public interface EventService {
 
+    EventRegistration registerLocalListener(String serviceName, String topic, Object listener);
+
+    EventRegistration registerLocalListener(String serviceName, String topic, EventFilter filter, Object listener);
+
     EventRegistration registerListener(String serviceName, String topic, Object listener);
 
     EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);

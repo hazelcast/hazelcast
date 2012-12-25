@@ -100,6 +100,7 @@ class ServiceManager {
     }
 
     synchronized void shutdown() {
+        logger.log(Level.FINEST, "Stopping services...");
         final List<ManagedService> managedServices = getServices(ManagedService.class);
         // reverse order to stop CoreServices last.
         Collections.reverse(managedServices);

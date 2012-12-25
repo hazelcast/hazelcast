@@ -35,12 +35,7 @@ public class GroupProperties {
     public static final String PROP_PARTITION_THREAD_PRIORITY = "hazelcast.service.thread.priority";
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
-    public static final String PROP_REDO_WAIT_MILLIS = "hazelcast.redo.wait.millis";
-    public static final String PROP_REDO_LOG_THRESHOLD = "hazelcast.redo.log.threshold";
-    public static final String PROP_REDO_GIVE_UP_THRESHOLD = "hazelcast.redo.giveup.threshold";
-    public static final String PROP_BACKUP_REDO_ENABLED = "hazelcast.backup.redo.enabled";
-    public static final String PROP_MAX_OPERATION_TIMEOUT = "hazelcast.max.operation.timeout";
-    public static final String PROP_MAX_CONCURRENT_OPERATION_LIMIT = "hazelcast.max.concurrent.operation.limit";
+    public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
@@ -138,19 +133,7 @@ public class GroupProperties {
 
     public final GroupProperty MERGE_NEXT_RUN_DELAY_SECONDS;
 
-    public final GroupProperty REDO_WAIT_MILLIS;
-
-    public final GroupProperty REDO_LOG_THRESHOLD;
-
-    public final GroupProperty REDO_GIVE_UP_THRESHOLD;
-
-    public final GroupProperty BACKUP_REDO_ENABLED;
-
-    public final GroupProperty MAX_OPERATION_TIMEOUT;
-
-    public final GroupProperty MAX_CONCURRENT_OPERATION_LIMIT;
-
-//    public final GroupProperty SOCKET_BIND_ANY;
+    public final GroupProperty OPERATION_CALL_TIMEOUT_MILLIS;
 
     public final GroupProperty SOCKET_SERVER_BIND_ANY;
 
@@ -280,12 +263,7 @@ public class GroupProperties {
         PARTITION_THREAD_PRIORITY = new GroupProperty(config, PROP_PARTITION_THREAD_PRIORITY, "8");
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
-        REDO_WAIT_MILLIS = new GroupProperty(config, PROP_REDO_WAIT_MILLIS, "500");
-        REDO_LOG_THRESHOLD = new GroupProperty(config, PROP_REDO_LOG_THRESHOLD, "15");
-        REDO_GIVE_UP_THRESHOLD = new GroupProperty(config, PROP_REDO_GIVE_UP_THRESHOLD, "90");
-        BACKUP_REDO_ENABLED = new GroupProperty(config, PROP_BACKUP_REDO_ENABLED, "false");
-        MAX_OPERATION_TIMEOUT = new GroupProperty(config, PROP_MAX_OPERATION_TIMEOUT, "300000");
-        MAX_CONCURRENT_OPERATION_LIMIT = new GroupProperty(config, PROP_MAX_CONCURRENT_OPERATION_LIMIT, "-1");
+        OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
         final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);
         SOCKET_CLIENT_BIND_ANY = new GroupProperty(config, PROP_SOCKET_CLIENT_BIND_ANY, SOCKET_BIND_ANY);

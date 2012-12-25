@@ -16,20 +16,24 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * @mdogan 12/14/12
+ * @mdogan 12/21/12
  */
-public interface EventRegistration extends DataSerializable {
 
-    String getId();
+@PrivateApi
+public class OperationAccessor {
 
-    EventFilter getFilter();
+    public static void setCallId(Operation op, long callId) {
+        op.setCallId(callId);
+    }
 
-    Address getSubscriber();
+    public static void setInvocationTime(Operation op, long invocationTime) {
+        op.setInvocationTime(invocationTime);
+    }
 
-    boolean isLocalOnly();
-
+    public static void setCallTimeout(Operation op, long callTimeout) {
+        op.setCallTimeout(callTimeout);
+    }
 }

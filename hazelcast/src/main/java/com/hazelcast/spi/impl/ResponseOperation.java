@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * @mdogan 12/14/12
+ * @mdogan 12/25/12
  */
-public interface EventRegistration extends DataSerializable {
 
-    String getId();
-
-    EventFilter getFilter();
-
-    Address getSubscriber();
-
-    boolean isLocalOnly();
+@PrivateApi
+public interface ResponseOperation {
 
 }

@@ -66,7 +66,6 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
         return locked;
     }
 
-
     @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(false);

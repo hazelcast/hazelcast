@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.RuntimeInterruptedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
@@ -30,7 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public final class InOutSelector implements Runnable {
+public final class InOutSelector extends Thread implements Runnable {
 
     final static long TEN_SECOND_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
@@ -48,9 +49,10 @@ public final class InOutSelector implements Runnable {
 
     final Selector selector;
 
-    public InOutSelector(ConnectionManager connectionManager) {
+    public InOutSelector(ConnectionManager connectionManager, int id) {
+        super(connectionManager.ioService.getThreadGroup(), connectionManager.ioService.getThreadPrefix() + id);
         this.connectionManager = connectionManager;
-        logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
         this.waitTime = 5000;  // TODO: This value has significant effect on idle CPU usage!
         Selector selectorTemp = null;
         try {
@@ -73,7 +75,8 @@ public final class InOutSelector implements Runnable {
                     l.countDown();
                 }
             });
-            l.await(5, TimeUnit.SECONDS);
+            interrupt();
+            l.await(3, TimeUnit.SECONDS);
         } catch (Throwable ignored) {
         }
     }
@@ -111,13 +114,14 @@ public final class InOutSelector implements Runnable {
                 }
                 processSelectionQueue();
                 if (!live) return;
+                if (isInterrupted()) {
+                    connectionManager.ioService.handleInterruptedException(this, new RuntimeInterruptedException());
+                    live = false;
+                    return;
+                }
                 int selectedKeyCount;
                 try {
                     selectedKeyCount = selector.select(waitTime);
-                    if (Thread.interrupted()) {
-                        connectionManager.ioService.handleInterruptedException(Thread.currentThread(), new RuntimeException());
-                        return;
-                    }
                 } catch (Throwable exp) {
                     continue;
                 }

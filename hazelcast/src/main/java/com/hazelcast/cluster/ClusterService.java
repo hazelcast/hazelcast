@@ -349,9 +349,9 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         if (!isMaster()) {
             return;
         }
-        final Collection<MemberImpl> memberList = getMemberList();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(memberList, getClusterTime());
-        for (MemberImpl member : memberList) {
+        final Collection<MemberImpl> members = getMemberList();
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime());
+        for (MemberImpl member : members) {
             if (member.equals(thisMember)) {
                 continue;
             }
@@ -452,7 +452,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                         logger.log(Level.FINEST, message);
 
                         // send members update back to node trying to join again...
-                        invokeClusterOperation(new FinalizeJoinOperation(getMemberList(), getClusterTime()),
+                        invokeClusterOperation(new FinalizeJoinOperation(createMemberInfos(getMemberList()), getClusterTime()),
                                 member.getAddress());
                         return;
                     }
@@ -470,10 +470,9 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                         doRemoveAddress(member.getAddress(), false);
                     }
                 }
-                if (!node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-                    if (node.isActive() && node.joined() && node.getMasterAddress() != null && !node.isMaster()) {
-                        sendMasterAnswer(joinRequest);
-                    }
+                final boolean multicastEnabled = node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
+                if (!multicastEnabled && node.isActive() && node.joined() && node.getMasterAddress() != null && !node.isMaster()) {
+                    sendMasterAnswer(joinRequest);
                 }
                 if (node.isMaster() && node.joined() && node.isActive()) {
                     final MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType,
@@ -568,30 +567,53 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         lock.lock();
         try {
             joinInProgress = true;
-            final FinalizeJoinOperation finalizeJoinOp = new FinalizeJoinOperation(getMemberList(), getClusterTime());
-            if (setJoins.size() > 0) {
-                for (MemberInfo memberJoined : setJoins) {
-                    finalizeJoinOp.addMemberInfo(memberJoined);
-                }
+            final Collection<MemberImpl> members = getMemberList();
+            final Collection<MemberInfo> memberInfos = createMemberInfos(members);
+            for (MemberImpl member : members) {
+                memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
             }
-            Collection<MemberInfo> members = finalizeJoinOp.getMemberInfos();
-            List<Future> calls = new ArrayList<Future>(members.size());
-            for (final MemberInfo member : members) {
+            for (MemberInfo memberJoining : setJoins) {
+                memberInfos.add(memberJoining);
+            }
+
+            final long time = getClusterTime();
+            final MemberInfoUpdateOperation memberInfoUpdateOp = new MemberInfoUpdateOperation(memberInfos, time, true);
+            // Post join operations must be lock free; means no locks at all;
+            // no partition locks, no key-based locks, no service level locks!
+            final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
+            final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
+                    ? new PostJoinOperation(postJoinOps) : null;
+            final FinalizeJoinOperation finalizeJoinOp = new FinalizeJoinOperation(memberInfos, postJoinOp, time);
+
+            final List<Future> calls = new ArrayList<Future>(members.size());
+            for (MemberInfo member : setJoins) {
+                calls.add(invokeClusterOperation(finalizeJoinOp, member.getAddress()));
+            }
+            for (MemberImpl member : members) {
                 if (!member.getAddress().equals(thisAddress)) {
-                    calls.add(invokeClusterOperation(finalizeJoinOp, member.getAddress()));
+                    calls.add(invokeClusterOperation(memberInfoUpdateOp, member.getAddress()));
                 }
             }
-            updateMembers(members);
+            updateMembers(memberInfos);
             for (Future future : calls) {
                 try {
-                    future.get(5, TimeUnit.SECONDS);
+                    future.get(3, TimeUnit.SECONDS);
+                } catch (TimeoutException ignored) {
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.log(Level.WARNING, "While waiting finalize join calls...", e);
                 }
             }
         } finally {
             lock.unlock();
         }
+    }
+
+    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members) {
+        final Collection<MemberInfo> memberInfos = new LinkedList<MemberInfo>();
+        for (MemberImpl member : members) {
+            memberInfos.add(new MemberInfo(member.getAddress(), member.getNodeType(), member.getUuid()));
+        }
+        return memberInfos;
     }
 
     void updateMembers(Collection<MemberInfo> members) {
@@ -833,12 +855,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         if (memberImpl != null) {
             memberImpl.didWrite();
         }
-        // TODO
-//        if (packet.lockAddress != null) {
-//            if (thisAddress.equals(packet.lockAddress)) {
-//                packet.lockAddress = null;
-//            }
-//        }
         conn.getWriteHandler().enqueueSocketWritable(packet);
         return true;
     }
@@ -905,7 +921,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
 
     public void addMembershipListener(MembershipListener listener) {
         // listeners.add(listener);
-        nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, listener);
+        nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
     }
 
     public void removeMembershipListener(MembershipListener listener) {

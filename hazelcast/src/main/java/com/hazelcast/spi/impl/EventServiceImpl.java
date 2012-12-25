@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.MemberImpl;
@@ -38,7 +39,7 @@ import java.util.logging.Level;
  */
 
 public class EventServiceImpl implements EventService {
-    public static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
+    private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
@@ -55,38 +56,53 @@ public class EventServiceImpl implements EventService {
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
+    public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {
+        return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, true);
+    }
+
+    public EventRegistration registerLocalListener(String serviceName, String topic, EventFilter filter, Object listener) {
+        return registerListenerInternal(serviceName, topic, filter, listener, true);
+    }
+
     public EventRegistration registerListener(String serviceName, String topic, Object listener) {
-        return registerListener(serviceName, topic, new EmptyFilter(), listener);
+        return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, false);
     }
 
     public EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener) {
+        return registerListenerInternal(serviceName, topic, filter, listener, false);
+    }
+
+    private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter,
+                                                       Object listener, boolean localOnly) {
         if (listener == null) {
             throw new IllegalArgumentException("Listener required!");
         }
         if (filter == null) {
-            throw new IllegalArgumentException("Filter required");
+            throw new IllegalArgumentException("EventFilter required!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        Registration reg = new Registration(createId(serviceName), serviceName, filter,
-                nodeEngine.getThisAddress(), listener);
+        Registration reg = new Registration(createId(serviceName), serviceName, topic, filter,
+                nodeEngine.getThisAddress(), listener, localOnly);
 
         if (segment.addRegistration(topic, reg)) {
-            Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-            Collection<Future> calls = new ArrayList<Future>(members.size());
-            for (MemberImpl member : members) {
-                if (!member.localMember()) {
-                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                            new RegistrationOperation(topic, reg), member.getAddress()).build();
-                    calls.add(inv.invoke());
+            if (!localOnly) {
+                Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+                Collection<Future> calls = new ArrayList<Future>(members.size());
+                for (MemberImpl member : members) {
+                    if (!member.localMember()) {
+                        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                                new RegistrationOperation(reg), member.getAddress()).build();
+                        calls.add(inv.invoke());
+                    }
                 }
-            }
-            for (Future f : calls) {
-                try {
-                    f.get(5, TimeUnit.SECONDS);
-                } catch (InterruptedException ignored) {
-                } catch (TimeoutException ignored) {
-                } catch (ExecutionException e) {
-                    throw new HazelcastException(e);
+                for (Future f : calls) {
+                    try {
+                        f.get(5, TimeUnit.SECONDS);
+                    } catch (InterruptedException ignored) {
+                    } catch (TimeoutException ignored) {
+                    } catch (ExecutionException e) {
+                        throw new HazelcastException(e);
+                    }
                 }
             }
             return reg;
@@ -99,9 +115,9 @@ public class EventServiceImpl implements EventService {
         return serviceName + ":" + UUID.randomUUID().toString();
     }
 
-    public boolean registerSubscriber(String serviceName, String topic, Registration reg) {
-        EventServiceSegment segment = getSegment(serviceName, true);
-        return segment.addRegistration(topic, reg);
+    private boolean handleRegistration(Registration reg) {
+        EventServiceSegment segment = getSegment(reg.serviceName, true);
+        return segment.addRegistration(reg.topic, reg);
     }
 
     public void deregisterListener(String serviceName, String id) {
@@ -142,13 +158,14 @@ public class EventServiceImpl implements EventService {
             final Data data = IOUtil.toData(new EventPacket(registration.getId(), serviceName, event));
             final Packet packet = new Packet(data);
             packet.setHeader(Packet.HEADER_EVENT, true);
+            // TODO: event publishing requires flow control mechanism!
             nodeEngine.getClusterService().send(packet, subscriber);
         }
     }
 
     public void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event) {
         final Iterator<EventRegistration> iter = registrations.iterator();
-        final Data eventData = IOUtil.toData(event); // TODO: serialization might be optimized
+        Data eventData = null;
         while (iter.hasNext()) {
             EventRegistration registration = iter.next();
             if (!(registration instanceof Registration)) {
@@ -158,10 +175,14 @@ public class EventServiceImpl implements EventService {
             if (reg.isLocal()) {
                 eventExecutorService.execute(new LocalEventDispatcher(serviceName, event, reg.listener));
             } else {
+                if (eventData == null) {
+                    eventData = IOUtil.toData(event);
+                }
                 final Address subscriber = registration.getSubscriber();
                 final Data data = IOUtil.toData(new EventPacket(registration.getId(), serviceName, eventData));
                 final Packet packet = new Packet(data);
                 packet.setHeader(Packet.HEADER_EVENT, true);
+                // TODO: event publishing requires flow control mechanism!
                 nodeEngine.getClusterService().send(packet, subscriber);
             }
         }
@@ -182,11 +203,35 @@ public class EventServiceImpl implements EventService {
     }
 
     @PrivateApi
-    public void handleEvent(Packet packet) {
+    void handleEvent(Packet packet) {
         eventExecutorService.execute(new EventPacketProcessor(packet));
     }
 
+    /**
+     * Post join operations must be lock free; means no locks at all;
+     * no partition locks, no key-based locks, no service level locks!
+     *
+     * Post join operations should return response, at least a null response.
+     *
+     * Also making post-join operation a JoinOperation will help a lot.
+     */
+    @PrivateApi
+    Operation getPostJoinOperation() {
+        final Collection<Registration> registrations = new LinkedList<Registration>();
+        for (EventServiceSegment segment : segments.values()) {
+            for (Collection<Registration> all : segment.registrations.values()) {
+                for (Registration reg : all) {
+                    if (!reg.isLocalOnly()) {
+                        registrations.add(reg);
+                    }
+                }
+            }
+        }
+        return registrations.isEmpty() ? null : new PostJoinRegistrationOperation(registrations);
+    }
+
     void shutdown() {
+        logger.log(Level.FINEST, "Stopping event executor...");
         eventExecutorService.shutdownNow();
         segments.clear();
     }
@@ -273,26 +318,27 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    static class Registration implements EventRegistration {
+    public static class Registration implements EventRegistration {
         private String id;
         private String serviceName;
+        private String topic;
         private EventFilter filter;
         private Address subscriber;
+        private transient boolean localOnly;
         private transient Object listener;
 
         public Registration() {
         }
 
-        public Registration(String id, String serviceName, EventFilter filter, Address subscriber) {
-            this(id, serviceName, filter, subscriber, null);
-        }
-
-        public Registration(String id, String serviceName, EventFilter filter, Address subscriber, Object listener) {
+        public Registration(String id, String serviceName, String topic,
+                            EventFilter filter, Address subscriber, Object listener, boolean localOnly) {
             this.filter = filter;
             this.id = id;
             this.listener = listener;
             this.serviceName = serviceName;
+            this.topic = topic;
             this.subscriber = subscriber;
+            this.localOnly = localOnly;
         }
 
         public EventFilter getFilter() {
@@ -307,7 +353,11 @@ public class EventServiceImpl implements EventService {
             return subscriber;
         }
 
-        public boolean isLocal() {
+        public boolean isLocalOnly() {
+            return localOnly;
+        }
+
+        private boolean isLocal() {
             return listener != null;
         }
 
@@ -336,13 +386,15 @@ public class EventServiceImpl implements EventService {
         public void writeData(DataOutput out) throws IOException {
             out.writeUTF(id);
             out.writeUTF(serviceName);
-            subscriber.writeData(out); // may be transient, subscriber == caller
+            out.writeUTF(topic);
+            subscriber.writeData(out);
             IOUtil.writeObject(out, filter);
         }
 
         public void readData(DataInput in) throws IOException {
             id = in.readUTF();
             serviceName = in.readUTF();
+            topic = in.readUTF();
             subscriber = new Address();
             subscriber.readData(in);
             filter = IOUtil.readObject(in);
@@ -363,13 +415,13 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    static class EventPacket implements DataSerializable {
+    public static class EventPacket implements DataSerializable {
 
-        String id;
-        String serviceName;
-        Object event;
+        private String id;
+        private String serviceName;
+        private Object event;
 
-        EventPacket() {
+        public EventPacket() {
         }
 
         EventPacket(String id, String serviceName, Object event) {
@@ -391,7 +443,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    static class EmptyFilter implements EventFilter, DataSerializable {
+    public static class EmptyFilter implements EventFilter, DataSerializable {
         public boolean eval(Object arg) {
             return true;
         }
@@ -399,23 +451,21 @@ public class EventServiceImpl implements EventService {
         public void readData(DataInput in) throws IOException {}
     }
 
-    static class RegistrationOperation extends AbstractOperation {
+    public static class RegistrationOperation extends AbstractOperation {
 
-        private String topic;
         private Registration registration;
         private boolean response = false;
 
-        RegistrationOperation() {
+        public RegistrationOperation() {
         }
 
-        private RegistrationOperation(String topic, Registration registration) {
+        private RegistrationOperation(Registration registration) {
             this.registration = registration;
-            this.topic = topic;
         }
 
         public void run() throws Exception {
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-            response = eventService.registerSubscriber(getServiceName(), topic, registration);
+            response = eventService.handleRegistration(registration);
         }
 
         @Override
@@ -430,15 +480,67 @@ public class EventServiceImpl implements EventService {
 
         @Override
         protected void writeInternal(DataOutput out) throws IOException {
-            out.writeUTF(topic);
             registration.writeData(out);
         }
 
         @Override
         protected void readInternal(DataInput in) throws IOException {
-            topic = in.readUTF();
             registration = new Registration();
             registration.readData(in);
+        }
+    }
+
+    public static class PostJoinRegistrationOperation extends AbstractOperation implements JoinOperation {
+
+        private Collection<Registration> registrations;
+
+        public PostJoinRegistrationOperation() {
+        }
+
+        public PostJoinRegistrationOperation(Collection<Registration> registrations) {
+            this.registrations = registrations;
+        }
+
+        @Override
+        public void run() throws Exception {
+            if (registrations != null && registrations.size() > 0) {
+                NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+                EventServiceImpl eventService = nodeEngine.eventService;
+                for (Registration reg : registrations) {
+                    eventService.handleRegistration(reg);
+                }
+            }
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+
+        @Override
+        protected void writeInternal(DataOutput out) throws IOException {
+            super.writeInternal(out);
+            int len = registrations != null ? registrations.size() : 0;
+            out.writeInt(len);
+            if (len > 0) {
+                for (Registration reg : registrations) {
+                    reg.writeData(out);
+                }
+            }
+        }
+
+        @Override
+        protected void readInternal(DataInput in) throws IOException {
+            super.readInternal(in);
+            int len = in.readInt();
+            if (len > 0) {
+                registrations = new ArrayList<Registration>(len);
+                for (int i = 0; i < len; i++) {
+                    Registration reg = new Registration();
+                    registrations.add(reg);
+                    reg.readData(in);
+                }
+            }
         }
     }
 }

@@ -24,8 +24,9 @@ public class TargetInvocationImpl extends InvocationImpl {
     private final Address target;
 
     public TargetInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                                Address target, int tryCount, long tryPauseMillis) {
-        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(), tryCount, tryPauseMillis);
+                                Address target, int tryCount, long tryPauseMillis, long callTimeout) {
+        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
+                tryCount, tryPauseMillis, callTimeout);
         this.target = target;
     }
 
