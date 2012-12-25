@@ -16,13 +16,12 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.atomicNumber.AtomicNumberService;
+import com.hazelcast.atomicNumber.proxy.AtomicNumberService;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.CustomServiceConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.Services;
-import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
