@@ -16,12 +16,18 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Operation;
+
+import java.util.List;
 
 /**
  * @ali 12/6/12
  */
 public class ClearOperation extends QueueBackupAwareOperation {
+
+    transient List<Data> dataList;
 
     public ClearOperation() {
     }
@@ -30,9 +36,24 @@ public class ClearOperation extends QueueBackupAwareOperation {
         super(name);
     }
 
+    public void beforeRun() throws Exception {
+        if (hasListener()){
+            dataList = getContainer().getAsDataList();
+        }
+    }
+
     public void run() throws Exception {
         getContainer().clear(false);
         response = true;
+    }
+
+    public void afterRun() throws Exception {
+        if (Boolean.TRUE.equals(response) && dataList != null){
+            for (Data data: dataList){
+                publishEvent(ItemEventType.REMOVED, data);
+            }
+            dataList.clear();
+        }
     }
 
     public Operation getBackupOperation() {
@@ -40,6 +61,6 @@ public class ClearOperation extends QueueBackupAwareOperation {
     }
 
     public boolean shouldBackup() {
-        return true;
+        return Boolean.TRUE.equals(response);
     }
 }

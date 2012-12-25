@@ -27,7 +27,7 @@ public interface EventService {
 
     EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);
 
-    void deregisterListener(String serviceName, String id);
+    void deregisterListener(String serviceName, String topic, String id);
 
     Collection<EventRegistration> getRegistrations(String serviceName, String topic);
 

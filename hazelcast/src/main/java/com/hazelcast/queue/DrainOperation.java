@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Operation;
 
@@ -43,6 +44,16 @@ public class DrainOperation extends QueueBackupAwareOperation {
 
     public void run() throws Exception {
         response = getContainer().drain(maxSize);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (response != null){
+            List<Data> list = (List<Data>)response;
+            for (Data data: list){
+                publishEvent(ItemEventType.REMOVED, data);
+            }
+        }
     }
 
     public boolean shouldBackup() {

@@ -14,37 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.queue;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.EventFilter;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 
-public class EntryEventFilter implements EventFilter,Serializable {
+/**
+ * @ali 12/24/12
+ */
+public class QueueEventFilter implements EventFilter, Serializable {
 
-    boolean includeValue = false;
-    Object key = null;
+    final boolean includeValue;
 
-    public EntryEventFilter(boolean includeValue, Object key) {
+    public QueueEventFilter(boolean includeValue) {
         this.includeValue = includeValue;
-        this.key = key;
     }
 
     public boolean isIncludeValue() {
         return includeValue;
     }
 
-    public Object getKey() {
-        return key;
-    }
-
     public boolean eval(Object arg) {
-        return key == null || key.equals(arg);
+        return false;
     }
 }

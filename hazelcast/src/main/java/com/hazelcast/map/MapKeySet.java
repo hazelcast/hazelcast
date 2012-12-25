@@ -16,35 +16,47 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEventType;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.EventFilter;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
-public class EntryEventFilter implements EventFilter,Serializable {
+public class MapKeySet implements DataSerializable {
 
-    boolean includeValue = false;
-    Object key = null;
+    Set<Data> keySet;
 
-    public EntryEventFilter(boolean includeValue, Object key) {
-        this.includeValue = includeValue;
-        this.key = key;
+
+    public MapKeySet(Set<Data> keySet) {
+        this.keySet = keySet;
     }
 
-    public boolean isIncludeValue() {
-        return includeValue;
+    public MapKeySet() {
     }
 
-    public Object getKey() {
-        return key;
+    public Set<Data> getKeySet() {
+        return keySet;
     }
 
-    public boolean eval(Object arg) {
-        return key == null || key.equals(arg);
+    public void writeData(DataOutput out) throws IOException {
+        int size = keySet.size();
+        out.writeInt(size);
+        for (Data o : keySet) {
+            o.writeData(out);
+        }
     }
+
+    public void readData(DataInput in) throws IOException {
+        int size = in.readInt();
+        keySet = new HashSet<Data>(size);
+        for (int i = 0; i < size; i++) {
+            Data data = new Data();
+            data.readData(in);
+            keySet.add(data);
+        }
+    }
+
 }

@@ -14,37 +14,43 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.queue;
 
-import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.EventFilter;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
-public class EntryEventFilter implements EventFilter,Serializable {
+/**
+ * @ali 12/24/12
+ */
+public class QueueEvent implements DataSerializable {
 
-    boolean includeValue = false;
-    Object key = null;
+    String name;
 
-    public EntryEventFilter(boolean includeValue, Object key) {
-        this.includeValue = includeValue;
-        this.key = key;
+    Data data;
+
+    ItemEventType eventType;
+
+    public QueueEvent(String name, Data data, ItemEventType eventType) {
+        this.name = name;
+        this.data = data;
+        this.eventType = eventType;
     }
 
-    public boolean isIncludeValue() {
-        return includeValue;
+    public void writeData(DataOutput out) throws IOException {
+        out.writeUTF(name);
+        IOUtil.writeNullableData(out, data);
+        out.writeInt(eventType.getType());
     }
 
-    public Object getKey() {
-        return key;
-    }
-
-    public boolean eval(Object arg) {
-        return key == null || key.equals(arg);
+    public void readData(DataInput in) throws IOException {
+        name = in.readUTF();
+        data = IOUtil.readNullableData(in);
+        eventType = ItemEventType.getByType(in.readInt());
     }
 }
