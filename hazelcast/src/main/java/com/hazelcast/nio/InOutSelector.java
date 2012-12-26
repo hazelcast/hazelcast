@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public final class InOutSelector implements Runnable {
     public InOutSelector(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         logger = connectionManager.ioService.getLogger(this.getClass().getName());
-        this.waitTime = 1;
+        this.waitTime = 1000;  // TODO: This value has significant effect on idle CPU usage!
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();

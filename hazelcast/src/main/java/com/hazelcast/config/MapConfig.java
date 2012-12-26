@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -523,7 +523,7 @@ public class MapConfig implements DataSerializable {
                                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
                 this.timeToLiveSeconds == other.timeToLiveSeconds &&
                 this.readBackupData == other.readBackupData &&
-                this.clearQuick == other.clearQuick &&
+//                this.clearQuick == other.clearQuick &&
                 this.valueIndexed == other.valueIndexed;
     }
 
@@ -556,7 +556,7 @@ public class MapConfig implements DataSerializable {
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
         result = prime * result + (this.readBackupData ? 1231 : 1237);
-        result = prime * result + (this.clearQuick ? 1231 : 1237);
+//        result = prime * result + (this.clearQuick ? 1231 : 1237);
         result = prime * result + (this.valueIndexed ? 1231 : 1237);
         return result;
     }
@@ -581,7 +581,7 @@ public class MapConfig implements DataSerializable {
                         this.timeToLiveSeconds == other.timeToLiveSeconds &&
                         this.readBackupData == other.readBackupData &&
                         this.valueIndexed == other.valueIndexed &&
-                        this.clearQuick == other.clearQuick &&
+//                        this.clearQuick == other.clearQuick &&
                         (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
                         (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
                                 : other.evictionPolicy == null) &&
@@ -606,10 +606,10 @@ public class MapConfig implements DataSerializable {
         cacheValue = b[2];
         evictionPolicy = in.readUTF();
         mergePolicy = in.readUTF();
-        clearQuick = in.readBoolean();
+//        clearQuick = in.readBoolean();
         nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.readData(in);
-        // TODO: MapStoreConfig mapStoreConfig
+//        TODO: MapStoreConfig mapStoreConfig
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -624,9 +624,9 @@ public class MapConfig implements DataSerializable {
         out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData, cacheValue));
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);
-        out.writeBoolean(clearQuick);
+//        out.writeBoolean(clearQuick);
         nearCacheConfig.writeData(out);
-        // TODO: MapStoreConfig mapStoreConfig
+//        TODO: MapStoreConfig mapStoreConfig
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -532,7 +532,7 @@ public class QueryTest extends TestUtil {
         imap.clear();
         imap = h1.getMap("employees2");
         imap.addIndex("name", false);
-        imap.addIndex("salary", true);
+        imap.addIndex("salary", false);
         imap.addIndex("active", false);
         for (int i = 0; i < 50000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import com.hazelcast.impl.GroupProperties;
 import org.hibernate.cfg.Environment;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
 @RunWith(TestBlockJUnit4ClassRunner.class)
+@Ignore
 public class CacheProviderDefaultTest extends HibernateStatisticsTestSupport {
 
     @BeforeClass

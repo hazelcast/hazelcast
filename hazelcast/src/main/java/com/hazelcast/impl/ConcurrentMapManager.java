@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -444,7 +444,7 @@ public class ConcurrentMapManager extends BaseManager {
 
     public boolean lock(String name, Object key, long timeout) {
         MLock mlock = new MLock();
-        final boolean booleanCall = timeout >= 0 ; // tryLock
+        final boolean booleanCall = timeout >= 0; // tryLock
         try {
             final boolean locked = mlock.lock(name, key, timeout);
             if (!locked && !booleanCall) {
@@ -490,6 +490,11 @@ public class ConcurrentMapManager extends BaseManager {
             boolean unlocked = booleanCall(CONCURRENT_MAP_FORCE_UNLOCK, name, dataKey, null, 0, -1);
             if (unlocked) {
                 backup(CONCURRENT_MAP_BACKUP_LOCK);
+                CMap cmap = getMap(name);
+                if (cmap != null) {
+                    LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
+                    cmap.mapLocalLocks.remove(dataKey, localLock);
+                }
             }
             return unlocked;
         }
@@ -515,8 +520,7 @@ public class ConcurrentMapManager extends BaseManager {
             long result = (Long) getResultAsObject();
             if (result == -1L) {
                 return false;
-            }
-            else {
+            } else {
                 CMap cmap = getMap(name);
                 if (result == 0) {
                     cmap.mapLocalLocks.remove(dataKey);
@@ -536,9 +540,9 @@ public class ConcurrentMapManager extends BaseManager {
         public boolean isLocked(String name, Object key) {
             Data dataKey = toData(key);
             CMap cmap = getMap(name);
-            if(cmap != null) {
+            if (cmap != null) {
                 LocalLock localLock = cmap.mapLocalLocks.get(dataKey);
-                if(localLock != null && localLock.getCount() > 0) {
+                if (localLock != null && localLock.getCount() > 0) {
                     return true;
                 }
             }
@@ -571,8 +575,8 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         protected final void handleInterruption() {
             logger.log(Level.WARNING, Thread.currentThread().getName() + " is interrupted! " +
-                                      "Hazelcast intentionally suppresses interruption during lock operations " +
-                                      "to avoid dead-lock conditions. Operation: " + request.operation);
+                    "Hazelcast intentionally suppresses interruption during lock operations " +
+                    "to avoid dead-lock conditions. Operation: " + request.operation);
         }
 
         @Override
@@ -1079,9 +1083,9 @@ public class ConcurrentMapManager extends BaseManager {
                 }
             }
             final CMap cMap = maps.get(name);
-            cMap.incrementGetCount();
             Data dataKey = null;
             if (cMap != null) {
+                cMap.incrementGetCount();
                 NearCache nearCache = cMap.nearCache;
                 if (nearCache != null) {
                     Object value = nearCache.get(key);
@@ -2097,8 +2101,8 @@ public class ConcurrentMapManager extends BaseManager {
         @Override
         protected final void handleInterruption() {
             logger.log(Level.WARNING, Thread.currentThread().getName() + " is interrupted! " +
-                                      "Hazelcast intentionally suppresses interruption during backup operations. " +
-                                      "Operation: " + request.operation);
+                    "Hazelcast intentionally suppresses interruption during backup operations. " +
+                    "Operation: " + request.operation);
         }
     }
 
@@ -2171,7 +2175,7 @@ public class ConcurrentMapManager extends BaseManager {
                 } catch (HazelcastException e) {
                     final Level level = backupRedoEnabled ? Level.WARNING : Level.FINEST;
                     logger.log(level, "Backup operation [" + operation + "] has failed! "
-                              + e.getClass().getName() + ": " +  e.getMessage());
+                            + e.getClass().getName() + ": " + e.getMessage());
                     logger.log(Level.FINEST, e.getMessage(), e);
                 }
             }
@@ -2180,7 +2184,7 @@ public class ConcurrentMapManager extends BaseManager {
                 // Operation seems successful but since owner target is dead, we may loose data!
                 // We should retry actual operation for the new target
                 logger.log(Level.WARNING, "Target[" + target + "] is dead! " +
-                                          "Hazelcast will retry " + request.operation);
+                        "Hazelcast will retry " + request.operation);
                 // TODO: what if another call changes actual value? Do we need version check?
                 doOp(); // means redo...
                 getRedoAwareResult();   // wait for operation to complete...
@@ -2258,7 +2262,7 @@ public class ConcurrentMapManager extends BaseManager {
         boolean result;
 
 
-        public MClearQuick(String name ) {
+        public MClearQuick(String name) {
             this.name = name;
         }
 
@@ -2525,7 +2529,9 @@ public class ConcurrentMapManager extends BaseManager {
             return backupRedoEnabled && isMigrating(request, getReplicaIndex(request));
         }
 
-        private int getReplicaIndex(final Request request) {return (int) request.longValue;}
+        private int getReplicaIndex(final Request request) {
+            return (int) request.longValue;
+        }
 
         public void handle(Request request) {
             doOperation(request);
@@ -4033,23 +4039,23 @@ public class ConcurrentMapManager extends BaseManager {
             }
 
             public void process() {
-                    final Record record = cmap.getRecord(request);
-                    if (record != null && !record.testLock(request.lockThreadId, request.lockAddress)) {
-                        // record is locked by a previous TryLockAndGetLoader operation
-                        // return redo response.
-                        returnRedoResponse(request, REDO_MAP_LOCKED);
-                    } else {
-                        if (valueData != null) {
-                            if (record == null) {
-                                cmap.createAndAddNewRecord(request.key, valueData);
-                            } else {
-                                record.setValueData(valueData);
-                            }
+                final Record record = cmap.getRecord(request);
+                if (record != null && !record.testLock(request.lockThreadId, request.lockAddress)) {
+                    // record is locked by a previous TryLockAndGetLoader operation
+                    // return redo response.
+                    returnRedoResponse(request, REDO_MAP_LOCKED);
+                } else {
+                    if (valueData != null) {
+                        if (record == null) {
+                            cmap.createAndAddNewRecord(request.key, valueData);
+                        } else {
+                            record.setValueData(valueData);
                         }
-                        doOperation(request);
-                        request.value = valueData;
-                    returnResponse(request);
                     }
+                    doOperation(request);
+                    request.value = valueData;
+                    returnResponse(request);
+                }
             }
         }
 

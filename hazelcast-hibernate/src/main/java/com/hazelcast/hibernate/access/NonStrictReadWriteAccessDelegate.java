@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,17 +35,17 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
     }
 
     public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
-        return putInToCache(key, value);
+        return put(key, value, version);
     }
 
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
                                final SoftLock lock) throws CacheException {
-        return putInToCache(key, value);
+        return update(key, value, currentVersion, previousVersion, lock);
     }
 
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
                                final boolean minimalPutOverride) throws CacheException {
-        return putInToCache(key, value);
+        return put(key, value, version);
     }
 
     public SoftLock lockItem(Object key, Object version) throws CacheException {

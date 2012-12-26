@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.hibernate.instance;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.AbstractHazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import org.hibernate.cache.CacheProvider;
 import org.hibernate.cache.RegionFactory;
@@ -40,8 +40,8 @@ final class RegionFactoryHazelcastAccessor extends HazelcastAccessor {
                 return ((HazelcastCacheProvider) provider).getHazelcastInstance();
             }
             logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheProvider!");
-        } else if (rf instanceof HazelcastCacheRegionFactory) {
-            return ((HazelcastCacheRegionFactory) rf).getHazelcastInstance();
+        } else if (rf instanceof AbstractHazelcastCacheRegionFactory) {
+            return ((AbstractHazelcastCacheRegionFactory) rf).getHazelcastInstance();
         } else {
             logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
         }

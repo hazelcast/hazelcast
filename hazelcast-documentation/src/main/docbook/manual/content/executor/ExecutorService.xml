@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -74,5 +74,9 @@ Future<String> future = executorService.submit (new Echo("myinput"));
 //when ready, get the result of your execution
 String result = future.get();
 ]]></programlisting>
+
+    If you need access to the current <literal>HazelcastInstance</literal> you are executing the task under, implement the interface <literal>HazelcastInstanceAware</literal>.
+    This will call the method <literal>setHazelcastInstance()</literal> prior to executing your task.
+        
     </para>
 </simplesect>
