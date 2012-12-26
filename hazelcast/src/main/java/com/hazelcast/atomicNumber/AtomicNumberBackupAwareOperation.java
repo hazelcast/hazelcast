@@ -1,6 +1,5 @@
 package com.hazelcast.atomicNumber;
 
-import com.hazelcast.atomicNumber.proxy.AtomicNumberService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.KeyBasedOperation;
 
