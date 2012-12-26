@@ -24,16 +24,14 @@ import com.hazelcast.spi.Operation;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @ali 12/20/12
  */
 public class CompareCollectionOperation extends QueueBackupAwareOperation {
 
-    Set<Data> dataSet;
+    List<Data> dataList;
 
     transient Map<Long, Data> dataMap;
 
@@ -42,21 +40,35 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
     public CompareCollectionOperation() {
     }
 
-    public CompareCollectionOperation(String name, Set<Data> dataSet, boolean retain) {
+    public CompareCollectionOperation(String name, List<Data> dataList, boolean retain) {
         super(name);
-        this.dataSet = dataSet;
+        this.dataList = dataList;
         this.retain = retain;
     }
 
     public void run() throws Exception {
-        dataMap = getContainer().compareCollection(dataSet, retain);
-        response = dataMap.size() > 0;
+        response = false;
+        dataMap = getContainer().compareCollection(dataList, retain);
+        if (dataMap.size() > 0) {
+            response = true;
+            deleteFromStore(false);
+        }
     }
 
     public void afterRun() throws Exception {
-        for (Map.Entry<Long, Data> entry: dataMap.entrySet()){
-            Data data = entry.getValue();
-            publishEvent(ItemEventType.REMOVED, data);
+        deleteFromStore(true);
+        if (hasListener()) {
+            for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
+                Data data = entry.getValue();
+                publishEvent(ItemEventType.REMOVED, data);
+            }
+        }
+    }
+
+    private void deleteFromStore(boolean async) {
+        QueueContainer container = getContainer();
+        if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
+            container.getStore().deleteAll(dataMap.keySet());
         }
     }
 
@@ -71,8 +83,8 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(retain);
-        out.writeInt(dataSet.size());
-        for (Data data : dataSet) {
+        out.writeInt(dataList.size());
+        for (Data data : dataList) {
             IOUtil.writeNullableData(out, data);
         }
     }
@@ -81,9 +93,9 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
         super.readInternal(in);
         retain = in.readBoolean();
         int size = in.readInt();
-        dataSet = new HashSet<Data>(size);
+        dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            dataSet.add(IOUtil.readNullableData(in));
+            dataList.add(IOUtil.readNullableData(in));
         }
     }
 

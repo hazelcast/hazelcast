@@ -23,6 +23,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
 
@@ -38,9 +39,11 @@ class WaitNotifyService {
     private final ExecutorService expirationExecutor;
     private final Future expirationTask;
     private final WaitingOpProcessor waitingOpProcessor;
+    private final NodeEngine nodeEngine;
     private final ILogger logger;
 
     public WaitNotifyService(final NodeEngineImpl nodeEngine, final WaitingOpProcessor waitingOpProcessor) {
+        this.nodeEngine = nodeEngine;
         this.waitingOpProcessor = waitingOpProcessor;
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(WaitNotifyService.class.getName());
@@ -78,8 +81,10 @@ class WaitNotifyService {
                                     return;
                                 }
                                 WaitingOp waitingOp = it.next();
-                                if (waitingOp.isValid() && waitingOp.expired()) {
-                                    waitingOpProcessor.process(waitingOp);
+                                if (waitingOp.isValid()) {
+                                    if (waitingOp.expired() || waitingOp.timedOut()) {
+                                        waitingOpProcessor.process(waitingOp);
+                                    }
                                 }
                             }
                         }
@@ -106,6 +111,7 @@ class WaitNotifyService {
         }
         long timeout = so.getWaitTimeoutMillis();
         WaitingOp waitingOp = (so instanceof KeyBasedOperation) ? new KeyBasedWaitingOp(q, so) : new WaitingOp(q, so);
+        waitingOp.setNodeEngine(nodeEngine);
         if (timeout > -1 && timeout < 1500) {
             delayQueue.offer(waitingOp);
         }
@@ -136,23 +142,11 @@ class WaitNotifyService {
         }
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("SchedulingService{");
-        sb.append("delayQueue=" + delayQueue.size());
-        sb.append(" \n[");
-        for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
-            sb.append("\t");
-            sb.append(ScheduledOps.size() + ", ");
-        }
-        sb.append("]\n}");
-        return sb.toString();
-    }
-
     private Queue<WaitingOp> getScheduleQueue(Object scheduleQueueKey) {
         return mapWaitingOps.get(scheduleQueueKey);
     }
 
+    // invalidated waiting ops will removed from queue eventually by notifiers.
     public void onMemberDisconnect(Address leftMember) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             Iterator<WaitingOp> it = q.iterator();
@@ -171,6 +165,7 @@ class WaitNotifyService {
         }
     }
 
+    // This is executed under partition migration lock!
     public void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
         if (migrationInfo.getReplicaIndex() == 0) {
             if (thisAddress.equals(migrationInfo.getFromAddress())) {
@@ -198,6 +193,19 @@ class WaitNotifyService {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("SchedulingService{");
+        sb.append("delayQueue=" + delayQueue.size());
+        sb.append(" \n[");
+        for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
+            sb.append("\t");
+            sb.append(ScheduledOps.size() + ", ");
+        }
+        sb.append("]\n}");
+        return sb.toString();
+    }
+
     interface WaitingOpProcessor {
         void process(WaitingOp so) throws Exception;
 
@@ -205,6 +213,7 @@ class WaitNotifyService {
     }
 
     void shutdown() {
+        logger.log(Level.FINEST, "Stopping tasks...");
         expirationTask.cancel(true);
         expirationExecutor.shutdown();
     }
@@ -222,15 +231,16 @@ class WaitNotifyService {
     static class WaitingOp extends AbstractOperation implements Delayed, PartitionAwareOperation {
         final Queue<WaitingOp> queue;
         final Operation op;
-        final WaitSupport so;
+        final WaitSupport waitSupport;
         final long expirationTime;
         volatile boolean valid = true;
 
-        WaitingOp(Queue<WaitingOp> queue, WaitSupport so) {
-            this.op = (Operation) so;
-            this.so = so;
+        WaitingOp(Queue<WaitingOp> queue, WaitSupport waitSupport) {
+            this.op = (Operation) waitSupport;
+            this.waitSupport = waitSupport;
             this.queue = queue;
-            this.expirationTime = so.getWaitTimeoutMillis() < 0 ? -1 : Clock.currentTimeMillis() + so.getWaitTimeoutMillis();
+            this.expirationTime = waitSupport.getWaitTimeoutMillis() < 0 ? -1
+                    : Clock.currentTimeMillis() + waitSupport.getWaitTimeoutMillis();
             this.setPartitionId(op.getPartitionId());
         }
 
@@ -250,8 +260,13 @@ class WaitNotifyService {
             return expirationTime != -1 && Clock.currentTimeMillis() >= expirationTime;
         }
 
+        public boolean timedOut() {
+            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            return nodeEngine.operationService.isCallTimedOut(op);
+        }
+
         public boolean shouldWait() {
-            return so.shouldWait();
+            return waitSupport.shouldWait();
         }
 
         public long getDelay(TimeUnit unit) {
@@ -269,8 +284,15 @@ class WaitNotifyService {
         @Override
         public void run() throws Exception {
             if (valid) {
-                so.onWaitExpire();
-                queue.remove(this);
+                if (expired()) {
+                    queue.remove(this);
+                    waitSupport.onWaitExpire();
+                } else if (timedOut()) {
+                    queue.remove(this);
+                    Object response = new CallTimeoutException("Call timed out for "
+                            + op.getClass().getName());
+                    op.getResponseHandler().sendResponse(response);
+                }
             }
         }
 
@@ -285,7 +307,7 @@ class WaitNotifyService {
         }
 
         public void expire() {
-            so.onWaitExpire();
+            waitSupport.onWaitExpire();
         }
 
         public String toString() {

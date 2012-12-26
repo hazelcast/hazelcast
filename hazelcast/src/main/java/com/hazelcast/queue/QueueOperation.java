@@ -33,6 +33,8 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
 
     transient Object response;
 
+    private transient QueueContainer container;
+
     protected QueueOperation() {
     }
 
@@ -41,12 +43,15 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
     }
 
     public QueueContainer getContainer() {
-        QueueService queueService = getService();
-        boolean fromBackup = false;
-        if (this instanceof BackupOperation){
-            fromBackup = true;
+        if (container == null){
+            QueueService queueService = getService();
+            boolean fromBackup = false;
+            if (this instanceof BackupOperation){
+                fromBackup = true;
+            }
+            container = queueService.getContainer(name, fromBackup);
         }
-        return queueService.getContainer(name, fromBackup);
+        return container;
     }
 
     public Object getResponse() {
@@ -56,6 +61,7 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
     public String getServiceName() {
         return QueueService.NAME;
     }
+
 
     public int getKeyHash() {
         return name.hashCode();

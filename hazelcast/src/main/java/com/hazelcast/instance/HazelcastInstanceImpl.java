@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.atomicNumber.AtomicNumberService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
@@ -140,7 +141,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public AtomicNumber getAtomicNumber(final String name) {
-        return null;
+        return (AtomicNumber)getServiceProxy(AtomicNumberService.class, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {

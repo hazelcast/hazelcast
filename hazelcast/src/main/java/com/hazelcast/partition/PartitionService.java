@@ -881,7 +881,7 @@ public class PartitionService implements CoreService, ManagedService,
                     }
                 }
             } catch (InterruptedException e) {
-                logger.log(Level.FINEST, "MigrationService is interrupted: " + e.getMessage(), e);
+                logger.log(Level.FINEST, "MigrationService is interrupted: " + e.getMessage());
                 running = false;
             } finally {
                 clearTaskQueues();

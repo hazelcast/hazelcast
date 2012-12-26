@@ -35,6 +35,8 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
 
     private Data data;
 
+    private transient QueueItem item;
+
     public OfferOperation() {
     }
 
@@ -44,11 +46,25 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public void run() {
-        response = getContainer().offer(data, false);
+        response = false;
+        QueueContainer container = getContainer();
+        item = container.offer(data);
+        if (item != null) {
+            response = true;
+            if (!container.isStoreAsync()) {
+                container.getStore().store(item.getItemId(), item.getData());
+            }
+        }
     }
 
     public void afterRun() throws Exception {
-        publishEvent(ItemEventType.ADDED, data);
+        if (Boolean.TRUE.equals(response)) {
+            QueueContainer container = getContainer();
+            publishEvent(ItemEventType.ADDED, data);
+            if (container.isStoreAsync()) {
+                container.getStore().store(item.getItemId(), item.getData());
+            }
+        }
     }
 
     public Operation getBackupOperation() {

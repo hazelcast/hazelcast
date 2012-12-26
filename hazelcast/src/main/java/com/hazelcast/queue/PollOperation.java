@@ -27,6 +27,8 @@ import com.hazelcast.spi.WaitSupport;
  */
 public class PollOperation extends QueueTimedOperation implements WaitSupport, Notifier {
 
+    transient QueueItem item;
+
     public PollOperation() {
     }
 
@@ -35,12 +37,23 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public void run() {
-        response = getContainer().poll(false);
+        QueueContainer container = getContainer();
+        item = container.poll();
+        if (item != null) {
+            response = item.getData();
+            if (!container.isStoreAsync()) {
+                container.getStore().delete(item.getItemId());
+            }
+        }
     }
 
     public void afterRun() throws Exception {
         if (response != null){
             publishEvent(ItemEventType.REMOVED, (Data)response);
+            QueueContainer container = getContainer();
+            if (container.isStoreAsync()) {
+                container.getStore().delete(item.getItemId());
+            }
         }
     }
 

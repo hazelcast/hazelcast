@@ -26,7 +26,7 @@ import java.io.IOException;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public final class Response extends AbstractOperation {
+public final class Response extends AbstractOperation implements ResponseOperation {
 
     private Object result = null;
     private boolean exception = false;

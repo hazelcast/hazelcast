@@ -31,6 +31,8 @@ public class RemoveOperation extends QueueBackupAwareOperation {
 
     private Data data;
 
+    transient long itemId = -1;
+
     public RemoveOperation() {
     }
 
@@ -40,12 +42,23 @@ public class RemoveOperation extends QueueBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        response = getContainer().remove(data, false);
+        QueueContainer container = getContainer();
+        itemId = container.remove(data);
+        if (itemId != -1){
+            response = true;
+            if (!container.isStoreAsync()){
+                container.getStore().delete(itemId);
+            }
+        }
     }
 
     public void afterRun() throws Exception {
-        if(Boolean.TRUE.equals(response)){
+        if (itemId != -1){
             publishEvent(ItemEventType.REMOVED, data);
+            QueueContainer container = getContainer();
+            if (container.isStoreAsync()){
+                container.getStore().delete(itemId);
+            }
         }
     }
 

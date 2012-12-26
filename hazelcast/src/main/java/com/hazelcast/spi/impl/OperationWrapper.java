@@ -21,6 +21,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -54,12 +55,12 @@ class OperationWrapper extends AbstractOperation {
         operation = (Operation) nodeEngine.toObject(operationData);
         operation.setNodeEngine(nodeEngine)
                 .setCaller(getCaller())
-                .setCallId(getCallId())
                 .setConnection(getConnection())
                 .setServiceName(getServiceName())
                 .setPartitionId(getPartitionId())
                 .setReplicaIndex(getReplicaIndex())
                 .setResponseHandler(getResponseHandler());
+        OperationAccessor.setCallId(operation, getCallId());
     }
 
     public void run() throws Exception {

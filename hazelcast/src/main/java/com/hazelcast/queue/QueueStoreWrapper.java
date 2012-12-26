@@ -28,9 +28,11 @@ import java.util.*;
  */
 public class QueueStoreWrapper {
 
-    QueueStore store;
+    private QueueStore store;
 
-    boolean enabled = false;
+    private boolean enabled = false;
+
+    private boolean async = false;
 
     public QueueStoreWrapper() {
     }
@@ -43,6 +45,8 @@ public class QueueStoreWrapper {
             Class<?> storeClass = Class.forName(storeConfig.getClassName());
             store = (QueueStore) storeClass.newInstance();
             enabled = storeConfig.isEnabled();
+            async = Boolean.parseBoolean(storeConfig.getProperty("async"));
+            async = true;
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
@@ -56,35 +60,55 @@ public class QueueStoreWrapper {
         return enabled;
     }
 
+    public boolean isAsync() {
+        return async;
+    }
+
     public void store(Long key, Data value) {
-        store.store(key, new QueueStoreValue(value));
+        if (enabled) {
+            store.store(key, new QueueStoreValue(value));
+        }
     }
 
     public void storeAll(Map map) {
-        store.storeAll(map);
+        if (enabled) {
+            store.storeAll(map);
+        }
     }
 
     public void delete(Long key) {
-        store.delete(key);
+        if (enabled) {
+            store.delete(key);
+        }
     }
 
     public void deleteAll(Collection keys) {
-        store.deleteAll(keys);
+        if (enabled) {
+            store.deleteAll(keys);
+        }
     }
 
     public Data load(Long key) {
-        QueueStoreValue val = (QueueStoreValue) store.load(key);
-        if (val != null) {
-            return val.getData();
+        if (enabled) {
+            QueueStoreValue val = (QueueStoreValue) store.load(key);
+            if (val != null) {
+                return val.getData();
+            }
         }
         return null;
     }
 
     public Map<Long, QueueStoreValue> loadAll(Collection keys) {
-        return store.loadAll(keys);
+        if (enabled) {
+            return store.loadAll(keys);
+        }
+        return new HashMap<Long, QueueStoreValue>(0);
     }
 
     public Set<Long> loadAllKeys() {
-        return store.loadAllKeys();
+        if (enabled) {
+            return store.loadAllKeys();
+        }
+        return new HashSet<Long>(0);
     }
 }

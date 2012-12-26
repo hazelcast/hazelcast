@@ -29,26 +29,26 @@ public class InvocationBuilder {
     private final Operation op;
     private final int partitionId;
     private final Address target;
+    private long callTimeout = -1L;
     private int replicaIndex = 0;
     private int tryCount = 100;
     private long tryPauseMillis = 500;
 
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
+        this(nodeEngine, serviceName, op, partitionId, null);
+    }
+
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
+        this(nodeEngine, serviceName, op, -1, target);
+    }
+
+    private InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId, Address target) {
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
-        this.target = null;
-    }
-
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-        this.nodeEngine = nodeEngine;
-        this.serviceName = serviceName;
-        this.op = op;
-        this.partitionId = -1;
         this.target = target;
     }
-
 
     public InvocationBuilder setReplicaIndex(int replicaIndex) {
         if (replicaIndex < 0 || replicaIndex >= PartitionInfo.MAX_REPLICA_COUNT) {
@@ -66,6 +66,11 @@ public class InvocationBuilder {
 
     public InvocationBuilder setTryPauseMillis(long tryPauseMillis) {
         this.tryPauseMillis = tryPauseMillis;
+        return this;
+    }
+
+    public InvocationBuilder setCallTimeout(long callTimeout) {
+        this.callTimeout = callTimeout;
         return this;
     }
 
@@ -97,11 +102,16 @@ public class InvocationBuilder {
         return partitionId;
     }
 
+    public long getCallTimeout() {
+        return callTimeout;
+    }
+
     public Invocation build() {
         if (target == null) {
-            return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+            return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex,
+                    tryCount, tryPauseMillis, callTimeout);
         } else {
-            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis);
+            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis, callTimeout);
         }
     }
 }

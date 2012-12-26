@@ -36,6 +36,7 @@ public final class Address implements DataSerializable {
     private int port = -1;
     private String host;
     private byte type;
+
     private transient String scopeId;
     private transient boolean hostSet;
 

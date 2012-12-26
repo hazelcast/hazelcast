@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+package com.hazelcast.spi.exception;
 
 /**
- * @mdogan 12/14/12
+ * @mdogan 12/19/12
  */
-public interface EventRegistration extends DataSerializable {
+public class CallTimeoutException extends RetryableException {
 
-    String getId();
+    public CallTimeoutException() {
+    }
 
-    EventFilter getFilter();
-
-    Address getSubscriber();
-
-    boolean isLocalOnly();
-
+    public CallTimeoutException(String message) {
+        super(message);
+    }
 }

@@ -25,7 +25,7 @@ import com.hazelcast.nio.IOUtil;
  */
 public class QueueStoreValue implements StoreValue {
 
-    Data data;
+    private Data data;
 
     public QueueStoreValue(Object o) {
         if (o instanceof Data){
