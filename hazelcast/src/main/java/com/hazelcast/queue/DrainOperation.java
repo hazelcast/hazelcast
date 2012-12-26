@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Operation;
+import com.sun.tools.javac.util.Pair;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -32,6 +33,8 @@ public class DrainOperation extends QueueBackupAwareOperation {
 
     int maxSize = -1;
 
+    transient Pair<Set<Long>, List<Data>> keyDataPair;
+
     //TODO how about waiting polls
 
     public DrainOperation() {
@@ -43,16 +46,21 @@ public class DrainOperation extends QueueBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        response = getContainer().drain(maxSize);
+        QueueContainer container = getContainer();
+        keyDataPair = container.drain(maxSize);
+        response = keyDataPair.snd;
+        if (!container.isStoreAsync()) {
+            container.getStore().deleteAll(keyDataPair.fst);
+        }
     }
 
-    @Override
     public void afterRun() throws Exception {
-        if (response != null){
-            List<Data> list = (List<Data>)response;
-            for (Data data: list){
-                publishEvent(ItemEventType.REMOVED, data);
-            }
+        QueueContainer container = getContainer();
+        if (container.isStoreAsync()) {
+            container.getStore().deleteAll(keyDataPair.fst);
+        }
+        for (Data data: keyDataPair.snd){
+            publishEvent(ItemEventType.REMOVED, data);
         }
     }
 

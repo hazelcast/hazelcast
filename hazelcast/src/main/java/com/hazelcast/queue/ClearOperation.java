@@ -20,14 +20,14 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Operation;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * @ali 12/6/12
  */
 public class ClearOperation extends QueueBackupAwareOperation {
 
-    transient List<Data> dataList;
+    private transient List<QueueItem> itemList;
 
     public ClearOperation() {
     }
@@ -37,23 +37,39 @@ public class ClearOperation extends QueueBackupAwareOperation {
     }
 
     public void beforeRun() throws Exception {
-        if (hasListener()){
-            dataList = getContainer().getAsDataList();
-        }
+        itemList = getContainer().itemList();
     }
 
     public void run() throws Exception {
-        getContainer().clear(false);
+        QueueContainer container = getContainer();
+        container.clear();
         response = true;
+        deleteFromStore(false);
     }
 
     public void afterRun() throws Exception {
-        if (Boolean.TRUE.equals(response) && dataList != null){
-            for (Data data: dataList){
-                publishEvent(ItemEventType.REMOVED, data);
+        if(deleteFromStore(true)){
+            for (QueueItem item: itemList){
+                publishEvent(ItemEventType.REMOVED, item.getData());
             }
-            dataList.clear();
         }
+    }
+
+    private boolean deleteFromStore(boolean async){
+        boolean published = false;
+        QueueContainer container = getContainer();
+        if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
+            Set<Long> set = new HashSet<Long>(itemList.size());
+            for (QueueItem item: itemList){
+                set.add(item.getItemId());
+                if (async){
+                    published = true;
+                    publishEvent(ItemEventType.REMOVED, item.getData());
+                }
+            }
+            container.getStore().deleteAll(set);
+        }
+        return published;
     }
 
     public Operation getBackupOperation() {

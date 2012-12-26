@@ -23,32 +23,32 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @ali 12/20/12
  */
 public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
 
-    Set<Data> dataSet;
+    List<Data> dataList;
 
     public AddAllBackupOperation() {
     }
 
-    public AddAllBackupOperation(String name, Set<Data> dataSet) {
+    public AddAllBackupOperation(String name, List<Data> dataList) {
         super(name);
-        this.dataSet = dataSet;
+        this.dataList = dataList;
     }
 
     public void run() throws Exception {
-        getContainer().addAll(dataSet, true);
+        getContainer().addAll(dataList);
     }
 
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(dataSet.size());
-        for (Data data: dataSet){
+        out.writeInt(dataList.size());
+        for (Data data: dataList){
             IOUtil.writeNullableData(out, data);
         }
     }
@@ -56,9 +56,9 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataSet = new HashSet<Data>(size);
+        dataList = new ArrayList<Data>(size);
         for (int i=0; i<size; i++){
-            dataSet.add(IOUtil.readNullableData(in));
+            dataList.add(IOUtil.readNullableData(in));
         }
     }
 }
