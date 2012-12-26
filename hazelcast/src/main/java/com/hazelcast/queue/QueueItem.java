@@ -33,9 +33,10 @@ public class QueueItem implements DataSerializable {
 
     private Data data;
 
-    private QueueContainer container;
+    final private QueueContainer container;
 
     QueueItem(QueueContainer container){
+        this.container = container;
     }
 
     QueueItem(QueueContainer container, long itemId){
@@ -63,26 +64,16 @@ public class QueueItem implements DataSerializable {
         return itemId;
     }
 
-    public void setItemId(long itemId) {
-        this.itemId = itemId;
-    }
-
     public boolean equals(Object obj) {
         if (obj instanceof QueueItem){
             QueueItem other = (QueueItem)obj;
             if (itemId == -1 || other.getItemId() == -1){
-                if (getData() == null){
-                    return false;
-                }
-                return data.equals(other.getData());
+                return getData() != null && data.equals(other.getData());
             }
             return itemId == other.getItemId();
         }
         else if (obj instanceof Data){
-            if (getData() == null){
-                return false;
-            }
-            return data.equals(obj);
+            return getData() != null && data.equals(obj);
         }
         else if (obj instanceof Long){
             return itemId == (Long)obj;

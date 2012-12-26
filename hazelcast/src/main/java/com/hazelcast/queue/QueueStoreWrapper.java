@@ -17,11 +17,13 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.nio.Data;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @ali 12/14/12

@@ -17,16 +17,11 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.DataSerializable;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 
 /**
  * @ali 12/24/12
  */
-public class ListenerKey{
+public class ListenerKey {
 
     private ItemListener listener;
     private String name;
@@ -42,10 +37,8 @@ public class ListenerKey{
 
         ListenerKey that = (ListenerKey) o;
 
-        if (!listener.equals(that.listener)) return false;
-        if (!name.equals(that.name)) return false;
+        return listener.equals(that.listener) && name.equals(that.name);
 
-        return true;
     }
 
     public int hashCode() {

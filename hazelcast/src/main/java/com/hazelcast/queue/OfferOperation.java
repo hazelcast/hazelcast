@@ -16,15 +16,15 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitSupport;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collection;
 
 /**
  * User: ali

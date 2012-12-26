@@ -42,21 +42,14 @@ public class QueueContainer implements DataSerializable {
 
     private QueueConfig config;
 
-    private String name;
-
-    private QueueService queueService;
-
     private long idGen = 0;
 
     private final QueueStoreWrapper store = new QueueStoreWrapper();
 
-    public QueueContainer(String name) {
-        this.name = name;
+    public QueueContainer() {
     }
 
-    public QueueContainer(QueueService queueService, int partitionId, QueueConfig config, String name, boolean fromBackup) {
-        this(name);
-        this.queueService = queueService;
+    public QueueContainer(int partitionId, QueueConfig config, boolean fromBackup) {
         this.partitionId = partitionId;
         setConfig(config);
         if (!fromBackup && store.isEnabled()) {
@@ -102,14 +95,12 @@ public class QueueContainer implements DataSerializable {
      * iterates all items, checks equality with data
      * This method does not trigger store load.
      *
-     * @param data
-     * @return
      */
     public long remove(Data data) {
         Iterator<QueueItem> iter = itemQueue.iterator();
         while (iter.hasNext()) {
             QueueItem item = iter.next();
-            if (item.equals(data)) {
+            if (data.equals(item.getData())) {
                 iter.remove();
                 return item.getItemId();
             }
@@ -130,9 +121,6 @@ public class QueueContainer implements DataSerializable {
 
     /**
      * This method does not trigger store load.
-     *
-     * @param dataSet
-     * @return
      */
     public boolean contains(List<Data> dataSet) {
         Set<QueueItem> set = new HashSet<QueueItem>(dataSet.size());
@@ -145,7 +133,6 @@ public class QueueContainer implements DataSerializable {
     /**
      * This method triggers store load.
      *
-     * @return
      */
     public List<QueueItem> itemList() {
         List<QueueItem> itemList = new ArrayList<QueueItem>(itemQueue.size());
@@ -197,9 +184,6 @@ public class QueueContainer implements DataSerializable {
     /**
      * This method triggers store load
      *
-     * @param dataList
-     * @param retain
-     * @return
      */
     public Map<Long, Data> compareCollection(List<Data> dataList, boolean retain) {
         Iterator<QueueItem> iter = itemQueue.iterator();
@@ -281,9 +265,7 @@ public class QueueContainer implements DataSerializable {
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(partitionId);
         out.writeInt(itemQueue.size());
-        Iterator<QueueItem> iterator = itemQueue.iterator();
-        while (iterator.hasNext()) {
-            QueueItem item = iterator.next();
+        for (QueueItem item : itemQueue) {
             item.writeData(out);
         }
     }
