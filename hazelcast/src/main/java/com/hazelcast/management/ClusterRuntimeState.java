@@ -81,28 +81,28 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     private void setLocks(final Collection<Record> lockedRecords, final Map<Address, Integer> addressIndexes) {
-        final long now = Clock.currentTimeMillis();
-        for (Record record : lockedRecords) {
-            if (record.isActive() && record.isValid(now) && record.isLocked()) {
-                Address owner = record.getLockAddress();
-                Integer index = addressIndexes.get(owner);
-                if (index == null) {
-                    index = -1;
-                }
-                lockInfos.add(new LockInfo(record.getName(), String.valueOf(record.getKey()),
-                        record.getLockAcquireTime(), index, record.getScheduledActionCount()));
-            }
-        }
-        lockTotalNum = lockInfos.size();
-        Collections.sort(lockInfos, new Comparator<LockInfo>() {
-            public int compare(LockInfo o1, LockInfo o2) {
-                int comp1 = Integer.valueOf(o2.getWaitingThreadCount()).compareTo(Integer.valueOf(o1.getWaitingThreadCount()));
-                if (comp1 == 0)
-                    return Long.valueOf(o1.getAcquireTime()).compareTo(Long.valueOf(o2.getAcquireTime()));
-                else return comp1;
-            }
-        });
-        lockInfos = lockInfos.subList(0, Math.min(LOCK_MAX_SIZE, lockInfos.size()));
+//        final long now = Clock.currentTimeMillis();
+//        for (Record record : lockedRecords) {
+//            if (record.isActive() && record.isValid(now) && record.isLocked()) {
+//                Address owner = record.getLockAddress();
+//                Integer index = addressIndexes.get(owner);
+//                if (index == null) {
+//                    index = -1;
+//                }
+//                lockInfos.add(new LockInfo(record.getName(), String.valueOf(record.getKey()),
+//                        record.getLockAcquireTime(), index, record.getScheduledActionCount()));
+//            }
+//        }
+//        lockTotalNum = lockInfos.size();
+//        Collections.sort(lockInfos, new Comparator<LockInfo>() {
+//            public int compare(LockInfo o1, LockInfo o2) {
+//                int comp1 = Integer.valueOf(o2.getWaitingThreadCount()).compareTo(Integer.valueOf(o1.getWaitingThreadCount()));
+//                if (comp1 == 0)
+//                    return Long.valueOf(o1.getAcquireTime()).compareTo(Long.valueOf(o2.getAcquireTime()));
+//                else return comp1;
+//            }
+//        });
+//        lockInfos = lockInfos.subList(0, Math.min(LOCK_MAX_SIZE, lockInfos.size()));
     }
 
     public MemberInfo getMember(int index) {

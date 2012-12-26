@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.atomicNumber.proxy.AtomicNumberService;
+import com.hazelcast.atomicNumber.AtomicNumberService;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.CustomServiceConfig;
 import com.hazelcast.config.MapServiceConfig;

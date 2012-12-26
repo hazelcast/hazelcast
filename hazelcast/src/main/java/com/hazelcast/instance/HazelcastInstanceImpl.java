@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.atomicNumber.proxy.AtomicNumberService;
+import com.hazelcast.atomicNumber.AtomicNumberService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;

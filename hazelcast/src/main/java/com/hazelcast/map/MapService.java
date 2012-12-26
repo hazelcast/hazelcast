@@ -30,10 +30,10 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.partition.*;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -49,11 +49,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
 
+    private final Set<String> mapsWithTTL;
+
+
     public MapService(final NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
+        mapsWithTTL = new ConcurrentHashSet<String>();
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -63,7 +67,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-//        nodeEngine.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
+
+        mapsWithTTL.add("mapp");
+        nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -253,4 +259,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 break;
         }
     }
+
+    private class CleanupTask implements Runnable {
+        public void run() {
+            for (String mapname : mapsWithTTL) {
+
+            }
+        }
+    }
+
 }

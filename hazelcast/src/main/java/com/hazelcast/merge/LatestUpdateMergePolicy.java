@@ -28,9 +28,10 @@ public class LatestUpdateMergePolicy implements MergePolicy {
         if (existingEntry == null || !existingDataEntry.hasValue()) {
             return mergingDataEntry.getValueData();
         }
-        return (mergingEntry.getLastUpdateTime() > existingEntry.getLastUpdateTime())
-                ? mergingDataEntry.getValueData()
-                : existingDataEntry.getValueData();
+//        return (mergingEntry.getLastUpdateTime() > existingEntry.getLastUpdateTime())
+//                ? mergingDataEntry.getValueData()
+//                : existingDataEntry.getValueData();
+        return null;
     }
 }
 

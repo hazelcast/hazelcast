@@ -38,20 +38,7 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
     public void run() {
         MapService mapService = (MapService) getService();
         DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        Record record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            if (mapPartition.loader != null) {
-                Object key = toObject(dataKey);
-                Object value = mapPartition.loader.load(key);
-                if (value != null) {
-                    result = toData(value);
-                    record = new DefaultRecord(getPartitionId(), dataKey, result, -1, -1, mapService.nextId());
-                    mapPartition.records.put(dataKey, record);
-                }
-            }
-        } else {
-            result = record.getValueData();
-        }
+        result = mapPartition.get(dataKey);
     }
 
     @Override

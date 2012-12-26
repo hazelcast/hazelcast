@@ -26,26 +26,23 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
-public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
+public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
     Object key;
-    Record record;
 
-    Data dataOldValue;
     PartitionContainer pc;
     ResponseHandler responseHandler;
     DefaultRecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
+    boolean evicted = false;
 
 
-    public BaseRemoveOperation(String name, Data dataKey, String txnId) {
+    public EvictOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
         setTxnId(txnId);
     }
 
-    public BaseRemoveOperation() {
+    public EvictOperation() {
     }
 
     protected boolean prepareTransaction() {
@@ -69,11 +66,21 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         init();
     }
 
-    public abstract void doOp();
+    public void doOp() {
+        if (prepareTransaction()) {
+            return;
+        }
+        evicted = recordStore.evict(dataKey);
+    }
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return evicted;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(false);
     }
 
     public Operation getBackupOperation() {
@@ -91,19 +98,24 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public boolean shouldBackup() {
-        return true;
+        return evicted;
     }
+
+    public void remove() {
+        recordStore.records.remove(dataKey);
+    }
+
 
     public void afterRun() {
         Member caller = nodeEngine.getCluster().getMember(getCaller());
         // todo optimize serialization. maybe you should not do here. or you can check if anyone wants values
-        int eventType = EntryEvent.TYPE_REMOVED;
-        EntryEvent event = new EntryEvent(getNodeEngine().getThisAddress().toString(), caller, eventType, nodeEngine.toObject(dataKey), nodeEngine.toObject(dataOldValue), null );
+        int eventType = EntryEvent.TYPE_EVICTED;
+        EntryEvent event = new EntryEvent(getNodeEngine().getThisAddress().toString(), caller, eventType, nodeEngine.toObject(dataKey), null, null);
         mapService.publishEvent(name, dataKey, event);
     }
 
     @Override
     public String toString() {
-        return "BaseRemoveOperation{" + name + "}";
+        return "EvictOperation{" + name + "}";
     }
 }

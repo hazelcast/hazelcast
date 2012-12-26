@@ -28,8 +28,9 @@ public class HigherHitsMergePolicy implements MergePolicy {
         if (existingEntry == null || !existingDataEntry.hasValue()) {
             return mergingDataEntry.getValueData();
         }
-        return (mergingEntry.getHits() > existingEntry.getHits())
-                ? mergingDataEntry.getValueData()
-                : existingDataEntry.getValueData();
+//        return (mergingEntry.getHits() > existingEntry.getHits())
+//                ? mergingDataEntry.getValueData()
+//                : existingDataEntry.getValueData();
+    return null;
     }
 }

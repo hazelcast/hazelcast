@@ -11,7 +11,6 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceProxy;
 
-import java.io.FileNotFoundException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -127,7 +126,7 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
     }
 
     public static void main(String [] args) throws Exception {
-        Config cfg = new XmlConfigBuilder("C:\\Users\\msk\\IdeaProjects\\sample\\src\\main\\resources\\hazelcast.xml").build();
+        Config cfg = new XmlConfigBuilder("/Users/msk/IdeaProjects/sample/src/main/resources/hazelcast.xml").build();
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(cfg);
         final AtomicNumber a1 = hazelcastInstance.getAtomicNumber("one");
 

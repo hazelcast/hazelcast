@@ -66,20 +66,19 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         Address caller = getCaller();
         DefaultRecordStore mapPartition = mapService.getMapPartition(partitionId, name);
         if (backupOpType == BackupOpType.PUT) {
-            Record record = mapPartition.records.get(dataKey);
+            DefaultRecord record = mapPartition.records.get(dataKey);
             if (record == null) {
-                record = new DefaultRecord(mapPartition.partitionInfo.getPartitionId(), dataKey, dataValue, -1, -1,
-                        mapService.nextId());
+                record = new DefaultRecord(mapService.nextId(), dataKey, dataValue, -1, -1);
                 mapPartition.records.put(dataKey, record);
             } else {
                 record.setValueData(dataValue);
             }
-            record.setActive();
+            record.setActive(true);
             record.setDirty(true);
         } else if (backupOpType == BackupOpType.REMOVE) {
-            Record record = mapPartition.records.remove(dataKey);
+            DefaultRecord record = mapPartition.records.remove(dataKey);
             if (record != null) {
-                record.markRemoved();
+//                record.markRemoved();
             }
         } else {
             if (backupOpType == BackupOpType.LOCK) {

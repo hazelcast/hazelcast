@@ -62,7 +62,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
      */
     public void recordUpdated(Record record) {
         DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
-        RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.getName()));
+        RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.toString()));
         if (!q.offer(ru)) {
             q.poll();
             q.offer(ru);

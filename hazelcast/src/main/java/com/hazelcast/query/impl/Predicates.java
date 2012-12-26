@@ -702,11 +702,11 @@ public final class Predicates {
                         results = filter;
                         continue;
                     } else {
-                        for (MapEntry entry : queryContext.getMapIndexService().getOwnedRecords()) {
-                            if (predicate.apply(entry)) {
-                                filter.add(entry);
-                            }
-                        }
+//                        for (MapEntry entry : queryContext.getMapIndexService().getOwnedRecords()) {
+//                            if (predicate.apply(entry)) {
+//                                filter.add(entry);
+//                            }
+//                        }
                     }
                 }
                 if (and && (filter == null || filter.isEmpty())) return null;

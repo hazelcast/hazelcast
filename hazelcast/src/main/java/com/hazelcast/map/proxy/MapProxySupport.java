@@ -196,6 +196,21 @@ abstract class MapProxySupport {
         }
     }
 
+    protected boolean evictInternal(final Data key) {
+        int partitionId = nodeEngine.getPartitionId(key);
+        String txnId = prepareTransaction(partitionId);
+        EvictOperation operation = new EvictOperation(name, key, txnId);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future f = invocation.invoke();
+            return (Boolean) f.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
     protected Data removeInternal(Data key) {
         int partitionId = nodeEngine.getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
@@ -491,9 +506,7 @@ abstract class MapProxySupport {
         return null;
     }
 
-    protected boolean evictInternal(final Data key) {
-        return false;
-    }
+
 
     public void flush() {
     }

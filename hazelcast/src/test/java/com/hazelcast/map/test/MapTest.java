@@ -131,9 +131,22 @@ public class MapTest {
         assertEquals(map.size(), 2);
     }
 
-
     @Test
     public void testMapRemove() {
+        IMap<String, String> map = getInstance().getMap("testMapRemove");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(map.remove("key1"), "value1");
+        assertEquals(map.size(), 2);
+        assertEquals(map.remove("key1"), null);
+        assertEquals(map.size(), 2);
+        assertEquals(map.remove("key3"), "value3");
+        assertEquals(map.size(), 1);
+    }
+
+    @Test
+    public void testMapEvict() {
         IMap<String, String> map = getInstance().getMap("testMapRemove");
         map.put("key1", "value1");
         map.put("key2", "value2");
@@ -303,6 +316,7 @@ public class MapTest {
         assertEquals(map.get(1), 2);
         map.put(2, 2);
         assertTrue(map.replace(2,2,3));
+        assertEquals(map.get(2), 3);
         assertTrue(map.replace(2,3,4));
         assertEquals(map.get(2), 4);
     }
