@@ -98,14 +98,14 @@ public class PartitionContainer {
             if (txnLogItem.isRemoved()) {
                 mapPartition.records.remove(key);
             } else {
-                Record record = mapPartition.records.get(key);
+                DefaultRecord record = mapPartition.records.get(key);
                 if (record == null) {
-                    record = new DefaultRecord(mapPartition.partitionInfo.getPartitionId(), key, txnLogItem.getValue(), -1, -1, mapService.nextId());
+                    record = new DefaultRecord(mapService.nextId(), key, txnLogItem.getValue(), -1, -1);
                     mapPartition.records.put(key, record);
                 } else {
                     record.setValueData(txnLogItem.getValue());
                 }
-                record.setActive();
+                record.setActive(true);
                 record.setDirty(true);
             }
         }

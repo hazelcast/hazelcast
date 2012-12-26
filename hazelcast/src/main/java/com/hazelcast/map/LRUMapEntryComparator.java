@@ -22,8 +22,9 @@ import java.util.Comparator;
 
 public class LRUMapEntryComparator implements Comparator<MapEntry> {
     public int compare(MapEntry r1, MapEntry r2) {
-        final long t1 = Math.max(r1.getLastAccessTime(), Math.max(r1.getLastUpdateTime(), r1.getCreationTime()));
-        final long t2 = Math.max(r2.getLastAccessTime(), Math.max(r2.getLastUpdateTime(), r2.getCreationTime()));
-        return t1 > t2 ? 1 : t1 == t2 ? 0 : -1;
+//        final long t1 = Math.max(r1.getLastAccessTime(), Math.max(r1.getLastUpdateTime(), r1.getCreationTime()));
+//        final long t2 = Math.max(r2.getLastAccessTime(), Math.max(r2.getLastUpdateTime(), r2.getCreationTime()));
+//        return t1 > t2 ? 1 : t1 == t2 ? 0 : -1;
+        return 0;
     }
 }

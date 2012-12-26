@@ -54,13 +54,12 @@ public class MapMigrationOperation extends AbstractOperation {
 
             DefaultRecordStore mapPartition = entry.getValue();
             Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(mapPartition.records.size());
-            for (Entry<Data, Record> recordEntry : mapPartition.records.entrySet()) {
+            for (Entry<Data, DefaultRecord> recordEntry : mapPartition.records.entrySet()) {
                 map.put(recordEntry.getKey(), new DataRecordEntry(recordEntry.getValue(), true));
             }
             data.put(name, map);
         }
 
-        // TODO: migrate locks?
     }
 
     public void run() {
@@ -74,12 +73,11 @@ public class MapMigrationOperation extends AbstractOperation {
             DefaultRecordStore partition = mapService.getMapPartition(getPartitionId(), mapName);
             for (Entry<Data, DataRecordEntry> entry : dataMap.entrySet()) {
                 final DataRecordEntry recordEntry = entry.getValue();
-                Record record = new DefaultRecord(getPartitionId(),
-                        recordEntry.getKeyData(), recordEntry.getValueData(), -1, -1, mapService.nextId());
+                DefaultRecord record = new DefaultRecord(  mapService.nextId(),
+                        recordEntry.getKeyData(), recordEntry.getValueData(), -1, -1);
                 partition.records.put(entry.getKey(), record);
             }
         }
-        // TODO: migrate locks?
     }
 
     public String getServiceName() {

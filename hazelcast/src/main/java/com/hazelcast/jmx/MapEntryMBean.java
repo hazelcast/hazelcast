@@ -95,7 +95,7 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
     @JMXAttribute("Cost")
     @JMXDescription("Cost")
     public long getCost() {
-        return getManagedObject().getCost();
+        return 0; //getManagedObject().getCost();
     }
 
     @JMXAttribute("CreationTime")
@@ -107,13 +107,13 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
     @JMXAttribute("ExpirationTime")
     @JMXDescription("Expiration time")
     long getExpirationTime() {
-        return getManagedObject().getExpirationTime();
+        return 0; //getManagedObject().getExpirationTime();
     }
 
     @JMXAttribute("Hits")
     @JMXDescription("Hits")
     int getHits() {
-        return getManagedObject().getHits();
+        return 0; //getManagedObject().getHits();
     }
 
     @JMXAttribute("LastAccessTime")
@@ -125,18 +125,18 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
     @JMXAttribute("LastUpdateTime")
     @JMXDescription("Last update time")
     long getLastUpdateTime() {
-        return getManagedObject().getLastUpdateTime();
+        return 0; //getManagedObject().getLastUpdateTime();
     }
 
     @JMXAttribute("Version")
     @JMXDescription("Version")
     long getVersion() {
-        return getManagedObject().getVersion();
+        return 0; //getManagedObject().getVersion();
     }
 
     @JMXAttribute("Valid")
     @JMXDescription("Is valid")
     boolean isValid() {
-        return getManagedObject().isValid();
+        return true; //getManagedObject().isValid();
     }
 }
