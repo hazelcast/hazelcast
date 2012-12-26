@@ -16,7 +16,13 @@
 
 package com.hazelcast.config;
 
-public class NearCacheConfig {
+import com.hazelcast.nio.DataSerializable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+public class NearCacheConfig implements DataSerializable {
     public final static int DEFAULT_TTL_SECONDS = 0;
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
@@ -86,5 +92,25 @@ public class NearCacheConfig {
     public NearCacheConfig setInvalidateOnChange(boolean invalidateOnChange) {
         this.invalidateOnChange = invalidateOnChange;
         return this;
+    }
+
+    public void writeData(DataOutput out) throws IOException {
+        out.writeInt(timeToLiveSeconds);
+        out.writeInt(maxSize);
+        out.writeBoolean(evictionPolicy == null);
+        if (evictionPolicy != null)
+            out.writeUTF(evictionPolicy);
+        out.writeInt(maxIdleSeconds);
+        out.writeBoolean(invalidateOnChange);
+    }
+
+    public void readData(DataInput in) throws IOException {
+        timeToLiveSeconds = in.readInt();
+        maxSize = in.readInt();
+        boolean nullEvictionPolicy = in.readBoolean();
+        if (!nullEvictionPolicy) evictionPolicy = in.readUTF();
+        else evictionPolicy = null;
+        maxIdleSeconds = in.readInt();
+        invalidateOnChange = in.readBoolean();
     }
 }

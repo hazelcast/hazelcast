@@ -607,8 +607,9 @@ public class MapConfig implements DataSerializable {
         evictionPolicy = in.readUTF();
         mergePolicy = in.readUTF();
         clearQuick = in.readBoolean();
+        nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.readData(in);
         // TODO: MapStoreConfig mapStoreConfig
-        // TODO: NearCacheConfig nearCacheConfig
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -624,8 +625,8 @@ public class MapConfig implements DataSerializable {
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);
         out.writeBoolean(clearQuick);
+        nearCacheConfig.writeData(out);
         // TODO: MapStoreConfig mapStoreConfig
-        // TODO: NearCacheConfig nearCacheConfig
     }
 
     @Override

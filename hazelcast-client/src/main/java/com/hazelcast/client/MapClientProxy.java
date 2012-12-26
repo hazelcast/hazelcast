@@ -16,11 +16,15 @@
 
 package com.hazelcast.client;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.hazelcast.client.impl.EntryListenerManager;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.Prefix;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.CMap.CMapEntry;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Keys;
@@ -32,6 +36,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -43,10 +48,52 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
     final private String name;
+    final LoadingCache<K, V> nearCache;
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.proxyHelper = new ProxyHelper(name, client);
+        Config config = (Config) proxyHelper.doOp(ClusterOperation.GET_CONFIG, null, null);
+        MapConfig mapConfig = config.getMapConfig(name);
+        NearCacheConfig ncc = mapConfig.getNearCacheConfig();
+        nearCache = (ncc != null) ? buildGuavaCache(ncc) : null;
+        if (ncc != null) {
+            if (ncc.isInvalidateOnChange()) {
+                addEntryListener(new EntryListener<K, V>() {
+                    public void entryAdded(EntryEvent<K, V> kvEntryEvent) {
+                    }
+
+                    public void entryRemoved(EntryEvent<K, V> kvEntryEvent) {
+                        nearCache.invalidate(kvEntryEvent.getKey());
+                    }
+
+                    public void entryUpdated(EntryEvent<K, V> kvEntryEvent) {
+                        nearCache.invalidate(kvEntryEvent.getKey());
+                    }
+
+                    public void entryEvicted(EntryEvent<K, V> kvEntryEvent) {
+                        nearCache.invalidate(kvEntryEvent.getKey());
+                    }
+                }, false);
+            }
+        }
+    }
+
+    private LoadingCache buildGuavaCache(NearCacheConfig nc) {
+        CacheBuilder cacheBuilder = CacheBuilder.newBuilder().maximumSize(nc.getMaxSize());
+        if (nc.getTimeToLiveSeconds() > 0)
+            cacheBuilder.expireAfterWrite(nc.getTimeToLiveSeconds(), TimeUnit.SECONDS);
+        if (nc.getMaxIdleSeconds() > 0) cacheBuilder.expireAfterAccess(nc.getMaxIdleSeconds(), TimeUnit.SECONDS);
+        return cacheBuilder.build(new CacheLoader() {
+            @Override
+            public Object load(Object o) throws Exception {
+                try {
+                    return MapClientProxy.this.get0(o);
+                } catch (Exception e) {
+                    throw new ExecutionException(e);
+                }
+            }
+        });
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
@@ -131,7 +178,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public boolean isLocked(K key) {
-        return (Boolean)doLock(ClusterOperation.CONCURRENT_MAP_IS_KEY_LOCKED, key, -1, null);
+        return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_IS_KEY_LOCKED, key, -1, null);
     }
 
     public boolean tryLock(K key) {
@@ -229,6 +276,17 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public V get(Object key) {
+        if (nearCache != null) try {
+            return nearCache.get((K) key);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+        }
+        return get0(key);
+    }
+
+    private V get0(Object key) {
         check(key);
         return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K) key, null);
     }
@@ -388,5 +446,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     @Override
     public int hashCode() {
         return getName().hashCode();
+    }
+
+    public Cache getNearCache(){
+        return nearCache;
     }
 }

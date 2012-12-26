@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.RemotelyProcessable;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.base.KeyValue;
@@ -118,6 +119,7 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(GET_INSTANCES.getValue(), new GetInstancesHandler());
         registerHandler(GET_MEMBERS.getValue(), new GetMembersHandler());
         registerHandler(GET_CLUSTER_TIME.getValue(), new GetClusterTimeHandler());
+        registerHandler(GET_CONFIG.getValue(), new GetConfigHandler());
         registerHandler(CLIENT_AUTHENTICATE.getValue(), new ClientAuthenticateHandler());
         registerHandler(CLIENT_ADD_INSTANCE_LISTENER.getValue(), new ClientAddInstanceListenerHandler());
         registerHandler(CLIENT_GET_PARTITIONS.getValue(), new GetPartitionsHandler());
@@ -813,6 +815,13 @@ public class ClientHandlerService implements ConnectionListener {
             Cluster cluster = factory.getCluster();
             long clusterTime = cluster.getClusterTime();
             packet.setValue(toData(clusterTime));
+        }
+    }
+
+    private class GetConfigHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            Config config = factory.getConfig();
+            packet.setValue(toData(config));
         }
     }
 
