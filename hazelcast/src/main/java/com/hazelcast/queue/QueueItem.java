@@ -33,19 +33,25 @@ public class QueueItem implements DataSerializable {
 
     private Data data;
 
-    QueueItem(){
+    private QueueContainer container;
+
+    QueueItem(QueueContainer container){
     }
 
-    QueueItem(long itemId){
+    QueueItem(QueueContainer container, long itemId){
+        this(container);
         this.itemId = itemId;
     }
 
-    public QueueItem(long itemId, Data data){
-        this.itemId = itemId;
+    public QueueItem(QueueContainer container, long itemId, Data data){
+        this(container, itemId);
         this.data = data;
     }
 
     public Data getData() {
+        if (data == null){
+            data = container.getData(itemId);
+        }
         return data;
     }
 
@@ -65,12 +71,15 @@ public class QueueItem implements DataSerializable {
         if (obj instanceof QueueItem){
             QueueItem other = (QueueItem)obj;
             if (itemId == -1 || other.getItemId() == -1){
-                return data.equals(other.data);
+                if (getData() == null){
+                    return false;
+                }
+                return data.equals(other.getData());
             }
             return itemId == other.getItemId();
         }
         else if (obj instanceof Data){
-            if (data == null){
+            if (getData() == null){
                 return false;
             }
             return data.equals(obj);

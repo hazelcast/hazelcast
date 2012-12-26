@@ -34,6 +34,10 @@ public class QueueStoreWrapper {
 
     private boolean async = false;
 
+    private int memoryLimit = 10;
+
+    private int bulkLoad = 3;
+
     public QueueStoreWrapper() {
     }
 
@@ -46,7 +50,11 @@ public class QueueStoreWrapper {
             store = (QueueStore) storeClass.newInstance();
             enabled = storeConfig.isEnabled();
             async = Boolean.parseBoolean(storeConfig.getProperty("async"));
-            async = true;
+            memoryLimit = Integer.parseInt(storeConfig.getProperty("memory-limit"));
+            bulkLoad = Integer.parseInt(storeConfig.getProperty("bulk-load"));
+            if (bulkLoad <= 0){
+                bulkLoad = 1;
+            }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
@@ -62,6 +70,14 @@ public class QueueStoreWrapper {
 
     public boolean isAsync() {
         return async;
+    }
+
+    public int getMemoryLimit() {
+        return memoryLimit;
+    }
+
+    public int getBulkLoad() {
+        return bulkLoad;
     }
 
     public void store(Long key, Data value) {
@@ -102,7 +118,7 @@ public class QueueStoreWrapper {
         if (enabled) {
             return store.loadAll(keys);
         }
-        return new HashMap<Long, QueueStoreValue>(0);
+        return null;
     }
 
     public Set<Long> loadAllKeys() {
