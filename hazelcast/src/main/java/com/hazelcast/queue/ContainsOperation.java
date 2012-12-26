@@ -21,32 +21,32 @@ import com.hazelcast.nio.Data;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @ali 12/12/12
  */
 public class ContainsOperation extends QueueOperation {
 
-    private Set<Data> dataSet;
+    private List<Data> dataList;
 
     public ContainsOperation() {
     }
 
-    public ContainsOperation(String name, Set<Data> dataSet){
+    public ContainsOperation(String name, List<Data> dataList){
         super(name);
-        this.dataSet = dataSet;
+        this.dataList = dataList;
     }
 
     public void run() throws Exception {
-        response = getContainer().contains(dataSet);
+        response = getContainer().contains(dataList);
     }
 
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(dataSet.size());
-        for (Data data: dataSet){
+        out.writeInt(dataList.size());
+        for (Data data: dataList){
             data.writeData(out);
         }
     }
@@ -54,11 +54,11 @@ public class ContainsOperation extends QueueOperation {
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataSet = new HashSet<Data>(size);
+        dataList = new ArrayList<Data>(size);
         for (int i=0; i<size; i++){
             Data data = new Data();
             data.readData(in);
-            dataSet.add(data);
+            dataList.add(data);
         }
     }
 }

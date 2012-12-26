@@ -20,9 +20,8 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.queue.QueueEventFilter;
+import com.hazelcast.queue.QueueItem;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
@@ -84,7 +83,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public boolean contains(Object o) {
         final Data data = nodeEngine.toData(o);
-        Set<Data> dataSet = new HashSet<Data>(1);
+        List<Data> dataSet = new ArrayList<Data>(1);
         dataSet.add(data);
         return containsInternal(dataSet);
     }
@@ -148,27 +147,41 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public Object[] toArray() {
-        return listInternal().toArray();
+        List<QueueItem> list = listInternal();
+        int size = list.size();
+        Object[] array = new Object[size];
+        for (int i = 0; i < size; i++) {
+            array[i] = IOUtil.toObject(list.get(i).getData());
+        }
+        return array;
     }
 
     public <T> T[] toArray(T[] ts) {
-        return listInternal().toArray(ts);
+        List<QueueItem> list = listInternal();
+        int size = list.size();
+        if (ts.length < size) {
+            ts = (T[])java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
+        }
+        for (int i = 0; i < size; i++) {
+            ts[i] = IOUtil.toObject(list.get(i).getData());
+        }
+        return ts;
     }
 
     public boolean containsAll(Collection<?> objects) {
-        return containsInternal(getDataSet(objects));
+        return containsInternal(getDataList(objects));
     }
 
     public boolean addAll(Collection<? extends E> es) {
-        return addAllInternal(getDataSet(es));
+        return addAllInternal(getDataList(es));
     }
 
     public boolean removeAll(Collection<?> objects) {
-        return compareCollectionInternal(getDataSet(objects), false);
+        return compareCollectionInternal(getDataList(objects), false);
     }
 
     public boolean retainAll(Collection<?> objects) {
-        return compareCollectionInternal(getDataSet(objects), true);
+        return compareCollectionInternal(getDataList(objects), true);
     }
 
     public String getName() {
@@ -202,11 +215,11 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         return sb.toString();
     }
 
-    private Set<Data> getDataSet(Collection<?> objects) {
-        Set<Data> dataSet = new HashSet<Data>(objects.size());
+    private List<Data> getDataList(Collection<?> objects) {
+        List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
-            dataSet.add(IOUtil.toData(o));
+            dataList.add(IOUtil.toData(o));
         }
-        return dataSet;
+        return dataList;
     }
 }

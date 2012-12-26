@@ -18,6 +18,7 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.queue.QueueItem;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -27,9 +28,9 @@ import java.util.Set;
  */
 public class QueueIterator<E> implements Iterator<E> {
 
-    final Iterator<Data> iter;
+    final Iterator<QueueItem> iter;
 
-    public QueueIterator(Iterator<Data> iter) {
+    public QueueIterator(Iterator<QueueItem> iter) {
         this.iter = iter;
     }
 
@@ -38,8 +39,8 @@ public class QueueIterator<E> implements Iterator<E> {
     }
 
     public E next() {
-        Data data = iter.next();
-        return IOUtil.toObject(data);
+        QueueItem item = iter.next();
+        return IOUtil.toObject(item.getData());
     }
 
     public void remove() {

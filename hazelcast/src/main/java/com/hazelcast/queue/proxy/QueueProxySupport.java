@@ -121,9 +121,9 @@ abstract class QueueProxySupport {
         }
     }
 
-    boolean containsInternal(Set<Data> dataSet) {
+    boolean containsInternal(List<Data> dataList) {
         try {
-            ContainsOperation operation = new ContainsOperation(name, dataSet);
+            ContainsOperation operation = new ContainsOperation(name, dataList);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
@@ -132,12 +132,12 @@ abstract class QueueProxySupport {
         }
     }
 
-    List<Data> listInternal(){
+    List<QueueItem> listInternal(){
         try {
             IteratorOperation operation = new IteratorOperation(name);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
-            return (List<Data>)nodeEngine.toObject(f.get());
+            return (List<QueueItem>)nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -154,7 +154,7 @@ abstract class QueueProxySupport {
         }
     }
 
-    boolean addAllInternal(Set<Data> dataSet){
+    boolean addAllInternal(List<Data> dataSet){
         try {
             AddAllOperation operation = new AddAllOperation(name, dataSet);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
@@ -165,7 +165,7 @@ abstract class QueueProxySupport {
         }
     }
 
-    boolean compareCollectionInternal(Set<Data> dataSet, boolean retain){
+    boolean compareCollectionInternal(List<Data> dataSet, boolean retain){
         try {
             CompareCollectionOperation operation = new CompareCollectionOperation(name, dataSet, retain);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();

@@ -70,6 +70,9 @@ public class QueueItem implements DataSerializable {
             return itemId == other.getItemId();
         }
         else if (obj instanceof Data){
+            if (data == null){
+                return false;
+            }
             return data.equals(obj);
         }
         else if (obj instanceof Long){
