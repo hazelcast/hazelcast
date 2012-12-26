@@ -70,7 +70,7 @@ public class MapConfig implements DataSerializable {
 
     private MapStoreConfig mapStoreConfig = null;
 
-    private NearCacheConfig nearCacheConfig = null;
+    private NearCacheConfig nearCacheConfig =new NearCacheConfig();
 
     private boolean readBackupData = false;
 
