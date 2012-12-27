@@ -18,10 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.DataAwareItemEvent;
 import com.hazelcast.nio.serialization.SerializerRegistry;
@@ -65,11 +62,12 @@ public class ItemListenerManager {
         entryListenerManager.removeListener(name, null, entryListener);
     }
 
-    public Call createNewAddListenerCall(final ProxyHelper proxyHelper, boolean includeValue) {
-        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
-        request.setLongValue(includeValue ? 1 : 0);
-        return proxyHelper.createCall(request);
-    }
+//    public Call createNewAddListenerCall(final PacketProxyHelper proxyHelper, boolean includeValue) {
+//        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
+//        request.setLongValue(includeValue ? 1 : 0);
+//        return proxyHelper.createCall(request);
+//        return null;
+//    }
 
     public Collection<Call> calls(final HazelcastClient client) {
         return Collections.emptyList();

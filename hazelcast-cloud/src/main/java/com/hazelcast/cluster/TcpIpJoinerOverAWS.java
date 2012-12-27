@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
@@ -55,3 +56,4 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         }
     }
 }
+

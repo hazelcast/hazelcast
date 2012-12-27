@@ -1,19 +1,19 @@
-///*
-// * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
-// *
-// * Licensed under the Apache License, Version 2.0 (the "License");
-// * you may not use this file except in compliance with the License.
-// * You may obtain a copy of the License at
-// *
-// * http://www.apache.org/licenses/LICENSE-2.0
-// *
-// * Unless required by applicable law or agreed to in writing, software
-// * distributed under the License is distributed on an "AS IS" BASIS,
-// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// * See the License for the specific language governing permissions and
-// * limitations under the License.
-// */
-//
+/*
+* Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 //package com.hazelcast.impl;
 //
 //import com.hazelcast.cluster.Bind;
@@ -50,8 +50,8 @@
 //public class ClientHandlerService implements ConnectionListener {
 //    private final Node node;
 //    private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
-//    private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[ClusterOperation.LENGTH];
-//    private final ClientOperationHandler unknownOperationHandler = new UnknownClientOperationHandler();
+//    private final ClientCommandHandler[] clientOperationHandlers = new ClientCommandHandler[ClusterOperation.LENGTH];
+//    private final ClientCommandHandler unknownOperationHandler = new UnknownClientOperationHandler();
 //    private final ILogger logger;
 //    private final int THREAD_COUNT;
 //    final Worker[] workers;
@@ -153,8 +153,8 @@
 //        }
 //        this.factory = node.factory;
 //    }
-//
-//    void registerHandler(short operation, ClientOperationHandler handler) {
+
+//    void registerHandler(short operation, ClientCommandHandler handler) {
 //        clientOperationHandlers[operation] = handler;
 //    }
 //
@@ -170,7 +170,7 @@
 //        }
 //        ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
 //        CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
-//        ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
+//        ClientCommandHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
 //        if (clientOperationHandler == null) {
 //            clientOperationHandler = unknownOperationHandler;
 //        }
@@ -342,7 +342,7 @@
 //        }
 //    }
 //
-//    private class TopicPublishHandler extends ClientOperationHandler {
+//    private class TopicPublishHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            ITopic<Object> topic = (ITopic) factory.getOrCreateProxyByName(packet.name);
 //            topic.publish(packet.getKeyData());
@@ -370,7 +370,7 @@
 //        }
 //    }
 //
-//    private class RemotelyProcessHandler extends ClientOperationHandler {
+//    private class RemotelyProcessHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            node.clusterService.enqueuePacket(packet);
 //        }
@@ -380,35 +380,35 @@
 //        }
 //    }
 //
-//    private class DestroyHandler extends ClientOperationHandler {
+//    private class DestroyHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            Instance instance = (Instance) factory.getOrCreateProxyByName(packet.name);
 //            instance.destroy();
 //        }
 //    }
 //
-//    private class NewIdHandler extends ClientOperationHandler {
+//    private class NewIdHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            IdGenerator idGen = (IdGenerator) factory.getOrCreateProxyByName(packet.name);
 //            packet.setValue(toData(idGen.newId()));
 //        }
 //    }
 //
-//    private class MapPutMultiHandler extends ClientOperationHandler {
+//    private class MapPutMultiHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
 //            packet.setValue(toData(multiMap.put(packet.getKeyData(), packet.getValueData())));
 //        }
 //    }
 //
-//    private class MapValueCountHandler extends ClientOperationHandler {
+//    private class MapValueCountHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
 //            packet.setValue(toData(multiMap.valueCount(packet.getKeyData())));
 //        }
 //    }
 //
-//    private class MapRemoveMultiHandler extends ClientOperationHandler {
+//    private class MapRemoveMultiHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            MultiMap multiMap = (MultiMap) factory.getOrCreateProxyByName(packet.name);
 //            if (packet.getValueData() == null || packet.getValueData().size() == 0) {
@@ -421,7 +421,7 @@
 //        }
 //    }
 //
-//    private class CancelExecutionHandler extends ClientOperationHandler {
+//    private class CancelExecutionHandler extends ClientCommandHandler {
 //
 //        @Override
 //        public void processCall(Node node, Packet packet) {
@@ -437,7 +437,7 @@
 //        }
 //    }
 //
-//    private class ExecutorServiceHandler extends ClientOperationHandler {
+//    private class ExecutorServiceHandler extends ClientCommandHandler {
 //        @Override
 //        public void processCall(Node node, Packet packet) {
 //        }
@@ -500,7 +500,7 @@
 //        }
 //    }
 //
-//    private class GetInstancesHandler extends ClientOperationHandler {
+//    private class GetInstancesHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            Collection<Instance> instances = factory.getInstances();
 //            Keys keys = new Keys();
@@ -520,7 +520,7 @@
 //        }
 //    }
 //
-//    private class GetMembersHandler extends ClientOperationHandler {
+//    private class GetMembersHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            Cluster cluster = factory.getCluster();
 //            Set<Member> members = cluster.getMembers();
@@ -536,7 +536,7 @@
 //        }
 //    }
 //
-//    private class GetPartitionsHandler extends ClientOperationHandler {
+//    private class GetPartitionsHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            PartitionService partitionService = factory.getPartitionService();
 //            if (packet.getKeyData() != null && packet.getKeyData().size() > 0) {
@@ -557,7 +557,7 @@
 //        }
 //    }
 //
-////    abstract private class AtomicLongClientHandler extends ClientOperationHandler {
+////    abstract private class AtomicLongClientHandler extends ClientCommandHandler {
 ////        abstract Object processCall(AtomicNumberProxy atomicLongProxy, Long value, Long expected);
 ////
 ////        public void processCall(Node node, Packet packet) {
@@ -592,7 +592,7 @@
 ////        }
 ////    }
 ////
-////    abstract private class CountDownLatchClientHandler extends ClientOperationHandler {
+////    abstract private class CountDownLatchClientHandler extends ClientCommandHandler {
 ////        abstract void processCall(Packet packet, CountDownLatchProxy cdlProxy, Integer value);
 ////
 ////        public void processCall(Node node, Packet packet) {
@@ -673,7 +673,7 @@
 //        }
 //    }
 //
-//    abstract private class SemaphoreClientOperationHandler extends ClientOperationHandler {
+//    abstract private class SemaphoreClientOperationHandler extends ClientCommandHandler {
 //        abstract void processCall(Packet packet, SemaphoreProxy semaphoreProxy, Integer value, boolean flag);
 //
 //        public void processCall(Node node, Packet packet) {
@@ -697,7 +697,7 @@
 //        }
 //    }
 //
-//    private class SemaphoreCancelAcquireHandler extends ClientOperationHandler {
+//    private class SemaphoreCancelAcquireHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            ConcurrentMapManager.MSemaphore msemaphore = node.concurrentMapManager.new MSemaphore();
 //            packet.setValue(toData(msemaphore.cancelAcquire(toData(packet.name))));
@@ -829,7 +829,7 @@
 //        }
 //    }
 //
-//    private class GetClusterTimeHandler extends ClientOperationHandler {
+//    private class GetClusterTimeHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            Cluster cluster = factory.getCluster();
 //            long clusterTime = cluster.getClusterTime();
@@ -837,7 +837,7 @@
 //        }
 //    }
 //
-//    class ClientAuthenticateHandler extends ClientOperationHandler {
+//    class ClientAuthenticateHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            final Credentials credentials = (Credentials) toObject(packet.getValueData());
 //            boolean authenticated = false;
@@ -889,7 +889,7 @@
 //        }
 //    }
 //
-//    private class ClientAddInstanceListenerHandler extends ClientOperationHandler {
+//    private class ClientAddInstanceListenerHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            ClientEndpoint endPoint = getClientEndpoint(packet.conn);
 //            factory.addInstanceListener(endPoint);
@@ -1012,7 +1012,7 @@
 //        }
 //    }
 //
-//    private class MapPutIfAbsentHandler extends ClientOperationHandler {
+//    private class MapPutIfAbsentHandler extends ClientCommandHandler {
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
 //            MProxy mproxy = (MProxy) map;
 //            Object v = value;
@@ -1035,7 +1035,7 @@
 //        }
 //    }
 //
-//    private class MapGetAllHandler extends ClientOperationHandler {
+//    private class MapGetAllHandler extends ClientCommandHandler {
 //
 //        public void processCall(Node node, Packet packet) {
 //            Keys keys = (Keys) toObject(packet.getKeyData());
@@ -1051,7 +1051,7 @@
 //        }
 //    }
 //
-//    private class MapGetHandler extends ClientOperationHandler {
+//    private class MapGetHandler extends ClientCommandHandler {
 //
 //        public void processCall(Node node, Packet packet) {
 //            InstanceType instanceType = getInstanceType(packet.name);
@@ -1111,7 +1111,7 @@
 //        }
 //    }
 //
-//    private class MapContainsHandler extends ClientOperationHandler {
+//    private class MapContainsHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            InstanceType instanceType = getInstanceType(packet.name);
 //            if (instanceType.equals(InstanceType.MAP)) {
@@ -1127,7 +1127,7 @@
 //        }
 //    }
 //
-//    private class MapContainsValueHandler extends ClientOperationHandler {
+//    private class MapContainsValueHandler extends ClientCommandHandler {
 //        public Data processMapOp(IMap<Object, Object> map, Data key, Data value) {
 //            return toData(map.containsValue(value));
 //        }
@@ -1284,7 +1284,7 @@
 //    }
 //
 //    @SuppressWarnings("LockAcquiredButNotSafelyReleased")
-//    private class LockOperationHandler extends ClientOperationHandler {
+//    private class LockOperationHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            final Object key = toObject(packet.getKeyData());
 //            final ILock lock = factory.getLock(key);
@@ -1307,7 +1307,7 @@
 //        }
 //    }
 //
-//    private class IsLockedOperationHandler extends ClientOperationHandler {
+//    private class IsLockedOperationHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            final Object key = toObject(packet.getKeyData());
 //            final ILock lock = factory.getLock(key);
@@ -1318,7 +1318,7 @@
 //        }
 //    }
 //
-//    private class UnlockOperationHandler extends ClientOperationHandler {
+//    private class UnlockOperationHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            final Object key = toObject(packet.getKeyData());
 //            final ILock lock = factory.getLock(key);
@@ -1450,7 +1450,7 @@
 //        }
 //    }
 //
-//    private class AddListenerHandler extends ClientOperationHandler {
+//    private class AddListenerHandler extends ClientCommandHandler {
 //        public void processCall(Node node, final Packet packet) {
 //            final ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
 //            boolean includeValue = (int) packet.longValue == 1;
@@ -1530,7 +1530,7 @@
 //        }
 //    }
 //
-//    private class RemoveListenerHandler extends ClientOperationHandler {
+//    private class RemoveListenerHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
 //            if (getInstanceType(packet.name).equals(InstanceType.MAP)) {
@@ -1550,7 +1550,7 @@
 //        }
 //    }
 //
-//    private class ListAddHandler extends ClientOperationHandler {
+//    private class ListAddHandler extends ClientCommandHandler {
 //        @Override
 //        public void processCall(Node node, Packet packet) {
 //            IList list = (IList) factory.getOrCreateProxyByName(packet.name);
@@ -1560,7 +1560,7 @@
 //        }
 //    }
 //
-//    private class SetAddHandler extends ClientOperationHandler {
+//    private class SetAddHandler extends ClientCommandHandler {
 //        @Override
 //        public void processCall(Node node, Packet packet) {
 //            ISet list = (ISet) factory.getOrCreateProxyByName(packet.name);
@@ -1570,7 +1570,7 @@
 //        }
 //    }
 //
-//    private class MapItemRemoveHandler extends ClientOperationHandler {
+//    private class MapItemRemoveHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            Collection collection = (Collection) factory.getOrCreateProxyByName(packet.name);
 //            Data value = toData(collection.remove(packet.getKeyData()));
@@ -1579,7 +1579,7 @@
 //        }
 //    }
 //
-//    public abstract class ClientOperationHandler {
+//    public abstract class ClientCommandHandler {
 //        public abstract void processCall(Node node, Packet packet);
 //
 //        public void handle(Node node, Packet packet) {
@@ -1606,7 +1606,7 @@
 //        }
 //    }
 //
-//    private final class UnknownClientOperationHandler extends ClientOperationHandler {
+//    private final class UnknownClientOperationHandler extends ClientCommandHandler {
 //        public void processCall(Node node, Packet packet) {
 //            final String error = "Unknown Client Operation, can not handle " + packet.operation;
 //            if (node.isActive()) {
@@ -1617,7 +1617,7 @@
 //        }
 //    }
 //
-//    private abstract class ClientMapOperationHandler extends ClientOperationHandler {
+//    private abstract class ClientMapOperationHandler extends ClientCommandHandler {
 //        public abstract Data processMapOp(IMap<Object, Object> map, Data key, Data value);
 //
 //        public void processCall(Node node, Packet packet) {
@@ -1628,7 +1628,7 @@
 //        }
 //    }
 //
-//    private abstract class ClientMapOperationHandlerWithTTL extends ClientOperationHandler {
+//    private abstract class ClientMapOperationHandlerWithTTL extends ClientCommandHandler {
 //        public void processCall(Node node, final Packet packet) {
 //            final IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
 //            final long ttl = packet.timeout;
@@ -1640,7 +1640,7 @@
 //        protected abstract Data processMapOp(IMap<Object, Object> map, Data keyData, Data valueData, long ttl);
 //    }
 //
-//    private abstract class ClientQueueOperationHandler extends ClientOperationHandler {
+//    private abstract class ClientQueueOperationHandler extends ClientCommandHandler {
 //        public abstract Data processQueueOp(IQueue<Object> queue, Data key, Data value);
 //
 //        public void processCall(Node node, Packet packet) {
@@ -1651,7 +1651,7 @@
 //        }
 //    }
 //
-//    private abstract class ClientCollectionOperationHandler extends ClientOperationHandler {
+//    private abstract class ClientCollectionOperationHandler extends ClientCommandHandler {
 //        public abstract void doMapOp(Node node, Packet packet);
 //
 //        public abstract void doListOp(Node node, Packet packet);
@@ -1679,7 +1679,7 @@
 //        }
 //    }
 //
-//    private abstract class ClientTransactionOperationHandler extends ClientOperationHandler {
+//    private abstract class ClientTransactionOperationHandler extends ClientCommandHandler {
 //        public abstract void processTransactionOp(Transaction transaction);
 //
 //        public void processCall(Node node, Packet packet) {

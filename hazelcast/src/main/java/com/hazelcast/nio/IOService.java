@@ -54,6 +54,8 @@ public interface IOService {
 
     void handleClientPacket(Packet p);
 
+    void handleClientCommand(Protocol protocol);
+
     void handleMemberPacket(Packet p);
 
     TextCommandService getTextCommandService();
@@ -105,4 +107,5 @@ public interface IOService {
     void executeAsync(Runnable runnable);
 
     Collection<Integer> getOutboundPorts();
+
 }

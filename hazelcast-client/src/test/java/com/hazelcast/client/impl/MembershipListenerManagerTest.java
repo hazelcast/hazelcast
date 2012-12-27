@@ -18,7 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
@@ -27,6 +26,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.stubbing.Answer;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -114,12 +114,12 @@ public class MembershipListenerManagerTest {
         new Thread(new Runnable() {
 
             public void run() {
-                Packet packet = new Packet();
-                Address address = new Address();
-                Member member = new MemberImpl(address, false);
-                packet.setKey(toByteArray(member));
-                packet.setValue(toByteArray(type));
-                membershipListenerManager.notifyListeners(packet);
+//                Packet packet = new Packet();
+//                Address address = new Address();
+//                Member member = new MemberImpl(address, false);
+//                packet.setKey(toByteArray(member));
+//                packet.setValue(toByteArray(type));
+//                membershipListenerManager.notifyListeners(packet);
             }
         }).start();
         if (type == MembershipEvent.MEMBER_ADDED) {

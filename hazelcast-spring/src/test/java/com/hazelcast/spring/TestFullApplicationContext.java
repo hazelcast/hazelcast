@@ -213,11 +213,11 @@ public class TestFullApplicationContext {
         QueueConfig testQConfig = config.getQueueConfig("testQ");
         assertNotNull(testQConfig);
         assertEquals("testQ", testQConfig.getName());
-        assertEquals(1000, testQConfig.getMaxSizePerJVM());
+        assertEquals(1000, testQConfig.getMaxSize());
         QueueConfig qConfig = config.getQueueConfig("q");
         assertNotNull(qConfig);
         assertEquals("q", qConfig.getName());
-        assertEquals(2500, qConfig.getMaxSizePerJVM());
+        assertEquals(2500, qConfig.getMaxSize());
         assertEquals(1, testQConfig.getItemListenerConfigs().size());
         ItemListenerConfig listenerConfig = testQConfig.getItemListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyItemListener", listenerConfig.getClassName());

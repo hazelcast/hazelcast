@@ -16,7 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -24,13 +25,13 @@ import java.util.Map;
 import java.util.logging.Level;
 
 public class InRunnable extends IORunnable implements Runnable {
-    final PacketReader reader;
+    final ProtocolReader reader;
     Connection connection = null;
     private final OutRunnable outRunnable;
 
     volatile long lastReceived;
 
-    public InRunnable(HazelcastClient client, OutRunnable outRunnable, Map<Long, Call> calls, PacketReader reader) {
+    public InRunnable(HazelcastClient client, OutRunnable outRunnable, Map<Long, Call> calls, ProtocolReader reader) {
         super(client, calls);
         this.outRunnable = outRunnable;
         this.reader = reader;
@@ -41,7 +42,7 @@ public class InRunnable extends IORunnable implements Runnable {
             Thread.sleep(10L);
             return;
         }
-        Packet packet;
+        Protocol protocol;
         try {
             Connection oldConnection = connection;
             connection = client.getConnectionManager().getConnection();
@@ -58,23 +59,27 @@ public class InRunnable extends IORunnable implements Runnable {
                 outRunnable.clusterIsDown(oldConnection);
                 Thread.sleep(10);
             } else {
-                packet = reader.readPacket(connection);
+                protocol = reader.read(connection);
 //                logger.log(Level.FINEST, "Reading " + packet.getOperation() + " Call id: " + packet.getCallId());
                 this.lastReceived = Clock.currentTimeMillis();
-                Call call = callMap.remove(packet.getCallId());
+                long callId = protocol.flag == null ? -1 : Long.valueOf(protocol.flag);
+                Call call = callMap.remove(callId);
                 if (call != null) {
                     call.received = System.nanoTime();
-                    call.setResponse(packet);
+                    call.setResponse(protocol);
                 } else {
-                    if (packet.getOperation().equals(ClusterOperation.EVENT)) {
-                        client.getListenerManager().enqueue(packet);
+                    if (protocol.command.equals(Command.EVENT) ||
+                            protocol.command.equals(Command.QEVENT) ||
+                            protocol.command.equals(Command.MESSAGE)) {
+                        client.getListenerManager().enqueue(protocol);
                     }
-                    if (packet.getCallId() != -1) {
-                        logger.log(Level.SEVERE, "In Thread can not handle: " + packet.getOperation() + " : " + packet.getCallId());
+                    if (callId != -1) {
+                        logger.log(Level.SEVERE, "In Thread can not handle: " + protocol.command + " : " + protocol.flag);
                     }
                 }
             }
         } catch (Throwable e) {
+            e.printStackTrace();
             logger.log(Level.FINEST, "InRunnable [" + connection + "] got an exception:" + e.toString(), e);
             outRunnable.clusterIsDown(connection);
         }

@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.HazelcastTimestamper;
+import com.hazelcast.impl.base.DataRecordEntry;
 import org.hibernate.cache.CacheException;
 
 import java.util.Map;
@@ -95,7 +96,7 @@ abstract class AbstractHazelcastRegion implements HazelcastRegion {
         for (final Object key : getCache().keySet()) {
             final MapEntry entry = getCache().getMapEntry(key);
             if (entry != null) {
-                size += entry.getCost();
+                size += ((DataRecordEntry)entry).getCost();
             }
         }
         return size;
