@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.query;
+package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.region.AbstractGeneralRegion;
-import org.hibernate.cache.QueryResultsRegion;
+import com.hazelcast.hibernate.RegionCache;
+import org.hibernate.cache.TimestampsRegion;
 
 import java.util.Properties;
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-public class HazelcastQueryResultsRegion extends AbstractGeneralRegion implements QueryResultsRegion {
+public class HazelcastTimestampsRegion<Cache extends RegionCache>
+        extends AbstractGeneralRegion<Cache> implements TimestampsRegion {
 
-    public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name, final Properties props) {
-        super(instance, name, props);
+    public HazelcastTimestampsRegion(final HazelcastInstance instance, final String name,
+                                     final Properties props, final Cache cache) {
+        super(instance, name, props, cache);
     }
+
 }

@@ -52,7 +52,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final PartitionContainer[] partitionContainers;
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
-    private Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
+    private final Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
 
     private final Set<String> mapsWithTTL;

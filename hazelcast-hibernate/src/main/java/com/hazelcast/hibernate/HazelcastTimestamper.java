@@ -19,6 +19,7 @@ package com.hazelcast.hibernate;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.GroupProperties;
 
 public final class HazelcastTimestamper {
 
@@ -42,7 +43,7 @@ public final class HazelcastTimestamper {
         String maxOpTimeoutProp = null;
         try {
             Config config = instance.getConfig();
-            maxOpTimeoutProp = config.getProperty("hazelcast.max.operation.timeout");
+            maxOpTimeoutProp = config.getProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS);
         } catch (UnsupportedOperationException ignored) {
             // HazelcastInstance is instance of HazelcastClient.
         }

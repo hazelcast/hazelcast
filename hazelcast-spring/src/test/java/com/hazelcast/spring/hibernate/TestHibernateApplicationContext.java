@@ -20,7 +20,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -42,9 +41,6 @@ public class TestHibernateApplicationContext {
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
-    @Resource(name = "cacheProvider")
-    private HazelcastCacheProvider cacheProvider;
-
     @Resource(name = "regionFactory")
     private HazelcastCacheRegionFactory regionFactory;
 
@@ -62,12 +58,6 @@ public class TestHibernateApplicationContext {
         final Member member = members.iterator().next();
         final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
         assertEquals(5700, inetSocketAddress.getPort());
-    }
-
-    @Test
-    public void testCacheProvider() {
-        assertNotNull(cacheProvider);
-        assertEquals(cacheProvider.getHazelcastInstance(), instance);
     }
 
     @Test

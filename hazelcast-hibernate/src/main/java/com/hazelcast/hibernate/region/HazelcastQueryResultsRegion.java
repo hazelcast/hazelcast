@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.entity;
+package com.hazelcast.hibernate.region;
 
-import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.local.LocalRegionCache;
+import org.hibernate.cache.QueryResultsRegion;
 
 import java.util.Properties;
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-final class NonStrictReadWriteAccessStrategy extends AbstractEntityRegionAccessStrategy {
-    NonStrictReadWriteAccessStrategy(final HazelcastEntityRegion entityRegion, final Properties props) {
-        super(new NonStrictReadWriteAccessDelegate<HazelcastEntityRegion>(entityRegion, props));
+public class HazelcastQueryResultsRegion extends AbstractGeneralRegion<LocalRegionCache> implements QueryResultsRegion {
+
+    public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name, final Properties props) {
+        // Note: We can pass HazelcastInstance as null, because instead of invalidation
+        // timestamps cache can take care of outdated queries.
+        super(instance, name, props, new LocalRegionCache(name, null, null));
     }
 }

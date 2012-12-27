@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.spring.hibernate.CacheProviderBeanDefinitionParser;
 import com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
@@ -26,7 +25,6 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
         registerBeanDefinitionParser("hazelcast", new HazelcastInstanceDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
-        registerBeanDefinitionParser("hibernate-cache-provider", new CacheProviderBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
         final String[] types = {"map", "multiMap",
                                 "queue", "topic", "set", "list",

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.entity;
+package com.hazelcast.hibernate.region;
 
 import com.hazelcast.hibernate.access.AccessDelegate;
 import org.hibernate.cache.CacheException;
@@ -25,11 +25,11 @@ import org.hibernate.cache.access.SoftLock;
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
-abstract class AbstractEntityRegionAccessStrategy implements EntityRegionAccessStrategy {
+public final class EntityRegionAccessStrategyAdapter implements EntityRegionAccessStrategy {
 
-    private final AccessDelegate<HazelcastEntityRegion> delegate;
+    private final AccessDelegate<? extends HazelcastEntityRegion> delegate;
 
-    protected AbstractEntityRegionAccessStrategy(final AccessDelegate<HazelcastEntityRegion> delegate) {
+    public EntityRegionAccessStrategyAdapter(final AccessDelegate<? extends HazelcastEntityRegion> delegate) {
         this.delegate = delegate;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.client;
@@ -20,7 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.instance.CallContext;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -39,7 +37,7 @@ public class ClientCommandService {
 
     public ClientCommandService(Node node) {
         this.node = node;
-        logger = Logger.getLogger(ClientCommandService.class.getName());
+        logger = node.getLogger(ClientCommandService.class.getName());
     }
 
     //Always called by an io-thread.
