@@ -18,14 +18,11 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Future;
 
 /**

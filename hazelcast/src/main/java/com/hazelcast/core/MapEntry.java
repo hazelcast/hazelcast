@@ -20,21 +20,7 @@ import java.util.Map;
 
 public interface MapEntry<K, V> extends Map.Entry<K, V> {
 
-    long getCost();
-
     long getCreationTime();
 
-    long getExpirationTime();
-
-    int getHits();
-
     long getLastAccessTime();
-
-    long getLastStoredTime();
-
-    long getLastUpdateTime();
-
-    long getVersion();
-
-    boolean isValid();
 }

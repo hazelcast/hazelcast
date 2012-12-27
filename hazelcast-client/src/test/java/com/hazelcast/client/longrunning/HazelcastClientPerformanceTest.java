@@ -19,7 +19,6 @@ package com.hazelcast.client.longrunning;
 import com.hazelcast.client.*;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -171,7 +170,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
         when(client.getConnectionManager()).thenReturn(connectionManager);
         Connection connection = new Connection("localhost", 5799, 1);
         when(connectionManager.getConnection()).thenReturn(connection);
-        PacketWriter packetWriter = new PacketWriter();
+        ProtocolWriter packetWriter = new ProtocolWriter();
         packetWriter.setConnection(connection);
         final OutRunnable outRunnable = new OutRunnable(client, new HashMap<Long, Call>(), packetWriter);
         new Thread(outRunnable).start();
@@ -190,10 +189,11 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
                         } catch (InterruptedException e) {
                             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                         }
-                        Packet packet = new Packet();
-                        packet.set("c:default", ClusterOperation.CONCURRENT_MAP_GET, new byte[30], null);
-                        Call call = new Call(callCounter.incrementAndGet(), packet);
-                        outRunnable.enQueue(call);
+//                        Packet packet = new Packet();
+//                        packet.set("c:default", ClusterOperation.CONCURRENT_MAP_GET, new byte[30], null);
+//                        packet.setCallId(callCounter.incrementAndGet());
+//                        Call call = new Call(packet.getCallId(), packet);
+//                        outRunnable.enQueue(call);
                     }
                 }
             });

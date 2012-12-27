@@ -22,6 +22,7 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.HazelcastTimestamper;
+import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.Cache;
@@ -94,7 +95,7 @@ public final class HazelcastCache implements Cache {
         for (final Object key : cache.keySet()) {
             final MapEntry entry = cache.getMapEntry(key);
             if (entry != null) {
-                size += entry.getCost();
+                size += ((DataRecordEntry)entry).getCost();
             }
         }
         return size;

@@ -19,7 +19,6 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -44,21 +43,18 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
 
     public static final String NAME = "hz:impl:queueService";
 
-    private final ILogger logger;
-
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, QueueProxy> proxies = new ConcurrentHashMap<String, QueueProxy>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(QueueService.class.getName());
     }
 
     public QueueContainer getContainer(final String name, boolean fromBackup) {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(this, nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), name, fromBackup);
+            container = new QueueContainer(nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), fromBackup);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;

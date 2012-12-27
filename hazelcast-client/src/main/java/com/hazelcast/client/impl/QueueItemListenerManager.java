@@ -18,14 +18,16 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataAwareItemEvent;
 import com.hazelcast.nio.Data;
+
 import com.hazelcast.nio.serialization.SerializerRegistry;
+
+import com.hazelcast.nio.Protocol;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,34 +48,53 @@ public class QueueItemListenerManager {
     public Collection<? extends Call> calls(HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : queueItemListeners.keySet()) {
-            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
             calls.add(createNewAddItemListenerCall(proxyHelper, true));
         }
         return calls;
     }
 
-    public Call createNewAddItemListenerCall(ProxyHelper proxyHelper, boolean includeValue) {
-        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
-        request.setLongValue(includeValue ? 1 : 0);
-        return proxyHelper.createCall(request);
+    public Call createNewAddItemListenerCall(PacketProxyHelper proxyHelper, boolean includeValue) {
+//        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
+//        request.setLongValue(includeValue ? 1 : 0);
+//        return proxyHelper.createCall(request);
+        return null;
     }
 
-    public void notifyListeners(Packet packet) {
-        List<ItemListenerHolder> list = queueItemListeners.get(packet.getName());
+//    public void notifyListeners(Packet packet) {
+//        List<ItemListenerHolder> list = queueItemListeners.get(packet.getName());
+//        if (list != null) {
+//            for (ItemListenerHolder listenerHolder : list) {
+//                ItemListener<Object> listener = listenerHolder.listener;
+//                Boolean added = (Boolean) toObject(packet.getValue());
+//                if (added) {
+//                    listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED,
+//                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, null, serializerRegistry));
+//                } else {
+//                    listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.REMOVED,
+//                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, null, serializerRegistry));
+//                }
+//            }
+//        }
+//    }
+
+    public void notifyListeners(Protocol protocol) {
+        String name = protocol.args[0];
+        List<ItemListenerHolder> list = queueItemListeners.get(name);
         if (list != null) {
             for (ItemListenerHolder listenerHolder : list) {
                 ItemListener<Object> listener = listenerHolder.listener;
-                Boolean added = (Boolean) toObject(packet.getValue());
-                if (added) {
-                    listener.itemAdded(new DataAwareItemEvent(packet.getName(), ItemEventType.ADDED,
-                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, null, serializerRegistry));
+                Data item = listenerHolder.includeValue?new Data(protocol.buffers[0].array()):null;
+                ItemEventType itemEventType = ItemEventType.valueOf(protocol.args[1]);
+                if (ItemEventType.ADDED.equals(itemEventType)) {
+                    listener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, item, null,  serializerRegistry));
                 } else {
-                    listener.itemRemoved(new DataAwareItemEvent(packet.getName(), ItemEventType.REMOVED,
-                            listenerHolder.includeValue ? new Data(packet.getKey()) : null, null, serializerRegistry));
+                    listener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, item, null, serializerRegistry));
                 }
             }
         }
     }
+
 
     public <E> void removeListener(String name, ItemListener<E> listener) {
         if (!queueItemListeners.containsKey(name)) {

@@ -29,6 +29,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -38,6 +39,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
+//import com.hazelcast.queue.QueueService;
 
 /**
  * @mdogan 9/18/12
@@ -61,7 +63,6 @@ class ServiceManager {
         logger.log(Level.FINEST, "Registering core services...");
         registerService(ClusterService.SERVICE_NAME, node.getClusterService());
         registerService(PartitionService.SERVICE_NAME, node.getPartitionService());
-
         final Services servicesConfig = node.getConfig().getServicesConfig();
         if (servicesConfig != null) {
             if (servicesConfig.isEnableDefaults()) {
@@ -74,7 +75,6 @@ class ServiceManager {
                 // ...
                 // ...
             }
-
             final Collection<ServiceConfig> serviceConfigs = servicesConfig.getServiceConfigs();
             for (ServiceConfig serviceConfig : serviceConfigs) {
                 if (serviceConfig.isEnabled()) {
@@ -94,7 +94,6 @@ class ServiceManager {
                             service = new MapService(nodeEngine);
                         }
                     }
-
                     if (service != null) {
                         registerService(serviceConfig.getName(), service);
                     }
@@ -128,12 +127,11 @@ class ServiceManager {
         Object oldService = services.putIfAbsent(serviceName, service);
         if (oldService != null) {
             logger.log(Level.WARNING, "Replacing " + serviceName + ": " +
-                                      oldService + " with " + service);
+                    oldService + " with " + service);
             if (oldService instanceof CoreService) {
                 throw new HazelcastException("Can not replace a CoreService! Name: " + serviceName
-                    + ", Service: " + oldService);
+                        + ", Service: " + oldService);
             }
-
             if (oldService instanceof ManagedService) {
                 destroyService((ManagedService) oldService);
             }
@@ -147,6 +145,9 @@ class ServiceManager {
                 logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
             }
         }
+        if (service instanceof ClientProtocolService) {
+            nodeEngine.getNode().clientCommandService.register((ClientProtocolService) service);
+        }
     }
 
     <T> T getService(String serviceName) {
@@ -157,7 +158,6 @@ class ServiceManager {
      * Returns a list of services matching provided service class/interface.
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
-     *
      */
     <S> List<S> getServices(Class<S> serviceClass) {
         final LinkedList<S> result = new LinkedList<S>();

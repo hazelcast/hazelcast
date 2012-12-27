@@ -16,257 +16,33 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.concurrentmap.ValueHolder;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.util.Clock;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 import static com.hazelcast.nio.IOUtil.toObject;
+
+
 
 @SuppressWarnings("VolatileLongOrDoubleField")
 public abstract class AbstractRecord extends AbstractSimpleRecord implements Record {
 
-    protected volatile int hits = 0;
-    protected volatile long version = 0;
     protected volatile long maxIdleMillis = Long.MAX_VALUE;
-    protected volatile long writeTime = -1;
-    protected volatile long removeTime = 0;
     protected volatile long lastAccessTime = 0;
-    protected volatile long lastStoredTime = 0;
     protected volatile long creationTime = 0;
-    protected volatile long expirationTime = Long.MAX_VALUE;
-    protected volatile long lastUpdateTime = 0;
+    protected volatile long ttl = -1;
+
     protected volatile boolean dirty = false;
+    protected volatile boolean active = true;
 
-    protected volatile OptionalInfo optionalInfo = null;
-
-    public AbstractRecord(int blockId, Data key, long ttl, long maxIdleMillis, long id) {
-        super(blockId, id, key);
-        this.setCreationTime(Clock.currentTimeMillis());
-        this.setTTL(ttl);
+    public AbstractRecord(long id, Data key, Data value, long ttl, long maxIdleMillis) {
+        super(id, key, value);
+        this.ttl = ttl;
+        this.creationTime = Clock.currentTimeMillis();
         this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
-        this.setVersion(0);
-    }
-
-    public Object getKey() {
-        return toObject(keyData);
-    }
-
-    public Long[] getIndexes() {
-        if (optionalInfo == null) return null;
-        return getOptionalInfo().indexes;
-    }
-
-    public byte[] getIndexTypes() {
-        if (optionalInfo == null) return null;
-        return getOptionalInfo().indexTypes;
-    }
-
-    public void setIndexes(Long[] indexes, byte[] indexTypes) {
-        if (indexes != null) {
-            this.getOptionalInfo().indexes = indexes;
-            this.getOptionalInfo().indexTypes = indexTypes;
-        }
-    }
-
-    protected void invalidateValueCache() {
-    }
-
-//    public void addScheduledAction(ScheduledAction scheduledAction) {
-//        if (getScheduledActions() == null) {
-//            setScheduledActions(new LinkedList<ScheduledAction>());
-//        }
-//        getScheduledActions().add(scheduledAction);
-//    }
-
-    public boolean isRemovable() {
-        return !isActive() && valueCount() <= 0 && getLockCount() <= 0 && !hasListener()
-               && getScheduledActionCount() == 0 && getBackupOpCount() == 0;
-    }
-
-    public boolean isEvictable() {
-        return getLockCount() <= 0 && !hasListener() && getScheduledActionCount() == 0;
-    }
-
-    public boolean hasListener() {
-        return getListeners() != null && getListeners().size() > 0;
-    }
-
-    public void addListener(Address address, boolean returnValue) {
-        if (getListeners() == null) {
-            setMapListeners(new ConcurrentHashMap<Address, Boolean>(1));
-        }
-        getListeners().put(address, returnValue);
-    }
-
-    public void removeListener(Address address) {
-        if (getListeners() == null) {
-            return;
-        }
-        getListeners().remove(address);
-    }
-
-    public void setLastUpdated() {
-        if (expirationTime != Long.MAX_VALUE && expirationTime > 0) {
-            long ttl = expirationTime - (lastUpdateTime > 0L ? lastUpdateTime : creationTime);
-            setTTL(ttl);
-        }
-        setLastUpdateTime(Clock.currentTimeMillis());
-    }
-
-    public void setLastAccessed() {
-        setLastAccessTime(Clock.currentTimeMillis());
-        incrementHits();
-    }
-
-    public long getExpirationTime() {
-        return expirationTime;
-    }
-
-    public long getRemainingTTL() {
-        if (expirationTime == Long.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        } else {
-            long ttl = expirationTime - Clock.currentTimeMillis();
-            return (ttl < 0) ? 1 : ttl;
-        }
-    }
-
-    public long getRemainingIdle() {
-        if (maxIdleMillis == Long.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        } else {
-            long lastTouch = Math.max(lastAccessTime, creationTime);
-            long idle = Clock.currentTimeMillis() - lastTouch;
-            return maxIdleMillis - idle;
-        }
-    }
-
-    public void setMaxIdle(long idle) {
-        if (idle <= 0 || idle == Long.MAX_VALUE) {
-            maxIdleMillis = Long.MAX_VALUE;
-        } else {
-            maxIdleMillis = idle;
-        }
-    }
-
-    public void setExpirationTime(final long expTime) {
-        if (expTime <= 0) {
-            this.expirationTime = Long.MAX_VALUE;
-        } else {
-            this.expirationTime = expTime;
-        }
-    }
-
-    public void setTTL(long ttl) {
-        if (ttl <= 0 || ttl == Long.MAX_VALUE) {
-            setExpirationTime(Long.MAX_VALUE);
-        } else {
-            setExpirationTime(Clock.currentTimeMillis() + ttl);
-        }
-    }
-
-    public void setInvalid() {
-        expirationTime = (Clock.currentTimeMillis() - 10);
-    }
-
-    public boolean isValid(long now) {
-        if (expirationTime == Long.MAX_VALUE && maxIdleMillis == Long.MAX_VALUE) {
-            return true;
-        }
-        long lastTouch = Math.max(lastAccessTime, creationTime);
-        long idle = now - lastTouch;
-        return expirationTime > now && (maxIdleMillis > idle);
-    }
-
-    public boolean isValid() {
-        return active && isValid(Clock.currentTimeMillis());
-    }
-
-    public void markRemoved() {
-        setActive(false);
-        setRemoveTime(Clock.currentTimeMillis());
-    }
-
-    public void setActive() {
-        setRemoveTime(0);
-        setActive(true);
-    }
-
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AbstractRecord)) return false;
-        Record record = (Record) o;
-        return record.getId() == getId();
-    }
-
-    public String toString() {
-        return "Record key=" + getKeyData() + ", active=" + isActive()
-               + ", version=" + getVersion() + ", removable=" + isRemovable();
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
-    }
-
-    public void incrementVersion() {
-        this.version++;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
-    }
-
-    public void setCreationTime(long newValue) {
-        creationTime = newValue;
-    }
-
-    public long getLastAccessTime() {
-        return lastAccessTime;
-    }
-
-    public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = lastAccessTime;
-    }
-
-    public long getLastUpdateTime() {
-        return lastUpdateTime;
-    }
-
-    public void setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime;
-    }
-
-    public int getHits() {
-        return hits;
-    }
-
-    public void incrementHits() {
-        hits++;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-        invalidateValueCache();
-    }
-
-    public Collection<ValueHolder> getMultiValues() {
-        if (optionalInfo == null) return null;
-        return getOptionalInfo().lsMultiValues;
-    }
-
-    public void setMultiValues(Collection<ValueHolder> lsValues) {
-        if (lsValues != null || optionalInfo != null) {
-            this.getOptionalInfo().lsMultiValues = lsValues;
-        }
     }
 
     public boolean isDirty() {
@@ -277,81 +53,45 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         this.dirty = dirty;
     }
 
-    public long getWriteTime() {
-        return writeTime;
+    public boolean isActive() {
+        return active;
     }
 
-    public void setWriteTime(long writeTime) {
-        this.writeTime = writeTime;
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
-    public long getRemoveTime() {
-        return removeTime;
+    @Override
+    public void writeData(DataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeLong(creationTime);
+        out.writeLong(lastAccessTime);
+        out.writeLong(maxIdleMillis);
+        out.writeLong(ttl);
+        out.writeBoolean(dirty);
+        out.writeBoolean(active);
     }
 
-    public void setRemoveTime(long removeTime) {
-        this.removeTime = removeTime;
+    @Override
+    public void readData(DataInput in) throws IOException {
+        super.readData(in);
+        creationTime = in.readLong();
+        lastAccessTime = in.readLong();
+        maxIdleMillis = in.readLong();
+        ttl = in.readLong();
+        dirty = in.readBoolean();
+        active = in.readBoolean();
     }
 
-//    public boolean hasScheduledAction() {
-//        return optionalInfo != null && optionalInfo.lsScheduledActions != null &&
-//               optionalInfo.lsScheduledActions.size() > 0;
-//    }
-
-//    public List<ScheduledAction> getScheduledActions() {
-//        if (optionalInfo == null) return null;
-//        return getOptionalInfo().lsScheduledActions;
-//    }
-
-//    public void setScheduledActions(List<ScheduledAction> lsScheduledActions) {
-//        if (lsScheduledActions != null) {
-//            this.getOptionalInfo().lsScheduledActions = lsScheduledActions;
-//        }
-//    }
-
-    public Map<Address, Boolean> getListeners() {
-        if (optionalInfo == null) return null;
-        return getOptionalInfo().mapListeners;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AbstractRecord)) return false;
+        Record record = (Record) o;
+        return record.getId() == getId();
     }
 
-    public void setMapListeners(Map<Address, Boolean> mapListeners) {
-        if (mapListeners != null) {
-            this.getOptionalInfo().mapListeners = mapListeners;
-        }
+    public String toString() {
+        return "Record key=" + getKeyData();
     }
 
-    public OptionalInfo getOptionalInfo() {
-        if (optionalInfo == null) {
-            optionalInfo = new OptionalInfo();
-        }
-        return optionalInfo;
-    }
-
-    public void setLastStoredTime(long lastStoredTime) {
-        this.lastStoredTime = lastStoredTime;
-    }
-
-    public long getLastStoredTime() {
-        return lastStoredTime;
-    }
-
-    public boolean isRemoved() {
-        return !active && removeTime > 0;
-    }
-
-    /**
-     * True if record is not removed (map.remove() ...)
-     * and either is not active or not valid or has not value (may because of locking)
-     */
-    public boolean isLoadable() {
-        return !isRemoved() && (!isActive() || !isValid() || !hasValueData());
-    }
-
-    class OptionalInfo {
-        volatile Collection<ValueHolder> lsMultiValues = null; // multimap values
-        Long[] indexes; // indexes of the current value;
-        byte[] indexTypes; // index types of the current value;
-//        List<ScheduledAction> lsScheduledActions = null;
-        Map<Address, Boolean> mapListeners = null;
-    }
 }

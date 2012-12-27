@@ -18,11 +18,11 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.ClusterOperation;
+//import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.PacketProxyHelper.check;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E> {
 
@@ -30,26 +30,29 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
         super(client, name);
     }
 
-    public SetClientProxy(ProxyHelper proxyHelper, String name) {
+    public SetClientProxy(PacketProxyHelper proxyHelper, String name) {
         super(proxyHelper, name);
     }
 
     @Override
     public boolean add(E o) {
         check(o);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET, o, null);
+//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET, o, null);
+        return false;
     }
 
     @Override
     public boolean remove(Object o) {
         check(o);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, o, null);
+        return false;
+//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, o, null);
     }
 
     @Override
     public boolean contains(Object o) {
         check(o);
-        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, o, null);
+        return false;
+//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, o, null);
     }
 
     @Override

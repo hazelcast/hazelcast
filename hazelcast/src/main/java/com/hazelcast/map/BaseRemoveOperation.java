@@ -94,11 +94,6 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         return true;
     }
 
-    public void remove() {
-        recordStore.records.remove(dataKey);
-    }
-
-
     public void afterRun() {
         Member caller = nodeEngine.getCluster().getMember(getCaller());
         // todo optimize serialization. maybe you should not do here. or you can check if anyone wants values

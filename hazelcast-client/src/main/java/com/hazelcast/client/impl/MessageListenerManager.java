@@ -18,12 +18,12 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.Packet;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.DataMessage;
 import com.hazelcast.nio.Data;
+
+import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 
 import java.util.ArrayList;
@@ -67,25 +67,36 @@ public class MessageListenerManager {
         return messageListeners.get(name).isEmpty();
     }
 
-    public void notifyMessageListeners(Packet packet) {
-        List<MessageListener> list = messageListeners.get(packet.getName());
+//    public void notifyMessageListeners(Packet packet) {
+//        List<MessageListener> list = messageListeners.get(packet.getName());
+//        if (list != null) {
+//            for (MessageListener<Object> messageListener : list) {
+//                messageListener.onMessage(new DataMessage(packet.getName(), new Data(packet.getKey()),
+//                        serializerRegistry));
+//            }
+//        }
+//    }
+
+    public void notifyMessageListeners(Protocol protocol) {
+        String name = protocol.args[0];
+        List<MessageListener> list = messageListeners.get(name);
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
-                messageListener.onMessage(new DataMessage(packet.getName(), new Data(packet.getKey()),
-                        serializerRegistry));
+                messageListener.onMessage(new DataMessage(name, new Data(protocol.buffers[0].array()), serializerRegistry));
             }
         }
     }
 
-    public Call createNewAddListenerCall(final ProxyHelper proxyHelper) {
-        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
-        return proxyHelper.createCall(request);
+    public Call createNewAddListenerCall(final PacketProxyHelper proxyHelper) {
+//        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
+//        return proxyHelper.createCall(request);
+        return null;
     }
 
     public Collection<Call> calls(final HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : messageListeners.keySet()) {
-            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
             calls.add(createNewAddListenerCall(proxyHelper));
         }
         return calls;

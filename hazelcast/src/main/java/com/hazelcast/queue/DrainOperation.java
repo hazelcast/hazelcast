@@ -65,11 +65,7 @@ public class DrainOperation extends QueueBackupAwareOperation {
     }
 
     public boolean shouldBackup() {
-        if (response != null){
-            List<Data> list = (List<Data>)response;
-            return list.size() > 0;
-        }
-        return false;
+        return keyDataPair.snd.size() > 0;
     }
 
     public Operation getBackupOperation() {

@@ -36,6 +36,9 @@ public class QueueEvent implements DataSerializable {
 
     ItemEventType eventType;
 
+    public QueueEvent() {
+    }
+
     public QueueEvent(String name, Data data, ItemEventType eventType) {
         this.name = name;
         this.data = data;

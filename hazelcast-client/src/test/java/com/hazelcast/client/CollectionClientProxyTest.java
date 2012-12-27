@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.ItemListenerManager;
 import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.impl.ClusterOperation;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Ignore;
@@ -47,15 +46,16 @@ public class CollectionClientProxyTest {
         ItemListenerManager itemListenerManager = mock(ItemListenerManager.class);
         when(listenerManager.getItemListenerManager()).thenReturn(itemListenerManager);
         when(client.getListenerManager()).thenReturn(listenerManager);
-        when(client.getOutRunnable()).thenReturn(new OutRunnable(client, new HashMap(), new PacketWriter()));
+        when(client.getOutRunnable()).thenReturn(new OutRunnable(client, new HashMap(), new ProtocolWriter()));
         String name = "def";
-        ProxyHelper proxyHelper = mock(ProxyHelper.class);
+        PacketProxyHelper proxyHelper = mock(PacketProxyHelper.class);
         when(proxyHelper.getHazelcastClient()).thenReturn(client);
-        Packet request = new Packet();
-        request.setName(name);
-        request.setOperation(ClusterOperation.ADD_LISTENER);
-        when(proxyHelper.createCall(request)).thenReturn(new Call(1L, request));
-        when(proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null)).thenReturn(request);
+//        Packet request = new Packet();
+//        request.setName(name);
+//        request.setOperation(ClusterOperation.ADD_LISTENER);
+//        request.setCallId(1L);
+//        when(proxyHelper.createCall(request)).thenReturn(new Call(1L, request));
+//        when(proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null)).thenReturn(request);
         CollectionClientProxy proxy = new SetClientProxy(proxyHelper, name);
         ItemListener listener = new ItemListener() {
 

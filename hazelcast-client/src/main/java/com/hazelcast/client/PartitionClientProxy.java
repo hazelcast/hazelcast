@@ -15,36 +15,69 @@
  */
 package com.hazelcast.client;
 
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.impl.ClusterOperation;
-import com.hazelcast.impl.Keys;
-import com.hazelcast.nio.Data;
+
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.core.PartitionService;
 
+import java.net.UnknownHostException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static com.hazelcast.nio.IOUtil.toData;
+
 public class PartitionClientProxy implements PartitionService {
-    final private ProxyHelper proxyHelper;
+    final private PacketProxyHelper proxyHelper;
+    final private ProtocolProxyHelper protocolProxyHelper;
 
     public PartitionClientProxy(HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new PacketProxyHelper("", client);
+        protocolProxyHelper = new ProtocolProxyHelper("", client);
     }
 
     public Set<Partition> getPartitions() {
-        Keys partitions =
-                (Keys) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, null, null);
+        Protocol protocol = protocolProxyHelper.doCommand(Command.PARTITIONS, new String[]{}, null);
         Set<Partition> set = new LinkedHashSet<Partition>();
-        for (Data d : partitions.getKeys()) {
-            set.add((Partition) IOUtil.toObject(d.buffer));
+        int i=protocol.args.length;
+
+        while(i>0){
+            final int partitionId = Integer.valueOf(protocol.args[i]);
+            String owner = protocol.args[++i];
+            Partition partition = partition(partitionId, owner);
+            set.add(partition);
         }
         return set;
     }
 
+    private Partition partition(final int partitionId, String owner) {
+        Address address = null;
+        if(owner!="null"){
+            String[] a = owner.split(":");
+            try {
+                address = new Address(a[0], Integer.valueOf(a[1]));
+            } catch (UnknownHostException e) {
+            }
+        }
+        final Member member = address == null? null: new MemberImpl(address, false);
+        return new Partition() {
+            public int getPartitionId() {
+                return partitionId;
+            }
+
+            public Member getOwner() {
+                return member;
+            }
+        };
+    }
+
     public Partition getPartition(Object key) {
-        return (Partition) proxyHelper.doOp(ClusterOperation.CLIENT_GET_PARTITIONS, key, null);
+        Protocol protocol = protocolProxyHelper.doCommand(Command.PARTITIONS, new String[]{}, toData(key));
+        return partition(Integer.valueOf(protocol.args[0]), protocol.args[1]);
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {

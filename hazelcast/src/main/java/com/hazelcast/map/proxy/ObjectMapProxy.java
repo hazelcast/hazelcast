@@ -208,7 +208,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public boolean evict(final Object key) {
-        return false;
+        return evictInternal(nodeEngine.toData(key));
     }
 
     public void clear() {

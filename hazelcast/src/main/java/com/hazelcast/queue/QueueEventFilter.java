@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.spi.EventFilter;
 
 import java.io.Serializable;
@@ -26,7 +25,10 @@ import java.io.Serializable;
  */
 public class QueueEventFilter implements EventFilter, Serializable {
 
-    final boolean includeValue;
+    boolean includeValue;
+
+    public QueueEventFilter() {
+    }
 
     public QueueEventFilter(boolean includeValue) {
         this.includeValue = includeValue;
