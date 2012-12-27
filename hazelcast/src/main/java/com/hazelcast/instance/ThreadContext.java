@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,9 +91,6 @@ public final class ThreadContext {
     private HazelcastInstanceImpl currentInstance;
 
     private SerializerRegistry currentSerializerRegistry;
-
-    // TODO: remove
-    private Object attachment;
 
     private Object currentOperation = null;
 
@@ -188,14 +185,6 @@ public final class ThreadContext {
         return getCallContext().getThreadId();
     }
 
-    public <T> T getAttachment() {
-        return (T) attachment;
-    }
-
-    public void setAttachment(final Object attachment) {
-        this.attachment = attachment;
-    }
-
     public Object getCurrentOperation() {
         return currentOperation;
     }
@@ -213,7 +202,6 @@ public final class ThreadContext {
     private void destroy() {
         serializer.destroy();
         mapHazelcastInstanceContexts.clear();
-        attachment = null;
         currentInstance = null;
         currentSerializerRegistry = null;
     }

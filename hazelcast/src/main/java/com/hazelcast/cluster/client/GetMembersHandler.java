@@ -22,18 +22,18 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
 public class GetMembersHandler extends ClientCommandHandler {
 
-    public GetMembersHandler(NodeService nodeService) {
+    public GetMembersHandler(NodeEngine nodeService) {
         super(nodeService);
     }
 
     public Protocol processCall(Node node, Protocol protocol) {
-        Collection<Member> collection = node.nodeService.getCluster().getMembers();
+        Collection<Member> collection = node.nodeEngine.getCluster().getMembers();
         String[] args = new String[collection.size()];
         int i = 0;
         for (Member member : collection) {

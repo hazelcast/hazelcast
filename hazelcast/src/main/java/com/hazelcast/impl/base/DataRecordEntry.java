@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,40 +59,40 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     }
 
     public DataRecordEntry(Record record) {
-        this(record, record.getValueData(), false);
+//        this(record, record.getValueData(), false);
     }
 
     public DataRecordEntry(Record record, boolean includeListeners) {
-        this(record, record.getValueData(), includeListeners);
+//        this(record, record.getValueData(), includeListeners);
     }
 
     public DataRecordEntry(Record record, Data value, boolean includeListeners) {
-        cost = record.getCost();
-        remainingIdle = record.getRemainingIdle();
-        expirationTime = record.getExpirationTime();
-        lastAccessTime = record.getLastAccessTime();
-        lastUpdateTime = record.getLastUpdateTime();
-        creationTime = record.getCreationTime();
-        lastStoredTime = record.getLastStoredTime();
-        version = record.getVersion();
-        hits = record.getHits();
-        valid = record.isValid();
-        name = "test" ;//TODO: record.getName();
-        keyData = record.getKeyData();
-        valueData = value;
-        indexes = record.getIndexes();
-        indexTypes = record.getIndexTypes();
-        DistributedLock lock = record.getLock();
-        if (lock != null && lock.getLockCount() > 0) {
-            lockAddress = lock.getLockAddress();
-            lockThreadId = lock.getLockThreadId();
-        }
-        if (includeListeners) {
-            Map<Address, Boolean> existing = record.getListeners();
-            if (existing != null) {
-                mapListeners = Collections.unmodifiableMap(existing);
-            }
-        }
+//        cost = record.getCost();
+//        remainingIdle = record.getRemainingIdle();
+//        expirationTime = record.getExpirationTime();
+//        lastAccessTime = record.getLastAccessTime();
+//        lastUpdateTime = record.getLastUpdateTime();
+//        creationTime = record.getCreationTime();
+//        lastStoredTime = record.getLastStoredTime();
+//        version = record.getVersion();
+//        hits = record.getHits();
+//        valid = record.isValid();
+//        name = "test" ;//TODO: record.getName();
+//        keyData = record.getKeyData();
+//        valueData = value;
+//        indexes = record.getIndexes();
+//        indexTypes = record.getIndexTypes();
+//        DistributedLock lock = record.getLock();
+//        if (lock != null && lock.getLockCount() > 0) {
+//            lockAddress = lock.getLockAddress();
+//            lockThreadId = lock.getLockThreadId();
+//        }
+//        if (includeListeners) {
+//            Map<Address, Boolean> existing = record.getListeners();
+//            if (existing != null) {
+//                mapListeners = Collections.unmodifiableMap(existing);
+//            }
+//        }
     }
 
     public void writeData(DataOutput out) throws IOException {

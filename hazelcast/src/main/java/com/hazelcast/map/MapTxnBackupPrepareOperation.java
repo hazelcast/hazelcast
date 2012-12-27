@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ResponseHandler;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class MapTxnBackupPrepareOperation extends Operation {
+public class MapTxnBackupPrepareOperation extends AbstractOperation {
     TransactionLog txnLog;
 
     public MapTxnBackupPrepareOperation(TransactionLog txnLog) {
@@ -36,7 +36,7 @@ public class MapTxnBackupPrepareOperation extends Operation {
     public void run() {
         int partitionId = getPartitionId();
         MapService mapService = (MapService) getService();
-        System.out.println(getNodeService().getThisAddress() + " backupPrepare " + txnLog.txnId);
+        System.out.println(getNodeEngine().getThisAddress() + " backupPrepare " + txnLog.txnId);
         mapService.getPartitionContainer(partitionId).putTransactionLog(txnLog.txnId, txnLog);
         ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);

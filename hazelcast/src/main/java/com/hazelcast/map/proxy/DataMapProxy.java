@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,17 +32,17 @@ import java.util.concurrent.TimeoutException;
 
 public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data> {
 
-    public DataMapProxy(final String name, final MapService mapService, NodeService nodeService) {
-        super(name, mapService, nodeService);
+    public DataMapProxy(final String name, final MapService mapService, NodeEngine nodeEngine) {
+        super(name, mapService, nodeEngine);
     }
 
     public Data get(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return getInternal(key);
     }
 
     public Future<Data> getAsync(final Data key) {
-        return null;
+        return getAsyncInternal(key);
     }
 
     public Data put(final Data k, final Data v) {
@@ -50,11 +50,11 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data put(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-       return putInternal(key, value, ttl, timeunit);
+        return putInternal(key, value, ttl, timeunit);
     }
 
     public boolean tryPut(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
-        return false;
+        return tryPutInternal(key, value, timeout, timeunit);
     }
 
     public Data putIfAbsent(final Data k, final Data v) {
@@ -70,7 +70,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Future<Data> putAsync(final Data key, final Data value) {
-        return null;
+        return putAsyncInternal(key, value);
     }
 
     public boolean replace(final Data key, final Data oldValue, final Data newValue) {
@@ -86,37 +86,44 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data remove(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return removeInternal(key);
     }
 
-    public boolean remove(final Object key, final Object value) {
-        return false;
+    public boolean remove(final Object k, final Object v) {
+        Data key = nodeEngine.toData(k);
+        Data value = nodeEngine.toData(v);
+        return removeInternal(key, value);
     }
 
-    public Object tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
-        return null;
+    public Data tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+        return tryRemoveInternal(key, timeout, timeunit);
     }
 
     public Future<Data> removeAsync(final Data key) {
-        return null;
+        return removeAsyncInternal(key);
     }
 
     public boolean containsKey(Object k) {
-        Data key = nodeService.toData(k);
+        Data key = nodeEngine.toData(k);
         return containsKeyInternal(key);
     }
 
     public boolean containsValue(final Object value) {
-        return false;
+        Data v = nodeEngine.toData(value);
+        return containsValueInternal(v);
     }
 
     public Map<Data, Data> getAll(final Set<Data> keys) {
-        return null;
+        return getAllDataInternal(keys);
     }
 
     public void putAll(final Map<? extends Data, ? extends Data> m) {
+        putAllDataInternal(m);
+    }
 
+    public void clear() {
+        clearInternal();
     }
 
     public void lock(final Data key) {
@@ -143,64 +150,64 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         forceUnlockInternal(key);
     }
 
-    public void addLocalEntryListener(final EntryListener<Data, Data> listener) {
-
-    }
-
-    public void addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
-
-    }
-
-    public void removeEntryListener(final EntryListener<Data, Data> listener) {
-
-    }
-
-    public void addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
-
-    }
-
-    public void removeEntryListener(final EntryListener<Data, Data> listener, final Data key) {
-
-    }
-
-    public MapEntry<Data, Data> getMapEntry(final Data key) {
-        return null;
-    }
-
-    public boolean evict(final Object key) {
-        return false;
-    }
-
     public Set<Data> keySet() {
-        return null;
+        return keySetInternal();
     }
 
     public Collection<Data> values() {
-        return null;
+        return valuesInternal();
     }
 
     public Set<Entry<Data, Data>> entrySet() {
-        return null;
+        return entrySetInternal();
+    }
+
+    public void addLocalEntryListener(final EntryListener<Data, Data> listener) {
+        addLocalEntryListenerInternal(listener);
+    }
+
+    public void addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
+        addEntryListenerInternal(listener, null, includeValue);
+    }
+
+    public void removeEntryListener(final EntryListener<Data, Data> listener) {
+        removeEntryListenerInternal(listener);
+    }
+
+    public void addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
+        addEntryListenerInternal(listener, key, includeValue);
+    }
+
+    public void removeEntryListener(final EntryListener<Data, Data> listener, final Data key) {
+        removeEntryListenerInternal(listener, key);
+    }
+
+    public MapEntry<Data, Data> getMapEntry(final Data key) {
+        return getMapEntryInternal(key);
+    }
+
+    public boolean evict(final Data key) {
+        return evictInternal(key);
     }
 
     public Set<Data> keySet(final Predicate predicate) {
-        return null;
+        return keySetInternal(predicate);
     }
 
     public Set<Entry<Data, Data>> entrySet(final Predicate predicate) {
-        return null;
+        return entrySetInternal(predicate);
     }
 
     public Collection<Data> values(final Predicate predicate) {
-        return null;
+        return valuesInternal(predicate);
     }
 
     public Set<Data> localKeySet() {
-        return null;
+        return localKeySetInternal();
     }
 
     public Set<Data> localKeySet(final Predicate predicate) {
-        return null;
+        return localKeySetInternal(predicate);
     }
 
     public Object getId() {
@@ -216,6 +223,5 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public void destroy() {
-
     }
 }

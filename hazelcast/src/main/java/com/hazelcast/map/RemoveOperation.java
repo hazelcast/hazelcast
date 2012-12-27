@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,19 @@ public class RemoveOperation extends BaseRemoveOperation {
     public RemoveOperation() {
     }
 
-    @Override
-    void initFlags() {
-      // use default flags
+
+    public void doOp() {
+        if (prepareTransaction()) {
+            return;
+        }
+
+        dataOldValue = recordStore.remove(dataKey);
     }
 
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
+    }
 
     @Override
     public String toString() {

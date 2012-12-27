@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -24,9 +24,12 @@
     <title>Distributed Lock</title>
     <para>
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
+import com.hazelcast.config.Config;
 import java.util.concurrent.locks.Lock;
 
-Lock lock = Hazelcast.getLock(myLockedObject);
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+Lock lock = hz.getLock(myLockedObject);
 lock.lock();
 try {
     // do something here

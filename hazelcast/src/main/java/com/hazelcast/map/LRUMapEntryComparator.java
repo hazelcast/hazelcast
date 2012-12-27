@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import java.util.Comparator;
 
 public class LRUMapEntryComparator implements Comparator<MapEntry> {
     public int compare(MapEntry r1, MapEntry r2) {
-        final long t1 = Math.max(r1.getLastAccessTime(), Math.max(r1.getLastUpdateTime(), r1.getCreationTime()));
-        final long t2 = Math.max(r2.getLastAccessTime(), Math.max(r2.getLastUpdateTime(), r2.getCreationTime()));
-        return t1 > t2 ? 1 : t1 == t2 ? 0 : -1;
+//        final long t1 = Math.max(r1.getLastAccessTime(), Math.max(r1.getLastUpdateTime(), r1.getCreationTime()));
+//        final long t2 = Math.max(r2.getLastAccessTime(), Math.max(r2.getLastUpdateTime(), r2.getCreationTime()));
+//        return t1 > t2 ? 1 : t1 == t2 ? 0 : -1;
+        return 0;
     }
 }

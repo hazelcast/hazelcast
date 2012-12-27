@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
     @JMXAttribute("Cost")
     @JMXDescription("Cost")
     public long getCost() {
-        return getManagedObject().getCost();
+        return 0; //getManagedObject().getCost();
     }
 
     @JMXAttribute("CreationTime")
@@ -107,13 +107,13 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
     @JMXAttribute("ExpirationTime")
     @JMXDescription("Expiration time")
     long getExpirationTime() {
-        return getManagedObject().getExpirationTime();
+        return 0; //getManagedObject().getExpirationTime();
     }
 
     @JMXAttribute("Hits")
     @JMXDescription("Hits")
     int getHits() {
-        return getManagedObject().getHits();
+        return 0; //getManagedObject().getHits();
     }
 
     @JMXAttribute("LastAccessTime")
@@ -125,18 +125,18 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
     @JMXAttribute("LastUpdateTime")
     @JMXDescription("Last update time")
     long getLastUpdateTime() {
-        return getManagedObject().getLastUpdateTime();
+        return 0; //getManagedObject().getLastUpdateTime();
     }
 
     @JMXAttribute("Version")
     @JMXDescription("Version")
     long getVersion() {
-        return getManagedObject().getVersion();
+        return 0; //getManagedObject().getVersion();
     }
 
     @JMXAttribute("Valid")
     @JMXDescription("Is valid")
     boolean isValid() {
-        return getManagedObject().isValid();
+        return true; //getManagedObject().isValid();
     }
 }

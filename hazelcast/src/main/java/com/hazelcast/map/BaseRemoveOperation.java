@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,55 +16,43 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.impl.Record;
+import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public abstract class BaseRemoveOperation extends LockAwareOperation {
+public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
     Object key;
     Record record;
-    int backupCount;
-    long version;
 
-    Data valueData;
+    Data dataOldValue;
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    MapPartition mapPartition;
+    DefaultRecordStore recordStore;
     MapService mapService;
-    NodeService nodeService;
+    NodeEngine nodeEngine;
 
-    // put flags: put(), set() and other put related operation implemntations will differ according to these flags
-    boolean LOAD_OLD = true;
-    boolean STORE = true;
-    boolean RETURN_RESPONSE = true;
-    boolean RETURN_OLD_VALUE = true;
-    boolean SEND_BACKUPS = true;
-    boolean TRANSACTION_ENABLED = true;
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
         setTxnId(txnId);
-        initFlags();
     }
 
     public BaseRemoveOperation() {
-        initFlags();
     }
 
-    abstract void initFlags();
-
     protected boolean prepareTransaction() {
-        if (TRANSACTION_ENABLED) {
-            if (txnId != null) {
-                pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
-                if (RETURN_RESPONSE)
-                    responseHandler.sendResponse(null);
-                return true;
-            }
+        if (txnId != null) {
+            pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
+            responseHandler.sendResponse(null);
+            return true;
         }
         return false;
     }
@@ -72,91 +60,50 @@ public abstract class BaseRemoveOperation extends LockAwareOperation {
     protected void init() {
         responseHandler = getResponseHandler();
         mapService = (MapService) getService();
-        nodeService = (NodeService) getNodeService();
+        nodeEngine = (NodeEngine) getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        mapPartition = pc.getMapPartition(name);
+        recordStore = pc.getMapPartition(name);
     }
 
-    protected void load() {
-        if (LOAD_OLD) {
-            if (mapPartition.loader != null) {
-                key = toObject(dataKey);
-                Object oldValue = mapPartition.loader.load(key);
-                valueData = toData(oldValue);
-            }
-        }
-    }
-
-
-    protected void store() {
-        if (STORE) {
-            if (mapPartition.store != null && mapPartition.writeDelayMillis == 0) {
-                if (key == null) {
-                    key = toObject(dataKey);
-                }
-                mapPartition.store.delete(key);
-            }
-        }
-    }
-
-    protected void sendBackups() {
-        int mapBackupCount = mapPartition.getBackupCount();
-        backupCount = Math.min(getClusterSize() - 1, mapBackupCount);
-        if (SEND_BACKUPS) {
-            version = pc.incrementAndGetVersion();
-            if (backupCount > 0) {
-                GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl, version);
-                op.setBackupOpType(GenericBackupOperation.BackupOpType.REMOVE);
-                op.setFirstCallerId(backupCallId, getCaller());
-                nodeService.sendBackups(MapService.MAP_SERVICE_NAME, op, getPartitionId(), mapBackupCount);
-            }
-        }
-    }
-
-    protected void prepareValue() {
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            load();
-        } else {
-            valueData = record.getValueData();
-        }
-    }
-
-    protected void sendResponse() {
-        if (RETURN_RESPONSE){
-            if (RETURN_OLD_VALUE){
-                responseHandler.sendResponse(new UpdateResponse(valueData, version, backupCount));
-            }
-            else {
-                responseHandler.sendResponse(new UpdateResponse(null, version, backupCount));
-            }
-        }
-    }
-
-
-    // run operation is seperated into methods so each method can be overridden to differentiate put implementation
-    public void doRun() {
+    public void beforeRun() {
         init();
-        if (prepareTransaction()) {
-            return;
-        }
-        prepareValue();
-        remove();
-        store();
-        sendBackups();
-        sendResponse();
     }
 
-    private void remove() {
-        mapPartition.records.remove(dataKey);
+    public abstract void doOp();
+
+    @Override
+    public Object getResponse() {
+        return dataOldValue;
     }
 
-    private int getClusterSize() {
-        return getNodeService().getCluster().getMembers().size();
+    public Operation getBackupOperation() {
+        final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
+        op.setBackupOpType(BackupOpType.REMOVE);
+        return op;
+    }
+
+    public int getAsyncBackupCount() {
+        return recordStore.getAsyncBackupCount();
+    }
+
+    public int getSyncBackupCount() {
+        return recordStore.getBackupCount();
+    }
+
+    public boolean shouldBackup() {
+        return true;
+    }
+
+    public void afterRun() {
+        Member caller = nodeEngine.getCluster().getMember(getCaller());
+        // todo optimize serialization. maybe you should not do here. or you can check if anyone wants values
+        int eventType = EntryEvent.TYPE_REMOVED;
+        EntryEvent event = new EntryEvent(getNodeEngine().getThisAddress().toString(), caller, eventType, nodeEngine.toObject(dataKey), nodeEngine.toObject(dataOldValue), null );
+        mapService.publishEvent(name, dataKey, event);
     }
 
     @Override
     public String toString() {
-        return "BasePutOperation{" + name + "}";
+        return "BaseRemoveOperation{" + name + "}";
     }
 }

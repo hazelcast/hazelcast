@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -55,7 +55,9 @@ import java.util.Queue;
 public class GettingStarted {
 
     public static void main(String[] args) {
-        Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");
+        Config cfg = new Config();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+        Map<Integer, String> mapCustomers = instance.getMap("customers");
         mapCustomers.put(1, "Joe");
         mapCustomers.put(2, "Ali");
         mapCustomers.put(3, "Avi");
@@ -63,7 +65,7 @@ public class GettingStarted {
         System.out.println("Customer with key 1: "+ mapCustomers.get(1));
         System.out.println("Map Size:" + mapCustomers.size());
 
-        Queue<String> queueCustomers = Hazelcast.getQueue("customers");
+        Queue<String> queueCustomers = instance.getQueue("customers");
         queueCustomers.offer("Tom");
         queueCustomers.offer("Mary");
         queueCustomers.offer("Jane");

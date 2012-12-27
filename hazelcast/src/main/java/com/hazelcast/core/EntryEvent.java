@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.core;
+
+import com.hazelcast.nio.Address;
 
 import java.util.EventObject;
 
@@ -123,6 +125,10 @@ public class EntryEvent<K, V> extends EventObject {
      */
     public String getName() {
         return name.substring(Prefix.MAP.length());
+    }
+
+    public EntryEvent cloneWithoutValues() {
+        return new EntryEvent<K,V>(getSource(), getMember(), entryEventType.getType(), getKey(), null, null);
     }
 
     @Override

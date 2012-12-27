@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,33 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.KeyBasedOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class AbstractKeyBasedOperation extends Operation {
+public abstract class AbstractKeyBasedOperation extends AbstractOperation implements KeyBasedOperation {
     protected Data dataKey = null;
     protected int threadId = -1;
     protected long timeout = -1;
+    protected Object keyObject;
+
 
     public AbstractKeyBasedOperation(Data dataKey) {
         this.dataKey = dataKey;
     }
 
     public AbstractKeyBasedOperation() {
+    }
+
+    public Object getKeyObject() {
+        return keyObject;
+    }
+
+    public void setKeyObject(Object keyObject) {
+        this.keyObject = keyObject;
     }
 
     public Data getKey() {
@@ -53,6 +64,10 @@ public abstract class AbstractKeyBasedOperation extends Operation {
 
     public void setTimeout(long timeout) {
         this.timeout = timeout;
+    }
+
+    public int getKeyHash() {
+        return dataKey != null ? dataKey.getPartitionHash() : 0;
     }
 
     public void writeInternal(DataOutput out) throws IOException {

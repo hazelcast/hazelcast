@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@
                 </para>
                 <para>
                     <programlisting language="xml">
-&lt;hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-3.0.xsd"
+&lt;hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
+    http://www.hazelcast.com/schema/config/hazelcast-config-3.0.xsd"
     xmlns="http://www.hazelcast.com/schema/config"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
     ....
@@ -254,7 +255,25 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>
                     <literal>hazelcast.socket.bind.any</literal>
                 </td>
-                <td>Bind node socket address to any local address</td>
+                <td>Bind both server-socket and client-sockets to any local interface</td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.socket.server.bind.any</literal>
+                </td>
+                <td>Bind server-socket to any local interface.
+                    If not set, <literal>hazelcast.socket.bind.any</literal> will be used as default.</td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.socket.client.bind.any</literal>
+                </td>
+                <td>Bind client-sockets to any local interface.
+                    If not set, <literal>hazelcast.socket.bind.any</literal> will be used as default.</td>
                 <td>boolean</td>
                 <td>true</td>
             </tr>
@@ -696,6 +715,18 @@ cfg.setProperty("hazelcast.property.foo", "value");
                 <td>string</td>
                 <td>null</td>
             </tr>
+            <tr>
+                <td>
+                    <literal>hazelcast.system.log.enabled</literal>
+                </td>
+                <td>
+                    Enable system logs
+                </td>
+                <td>boolean</td>
+                <td>true</td>
+            </tr>
+
+
         </tbody>
     </table>
 

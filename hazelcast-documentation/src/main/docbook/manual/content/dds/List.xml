@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -26,8 +26,12 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.List;
 import java.util.Iterator;
+import com.hazelcast.config.Config;
 
-java.util.List list = Hazelcast.getList("IBM-Quote-Frequency");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+
+java.util.List list = hz.getList("IBM-Quote-Frequency");
 list.add(new Price(10));
 list.add(new Price(11));
 list.add(new Price(12));

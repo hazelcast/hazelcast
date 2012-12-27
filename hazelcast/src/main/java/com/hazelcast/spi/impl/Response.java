@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,18 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionLockFreeOperation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
-public class Response extends Operation implements PartitionLockFreeOperation {
+public final class Response extends AbstractOperation implements ResponseOperation {
+
     private Object result = null;
-    private Data resultData = null;
     private boolean exception = false;
-    private Data opBeforeData = null;
 
     public Response() {
     }
@@ -42,68 +39,71 @@ public class Response extends Operation implements PartitionLockFreeOperation {
     }
 
     public Response(Object result, boolean exception) {
-        this(null, result, exception);
-    }
-
-    public Response(Operation opBefore, Object result, boolean exception) {
         this.result = result;
         this.exception = exception;
-        try {
-            this.resultData = toData(result);
-            this.opBeforeData = toData(opBefore);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
-    public void run() {
-        if (opBeforeData != null) {
-            Operation op = (Operation) toObject(opBeforeData);
-            op.setCallId(getCallId())
-                    .setService(getService())
-                    .setPartitionId(getPartitionId())
-                    .setCaller(getCaller())
-                    .setCallId(getCallId())
-                    .setNodeService(getNodeService());
-            op.run();
+    @Override
+    public void beforeRun() throws Exception {
+    }
+
+    public void run() throws Exception {
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final long callId = getCallId();
+        final Object response;
+        if (exception) {
+            response = toObject(result);
+        } else {
+            response = result;
         }
-        long callId = getCallId();
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        nodeService.notifyCall(callId, Response.this);
+        nodeEngine.operationService.notifyCall(callId, response);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     public boolean isException() {
         return exception;
     }
 
-    public Data getResultData() {
-        return resultData;
-    }
-
     public Object getResult() {
-        if (result == null) {
-            result = toObject(resultData);
-        }
         return result;
     }
 
     public void writeInternal(DataOutput out) throws IOException {
-        IOUtil.writeNullableData(out, opBeforeData);
-        IOUtil.writeNullableData(out, resultData);
+        final boolean isData = result instanceof Data;
+        out.writeBoolean(isData);
+        if (isData) {
+            ((Data) result).writeData(out);
+        } else {
+            IOUtil.writeObject(out, result);
+        }
         out.writeBoolean(exception);
     }
 
     public void readInternal(DataInput in) throws IOException {
-        opBeforeData = IOUtil.readNullableData(in);
-        resultData = IOUtil.readNullableData(in);
+        final boolean isData = in.readBoolean();
+        if (isData) {
+            Data data = new Data();
+            data.readData(in);
+            result = data;
+        } else {
+            result = IOUtil.readObject(in);
+        }
         exception = in.readBoolean();
     }
 
     @Override
     public String toString() {
         return "Response{" +
-                "result=" + getResult() +
-                ", exception=" + exception +
-                '}';
+               "result=" + getResult() +
+               ", exception=" + exception +
+               '}';
     }
 }

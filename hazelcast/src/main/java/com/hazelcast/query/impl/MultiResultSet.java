@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 public class MultiResultSet extends AbstractSet<MapEntry> {
-    private final List<Collection<Record>> resultSets = new ArrayList<Collection<Record>>();
+    private final List<Collection<IndexEntry>> resultSets = new ArrayList<Collection<IndexEntry>>();
     private final Set<Long> indexValues = new HashSet<Long>();
     private final ConcurrentMap<Long, Long> recordValues;
 
@@ -31,7 +31,7 @@ public class MultiResultSet extends AbstractSet<MapEntry> {
         this.recordValues = recordValues;
     }
 
-    public void addResultSet(Long indexValue, Collection<Record> resultSet) {
+    public void addResultSet(Long indexValue, Collection<IndexEntry> resultSet) {
         resultSets.add(resultSet);
         indexValues.add(indexValue);
     }
@@ -49,7 +49,7 @@ public class MultiResultSet extends AbstractSet<MapEntry> {
 
     class It implements Iterator<MapEntry> {
         int currentIndex = 0;
-        Iterator<Record> currentIterator;
+        Iterator<IndexEntry> currentIterator;
 
         public boolean hasNext() {
             if (resultSets.size() == 0) return false;
@@ -83,7 +83,7 @@ public class MultiResultSet extends AbstractSet<MapEntry> {
     @Override
     public int size() {
         int size = 0;
-        for (Collection<Record> resultSet : resultSets) {
+        for (Collection<IndexEntry> resultSet : resultSets) {
             size += resultSet.size();
         }
         return size;

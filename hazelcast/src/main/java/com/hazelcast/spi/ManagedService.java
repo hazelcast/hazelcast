@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Properties;
  */
 public interface ManagedService {
 
-    void init(NodeService nodeService, Properties properties);
+    void init(NodeEngine nodeEngine, Properties properties);
 
     void destroy();
 

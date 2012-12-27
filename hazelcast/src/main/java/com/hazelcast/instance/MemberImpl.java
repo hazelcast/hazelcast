@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,15 +32,15 @@ import java.util.logging.Level;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, DataSerializable {
 
-    protected boolean localMember;
-    protected Address address;
-    protected NodeType nodeType;
-    protected String uuid;
-    protected transient long lastRead = 0;
-    protected transient long lastWrite = 0;
-    @SuppressWarnings("VolatileLongOrDoubleField")
-    protected transient volatile long lastPing = 0;
-    private volatile transient ILogger logger;
+    private boolean localMember;
+    private Address address;
+    private NodeType nodeType;
+    private String uuid;
+
+    private transient volatile long lastRead = 0;
+    private transient volatile long lastWrite = 0;
+    private transient volatile long lastPing = 0;
+    private transient volatile ILogger logger;
 
     public MemberImpl() {
     }

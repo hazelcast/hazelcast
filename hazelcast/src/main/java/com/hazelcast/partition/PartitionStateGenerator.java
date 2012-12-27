@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public interface PartitionStateGenerator {
     PartitionInfo[] reArrange(final PartitionInfo[] currentState,
                               final Collection<Member> members,
                               final int partitionCount,
-                              final List<MigrationRequestOperation> lostPartitionTasksList,
-                              final List<MigrationRequestOperation> immediateTasksList,
-                              final List<MigrationRequestOperation> scheduledTasksList);
+                              final List<MigrationInfo> lostPartitionMigrations,
+                              final List<MigrationInfo> immediateMigrations,
+                              final List<MigrationInfo> scheduledMigrations);
 }

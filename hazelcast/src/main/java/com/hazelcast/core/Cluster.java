@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.core;
+
+import com.hazelcast.nio.Address;
 
 import java.util.Set;
 
@@ -46,6 +48,8 @@ public interface Cluster {
      * @return current members of the cluster
      */
     Set<Member> getMembers();
+
+    Member getMember(Address address);
 
     /**
      * Returns this Hazelcast instance member

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.ResponseHandler;
 
-public class MapSizeOperation extends AbstractNamedOperation {
+public class MapSizeOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+
+    private transient int size;
 
     public MapSizeOperation(String name) {
         super(name);
@@ -29,9 +31,18 @@ public class MapSizeOperation extends AbstractNamedOperation {
     }
 
     public void run() {
-        ResponseHandler responseHandler = getResponseHandler();
         MapService mapService = (MapService) getService();
-        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        responseHandler.sendResponse(mapPartition.records.size());
+        DefaultRecordStore recordStore = mapService.getMapPartition(getPartitionId(), name);
+        size = recordStore.size();
+    }
+
+    @Override
+    public Object getResponse() {
+        return size;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,48 +21,41 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public abstract class Operation implements Runnable, DataSerializable {
+public abstract class Operation implements DataSerializable {
 
     //serialized
     private String serviceName = null;
-    private int partitionId;
+    private int partitionId = -1;
     private int replicaIndex;
-    private long callId;
-    private boolean validateTarget = false;
+    private long callId = -1;
+    private boolean validateTarget = true;
+
+    private long invocationTime = -1;
+    private long callTimeout = Long.MAX_VALUE;
+
     // injected
-    private transient NodeService nodeService = null;
+    private transient NodeEngine nodeEngine = null;
     private transient Object service;
     private transient Address caller;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
 
-    final public void writeData(DataOutput out) throws IOException {
-        IOUtil.writeNullableString(out, serviceName);
-        out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
-        out.writeLong(callId);
-        out.writeBoolean(validateTarget);
-        writeInternal(out);
-    }
+    public abstract void beforeRun() throws Exception;
 
-    final public void readData(DataInput in) throws IOException {
-        serviceName = IOUtil.readNullableString(in);
-        partitionId = in.readInt();
-        replicaIndex = in.readInt();
-        callId = in.readLong();
-        validateTarget = in.readBoolean();
-        readInternal(in);
-    }
+    public abstract void run() throws Exception;
 
-    protected abstract void writeInternal(DataOutput out) throws IOException;
+    public abstract void afterRun() throws Exception;
 
-    protected abstract void readInternal(DataInput in) throws IOException;
+    public abstract boolean returnsResponse();
+
+    public abstract Object getResponse();
 
     public String getServiceName() {
         return serviceName;
@@ -87,6 +80,10 @@ public abstract class Operation implements Runnable, DataSerializable {
     }
 
     public final Operation setReplicaIndex(int replicaIndex) {
+        if (replicaIndex < 0 || replicaIndex >= PartitionInfo.MAX_REPLICA_COUNT) {
+            throw new IllegalArgumentException("Replica index is out of range [0-"
+                    + (PartitionInfo.MAX_REPLICA_COUNT - 1) + "]");
+        }
         this.replicaIndex = replicaIndex;
         return this;
     }
@@ -95,12 +92,13 @@ public abstract class Operation implements Runnable, DataSerializable {
         return callId;
     }
 
-    public final Operation setCallId(long callId) {
+    // Accessed using OperationAccessor
+    final Operation setCallId(long callId) {
         this.callId = callId;
         return this;
     }
 
-    public boolean shouldValidateTarget() {
+    public boolean validatesTarget() {
         return validateTarget;
     }
 
@@ -109,20 +107,22 @@ public abstract class Operation implements Runnable, DataSerializable {
         return this;
     }
 
-    public final NodeService getNodeService() {
-        return nodeService;
+    public final NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
-    public final Operation setNodeService(NodeService nodeService) {
-        this.nodeService = nodeService;
+    public final Operation setNodeEngine(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
         return this;
     }
 
     public final <T> T getService() {
         if (service == null) {
-            service = ((NodeServiceImpl) nodeService).getService(serviceName);
+            // one might have overridden getServiceName() method...
+            final String name = serviceName != null ? serviceName : getServiceName();
+            service = ((NodeEngineImpl) nodeEngine).getService(name);
             if (service == null) {
-                throw new HazelcastException(serviceName + " not found!");
+                throw new HazelcastException("Service with name '" + name + "' not found!");
             }
         }
         return (T) service;
@@ -159,4 +159,48 @@ public abstract class Operation implements Runnable, DataSerializable {
     public final ResponseHandler getResponseHandler() {
         return responseHandler;
     }
+
+    public final long getInvocationTime() {
+        return invocationTime;
+    }
+
+    // Accessed using OperationAccessor
+    final void setInvocationTime(long invocationTime) {
+        this.invocationTime = invocationTime;
+    }
+
+    public final long getCallTimeout() {
+        return callTimeout;
+    }
+
+    // Accessed using OperationAccessor
+    final void setCallTimeout(long callTimeout) {
+        this.callTimeout = callTimeout;
+    }
+
+    public final void writeData(DataOutput out) throws IOException {
+        IOUtil.writeNullableString(out, serviceName);
+        out.writeInt(partitionId);
+        out.writeInt(replicaIndex);
+        out.writeLong(callId);
+        out.writeBoolean(validateTarget);
+        out.writeLong(invocationTime);
+        out.writeLong(callTimeout);
+        writeInternal(out);
+    }
+
+    public final void readData(DataInput in) throws IOException {
+        serviceName = IOUtil.readNullableString(in);
+        partitionId = in.readInt();
+        replicaIndex = in.readInt();
+        callId = in.readLong();
+        validateTarget = in.readBoolean();
+        invocationTime = in.readLong();
+        callTimeout = in.readLong();
+        readInternal(in);
+    }
+
+    protected abstract void writeInternal(DataOutput out) throws IOException;
+
+    protected abstract void readInternal(DataInput in) throws IOException;
 }

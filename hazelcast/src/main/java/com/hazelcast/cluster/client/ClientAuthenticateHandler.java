@@ -28,7 +28,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -38,7 +38,7 @@ import java.util.logging.Level;
 public class ClientAuthenticateHandler extends ClientCommandHandler {
     ILogger logger;
 
-    public ClientAuthenticateHandler(NodeService node) {
+    public ClientAuthenticateHandler(NodeEngine node) {
         super(node);
     }
 
@@ -53,7 +53,7 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
             }
             credentials = new UsernamePasswordCredentials(args[0], args[1]);
         } else {
-            credentials = (Credentials) node.nodeService.toObject(new Data(protocol.buffers[0].array()));
+            credentials = (Credentials) node.nodeEngine.toObject(new Data(protocol.buffers[0].array()));
         }
         boolean authenticated = doAuthenticate(node, credentials, protocol.conn);
         return authenticated ? protocol.success() : protocol.error(null);
@@ -105,8 +105,8 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
 //            node.clusterService.enqueueAndWait(bind);
             BindOperation bind = new BindOperation(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(), conn.getSocketChannelWrapper().socket().getPort()));
             bind.setConnection(conn);
-            bind.setNodeService(node.nodeService);
-            node.nodeService.execute(bind);
+            bind.setNodeEngine(node.nodeEngine);
+            node.nodeEngine.getOperationService().runOperation(bind);
             ///?????
         }
         return authenticated;

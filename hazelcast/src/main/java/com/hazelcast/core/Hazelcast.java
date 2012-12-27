@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
-        return HazelcastInstanceFactory.newHazelcastInstance(config, null);
+        return HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
     /**
@@ -88,7 +88,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance() {
-        return HazelcastInstanceFactory.newHazelcastInstance(null, null);
+        return HazelcastInstanceFactory.newHazelcastInstance(null);
     }
 
     /**

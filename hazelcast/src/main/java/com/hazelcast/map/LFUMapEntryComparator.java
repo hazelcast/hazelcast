@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.util.Comparator;
 
 public class LFUMapEntryComparator implements Comparator<MapEntry> {
     public int compare(MapEntry r1, MapEntry r2) {
-        final int h1 = r1.getHits();
-        final int h2 = r2.getHits();
+        final int h1 = 0;// r1.getHits();
+        final int h2 = 0;//r2.getHits();
         return h1 > h2 ? 1 : h1 == h2 ? 0 : -1;
     }
 }

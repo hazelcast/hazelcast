@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,16 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.impl.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
-public class MergeClustersOperation extends AbstractOperation {
+public class MergeClustersOperation extends AbstractClusterOperation {
 
     private Address newTargetAddress = null;
 
@@ -41,8 +40,8 @@ public class MergeClustersOperation extends AbstractOperation {
 
     public void run() {
         final Address endpoint = getCaller();
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        final Node node = nodeService.getNode();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final Node node = nodeEngine.getNode();
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
         if (endpoint == null || !endpoint.equals(masterAddress)) {

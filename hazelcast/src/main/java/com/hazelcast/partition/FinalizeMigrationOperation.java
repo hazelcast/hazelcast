@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.spi.*;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
-import com.hazelcast.spi.impl.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.MigrationServiceEvent;
+import com.hazelcast.spi.PartitionLevelOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -29,31 +29,30 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint.*;
-import static com.hazelcast.spi.MigrationServiceEvent.MigrationType.*;
+public class FinalizeMigrationOperation extends AbstractOperation
+        implements PartitionLevelOperation, MigrationCycleOperation {
 
-public class FinalizeMigrationOperation extends AbstractOperation implements PartitionLockFreeOperation {
-
-    private boolean source;     // source of destination
-    private boolean move;       // move or copy
+    private MigrationEndpoint endpoint;     // source of destination
+    private MigrationType type;       // move or copy
+    private int copyBackReplicaIndex;
     private boolean success;
 
     public FinalizeMigrationOperation() {
     }
 
-    public FinalizeMigrationOperation(final boolean source, final boolean move, final boolean success) {
-        this.source = source;
+    public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final MigrationType type,
+                                      final int copyBackReplicaIndex, final boolean success) {
+        this.endpoint = endpoint;
         this.success = success;
-        this.move = move;
+        this.type = type;
+        this.copyBackReplicaIndex = copyBackReplicaIndex;
     }
 
 
     public void run() {
         final Collection<MigrationAwareService> services = getServices();
-        final MigrationEndpoint endpoint = source ? SOURCE : DESTINATION;
-        final MigrationType type = move ? MOVE : COPY;
         final MigrationServiceEvent event = new MigrationServiceEvent(endpoint, getPartitionId(),
-                getReplicaIndex(), type);
+                getReplicaIndex(), type, copyBackReplicaIndex);
         for (MigrationAwareService service : services) {
             try {
                 if (success) {
@@ -62,18 +61,23 @@ public class FinalizeMigrationOperation extends AbstractOperation implements Par
                     service.rollbackMigration(event);
                 }
             } catch (Throwable e) {
-                getNodeService().getLogger(FinalizeMigrationOperation.class.getName()).log(Level.WARNING,
+                getNodeEngine().getLogger(FinalizeMigrationOperation.class.getName()).log(Level.WARNING,
                         "Error while finalizing migration -> " + event, e);
             }
         }
         PartitionService partitionService = getService();
-        partitionService.removeActiveMigration(getPartitionId());
+        MigrationInfo migrationInfo = partitionService.removeActiveMigration(getPartitionId());
+
+        if (success) {
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            nodeEngine.onPartitionMigrate(migrationInfo);
+        }
     }
 
     protected Collection<MigrationAwareService> getServices() {
         Collection<MigrationAwareService> services = new LinkedList<MigrationAwareService>();
-        NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        for (Object serviceObject : nodeService.getServices(MigrationAwareService.class)) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        for (Object serviceObject : nodeEngine.getServices(MigrationAwareService.class)) {
             if (serviceObject instanceof MigrationAwareService) {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 services.add(service);
@@ -83,18 +87,25 @@ public class FinalizeMigrationOperation extends AbstractOperation implements Par
     }
 
     @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         success = in.readBoolean();
-        source = in.readBoolean();
-        move = in.readBoolean();
+        copyBackReplicaIndex = in.readInt();
+        endpoint = MigrationEndpoint.readFrom(in);
+        type = MigrationType.readFrom(in);
     }
 
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(success);
-        out.writeBoolean(source);
-        out.writeBoolean(move);
+        out.writeInt(copyBackReplicaIndex);
+        MigrationEndpoint.writeTo(endpoint, out);
+        MigrationType.writeTo(type, out);
     }
 }

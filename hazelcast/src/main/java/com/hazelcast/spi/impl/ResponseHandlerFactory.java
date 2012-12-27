@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
 
-import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @mdogan 8/2/12
  */
 public final class ResponseHandlerFactory {
 
-    public static void setNoReplyResponseHandler(NodeService nodeservice, Operation op) {
-        op.setResponseHandler(new NoReplyResponseHandler(nodeservice, op));
-    }
+    private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
 
     public static void setLocalResponseHandler(InvocationImpl inv) {
         inv.getOperation().setResponseHandler(createLocalResponseHandler(inv));
@@ -40,68 +40,75 @@ public final class ResponseHandlerFactory {
         return new LocalInvocationResponseHandler(inv);
     }
 
-    public static void setRemoteResponseHandler(NodeService nodeservice, Operation op) {
-        op.setResponseHandler(createRemoteResponseHandler(nodeservice, op));
+    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
+        op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
     }
 
-    public static ResponseHandler createRemoteResponseHandler(NodeService nodeService, Operation op) {
-        return new RemoteInvocationResponseHandler(nodeService, op.getConnection(), op.getPartitionId(), op.getCallId());
-    }
-
-    private static class NoReplyResponseHandler implements ResponseHandler {
-        private final NodeService nodeService;
-        private final Operation operation;
-
-        private NoReplyResponseHandler(NodeService nodeService, Operation operation) {
-            this.nodeService = nodeService;
-            this.operation = operation;
-        }
-
-        public void sendResponse(final Object obj) {
-            if (obj instanceof Throwable) {
-                nodeService.getLogger(getClass().getName())
-                        .log(Level.WARNING, "Error while executing operation: " + operation, (Throwable) obj);
-            } else {
-                throw new IllegalStateException("Can not send response for NoReply operation: "
-                        + operation);
+    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
+        if (op.getCallId() < 0) {
+            if (op.returnsResponse()) {
+                throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
             }
+            return NO_RESPONSE_HANDLER;
+        }
+        return new RemoteInvocationResponseHandler(nodeEngine, op.getConnection(), op.getPartitionId(), op.getCallId());
+    }
+
+    public static ResponseHandler createEmptyResponseHandler() {
+        return NO_RESPONSE_HANDLER;
+    }
+
+    private static class NoResponseHandler implements ResponseHandler {
+        public void sendResponse(final Object obj) {
         }
     }
 
     private static class RemoteInvocationResponseHandler implements ResponseHandler {
 
-        private final NodeService nodeService;
+        private final NodeEngine nodeEngine;
         private final Connection conn;
         private final int partitionId;
         private final long callId;
+        private final AtomicBoolean sent = new AtomicBoolean(false);
 
-        private RemoteInvocationResponseHandler(NodeService nodeService, Connection conn,
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Connection conn,
                                                 int partitionId, long callId) {
-            this.nodeService = nodeService;
+            this.nodeEngine = nodeEngine;
             this.conn = conn;
             this.partitionId = partitionId;
             this.callId = callId;
         }
 
-        public void sendResponse(Object response) {
-            if (!(response instanceof Operation)) {
-                response = new Response(response);
+        public void sendResponse(Object obj) {
+            if (!sent.compareAndSet(false, true)) {
+                throw new IllegalStateException("Response already sent for call: " + callId
+                                                + " to " + conn.getEndPoint());
             }
-            Operation responseOp = (Operation) response;
-            responseOp.setCallId(callId);
-            nodeService.send(responseOp, partitionId, conn);
+            final Operation response;
+            if (obj instanceof Operation) {
+                response = (Operation) obj;
+            } else {
+                response = new Response(obj);
+            }
+            OperationAccessor.setCallId(response, callId);
+            response.setPartitionId(partitionId);
+            nodeEngine.getOperationService().send(response, conn);
         }
     }
 
     private static class LocalInvocationResponseHandler implements ResponseHandler {
 
         private final InvocationImpl invocation;
+        private final AtomicBoolean sent = new AtomicBoolean(false);
 
         private LocalInvocationResponseHandler(InvocationImpl invocation) {
             this.invocation = invocation;
         }
 
         public void sendResponse(Object obj) {
+            if (!sent.compareAndSet(false, true)) {
+                throw new IllegalStateException("Response already sent for invocation: " + invocation);
+            }
             invocation.notify(obj);
         }
     }

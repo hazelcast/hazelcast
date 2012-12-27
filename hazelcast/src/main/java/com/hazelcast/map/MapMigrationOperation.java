@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -32,7 +33,7 @@ import java.util.Map.Entry;
 /**
  * @mdogan 7/24/12
  */
-public class MapMigrationOperation extends Operation {
+public class MapMigrationOperation extends AbstractOperation {
 
     private Map<String, Map<Data, DataRecordEntry>> data;
     private boolean diff;
@@ -44,17 +45,21 @@ public class MapMigrationOperation extends Operation {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         this.diff = diff;
         data = new HashMap<String, Map<Data, DataRecordEntry>>(container.maps.size());
-        for (Entry<String, MapPartition> entry : container.maps.entrySet()) {
+        for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
-            MapPartition mapPartition = entry.getValue();
+            final MapConfig mapConfig = container.getMapConfig(name);
+            if (mapConfig.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+
+            DefaultRecordStore mapPartition = entry.getValue();
             Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(mapPartition.records.size());
-            for (Entry<Data, Record> recordEntry : mapPartition.records.entrySet()) {
+            for (Entry<Data, DefaultRecord> recordEntry : mapPartition.records.entrySet()) {
                 map.put(recordEntry.getKey(), new DataRecordEntry(recordEntry.getValue(), true));
             }
             data.put(name, map);
         }
 
-        // TODO: migrate locks?
     }
 
     public void run() {
@@ -65,15 +70,14 @@ public class MapMigrationOperation extends Operation {
         for (Entry<String, Map<Data, DataRecordEntry>> dataEntry : data.entrySet()) {
             Map<Data, DataRecordEntry> dataMap = dataEntry.getValue();
             final String mapName = dataEntry.getKey();
-            MapPartition partition = mapService.getMapPartition(getPartitionId(), mapName);
+            DefaultRecordStore partition = mapService.getMapPartition(getPartitionId(), mapName);
             for (Entry<Data, DataRecordEntry> entry : dataMap.entrySet()) {
                 final DataRecordEntry recordEntry = entry.getValue();
-                Record record = new DefaultRecord(getPartitionId(),
-                        recordEntry.getKeyData(), recordEntry.getValueData(), -1, -1, mapService.nextId());
+                DefaultRecord record = new DefaultRecord(  mapService.nextId(),
+                        recordEntry.getKeyData(), recordEntry.getValueData(), -1, -1);
                 partition.records.put(entry.getKey(), record);
             }
         }
-        // TODO: migrate locks?
     }
 
     public String getServiceName() {

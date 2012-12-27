@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,18 +32,18 @@ public final class OutOfMemoryErrorDispatcher {
         OutOfMemoryErrorDispatcher.handler = outOfMemoryHandler;
     }
 
-    synchronized static boolean register(HazelcastInstanceImpl factory) {
+    synchronized static boolean register(HazelcastInstanceImpl instance) {
         if (size < instances.length - 1) {
-            instances[size++] = factory;
+            instances[size++] = instance;
             return true;
         }
         return false;
     }
 
-    synchronized static boolean deregister(HazelcastInstanceImpl factory) {
+    synchronized static boolean deregister(HazelcastInstanceImpl instance) {
         for (int index = 0; index < instances.length; index++) {
             HazelcastInstance hz = instances[index];
-            if (hz == factory) {
+            if (hz == instance) {
                 try {
                     int numMoved = size - index - 1;
                     if (numMoved > 0) {
@@ -67,7 +67,10 @@ public final class OutOfMemoryErrorDispatcher {
 
     public synchronized static void onOutOfMemory(OutOfMemoryError oom) {
         if (handler != null) {
-            handler.onOutOfMemory(oom, instances);
+            try {
+                handler.onOutOfMemory(oom, instances);
+            } catch (Throwable ignored) {
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,52 +18,62 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.nio.Data;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
 import com.hazelcast.spi.exception.TransactionException;
-import com.hazelcast.spi.impl.AbstractOperation;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService, ClientProtocolService {
+        TransactionalService, RemoteService, EventPublishingService<EntryEvent, EntryListener>, ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
     private final ILogger logger;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
-    private final NodeService nodeService;
-    private final ConcurrentMap<Long, BlockingQueue<Boolean>> backupCalls = new ConcurrentHashMap<Long, BlockingQueue<Boolean>>(1000);
+    private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
     private Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
+    private final ConcurrentMap<ListenerKey, String> eventRegistrations;
 
-    public MapService(final NodeService nodeService) {
-        this.nodeService = nodeService;
-        this.logger = nodeService.getLogger(MapService.class.getName());
-        partitionContainers = new PartitionContainer[nodeService.getPartitionCount()];
+    private final Set<String> mapsWithTTL;
+
+    public MapService(final NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(MapService.class.getName());
+        partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
+        eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
+        mapsWithTTL = new ConcurrentHashSet<String>();
     }
 
-    public void init(NodeService nodeService, Properties properties) {
-        int partitionCount = nodeService.getPartitionCount();
-        final Config config = nodeService.getConfig();
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        int partitionCount = nodeEngine.getPartitionCount();
+        final Config config = nodeEngine.getConfig();
         for (int i = 0; i < partitionCount; i++) {
-            PartitionInfo partition = nodeService.getPartitionInfo(i);
+            PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-        nodeService.scheduleWithFixedDelay(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
+        mapsWithTTL.add("mapp");
+        nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
 
@@ -79,7 +89,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return partitionContainers[partitionId];
     }
 
-    public MapPartition getMapPartition(int partitionId, String mapName) {
+    public DefaultRecordStore getMapPartition(int partitionId, String mapName) {
         return getPartitionContainer(partitionId).getMapPartition(mapName);
     }
 
@@ -92,7 +102,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeService.getPartitionCount()) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
             return null;
         }
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
@@ -101,9 +111,18 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void commitMigration(MigrationServiceEvent event) {
         logger.log(Level.FINEST, "Committing " + event);
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
-                && event.getMigrationType() == MigrationType.MOVE) {
-            clearPartitionData(event.getPartitionId());
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            if (event.getMigrationType() == MigrationType.MOVE) {
+                clearPartitionData(event.getPartitionId());
+            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
+                final PartitionContainer container = partitionContainers[event.getPartitionId()];
+                for (DefaultRecordStore mapPartition : container.maps.values()) {
+                    final MapConfig mapConfig = container.getMapConfig(mapPartition.name);
+                    if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
+                        mapPartition.clear();
+                    }
+                }
+            }
         }
     }
 
@@ -114,37 +133,31 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
+    public int getMaxBackupCount() {
+        int max = 1;
+        for (PartitionContainer container : partitionContainers) {
+            max = Math.max(max, container.getMaxBackupCount());
+        }
+        return max;
+    }
+
     private void clearPartitionData(final int partitionId) {
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
-        for (MapPartition mapPartition : container.maps.values()) {
+        for (DefaultRecordStore mapPartition : container.maps.values()) {
             mapPartition.clear();
         }
         container.maps.clear();
         container.transactions.clear(); // TODO: not sure?
     }
 
-    public long createNewBackupCallQueue() {
-        long backupCallId = nextId();
-        backupCalls.put(backupCallId, new LinkedBlockingQueue<Boolean>());
-        return backupCallId;
-    }
-
-    public BlockingQueue getBackupCallQueue(long backupCallId) {
-        return backupCalls.get(backupCallId);
-    }
-
-    public void removeBackupCallQueue(long backupCallId) {
-        backupCalls.remove(backupCallId);
-    }
-
     public void prepare(String txnId, int partitionId) throws TransactionException {
-        System.out.println(nodeService.getThisAddress() + " MapService prepare " + txnId);
+        System.out.println(nodeEngine.getThisAddress() + " MapService prepare " + txnId);
         PartitionContainer pc = partitionContainers[partitionId];
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), partitionId,
+            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -152,11 +165,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void commit(String txnId, int partitionId) throws TransactionException {
-        System.out.println(nodeService.getThisAddress() + " MapService commit " + txnId);
+        System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), partitionId,
+            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -164,43 +177,47 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void rollback(String txnId, int partitionId) throws TransactionException {
-        System.out.println(nodeService.getThisAddress() + " MapService commit " + txnId);
+        System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeService.takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), partitionId,
+            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
         }
     }
 
-    public NodeService getNodeService() {
-        return nodeService;
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
     public String getName() {
         return MAP_SERVICE_NAME;
     }
 
-    public MapProxy createProxy(Object... params) {
+    public MapProxy getProxy(Object... params) {
         final String name = String.valueOf(params[0]);
         if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new DataMapProxy(name, this, nodeService);
+            return new DataMapProxy(name, this, nodeEngine);
         }
-        final MapProxy proxy = new ObjectMapProxy(name, this, nodeService);
-        final MapProxy currentProxy = proxies.putIfAbsent(name, proxy);
-        return currentProxy != null ? currentProxy : proxy;
+        MapProxy proxy = proxies.get(name);
+        if (proxy == null) {
+            proxy = new ObjectMapProxy(name, this, nodeEngine);
+            final MapProxy currentProxy = proxies.putIfAbsent(name, proxy);
+            proxy = currentProxy != null ? currentProxy : proxy;
+        }
+        return proxy;
     }
 
     public Collection<ServiceProxy> getProxies() {
         return new HashSet<ServiceProxy>(proxies.values());
     }
 
-    public void memberAdded(final MemberImpl member) {
+    public void memberAdded(final MembershipServiceEvent membershipEvent) {
     }
 
-    public void memberRemoved(final MemberImpl member) {
+    public void memberRemoved(final MembershipServiceEvent membershipEvent) {
         // submit operations to partition threads to;
         // * release locks
         // * rollback transaction
@@ -214,32 +231,54 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
-    private class CleanupTask implements Runnable {
-        public void run() {
-            final List<Integer> ownedPartitions = new ArrayList<Integer>();
-            for (int i = 0; i < partitionContainers.length; i++) {
-                final PartitionInfo partitionInfo = nodeService.getPartitionInfo(i);
-                if (partitionInfo != null && nodeService.getThisAddress().equals(partitionInfo.getOwner())) {
-                    ownedPartitions.add(i);
+    public void publishEvent(String mapName, Data key, EntryEvent event) {
+        Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
+        Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
+        Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
+        for (EventRegistration candidate : candidates) {
+            EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
+            if (filter.eval(key)) {
+                if (filter.isIncludeValue()) {
+                    registrationsWithValue.add(candidate);
+                } else {
+                    registrationsWithoutValue.add(candidate);
                 }
             }
-            final CountDownLatch latch = new CountDownLatch(ownedPartitions.size());
-            for (Integer partitionId : ownedPartitions) {
-                Operation op = new AbstractOperation() {
-                    public void run() {
-                        try {
-                            getPartitionContainer(getPartitionId()).invalidateExpiredScheduledOps();
-                        } finally {
-                            latch.countDown();
-                        }
-                    }
-                };
-                op.setPartitionId(partitionId).setValidateTarget(false);
-                nodeService.runLocally(op);
-            }
-            try {
-                latch.await(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
+        }
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
+    }
+
+    public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
+        EventRegistration registration = nodeEngine.getEventService().registerListener(MAP_SERVICE_NAME, mapName, eventFilter, entryListener);
+        eventRegistrations.put(new ListenerKey(entryListener, ((EntryEventFilter) eventFilter).getKey()), registration.getId());
+    }
+
+    public void removeEventListener(EntryListener entryListener, String mapName, Object key) {
+        String registrationId = eventRegistrations.get(new ListenerKey(entryListener, key));
+        nodeEngine.getEventService().deregisterListener(MAP_SERVICE_NAME, mapName, registrationId);
+    }
+
+    public void dispatchEvent(EntryEvent event, EntryListener listener) {
+        switch (event.getEventType()) {
+            case ADDED:
+                listener.entryAdded(event);
+                break;
+            case EVICTED:
+                listener.entryEvicted(event);
+                break;
+            case UPDATED:
+                listener.entryUpdated(event);
+                break;
+            case REMOVED:
+                listener.entryRemoved(event);
+                break;
+        }
+    }
+
+    private class CleanupTask implements Runnable {
+        public void run() {
+            for (String mapname : mapsWithTTL) {
             }
         }
     }

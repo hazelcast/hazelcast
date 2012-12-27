@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package com.hazelcast.partition;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 /**
  * @mdogan 8/11/12
  */
@@ -25,7 +29,18 @@ public enum MigrationStatus {
     COMPLETED(1),
     FAILED(-1);
 
-    public static MigrationStatus get(byte code) {
+    private final byte code;
+
+    private MigrationStatus(final int code) {
+        this.code = (byte) code;
+    }
+
+    public static void writeTo(MigrationStatus status, DataOutput out) throws IOException {
+        out.writeByte(status.code);
+    }
+
+    public static MigrationStatus readFrom(DataInput in) throws IOException {
+        final byte code = in.readByte();
         switch (code) {
             case 0:
                 return STARTED;
@@ -35,15 +50,5 @@ public enum MigrationStatus {
                 return FAILED;
         }
         return null;
-    }
-
-    private final byte code;
-
-    private MigrationStatus(final int code) {
-        this.code = (byte) code;
-    }
-
-    public byte getCode() {
-        return code;
     }
 }

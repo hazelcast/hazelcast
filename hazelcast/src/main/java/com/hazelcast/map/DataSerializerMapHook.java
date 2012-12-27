@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,9 @@ public final class DataSerializerMapHook implements DataSerializerHook {
                 return new PutOperation();
             }
         });
-        factories.put(UpdateResponse.class.getName(), new DataSerializableFactory() {
+        factories.put(RemoveOperation.class.getName(), new DataSerializableFactory() {
             public DataSerializable create() {
-                return new UpdateResponse();
-            }
-        });
-        factories.put(AsyncBackupResponse.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new AsyncBackupResponse();
+                return new RemoveOperation();
             }
         });
         factories.put(GenericBackupOperation.class.getName(), new DataSerializableFactory() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class PartitionInfo {
-    public static final int MAX_REPLICA_COUNT = MapConfig.MAX_BACKUP_COUNT + 1;
+    public static final int MAX_REPLICA_COUNT = 7;
 
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
@@ -71,7 +70,7 @@ public class PartitionInfo {
     }
 
     public Address getReplicaAddress(int index) {
-        return (addresses != null && addresses.length() > index)
+        return (addresses.length() > index)
                 ? addresses.get(index) : null;
     }
 
@@ -99,22 +98,6 @@ public class PartitionInfo {
             }
         }
         return false;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Partition [")
-                .append(partitionId).append("]{\n");
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            Address address = addresses.get(i);
-            if (address != null) {
-                sb.append('\t');
-                sb.append(i).append(":").append(address);
-                sb.append("\n");
-            }
-        }
-        sb.append("}");
-        return sb.toString();
     }
 
     boolean onDeadAddress(Address deadAddress) {
@@ -167,5 +150,21 @@ public class PartitionInfo {
             result = 31 * result + (address != null ? address.hashCode() : 0);
         }
         return result;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Partition [")
+                .append(partitionId).append("]{\n");
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            Address address = addresses.get(i);
+            if (address != null) {
+                sb.append('\t');
+                sb.append(i).append(":").append(address);
+                sb.append("\n");
+            }
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }

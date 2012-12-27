@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.nio.Address;
 
 import java.util.Set;
 
@@ -37,6 +38,10 @@ public class ClusterProxy implements Cluster {
 
     public Set<Member> getMembers() {
         return clusterService.getMembers();
+    }
+
+    public Member getMember(Address address) {
+        return clusterService.getMember(address);
     }
 
     public long getClusterTime() {

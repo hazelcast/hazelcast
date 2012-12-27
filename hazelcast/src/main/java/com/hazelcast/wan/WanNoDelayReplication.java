@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         this.groupName = groupName;
         this.password = password;
         addressQueue.addAll(Arrays.asList(targets));
-        node.nodeService.execute(this);
+        node.nodeEngine.getExecutionService().execute(this);
     }
 
     /**
@@ -62,7 +62,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
      */
     public void recordUpdated(Record record) {
         DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
-        RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.getName()));
+        RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.toString()));
         if (!q.offer(ru)) {
             q.poll();
             q.offer(ru);
@@ -137,9 +137,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         Operation authorizationCall = new AuthorizationOperation(groupName, groupPassword);
-        Future<Boolean> future = node.nodeService.createInvocationBuilder(WanReplicationService.SERVICE_NAME,
-                authorizationCall, -1)
-                .setTarget(target).setTryCount(1).build().invoke();
+        Future<Boolean> future = node.nodeEngine.getOperationService().createInvocationBuilder(WanReplicationService.SERVICE_NAME,
+                authorizationCall, target).setTryCount(1).build().invoke();
         try {
             return future.get();
         } catch (Exception ignored) {

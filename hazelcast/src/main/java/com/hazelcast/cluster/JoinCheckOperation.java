@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.Response;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -28,9 +27,11 @@ import java.io.IOException;
 /**
  * @mdogan 8/2/12
  */
-public class JoinCheckOperation extends Operation implements JoinOperation {
+public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
     private JoinInfo joinInfo;
+
+    private transient JoinInfo response;
 
     public JoinCheckOperation() {
     }
@@ -41,8 +42,8 @@ public class JoinCheckOperation extends Operation implements JoinOperation {
 
     public void run() {
         final ClusterService service = getService();
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        final Node node = nodeService.getNode();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final Node node = nodeEngine.getNode();
         boolean ok = false;
         if (joinInfo != null && node.joined() && node.isActive()) {
             try {
@@ -51,10 +52,18 @@ public class JoinCheckOperation extends Operation implements JoinOperation {
             }
         }
         if (ok) {
-            getResponseHandler().sendResponse(new Response(node.createJoinInfo()));
-        } else {
-            getResponseHandler().sendResponse(null);
+            response = node.createJoinInfo();
         }
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override

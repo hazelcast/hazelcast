@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,9 +204,9 @@ public abstract class AbstractJoiner implements Joiner {
     protected void sendClusterMergeToOthers(final Address targetAddress) {
         for (MemberImpl member : node.getClusterService().getMemberList()) {
             if (!member.localMember()) {
-                node.nodeService.createInvocationBuilder(ClusterService.SERVICE_NAME,
-                        new MergeClustersOperation(targetAddress), -1)
-                        .setTarget(member.getAddress()).setTryCount(1).build().invoke();
+                node.nodeEngine.getOperationService().createInvocationBuilder(ClusterService.SERVICE_NAME,
+                        new MergeClustersOperation(targetAddress), member.getAddress())
+                        .setTryCount(1).build().invoke();
             }
         }
     }

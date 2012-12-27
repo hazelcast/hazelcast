@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,12 +48,13 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     public PartitionInfo[] reArrange(PartitionInfo[] currentState, Collection<Member> members, int partitionCount,
-                                     List<MigrationRequestOperation> lostPartitionTasksList, List<MigrationRequestOperation> immediateTasksList,
-                                     List<MigrationRequestOperation> scheduledTasksList) {
+                                     final List<MigrationInfo> lostPartitionMigrations,
+                                     final List<MigrationInfo> immediateMigrations,
+                                     final List<MigrationInfo> scheduledMigrations) {
         final LinkedList<NodeGroup> groups = createNodeGroups(memberGroupFactory.createMemberGroups(members));
         if (groups.size() == 0) return currentState;
         PartitionInfo[] newState = arrange(groups, partitionCount, new CopyStateInitializer(currentState));
-        finalizeArrangement(currentState, newState, lostPartitionTasksList, immediateTasksList, scheduledTasksList);
+        finalizeArrangement(currentState, newState, lostPartitionMigrations, immediateMigrations, scheduledMigrations);
         return newState;
     }
 
@@ -82,71 +83,76 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return state;
     }
 
-    private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState, List<MigrationRequestOperation> lostPartitionTasksList,
-                                     List<MigrationRequestOperation> immediateTasksList, List<MigrationRequestOperation> scheduledTasksList) {
+    private void finalizeArrangement(PartitionInfo[] currentState, PartitionInfo[] newState,
+                                     final List<MigrationInfo> lostPartitionMigrations,
+                                     final List<MigrationInfo> immediateMigrations,
+                                     final List<MigrationInfo> scheduledMigrations) {
         final int partitionCount = currentState.length;
         // hold migration tasks related to a partition temporarily
-        final List<MigrationRequestOperation> partitionMigrationTasks = new LinkedList<MigrationRequestOperation>();
+        final List<MigrationInfo> partitionMigrationTasks = new LinkedList<MigrationInfo>();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             PartitionInfo currentPartition = currentState[partitionId];
             PartitionInfo newPartition = newState[partitionId];
             for (int replicaIndex = 0; replicaIndex < PartitionInfo.MAX_REPLICA_COUNT; replicaIndex++) {
                 Address currentOwner = currentPartition.getReplicaAddress(replicaIndex);
                 Address newOwner = newPartition.getReplicaAddress(replicaIndex);
-                MigrationRequestOperation op = null;
+                MigrationInfo op = null;
                 if (currentOwner != null && newOwner != null && !currentOwner.equals(newOwner)) {
                     // migration owner or backup
-                    op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, true);
+                    op = new MigrationInfo(partitionId, replicaIndex, MigrationType.MOVE, currentOwner, newOwner);
+//                    op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, true);
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
                     currentOwner = currentPartition.getOwner();
-                    boolean selfCopy = false;
+                    boolean copyBack = false;
                     // an earlier level replica of this partition may be migrated from
                     // target of this copy task. if so, to avoid copy back partition data after migration,
                     // set partition's replica owner to just after earlier replica is migrated.
-                    ListIterator<MigrationRequestOperation> iter = partitionMigrationTasks.listIterator(partitionMigrationTasks.size());
+                    ListIterator<MigrationInfo> iter = partitionMigrationTasks.listIterator(partitionMigrationTasks.size());
                     while (iter.hasPrevious()) {
-                        MigrationRequestOperation task = iter.previous();
+                        MigrationInfo task = iter.previous();
                         // task to be attached to must be a migration, not a copy of a backup!
-                        if (task.isMigration() && newOwner.equals(task.getFromAddress())) {
-                            selfCopy = true;
-                            task.setSelfCopyReplicaIndex(replicaIndex);
+                        if (task.getMigrationType() == MigrationType.MOVE && newOwner.equals(task.getFromAddress())) {
+                            copyBack = true;
+                            task.setCopyBackReplicaIndex(replicaIndex);
                             break;
                         }
                     }
-                    if (!selfCopy) {
+                    if (!copyBack) {
                         // currentOwner set here is not used on operation, just for an info.
                         // actual currentOwner will be determined just before copy.
-                        op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, false);
+                        op = new MigrationInfo(partitionId, replicaIndex, MigrationType.COPY, currentOwner, newOwner);
+//                        op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, false);
                     }
                 } else if (currentOwner != null && newOwner == null) {
                     // A member is dead, this replica should not have an owner!
-                    immediateTasksList.add(new MigrationRequestOperation(partitionId, currentOwner, null, replicaIndex, false));
+                    immediateMigrations.add(new MigrationInfo(partitionId, replicaIndex, MigrationType.COPY,
+                            currentOwner, null));
                 }
                 if (op != null) {
                     partitionMigrationTasks.add(op);
                     if (replicaIndex == 0 && currentOwner == null) {
-                        lostPartitionTasksList.add(op);
+                        lostPartitionMigrations.add(op);
                     } else if (replicaIndex == 0 && currentOwner != null
                             && currentOwner.equals(newPartition.getReplicaAddress(1))) {
-                        immediateTasksList.add(op);
+                        immediateMigrations.add(op);
                     } else if (replicaIndex == 1 && currentPartition.getReplicaAddress(1) == null) {
-                        immediateTasksList.add(op);
+                        immediateMigrations.add(op);
                     } else {
-                        scheduledTasksList.add(op);
+                        scheduledMigrations.add(op);
                     }
                 }
             }
             partitionMigrationTasks.clear();
         }
-        arrangeScheduledTasks(scheduledTasksList);
+        arrangeScheduledTasks(scheduledMigrations);
     }
 
-    private void arrangeScheduledTasks(final List<MigrationRequestOperation> scheduledTasksList) {
+    private void arrangeScheduledTasks(final List<MigrationInfo> scheduledMigrations) {
         // hope list is random access
-        Collections.shuffle(scheduledTasksList);
-        Collections.sort(scheduledTasksList, new Comparator<MigrationRequestOperation>() {
-            public int compare(final MigrationRequestOperation t1, final MigrationRequestOperation t2) {
+        Collections.shuffle(scheduledMigrations);
+        Collections.sort(scheduledMigrations, new Comparator<MigrationInfo>() {
+            public int compare(final MigrationInfo t1, final MigrationInfo t2) {
                 if (t1.getReplicaIndex() == t2.getReplicaIndex()) {
                     return 0;
                 } else if (t1.getReplicaIndex() <= 1 && t2.getReplicaIndex() <= 1) {

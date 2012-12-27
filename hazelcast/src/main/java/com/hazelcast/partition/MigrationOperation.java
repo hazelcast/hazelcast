@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.spi.*;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationEndpoint;
-import com.hazelcast.spi.MigrationServiceEvent.MigrationType;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.impl.AbstractOperation;
-import com.hazelcast.spi.impl.NodeServiceImpl;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.MigrationServiceEvent;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -33,22 +31,19 @@ import java.util.logging.Level;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-public class MigrationOperation extends AbstractOperation {
-    private boolean move;
-    private Collection<Operation> tasks;
+public class MigrationOperation extends BaseMigrationOperation {
+
+    private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ErrorResponseHandler();
+
+    private transient Collection<Operation> tasks;
     private byte[] bytesRecordSet;
-    private Address from;
     private int taskCount;
 
     public MigrationOperation() {
     }
 
-    public MigrationOperation(int partitionId, int replicaIndex, boolean move,
-                              Collection<Operation> tasks, Address from) throws IOException {
-        super();
-        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        this.move = move;
-        this.from = from;
+    public MigrationOperation(MigrationInfo migrationInfo, Collection<Operation> tasks) throws IOException {
+        super(migrationInfo);
         this.tasks = tasks;
         this.taskCount = tasks.size();
         ByteArrayOutputStream bos = new ByteArrayOutputStream(8192 * taskCount);
@@ -79,65 +74,73 @@ public class MigrationOperation extends AbstractOperation {
             if (taskCount != tasks.size()) {
                 getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
                         "expected-count: " + size + ", actual-count: " + tasks.size() +
-                        "\nfrom: " + from + ", partition: " + getPartitionId()
+                        "\nfrom: " + migrationInfo.getFromAddress() + ", partition: " + getPartitionId()
                         + ", replica: " + getReplicaIndex());
             }
-            final boolean result = runMigrationTasks();
-            getResponseHandler().sendResponse(result);
+            success = runMigrationTasks();
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof IllegalStateException) {
                 level = Level.FINEST;
             }
             getLogger().log(level, e.getMessage(), e);
-            getResponseHandler().sendResponse(Boolean.FALSE);
+            success = false;
         } finally {
             IOUtil.closeResource(in);
         }
     }
 
+    @Override
+    public Object getResponse() {
+        return success;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
     private boolean runMigrationTasks() {
         boolean error = false;
-        final NodeServiceImpl nodeService = (NodeServiceImpl) getNodeService();
-        final MigrationType migrationType = move ? MigrationType.MOVE : MigrationType.COPY;
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final PartitionService partitionService = getService();
-        partitionService.addActiveMigration(new MigrationInfo(getPartitionId(), getReplicaIndex(), move,
-                from, nodeService.getThisAddress()));
+        partitionService.addActiveMigration(migrationInfo);
 
         for (Operation op : tasks) {
             try {
-                nodeService.setOperationContext(op, op.getServiceName(), from, -1).setPartitionId(getPartitionId());
-                ResponseHandlerFactory.setNoReplyResponseHandler(nodeService, op);
+                op.setNodeEngine(nodeEngine).setCaller(migrationInfo.getFromAddress())
+                        .setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
+                op.setResponseHandler(ERROR_RESPONSE_HANDLER);
                 MigrationAwareService service = op.getService();
-                service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, getPartitionId(),
-                        getReplicaIndex(), migrationType));
+                service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, migrationInfo));
+                op.beforeRun();
                 op.run();
+                op.afterRun();
             } catch (Throwable e) {
                 error = true;
-                getLogger().log(Level.SEVERE, e.getMessage(), e);
+                getLogger().log(Level.SEVERE, "While executing " + op, e);
                 break;
             }
         }
         return !error;
     }
 
-    private ILogger getLogger() {
-        return getNodeService().getLogger(MigrationOperation.class.getName());
+    private static class ErrorResponseHandler implements ResponseHandler {
+        public void sendResponse(final Object obj) {
+            throw new HazelcastException("Migration operations can not send response!");
+        }
     }
 
     public void writeInternal(DataOutput out) throws IOException {
-        out.writeBoolean(move);
+        super.writeInternal(out);
         out.writeInt(taskCount);
-        from.writeData(out);
         out.writeInt(bytesRecordSet.length);
         out.write(bytesRecordSet);
     }
 
     public void readInternal(DataInput in) throws IOException {
-        move = in.readBoolean();
+        super.readInternal(in);
         taskCount = in.readInt();
-        from = new Address();
-        from.readData(in);
         int size = in.readInt();
         bytesRecordSet = new byte[size];
         in.readFully(bytesRecordSet);
@@ -146,11 +149,10 @@ public class MigrationOperation extends AbstractOperation {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("MigrationOperation");
+        sb.append(getClass().getName());
         sb.append("{partitionId=").append(getPartitionId());
         sb.append(", replicaIndex=").append(getReplicaIndex());
-        sb.append(", move=").append(move);
-        sb.append(", from=").append(from);
+        sb.append(", migration=").append(migrationInfo);
         sb.append(", taskCount=").append(taskCount);
         sb.append('}');
         return sb.toString();

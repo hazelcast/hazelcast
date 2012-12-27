@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -24,13 +24,12 @@
       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
 
     <para>
-    One of the coolest new futures of Java 1.5 is the Executor framework, which allows you to asynchronously execute
+    One of the coolest features of Java 1.5 is the Executor framework, which allows you to asynchronously execute
     your tasks, logical units of works, such as database query, complex calculation, image rendering etc. So one nice
     way of executing such tasks would be running them asynchronously and doing other things meanwhile. When ready, get
     the result and move on. If execution of the task takes longer than expected, you may consider canceling the task
     execution. In Java Executor framework, tasks are implemented as
-    <literal>java.util.concurrent.Callable</literal>
-    and<literal>java.util.Runnable</literal>.
+    <literal>java.util.concurrent.Callable</literal> and <literal>java.util.Runnable</literal>.
 
     <programlisting language="java"><![CDATA[import java.util.concurrent.Callable;
 import java.io.Serializable;
@@ -65,8 +64,7 @@ public class Echo implements Callable<String>, Serializable {
     Executing a task by using executor framework is very straight forward. Simply obtain a
     <literal>ExecutorService</literal>
     instance, generally via
-    <literal>Executors</literal>
-    and submit the task which returns a<literal>Future</literal>. After executing task, you don't have to wait for
+    <literal>Executors</literal> and submit the task which returns a <literal>Future</literal>. After executing task, you don't have to wait for
     execution to complete, you can process other things and when ready use the future object to retrieve the result as
     show in code below.
 

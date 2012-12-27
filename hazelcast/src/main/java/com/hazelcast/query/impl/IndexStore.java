@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,20 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Record;
 import com.hazelcast.query.PredicateType;
 
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 public interface IndexStore {
     void getSubRecordsBetween(MultiResultSet results, Long from, Long to);
 
     void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue);
 
-    void newRecordIndex(Long newValue, Record record);
+    void newRecordIndex(Long newValue, IndexEntry record);
 
     void removeRecordIndex(Long oldValue, Long recordId);
 
     Set<MapEntry> getRecords(Long value);
 
     void getRecords(MultiResultSet results, Set<Long> values);
-
-    ConcurrentMap<Long, ConcurrentMap<Long, Record>> getMapRecords();
 }

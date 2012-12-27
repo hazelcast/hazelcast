@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -27,8 +27,11 @@
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import com.hazelcast.config.Config;
 
-BlockingQueue<MyTask> q = Hazelcast.getQueue("tasks");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+BlockingQueue<MyTask> q = hz.getQueue("tasks");
 q.put(new MyTask());
 MyTask task = q.take();
 

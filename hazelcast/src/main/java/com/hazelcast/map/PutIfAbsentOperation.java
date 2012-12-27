@@ -16,14 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class PutIfAbsentOperation extends BasePutOperation {
 
-    boolean absent = true;
 
     public PutIfAbsentOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, txnId, ttl);
@@ -32,51 +30,27 @@ public class PutIfAbsentOperation extends BasePutOperation {
     public PutIfAbsentOperation() {
     }
 
-    @Override
-    void initFlags() {
-        // use default flags
-    }
 
-
-    protected void prepareRecord() {
-        record = mapPartition.records.get(dataKey);
-        if (record == null) {
-            load();
-            if (absent) {
-                record = new DefaultRecord(getPartitionId(), dataKey, dataValue, -1, -1, mapService.nextId());
-                mapPartition.records.put(dataKey, record);
-                record.setActive();
-                record.setDirty(true);
-            }
-        } else {
-            oldValueData = record.getValueData();
-            absent = false;
-        }
-    }
-
-    protected void load() {
-        if (mapPartition.loader != null) {
-            if (key == null) {
-                key = toObject(dataKey);
-            }
-            Object oldValue = mapPartition.loader.load(key);
-            absent = oldValue == null;
-        }
-    }
-
-    public void doRun() {
-        init();
-        // todo transaction should be written relating to if absent
+    public void doOp() {
         if (prepareTransaction()) {
             return;
         }
-        prepareRecord();
-        if (absent) {
-            store();
-            sendBackups();
-        }
+        dataOldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl);
+    }
 
-        sendResponse();
+    @Override
+    public Object getResponse() {
+        return dataOldValue;
+    }
+
+    public boolean shouldBackup() {
+        return true;
+    }
+
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
     }
 
 

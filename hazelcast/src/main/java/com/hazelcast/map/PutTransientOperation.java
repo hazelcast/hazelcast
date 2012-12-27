@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.nio.Data;
 
 public class PutTransientOperation extends BasePutOperation {
@@ -27,18 +28,30 @@ public class PutTransientOperation extends BasePutOperation {
     public PutTransientOperation() {
     }
 
-    @Override
-    void initFlags() {
-        STORE = false;
-        LOAD_OLD = false;
-        RETURN_OLD_VALUE = false;
+    public void doOp() {
+        if (prepareTransaction()) {
+            return;
+        }
+        recordStore.putTransient(dataKey, dataValue, ttl);
     }
 
+    @Override
+    public Object getResponse() {
+        return null;
+    }
 
+    public boolean shouldBackup() {
+        return true;
+    }
 
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
+    }
 
     @Override
     public String toString() {
         return "PutTransientOperation{" + name + "}";
     }
+
 }

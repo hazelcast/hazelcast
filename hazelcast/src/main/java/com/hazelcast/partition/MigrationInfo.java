@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,28 +29,35 @@ public class MigrationInfo implements DataSerializable {
     private Address from;
     private Address to;
     private int replicaIndex;
-    private boolean move;    // move or copy
+    private MigrationType migrationType;
+    private int copyBackReplicaIndex = -1;
 
     private transient long creationTime = Clock.currentTimeMillis();
 
     public MigrationInfo() {
     }
 
-    public MigrationInfo(int partitionId, int replicaIndex, boolean move, Address from, Address to) {
+    public MigrationInfo(int partitionId, int replicaIndex, MigrationType migrationType,
+                         Address from, Address to) {
+        this(partitionId, replicaIndex, migrationType, from, to, -1);
+    }
+
+    public MigrationInfo(int partitionId, int replicaIndex, MigrationType migrationType,
+                         Address from, Address to, int copyBackReplicaIndex) {
         this.partitionId = partitionId;
         this.from = from;
         this.to = to;
         this.replicaIndex = replicaIndex;
-        this.move = move;
-    }
-
-    public MigrationInfo(MigrationInfo migrationInfo) {
-        this(migrationInfo.partitionId, migrationInfo.replicaIndex,
-                migrationInfo.move, migrationInfo.from, migrationInfo.to);
+        this.copyBackReplicaIndex = copyBackReplicaIndex;
+        this.migrationType = migrationType;
     }
 
     public Address getFromAddress() {
         return from;
+    }
+
+    void setFromAddress(Address fromAddress) {
+        this.from = fromAddress;
     }
 
     public Address getToAddress() {
@@ -65,8 +72,16 @@ public class MigrationInfo implements DataSerializable {
         return partitionId;
     }
 
-    public boolean isMoving() {
-        return move;
+    public int getCopyBackReplicaIndex() {
+        return copyBackReplicaIndex;
+    }
+
+    void setCopyBackReplicaIndex(int copyBackReplicaIndex) {
+        this.copyBackReplicaIndex = copyBackReplicaIndex;
+    }
+
+    public MigrationType getMigrationType() {
+        return migrationType;
     }
 
     public long getCreationTime() {
@@ -76,7 +91,8 @@ public class MigrationInfo implements DataSerializable {
     public void writeData(DataOutput out) throws IOException {
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
-        out.writeBoolean(move);
+        out.writeInt(copyBackReplicaIndex);
+        MigrationType.writeTo(migrationType, out);
         boolean hasFrom = from != null;
         out.writeBoolean(hasFrom);
         if (hasFrom) {
@@ -88,7 +104,8 @@ public class MigrationInfo implements DataSerializable {
     public void readData(DataInput in) throws IOException {
         partitionId = in.readInt();
         replicaIndex = in.readInt();
-        move = in.readBoolean();
+        copyBackReplicaIndex = in.readInt();
+        migrationType = MigrationType.readFrom(in);
         boolean hasFrom = in.readBoolean();
         if (hasFrom) {
             from = new Address();
@@ -105,9 +122,10 @@ public class MigrationInfo implements DataSerializable {
 
         final MigrationInfo that = (MigrationInfo) o;
 
-        if (move != that.move) return false;
+        if (copyBackReplicaIndex != that.copyBackReplicaIndex) return false;
         if (partitionId != that.partitionId) return false;
         if (replicaIndex != that.replicaIndex) return false;
+        if (migrationType != that.migrationType) return false;
 
         return true;
     }
@@ -116,7 +134,8 @@ public class MigrationInfo implements DataSerializable {
     public int hashCode() {
         int result = partitionId;
         result = 31 * result + replicaIndex;
-        result = 31 * result + (move ? 1 : 0);
+        result = 31 * result + copyBackReplicaIndex;
+        result = 31 * result + (migrationType != null ? migrationType.hashCode() : 0);
         return result;
     }
 
@@ -124,11 +143,13 @@ public class MigrationInfo implements DataSerializable {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("MigrationInfo");
-        sb.append("{partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append(", move=").append(move);
+        sb.append("{copyBackReplicaIndex=").append(copyBackReplicaIndex);
+        sb.append(", partitionId=").append(partitionId);
         sb.append(", from=").append(from);
         sb.append(", to=").append(to);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", migrationType=").append(migrationType);
+        sb.append(", creationTime=").append(creationTime);
         sb.append('}');
         return sb.toString();
     }

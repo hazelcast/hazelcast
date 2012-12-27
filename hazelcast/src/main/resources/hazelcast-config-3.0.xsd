@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -81,8 +81,9 @@
     <xs:element name="queue">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="max-size-per-jvm"/>
-                <xs:element ref="backing-map-ref"/>
+                <xs:element ref="queue-max-size"/>
+                <xs:element ref="queue-sync-backup-count"/>
+                <xs:element ref="queue-async-backup-count"/>
                 <xs:element ref="item-listeners" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
@@ -429,12 +430,32 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="max-size-per-jvm">
+    <xs:element name="queue-max-size">
         <xs:annotation>
             <xs:documentation>
                 Maximum size of the queue. When a JVM's local queue size reaches the maximum,
                 all put/offer operations will get blocked until the queue size of the JVM goes down below the maximum.
                 Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:short"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="queue-sync-backup-count">
+        <xs:annotation>
+            <xs:documentation>
+                Sync Backup Count
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:short"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="queue-async-backup-count">
+        <xs:annotation>
+            <xs:documentation>
+                Async Backup Count
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>

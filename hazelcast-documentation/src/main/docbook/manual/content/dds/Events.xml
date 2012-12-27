@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -37,14 +37,17 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryEvent; 
+import com.hazelcast.config.Config;
 
 public class Sample implements ItemListener, EntryListener {
 
     public static void main(String[] args) { 
         Sample sample = new Sample();
-        Queue queue = Hazelcast.getQueue ("default"); 
-        Map   map   = Hazelcast.getMap   ("default"); 
-        Set   set   = Hazelcast.getSet   ("default"); 
+        Config cfg = new Config();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+        IQueue queue = hz.getQueue ("default");
+        IMap   map   = hz.getMap   ("default");
+        ISet   set   = hz.getSet   ("default");
         //listen for all added/updated/removed entries
         queue.addItemListener(sample, true);
         set.addItemListener  (sample, true); 

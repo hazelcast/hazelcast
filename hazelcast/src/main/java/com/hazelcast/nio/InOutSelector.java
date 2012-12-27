@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.RuntimeInterruptedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
@@ -30,28 +31,29 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public final class InOutSelector implements Runnable {
-
-    protected final ILogger logger;
-
-    protected final Selector selector;
-
-    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
-
-    protected final ConnectionManager connectionManager;
-
-    private final int waitTime;
-
-    protected boolean live = true;
+public final class InOutSelector extends Thread implements Runnable {
 
     final static long TEN_SECOND_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
+    private final ILogger logger;
+
+    private final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
+
+    private final ConnectionManager connectionManager;
+
+    private final int waitTime;
+
+    private boolean live = true;
+
     private long lastPublish = 0;
 
-    public InOutSelector(ConnectionManager connectionManager) {
+    final Selector selector;
+
+    public InOutSelector(ConnectionManager connectionManager, int id) {
+        super(connectionManager.ioService.getThreadGroup(), connectionManager.ioService.getThreadPrefix() + id);
         this.connectionManager = connectionManager;
-        logger = connectionManager.ioService.getLogger(this.getClass().getName());
-        this.waitTime = 1;
+        this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.waitTime = 5000;  // TODO: This value has significant effect on idle CPU usage!
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();
@@ -73,7 +75,8 @@ public final class InOutSelector implements Runnable {
                     l.countDown();
                 }
             });
-            l.await(5, TimeUnit.SECONDS);
+            interrupt();
+            l.await(3, TimeUnit.SECONDS);
         } catch (Throwable ignored) {
         }
     }
@@ -111,13 +114,14 @@ public final class InOutSelector implements Runnable {
                 }
                 processSelectionQueue();
                 if (!live) return;
+                if (isInterrupted()) {
+                    connectionManager.ioService.handleInterruptedException(this, new RuntimeInterruptedException());
+                    live = false;
+                    return;
+                }
                 int selectedKeyCount;
                 try {
                     selectedKeyCount = selector.select(waitTime);
-                    if (Thread.interrupted()) {
-                        connectionManager.ioService.handleInterruptedException(Thread.currentThread(), new RuntimeException());
-                        return;
-                    }
                 } catch (Throwable exp) {
                     continue;
                 }

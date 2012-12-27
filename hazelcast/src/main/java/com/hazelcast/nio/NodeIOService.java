@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
-import com.hazelcast.spi.ClientProtocolService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,10 +33,12 @@ import java.util.Set;
 
 public class NodeIOService implements IOService {
 
-    final Node node;
+    private final Node node;
+    private final NodeEngineImpl nodeEngine;
 
     public NodeIOService(Node node) {
         this.node = node;
+        this.nodeEngine = node.nodeEngine;
     }
 
     public boolean isActive() {
@@ -97,14 +99,13 @@ public class NodeIOService implements IOService {
         if (member != null) {
             member.didRead();
         }
-        node.nodeService.handleOperation(packet);
+        nodeEngine.handlePacket(packet);
     }
 
     public void handleClientCommand(Protocol p) {
         //TODO command name is not serviceName. A mapper should be introduced.
         node.clientCommandService.handle(p);
     }
-
 
     public TextCommandService getTextCommandService() {
         return node.getTextCommandService();
@@ -119,7 +120,7 @@ public class NodeIOService implements IOService {
     }
 
     public void removeEndpoint(final Address endPoint) {
-        node.nodeService.execute(new Runnable() {
+        nodeEngine.getExecutionService().execute(new Runnable() {
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
@@ -155,7 +156,7 @@ public class NodeIOService implements IOService {
     }
 
     public boolean isSocketBindAny() {
-        return node.groupProperties.SOCKET_BIND_ANY.getBoolean();
+        return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
     }
 
     public boolean isSocketPortAutoIncrement() {
@@ -188,9 +189,9 @@ public class NodeIOService implements IOService {
 
     public void disconnectExistingCalls(final Address deadEndpoint) {
         if (deadEndpoint != null) {
-            node.nodeService.execute(new Runnable() {
+            nodeEngine.getExecutionService().execute(new Runnable() {
                 public void run() {
-                    node.clusterService.disconnectExistingCalls(deadEndpoint);
+                    nodeEngine.onMemberDisconnect(deadEndpoint);
                 }
             });
         }
@@ -218,7 +219,7 @@ public class NodeIOService implements IOService {
     }
 
     public void executeAsync(final Runnable runnable) {
-        node.nodeService.execute(runnable);
+        nodeEngine.getExecutionService().execute(runnable);
     }
 
     public Collection<Integer> getOutboundPorts() {
@@ -227,14 +228,12 @@ public class NodeIOService implements IOService {
                 ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
         final Set<Integer> ports = networkConfig.getOutboundPorts() == null
                 ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
-
         if (portDefinitions.isEmpty() && ports.isEmpty()) {
             return Collections.emptySet(); // means any port
         }
         if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
             return Collections.emptySet(); // means any port
         }
-
         // not checking port ranges...
         for (String portDef : portDefinitions) {
             String[] portDefs = portDef.split("[,; ]");

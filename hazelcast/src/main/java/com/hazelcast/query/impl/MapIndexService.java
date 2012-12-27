@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,38 +52,38 @@ public class MapIndexService {
     }
 
     public void index(Record record) {
-        final Long recordId = record.getId();
-        if (record.isActive()) {
-            final Record anotherRecord = records.putIfAbsent(recordId, record);
-            if (anotherRecord != null) {
-                record = anotherRecord;
-            } else {
-                size.incrementAndGet();
-            }
-        } else {
-            remove(record);
-        }
-        if (indexValue != null) {
-            Long newValueIndex = -1L;
-            if (record.isActive() && record.hasValueData()) {
-                newValueIndex = (long) record.getValueData().hashCode();
-            }
-            indexValue.index(newValueIndex, record);
-        }
-        Long[] indexValues = record.getIndexes();
-        if (indexValues != null && hasIndexedAttributes) {
-            byte[] indexTypes = record.getIndexTypes();
-            if (indexTypes == null || indexValues.length != indexTypes.length) {
-                throw new IllegalArgumentException("index and types don't match " + Arrays.toString(indexTypes));
-            }
-            Collection<Index> indexes = mapIndexes.values();
-            for (Index index : indexes) {
-                if (indexValues.length > index.getAttributeIndex()) {
-                    Long newValue = indexValues[index.getAttributeIndex()];
-                    index.index(newValue, record);
-                }
-            }
-        }
+//        final Long recordId = record.getId();
+//        if (record.isActive()) {
+//            final Record anotherRecord = records.putIfAbsent(recordId, record);
+//            if (anotherRecord != null) {
+//                record = anotherRecord;
+//            } else {
+//                size.incrementAndGet();
+//            }
+//        } else {
+//            remove(record);
+//        }
+//        if (indexValue != null) {
+//            Long newValueIndex = -1L;
+//            if (record.isActive() && record.hasValueData()) {
+//                newValueIndex = (long) record.getValueData().hashCode();
+//            }
+//            indexValue.index(newValueIndex, record);
+//        }
+//        Long[] indexValues = record.getIndexes();
+//        if (indexValues != null && hasIndexedAttributes) {
+//            byte[] indexTypes = record.getIndexTypes();
+//            if (indexTypes == null || indexValues.length != indexTypes.length) {
+//                throw new IllegalArgumentException("index and types don't match " + Arrays.toString(indexTypes));
+//            }
+//            Collection<Index> indexes = mapIndexes.values();
+//            for (Index index : indexes) {
+//                if (indexValues.length > index.getAttributeIndex()) {
+//                    Long newValue = indexValues[index.getAttributeIndex()];
+//                    index.index(newValue, record);
+//                }
+//            }
+//        }
     }
 
     public Collection<Record> getOwnedRecords() {
@@ -186,9 +186,9 @@ public class MapIndexService {
                             Iterator<MapEntry> it = resultSet.iterator();
                             while (it.hasNext()) {
                                 Record record = (Record) it.next();
-                                if (!p.apply(record)) {
-                                    it.remove();
-                                }
+//                                if (!p.apply(record)) {
+//                                    it.remove();
+//                                }
                             }
                         }
                         return resultSet;
@@ -232,7 +232,8 @@ public class MapIndexService {
             }
             // no matching condition yet!
             // return everything.
-            return new SingleResultSet(records);
+//            return new SingleResultSet(records);
+            return null;
         } finally {
             queryContext.setStrong(strong);
         }

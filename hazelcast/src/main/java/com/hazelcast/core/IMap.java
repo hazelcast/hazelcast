@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -550,31 +550,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
     void forceUnlock(K key);
 
     /**
-     * Tries to acquire the lock for the entire map.
-     * The thread that locks the map can do all the operations
-     * but other threads in the cluster cannot operate on the map.
-     * <p>If the lock is not available then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of two things happens:
-     * <ul>
-     * <li>The lock is acquired by the current thread; or
-     * <li>The specified waiting time elapses
-     * </ul>
-     *
-     * @param time     maximum time to wait for the lock
-     * @param timeunit time unit of the <tt>time</tt> argument.
-     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
-     *         if the waiting time elapsed before the lock was acquired.
-     */
-    boolean lockMap(long time, TimeUnit timeunit);
-
-    /**
-     * Unlocks the map. It never blocks and
-     * returns immediately.
-     */
-    void unlockMap();
-
-    /**
      * Adds a local entry listener for this map. Added listener will be only
      * listening for the events (add/remove/update/evict) of the locally owned entries.
      * <p/>
@@ -677,7 +652,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @param key key to evict
      * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
      */
-    boolean evict(Object key);
+    boolean evict(K key);
 
     /**
      * Returns a set clone of the keys contained in this map.

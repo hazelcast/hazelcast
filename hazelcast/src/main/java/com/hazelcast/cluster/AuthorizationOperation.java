@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,17 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class AuthorizationOperation extends Operation implements JoinOperation {
+public class AuthorizationOperation extends AbstractOperation implements JoinOperation {
 
     private String groupName;
     private String groupPassword;
+    private Boolean response = Boolean.TRUE;
 
     public AuthorizationOperation() {
     }
@@ -37,14 +38,22 @@ public class AuthorizationOperation extends Operation implements JoinOperation {
     }
 
     public void run() {
-        GroupConfig groupConfig = getNodeService().getConfig().getGroupConfig();
-        Boolean response = Boolean.TRUE;
+        GroupConfig groupConfig = getNodeEngine().getConfig().getGroupConfig();
         if (!groupName.equals(groupConfig.getName())) {
             response = Boolean.FALSE;
         } else if (!groupPassword.equals(groupConfig.getPassword())) {
             response = Boolean.FALSE;
         }
-        getResponseHandler().sendResponse(response);
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override

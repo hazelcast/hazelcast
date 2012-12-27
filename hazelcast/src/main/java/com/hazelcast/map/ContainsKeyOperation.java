@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.Record;
-import com.hazelcast.map.MapPartition;
-import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
+
+    boolean containsKey;
 
     public ContainsKeyOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -33,8 +32,13 @@ public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
 
     public void run() {
         MapService mapService = (MapService) getService();
-        MapPartition mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        getResponseHandler().sendResponse(mapPartition.records.containsKey(dataKey));
+        DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
+        containsKey = mapPartition.records.containsKey(dataKey);
+    }
+
+    @Override
+    public Object getResponse() {
+        return containsKey;
     }
 
     @Override

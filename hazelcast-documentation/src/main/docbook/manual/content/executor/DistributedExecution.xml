@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -55,30 +55,40 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;   
 import java.util.concurrent.Future;   
 import java.util.Set;
+import com.hazelcast.config.Config;
+
 
 public void echoOnTheMember(String input, Member member) throws Exception {
    FutureTask<String> task = new DistributedTask<String>(new Echo(input), member);
-   ExecutorService executorService = Hazelcast.getExecutorService();
+   Config cfg = new Config();
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+   ExecutorService executorService = hz.getExecutorService();
    executorService.execute(task);
    String echoResult = task.get();
 }
 
 public void echoOnTheMemberOwningTheKey(String input, Object key) throws Exception {
    FutureTask<String> task = new DistributedTask<String>(new Echo(input), key);
-   ExecutorService executorService = Hazelcast.getExecutorService();
+   Config cfg = new Config();
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+   ExecutorService executorService = hz.getExecutorService();
    executorService.execute(task);
    String echoResult = task.get();
 }
 
 public void echoOnSomewhere(String input) throws Exception { 
-   ExecutorService executorService = Hazelcast.getExecutorService();
+   Config cfg = new Config();
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+   ExecutorService executorService = hz.getExecutorService();
    Future<String> task = executorService.submit(new Echo(input));
    String echoResult = task.get();
 }
 
 public void echoOnMembers(String input, Set<Member> members) throws Exception {
+   Config cfg = new Config();
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
    MultiTask<String> task = new MultiTask<String>(new Echo(input), members);
-   ExecutorService executorService = Hazelcast.getExecutorService();
+   ExecutorService executorService = hz.getExecutorService();
    executorService.execute(task);
    Collection<String> results = task.get();
 } 

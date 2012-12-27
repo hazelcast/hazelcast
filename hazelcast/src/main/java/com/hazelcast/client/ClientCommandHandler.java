@@ -24,7 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.spi.NodeService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.logging.Level;
 
@@ -32,7 +32,7 @@ public abstract class ClientCommandHandler implements CommandHandler {
 
     private final ILogger logger;
 
-    protected ClientCommandHandler(NodeService node) {
+    protected ClientCommandHandler(NodeEngine node) {
         this.logger = node.getLogger(this.getClass().getName());
     }
 

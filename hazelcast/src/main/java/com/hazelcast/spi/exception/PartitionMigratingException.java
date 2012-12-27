@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,9 @@ import com.hazelcast.nio.Address;
 
 public class PartitionMigratingException extends RetryableException {
 
-    public PartitionMigratingException(Address thisAddress, Address target) {
-        this(thisAddress, target, -1, null);
-    }
-
-    public PartitionMigratingException(Address thisAddress, Address target, int partitionId, String operationName) {
-        this(thisAddress, target, partitionId, operationName, null);
-    }
-
-    public PartitionMigratingException(Address thisAddress, Address target, int partitionId,
+    public PartitionMigratingException(Address thisAddress, int partitionId,
                                        String operationName, String serviceName) {
-        super("Partition is migrating! this:" + thisAddress + ", target:" + target
+        super("Partition is migrating! this:" + thisAddress
               + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ public class TargetInvocationImpl extends InvocationImpl {
 
     private final Address target;
 
-    public TargetInvocationImpl(NodeServiceImpl nodeService, String serviceName, Operation op, int partitionId,
-                                int replicaIndex, Address target, int tryCount, long tryPauseMillis) {
-        super(nodeService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis);
+    public TargetInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+                                Address target, int tryCount, long tryPauseMillis, long callTimeout) {
+        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
+                tryCount, tryPauseMillis, callTimeout);
         this.target = target;
     }
 
