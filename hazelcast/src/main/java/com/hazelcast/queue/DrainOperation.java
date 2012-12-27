@@ -19,7 +19,6 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Operation;
-import com.sun.tools.javac.util.Pair;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -50,7 +49,7 @@ public class DrainOperation extends QueueBackupAwareOperation {
         itemList = container.drain(maxSize);
         Set<Long> keySet = new HashSet<Long>(itemList.size());
         List<Data> dataList = new ArrayList<Data>(itemList.size());
-        for (QueueItem item: itemList){
+        for (QueueItem item : itemList) {
             keySet.add(item.getItemId());
             dataList.add(item.getData());
         }
@@ -61,9 +60,9 @@ public class DrainOperation extends QueueBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-        if (itemList.size() > 0){
-            List<Data> dataList = (List<Data>)response;
-            for (Data data: dataList){
+        if (itemList.size() > 0) {
+            List<Data> dataList = (List<Data>) response;
+            for (Data data : dataList) {
                 publishEvent(ItemEventType.REMOVED, data);
             }
         }

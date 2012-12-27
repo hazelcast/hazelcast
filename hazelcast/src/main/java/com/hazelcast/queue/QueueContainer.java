@@ -20,7 +20,6 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
-import com.sun.tools.javac.util.Pair;
 
 import java.io.DataInput;
 import java.io.DataOutput;
