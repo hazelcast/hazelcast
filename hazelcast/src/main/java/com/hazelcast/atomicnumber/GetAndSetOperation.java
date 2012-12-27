@@ -1,4 +1,4 @@
-package com.hazelcast.atomic;
+package com.hazelcast.atomicnumber;
 
 import com.hazelcast.spi.Operation;
 
@@ -7,33 +7,27 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 // author: sancar - 24.12.2012
-public class CompareAndSetOperation extends AtomicNumberBackupAwareOperation {
+public class GetAndSetOperation extends AtomicNumberBackupAwareOperation {
 
-    private long expect;
-    private long update;
+    private long newValue;
 
-    private boolean returnValue = false;
+    private long returnValue;
 
-    public CompareAndSetOperation(){
+    public GetAndSetOperation(){
         super();
     }
 
-    public CompareAndSetOperation(String name, long expect, long update){
+    public GetAndSetOperation(String name, long newValue){
         super(name);
-        this.expect = expect;
-        this.update = update;
+        this.newValue = newValue;
     }
 
     @Override
     public void run() throws Exception {
-        if(getNumber() == expect){
-            setNumber(update);
-            returnValue = true;
-        }else{
-            shouldBackup = false;
-        }
-    }
 
+        returnValue = getNumber();
+        setNumber(newValue);
+    }
 
     @Override
     public boolean returnsResponse() {
@@ -48,18 +42,16 @@ public class CompareAndSetOperation extends AtomicNumberBackupAwareOperation {
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(expect);
-        out.writeLong(update);
+        out.writeLong(newValue);
     }
 
     @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        expect = in.readLong();
-        update = in.readLong();
+        newValue = in.readLong();
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name,update);
+        return new SetBackupOperation(name,newValue);
     }
 }

@@ -1,4 +1,4 @@
-package com.hazelcast.atomic;
+package com.hazelcast.atomicnumber;
 
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.KeyBasedOperation;

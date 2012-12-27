@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.atomic;
+package com.hazelcast.atomicnumber;
 
-import com.hazelcast.atomic.proxy.AtomicNumberProxy;
+import com.hazelcast.atomicnumber.proxy.AtomicNumberProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.spi.*;
 

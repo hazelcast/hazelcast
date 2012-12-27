@@ -1,4 +1,4 @@
-package com.hazelcast.atomic;
+package com.hazelcast.atomicnumber;
 
 import com.hazelcast.spi.Operation;
 
@@ -7,28 +7,26 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 // author: sancar - 24.12.2012
-public class GetAndSetOperation extends AtomicNumberBackupAwareOperation {
+public class GetAndAddOperation extends AtomicNumberBackupAwareOperation {
 
-    private long newValue;
-
+    private long delta;
     private long returnValue;
 
-    public GetAndSetOperation(){
+
+    public GetAndAddOperation(){
         super();
     }
-
-    public GetAndSetOperation(String name, long newValue){
+    public GetAndAddOperation(String name, long delta){
         super(name);
-        this.newValue = newValue;
+        this.delta = delta;
     }
 
     @Override
     public void run() throws Exception {
-
         returnValue = getNumber();
-        setNumber(newValue);
-    }
+        setNumber(returnValue + delta);
 
+    }
     @Override
     public boolean returnsResponse() {
         return true;
@@ -42,16 +40,16 @@ public class GetAndSetOperation extends AtomicNumberBackupAwareOperation {
     @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(newValue);
+        out.writeLong(delta);
     }
 
     @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        newValue = in.readLong();
+        delta = in.readLong();
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name,newValue);
+        return new SetBackupOperation(name,returnValue + delta);
     }
 }
