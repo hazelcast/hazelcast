@@ -236,7 +236,6 @@
     <xs:element name="semaphore" type="hazelcast-type"/>
     <xs:element name="lock" type="hazelcast-type"/>
 
-    <xs:element name="hibernate-cache-provider" type="hibernate-cache"/>
     <xs:element name="hibernate-region-factory" type="hibernate-cache"/>
 
     <!-- internal elements -->

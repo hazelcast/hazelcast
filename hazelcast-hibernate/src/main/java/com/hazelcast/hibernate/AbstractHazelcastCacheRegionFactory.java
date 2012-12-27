@@ -14,50 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.provider;
+package com.hazelcast.hibernate;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
-import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.instance.HazelcastInstanceFactory;
 import com.hazelcast.hibernate.instance.IHazelcastInstanceLoader;
+import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.hibernate.cache.Cache;
 import org.hibernate.cache.CacheException;
-import org.hibernate.cache.CacheProvider;
+import org.hibernate.cache.QueryResultsRegion;
+import org.hibernate.cache.RegionFactory;
+import org.hibernate.cache.access.AccessType;
+import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
 import java.util.logging.Level;
 
-/**
- * Implementation of (deprecated) Hibernate <code>CacheProvider</code> interface for compatibility with pre-Hibernate
- * 3.3.x code.
- * <p/>
- * To enable, <code>hibernate.cache.provider_class=com.hazelcast.hibernate.provider.HazelcastCacheProvider</code>. This
- * cache provider relies on <code>hazelcast.xml</code> for cache configuration.
- *
- * @author Leo Kim (lkim@limewire.com)
- * @see HazelcastCache
- * @see HazelcastCacheRegionFactory
- */
-public final class HazelcastCacheProvider implements CacheProvider {
+public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
-    private static final ILogger LOG = Logger.getLogger(HazelcastCacheProvider.class.getName());
+    private final ILogger LOG = Logger.getLogger(getClass().getName());
 
     private IHazelcastInstanceLoader instanceLoader = null;
-    private HazelcastInstance instance;
+    protected HazelcastInstance instance;
 
-    public HazelcastCacheProvider() {
+    public AbstractHazelcastCacheRegionFactory() {
     }
 
-    public HazelcastCacheProvider(final HazelcastInstance instance) {
+    public AbstractHazelcastCacheRegionFactory(final Properties properties) {
+        this();
+    }
+
+    public AbstractHazelcastCacheRegionFactory(final HazelcastInstance instance) {
         this.instance = instance;
     }
 
-    public Cache buildCache(final String name, final Properties properties) throws CacheException {
-        return new HazelcastCache(instance, name, properties);
+    public final QueryResultsRegion buildQueryResultsRegion(final String regionName, final Properties properties)
+            throws CacheException {
+        return new HazelcastQueryResultsRegion(instance, regionName, properties);
     }
 
     /**
@@ -71,11 +65,20 @@ public final class HazelcastCacheProvider implements CacheProvider {
         return HazelcastTimestamper.nextTimestamp(instance);
     }
 
-    public void start(final Properties props) throws CacheException {
-        LOG.log(Level.INFO, "Starting up HazelcastCacheProvider...");
+    public void start(final Settings settings, final Properties properties) throws CacheException {
+        LOG.log(Level.INFO, "Starting up HazelcastCacheRegionFactory...");
         if (instance == null || !instance.getLifecycleService().isRunning()) {
-            instanceLoader = HazelcastInstanceFactory.createInstanceLoader(props);
+            instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
             instance = instanceLoader.loadInstance();
+        }
+    }
+
+    public void stop() {
+        if (instanceLoader != null) {
+            LOG.log(Level.INFO, "Shutting down HazelcastCacheRegionFactory...");
+            instanceLoader.unloadInstance();
+            instance = null;
+            instanceLoader = null;
         }
     }
 
@@ -83,15 +86,7 @@ public final class HazelcastCacheProvider implements CacheProvider {
         return instance;
     }
 
-    /**
-     * Calls <code>{@link Hazelcast#shutdown()}</code>.
-     */
-    public void stop() {
-        if (instanceLoader != null) {
-            LOG.log(Level.INFO, "Shutting down HazelcastCacheProvider...");
-            instanceLoader.unloadInstance();
-            instance = null;
-            instanceLoader = null;
-        }
+    public AccessType getDefaultAccessType() {
+        return AccessType.READ_WRITE;
     }
 }

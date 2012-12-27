@@ -42,9 +42,6 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
     }
 
     public HazelcastInstance loadInstance() throws CacheException {
-        if (props == null) {
-            throw new NullPointerException("Hibernate environment properties is null!");
-        }
         if (client != null && client.getLifecycleService().isRunning()) {
             logger.log(Level.WARNING, "Current HazelcastClient is already active! Shutting it down...");
             unloadInstance();

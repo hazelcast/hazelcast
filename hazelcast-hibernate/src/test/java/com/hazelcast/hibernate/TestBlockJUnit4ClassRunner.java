@@ -16,9 +16,12 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.impl.GroupProperties;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
+
+import java.io.InputStream;
+import java.util.logging.LogManager;
 
 /**
  * @mdogan 7/19/12
@@ -26,6 +29,13 @@ import org.junit.runners.model.InitializationError;
 public class TestBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
+        try {
+            InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("logging.properties");
+            LogManager.getLogManager().readConfiguration(in);
+            in.close();
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
