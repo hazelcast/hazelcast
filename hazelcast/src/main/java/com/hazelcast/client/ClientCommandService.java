@@ -51,7 +51,7 @@ public class ClientCommandService {
             return;
         }
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, protocol, callContext, clientEndpoint.getSubject());
-        node.nodeService.execute(clientRequestHandler);
+        node.nodeEngine.getExecutionService().execute(clientRequestHandler);
     }
 
     public ClientEndpoint getClientEndpoint(Connection conn) {

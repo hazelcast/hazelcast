@@ -30,14 +30,14 @@ public class MapGetHandler extends ClientCommandHandler {
     final MapService mapService;
 
     public MapGetHandler(MapService mapService) {
-        super(mapService.getNodeService());
+        super(mapService.getNodeEngine());
         this.mapService = mapService;
     }
 
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
         byte[] key = protocol.buffers[0].array();
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createProxy(name, true);
+        DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
         Data value = dataMapProxy.get(new Data(key));
         return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
     }

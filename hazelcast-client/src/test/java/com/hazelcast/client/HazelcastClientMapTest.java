@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
+import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -408,7 +409,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         MapEntry<String, String> entry = map.getMapEntry("a");
         assertEquals("a", entry.getKey());
         assertEquals("b", entry.getValue());
-        assertEquals(2, entry.getHits());
+        assertEquals(2, ((DataRecordEntry)entry).getHits());
         assertEquals("b", entry.getValue());
         assertEquals("b", entry.setValue("c"));
         assertEquals("c", map.get("a"));
@@ -454,7 +455,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
         Iterator<Entry<String, String>> it = entrySet.iterator();
         for (String key : keySet) {
-            MapEntry mapEntry = map.getMapEntry(key);
+            DataRecordEntry  mapEntry = (DataRecordEntry) map.getMapEntry(key);
             assertEquals(1, mapEntry.getHits());
         }
         while (it.hasNext()) {

@@ -89,6 +89,10 @@ public class ClusterClientProxy implements Cluster {
         return members;
     }
 
+    public Member getMember(Address address) {
+        throw new UnsupportedOperationException();
+    }
+
     public Member getLocalMember() {
         throw new UnsupportedOperationException();
     }
