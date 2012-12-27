@@ -95,11 +95,6 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private boolean registerSubscriber(String serviceName, String topic, Registration reg) {
-        EventServiceSegment segment = getSegment(serviceName, true);
-        return segment.addRegistration(topic, reg);
-    }
-
     private boolean handleRegistration(Registration reg) {
         EventServiceSegment segment = getSegment(reg.serviceName, true);
         return segment.addRegistration(reg.topic, reg);
@@ -109,7 +104,7 @@ public class EventServiceImpl implements EventService {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             final Registration reg = segment.removeRegistration(topic, id);
-            if (reg != null) {
+            if (reg != null && !reg.isLocalOnly()) {
                 final DeregistrationOperation op = new DeregistrationOperation(topic, id);
                 invokeOnOtherNodes(serviceName, op);
             }
@@ -243,11 +238,9 @@ public class EventServiceImpl implements EventService {
     Operation getPostJoinOperation() {
         final Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
-            for (Collection<Registration> all : segment.registrations.values()) {
-                for (Registration reg : all) {
-                    if (!reg.isLocalOnly()) {
-                        registrations.add(reg);
-                    }
+            for (Registration reg : segment.registrationIdMap.values()) {
+                if (!reg.isLocalOnly()) {
+                    registrations.add(reg);
                 }
             }
         }
@@ -257,7 +250,17 @@ public class EventServiceImpl implements EventService {
     void shutdown() {
         logger.log(Level.FINEST, "Stopping event executor...");
         eventExecutorService.shutdownNow();
+        for (EventServiceSegment segment : segments.values()) {
+            segment.clear();
+        }
         segments.clear();
+    }
+
+    void onMemberLeft(MemberImpl member) {
+        final Address address = member.getAddress();
+        for (EventServiceSegment segment : segments.values()) {
+            segment.onMemberLeft(address);
+        }
     }
 
     private class EventServiceSegment {
@@ -299,6 +302,24 @@ public class EventServiceImpl implements EventService {
                 }
             }
             return registration;
+        }
+
+        void clear() {
+            registrations.clear();
+            registrationIdMap.clear();
+        }
+
+        void onMemberLeft(Address address) {
+            for (Collection<Registration> all : registrations.values()) {
+                Iterator<Registration> iter = all.iterator();
+                while (iter.hasNext()) {
+                    Registration reg = iter.next();
+                    if (address.equals(reg.getSubscriber())) {
+                        iter.remove();
+                        registrationIdMap.remove(reg.id);
+                    }
+                }
+            }
         }
     }
 
