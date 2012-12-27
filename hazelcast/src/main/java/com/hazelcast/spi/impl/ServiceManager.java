@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.atomicNumber.AtomicNumberService;
+import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.CustomServiceConfig;
 import com.hazelcast.config.MapServiceConfig;
@@ -32,6 +32,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.topic.TopicService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,6 +69,7 @@ class ServiceManager {
                 registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeEngine));
                 registerService(QueueService.NAME, new QueueService(nodeEngine));
                 registerService(AtomicNumberService.NAME, new AtomicNumberService());
+                registerService(TopicService.NAME, new TopicService());
                 // TODO: add other services
                 // ...
                 // ...

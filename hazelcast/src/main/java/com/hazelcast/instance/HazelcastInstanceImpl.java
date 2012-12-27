@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.atomicNumber.AtomicNumberService;
+import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceProxy;
+import com.hazelcast.topic.TopicService;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -108,7 +109,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return getOrCreateInstance(Prefix.TOPIC + name);
+//        return getOrCreateInstance(Prefix.TOPIC + name);
+        return (ITopic<E>) getServiceProxy(TopicService.class, name);
     }
 
     public <E> ISet<E> getSet(String name) {
