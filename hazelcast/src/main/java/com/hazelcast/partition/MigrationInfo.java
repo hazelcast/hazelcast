@@ -84,6 +84,10 @@ public class MigrationInfo implements DataSerializable {
         return migrationType;
     }
 
+    void setMigrationType(MigrationType migrationType) {
+        this.migrationType = migrationType;
+    }
+
     public long getCreationTime() {
         return creationTime;
     }
