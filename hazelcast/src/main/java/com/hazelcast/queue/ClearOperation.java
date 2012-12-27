@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.RetryableException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -38,39 +39,40 @@ public class ClearOperation extends QueueBackupAwareOperation {
     }
 
     public void beforeRun() throws Exception {
-        itemList = getContainer().itemList();
+        if (hasListener() || getContainer().isStoreEnabled()){
+            itemList = getContainer().itemList();
+        }
     }
 
-    public void run() throws Exception {
+    public void run() {
         QueueContainer container = getContainer();
+        try {
+            deleteFromStore(false);
+        } catch (Exception e) {
+            throw new RetryableException(e);
+        }
         container.clear();
         response = true;
-        deleteFromStore(false);
     }
 
     public void afterRun() throws Exception {
-        if(deleteFromStore(true)){
+        deleteFromStore(true);
+        if (itemList != null){
             for (QueueItem item: itemList){
                 publishEvent(ItemEventType.REMOVED, item.getData());
             }
         }
     }
 
-    private boolean deleteFromStore(boolean async){
-        boolean published = false;
+    private void deleteFromStore(boolean async) throws Exception {
         QueueContainer container = getContainer();
         if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
             Set<Long> set = new HashSet<Long>(itemList.size());
             for (QueueItem item: itemList){
                 set.add(item.getItemId());
-                if (async){
-                    published = true;
-                    publishEvent(ItemEventType.REMOVED, item.getData());
-                }
             }
             container.getStore().deleteAll(set);
         }
-        return published;
     }
 
     public Operation getBackupOperation() {

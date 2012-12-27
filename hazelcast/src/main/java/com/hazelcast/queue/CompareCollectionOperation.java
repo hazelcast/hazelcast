@@ -46,12 +46,16 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
         this.retain = retain;
     }
 
-    public void run() throws Exception {
+    public void run() {
         response = false;
-        dataMap = getContainer().compareCollection(dataList, retain);
-        if (dataMap.size() > 0) {
-            response = true;
-            deleteFromStore(false);
+        try {
+            dataMap = getContainer().compareAndRemove(dataList, retain);
+            if (dataMap.size() > 0) {
+                response = true;
+                deleteFromStore(false);
+            }
+        } catch (Exception e) {
+           //TODO
         }
     }
 
@@ -65,7 +69,7 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
         }
     }
 
-    private void deleteFromStore(boolean async) {
+    private void deleteFromStore(boolean async) throws Exception {
         QueueContainer container = getContainer();
         if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
             container.getStore().deleteAll(dataMap.keySet());

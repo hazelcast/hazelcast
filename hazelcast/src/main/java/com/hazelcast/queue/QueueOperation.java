@@ -22,6 +22,7 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.Collection;
@@ -45,11 +46,11 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
     public QueueContainer getContainer() {
         if (container == null){
             QueueService queueService = getService();
-            boolean fromBackup = false;
-            if (this instanceof BackupOperation){
-                fromBackup = true;
+            try {
+                container = queueService.getContainer(name, this instanceof BackupOperation);
+            } catch (Exception e) {
+                throw new RetryableException(e);
             }
-            container = queueService.getContainer(name, fromBackup);
         }
         return container;
     }

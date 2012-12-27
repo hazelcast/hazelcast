@@ -36,7 +36,7 @@ public class QueueStoreWrapper {
 
     private boolean async = false;
 
-    private int memoryLimit = 10;
+    private int memoryLimit = 5;
 
     private int bulkLoad = 3;
 
@@ -54,7 +54,7 @@ public class QueueStoreWrapper {
             async = Boolean.parseBoolean(storeConfig.getProperty("async"));
             memoryLimit = Integer.parseInt(storeConfig.getProperty("memory-limit"));
             bulkLoad = Integer.parseInt(storeConfig.getProperty("bulk-load"));
-            if (bulkLoad <= 0){
+            if (bulkLoad < 1){
                 bulkLoad = 1;
             }
         } catch (ClassNotFoundException e) {
@@ -63,7 +63,10 @@ public class QueueStoreWrapper {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
             e.printStackTrace();
+        } catch (NumberFormatException e){
+//            e.printStackTrace();
         }
+
     }
 
     public boolean isEnabled() {
@@ -82,31 +85,31 @@ public class QueueStoreWrapper {
         return bulkLoad;
     }
 
-    public void store(Long key, Data value) {
+    public void store(Long key, Data value) throws Exception {
         if (enabled) {
             store.store(key, new QueueStoreValue(value));
         }
     }
 
-    public void storeAll(Map map) {
+    public void storeAll(Map map) throws Exception {
         if (enabled) {
             store.storeAll(map);
         }
     }
 
-    public void delete(Long key) {
+    public void delete(Long key) throws Exception {
         if (enabled) {
             store.delete(key);
         }
     }
 
-    public void deleteAll(Collection keys) {
+    public void deleteAll(Collection keys) throws Exception {
         if (enabled) {
             store.deleteAll(keys);
         }
     }
 
-    public Data load(Long key) {
+    public Data load(Long key) throws Exception {
         if (enabled) {
             QueueStoreValue val = (QueueStoreValue) store.load(key);
             if (val != null) {
@@ -116,14 +119,14 @@ public class QueueStoreWrapper {
         return null;
     }
 
-    public Map<Long, QueueStoreValue> loadAll(Collection keys) {
+    public Map<Long, QueueStoreValue> loadAll(Collection keys) throws Exception {
         if (enabled) {
             return store.loadAll(keys);
         }
         return null;
     }
 
-    public Set<Long> loadAllKeys() {
+    public Set<Long> loadAllKeys() throws Exception {
         if (enabled) {
             return store.loadAllKeys();
         }

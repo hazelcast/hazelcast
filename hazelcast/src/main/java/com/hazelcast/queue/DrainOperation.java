@@ -33,7 +33,7 @@ public class DrainOperation extends QueueBackupAwareOperation {
 
     int maxSize = -1;
 
-    transient Pair<Set<Long>, List<Data>> keyDataPair;
+    transient List<QueueItem> itemList;
 
     //TODO how about waiting polls
 
@@ -47,25 +47,30 @@ public class DrainOperation extends QueueBackupAwareOperation {
 
     public void run() throws Exception {
         QueueContainer container = getContainer();
-        keyDataPair = container.drain(maxSize);
-        response = keyDataPair.snd;
+        itemList = container.drain(maxSize);
+        Set<Long> keySet = new HashSet<Long>(itemList.size());
+        List<Data> dataList = new ArrayList<Data>(itemList.size());
+        for (QueueItem item: itemList){
+            keySet.add(item.getItemId());
+            dataList.add(item.getData());
+        }
+        response = dataList;
         if (!container.isStoreAsync()) {
-            container.getStore().deleteAll(keyDataPair.fst);
+            container.getStore().deleteAll(keySet);
         }
     }
 
     public void afterRun() throws Exception {
-        QueueContainer container = getContainer();
-        if (container.isStoreAsync()) {
-            container.getStore().deleteAll(keyDataPair.fst);
-        }
-        for (Data data: keyDataPair.snd){
-            publishEvent(ItemEventType.REMOVED, data);
+        if (itemList.size() > 0){
+            List<Data> dataList = (List<Data>)response;
+            for (Data data: dataList){
+                publishEvent(ItemEventType.REMOVED, data);
+            }
         }
     }
 
     public boolean shouldBackup() {
-        return keyDataPair.snd.size() > 0;
+        return itemList.size() > 0;
     }
 
     public Operation getBackupOperation() {

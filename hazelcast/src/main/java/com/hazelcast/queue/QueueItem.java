@@ -33,7 +33,7 @@ public class QueueItem implements DataSerializable {
 
     private Data data;
 
-    final private QueueContainer container;
+    private final transient QueueContainer container;
 
     QueueItem(QueueContainer container){
         this.container = container;

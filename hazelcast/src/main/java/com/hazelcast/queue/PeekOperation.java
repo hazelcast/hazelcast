@@ -16,6 +16,8 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.spi.exception.RetryableException;
+
 /**
  * User: ali
  * Date: 11/23/12
@@ -31,6 +33,12 @@ public class PeekOperation extends QueueOperation {
     }
 
     public void run() {
-        response = getContainer().peek();
+        QueueItem item;
+        try {
+            item = getContainer().peek();
+        } catch (Exception e) {
+            throw new RetryableException(e);
+        }
+        response = item != null ? item.getData() : null;
     }
 }

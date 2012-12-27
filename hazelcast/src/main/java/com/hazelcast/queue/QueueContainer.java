@@ -49,7 +49,7 @@ public class QueueContainer implements DataSerializable {
     public QueueContainer() {
     }
 
-    public QueueContainer(int partitionId, QueueConfig config, boolean fromBackup) {
+    public QueueContainer(int partitionId, QueueConfig config, boolean fromBackup) throws Exception {
         this.partitionId = partitionId;
         setConfig(config);
         if (!fromBackup && store.isEnabled()) {
@@ -63,7 +63,10 @@ public class QueueContainer implements DataSerializable {
     }
 
     public QueueItem offer(Data data) {
-        QueueItem item = new QueueItem(this, idGen++, data);
+        QueueItem item = new QueueItem(this, idGen++);
+        if (!store.isEnabled() || store.getMemoryLimit() > itemQueue.size()){
+            item.setData(data);
+        }
         if (itemQueue.offer(item)) {
             return item;
         }
@@ -79,11 +82,15 @@ public class QueueContainer implements DataSerializable {
         dataMap.clear();
     }
 
-    public QueueItem poll() {
-        QueueItem item = itemQueue.poll();
-        if (item != null && item.getData() == null) {
+    public QueueItem poll() throws Exception {
+        QueueItem item = itemQueue.peek();
+        if (item == null){
+            return null;
+        }
+        if (store.isEnabled() && item.getData() == null) {
             load(item);
         }
+        itemQueue.poll();
         return item;
     }
 
@@ -108,7 +115,7 @@ public class QueueContainer implements DataSerializable {
         return -1;
     }
 
-    public Data peek() {
+    public QueueItem peek() throws Exception {
         QueueItem item = itemQueue.peek();
         if (item == null) {
             return null;
@@ -116,7 +123,7 @@ public class QueueContainer implements DataSerializable {
         if (store.isEnabled() && item.getData() == null) {
             load(item);
         }
-        return item.getData();
+        return item;
     }
 
     /**
@@ -134,7 +141,7 @@ public class QueueContainer implements DataSerializable {
      * This method triggers store load.
      *
      */
-    public List<QueueItem> itemList() {
+    public List<QueueItem> itemList() throws Exception {
         List<QueueItem> itemList = new ArrayList<QueueItem>(itemQueue.size());
         for (QueueItem item : itemQueue) {
             if (store.isEnabled() && item.getData() == null) {
@@ -145,18 +152,16 @@ public class QueueContainer implements DataSerializable {
         return itemList;
     }
 
-    public Pair<Set<Long>, List<Data>> drain(int maxSize) {
+    public List<QueueItem> drain(int maxSize) throws Exception {
         if (maxSize < 0 || maxSize > itemQueue.size()) {
             maxSize = itemQueue.size();
         }
-        Set<Long> keySet = new HashSet<Long>(maxSize);
-        List<Data> dataList = new ArrayList<Data>(maxSize);
+        List<QueueItem> itemList = new ArrayList<QueueItem>(maxSize);
         for (int i = 0; i < maxSize; i++) {
             QueueItem item = poll();
-            keySet.add(item.getItemId());
-            dataList.add(item.getData());
+            itemList.add(item);
         }
-        return new Pair<Set<Long>, List<Data>>(keySet, dataList);
+        return itemList;
     }
 
     public void drainFromBackup(int maxSize) {
@@ -185,21 +190,29 @@ public class QueueContainer implements DataSerializable {
      * This method triggers store load
      *
      */
-    public Map<Long, Data> compareCollection(List<Data> dataList, boolean retain) {
+    public Map<Long, Data> compareAndRemove(List<Data> dataList, boolean retain) throws Exception {
         Iterator<QueueItem> iter = itemQueue.iterator();
-        Map<Long, Data> keySet = new HashMap<Long, Data>();
+        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
         while (iter.hasNext()) {
             QueueItem item = iter.next();
             if (item.getData() == null && store.isEnabled()) {
-                load(item);
+                try {
+                    load(item);
+                } catch (Exception e) {
+                    int index = 0;
+                    for (Map.Entry<Long, Data> entry: map.entrySet()){
+                        itemQueue.add(index++, new QueueItem(this, entry.getKey(), entry.getValue()));
+                    }
+                    throw e;
+                }
             }
             boolean contains = dataList.contains(item.getData());
             if ((retain && !contains) || (!retain && contains)) {
-                keySet.put(item.getItemId(), item.getData());
+                map.put(item.getItemId(), item.getData());
                 iter.remove();
             }
         }
-        return keySet;
+        return map;
     }
 
     public void compareCollectionBackup(Set<Long> keySet) {
@@ -224,6 +237,10 @@ public class QueueContainer implements DataSerializable {
         return store.isAsync();
     }
 
+    public boolean isStoreEnabled() {
+        return store.isEnabled();
+    }
+
     public QueueStoreWrapper getStore() {
         return store;
     }
@@ -234,7 +251,7 @@ public class QueueContainer implements DataSerializable {
         store.setConfig(storeConfig);
     }
 
-    private void load(QueueItem item) {
+    private void load(QueueItem item) throws Exception {
         int bulkLoad = store.getBulkLoad();
         bulkLoad = Math.min(itemQueue.size(), bulkLoad);
         if (bulkLoad == 1) {
@@ -242,19 +259,20 @@ public class QueueContainer implements DataSerializable {
         } else if (bulkLoad > 1) {
             ListIterator<QueueItem> iter = itemQueue.listIterator();
             HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
-            for (int i = 0; i < bulkLoad - 1; i++) {
-                keySet.add(iter.next().getItemId());
-            }
-            if (!keySet.add(item.getItemId())) {
+            for (int i = 0; i < bulkLoad; i++) {
                 keySet.add(iter.next().getItemId());
             }
             Map<Long, QueueStoreValue> values = store.loadAll(keySet);
+            if (values == null){
+                System.err.println("something wrong!");//TODO
+                return;
+            }
             for (Map.Entry<Long, QueueStoreValue> entry : values.entrySet()) {
                 long id = entry.getKey();
                 Data data = entry.getValue().getData();
                 dataMap.put(id, data);
             }
-            item.setData(dataMap.get(item.getItemId()));
+            item.setData(getData(item.getItemId()));
         }
     }
 
@@ -279,6 +297,10 @@ public class QueueContainer implements DataSerializable {
             itemQueue.offer(item);
             idGen++;
         }
+    }
+
+    class KeyDataPair{
+
     }
 
 }
