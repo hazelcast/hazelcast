@@ -19,7 +19,9 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.DataInput;
@@ -31,7 +33,7 @@ import java.util.*;
  * @ali 12/20/12
  */
 
-public class AddAllOperation extends QueueBackupAwareOperation {
+public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
     private List<Data> dataList;
 
@@ -44,15 +46,22 @@ public class AddAllOperation extends QueueBackupAwareOperation {
     }
 
     public void run() {
-        response = false;
         QueueContainer container = getContainer();
-        container.addAll(dataList);
-        response = true;
+        if (container.checkBound()){
+            container.addAll(dataList);
+            response = true;
+        }
+        else {
+            response = false;
+        }
+
     }
 
     public void afterRun() throws Exception {
-        for (Data data : dataList) {
-            publishEvent(ItemEventType.ADDED, data);
+        if (Boolean.TRUE.equals(response)){
+            for (Data data : dataList) {
+                publishEvent(ItemEventType.ADDED, data);
+            }
         }
     }
 
@@ -79,5 +88,13 @@ public class AddAllOperation extends QueueBackupAwareOperation {
         for (int i = 0; i < size; i++) {
             dataList.add(IOUtil.readNullableData(in));
         }
+    }
+
+    public boolean shouldNotify() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":poll";
     }
 }

@@ -45,7 +45,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     public boolean add(E e) {
         final boolean res = offer(e);
         if (!res) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Queue is full!");
         }
         return res;
     }
@@ -106,7 +106,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     public E remove() {
         final E res = poll();
         if (res == null) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("Queue is empty!");
         }
         return res;
     }
@@ -127,7 +127,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     public E element() {
         final E res = peek();
         if (res == null) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("Queue is empty!");
         }
         return res;
     }

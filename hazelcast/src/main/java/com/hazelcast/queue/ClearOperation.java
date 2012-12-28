@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.RetryableException;
 
@@ -28,7 +29,7 @@ import java.util.Set;
 /**
  * @ali 12/6/12
  */
-public class ClearOperation extends QueueBackupAwareOperation {
+public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 
     private transient List<Data> dataList;
 
@@ -45,9 +46,9 @@ public class ClearOperation extends QueueBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-            for (Data data: dataList){
-                publishEvent(ItemEventType.REMOVED, data);
-            }
+        for (Data data : dataList) {
+            publishEvent(ItemEventType.REMOVED, data);
+        }
     }
 
     public Operation getBackupOperation() {
@@ -56,5 +57,13 @@ public class ClearOperation extends QueueBackupAwareOperation {
 
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
+    }
+
+    public boolean shouldNotify() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":offer";
     }
 }

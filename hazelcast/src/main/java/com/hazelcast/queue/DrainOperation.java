@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
@@ -28,7 +29,7 @@ import java.util.*;
 /**
  * @ali 12/19/12
  */
-public class DrainOperation extends QueueBackupAwareOperation {
+public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 
     int maxSize = -1;
 
@@ -72,5 +73,13 @@ public class DrainOperation extends QueueBackupAwareOperation {
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         maxSize = in.readInt();
+    }
+
+    public boolean shouldNotify() {
+        return dataList.size() > 0;
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":offer";
     }
 }

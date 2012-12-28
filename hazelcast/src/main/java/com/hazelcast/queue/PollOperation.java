@@ -54,7 +54,7 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public boolean shouldNotify() {
-        return true;
+        return response != null;
     }
 
     public Object getNotifiedKey() {
