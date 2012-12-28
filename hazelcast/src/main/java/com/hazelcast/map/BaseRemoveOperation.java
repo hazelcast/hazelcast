@@ -95,11 +95,8 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public void afterRun() {
-        Member caller = nodeEngine.getCluster().getMember(getCaller());
-        // todo optimize serialization. maybe you should not do here. or you can check if anyone wants values
         int eventType = EntryEvent.TYPE_REMOVED;
-        EntryEvent event = new EntryEvent(getNodeEngine().getThisAddress().toString(), caller, eventType, nodeEngine.toObject(dataKey), nodeEngine.toObject(dataOldValue), null );
-        mapService.publishEvent(name, dataKey, event);
+        mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, null);
     }
 
     @Override

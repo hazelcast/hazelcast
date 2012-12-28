@@ -22,6 +22,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.logging.ILogger;
@@ -29,12 +31,15 @@ import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
@@ -52,7 +57,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ILogger logger;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
     private final Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
@@ -60,7 +65,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final Set<String> mapsWithTTL;
 
     public MapService(final NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
@@ -237,13 +242,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
-    public void publishEvent(String mapName, Data key, EntryEvent event) {
+
+    public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
         for (EventRegistration candidate : candidates) {
             EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
-            if (filter.eval(key)) {
+            if (filter.eval(dataKey)) {
                 if (filter.isIncludeValue()) {
                     registrationsWithValue.add(candidate);
                 } else {
@@ -251,6 +257,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 }
             }
         }
+        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
+            return;
+
+        String source = nodeEngine.getNode().address.toString();
+        final SerializerRegistry serializerRegistry = nodeEngine.getNode().hazelcastInstance.getSerializerRegistry();
+        Member callerMember = nodeEngine.getClusterService().getMember(caller);
+        EntryEvent event = new DataAwareEntryEvent(callerMember, eventType, source, dataKey, dataValue, dataOldValue, false, serializerRegistry);
+
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
@@ -281,6 +295,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 break;
         }
     }
+
 
     private class CleanupTask implements Runnable {
         public void run() {

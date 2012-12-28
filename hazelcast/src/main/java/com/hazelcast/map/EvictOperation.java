@@ -107,11 +107,8 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
 
 
     public void afterRun() {
-        Member caller = nodeEngine.getCluster().getMember(getCaller());
-        // todo optimize serialization. maybe you should not do here. or you can check if anyone wants values
         int eventType = EntryEvent.TYPE_EVICTED;
-        EntryEvent event = new EntryEvent(getNodeEngine().getThisAddress().toString(), caller, eventType, nodeEngine.toObject(dataKey), null, null);
-        mapService.publishEvent(name, dataKey, event);
+        mapService.publishEvent(getCaller(), name, eventType, dataKey, null, dataValue);
     }
 
     @Override
