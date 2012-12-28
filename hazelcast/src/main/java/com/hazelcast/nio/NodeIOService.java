@@ -102,6 +102,11 @@ public class NodeIOService implements IOService {
         nodeEngine.handlePacket(packet);
     }
 
+    public void handleClientCommand(Protocol p) {
+        //TODO command name is not serviceName. A mapper should be introduced.
+        node.clientCommandService.handle(p);
+    }
+
     public TextCommandService getTextCommandService() {
         return node.getTextCommandService();
     }
@@ -223,14 +228,12 @@ public class NodeIOService implements IOService {
                 ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
         final Set<Integer> ports = networkConfig.getOutboundPorts() == null
                 ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
-
         if (portDefinitions.isEmpty() && ports.isEmpty()) {
             return Collections.emptySet(); // means any port
         }
         if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
             return Collections.emptySet(); // means any port
         }
-
         // not checking port ranges...
         for (String portDef : portDefinitions) {
             String[] portDefs = portDef.split("[,; ]");

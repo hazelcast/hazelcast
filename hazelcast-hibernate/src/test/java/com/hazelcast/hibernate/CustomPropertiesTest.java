@@ -25,16 +25,12 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
 import org.hibernate.*;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheKey;
 import org.hibernate.cfg.Environment;
 import org.hibernate.engine.SessionFactoryImplementor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.Date;
@@ -134,13 +130,14 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         hz.getLifecycleService().shutdown();
     }
 
+    @Ignore
     @Test(expected = CacheException.class)
     public void testTimeout() throws InterruptedException {
         Properties props = getDefaultProperties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
-        props.put(CacheEnvironment.LOCK_TIMEOUT, "3");
+        props.put(CacheEnvironment.LOCK_TIMEOUT_SECONDS, "3");
         final SessionFactory sf = createSessionFactory(props);
-        assertEquals(3, CacheEnvironment.getLockTimeoutInSeconds(props));
+        assertEquals(3000, CacheEnvironment.getLockTimeoutInMillis(props));
         final HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         final Long id = new Long(1L);
         DummyEntity e = new DummyEntity(id, "", 0, null);
@@ -156,8 +153,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
                         DummyEntity.class.getName(), EntityMode.POJO, sfi);
                 assertTrue(hz.getMap(DummyEntity.class.getName()).tryLock(key));
             }
-
-            ;
         }.start();
         Thread.sleep(1000);
         session = sf.openSession();
@@ -175,7 +170,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
 
     private Properties getDefaultProperties() {
         Properties props = new Properties();
-        props.setProperty(Environment.CACHE_PROVIDER, HazelcastCacheProvider.class.getName());
+        props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
         props.setProperty(CacheEnvironment.CONFIG_FILE_PATH_LEGACY, "hazelcast-custom.xml");
         return props;
     }

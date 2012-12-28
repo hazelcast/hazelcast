@@ -21,13 +21,12 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.exception.RetryableException;
 
 /**
  * @ali 12/6/12
  */
 public class PollOperation extends QueueTimedOperation implements WaitSupport, Notifier {
-
-    transient QueueItem item;
 
     public PollOperation() {
     }
@@ -37,23 +36,12 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public void run() {
-        QueueContainer container = getContainer();
-        item = container.poll();
-        if (item != null) {
-            response = item.getData();
-            if (!container.isStoreAsync()) {
-                container.getStore().delete(item.getItemId());
-            }
-        }
+        response = getContainer().poll();
     }
 
     public void afterRun() throws Exception {
-        if (response != null){
-            publishEvent(ItemEventType.REMOVED, (Data)response);
-            QueueContainer container = getContainer();
-            if (container.isStoreAsync()) {
-                container.getStore().delete(item.getItemId());
-            }
+        if (response != null) {
+            publishEvent(ItemEventType.REMOVED, (Data) response);
         }
     }
 

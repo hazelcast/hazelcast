@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
+import com.hazelcast.client.ClientCommandService;
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.Join;
@@ -100,7 +101,7 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
-    //    public final ClientHandlerService clientHandlerService;
+    public final ClientCommandService clientCommandService;
 
     //    public final ClientServiceImpl clientService;
 
@@ -154,6 +155,7 @@ public class Node {
         connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
         clusterService = new ClusterService(this);
         partitionService = new PartitionService(this);
+        clientCommandService = new ClientCommandService(this);
 //        clientHandlerService = new ClientHandlerService(this);
 //        clientService = new ClientServiceImpl(concurrentMapManager);
         textCommandService = new TextCommandServiceImpl(this);

@@ -16,7 +16,6 @@
 
 package com.hazelcast.hibernate.access;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
@@ -32,8 +31,6 @@ public interface AccessDelegate<T extends HazelcastRegion> {
      * @return The underlying region
      */
     T getHazelcastRegion();
-
-    IMap getCache();
 
     /**
      * Attempt to retrieve an object from the cache. Mainly used in attempting

@@ -129,12 +129,12 @@ abstract class QueueProxySupport {
         }
     }
 
-    List<QueueItem> listInternal(){
+    List<Data> listInternal(){
         try {
             IteratorOperation operation = new IteratorOperation(name);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
-            return (List<QueueItem>)nodeEngine.toObject(f.get());
+            return (List<Data>)nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -164,7 +164,7 @@ abstract class QueueProxySupport {
 
     boolean compareCollectionInternal(List<Data> dataSet, boolean retain){
         try {
-            CompareCollectionOperation operation = new CompareCollectionOperation(name, dataSet, retain);
+            CompareAndRemoveOperation operation = new CompareAndRemoveOperation(name, dataSet, retain);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());

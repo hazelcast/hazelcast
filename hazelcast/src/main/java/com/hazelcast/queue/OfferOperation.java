@@ -21,6 +21,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -49,21 +50,13 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
         response = false;
         QueueContainer container = getContainer();
         item = container.offer(data);
-        if (item != null) {
-            response = true;
-            if (!container.isStoreAsync()) {
-                container.getStore().store(item.getItemId(), item.getData());
-            }
-        }
+        response = true;
+
     }
 
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            QueueContainer container = getContainer();
             publishEvent(ItemEventType.ADDED, data);
-            if (container.isStoreAsync()) {
-                container.getStore().store(item.getItemId(), item.getData());
-            }
         }
     }
 

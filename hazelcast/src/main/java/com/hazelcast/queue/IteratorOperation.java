@@ -28,7 +28,7 @@ public class IteratorOperation extends QueueOperation {
         super(name);
     }
 
-    public void run() throws Exception {
-        response = getContainer().itemList();
+    public void run(){
+        response = getContainer().getAsDataList();
     }
 }

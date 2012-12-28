@@ -115,6 +115,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         if (task.getMigrationType() == MigrationType.MOVE && newOwner.equals(task.getFromAddress())) {
                             copyBack = true;
                             task.setCopyBackReplicaIndex(replicaIndex);
+                            task.setMigrationType(MigrationType.MOVE_COPY_BACK);
                             break;
                         }
                     }

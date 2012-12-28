@@ -39,7 +39,8 @@ public class OfferBackupOperation extends QueueOperation implements BackupOperat
     }
 
     public void run() throws Exception {
-        response = getContainer().offer(data);
+        getContainer().offerBackup(data);
+        response = true;
     }
 
     public void writeInternal(DataOutput out) throws IOException {

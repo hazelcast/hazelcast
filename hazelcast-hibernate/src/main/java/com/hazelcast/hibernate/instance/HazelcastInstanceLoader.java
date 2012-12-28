@@ -23,7 +23,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
@@ -53,16 +53,14 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
             return instance;
         }
         String configResourcePath = null;
-        if (props != null) {
-            instanceName = CacheEnvironment.getInstanceName(props);
-            useLiteMember = CacheEnvironment.isLiteMember(props);
-            if (!useLiteMember && props.contains(CacheEnvironment.USE_SUPER_CLIENT)) {
-                useLiteMember = CacheEnvironment.isSuperClient(props);
-                logger.log(Level.WARNING, "'" + CacheEnvironment.USE_SUPER_CLIENT + "' property is deprecated!" +
-                        " Please use '" + CacheEnvironment.USE_LITE_MEMBER + "' instead...");
-            }
-            configResourcePath = CacheEnvironment.getConfigFilePath(props);
+        instanceName = CacheEnvironment.getInstanceName(props);
+        useLiteMember = CacheEnvironment.isLiteMember(props);
+        if (!useLiteMember && props.contains(CacheEnvironment.USE_SUPER_CLIENT)) {
+            useLiteMember = CacheEnvironment.isSuperClient(props);
+            logger.log(Level.WARNING, "'" + CacheEnvironment.USE_SUPER_CLIENT + "' property is deprecated!" +
+                    " Please use '" + CacheEnvironment.USE_LITE_MEMBER + "' instead...");
         }
+        configResourcePath = CacheEnvironment.getConfigFilePath(props);
         if (useLiteMember) {
             logger.log(Level.WARNING,
                     "Creating Hazelcast node as Lite-Member. "

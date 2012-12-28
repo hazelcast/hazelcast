@@ -16,29 +16,34 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.partition.*;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationType;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EntryEvent, EntryListener> {
+        TransactionalService, RemoteService, EventPublishingService<EntryEvent, EntryListener>, ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
@@ -47,10 +52,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final PartitionContainer[] partitionContainers;
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
+    private final Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
 
     private final Set<String> mapsWithTTL;
-
 
     public MapService(final NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -67,9 +72,17 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-
         mapsWithTTL.add("mapp");
         nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
+        registerClientOperationHandlers();
+    }
+
+    private void registerClientOperationHandlers() {
+        registerHandler("MGET", new MapGetHandler(this));
+    }
+
+    void registerHandler(String command, ClientCommandHandler handler) {
+        commandHandlers.put(command, handler);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -214,6 +227,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void destroy() {
     }
 
+    public Map<String, ClientCommandHandler> getCommandMap() {
+        return commandHandlers;
+    }
+
     public void publishEvent(String mapName, Data key, EntryEvent event) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
@@ -234,8 +251,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerListener(MAP_SERVICE_NAME, mapName, eventFilter, entryListener);
-        eventRegistrations.put(new ListenerKey(entryListener, ((EntryEventFilter)eventFilter).getKey()), registration.getId());
-
+        eventRegistrations.put(new ListenerKey(entryListener, ((EntryEventFilter) eventFilter).getKey()), registration.getId());
     }
 
     public void removeEventListener(EntryListener entryListener, String mapName, Object key) {
@@ -263,9 +279,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private class CleanupTask implements Runnable {
         public void run() {
             for (String mapname : mapsWithTTL) {
-
             }
         }
     }
-
 }

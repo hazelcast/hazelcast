@@ -51,7 +51,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         this.nodeEngine = nodeEngine;
     }
 
-    public QueueContainer getContainer(final String name, boolean fromBackup) {
+    public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
             container = new QueueContainer(nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), fromBackup);
@@ -133,7 +133,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
-        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, IOUtil.toObject(event.data), null);
+        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, IOUtil.toObject(event.data), nodeEngine.getCluster().getMember(event.caller));
         if (event.eventType.equals(ItemEventType.ADDED)){
             listener.itemAdded(itemEvent);
         }

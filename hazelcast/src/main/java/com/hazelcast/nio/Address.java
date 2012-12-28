@@ -63,6 +63,7 @@ public final class Address implements DataSerializable {
         this.host = hostname != null ? hostname : addressArgs[0];
         if (addressArgs.length == 2) {
             scopeId = addressArgs[1];
+
         }
         this.port = port;
     }

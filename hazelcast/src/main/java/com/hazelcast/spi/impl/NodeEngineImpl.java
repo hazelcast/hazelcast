@@ -168,6 +168,7 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void onMemberLeft(MemberImpl member) {
         onMemberDisconnect(member.getAddress());
+        eventService.onMemberLeft(member);
     }
 
     @PrivateApi

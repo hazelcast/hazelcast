@@ -28,15 +28,17 @@ public class TransactionUtil {
 
     public static Transaction getTransaction(HazelcastClient client) {
         final ThreadContext ctx = ThreadContext.get();
-        TransactionClientProxy transactionProxy = ctx.getAttachment();
-        if (transactionProxy == null) {
-            transactionProxy = new TransactionClientProxy(null, client);
-            ctx.setAttachment(transactionProxy);
-        }
-        return transactionProxy;
+//        TransactionClientProxy transactionProxy = ctx.getAttachment();
+//        if (transactionProxy == null) {
+//            transactionProxy = new TransactionClientProxy(null, client);
+//            ctx.setAttachment(transactionProxy);
+//        }
+//        return transactionProxy;
+        //TODO: Need to fix this. Commented because it didn't compile.
+        return null;
     }
 
     public static void removeTransaction() {
-        ThreadContext.get().setAttachment(null);
+//        ThreadContext.get().setAttachment(null);
     }
 }

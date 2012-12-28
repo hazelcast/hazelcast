@@ -20,6 +20,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -34,8 +35,6 @@ public class AddAllOperation extends QueueBackupAwareOperation {
 
     private List<Data> dataList;
 
-    private transient List<QueueItem> itemList;
-
     public AddAllOperation() {
     }
 
@@ -44,38 +43,17 @@ public class AddAllOperation extends QueueBackupAwareOperation {
         this.dataList = dataList;
     }
 
-    public void run() throws Exception {
+    public void run() {
         response = false;
         QueueContainer container = getContainer();
-        itemList = container.addAll(dataList);
-        if (itemList.size() > 0){
-            response = true;
-            storeAll(false);
-        }
+        container.addAll(dataList);
+        response = true;
     }
 
     public void afterRun() throws Exception {
-        if (itemList.size() > 0 && storeAll(true)){
-            for (QueueItem item: itemList){
-                publishEvent(ItemEventType.ADDED, item.getData());
-            }
+        for (Data data : dataList) {
+            publishEvent(ItemEventType.ADDED, data);
         }
-    }
-
-    private boolean storeAll(boolean async){
-        boolean published = false;
-        QueueContainer container = getContainer();
-        if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
-            Map<Long, QueueStoreValue> map = new HashMap<Long, QueueStoreValue>(itemList.size());
-            for (QueueItem item: itemList){
-                QueueStoreValue storeValue = new QueueStoreValue(item.getData());
-                map.put(item.getItemId(), storeValue);
-                published = true;
-                publishEvent(ItemEventType.ADDED, item.getData());
-            }
-            container.getStore().storeAll(map);
-        }
-        return published;
     }
 
     public boolean shouldBackup() {
@@ -89,7 +67,7 @@ public class AddAllOperation extends QueueBackupAwareOperation {
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataList.size());
-        for (Data data: dataList){
+        for (Data data : dataList) {
             IOUtil.writeNullableData(out, data);
         }
     }
@@ -98,7 +76,7 @@ public class AddAllOperation extends QueueBackupAwareOperation {
         super.readInternal(in);
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             dataList.add(IOUtil.readNullableData(in));
         }
     }
