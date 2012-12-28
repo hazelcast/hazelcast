@@ -22,8 +22,7 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,127 +39,148 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public boolean add(Data data) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        final boolean res = offer(data);
+        if (!res) {
+            throw new IllegalStateException("Queue is full!");
+        }
+        return res;
     }
 
     public boolean offer(Data data) {
         try {
-            return offer(data,-1,null);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            return offer(data, 0, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            return false;
         }
-        return false;
     }
 
     public void put(Data data) throws InterruptedException {
-        //To change body of implemented methods use File | Settings | File Templates.
+        offer(data, -1, TimeUnit.MILLISECONDS);
     }
 
-    public boolean offer(Data data, long ttl, TimeUnit timeUnit) throws InterruptedException {
-        return false;
+    public boolean offer(Data data, long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
     public Data take() throws InterruptedException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return poll(-1, TimeUnit.MILLISECONDS);
     }
 
-    public Data poll(long l, TimeUnit timeUnit) throws InterruptedException {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public Data poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        return pollInternal(timeUnit.toMillis(timeout));
     }
 
     public int remainingCapacity() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return config.getMaxSize() - size();
     }
 
     public boolean remove(Object o) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return removeInternal((Data)o);
     }
 
     public boolean contains(Object o) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        List<Data> dataSet = new ArrayList<Data>(1);
+        dataSet.add((Data)o);
+        return containsInternal(dataSet);
     }
 
     public int drainTo(Collection<? super Data> objects) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return drainTo(objects, -1);
     }
 
     public int drainTo(Collection<? super Data> objects, int i) {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        if (this.equals(objects)) {
+            throw new IllegalArgumentException("Can not drain to same Queue");
+        }
+        List<Data> dataList = drainInternal(i);
+        objects.addAll(dataList);
+        return dataList.size();
     }
 
     public boolean isEmpty() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return size() == 0;
     }
 
     public Iterator<Data> iterator() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return new QueueIterator<Data>(listInternal().iterator(), true);
     }
 
     public Object[] toArray() {
-        return new Object[0];  //To change body of implemented methods use File | Settings | File Templates.
+        List<Data> list = listInternal();
+        return list.toArray();
     }
 
     public boolean containsAll(Collection<?> objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return containsInternal((Collection<Data>)objects);
     }
 
     public boolean addAll(Collection<? extends Data> datas) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return addAllInternal((Collection<Data>)datas);
     }
 
     public boolean removeAll(Collection<?> objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return compareAndRemove((Collection<Data>)objects, false);
     }
 
     public String getName() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return name;
     }
 
     public void addItemListener(ItemListener<Data> listener, boolean includeValue) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        queueService.addItemListener(name, listener, includeValue);
     }
 
     public void removeItemListener(ItemListener<Data> listener) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        queueService.removeItemListener(name, listener);
     }
 
     public InstanceType getInstanceType() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void destroy() {
-        //To change body of implemented methods use File | Settings | File Templates.
+        return InstanceType.QUEUE;
     }
 
     public Object getId() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return name;
     }
 
     public Data remove() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        final Data res = poll();
+        if (res == null) {
+            throw new NoSuchElementException("Queue is empty!");
+        }
+        return res;
     }
 
+
     public Data poll() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        try {
+            return poll(0, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
     }
 
     public Data element() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        final Data res = peek();
+        if (res == null) {
+            throw new NoSuchElementException("Queue is empty!");
+        }
+        return res;
     }
 
     public Data peek() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return peekInternal();
     }
 
     public <T> T[] toArray(T[] ts) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        List<Data> list = listInternal();
+        return list.toArray(ts);
     }
 
     public boolean retainAll(Collection<?> objects) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return compareAndRemove((Collection<Data>)objects, true);
     }
 }

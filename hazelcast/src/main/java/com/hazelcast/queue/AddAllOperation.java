@@ -35,12 +35,12 @@ import java.util.*;
 
 public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private List<Data> dataList;
+    private Collection<Data> dataList;
 
     public AddAllOperation() {
     }
 
-    public AddAllOperation(String name, List<Data> dataList) {
+    public AddAllOperation(String name, Collection<Data> dataList) {
         super(name);
         this.dataList = dataList;
     }

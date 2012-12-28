@@ -22,6 +22,7 @@ import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -118,7 +119,7 @@ abstract class QueueProxySupport {
         }
     }
 
-    boolean containsInternal(List<Data> dataList) {
+    boolean containsInternal(Collection<Data> dataList) {
         try {
             ContainsOperation operation = new ContainsOperation(name, dataList);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
@@ -151,9 +152,9 @@ abstract class QueueProxySupport {
         }
     }
 
-    boolean addAllInternal(List<Data> dataSet){
+    boolean addAllInternal(Collection<Data> dataList){
         try {
-            AddAllOperation operation = new AddAllOperation(name, dataSet);
+            AddAllOperation operation = new AddAllOperation(name, dataList);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
@@ -162,9 +163,9 @@ abstract class QueueProxySupport {
         }
     }
 
-    boolean compareCollectionInternal(List<Data> dataSet, boolean retain){
+    boolean compareAndRemove(Collection<Data> dataList, boolean retain){
         try {
-            CompareAndRemoveOperation operation = new CompareAndRemoveOperation(name, dataSet, retain);
+            CompareAndRemoveOperation operation = new CompareAndRemoveOperation(name, dataList, retain);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
@@ -182,6 +183,10 @@ abstract class QueueProxySupport {
         if (data == null) {
             throw new NullPointerException();
         }
+    }
+
+    public void destroy() {
+        //
     }
 
 

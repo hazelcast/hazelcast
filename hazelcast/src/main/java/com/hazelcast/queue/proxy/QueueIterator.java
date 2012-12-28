@@ -29,8 +29,11 @@ public class QueueIterator<E> implements Iterator<E> {
 
     final Iterator<Data> iter;
 
-    public QueueIterator(Iterator<Data> iter) {
+    final boolean isData;
+
+    public QueueIterator(Iterator<Data> iter, boolean isData) {
         this.iter = iter;
+        this.isData = isData;
     }
 
     public boolean hasNext() {
@@ -38,7 +41,11 @@ public class QueueIterator<E> implements Iterator<E> {
     }
 
     public E next() {
-        return IOUtil.toObject(iter.next());
+        Data data = iter.next();
+        if (isData){
+            return (E)data;
+        }
+        return IOUtil.toObject(data);
     }
 
     public void remove() {

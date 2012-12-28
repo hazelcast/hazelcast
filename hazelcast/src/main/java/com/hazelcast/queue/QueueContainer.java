@@ -187,7 +187,7 @@ public class QueueContainer implements DataSerializable {
     /**
      * This method does not trigger store load.
      */
-    public boolean contains(List<Data> dataSet) {
+    public boolean contains(Collection<Data> dataSet) {
         Set<QueueItem> set = new HashSet<QueueItem>(dataSet.size());
         for (Data data : dataSet) {
             set.add(new QueueItem(this, -1, data));
@@ -257,7 +257,7 @@ public class QueueContainer implements DataSerializable {
 
     }
 
-    public void addAll(List<Data> dataList) {
+    public void addAll(Collection<Data> dataList) {
         Map<Long, Data> dataMap = new HashMap<Long, Data>(dataList.size());
         for (Data data : dataList) {
             QueueItem item = offerBackup(data);
@@ -276,7 +276,7 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    public void addAllBackup(List<Data> dataList){
+    public void addAllBackup(Collection<Data> dataList){
         for (Data data : dataList) {
             offerBackup(data);
         }
@@ -285,7 +285,7 @@ public class QueueContainer implements DataSerializable {
     /**
      * This method triggers store load
      */
-    public Map<Long, Data> compareAndRemove(List<Data> dataList, boolean retain){
+    public Map<Long, Data> compareAndRemove(Collection<Data> dataList, boolean retain){
         LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
         for (QueueItem item: itemQueue ) {
             if (item.getData() == null && store.isEnabled()) {
@@ -318,7 +318,7 @@ public class QueueContainer implements DataSerializable {
         return map;
     }
 
-    public void compareCollectionBackup(Set<Long> keySet) {
+    public void compareAndRemoveBackup(Set<Long> keySet) {
         Iterator<QueueItem> iter = itemQueue.iterator();
         while (iter.hasNext()) {
             QueueItem item = iter.next();

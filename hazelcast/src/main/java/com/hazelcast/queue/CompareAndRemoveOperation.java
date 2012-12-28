@@ -32,7 +32,7 @@ import java.util.*;
  */
 public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private List<Data> dataList;
+    private Collection<Data> dataList;
 
     transient Map<Long, Data> dataMap;
 
@@ -41,7 +41,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     public CompareAndRemoveOperation() {
     }
 
-    public CompareAndRemoveOperation(String name, List<Data> dataList, boolean retain) {
+    public CompareAndRemoveOperation(String name, Collection<Data> dataList, boolean retain) {
         super(name);
         this.dataList = dataList;
         this.retain = retain;

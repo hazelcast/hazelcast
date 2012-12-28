@@ -22,6 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -29,12 +30,12 @@ import java.util.List;
  */
 public class ContainsOperation extends QueueOperation {
 
-    private List<Data> dataList;
+    private Collection<Data> dataList;
 
     public ContainsOperation() {
     }
 
-    public ContainsOperation(String name, List<Data> dataList){
+    public ContainsOperation(String name, Collection<Data> dataList){
         super(name);
         this.dataList = dataList;
     }
