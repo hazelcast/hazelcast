@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.impl;
 
 import com.hazelcast.nio.DataSerializable;
 
@@ -22,35 +22,15 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class RecordStats implements DataSerializable {
+public class RecordState implements DataSerializable {
 
-    protected volatile int hits = 0;
-    protected volatile long version = 0;
     protected volatile long maxIdleMillis = Long.MAX_VALUE;
-    protected volatile long writeTime = -1;
-    protected volatile long removeTime = 0;
     protected volatile long lastAccessTime = 0;
-    protected volatile long lastStoredTime = 0;
     protected volatile long creationTime = 0;
-    protected volatile long expirationTime = Long.MAX_VALUE;
-    protected volatile long lastUpdateTime = 0;
+    protected volatile long ttl = -1;
+
     protected volatile boolean dirty = false;
-
-    public int getHits() {
-        return hits;
-    }
-
-    public void setHits(int hits) {
-        this.hits = hits;
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
-    }
+    protected volatile boolean active = true;
 
     public long getMaxIdleMillis() {
         return maxIdleMillis;
@@ -58,22 +38,6 @@ public class RecordStats implements DataSerializable {
 
     public void setMaxIdleMillis(long maxIdleMillis) {
         this.maxIdleMillis = maxIdleMillis;
-    }
-
-    public long getWriteTime() {
-        return writeTime;
-    }
-
-    public void setWriteTime(long writeTime) {
-        this.writeTime = writeTime;
-    }
-
-    public long getRemoveTime() {
-        return removeTime;
-    }
-
-    public void setRemoveTime(long removeTime) {
-        this.removeTime = removeTime;
     }
 
     public long getLastAccessTime() {
@@ -84,14 +48,6 @@ public class RecordStats implements DataSerializable {
         this.lastAccessTime = lastAccessTime;
     }
 
-    public long getLastStoredTime() {
-        return lastStoredTime;
-    }
-
-    public void setLastStoredTime(long lastStoredTime) {
-        this.lastStoredTime = lastStoredTime;
-    }
-
     public long getCreationTime() {
         return creationTime;
     }
@@ -100,20 +56,12 @@ public class RecordStats implements DataSerializable {
         this.creationTime = creationTime;
     }
 
-    public long getExpirationTime() {
-        return expirationTime;
+    public long getTtl() {
+        return ttl;
     }
 
-    public void setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime;
-    }
-
-    public long getLastUpdateTime() {
-        return lastUpdateTime;
-    }
-
-    public void setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime;
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
     }
 
     public boolean isDirty() {
@@ -124,12 +72,29 @@ public class RecordStats implements DataSerializable {
         this.dirty = dirty;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public void writeData(DataOutput out) throws IOException {
-
-
+        out.writeLong(maxIdleMillis);
+        out.writeLong(lastAccessTime);
+        out.writeLong(creationTime);
+        out.writeLong(ttl);
+        out.writeBoolean(dirty);
+        out.writeBoolean(active);
     }
 
     public void readData(DataInput in) throws IOException {
-
+        maxIdleMillis = in.readLong();
+        lastAccessTime = in.readLong();
+        creationTime = in.readLong();
+        ttl = in.readLong();
+        dirty = in.readBoolean();
+        active = in.readBoolean();
     }
 }
