@@ -98,9 +98,9 @@ public class PartitionContainer {
             if (txnLogItem.isRemoved()) {
                 mapPartition.records.remove(key);
             } else {
-                DefaultRecord record = mapPartition.records.get(key);
+                Record record = mapPartition.records.get(key);
                 if (record == null) {
-                    record = new DefaultRecord(mapService.nextId(), key, txnLogItem.getValue(), -1, -1);
+                    record = mapService.createRecord(key, txnLogItem.getValue(), -1, -1);
                     mapPartition.records.put(key, record);
                 } else {
                     record.setValueData(txnLogItem.getValue());

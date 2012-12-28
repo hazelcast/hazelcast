@@ -16,9 +16,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.concurrentmap.ValueHolder;
-import com.hazelcast.map.RecordStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.DataSerializable;
 
@@ -29,26 +26,24 @@ import java.io.IOException;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 @SuppressWarnings("SynchronizeOnThis")
-public final class DefaultRecord extends AbstractRecord implements DataSerializable{
+public final class DefaultRecord extends AbstractRecord {
 
+    private volatile Data valueData;
     protected volatile Object valueObject;
-    protected volatile Object keyObject;
-    protected volatile RecordStats stats;
 
     public DefaultRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
-        super(id, keyData, valueData, ttl, maxIdleMillis);
+        super(id, keyData, ttl, maxIdleMillis);
+        this.valueData = valueData;
+    }
+
+    public DefaultRecord() {
+        super();
     }
 
     public Object getValue() {
-        if(valueObject == null)
+        if (valueObject == null)
             valueObject = toObject(valueData);
         return valueObject;
-    }
-
-    public Object getKey() {
-        if(keyObject == null)
-            keyObject = toObject(keyData);
-        return keyObject;
     }
 
     public Object setValue(Object value) {
@@ -57,21 +52,29 @@ public final class DefaultRecord extends AbstractRecord implements DataSerializa
         return oldValue;
     }
 
+    public Data getValueData() {
+        return valueData;
+    }
+
     public void setValueData(Data valueData) {
-        super.setValueData(valueData);
+        this.valueData = valueData;
         valueObject = null;
     }
 
     @Override
     public void writeData(DataOutput out) throws IOException {
         super.writeData(out);
-        stats.writeData(out);
+        keyData.writeData(out);
+        valueData.writeData(out);
     }
 
     @Override
     public void readData(DataInput in) throws IOException {
         super.readData(in);
-        stats = new RecordStats();
+        keyData = new Data();
+        keyData.readData(in);
+        valueData = new Data();
+        valueData.readData(in);
     }
 
 }

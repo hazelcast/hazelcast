@@ -44,7 +44,7 @@ public class PutBackupOperation extends PutOperation {
         MapService mapService = (MapService) getService();
         System.out.println(getNodeEngine().getThisAddress() + " backup " + txnId + " response " + sendResponse);
         DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        DefaultRecord record = mapPartition.records.get(dataKey);
+        Record record = mapPartition.records.get(dataKey);
         if (record == null) {
             record = new DefaultRecord( mapService.nextId(), dataKey, dataValue, -1, -1);
             mapPartition.records.put(dataKey, record);

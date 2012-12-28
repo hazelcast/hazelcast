@@ -22,6 +22,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.impl.DefaultRecord;
+import com.hazelcast.impl.Record;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -149,6 +151,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         container.maps.clear();
         container.transactions.clear(); // TODO: not sure?
+    }
+
+    public Record createRecord(Data keyData, Data valueData, long ttl, long maxIdleMillis) {
+        return new DefaultRecord(nextId(), keyData, valueData, ttl, maxIdleMillis);
     }
 
     public void prepare(String txnId, int partitionId) throws TransactionException {
