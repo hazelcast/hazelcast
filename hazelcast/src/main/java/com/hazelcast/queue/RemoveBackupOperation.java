@@ -28,28 +28,28 @@ import java.io.IOException;
  */
 public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
 
-    private Data data;
+    private long itemId;
 
     public RemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(String name, Data data) {
+    public RemoveBackupOperation(String name, long itemId) {
         super(name);
-        this.data = data;
+        this.itemId = itemId;
     }
 
     public void run() throws Exception {
-        response = getContainer().remove(data) != -1;
+        getContainer().removeBackup(itemId);
+        response = true;
     }
 
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        data.writeData(out);
+        out.writeLong(itemId);
     }
 
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        data = new Data();
-        data.readData(in);
+        itemId = in.readLong();
     }
 }

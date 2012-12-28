@@ -79,7 +79,7 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
         for (EventRegistration registration: registrations){
             QueueEventFilter filter = (QueueEventFilter)registration.getFilter();
-            QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType);
+            QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType, getNodeEngine().getThisAddress());
             eventService.publishEvent(getServiceName(), registration, event);
         }
     }

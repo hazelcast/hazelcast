@@ -35,8 +35,6 @@ public class AddAllOperation extends QueueBackupAwareOperation {
 
     private List<Data> dataList;
 
-    private transient List<QueueItem> itemList;
-
     public AddAllOperation() {
     }
 
@@ -48,36 +46,13 @@ public class AddAllOperation extends QueueBackupAwareOperation {
     public void run() {
         response = false;
         QueueContainer container = getContainer();
-        itemList = container.addAll(dataList);
-        if (itemList.size() > 0) {
-            try {
-                storeAll(false);
-            } catch (Exception e) {
-                for (int i = 0; i < itemList.size(); i++) {
-                    container.pollBackup();
-                }
-                throw new RetryableException(e);
-            }
-            response = true;
-        }
+        container.addAll(dataList);
+        response = true;
     }
 
     public void afterRun() throws Exception {
-        storeAll(true);
-        for (QueueItem item : itemList) {
-            publishEvent(ItemEventType.ADDED, item.getData());
-        }
-    }
-
-    private void storeAll(boolean async) throws Exception {
-        QueueContainer container = getContainer();
-        if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
-            Map<Long, QueueStoreValue> map = new HashMap<Long, QueueStoreValue>(itemList.size());
-            for (QueueItem item : itemList) {
-                QueueStoreValue storeValue = new QueueStoreValue(item.getData());
-                map.put(item.getItemId(), storeValue);
-            }
-            container.getStore().storeAll(map);
+        for (Data data : dataList) {
+            publishEvent(ItemEventType.ADDED, data);
         }
     }
 

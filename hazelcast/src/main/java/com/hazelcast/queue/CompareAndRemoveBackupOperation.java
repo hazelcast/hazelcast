@@ -27,14 +27,14 @@ import java.util.Set;
 /**
  * @ali 12/20/12
  */
-public class CompareCollectionBackupOperation extends QueueOperation implements BackupOperation {
+public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation {
 
     Set<Long> keySet;
 
-    public CompareCollectionBackupOperation() {
+    public CompareAndRemoveBackupOperation() {
     }
 
-    public CompareCollectionBackupOperation(String name, Set<Long> keySet) {
+    public CompareAndRemoveBackupOperation(String name, Set<Long> keySet) {
         super(name);
         this.keySet = keySet;
     }

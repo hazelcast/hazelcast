@@ -29,50 +29,33 @@ import java.util.*;
 /**
  * @ali 12/20/12
  */
-public class CompareCollectionOperation extends QueueBackupAwareOperation {
+public class CompareAndRemoveOperation extends QueueBackupAwareOperation {
 
-    List<Data> dataList;
+    private List<Data> dataList;
 
     transient Map<Long, Data> dataMap;
 
     boolean retain;
 
-    public CompareCollectionOperation() {
+    public CompareAndRemoveOperation() {
     }
 
-    public CompareCollectionOperation(String name, List<Data> dataList, boolean retain) {
+    public CompareAndRemoveOperation(String name, List<Data> dataList, boolean retain) {
         super(name);
         this.dataList = dataList;
         this.retain = retain;
     }
 
     public void run() {
-        response = false;
-        try {
-            dataMap = getContainer().compareAndRemove(dataList, retain);
-            if (dataMap.size() > 0) {
-                response = true;
-                deleteFromStore(false);
-            }
-        } catch (Exception e) {
-           //TODO
-        }
+        dataMap = getContainer().compareAndRemove(dataList, retain);
+        response = dataMap.size() > 0;
     }
 
     public void afterRun() throws Exception {
-        deleteFromStore(true);
         if (hasListener()) {
-            for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
-                Data data = entry.getValue();
+            for (Data data : dataMap.values()) {
                 publishEvent(ItemEventType.REMOVED, data);
             }
-        }
-    }
-
-    private void deleteFromStore(boolean async) throws Exception {
-        QueueContainer container = getContainer();
-        if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
-            container.getStore().deleteAll(dataMap.keySet());
         }
     }
 
@@ -81,7 +64,7 @@ public class CompareCollectionOperation extends QueueBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new CompareCollectionBackupOperation(name, dataMap.keySet());
+        return new CompareAndRemoveBackupOperation(name, dataMap.keySet());
     }
 
     public void writeInternal(DataOutput out) throws IOException {

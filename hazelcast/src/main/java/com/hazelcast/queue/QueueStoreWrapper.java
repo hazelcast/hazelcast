@@ -19,26 +19,30 @@ package com.hazelcast.queue;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.IOUtil;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @ali 12/14/12
  */
 public class QueueStoreWrapper {
 
+    private static final int DEFAULT_MEMORY_LIMIT = 1000;
+
+    private static final int DEFAULT_BULK_LOAD = 250;
+
     private QueueStore store;
+
+    private QueueStoreConfig storeConfig;
 
     private boolean enabled = false;
 
-    private boolean async = false;
+    private int memoryLimit = DEFAULT_MEMORY_LIMIT;
 
-    private int memoryLimit = 5;
+    private int bulkLoad = DEFAULT_BULK_LOAD;
 
-    private int bulkLoad = 3;
+    private boolean binary = false;
 
     public QueueStoreWrapper() {
     }
@@ -47,14 +51,15 @@ public class QueueStoreWrapper {
         if (storeConfig == null) {
             return;
         }
+        this.storeConfig = storeConfig;
         try {
             Class<?> storeClass = Class.forName(storeConfig.getClassName());
             store = (QueueStore) storeClass.newInstance();
             enabled = storeConfig.isEnabled();
-            async = Boolean.parseBoolean(storeConfig.getProperty("async"));
-            memoryLimit = Integer.parseInt(storeConfig.getProperty("memory-limit"));
-            bulkLoad = Integer.parseInt(storeConfig.getProperty("bulk-load"));
-            if (bulkLoad < 1){
+            binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));
+            memoryLimit = parseInt("memory-limit", DEFAULT_MEMORY_LIMIT);
+            bulkLoad = parseInt("bulk-load", DEFAULT_BULK_LOAD);
+            if (bulkLoad < 1) {
                 bulkLoad = 1;
             }
         } catch (ClassNotFoundException e) {
@@ -63,18 +68,15 @@ public class QueueStoreWrapper {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
             e.printStackTrace();
-        } catch (NumberFormatException e){
-//            e.printStackTrace();
         }
-
     }
 
     public boolean isEnabled() {
         return enabled;
     }
 
-    public boolean isAsync() {
-        return async;
+    public boolean isBinary() {
+        return binary;
     }
 
     public int getMemoryLimit() {
@@ -87,13 +89,21 @@ public class QueueStoreWrapper {
 
     public void store(Long key, Data value) throws Exception {
         if (enabled) {
-            store.store(key, new QueueStoreValue(value));
+            store.store(key, binary ? value.buffer : IOUtil.toObject(value));
         }
     }
 
-    public void storeAll(Map map) throws Exception {
+    public void storeAll(Map<Long, Data> map) throws Exception {
         if (enabled) {
-            store.storeAll(map);
+            if (binary) {
+                store.storeAll(map);
+            } else {
+                Map<Long, Object> objectMap = new HashMap<Long, Object>(map.size());
+                for (Map.Entry<Long, Data> entry : map.entrySet()) {
+                    objectMap.put(entry.getKey(), IOUtil.toObject(entry.getValue()));
+                }
+                store.storeAll(objectMap);
+            }
         }
     }
 
@@ -103,7 +113,7 @@ public class QueueStoreWrapper {
         }
     }
 
-    public void deleteAll(Collection keys) throws Exception {
+    public void deleteAll(Collection<Long> keys) throws Exception {
         if (enabled) {
             store.deleteAll(keys);
         }
@@ -111,17 +121,26 @@ public class QueueStoreWrapper {
 
     public Data load(Long key) throws Exception {
         if (enabled) {
-            QueueStoreValue val = (QueueStoreValue) store.load(key);
-            if (val != null) {
-                return val.getData();
+            Object val = store.load(key);
+            if (binary) {
+                return (Data) val;
             }
+            return IOUtil.toData(val);
         }
         return null;
     }
 
-    public Map<Long, QueueStoreValue> loadAll(Collection keys) throws Exception {
+    public Map<Long, Data> loadAll(Collection<Long> keys) throws Exception {
         if (enabled) {
-            return store.loadAll(keys);
+            Map<Long, ?> map = store.loadAll(keys);
+            if (binary) {
+                return (Map<Long, Data>) map;
+            }
+            Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
+            for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                dataMap.put(entry.getKey(), IOUtil.toData(entry.getValue()));
+            }
+            return dataMap;
         }
         return null;
     }
@@ -130,6 +149,18 @@ public class QueueStoreWrapper {
         if (enabled) {
             return store.loadAllKeys();
         }
-        return new HashSet<Long>(0);
+        return null;
+    }
+
+    private int parseInt(String name, int defaultValue) {
+        String val = storeConfig.getProperty(name);
+        if (val == null){
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 }

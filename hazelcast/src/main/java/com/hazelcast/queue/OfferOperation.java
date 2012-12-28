@@ -50,26 +50,13 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
         response = false;
         QueueContainer container = getContainer();
         item = container.offer(data);
-        if (item != null) {
-            if (container.isStoreEnabled() && !container.isStoreAsync()) {
-                try {
-                    container.getStore().store(item.getItemId(), data);
-                } catch (Exception e) {
-                    container.pollBackup();
-                    throw new RetryableException(e);
-                }
-            }
-            response = true;
-        }
+        response = true;
+
     }
 
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            QueueContainer container = getContainer();
             publishEvent(ItemEventType.ADDED, data);
-            if (container.isStoreEnabled() && container.isStoreAsync()) {
-                container.getStore().store(item.getItemId(), item.getData());
-            }
         }
     }
 
