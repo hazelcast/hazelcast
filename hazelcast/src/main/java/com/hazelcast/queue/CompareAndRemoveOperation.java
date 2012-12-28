@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
@@ -29,7 +30,7 @@ import java.util.*;
 /**
  * @ali 12/20/12
  */
-public class CompareAndRemoveOperation extends QueueBackupAwareOperation {
+public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private List<Data> dataList;
 
@@ -86,4 +87,11 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation {
         }
     }
 
+    public boolean shouldNotify() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":offer";
+    }
 }

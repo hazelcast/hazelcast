@@ -34,7 +34,7 @@ public final class QueueConfig implements DataSerializable {
     private List<ItemListenerConfig> listenerConfigs;
     private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
-    private int maxSize;
+    private int maxSize = 5;
     private QueueStoreConfig queueStoreConfig;
 
     public QueueConfig() {

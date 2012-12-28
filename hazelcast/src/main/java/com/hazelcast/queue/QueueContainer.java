@@ -371,6 +371,17 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
+    public boolean checkBound(){
+        return checkBound(1);
+    }
+
+    public boolean checkBound(int delta){
+        if (itemQueue.size() + delta > config.getMaxSize()){
+            return false;
+        }
+        return true;
+    }
+
     public Data getData(long itemId) {
         return dataMap.remove(itemId);
     }

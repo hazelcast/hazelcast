@@ -47,11 +47,14 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public void run() {
-        response = false;
         QueueContainer container = getContainer();
-        item = container.offer(data);
-        response = true;
-
+        if (container.checkBound()){
+            item = container.offer(data);
+            response = true;
+        }
+        else {
+            response = false;
+        }
     }
 
     public void afterRun() throws Exception {
@@ -69,8 +72,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public boolean shouldNotify() {
-        //TODO
-        return true;
+        return Boolean.TRUE.equals(response);
     }
 
     public Object getNotifiedKey() {
@@ -83,7 +85,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
 
     public boolean shouldWait() {
         QueueContainer container = getContainer();
-        return getWaitTimeoutMillis() != 0 && container.getConfig().getMaxSize() <= container.size();
+        return getWaitTimeoutMillis() != 0 && !container.checkBound();
     }
 
     public void onWaitExpire() {

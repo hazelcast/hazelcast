@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
@@ -27,7 +28,7 @@ import java.io.IOException;
 /**
  * @ali 12/6/12
  */
-public class RemoveOperation extends QueueBackupAwareOperation {
+public class RemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Data data;
 
@@ -70,5 +71,13 @@ public class RemoveOperation extends QueueBackupAwareOperation {
         super.readInternal(in);
         data = new Data();
         data.readData(in);
+    }
+
+    public boolean shouldNotify() {
+        return itemId != -1;
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":offer";
     }
 }
