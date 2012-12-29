@@ -32,8 +32,8 @@ public class MapIsEmptyOperation extends AbstractNamedOperation implements Parti
 
     public void run() {
         MapService mapService = (MapService) getService();
-        DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        empty = mapPartition.records.isEmpty();
+        RecordStore mapPartition = mapService.getRecordStore(getPartitionId(), name);
+        empty = mapPartition.getRecords().isEmpty();
     }
 
     @Override

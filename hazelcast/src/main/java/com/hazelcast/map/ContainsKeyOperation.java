@@ -32,8 +32,8 @@ public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
 
     public void run() {
         MapService mapService = (MapService) getService();
-        DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        containsKey = mapPartition.records.containsKey(dataKey);
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        containsKey = recordStore.getRecords().containsKey(dataKey);
     }
 
     @Override

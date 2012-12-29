@@ -24,7 +24,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
     public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore recordStore;
+    RecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
     boolean locked = false;
@@ -46,7 +46,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
         mapService = getService();
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getMapPartition(name);
+        recordStore = pc.getRecordStore(name);
     }
 
     public void beforeRun() {

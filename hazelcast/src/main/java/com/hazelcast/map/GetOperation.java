@@ -16,12 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
-import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class GetOperation extends AbstractNamedKeyBasedOperation {
@@ -37,8 +34,8 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
 
     public void run() {
         MapService mapService = (MapService) getService();
-        DefaultRecordStore mapPartition = mapService.getMapPartition(getPartitionId(), name);
-        result = mapPartition.get(dataKey);
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        result = recordStore.get(dataKey);
     }
 
     @Override

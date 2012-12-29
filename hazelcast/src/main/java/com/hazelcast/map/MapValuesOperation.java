@@ -21,7 +21,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.Collection;
-import java.util.Set;
 
 public class MapValuesOperation extends AbstractNamedOperation implements PartitionAwareOperation {
     Collection<Data> values;
@@ -35,7 +34,7 @@ public class MapValuesOperation extends AbstractNamedOperation implements Partit
 
     public void run() {
         MapService mapService = (MapService) getService();
-        DefaultRecordStore recordStore = mapService.getMapPartition(getPartitionId(), name);
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         values = recordStore.values();
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -73,6 +74,11 @@ public class RecordState implements DataSerializable {
     }
 
     public boolean isActive() {
+        // check if record has expired, if so make active false
+        if(active && ttl > 0 && Clock.currentTimeMillis() > creationTime + ttl)
+            active = false;
+        if(active && maxIdleMillis > 0 && Clock.currentTimeMillis() > lastAccessTime + maxIdleMillis)
+            active = false;
         return active;
     }
 

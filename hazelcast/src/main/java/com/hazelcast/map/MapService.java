@@ -26,6 +26,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
+import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -79,7 +80,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-        mapsWithTTL.add("mapp");
+
+        for (String mapName : proxies.keySet()) {
+            MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
+            if (mapConfig.getTimeToLiveSeconds() > 0 || mapConfig.getMaxIdleSeconds() > 0)
+                mapsWithTTL.add(mapName);
+        }
+
+        // todo make this 1 second configurable
         nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
@@ -96,8 +104,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return partitionContainers[partitionId];
     }
 
-    public DefaultRecordStore getMapPartition(int partitionId, String mapName) {
-        return getPartitionContainer(partitionId).getMapPartition(mapName);
+    public RecordStore getRecordStore(int partitionId, String mapName) {
+        return getPartitionContainer(partitionId).getRecordStore(mapName);
     }
 
     public long nextId() {
@@ -158,7 +166,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         container.transactions.clear(); // TODO: not sure?
     }
 
-    public Record createRecord(Data keyData, Data valueData, long ttl, long maxIdleMillis) {
+    public Record createRecord(String mapName, Data keyData, Data valueData, long ttl) {
+        MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
+        long maxIdleMillis = mapConfig.getMaxIdleSeconds() * 1000;
+        if (ttl == -1) {
+            ttl = mapConfig.getTimeToLiveSeconds() * 1000;
+        }
         return new DefaultRecord(nextId(), keyData, valueData, ttl, maxIdleMillis);
     }
 
@@ -296,10 +309,37 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
+    public void notifyMapTtl(String mapName) {
+        mapsWithTTL.add(mapName);
+    }
+
 
     private class CleanupTask implements Runnable {
         public void run() {
-            for (String mapname : mapsWithTTL) {
+            cleanExpiredRecords();
+        }
+
+        private void cleanExpiredRecords() {
+            if (mapsWithTTL.isEmpty())
+                return;
+
+            for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
+                Node node = nodeEngine.getNode();
+                Address owner = node.partitionService.getPartitionOwner(i);
+                if (node.address.equals(owner)) {
+                    for (String mapName : mapsWithTTL) {
+                        PartitionContainer pc = partitionContainers[i];
+                        RecordStore recordStore = pc.getRecordStore(mapName);
+                        Set<Map.Entry<Data, Record>> recordEntries = recordStore.getRecords().entrySet();
+                        List<Data> keysToRemoved = new ArrayList<Data>();
+                        for (Map.Entry<Data, Record> entry : recordEntries) {
+                            Record record = entry.getValue();
+                            if (!record.isActive())
+                                keysToRemoved.add(entry.getKey());
+                        }
+                        recordStore.removeAll(keysToRemoved);
+                    }
+                }
             }
         }
     }

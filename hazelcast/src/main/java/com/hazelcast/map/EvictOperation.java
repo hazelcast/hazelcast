@@ -17,8 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Member;
-import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -31,7 +29,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
 
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore recordStore;
+    RecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
     boolean evicted = false;
@@ -59,7 +57,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         mapService = (MapService) getService();
         nodeEngine = (NodeEngine) getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getMapPartition(name);
+        recordStore = pc.getRecordStore(name);
     }
 
     public void beforeRun() {
@@ -102,7 +100,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void remove() {
-        recordStore.records.remove(dataKey);
+        recordStore.getRecords().remove(dataKey);
     }
 
 

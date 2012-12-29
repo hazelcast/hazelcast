@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Member;
 import com.hazelcast.impl.Record;
 import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.Data;
@@ -32,7 +31,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     Data dataOldValue;
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore recordStore;
+    RecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
 
@@ -62,7 +61,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         mapService = getService();
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getMapPartition(name);
+        recordStore = pc.getRecordStore(name);
     }
 
     public void beforeRun() {

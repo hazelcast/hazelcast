@@ -240,7 +240,7 @@ public class MapTest {
         actual.add("key1");
         actual.add("key2");
         actual.add("key3");
-        assertEquals( map.keySet(), actual);
+        assertEquals(map.keySet(), actual);
     }
 
     @Test
@@ -315,9 +315,9 @@ public class MapTest {
         assertTrue(map.replace(1, 1, 2));
         assertEquals(map.get(1), 2);
         map.put(2, 2);
-        assertTrue(map.replace(2,2,3));
+        assertTrue(map.replace(2, 2, 3));
         assertEquals(map.get(2), 3);
-        assertTrue(map.replace(2,3,4));
+        assertTrue(map.replace(2, 3, 4));
         assertEquals(map.get(2), 4);
     }
 
@@ -381,7 +381,6 @@ public class MapTest {
     }
 
 
-
     @Test
     public void testMapTryPut() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapTryPut");
@@ -415,7 +414,7 @@ public class MapTest {
         Future<Object> ff = map.putAsync(1, 1);
         try {
             assertEquals(null, ff.get());
-            assertEquals(1, map.putAsync(1,2).get());
+            assertEquals(1, map.putAsync(1, 2).get());
             assertEquals(2, map.getAsync(1).get());
             assertEquals(2, map.removeAsync(1).get());
             assertEquals(0, map.size());
@@ -430,9 +429,9 @@ public class MapTest {
     public void testGetAllPutAll() {
         final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
         Map mm = new HashMap();
-        mm.put(1,1);
-        mm.put(2,2);
-        mm.put(3,3);
+        mm.put(1, 1);
+        mm.put(2, 2);
+        mm.put(3, 3);
         map.putAll(mm);
         assertEquals(map.size(), 3);
         assertEquals(map.get(1), 1);
@@ -592,6 +591,14 @@ public class MapTest {
         assertEquals(removedValue[0], null);
     }
 
+    @Test
+    public void testPutWithTtl() throws InterruptedException {
+        IMap<String, String> map = getInstance().getMap("testPutWithTtl");
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        Thread.sleep(3000);
+        assertNull(map.get("key"));
+
+    }
 
 
     @Test
