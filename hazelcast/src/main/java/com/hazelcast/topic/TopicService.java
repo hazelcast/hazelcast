@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class TopicService implements ManagedService, RemoteService, EventPublishingService {
 
-    public static final String NAME = "hz:impl:TopicService";
+    public static final String NAME = "hz:impl:topicService";
 
     private NodeEngine nodeEngine;
 
@@ -45,7 +45,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public void destroy() {
-        
+
     }
 
     public ServiceProxy getProxy(Object... params) {
@@ -67,9 +67,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public void dispatchEvent(Object event, Object listener) {
-        TopicEvent topicEvent = (TopicEvent)event;
-        Message message = new Message(topicEvent.name,nodeEngine.toObject(topicEvent.data));
-       ((MessageListener)listener).onMessage(message);
+        TopicEvent topicEvent = (TopicEvent) event;
+        Message message = new Message(topicEvent.name, nodeEngine.toObject(topicEvent.data));
+        ((MessageListener) listener).onMessage(message);
 
     }
 }
