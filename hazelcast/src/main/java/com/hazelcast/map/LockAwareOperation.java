@@ -49,7 +49,7 @@ public abstract class LockAwareOperation extends TTLAwareOperation implements Wa
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         PartitionContainer pc = mapService.getPartitionContainer(partitionId);
-        DefaultRecordStore mapPartition = pc.getMapPartition(name);
+        RecordStore mapPartition = pc.getRecordStore(name);
         boolean shouldWait = !mapPartition.canRun(this);
         return shouldWait;
     }

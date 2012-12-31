@@ -26,11 +26,9 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ali
  * Date: 11/14/12
  * Time: 12:54 AM
- * To change this template use File | Settings | File Templates.
  */
 public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data> {
 

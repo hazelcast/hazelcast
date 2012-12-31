@@ -69,12 +69,12 @@ public class MapMigrationOperation extends AbstractOperation {
         for (Entry<String, Map<Data, Record>> dataEntry : data.entrySet()) {
             Map<Data, Record> dataMap = dataEntry.getValue();
             final String mapName = dataEntry.getKey();
-            DefaultRecordStore partition = mapService.getMapPartition(getPartitionId(), mapName);
+            RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
             for (Entry<Data, Record> entry : dataMap.entrySet()) {
                 final Record recordEntry = entry.getValue();
                 DefaultRecord record = new DefaultRecord(  mapService.nextId(),
                         recordEntry.getKey(), recordEntry.getValueData(), -1, -1);
-                partition.records.put(entry.getKey(), record);
+                recordStore.getRecords().put(entry.getKey(), record);
             }
         }
     }

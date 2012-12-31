@@ -66,7 +66,7 @@ public abstract class AbstractRecord implements Record, DataSerializable {
         }
     }
 
-    public void setTTL(long ttl){
+    public void setTtl(long ttl){
         if(ttl > 0 && state == null) {
             state = new RecordState();
         }
@@ -83,6 +83,25 @@ public abstract class AbstractRecord implements Record, DataSerializable {
     public void setDirty(boolean b) {
         if (state != null)
             state.setDirty(b);
+    }
+
+    public boolean isDirty() {
+        if(state != null)
+            return state.isDirty();
+        return false;
+    }
+
+    public boolean isActive() {
+        if(state != null)
+            return state.isActive();
+        return true;
+    }
+
+    public long getTtl() {
+        if(state != null)
+            return -1;
+        return state.getTtl();
+
     }
 
     public Record clone() {
