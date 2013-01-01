@@ -45,7 +45,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     public boolean add(E e) {
         final boolean res = offer(e);
         if (!res) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Queue is full!");
         }
         return res;
     }
@@ -106,7 +106,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     public E remove() {
         final E res = poll();
         if (res == null) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("Queue is empty!");
         }
         return res;
     }
@@ -127,7 +127,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     public E element() {
         final E res = peek();
         if (res == null) {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("Queue is empty!");
         }
         return res;
     }
@@ -146,23 +146,23 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public Object[] toArray() {
-        List<QueueItem> list = listInternal();
+        List<Data> list = listInternal();
         int size = list.size();
         Object[] array = new Object[size];
         for (int i = 0; i < size; i++) {
-            array[i] = IOUtil.toObject(list.get(i).getData());
+            array[i] = IOUtil.toObject(list.get(i));
         }
         return array;
     }
 
     public <T> T[] toArray(T[] ts) {
-        List<QueueItem> list = listInternal();
+        List<Data> list = listInternal();
         int size = list.size();
         if (ts.length < size) {
             ts = (T[])java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
         }
         for (int i = 0; i < size; i++) {
-            ts[i] = IOUtil.toObject(list.get(i).getData());
+            ts[i] = IOUtil.toObject(list.get(i));
         }
         return ts;
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.DataInput;
@@ -28,59 +29,117 @@ import static com.hazelcast.nio.IOUtil.toObject;
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-public abstract class AbstractRecord extends AbstractSimpleRecord implements Record {
+public abstract class AbstractRecord implements Record, DataSerializable {
 
-    protected volatile long maxIdleMillis = Long.MAX_VALUE;
-    protected volatile long lastAccessTime = 0;
-    protected volatile long creationTime = 0;
-    protected volatile long ttl = -1;
+    protected volatile long id;
+    protected volatile RecordState state;
+    protected volatile RecordStats stats;
+    protected volatile Data keyData;
 
-    protected volatile boolean dirty = false;
-    protected volatile boolean active = true;
+    public AbstractRecord(long id, Data keyData, long ttl, long maxIdleMillis) {
+        this.id = id;
+        if(ttl > 0 || maxIdleMillis > 0){
+            state = new RecordState();
+            state.setTtl(ttl);
+            state.setMaxIdleMillis(maxIdleMillis);
+        }
+        this.keyData = keyData;
+    }
 
-    public AbstractRecord(long id, Data key, Data value, long ttl, long maxIdleMillis) {
-        super(id, key, value);
-        this.ttl = ttl;
-        this.creationTime = Clock.currentTimeMillis();
-        this.maxIdleMillis = (maxIdleMillis == 0) ? Long.MAX_VALUE : maxIdleMillis;
+    public AbstractRecord() {
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public Data getKey() {
+        return keyData;
+    }
+
+    public void setMaxIdleMillis(long maxIdleMillis){
+        if(maxIdleMillis > 0 && state == null) {
+            state = new RecordState();
+        }
+        if(state != null) {
+            state.setMaxIdleMillis(maxIdleMillis);
+        }
+    }
+
+    public void setTtl(long ttl){
+        if(ttl > 0 && state == null) {
+            state = new RecordState();
+        }
+        if(state != null) {
+            state.setTtl(ttl);
+        }
+    }
+
+    public void setActive(boolean b) {
+        if (state != null)
+            state.setActive(b);
+    }
+
+    public void setDirty(boolean b) {
+        if (state != null)
+            state.setDirty(b);
     }
 
     public boolean isDirty() {
-        return dirty;
-    }
-
-    public void setDirty(boolean dirty) {
-        this.dirty = dirty;
+        if(state != null)
+            return state.isDirty();
+        return false;
     }
 
     public boolean isActive() {
-        return active;
+        if(state != null)
+            return state.isActive();
+        return true;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public long getTtl() {
+        if(state != null)
+            return -1;
+        return state.getTtl();
+
     }
 
-    @Override
+    public Record clone() {
+        // todo implement
+        return null;
+    }
+
     public void writeData(DataOutput out) throws IOException {
-        super.writeData(out);
-        out.writeLong(creationTime);
-        out.writeLong(lastAccessTime);
-        out.writeLong(maxIdleMillis);
-        out.writeLong(ttl);
-        out.writeBoolean(dirty);
-        out.writeBoolean(active);
+        out.writeLong(id);
+        if(state != null) {
+            out.writeBoolean(true);
+            state.writeData(out);
+        }
+        else {
+            out.writeBoolean(false);
+        }
+
+        if(stats != null) {
+            out.writeBoolean(true);
+            stats.writeData(out);
+        }
+        else {
+            out.writeBoolean(false);
+        }
     }
 
-    @Override
     public void readData(DataInput in) throws IOException {
-        super.readData(in);
-        creationTime = in.readLong();
-        lastAccessTime = in.readLong();
-        maxIdleMillis = in.readLong();
-        ttl = in.readLong();
-        dirty = in.readBoolean();
-        active = in.readBoolean();
+        id = in.readLong();
+        boolean stateEnabled = in.readBoolean();
+        if(stateEnabled) {
+            state = new RecordState();
+            state.readData(in);
+        }
+        boolean statsEnabled = in.readBoolean();
+        if(statsEnabled) {
+            stats = new RecordStats();
+            stats.readData(in);
+        }
     }
 
     public boolean equals(Object o) {
@@ -91,7 +150,10 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public String toString() {
-        return "Record key=" + getKeyData();
+        return "Record id=" + getId();
     }
 
+    public int hashCode() {
+        return (int) (id ^ (id >>> 32));
+    }
 }

@@ -17,48 +17,37 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
-@SuppressWarnings("SynchronizeOnThis")
-public final class DefaultRecord extends AbstractRecord {
+public class DataRecord extends AbstractRecord implements Record {
 
     private volatile Data valueData;
-    protected volatile Object valueObject;
 
-    public DefaultRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
+    public DataRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
         super(id, keyData, ttl, maxIdleMillis);
         this.valueData = valueData;
-    }
-
-    public DefaultRecord() {
-        super();
-    }
-
-    public Object getValue() {
-        if (valueObject == null)
-            valueObject = toObject(valueData);
-        return valueObject;
-    }
-
-    public Object setValue(Object value) {
-        Object oldValue = getValue();
-        valueObject = value;
-        return oldValue;
     }
 
     public Data getValueData() {
         return valueData;
     }
 
-    public void setValueData(Data valueData) {
+    public void setValueData(Data dataValue) {
         this.valueData = valueData;
-        valueObject = null;
+    }
+
+    public Object getValue() {
+        return IOUtil.toObject(valueData);
+    }
+
+    public Object setValue(Object o) {
+        Object old = getValue();
+        valueData = IOUtil.toData(o);
+        return old;
     }
 
     @Override
@@ -76,5 +65,4 @@ public final class DefaultRecord extends AbstractRecord {
         valueData = new Data();
         valueData.readData(in);
     }
-
 }

@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 
 import java.io.DataInput;
@@ -28,11 +29,11 @@ import java.util.*;
 /**
  * @ali 12/19/12
  */
-public class DrainOperation extends QueueBackupAwareOperation {
+public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 
     int maxSize = -1;
 
-    transient List<QueueItem> itemList;
+    transient Collection<Data> dataList;
 
     //TODO how about waiting polls
 
@@ -46,30 +47,18 @@ public class DrainOperation extends QueueBackupAwareOperation {
 
     public void run() throws Exception {
         QueueContainer container = getContainer();
-        itemList = container.drain(maxSize);
-        Set<Long> keySet = new HashSet<Long>(itemList.size());
-        List<Data> dataList = new ArrayList<Data>(itemList.size());
-        for (QueueItem item : itemList) {
-            keySet.add(item.getItemId());
-            dataList.add(item.getData());
-        }
+        dataList = container.drain(maxSize);
         response = dataList;
-        if (!container.isStoreAsync()) {
-            container.getStore().deleteAll(keySet);
-        }
     }
 
     public void afterRun() throws Exception {
-        if (itemList.size() > 0) {
-            List<Data> dataList = (List<Data>) response;
-            for (Data data : dataList) {
-                publishEvent(ItemEventType.REMOVED, data);
-            }
+        for (Data data : dataList) {
+            publishEvent(ItemEventType.REMOVED, data);
         }
     }
 
     public boolean shouldBackup() {
-        return itemList.size() > 0;
+        return dataList.size() > 0;
     }
 
     public Operation getBackupOperation() {
@@ -84,5 +73,13 @@ public class DrainOperation extends QueueBackupAwareOperation {
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
         maxSize = in.readInt();
+    }
+
+    public boolean shouldNotify() {
+        return dataList.size() > 0;
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":offer";
     }
 }

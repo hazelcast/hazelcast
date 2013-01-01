@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.AbstractOperation;
 
@@ -35,7 +34,7 @@ import java.util.Map.Entry;
  */
 public class MapMigrationOperation extends AbstractOperation {
 
-    private Map<String, Map<Data, DataRecordEntry>> data;
+    private Map<String, Map<Data, Record>> data;
     private boolean diff;
 
     public MapMigrationOperation() {
@@ -44,7 +43,7 @@ public class MapMigrationOperation extends AbstractOperation {
     public MapMigrationOperation(PartitionContainer container, int partitionId, int replicaIndex, boolean diff) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         this.diff = diff;
-        data = new HashMap<String, Map<Data, DataRecordEntry>>(container.maps.size());
+        data = new HashMap<String, Map<Data, Record>>(container.maps.size());
         for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
             final MapConfig mapConfig = container.getMapConfig(name);
@@ -52,10 +51,10 @@ public class MapMigrationOperation extends AbstractOperation {
                 continue;
             }
 
-            DefaultRecordStore mapPartition = entry.getValue();
-            Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(mapPartition.records.size());
-            for (Entry<Data, DefaultRecord> recordEntry : mapPartition.records.entrySet()) {
-                map.put(recordEntry.getKey(), new DataRecordEntry(recordEntry.getValue(), true));
+            DefaultRecordStore recordStore = entry.getValue();
+            Map<Data, Record> map = new HashMap<Data, Record>(recordStore.records.size());
+            for (Entry<Data, Record> recordEntry : recordStore.records.entrySet()) {
+                map.put(recordEntry.getKey(), recordEntry.getValue());
             }
             data.put(name, map);
         }
@@ -67,15 +66,15 @@ public class MapMigrationOperation extends AbstractOperation {
             return;
         }
         MapService mapService = (MapService) getService();
-        for (Entry<String, Map<Data, DataRecordEntry>> dataEntry : data.entrySet()) {
-            Map<Data, DataRecordEntry> dataMap = dataEntry.getValue();
+        for (Entry<String, Map<Data, Record>> dataEntry : data.entrySet()) {
+            Map<Data, Record> dataMap = dataEntry.getValue();
             final String mapName = dataEntry.getKey();
-            DefaultRecordStore partition = mapService.getMapPartition(getPartitionId(), mapName);
-            for (Entry<Data, DataRecordEntry> entry : dataMap.entrySet()) {
-                final DataRecordEntry recordEntry = entry.getValue();
+            RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
+            for (Entry<Data, Record> entry : dataMap.entrySet()) {
+                final Record recordEntry = entry.getValue();
                 DefaultRecord record = new DefaultRecord(  mapService.nextId(),
-                        recordEntry.getKeyData(), recordEntry.getValueData(), -1, -1);
-                partition.records.put(entry.getKey(), record);
+                        recordEntry.getKey(), recordEntry.getValueData(), -1, -1);
+                recordStore.getRecords().put(entry.getKey(), record);
             }
         }
     }
@@ -87,15 +86,15 @@ public class MapMigrationOperation extends AbstractOperation {
     public void readInternal(final DataInput in) throws IOException {
         diff = in.readBoolean();
         int size = in.readInt();
-        data = new HashMap<String, Map<Data, DataRecordEntry>>(size);
+        data = new HashMap<String, Map<Data, Record>>(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int mapSize = in.readInt();
-            Map<Data, DataRecordEntry> map = new HashMap<Data, DataRecordEntry>(mapSize);
+            Map<Data, Record> map = new HashMap<Data, Record>(mapSize);
             for (int j = 0; j < mapSize; j++) {
                 Data data = new Data();
                 data.readData(in);
-                DataRecordEntry recordEntry = new DataRecordEntry();
+                Record recordEntry = new DefaultRecord();
                 recordEntry.readData(in);
                 map.put(data, recordEntry);
             }
@@ -106,11 +105,11 @@ public class MapMigrationOperation extends AbstractOperation {
     public void writeInternal(final DataOutput out) throws IOException {
         out.writeBoolean(diff);
         out.writeInt(data.size());
-        for (Entry<String, Map<Data, DataRecordEntry>> mapEntry : data.entrySet()) {
+        for (Entry<String, Map<Data, Record>> mapEntry : data.entrySet()) {
             out.writeUTF(mapEntry.getKey());
-            Map<Data, DataRecordEntry> map = mapEntry.getValue();
+            Map<Data, Record> map = mapEntry.getValue();
             out.writeInt(map.size());
-            for (Entry<Data, DataRecordEntry> entry : map.entrySet()) {
+            for (Entry<Data, Record> entry : map.entrySet()) {
                 entry.getKey().writeData(out);
                 entry.getValue().writeData(out);
             }

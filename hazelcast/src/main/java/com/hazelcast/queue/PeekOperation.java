@@ -25,20 +25,15 @@ import com.hazelcast.spi.exception.RetryableException;
  */
 public class PeekOperation extends QueueOperation {
 
-    public PeekOperation(){
+    public PeekOperation() {
     }
 
-    public PeekOperation(final String name){
+    public PeekOperation(final String name) {
         super(name);
     }
 
     public void run() {
-        QueueItem item;
-        try {
-            item = getContainer().peek();
-        } catch (Exception e) {
-            throw new RetryableException(e);
-        }
+        QueueItem item = getContainer().peek();
         response = item != null ? item.getData() : null;
     }
 }

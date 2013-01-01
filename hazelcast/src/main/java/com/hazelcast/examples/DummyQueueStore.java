@@ -17,10 +17,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.StoreValue;
-import com.hazelcast.queue.QueueStoreValue;
 
-import java.io.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,19 +26,19 @@ import java.util.Set;
 /**
  * @ali 12/14/12
  */
-public class DummyQueueStore implements QueueStore<String> {
+public class DummyQueueStore implements QueueStore {
 
-    HashMap<Long, StoreValue<String>> map = new HashMap<Long, StoreValue<String>>();
+    HashMap<Long, Object> map = new HashMap<Long, Object>();
 
     public DummyQueueStore() {
     }
 
-    public void store(Long key, StoreValue<String> value) {
+    public void store(Long key, Object value) {
         map.put(key, value);
     }
 
-    public void storeAll(Map<Long, StoreValue<String>> map) {
-        map.putAll(map);
+    public void storeAll(Map<Long, ?> map) {
+        this.map.putAll(map);
     }
 
     public void delete(Long key) {
@@ -54,12 +51,12 @@ public class DummyQueueStore implements QueueStore<String> {
         }
     }
 
-    public StoreValue<String> load(Long key) {
+    public Object load(Long key) {
         return map.get(key);
     }
 
-    public Map<Long, StoreValue<String>> loadAll(Collection<Long> keys) {
-        HashMap<Long, StoreValue<String>> temp = new HashMap<Long, StoreValue<String>>(keys.size());
+    public Map<Long, ?> loadAll(Collection<Long> keys) {
+        Map<Long, Object> temp = new HashMap<Long, Object>(keys.size());
         for (Long key: keys){
             temp.put(key, map.get(key));
         }
@@ -69,5 +66,4 @@ public class DummyQueueStore implements QueueStore<String> {
     public Set<Long> loadAllKeys() {
         return map.keySet();
     }
-
 }

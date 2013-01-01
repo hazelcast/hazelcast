@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.impl;
 
 import com.hazelcast.nio.DataSerializable;
 
@@ -25,16 +25,12 @@ import java.io.IOException;
 public class RecordStats implements DataSerializable {
 
     protected volatile int hits = 0;
-    protected volatile long version = 0;
-    protected volatile long maxIdleMillis = Long.MAX_VALUE;
+    protected volatile int version = 0;
     protected volatile long writeTime = -1;
     protected volatile long removeTime = 0;
-    protected volatile long lastAccessTime = 0;
     protected volatile long lastStoredTime = 0;
-    protected volatile long creationTime = 0;
     protected volatile long expirationTime = Long.MAX_VALUE;
     protected volatile long lastUpdateTime = 0;
-    protected volatile boolean dirty = false;
 
     public int getHits() {
         return hits;
@@ -48,16 +44,8 @@ public class RecordStats implements DataSerializable {
         return version;
     }
 
-    public void setVersion(long version) {
+    public void setVersion(int version) {
         this.version = version;
-    }
-
-    public long getMaxIdleMillis() {
-        return maxIdleMillis;
-    }
-
-    public void setMaxIdleMillis(long maxIdleMillis) {
-        this.maxIdleMillis = maxIdleMillis;
     }
 
     public long getWriteTime() {
@@ -76,28 +64,12 @@ public class RecordStats implements DataSerializable {
         this.removeTime = removeTime;
     }
 
-    public long getLastAccessTime() {
-        return lastAccessTime;
-    }
-
-    public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = lastAccessTime;
-    }
-
     public long getLastStoredTime() {
         return lastStoredTime;
     }
 
     public void setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = lastStoredTime;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
-    }
-
-    public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
     }
 
     public long getExpirationTime() {
@@ -116,20 +88,24 @@ public class RecordStats implements DataSerializable {
         this.lastUpdateTime = lastUpdateTime;
     }
 
-    public boolean isDirty() {
-        return dirty;
-    }
-
-    public void setDirty(boolean dirty) {
-        this.dirty = dirty;
-    }
-
     public void writeData(DataOutput out) throws IOException {
-
-
+        out.writeInt(hits);
+        out.writeInt(version);
+        out.writeLong(writeTime);
+        out.writeLong(removeTime);
+        out.writeLong(lastStoredTime);
+        out.writeLong(expirationTime);
+        out.writeLong(lastUpdateTime);
     }
 
     public void readData(DataInput in) throws IOException {
-
+        hits = in.readInt();
+        version = in.readInt();
+        writeTime = in.readLong();
+        removeTime = in.readLong();
+        lastStoredTime = in.readLong();
+        expirationTime = in.readLong();
+        lastUpdateTime = in.readLong();
     }
+
 }

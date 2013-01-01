@@ -133,7 +133,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
-        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, IOUtil.toObject(event.data), null);
+        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, IOUtil.toObject(event.data), nodeEngine.getCluster().getMember(event.caller));
         if (event.eventType.equals(ItemEventType.ADDED)){
             listener.itemAdded(itemEvent);
         }

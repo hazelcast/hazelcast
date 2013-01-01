@@ -47,29 +47,19 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public void run() {
-        response = false;
         QueueContainer container = getContainer();
-        item = container.offer(data);
-        if (item != null) {
-            if (container.isStoreEnabled() && !container.isStoreAsync()) {
-                try {
-                    container.getStore().store(item.getItemId(), data);
-                } catch (Exception e) {
-                    container.pollBackup();
-                    throw new RetryableException(e);
-                }
-            }
+        if (container.checkBound()){
+            item = container.offer(data);
             response = true;
+        }
+        else {
+            response = false;
         }
     }
 
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            QueueContainer container = getContainer();
             publishEvent(ItemEventType.ADDED, data);
-            if (container.isStoreEnabled() && container.isStoreAsync()) {
-                container.getStore().store(item.getItemId(), item.getData());
-            }
         }
     }
 
@@ -82,8 +72,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     }
 
     public boolean shouldNotify() {
-        //TODO
-        return true;
+        return Boolean.TRUE.equals(response);
     }
 
     public Object getNotifiedKey() {
@@ -96,7 +85,7 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
 
     public boolean shouldWait() {
         QueueContainer container = getContainer();
-        return getWaitTimeoutMillis() != 0 && container.getConfig().getMaxSize() <= container.size();
+        return getWaitTimeoutMillis() != 0 && !container.checkBound();
     }
 
     public void onWaitExpire() {

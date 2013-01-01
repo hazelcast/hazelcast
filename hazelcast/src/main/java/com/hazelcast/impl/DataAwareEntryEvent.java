@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 

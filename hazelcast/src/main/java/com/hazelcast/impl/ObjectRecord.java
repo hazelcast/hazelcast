@@ -16,60 +16,54 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.concurrentmap.ValueHolder;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
 
-public abstract class AbstractSimpleRecord implements Record, DataSerializable {
-    protected volatile long id;
-    protected volatile Data keyData;
-    protected volatile Data valueData;
+public class ObjectRecord extends AbstractRecord {
 
-    public AbstractSimpleRecord(long id, Data keyData, Data valueData) {
-        this.id = id;
-        this.keyData = keyData;
-        this.valueData = valueData;
-    }
+    private volatile Object value;
 
-    public long getId() {
-        return id;
-    }
-
-    public Data getKeyData() {
-        return keyData;
+    public ObjectRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
+        super(id, keyData, ttl, maxIdleMillis);
+        this.value = IOUtil.toObject(valueData);
     }
 
     public Data getValueData() {
-        return valueData;
+        return IOUtil.toData(value);
     }
 
-    public void setValueData(Data valueData) {
-        this.valueData = valueData;
+    public void setValueData(Data dataValue) {
+        value = IOUtil.toObject(dataValue);
     }
 
+    public Object getValue() {
+        return value;
+    }
+
+    public Object setValue(Object o) {
+        Record old = ((Record) o).clone();
+        value = o;
+        return old;
+    }
+
+    @Override
     public void writeData(DataOutput out) throws IOException {
-        out.writeLong(id);
+        super.writeData(out);
         keyData.writeData(out);
-        valueData.writeData(out);
+        getValueData().writeData(out);
     }
 
+    @Override
     public void readData(DataInput in) throws IOException {
-        id = in.readLong();
+        super.readData(in);
         keyData = new Data();
         keyData.readData(in);
-        valueData = new Data();
+        Data valueData = new Data();
         valueData.readData(in);
-    }
-
-    public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        value = IOUtil.toObject(valueData);
     }
 }

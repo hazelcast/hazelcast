@@ -19,7 +19,9 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.DataInput;
@@ -31,11 +33,9 @@ import java.util.*;
  * @ali 12/20/12
  */
 
-public class AddAllOperation extends QueueBackupAwareOperation {
+public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
     private List<Data> dataList;
-
-    private transient List<QueueItem> itemList;
 
     public AddAllOperation() {
     }
@@ -46,38 +46,22 @@ public class AddAllOperation extends QueueBackupAwareOperation {
     }
 
     public void run() {
-        response = false;
         QueueContainer container = getContainer();
-        itemList = container.addAll(dataList);
-        if (itemList.size() > 0) {
-            try {
-                storeAll(false);
-            } catch (Exception e) {
-                for (int i = 0; i < itemList.size(); i++) {
-                    container.pollBackup();
-                }
-                throw new RetryableException(e);
-            }
+        if (container.checkBound()){
+            container.addAll(dataList);
             response = true;
         }
+        else {
+            response = false;
+        }
+
     }
 
     public void afterRun() throws Exception {
-        storeAll(true);
-        for (QueueItem item : itemList) {
-            publishEvent(ItemEventType.ADDED, item.getData());
-        }
-    }
-
-    private void storeAll(boolean async) throws Exception {
-        QueueContainer container = getContainer();
-        if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
-            Map<Long, QueueStoreValue> map = new HashMap<Long, QueueStoreValue>(itemList.size());
-            for (QueueItem item : itemList) {
-                QueueStoreValue storeValue = new QueueStoreValue(item.getData());
-                map.put(item.getItemId(), storeValue);
+        if (Boolean.TRUE.equals(response)){
+            for (Data data : dataList) {
+                publishEvent(ItemEventType.ADDED, data);
             }
-            container.getStore().storeAll(map);
         }
     }
 
@@ -104,5 +88,13 @@ public class AddAllOperation extends QueueBackupAwareOperation {
         for (int i = 0; i < size; i++) {
             dataList.add(IOUtil.readNullableData(in));
         }
+    }
+
+    public boolean shouldNotify() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":poll";
     }
 }

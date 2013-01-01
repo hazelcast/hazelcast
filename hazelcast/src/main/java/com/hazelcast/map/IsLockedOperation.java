@@ -17,9 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
@@ -27,7 +25,7 @@ public class IsLockedOperation extends AbstractNamedKeyBasedOperation {
 
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore recordStore;
+    RecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
     boolean locked = false;
@@ -44,7 +42,7 @@ public class IsLockedOperation extends AbstractNamedKeyBasedOperation {
         mapService = getService();
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getMapPartition(name);
+        recordStore = pc.getRecordStore(name);
     }
 
     public void beforeRun() {

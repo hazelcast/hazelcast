@@ -17,6 +17,8 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Data;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.RetryableException;
 
@@ -27,9 +29,9 @@ import java.util.Set;
 /**
  * @ali 12/6/12
  */
-public class ClearOperation extends QueueBackupAwareOperation {
+public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private transient List<QueueItem> itemList;
+    private transient List<Data> dataList;
 
     public ClearOperation() {
     }
@@ -38,40 +40,14 @@ public class ClearOperation extends QueueBackupAwareOperation {
         super(name);
     }
 
-    public void beforeRun() throws Exception {
-        if (hasListener() || getContainer().isStoreEnabled()){
-            itemList = getContainer().itemList();
-        }
-    }
-
     public void run() {
-        QueueContainer container = getContainer();
-        try {
-            deleteFromStore(false);
-        } catch (Exception e) {
-            throw new RetryableException(e);
-        }
-        container.clear();
+        dataList = getContainer().clear();
         response = true;
     }
 
     public void afterRun() throws Exception {
-        deleteFromStore(true);
-        if (itemList != null){
-            for (QueueItem item: itemList){
-                publishEvent(ItemEventType.REMOVED, item.getData());
-            }
-        }
-    }
-
-    private void deleteFromStore(boolean async) throws Exception {
-        QueueContainer container = getContainer();
-        if (container.isStoreAsync() == async && container.getStore().isEnabled()) {
-            Set<Long> set = new HashSet<Long>(itemList.size());
-            for (QueueItem item: itemList){
-                set.add(item.getItemId());
-            }
-            container.getStore().deleteAll(set);
+        for (Data data : dataList) {
+            publishEvent(ItemEventType.REMOVED, data);
         }
     }
 
@@ -81,5 +57,13 @@ public class ClearOperation extends QueueBackupAwareOperation {
 
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
+    }
+
+    public boolean shouldNotify() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public Object getNotifiedKey() {
+        return name + ":offer";
     }
 }

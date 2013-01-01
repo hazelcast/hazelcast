@@ -26,7 +26,7 @@ public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation impleme
 
     PartitionContainer pc;
     ResponseHandler responseHandler;
-    DefaultRecordStore recordStore;
+    RecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
     boolean unlocked = false;
@@ -43,7 +43,7 @@ public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation impleme
         mapService = getService();
         nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getMapPartition(name);
+        recordStore = pc.getRecordStore(name);
     }
 
     public void beforeRun() {

@@ -23,14 +23,14 @@ import java.util.Set;
 /**
  * @ali 12/14/12
  */
-public interface QueueStore<V> {
+public interface QueueStore {
     /**
      * Stores the key-value pair.
      *
      * @param key   key of the entry to store
      * @param value value of the entry to store
      */
-    void store(Long key, StoreValue<V> value);
+    void store(Long key, Object value);
 
     /**
      * Stores multiple entries. Implementation of this method can optimize the
@@ -38,7 +38,7 @@ public interface QueueStore<V> {
      *
      * @param map map of entries to store
      */
-    void storeAll(Map<Long, StoreValue<V>> map);
+    void storeAll(Map<Long, ?> map);
 
     /**
      * Deletes the entry with a given key from the store.
@@ -63,7 +63,7 @@ public interface QueueStore<V> {
      * @param key
      * @return value of the key
      */
-    StoreValue<V> load(Long key);
+    Object load(Long key);
 
     /**
      * Loads given keys. This is batch load operation so that implementation can
@@ -72,7 +72,7 @@ public interface QueueStore<V> {
      * @param keys keys of the values entries to load
      * @return map of loaded key-value pairs.
      */
-    Map<Long, StoreValue<V>> loadAll(Collection<Long> keys);
+    Map<Long, ?> loadAll(Collection<Long> keys);
 
     /**
      * Loads all of the keys from the store.

@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -29,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 
 
 public class PartitionContainer {
+    // todo remove config why it is necessary here?
     private final Config config;
     private final MapService mapService;
     final PartitionInfo partitionInfo;
@@ -56,7 +56,7 @@ public class PartitionContainer {
         return config.findMatchingMapConfig(name.substring(2));
     }
 
-    public DefaultRecordStore getMapPartition(String name) {
+    public RecordStore getRecordStore(String name) {
         DefaultRecordStore mapPartition = maps.get(name);
         if (mapPartition == null) {
             mapPartition = new DefaultRecordStore(name, PartitionContainer.this);
@@ -93,15 +93,15 @@ public class PartitionContainer {
         if (txnLog == null) return;
         for (TransactionLogItem txnLogItem : txnLog.changes.values()) {
             System.out.println(mapService.getNodeEngine().getThisAddress() + " pc.commit " + txnLogItem);
-            DefaultRecordStore mapPartition = getMapPartition(txnLogItem.getName());
+            RecordStore recordStore = getRecordStore(txnLogItem.getName());
             Data key = txnLogItem.getKey();
             if (txnLogItem.isRemoved()) {
-                mapPartition.records.remove(key);
+                recordStore.remove(key);
             } else {
-                DefaultRecord record = mapPartition.records.get(key);
+                Record record = recordStore.getRecords().get(key);
                 if (record == null) {
-                    record = new DefaultRecord(mapService.nextId(), key, txnLogItem.getValue(), -1, -1);
-                    mapPartition.records.put(key, record);
+                    record = mapService.createRecord(txnLogItem.getName(), key, txnLogItem.getValue(), -1);
+                    recordStore.getRecords().put(key, record);
                 } else {
                     record.setValueData(txnLogItem.getValue());
                 }

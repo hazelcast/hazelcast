@@ -22,17 +22,25 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.impl.DataAwareEntryEvent;
+import com.hazelcast.impl.DefaultRecord;
+import com.hazelcast.impl.Record;
+import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
@@ -50,7 +58,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ILogger logger;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
     private final Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
@@ -58,7 +66,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final Set<String> mapsWithTTL;
 
     public MapService(final NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
@@ -72,7 +80,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-        mapsWithTTL.add("mapp");
+
+        for (String mapName : proxies.keySet()) {
+            MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
+            if (mapConfig.getTimeToLiveSeconds() > 0 || mapConfig.getMaxIdleSeconds() > 0)
+                mapsWithTTL.add(mapName);
+        }
+
+        // todo make this 1 second configurable
         nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
@@ -89,8 +104,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return partitionContainers[partitionId];
     }
 
-    public DefaultRecordStore getMapPartition(int partitionId, String mapName) {
-        return getPartitionContainer(partitionId).getMapPartition(mapName);
+    public RecordStore getRecordStore(int partitionId, String mapName) {
+        return getPartitionContainer(partitionId).getRecordStore(mapName);
     }
 
     public long nextId() {
@@ -149,6 +164,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         container.maps.clear();
         container.transactions.clear(); // TODO: not sure?
+    }
+
+    public Record createRecord(String mapName, Data keyData, Data valueData, long ttl) {
+        MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
+        long maxIdleMillis = mapConfig.getMaxIdleSeconds() * 1000;
+        if (ttl == -1) {
+            ttl = mapConfig.getTimeToLiveSeconds() * 1000;
+        }
+        return new DefaultRecord(nextId(), keyData, valueData, ttl, maxIdleMillis);
     }
 
     public void prepare(String txnId, int partitionId) throws TransactionException {
@@ -231,13 +255,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
-    public void publishEvent(String mapName, Data key, EntryEvent event) {
+
+    public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
         for (EventRegistration candidate : candidates) {
             EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
-            if (filter.eval(key)) {
+            if (filter.eval(dataKey)) {
                 if (filter.isIncludeValue()) {
                     registrationsWithValue.add(candidate);
                 } else {
@@ -245,6 +270,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 }
             }
         }
+        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
+            return;
+
+        String source = nodeEngine.getNode().address.toString();
+        final SerializerRegistry serializerRegistry = nodeEngine.getNode().hazelcastInstance.getSerializerRegistry();
+        Member callerMember = nodeEngine.getClusterService().getMember(caller);
+        EntryEvent event = new DataAwareEntryEvent(callerMember, eventType, source, dataKey, dataValue, dataOldValue, false, serializerRegistry);
+
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
@@ -276,9 +309,37 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
+    public void notifyMapTtl(String mapName) {
+        mapsWithTTL.add(mapName);
+    }
+
+
     private class CleanupTask implements Runnable {
         public void run() {
-            for (String mapname : mapsWithTTL) {
+            cleanExpiredRecords();
+        }
+
+        private void cleanExpiredRecords() {
+            if (mapsWithTTL.isEmpty())
+                return;
+
+            for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
+                Node node = nodeEngine.getNode();
+                Address owner = node.partitionService.getPartitionOwner(i);
+                if (node.address.equals(owner)) {
+                    for (String mapName : mapsWithTTL) {
+                        PartitionContainer pc = partitionContainers[i];
+                        RecordStore recordStore = pc.getRecordStore(mapName);
+                        Set<Map.Entry<Data, Record>> recordEntries = recordStore.getRecords().entrySet();
+                        List<Data> keysToRemoved = new ArrayList<Data>();
+                        for (Map.Entry<Data, Record> entry : recordEntries) {
+                            Record record = entry.getValue();
+                            if (!record.isActive())
+                                keysToRemoved.add(entry.getKey());
+                        }
+                        recordStore.removeAll(keysToRemoved);
+                    }
+                }
             }
         }
     }

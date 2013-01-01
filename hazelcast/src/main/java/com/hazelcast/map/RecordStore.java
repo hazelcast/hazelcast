@@ -17,7 +17,14 @@
 package com.hazelcast.map;
 
 
+import com.hazelcast.impl.Record;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 public interface RecordStore {
 
@@ -26,6 +33,8 @@ public interface RecordStore {
     Data remove(Data dataKey);
 
     boolean remove(Data dataKey, Data testValue);
+
+    Data get(Data dataKey);
 
     Data put(Data dataKey, Data dataValue, long ttl);
 
@@ -41,4 +50,35 @@ public interface RecordStore {
 
     Data putIfAbsent(Data dataKey, Data dataValue, long ttl);
 
+    ConcurrentMap<Data, Record> getRecords();
+
+    void removeAll(List<Data> keys);
+
+    Set<Data> keySet();
+
+    int size();
+
+    boolean forceUnlock(Data dataKey);
+
+    boolean isLocked(Data dataKey);
+
+    boolean lock(Data key, Address caller, int threadId, long ttl);
+
+    int getBackupCount();
+
+    int getAsyncBackupCount();
+
+    boolean containsValue(Data testValue);
+
+    LockInfo getOrCreateLock(Data key);
+
+    boolean canRun(LockAwareOperation lockAwareOperation);
+
+    LockInfo getLock(Data key);
+
+    boolean evict(Data dataKey);
+
+    boolean unlock(Data dataKey, Address caller, int threadId);
+
+    Collection<Data> values();
 }

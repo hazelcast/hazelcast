@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
@@ -64,19 +63,19 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         Address caller = getCaller();
-        DefaultRecordStore mapPartition = mapService.getMapPartition(partitionId, name);
+        RecordStore mapPartition = mapService.getRecordStore(partitionId, name);
         if (backupOpType == BackupOpType.PUT) {
-            DefaultRecord record = mapPartition.records.get(dataKey);
+            Record record = mapPartition.getRecords().get(dataKey);
             if (record == null) {
-                record = new DefaultRecord(mapService.nextId(), dataKey, dataValue, -1, -1);
-                mapPartition.records.put(dataKey, record);
+                record = mapService.createRecord(name, dataKey, dataValue, -1);
+                mapPartition.getRecords().put(dataKey, record);
             } else {
                 record.setValueData(dataValue);
             }
             record.setActive(true);
             record.setDirty(true);
         } else if (backupOpType == BackupOpType.REMOVE) {
-            DefaultRecord record = mapPartition.records.remove(dataKey);
+            Record record = mapPartition.getRecords().remove(dataKey);
             if (record != null) {
 //                record.markRemoved();
             }

@@ -28,8 +28,6 @@ import com.hazelcast.spi.exception.RetryableException;
  */
 public class PollOperation extends QueueTimedOperation implements WaitSupport, Notifier {
 
-    transient QueueItem item;
-
     public PollOperation() {
     }
 
@@ -38,28 +36,12 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public void run() {
-        QueueContainer container = getContainer();
-        try {
-            item = container.peek();
-            if (item != null) {
-                response = item.getData();
-                if (container.isStoreEnabled() && !container.isStoreAsync()) {
-                    container.getStore().delete(item.getItemId());
-                }
-                container.pollBackup();
-            }
-        } catch (Exception e) {
-            throw new RetryableException(e);
-        }
+        response = getContainer().poll();
     }
 
     public void afterRun() throws Exception {
         if (response != null) {
             publishEvent(ItemEventType.REMOVED, (Data) response);
-            QueueContainer container = getContainer();
-            if (container.isStoreAsync()) {
-                container.getStore().delete(item.getItemId());
-            }
         }
     }
 
@@ -72,7 +54,7 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
     }
 
     public boolean shouldNotify() {
-        return true;
+        return response != null;
     }
 
     public Object getNotifiedKey() {

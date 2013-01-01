@@ -20,17 +20,33 @@ import com.hazelcast.impl.base.DistributedLock;
 import com.hazelcast.impl.concurrentmap.ValueHolder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Data;
+import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.impl.IndexEntry;
 
 import java.util.Collection;
 import java.util.Map;
 
-public interface Record {
-
-    Object getKey();
-
-    Object getValue();
+public interface Record extends DataSerializable, Map.Entry, Cloneable {
 
     long getId();
 
+    Data getValueData();
+
+    void setValueData(Data dataValue);
+
+    Data getKey();
+
+    void setActive(boolean b);
+
+    boolean isActive();
+
+    void setDirty(boolean b);
+
+    boolean isDirty();
+
+    Record clone();
+
+    long getTtl();
+
+    void setTtl(long ttl);
 }
