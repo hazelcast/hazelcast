@@ -44,15 +44,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     private final ConcurrentMap<String, TopicProxy> proxies = new ConcurrentHashMap<String, TopicProxy>();
 
-    private Map<String, TopicConfig> config;
-    private Properties properties;
-
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
-        properties.setProperty("total.order.enabled",System.getProperty("hazelcast.topic.total.order.enabled"));
-        this.properties = properties;
-        //config = nodeEngine.getConfig().getTopicConfigs();
-        //System.out.println(config);
     }
 
     public void destroy() {
@@ -66,7 +59,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
         TopicProxy proxy = proxies.get(name);
         if (proxy == null) {
-            if(String.valueOf(properties.get("total.order.enabled")).equals("true"))
+            TopicConfig topicConfig = nodeEngine.getConfig().getTopicConfig(name);
+            if(topicConfig.isGlobalOrderingEnabled())
                 proxy = new TotalOrderedTopicProxy(name,nodeEngine);
             else
                 proxy = new TopicProxy(name, nodeEngine);
