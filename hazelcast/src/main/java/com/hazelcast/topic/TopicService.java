@@ -16,13 +16,17 @@
 
 package com.hazelcast.topic;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.spi.*;
 import com.hazelcast.topic.proxy.TopicProxy;
+import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -40,8 +44,15 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     private final ConcurrentMap<String, TopicProxy> proxies = new ConcurrentHashMap<String, TopicProxy>();
 
+    private Map<String, TopicConfig> config;
+    private Properties properties;
+
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
+        properties.setProperty("total.order.enabled",System.getProperty("hazelcast.topic.total.order.enabled"));
+        this.properties = properties;
+        //config = nodeEngine.getConfig().getTopicConfigs();
+        //System.out.println(config);
     }
 
     public void destroy() {
@@ -55,7 +66,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
         TopicProxy proxy = proxies.get(name);
         if (proxy == null) {
-            proxy = new TopicProxy(name, nodeEngine);
+            if(String.valueOf(properties.get("total.order.enabled")).equals("true"))
+                proxy = new TotalOrderedTopicProxy(name,nodeEngine);
+            else
+                proxy = new TopicProxy(name, nodeEngine);
+
             final TopicProxy currentProxy = proxies.putIfAbsent(name, proxy);
             proxy = currentProxy != null ? currentProxy : proxy;
         }

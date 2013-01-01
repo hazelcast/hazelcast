@@ -45,15 +45,15 @@ import java.util.concurrent.ConcurrentMap;
  * Date: 12/26/12
  * Time: 2:06 PM
  */
-public class TopicProxy<E> implements ITopic<E> , ServiceProxy{
+public class TopicProxy<E> implements ITopic<E>, ServiceProxy {
 
     private final String name;
-    private final NodeEngine nodeEngine;
+    protected final NodeEngine nodeEngine;
     private final EventService eventService;
 
-    private final ConcurrentMap<String,String> registeredIds = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<String, String> registeredIds = new ConcurrentHashMap<String, String>();
 
-    public TopicProxy(String name, NodeEngine nodeEngine){
+    public TopicProxy(String name, NodeEngine nodeEngine) {
 
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -73,12 +73,12 @@ public class TopicProxy<E> implements ITopic<E> , ServiceProxy{
     public void addMessageListener(MessageListener<E> listener) {
         EventRegistration eventRegistration = eventService.registerListener(TopicService.NAME, name, listener);
 
-        if(registeredIds.putIfAbsent(name, eventRegistration.getId()) != null )
+        if (registeredIds.putIfAbsent(name, eventRegistration.getId()) != null)
             System.out.println("Already registered");
     }
 
     public void removeMessageListener(MessageListener<E> listener) {
-        if(registeredIds.get(name) == null)
+        if (registeredIds.get(name) == null)
             System.out.println("Not registered");
         else {
             eventService.deregisterListener(TopicService.NAME, name, registeredIds.get(name));
@@ -87,7 +87,7 @@ public class TopicProxy<E> implements ITopic<E> , ServiceProxy{
     }
 
     public LocalTopicStats getLocalTopicStats() {
-        return null;  
+        return null;
     }
 
     public InstanceType getInstanceType() {
