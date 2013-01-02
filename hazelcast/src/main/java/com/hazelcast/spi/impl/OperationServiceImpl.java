@@ -32,10 +32,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
-import com.hazelcast.util.ConcurrentHashSet;
-import com.hazelcast.util.FastExecutor;
-import com.hazelcast.util.SpinLock;
-import com.hazelcast.util.SpinReadWriteLock;
+import com.hazelcast.util.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -210,6 +207,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private void doRunOperation(Operation op) {
+        OperationAccessor.setStartTime(op, Clock.currentTimeMillis());
         try {
             op.beforeRun();
             if (op instanceof WaitSupport) {

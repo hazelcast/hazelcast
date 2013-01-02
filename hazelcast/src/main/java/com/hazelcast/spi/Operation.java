@@ -31,21 +31,21 @@ import java.io.IOException;
 public abstract class Operation implements DataSerializable {
 
     //serialized
-    private String serviceName = null;
+    private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
     private long callId = -1;
     private boolean validateTarget = true;
-
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
 
     // injected
-    private transient NodeEngine nodeEngine = null;
+    private transient NodeEngine nodeEngine;
     private transient Object service;
     private transient Address caller;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
+    private transient long startTime;
 
     public abstract void beforeRun() throws Exception;
 
@@ -158,6 +158,15 @@ public abstract class Operation implements DataSerializable {
 
     public final ResponseHandler getResponseHandler() {
         return responseHandler;
+    }
+
+    public final long getStartTime() {
+        return startTime;
+    }
+
+    // Accessed using OperationAccessor
+    final void setStartTime(long startTime) {
+        this.startTime = startTime;
     }
 
     public final long getInvocationTime() {
