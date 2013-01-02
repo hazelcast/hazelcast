@@ -7,15 +7,15 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 // author: sancar - 25.12.2012
-public class SetBackupOperation extends AtomicNumberBaseOperation  implements BackupOperation {
+public class SetBackupOperation extends AtomicNumberBaseOperation implements BackupOperation {
 
     private long newValue;
 
-    public SetBackupOperation(){
+    public SetBackupOperation() {
         super();
     }
 
-    public SetBackupOperation(String name, long newValue){
+    public SetBackupOperation(String name, long newValue) {
         super(name);
         this.newValue = newValue;
     }
@@ -30,7 +30,7 @@ public class SetBackupOperation extends AtomicNumberBaseOperation  implements Ba
         return true;
     }
 
-    public Object getResponse(){
+    public Object getResponse() {
         return newValue;
     }
 

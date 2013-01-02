@@ -14,11 +14,11 @@ public class CompareAndSetOperation extends AtomicNumberBackupAwareOperation {
 
     private boolean returnValue = false;
 
-    public CompareAndSetOperation(){
+    public CompareAndSetOperation() {
         super();
     }
 
-    public CompareAndSetOperation(String name, long expect, long update){
+    public CompareAndSetOperation(String name, long expect, long update) {
         super(name);
         this.expect = expect;
         this.update = update;
@@ -26,10 +26,10 @@ public class CompareAndSetOperation extends AtomicNumberBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        if(getNumber() == expect){
+        if (getNumber() == expect) {
             setNumber(update);
             returnValue = true;
-        }else{
+        } else {
             shouldBackup = false;
         }
     }
@@ -60,6 +60,6 @@ public class CompareAndSetOperation extends AtomicNumberBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name,update);
+        return new SetBackupOperation(name, update);
     }
 }

@@ -11,11 +11,11 @@ public class SetOperation extends AtomicNumberBackupAwareOperation {
 
     private long newValue;
 
-    public SetOperation(){
+    public SetOperation() {
         super();
     }
 
-    public SetOperation(String name, long newValue){
+    public SetOperation(String name, long newValue) {
         super(name);
         this.newValue = newValue;
     }
@@ -43,6 +43,6 @@ public class SetOperation extends AtomicNumberBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name,newValue);
+        return new SetBackupOperation(name, newValue);
     }
 }

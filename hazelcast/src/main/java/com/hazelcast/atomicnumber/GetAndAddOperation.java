@@ -13,10 +13,11 @@ public class GetAndAddOperation extends AtomicNumberBackupAwareOperation {
     private long returnValue;
 
 
-    public GetAndAddOperation(){
+    public GetAndAddOperation() {
         super();
     }
-    public GetAndAddOperation(String name, long delta){
+
+    public GetAndAddOperation(String name, long delta) {
         super(name);
         this.delta = delta;
     }
@@ -27,6 +28,7 @@ public class GetAndAddOperation extends AtomicNumberBackupAwareOperation {
         setNumber(returnValue + delta);
 
     }
+
     @Override
     public boolean returnsResponse() {
         return true;
@@ -50,6 +52,6 @@ public class GetAndAddOperation extends AtomicNumberBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name,returnValue + delta);
+        return new SetBackupOperation(name, returnValue + delta);
     }
 }
