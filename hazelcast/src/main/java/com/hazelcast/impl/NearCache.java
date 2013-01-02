@@ -60,9 +60,13 @@ public class NearCache {
     }
 
     public boolean containsKey(Object key) {
-        long now = Clock.currentTimeMillis();
         CacheEntry entry = cache.get(key);
-        return !(entry == null || entry.isValid(now));
+        if (entry == null) {
+            return false;
+        } else {
+            long now = Clock.currentTimeMillis();
+            return entry.isValid(now);
+        }
     }
 
     public void setContainsKey(Object key, Data dataKey) {
@@ -73,11 +77,11 @@ public class NearCache {
     }
 
     public Object get(Object key) {
-        long now = Clock.currentTimeMillis();
         CacheEntry entry = cache.get(key);
         if (entry == null) {
             return null;
         } else {
+            long now = Clock.currentTimeMillis();
             if (entry.isValid(now)) {
                 Object value = null;
                 if (ThreadContext.get().isClient()) {

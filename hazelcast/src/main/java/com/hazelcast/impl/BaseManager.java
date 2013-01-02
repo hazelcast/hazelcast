@@ -190,7 +190,6 @@ public abstract class BaseManager {
 
     abstract class AbstractCall implements Call, CallStateAware {
         protected long callId = -1;
-        protected long firstEnqueueTime = -1;
         protected int enqueueCount = 0;
         protected CallState callState = null;
 
@@ -216,9 +215,6 @@ public abstract class BaseManager {
         }
 
         public void onEnqueue() {
-            if (firstEnqueueTime == -1) {
-                firstEnqueueTime = Clock.currentTimeMillis();
-            }
             enqueueCount++;
         }
 
@@ -233,7 +229,6 @@ public abstract class BaseManager {
 
         public void reset() {
             initCall();
-            firstEnqueueTime = -1;
             enqueueCount = 0;
         }
 
@@ -241,16 +236,11 @@ public abstract class BaseManager {
             return enqueueCount;
         }
 
-        protected int getDurationSeconds() {
-            return (int) (Clock.currentTimeMillis() - firstEnqueueTime) / 1000;
-        }
-
         @Override
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], duration=" + (+getDurationSeconds()) +
-                    "sn., enqueueCount=" + getEnqueueCount() +
+                    "] enqueueCount=" + getEnqueueCount() +
                     '}';
         }
     }
@@ -533,8 +523,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], duration=" + (+getDurationSeconds()) +
-                    "sn., enqueueCount=" + getEnqueueCount() +
+                    "] enqueueCount=" + getEnqueueCount() +
                     ", " + request +
                     '}';
         }
@@ -807,8 +796,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
-                    "sn., enqueueCount=" + enqueueCount +
+                    "] enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +
                     '}';
@@ -964,8 +952,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
-                    "sn., enqueueCount=" + enqueueCount +
+                    "] enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +
                     '}';
