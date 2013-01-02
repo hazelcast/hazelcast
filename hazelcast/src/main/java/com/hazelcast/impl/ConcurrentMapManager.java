@@ -242,11 +242,12 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void syncForDeadSemaphores(Address deadAddress) {
+        if (deadAddress == null) return;
         CMap cmap = maps.get(MapConfig.SEMAPHORE_MAP_NAME);
         if (cmap != null) {
             for (Record record : cmap.mapRecords.values()) {
                 DistributedSemaphore semaphore = (DistributedSemaphore) record.getValue();
-                if (semaphore.onDisconnect(deadAddress)) {
+                if (semaphore != null && semaphore.onDisconnect(deadAddress)) {
                     record.setValueData(toData(semaphore));
                     record.incrementVersion();
                 }
@@ -255,6 +256,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void syncForDeadCountDownLatches(Address deadAddress) {
+        if (deadAddress == null) return;
         final CMap cmap = maps.get(MapConfig.COUNT_DOWN_LATCH_MAP_NAME);
         if (deadAddress != null && cmap != null) {
             for (Record record : cmap.mapRecords.values()) {
