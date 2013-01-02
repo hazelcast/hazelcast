@@ -121,7 +121,7 @@ abstract class QueueProxySupport {
 
     private <T> T invoke(QueueOperation operation) {
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.QUEUE_SERVICE_NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
@@ -131,7 +131,7 @@ abstract class QueueProxySupport {
 
     private Data invokeData(QueueOperation operation) {
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.QUEUE_SERVICE_NAME, operation, getPartitionId()).build();
             Future<Data> f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {

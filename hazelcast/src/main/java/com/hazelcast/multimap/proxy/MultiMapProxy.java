@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.multimap.proxy;
+
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.spi.ServiceProxy;
 
 /**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
+ * @ali 1/1/13
  */
-public class PeekOperation extends QueueOperation {
-
-    public PeekOperation() {
-    }
-
-    public PeekOperation(final String name) {
-        super(name);
-    }
-
-    public void run() {
-        QueueItem item = getContainer().peek();
-        response = item != null ? item.getData() : null;
-    }
+public interface MultiMapProxy<K, V> extends MultiMap<K, V>, ServiceProxy {
 }

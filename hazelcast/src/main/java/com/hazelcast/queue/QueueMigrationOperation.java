@@ -75,6 +75,6 @@ public class QueueMigrationOperation extends AbstractOperation {
     }
 
     public String getServiceName() {
-        return QueueService.NAME;
+        return QueueService.QUEUE_SERVICE_NAME;
     }
 }

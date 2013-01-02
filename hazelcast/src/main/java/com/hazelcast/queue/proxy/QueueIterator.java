@@ -18,7 +18,6 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.queue.QueueItem;
 
 import java.util.Iterator;
 

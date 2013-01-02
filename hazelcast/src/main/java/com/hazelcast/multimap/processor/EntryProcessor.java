@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.multimap.processor;
+
+import com.hazelcast.nio.DataSerializable;
 
 /**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
+ * @ali 1/1/13
  */
-public class PeekOperation extends QueueOperation {
+public interface EntryProcessor<T> extends DataSerializable {
 
-    public PeekOperation() {
-    }
+    T execute(Entry entry);
 
-    public PeekOperation(final String name) {
-        super(name);
-    }
+    Object createNew();
 
-    public void run() {
-        QueueItem item = getContainer().peek();
-        response = item != null ? item.getData() : null;
-    }
 }

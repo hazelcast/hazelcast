@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.multimap.processor;
 
 /**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
+ * @ali 1/2/13
  */
-public class PeekOperation extends QueueOperation {
+public interface BackupAwareEntryProcessor<T> extends EntryProcessor<T> {
 
-    public PeekOperation() {
-    }
+    void executeBackup(Entry entry);
 
-    public PeekOperation(final String name) {
-        super(name);
-    }
-
-    public void run() {
-        QueueItem item = getContainer().peek();
-        response = item != null ? item.getData() : null;
-    }
 }

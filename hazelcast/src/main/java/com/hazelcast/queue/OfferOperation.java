@@ -21,7 +21,6 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
-import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.DataInput;
 import java.io.DataOutput;

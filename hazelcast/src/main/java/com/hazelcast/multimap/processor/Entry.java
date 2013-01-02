@@ -14,24 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.multimap.processor;
+
+import com.hazelcast.nio.Data;
 
 /**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
+ * @ali 1/1/13
  */
-public class PeekOperation extends QueueOperation {
+public class Entry {
 
-    public PeekOperation() {
+    Data key;
+
+    Object value;
+
+    public Entry(Data key) {
+        this.key = key;
     }
 
-    public PeekOperation(final String name) {
-        super(name);
+    public Entry(Data key, Object value) {
+        this.key = key;
+        this.value = value;
     }
 
-    public void run() {
-        QueueItem item = getContainer().peek();
-        response = item != null ? item.getData() : null;
+    public Data getKey() {
+        return key;
+    }
+
+    <T> T getValue(){
+        return (T)value;
     }
 }
