@@ -45,10 +45,6 @@ public class CallContext {
         this.txn = null;
     }
 
-    public long getTxnId() {
-        return (txn == null) ? -1L : txn.getId();
-    }
-
     public int getThreadId() {
         return threadId;
     }
