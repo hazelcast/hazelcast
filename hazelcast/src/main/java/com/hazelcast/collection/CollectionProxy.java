@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.proxy;
+package com.hazelcast.collection;
 
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.spi.ServiceProxy;
 
 /**
  * @ali 1/1/13
  */
-public interface MultiMapProxy<K, V> extends MultiMap<K, V>, ServiceProxy {
+public interface CollectionProxy extends ServiceProxy {
+
+    public Object createNew();
+
 }

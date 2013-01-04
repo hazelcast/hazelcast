@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap;
+package com.hazelcast.collection;
 
-import com.hazelcast.multimap.processor.BackupAwareEntryProcessor;
-import com.hazelcast.multimap.processor.Entry;
+import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
+import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.collection.processor.EntryProcessor;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.BackupOperation;
@@ -30,27 +31,22 @@ import java.io.IOException;
 /**
  * @ali 1/2/13
  */
-public class MultiMapBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
 
-    BackupAwareEntryProcessor processor;
+    EntryProcessor processor;
 
-    public MultiMapBackupOperation() {
+    CollectionBackupOperation() {
     }
 
-    public MultiMapBackupOperation(String name, Data dataKey, BackupAwareEntryProcessor processor) {
+    CollectionBackupOperation(String name, Data dataKey, EntryProcessor processor) {
         super(name, dataKey);
         this.processor = processor;
     }
 
     public void run() throws Exception {
-        MultiMapService mmService = getService();
-        MultiMapContainer multiMap = mmService.getMultiMap(getPartitionId(), name);
-        Object entryValue = multiMap.getObject(dataKey);
-        if (entryValue == null){
-            entryValue = processor.createNew();
-            multiMap.putObject(dataKey, entryValue);
-        }
-        processor.executeBackup(new Entry(dataKey, entryValue));
+        CollectionService service = getService();
+        CollectionContainer collectionContainer = service.getCollectionContainer(getPartitionId(), name);
+        ((BackupAwareEntryProcessor)processor).executeBackup(new Entry(collectionContainer, dataKey));
     }
 
     public Object getResponse() {

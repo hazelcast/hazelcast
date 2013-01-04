@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap;
+package com.hazelcast.collection;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -22,27 +22,31 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @ali 1/2/13
  */
-public class MultiMapPartitionContainer {
+public class CollectionPartitionContainer {
 
-    MultiMapService service;
+    CollectionService service;
 
-    private final ConcurrentMap<String, MultiMapContainer> multiMaps = new ConcurrentHashMap<String, MultiMapContainer>(1000);
+    private final ConcurrentMap<String, CollectionContainer> multiMaps = new ConcurrentHashMap<String, CollectionContainer>(1000);
 
-    public MultiMapPartitionContainer(MultiMapService service) {
+    public CollectionPartitionContainer(CollectionService service) {
         this.service = service;
     }
 
-    public MultiMapContainer getMultiMapContainer(String name){
-        MultiMapContainer multiMap = multiMaps.get(name);
+    public CollectionContainer getCreateCollectionContainer(String name){
+        CollectionContainer multiMap = multiMaps.get(name);
         if (multiMap == null){
-            multiMap = new MultiMapContainer(name, service);
-            MultiMapContainer current = multiMaps.putIfAbsent(name, multiMap);
+            multiMap = new CollectionContainer(name, service);
+            CollectionContainer current = multiMaps.putIfAbsent(name, multiMap);
             multiMap = current == null ? multiMap : current;
         }
         return multiMap;
     }
 
-    public ConcurrentMap<String, MultiMapContainer> getMultiMaps() {
+    public CollectionContainer getCollectionContainer(String name){
+        return multiMaps.get(name);
+    }
+
+    public ConcurrentMap<String, CollectionContainer> getMultiMaps() {
         return multiMaps; //TODO for testing only
     }
 }

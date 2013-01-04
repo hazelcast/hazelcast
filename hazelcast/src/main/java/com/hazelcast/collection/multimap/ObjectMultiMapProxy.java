@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.proxy;
+package com.hazelcast.collection.multimap;
 
+import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionPartitionContainer;
+import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.CollectionProxy;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.multimap.MultiMapContainer;
-import com.hazelcast.multimap.MultiMapPartitionContainer;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.NodeEngine;
@@ -32,52 +34,58 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 1/1/13
+ * @ali 1/2/13
  */
-public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements MultiMapProxy<K, V> {
+public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V> {
 
-    public ObjectMultiMapProxy(String name, MultiMapService service, NodeEngine nodeEngine) {
+    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine) {
         super(name, service, nodeEngine);
     }
 
     public String getName() {
-
-        return name;
+        return null;
     }
 
     public boolean put(K key, V value) {
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
-        return putInternal(dataKey,dataValue);
+        return putInternal(dataKey, dataValue);
     }
 
     public Collection<V> get(K key) {
         Data dataKey = nodeEngine.toData(key);
-        Collection<Data> dataColl = getInternal(dataKey);
-        if (dataColl == null){
-            return new HashSet<V>(0);
-        }
-        Collection<V> coll = new HashSet<V>(dataColl.size());
-        for (Data data: dataColl){
-            coll.add((V)IOUtil.toObject(data));
-        }
-        return coll;
+        MultiMapCollectionResponse result = getInternal(dataKey);
+        return result.getCollection();
     }
 
     public boolean remove(Object key, Object value) {
-        return false;
+        Data dataKey = nodeEngine.toData(key);
+        Data dataValue = nodeEngine.toData(value);
+        return removeInternal(dataKey, dataValue);
     }
 
     public Collection<V> remove(Object key) {
-        return null;
+        Data dataKey = nodeEngine.toData(key);
+        MultiMapCollectionResponse result = removeInternal(dataKey);
+        return result.getCollection();
     }
 
     public Set<K> localKeySet() {
-        return null;
+        Set<Data> dataKeySet = localKeySetInternal();
+        return toObjectSet(dataKeySet);
     }
 
     public Set<K> keySet() {
-        return null;
+        Set<Data> dataKeySet = keySetInternal();
+        return toObjectSet(dataKeySet);
+    }
+
+    private Set<K> toObjectSet(Set<Data> dataSet) {
+        Set<K> keySet = new HashSet<K>(dataSet.size());
+        for (Data dataKey : dataSet) {
+            keySet.add((K) IOUtil.toObject(dataKey));
+        }
+        return keySet;
     }
 
     public Collection<V> values() {
@@ -150,20 +158,20 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements M
 
     public LocalMapStats getLocalMultiMapStats() {
         int count = nodeEngine.getPartitionCount();
-        for (int i=0; i<count; i++){
-            MultiMapPartitionContainer partitionContainer = service.getPartitionContainer(i);
-            Map<String, MultiMapContainer> multiMaps = partitionContainer.getMultiMaps();
-            if (multiMaps.size() > 0){
+        for (int i = 0; i < count; i++) {
+            CollectionPartitionContainer partitionContainer = service.getPartitionContainer(i);
+            Map<String, CollectionContainer> multiMaps = partitionContainer.getMultiMaps();
+            if (multiMaps.size() > 0) {
                 System.out.println("partitionId: " + i);
             }
-            for (Map.Entry<String, MultiMapContainer> entry: multiMaps.entrySet()){
+            for (Map.Entry<String, CollectionContainer> entry : multiMaps.entrySet()) {
                 System.out.println("\tname: " + entry.getKey());
-                MultiMapContainer container = entry.getValue();
+                CollectionContainer container = entry.getValue();
                 Map<Data, Object> map = container.getObjects();
-                for (Map.Entry<Data, Object> en: map.entrySet()){
+                for (Map.Entry<Data, Object> en : map.entrySet()) {
                     System.out.println("\t\tkey: " + IOUtil.toObject(en.getKey()));
-                    Collection col = (Collection)en.getValue();
-                    for (Object o: col){
+                    Collection col = (Collection) en.getValue();
+                    for (Object o : col) {
                         System.out.println("\t\t\tval: " + IOUtil.toObject(o));
                     }
                 }

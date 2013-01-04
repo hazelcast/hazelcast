@@ -26,7 +26,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.queue.QueueService;
@@ -72,7 +72,7 @@ class ServiceManager {
                 registerService(QueueService.QUEUE_SERVICE_NAME, new QueueService(nodeEngine));
                 registerService(AtomicNumberService.NAME, new AtomicNumberService());
                 registerService(TopicService.NAME, new TopicService());
-                registerService(MultiMapService.MULTI_MAP_SERVICE_NAME, new MultiMapService(nodeEngine));
+                registerService(CollectionService.COLLECTION_SERVICE_NAME, new CollectionService(nodeEngine));
                 // TODO: add other services
                 // ...
                 // ...

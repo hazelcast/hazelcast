@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap;
+package com.hazelcast.collection;
 
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.multimap.processor.BackupAwareEntryProcessor;
-import com.hazelcast.multimap.processor.Entry;
-import com.hazelcast.multimap.processor.EntryProcessor;
+import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
+import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.collection.processor.EntryProcessor;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -33,30 +32,25 @@ import java.io.IOException;
 /**
  * @ali 1/1/13
  */
-public class MultiMapOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation {
+public class CollectionOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation {
 
     EntryProcessor processor;
 
     transient Object response;
 
-    public MultiMapOperation() {
+    CollectionOperation() {
     }
 
-    public MultiMapOperation(String name, Data dataKey, EntryProcessor processor, int partitionId) {
+    CollectionOperation(String name, Data dataKey, EntryProcessor processor, int partitionId) {
         super(name, dataKey);
         this.processor = processor;
         setPartitionId(partitionId);
     }
 
     public void run() throws Exception {
-        MultiMapService mmService = getService();
-        MultiMapContainer multiMap = mmService.getMultiMap(getPartitionId(), name);
-        Object entryValue = multiMap.getObject(dataKey);
-        if (entryValue == null){
-            entryValue = processor.createNew();
-            multiMap.putObject(dataKey, entryValue);
-        }
-        response = processor.execute(new Entry(dataKey, entryValue));
+        CollectionService service = getService();
+        CollectionContainer collectionContainer = service.getCollectionContainer(getPartitionId(), name);
+        response = processor.execute(new Entry(collectionContainer, dataKey));
     }
 
     public Object getResponse() {
@@ -68,21 +62,17 @@ public class MultiMapOperation extends AbstractNamedKeyBasedOperation implements
     }
 
     public int getSyncBackupCount() {
-        MultiMapService mmService = getService();
-        MultiMapConfig config = mmService.getConfig(name);
         //TODO config
         return 1;
     }
 
     public int getAsyncBackupCount() {
-        MultiMapService mmService = getService();
-        MultiMapConfig config = mmService.getConfig(name);
         //TODO config
         return 0;
     }
 
     public Operation getBackupOperation() {
-        return new MultiMapBackupOperation(name, dataKey, (BackupAwareEntryProcessor)processor);
+        return new CollectionBackupOperation(name, dataKey, processor);
     }
 
     public void writeInternal(DataOutput out) throws IOException {

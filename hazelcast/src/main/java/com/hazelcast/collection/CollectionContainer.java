@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap;
+package com.hazelcast.collection;
 
 import com.hazelcast.nio.Data;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * @ali 1/2/13
  */
-public class MultiMapContainer {
+public class CollectionContainer {
 
     String name;
 
-    MultiMapService service;
+    CollectionService service;
 
     private final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
 
-    public MultiMapContainer(String name, MultiMapService service) {
+    public CollectionContainer(String name, CollectionService service) {
         this.name = name;
         this.service = service;
     }
@@ -43,6 +44,20 @@ public class MultiMapContainer {
 
     public void putObject(Data dataKey, Object object){
         objects.put(dataKey, object);
+    }
+
+    public void removeObject(Data dataKey){
+        objects.remove(dataKey);
+    }
+
+    public Object putNewObject(Data dataKey){
+        Object obj = service.createNew(name);
+        objects.put(dataKey, obj);
+        return obj;
+    }
+
+    public Set<Data> keySet(){
+        return objects.keySet();
     }
 
     public ConcurrentMap<Data, Object> getObjects() {

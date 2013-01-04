@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.processor;
+package com.hazelcast.collection.processor;
 
 import com.hazelcast.nio.DataSerializable;
 
@@ -25,6 +25,6 @@ public interface EntryProcessor<T> extends DataSerializable {
 
     T execute(Entry entry);
 
-    Object createNew();
+    boolean isBinary();
 
 }

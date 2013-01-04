@@ -14,52 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.processor;
-
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+package com.hazelcast.collection.processor;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashSet;
 
 /**
- * @ali 1/1/13
+ * @ali 1/2/13
  */
-public class PutEntryProcessor implements BackupAwareEntryProcessor<Boolean> {
+public abstract class BaseEntryProcessor<T> implements EntryProcessor<T> {
 
-    Data data;
+    private boolean binary = true;
 
-    public PutEntryProcessor() {
+    protected BaseEntryProcessor(){
     }
 
-    public PutEntryProcessor(Data data) {
-        this.data = data;
+    protected BaseEntryProcessor(boolean binary) {
+        this.binary = binary;
     }
 
-    public Boolean execute(Entry entry) {
-        HashSet<Data> set = entry.getValue();
-        System.out.println("added");
-        return set.add(data);
-    }
-
-    public void executeBackup(Entry entry) {
-        HashSet<Data> set = entry.getValue();
-        System.out.println("added backup");
-        set.add(data);
-    }
-
-    public Object createNew() {
-        return new HashSet<Data>();
+    public boolean isBinary() {
+        return binary;
     }
 
     public void writeData(DataOutput out) throws IOException {
-        IOUtil.writeNullableData(out, data);
-        data.writeData(out);
+        out.writeBoolean(binary);
     }
 
     public void readData(DataInput in) throws IOException {
-        data = IOUtil.readNullableData(in);
+        binary = in.readBoolean();
     }
+
 }

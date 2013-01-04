@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.processor;
+package com.hazelcast.collection.processor;
 
 /**
  * @ali 1/2/13
  */
-public interface BackupAwareEntryProcessor<T> extends EntryProcessor<T> {
+public interface BackupAwareEntryProcessor {
 
     void executeBackup(Entry entry);
 

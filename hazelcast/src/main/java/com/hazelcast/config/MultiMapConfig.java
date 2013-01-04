@@ -29,6 +29,7 @@ public class MultiMapConfig implements DataSerializable {
     private String name;
     private String valueCollectionType = ValueCollectionType.SET.toString();
     private List<EntryListenerConfig> listenerConfigs;
+    private boolean binary = false;
 
     public MultiMapConfig() {
     }
@@ -36,6 +37,7 @@ public class MultiMapConfig implements DataSerializable {
     public MultiMapConfig(MultiMapConfig defConfig) {
         this.name = defConfig.getName();
         this.valueCollectionType = defConfig.getValueCollectionType().toString();
+        this.binary = defConfig.binary;
     }
 
     public enum ValueCollectionType {
@@ -45,11 +47,13 @@ public class MultiMapConfig implements DataSerializable {
     public void writeData(DataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(valueCollectionType);
+        out.writeBoolean(binary);
     }
 
     public void readData(DataInput in) throws IOException {
         name = in.readUTF();
         valueCollectionType = in.readUTF();
+        binary = in.readBoolean();
     }
 
     public String getName() {
@@ -89,6 +93,14 @@ public class MultiMapConfig implements DataSerializable {
 
     public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+    }
+
+    public boolean isBinary() {
+        return binary;
+    }
+
+    public void setBinary(boolean binary) {
+        this.binary = binary;
     }
 
     @Override

@@ -349,6 +349,10 @@ public class HazelcastClient implements HazelcastInstance {
         return null;
     }
 
+    public <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object... params) {
+        return null;
+    }
+
     public <S extends ServiceProxy> S getServiceProxy(String serviceName, String name) {
         return null;
     }

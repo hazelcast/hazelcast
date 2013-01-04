@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.atomicnumber.AtomicNumberService;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
@@ -25,7 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
@@ -123,7 +124,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getServiceProxy(MultiMapService.class, name);
+        return (MultiMap<K, V>) getServiceProxy(CollectionService.class, name, CollectionProxyType.MULTI_MAP);
     }
 
     public ILock getLock(Object key) {
@@ -196,6 +197,16 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         for (Object service : services) {
             if (serviceClass.isAssignableFrom(service.getClass())) {
                 return (S) ((RemoteService) service).getProxy(name);
+            }
+        }
+        throw new IllegalArgumentException();
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, Object... params) {
+        Collection services = node.nodeEngine.getServices(serviceClass);
+        for (Object service : services) {
+            if (serviceClass.isAssignableFrom(service.getClass())) {
+                return (S) ((RemoteService) service).getProxy(params);
             }
         }
         throw new IllegalArgumentException();

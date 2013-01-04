@@ -14,33 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.processor;
-
-import com.hazelcast.nio.Data;
+package com.hazelcast.collection;
 
 /**
- * @ali 1/1/13
+ * @ali 1/2/13
  */
-public class Entry {
-
-    Data key;
-
-    Object value;
-
-    public Entry(Data key) {
-        this.key = key;
-    }
-
-    public Entry(Data key, Object value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public Data getKey() {
-        return key;
-    }
-
-    <T> T getValue(){
-        return (T)value;
-    }
+public enum CollectionProxyType {
+    MULTI_MAP, LIST, SET, QUEUE
 }

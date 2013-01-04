@@ -14,36 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.processor;
+package com.hazelcast.collection.multimap;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.collection.processor.BaseEntryProcessor;
+import com.hazelcast.config.MultiMapConfig;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 
 /**
- * @ali 1/2/13
+ * @ali 1/3/13
  */
-public class GetEntryProcessor implements EntryProcessor<Collection<Data>> {
+public abstract class MultiMapEntryProcessor<T> extends BaseEntryProcessor<T> {
 
-    public GetEntryProcessor() {
+    String collectionType = MultiMapConfig.ValueCollectionType.SET.toString();
+
+    protected MultiMapEntryProcessor() {
     }
 
-    public Collection<Data> execute(Entry entry) {
-        HashSet<Data> set = entry.getValue();
-        return set.size() == 0 ? null : set;
-    }
-
-    public Object createNew() {
-        return new HashSet<Data>();
+    protected MultiMapEntryProcessor(boolean binary, MultiMapConfig.ValueCollectionType collectionType) {
+        super(binary);
+        this.collectionType = collectionType.toString();
     }
 
     public void writeData(DataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeUTF(collectionType);
     }
 
     public void readData(DataInput in) throws IOException {
+        super.readData(in);
+        collectionType = in.readUTF();
     }
 }

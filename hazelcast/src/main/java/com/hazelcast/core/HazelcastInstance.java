@@ -288,6 +288,8 @@ public interface HazelcastInstance {
 
     <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, String name);
 
+    <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object... params);
+
 
     <S extends ServiceProxy> S getServiceProxy(String serviceName, String name);
 
