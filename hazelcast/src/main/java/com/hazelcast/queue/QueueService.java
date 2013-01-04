@@ -41,7 +41,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
 
     private NodeEngine nodeEngine;
 
-    public static final String NAME = "hz:impl:queueService";
+    public static final String QUEUE_SERVICE_NAME = "hz:impl:queueService";
 
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, QueueProxy> proxies = new ConcurrentHashMap<String, QueueProxy>();
@@ -163,7 +163,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
             return;
         }
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService.registerListener(QueueService.NAME, name, new QueueEventFilter(includeValue), listener);
+        EventRegistration registration = eventService.registerListener(QueueService.QUEUE_SERVICE_NAME, name, new QueueEventFilter(includeValue), listener);
         eventRegistrations.put(listenerKey, registration.getId());
     }
 
@@ -172,7 +172,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         String id = eventRegistrations.remove(listenerKey);
         if (id != null){
             EventService eventService = nodeEngine.getEventService();
-            eventService.deregisterListener(NAME, name, id);
+            eventService.deregisterListener(QUEUE_SERVICE_NAME, name, id);
         }
     }
 

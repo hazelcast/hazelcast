@@ -291,7 +291,7 @@ public class ConfigXmlGenerator {
         final Collection<TopicConfig> tCfgs = config.getTopicConfigs().values();
         for (TopicConfig t : tCfgs) {
             xml.append("<topic name=\"").append(t.getName()).append("\">");
-//            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled()).append("</global-ordering-enabled>");
+            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled()).append("</global-ordering-enabled>");
             if (!t.getMessageListenerConfigs().isEmpty()) {
                 xml.append("<message-listeners>");
                 for (ListenerConfig lc : t.getMessageListenerConfigs()) {

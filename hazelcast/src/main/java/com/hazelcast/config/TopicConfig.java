@@ -26,7 +26,7 @@ import java.util.List;
 
 public final class TopicConfig implements DataSerializable {
 
-    public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
+    public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = true;
 
     private String name;
 

@@ -23,9 +23,14 @@ import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
+import com.hazelcast.monitor.impl.LocalAtomicNumberStatsImpl;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceProxy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import org.mockito.cglib.core.TinyBitSet;
+
 import java.util.concurrent.Future;
 
 // author: sancar - 21.12.2012
@@ -33,12 +38,14 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
 
     private final String name;
     private final NodeEngine nodeEngine;
+    private final AtomicNumberService atomicNumberService;
     private final int partitionId;
 
-    public AtomicNumberProxy(String name, NodeEngine nodeEngine) {
+    public AtomicNumberProxy(String name, AtomicNumberService atomicNumberService, NodeEngine nodeEngine) {
 
         this.name = name;
         this.nodeEngine = nodeEngine;
+        this.atomicNumberService = atomicNumberService;
         this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
     }
 
@@ -52,7 +59,7 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
             AddAndGetOperation operation = new AddAndGetOperation(name, delta);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
             Future f = inv.invoke();
-            return (Long)f.get();
+            return (Long) f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -63,7 +70,7 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
             CompareAndSetOperation operation = new CompareAndSetOperation(name, expect, update);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
             Future f = inv.invoke();
-            return (Boolean)f.get();
+            return (Boolean) f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -86,7 +93,7 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
             GetAndAddOperation operation = new GetAndAddOperation(name, delta);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
             Future f = inv.invoke();
-            return (Long)f.get();
+            return (Long) f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -97,7 +104,7 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
             GetAndSetOperation operation = new GetAndSetOperation(name, newValue);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
             Future f = inv.invoke();
-            return (Long)f.get();
+            return (Long) f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -124,6 +131,10 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
     }
 
     public LocalAtomicNumberStats getLocalAtomicNumberStats() {
+        for (String proxy : atomicNumberService.getProxyNames()) {
+            System.out.println(proxy + "->" + atomicNumberService.getNumber(proxy));
+        }
+
         return null;
     }
 
@@ -139,40 +150,8 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
         return name;
     }
 
-    public static void main(String [] args) throws Exception {
-        Config cfg = new XmlConfigBuilder("/Users/msk/IdeaProjects/sample/src/main/resources/hazelcast.xml").build();
-        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(cfg);
-        //final AtomicNumber a1 = hazelcastInstance.getAtomicNumber("one");
-
-        final AtomicNumber a2 = hazelcastInstance.getAtomicNumber("two");
-        /*
-        for(int i = 0 ; i < 1000 ; i++){
-            new Runnable() {
-
-                public void run() {
-
-                    for(int j = 0 ; j < 1; j++)
-                        a1.incrementAndGet();
-
-                    if(a1.compareAndSet(1000,-1)){
-                        a1.set(2);
-                    }
-                }
-            }.run();
-
-        }
-          */
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        //System.out.println(2 == a1.get());
-        for(int i = 0; i < 50 ; i++)
-            a2.addAndGet(3);
-
-        System.out.println(a2.get());
-
+    public int getPartitionId() {
+        return partitionId;
     }
+
 }

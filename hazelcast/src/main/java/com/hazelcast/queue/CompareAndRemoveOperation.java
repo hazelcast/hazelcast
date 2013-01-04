@@ -25,14 +25,16 @@ import com.hazelcast.spi.Operation;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * @ali 12/20/12
  */
 public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private List<Data> dataList;
+    private Collection<Data> dataList;
 
     transient Map<Long, Data> dataMap;
 
@@ -41,7 +43,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     public CompareAndRemoveOperation() {
     }
 
-    public CompareAndRemoveOperation(String name, List<Data> dataList, boolean retain) {
+    public CompareAndRemoveOperation(String name, Collection<Data> dataList, boolean retain) {
         super(name);
         this.dataList = dataList;
         this.retain = retain;

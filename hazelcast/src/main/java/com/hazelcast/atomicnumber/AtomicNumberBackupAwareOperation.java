@@ -4,15 +4,15 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.KeyBasedOperation;
 
 // author: sancar - 25.12.2012
-public abstract class AtomicNumberBackupAwareOperation extends  AtomicNumberBaseOperation implements BackupAwareOperation, KeyBasedOperation {
+public abstract class AtomicNumberBackupAwareOperation extends AtomicNumberBaseOperation implements BackupAwareOperation, KeyBasedOperation {
 
     protected boolean shouldBackup = true;
 
-    public AtomicNumberBackupAwareOperation(){
+    public AtomicNumberBackupAwareOperation() {
         super();
     }
 
-    public AtomicNumberBackupAwareOperation(String name){
+    public AtomicNumberBackupAwareOperation(String name) {
         super(name);
     }
 

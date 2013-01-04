@@ -14,51 +14,62 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.topic;
 
 import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 
 /**
- * @ali 12/20/12
+ * User: sancar
+ * Date: 12/31/12
+ * Time: 12:10 PM
  */
-public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
+public class PublishOperation extends AbstractNamedOperation implements KeyBasedOperation {
 
-    Collection<Data> dataList;
+    private Data message;
 
-    public AddAllBackupOperation() {
+    public PublishOperation() {
+        super();
     }
 
-    public AddAllBackupOperation(String name, Collection<Data> dataList) {
+    public PublishOperation(String name, Data message) {
         super(name);
-        this.dataList = dataList;
+        this.message = message;
     }
 
+    @Override
     public void run() throws Exception {
-        getContainer().addAllBackup(dataList);
+
+        TopicEvent topicEvent = new TopicEvent(name, message);
+        getNodeEngine().getEventService().publishEvent(TopicService.NAME, getNodeEngine().getEventService().getRegistrations(TopicService.NAME, name), topicEvent);
+
     }
 
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    public int getKeyHash() {
+        String key = TopicService.NAME + getName();
+        return key.hashCode();
+    }
+
+    @Override
     public void writeInternal(DataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(dataList.size());
-        for (Data data: dataList){
-            IOUtil.writeNullableData(out, data);
-        }
+        message.writeData(out);
     }
 
+    @Override
     public void readInternal(DataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
-            dataList.add(IOUtil.readNullableData(in));
-        }
+        message = new Data();
+        message.readData(in);
     }
 }

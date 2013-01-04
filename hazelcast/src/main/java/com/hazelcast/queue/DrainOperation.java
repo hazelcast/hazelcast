@@ -24,7 +24,7 @@ import com.hazelcast.spi.Operation;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
 
 /**
  * @ali 12/19/12

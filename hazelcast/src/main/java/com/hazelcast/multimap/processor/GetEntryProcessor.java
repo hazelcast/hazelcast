@@ -14,41 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.multimap.processor;
 
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.nio.Data;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
- * @ali 12/11/12
+ * @ali 1/2/13
  */
-public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
+public class GetEntryProcessor implements EntryProcessor<Collection<Data>> {
 
-    private long itemId;
-
-    public RemoveBackupOperation() {
+    public GetEntryProcessor() {
     }
 
-    public RemoveBackupOperation(String name, long itemId) {
-        super(name);
-        this.itemId = itemId;
+    public Collection<Data> execute(Entry entry) {
+        HashSet<Data> set = entry.getValue();
+        return set.size() == 0 ? null : set;
     }
 
-    public void run() throws Exception {
-        getContainer().removeBackup(itemId);
-        response = true;
+    public Object createNew() {
+        return new HashSet<Data>();
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(itemId);
+    public void writeData(DataOutput out) throws IOException {
     }
 
-    public void readInternal(DataInput in) throws IOException {
-        super.readInternal(in);
-        itemId = in.readLong();
+    public void readData(DataInput in) throws IOException {
     }
 }
