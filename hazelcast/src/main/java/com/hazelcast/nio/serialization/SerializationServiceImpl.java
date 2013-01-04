@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -45,13 +46,13 @@ public final class SerializationServiceImpl implements SerializationService {
     private final ManagedContext managedContext;
     final SerializationContext serializationContext;
 
-    public SerializationServiceImpl(PortableFactory portableFactory) {
-        this(portableFactory, null);
+    public SerializationServiceImpl(int version, PortableFactory portableFactory) {
+        this(version, portableFactory, null);
     }
 
-    public SerializationServiceImpl(PortableFactory portableFactory, ManagedContext managedContext) {
+    public SerializationServiceImpl(int version, PortableFactory portableFactory, ManagedContext managedContext) {
         this.managedContext = managedContext;
-        serializationContext = new SerializationContextImpl(portableFactory, 5);
+        serializationContext = new SerializationContextImpl(portableFactory, version);
         safeRegister(DataSerializable.class, dataSerializer = new DataSerializer());
         safeRegister(Portable.class, portableSerializer = new PortableSerializer(serializationContext));
         safeRegister(String.class, new DefaultSerializers.StringSerializer());
@@ -82,8 +83,8 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             serializer.write(out, obj);
             final Data data = new Data(serializer.getTypeId(), out.toByteArray());
-            if (serializer instanceof PortableSerializer) {
-                data.cd = ((PortableSerializer) serializer).getClassDefinition((Portable) obj);
+            if (obj instanceof Portable) {
+                data.cd = serializationContext.lookup(((Portable) obj).getClassId());
             }
 //            if (obj instanceof PartitionAware) {
 //                final Data partitionKey = writeObject(((PartitionAware) obj).getPartitionKey());
@@ -127,6 +128,9 @@ public final class SerializationServiceImpl implements SerializationService {
             if (serializer == null) {
                 throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
             }
+            if (data.type == SerializationConstants.SERIALIZER_TYPE_PORTABLE) {
+                serializationContext.registerClassDefinition(data.cd);
+            }
             in = new ContextAwareDataInput(data, this);
             Object obj = serializer.read(in);
             if (managedContext != null) {
@@ -142,9 +146,7 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             throw new HazelcastSerializationException(e);
         } finally {
-            if (in != null) {
-                in.close();
-            }
+            IOUtil.closeResource(in);
         }
     }
 
@@ -365,27 +367,25 @@ public final class SerializationServiceImpl implements SerializationService {
         private void registerNestedDefinitions(ClassDefinitionImpl cd) throws IOException {
             Collection<ClassDefinition> nestedDefinitions = cd.getNestedClassDefinitions();
             for (ClassDefinition classDefinition : nestedDefinitions) {
-                final long key = combineToLong(classDefinition.getClassId(), classDefinition.getVersion());
                 final ClassDefinitionImpl nestedCD = (ClassDefinitionImpl) classDefinition;
-                registerClassDefinition(key, nestedCD);
+                registerClassDefinition(nestedCD);
                 registerNestedDefinitions(nestedCD);
             }
         }
 
-        public void registerClassDefinition(int classId, ClassDefinitionImpl cd) throws IOException {
-            registerClassDefinition(combineToLong(classId, version), cd);
-        }
-
-        public void registerClassDefinition(long versionedClassId, ClassDefinitionImpl cd) throws IOException {
-            if (versionedDefinitions.putIfAbsent(versionedClassId, cd) == null) {
-                if (cd.getBinary() == null) {
+        public void registerClassDefinition(ClassDefinition cd) throws IOException {
+            if (cd == null) return;
+            final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
+            final long versionedClassId = combineToLong(cdImpl.getClassId(), cdImpl.getVersion());
+            if (versionedDefinitions.putIfAbsent(versionedClassId, cdImpl) == null) {
+                if (cdImpl.getBinary() == null) {
                     final ContextAwareDataOutput out = pop();
                     try {
-                        cd.writeData(out);
+                        cdImpl.writeData(out);
                         final byte[] binary = out.toByteArray();
                         out.reset();
                         compress(binary, out);
-                        cd.setBinary(out.toByteArray());
+                        cdImpl.setBinary(out.toByteArray());
                     } finally {
                         push(out);
                     }

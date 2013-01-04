@@ -42,4 +42,20 @@ public interface PortableReader {
     short readShort(String fieldName) throws IOException;
     
     <P extends Portable> P readPortable(String fieldName) throws IOException;
+
+    byte[] readByteArray(String fieldName) throws IOException;
+
+    char[] readCharArray(String fieldName) throws IOException;
+
+    int[] readIntArray(String fieldName) throws IOException;
+
+    long[] readLongArray(String fieldName) throws IOException;
+
+    double[] readDoubleArray(String fieldName) throws IOException;
+
+    float[] readFloatArray(String fieldName) throws IOException;
+
+    short[] readShortArray(String fieldName) throws IOException;
+
+    Portable[] readPortableArray(String fieldName) throws IOException;
 }

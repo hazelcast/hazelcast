@@ -97,51 +97,6 @@ public final class IOUtil {
         return null;
     }
 
-//    public static byte[] toByteArray(Object obj) {
-//        if (obj == null) {
-//            return null;
-//        }
-//        if (obj instanceof byte[]) {
-//            return (byte[]) obj;
-//        }
-//        return ThreadContext.get().toByteArray(obj);
-//    }
-//
-//    public static Data toData(Object obj) {
-//        if (obj == null) {
-//            return null;
-//        }
-//        if (obj instanceof Data) {
-//            return (Data) obj;
-//        }
-//        return ThreadContext.get().toData(obj);
-//    }
-//
-//    public static <T> T toObject(byte[] data) {
-//        return (T) ThreadContext.get().toObject(data);
-//    }
-//
-//    public static <T> T toObject(Data data) {
-//        if (data == null) {
-//            return null;
-//        }
-//        return (T) ThreadContext.get().toObject(data);
-//    }
-//
-//    public static Object toObject(Object data) {
-//        if (data == null) {
-//            return null;
-//        }
-//        if (data instanceof Data) {
-//            return ThreadContext.get().toObject((Data) data);
-//        }
-//        return data;
-//    }
-//
-//    public static <T> T toObject(DataHolder dataHolder) {
-//        return toObject(dataHolder.toData());
-//    }
-
     public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
         return new ObjectInputStream(in) {
             protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
@@ -244,16 +199,6 @@ public final class IOUtil {
         }
         return sb.toString();
     }
-
-//    public static Data addDelta(Data longData, long delta) {
-//        long longValue = (Long) toObject(longData);
-//        return toData(longValue + delta);
-//    }
-//
-//    public static Data addDelta(Data intData, int delta) {
-//        int intValue = (Integer) toObject(intData);
-//        return toData(intValue + delta);
-//    }
 
     public static byte[] compress(byte[] input) throws IOException {
         Deflater compressor = new Deflater();

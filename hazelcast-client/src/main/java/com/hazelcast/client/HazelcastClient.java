@@ -74,7 +74,7 @@ public class HazelcastClient implements HazelcastInstance {
     private final PartitionClientProxy partitionClientProxy;
     private final LifecycleServiceClientImpl lifecycleService;
     private final ConnectionManager connectionManager;
-    private final SerializationServiceImpl serializationService = new SerializationServiceImpl(null);
+    private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
 
     private HazelcastClient(ClientConfig config) {
         if (config.getAddressList().size() == 0) {

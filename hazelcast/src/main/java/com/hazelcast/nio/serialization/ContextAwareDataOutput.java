@@ -341,7 +341,6 @@ class ContextAwareDataOutput extends OutputStream implements ObjectDataOutput, S
         return service.serializationContext;
     }
 
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();

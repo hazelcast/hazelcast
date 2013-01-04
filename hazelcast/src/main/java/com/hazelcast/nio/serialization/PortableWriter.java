@@ -31,7 +31,7 @@ public interface PortableWriter {
 
     void writeBoolean(String fieldName, final boolean value) throws IOException;
 
-    void writeByte(String fieldName, final int value) throws IOException;
+    void writeByte(String fieldName, final byte value) throws IOException;
 
     void writeChar(String fieldName, final int value) throws IOException;
 
@@ -39,7 +39,24 @@ public interface PortableWriter {
 
     void writeFloat(String fieldName, final float value) throws IOException;
 
-    void writeShort(String fieldName, final int value) throws IOException;
+    void writeShort(String fieldName, final short value) throws IOException;
 
     void writePortable (String fieldName, Portable portable) throws IOException;
+
+    void writeByteArray(String fieldName, byte[] bytes) throws IOException;
+
+    void writeCharArray(String fieldName, char[] chars) throws IOException;
+
+    void writeIntArray(String fieldName, int[] ints) throws IOException;
+
+    void writeLongArray(String fieldName, long[] longs) throws IOException;
+
+    void writeDoubleArray(String fieldName, double[] values) throws IOException;
+
+    void writeFloatArray(String fieldName, float[] values) throws IOException;
+
+    void writeShortArray(String fieldName, short[] values) throws IOException;
+
+    void writePortableArray(String fieldName, Portable[] portables) throws IOException;
+
 }

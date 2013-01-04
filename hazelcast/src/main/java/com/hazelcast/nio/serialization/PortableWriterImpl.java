@@ -60,7 +60,7 @@ class PortableWriterImpl implements PortableWriter {
         out.writeBoolean(value);
     }
 
-    public void writeByte(String fieldName, int value) throws IOException {
+    public void writeByte(String fieldName, byte value) throws IOException {
         setPosition(fieldName);
         out.writeByte(value);
     }
@@ -80,7 +80,7 @@ class PortableWriterImpl implements PortableWriter {
         out.writeFloat(value);
     }
 
-    public void writeShort(String fieldName, int value) throws IOException {
+    public void writeShort(String fieldName, short value) throws IOException {
         setPosition(fieldName);
         out.writeShort(value);
     }
@@ -94,8 +94,124 @@ class PortableWriterImpl implements PortableWriter {
         }
     }
 
+    public void writeByteArray(String fieldName, byte[] values) throws IOException {
+        setPosition(fieldName);
+        final int len = values == null ? 0 : values.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                out.writeByte(values[i]);
+            }
+        }
+    }
+
+    public void writeCharArray(String fieldName, char[] values) throws IOException {
+        setPosition(fieldName);
+        final int len = values == null ? 0 : values.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                out.writeChar(values[i]);
+            }
+        }
+    }
+
+    public void writeIntArray(String fieldName, int[] values) throws IOException {
+        setPosition(fieldName);
+        final int len = values == null ? 0 : values.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                out.writeInt(values[i]);
+            }
+        }
+    }
+
+    public void writeLongArray(String fieldName, long[] values) throws IOException {
+        setPosition(fieldName);
+        final int len = values == null ? 0 : values.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                out.writeLong(values[i]);
+            }
+        }
+    }
+
+    public void writeDoubleArray(String fieldName, double[] values) throws IOException {
+        setPosition(fieldName);
+        final int len = values == null ? 0 : values.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                out.writeDouble(values[i]);
+            }
+        }
+    }
+
+    public void writeFloatArray(String fieldName, float[] values) throws IOException {
+        setPosition(fieldName);
+        final int len = values == null ? 0 : values.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                out.writeFloat(values[i]);
+            }
+        }
+    }
+
+    public void writeShortArray(String fieldName, short[] values) throws IOException {
+        setPosition(fieldName);
+        final int len = values == null ? 0 : values.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                out.writeShort(values[i]);
+            }
+        }
+    }
+
+    public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
+        setPosition(fieldName);
+        final int len = portables == null ? 0 : portables.length;
+        out.writeInt(len);
+        if (len > 0) {
+            for (Portable portable : portables) {
+                serializer.write(out, portable);
+            }
+        }
+    }
+
+//    public void writeIntMap(String fieldName, Map<Integer, Portable> portables) throws IOException {
+//        setPosition(fieldName);
+//        final int len = portables == null ? 0 : portables.size();
+//        out.writeInt(len);
+//        if (len > 0) {
+//            for (Map.Entry<Integer, Portable> entry : portables.entrySet()) {
+//                out.writeInt(entry.getKey());
+//                serializer.write(out, entry.getValue());
+//            }
+//        }
+//    }
+//
+//    public void writeStringMap(String fieldName, Map<String, Portable> portables) throws IOException {
+//        setPosition(fieldName);
+//        final int len = portables == null ? 0 : portables.size();
+//        out.writeInt(len);
+//        if (len > 0) {
+//            for (Map.Entry<String, Portable> entry : portables.entrySet()) {
+//                out.writeUTF(entry.getKey());
+//                serializer.write(out, entry.getValue());
+//            }
+//        }
+//    }
+
     private void setPosition(String fieldName) throws IOException {
         FieldDefinition fd = cd.get(fieldName);
+        if (fd == null) {
+            throw new HazelcastSerializationException("Invalid field name: '" + fieldName
+                    + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
+        }
         int pos = out.position();
         int index = fd.getIndex();
         // index = fieldIndex++; // if class versions are the same.

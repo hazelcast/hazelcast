@@ -130,7 +130,7 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
-        serializationService = new SerializationServiceImpl(null, hazelcastInstance.managedContext);
+        serializationService = new SerializationServiceImpl(1, null, hazelcastInstance.managedContext);
         systemLogService = new SystemLogService(this);
         final AddressPicker addressPicker = new AddressPicker(this);
         try {

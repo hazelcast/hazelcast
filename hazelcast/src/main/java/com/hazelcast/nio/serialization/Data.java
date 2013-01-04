@@ -44,13 +44,10 @@ public class Data implements DataSerializable {
 
     public void postConstruct(SerializationContext context) {
         if (cd != null && cd instanceof ClassDefinitionBinaryProxy) {
-            ClassDefinition realCD = context.lookup(cd.getClassId(), cd.getVersion());
-            if (realCD == null) {
-                try {
-                    cd = context.createClassDefinition(cd.getBinary());
-                } catch (IOException e) {
-                    throw new HazelcastSerializationException(e);
-                }
+            try {
+                cd = ((ClassDefinitionBinaryProxy) cd).toReal(context);
+            } catch (IOException e) {
+                throw new HazelcastSerializationException(e);
             }
         }
     }

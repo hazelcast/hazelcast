@@ -16,22 +16,13 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.io.IOException;
-
 /**
- * @mdogan 12/26/12
+ * @mdogan 1/4/13
  */
-public interface SerializationContext {
+public interface PortableConverter<T>  {
 
-    ClassDefinitionImpl lookup(int classId);
+    Portable toPortable(T object);
 
-    ClassDefinitionImpl lookup(int classId, int version);
+    T toObject(Portable portable);
 
-    Portable createPortable(int classId);
-
-    ClassDefinitionImpl createClassDefinition(byte[] binary) throws IOException;
-
-    void registerClassDefinition(ClassDefinition cd) throws IOException;
-
-    int getVersion();
 }

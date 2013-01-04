@@ -44,23 +44,27 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
 
     private final SerializationServiceImpl service;
 
-    private int classId;
+    private int localClassId;
+
+    private int localVersionId;
 
     public ContextAwareDataInput(byte[] buffer, SerializationServiceImpl service) {
-        this(buffer, 0, service, -1);
+        this(buffer, 0, service);
     }
 
     public ContextAwareDataInput(Data data, SerializationServiceImpl service) {
-        this(data.buffer, 0, service, data.cd != null ? data.cd.getClassId() : -1);
+        this(data.buffer, 0, service);
+        final ClassDefinition cd = data.cd;
+        this.localClassId = cd != null ? cd.getClassId() : -1;
+        this.localVersionId = cd != null ? cd.getVersion() : -1;
     }
 
-    private ContextAwareDataInput(byte buffer[], int offset, SerializationServiceImpl service, int classId) {
+    private ContextAwareDataInput(byte buffer[], int offset, SerializationServiceImpl service) {
         super();
         this.buffer = buffer;
         this.size = buffer.length - offset;
         this.offset = offset;
         this.service = service;
-        this.classId = classId;
     }
 
     @Override
@@ -402,11 +406,11 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
     }
 
     public ContextAwareDataInput duplicate() {
-        return new ContextAwareDataInput(buffer, 0, service, classId);
+        return new ContextAwareDataInput(buffer, 0, service);
     }
 
     public ContextAwareDataInput slice() {
-        return new ContextAwareDataInput(buffer, pos, service, classId);
+        return new ContextAwareDataInput(buffer, pos, service);
     }
 
     @Override
@@ -466,6 +470,8 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
 
     @Override
     public void close() {
+        localClassId = -1;
+        localVersionId = -1;
     }
 
     private String readShortUTF() throws IOException {
@@ -535,12 +541,20 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
         return service.serializationContext;
     }
 
-    public int getClassId() {
-        return classId;
+    int getLocalClassId() {
+        return localClassId;
     }
 
-    public void setClassId(int classId) {
-        this.classId = classId;
+    void setLocalClassId(int classId) {
+        this.localClassId = classId;
+    }
+
+    int getLocalVersionId() {
+        return localVersionId;
+    }
+
+    void setLocalVersionId(int localVersionId) {
+        this.localVersionId = localVersionId;
     }
 
     @Override
@@ -551,7 +565,6 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
         sb.append(", offset=").append(offset);
         sb.append(", pos=").append(pos);
         sb.append(", mark=").append(mark);
-        sb.append(", classId=").append(classId);
         sb.append('}');
         return sb.toString();
     }

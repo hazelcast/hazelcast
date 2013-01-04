@@ -20,10 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @mdogan 12/26/12
@@ -34,7 +31,7 @@ public class ClassDefinitionImpl implements DataSerializable, ClassDefinition {
     private List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
             FieldDefinition>();
-    private List<ClassDefinition> nestedClassDefinitions = new ArrayList<ClassDefinition>();
+    private Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
 
     private byte[] binary;
 
@@ -55,7 +52,7 @@ public class ClassDefinitionImpl implements DataSerializable, ClassDefinition {
         return fieldDefinitions.get(fieldIndex);
     }
 
-    public List<ClassDefinition> getNestedClassDefinitions() {
+    public Set<ClassDefinition> getNestedClassDefinitions() {
         return nestedClassDefinitions;
     }
 
@@ -110,12 +107,32 @@ public class ClassDefinitionImpl implements DataSerializable, ClassDefinition {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ClassDefinitionImpl that = (ClassDefinitionImpl) o;
+
+        if (classId != that.classId) return false;
+        if (version != that.version) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = classId;
+        result = 31 * result + version;
+        return result;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("ClassDefinition");
         sb.append("{classId=").append(classId);
-        sb.append(", fieldDefinitions=").append(fieldDefinitions);
         sb.append(", version=").append(version);
+        sb.append(", fieldDefinitions=").append(fieldDefinitions);
         sb.append('}');
         return sb.toString();
     }

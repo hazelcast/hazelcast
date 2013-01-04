@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MessageListenerManagerTest {
 
-    final private SerializationService serializationService = new SerializationServiceImpl(null);
+    final private SerializationService serializationService = new SerializationServiceImpl(1, null);
 
     @Test
     public void testRegisterMessageListener() throws Exception {
