@@ -17,12 +17,12 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Predicates;
 import com.hazelcast.query.impl.QueryContext;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 
@@ -65,11 +65,11 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(sql);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         sql = in.readUTF();
         predicate = createPredicate(sql);
     }

@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalCountDownLatchOperationStatsImpl extends LocalOperationStatsSupport
@@ -31,13 +31,13 @@ public class LocalCountDownLatchOperationStatsImpl extends LocalOperationStatsSu
     OperationStat countdown = new OperationStat(0, 0);
     OperationStat other = new OperationStat(0, 0);
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         await.writeData(out);
         countdown.writeData(out);
         other.writeData(out);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         (await = new OperationStat()).readData(in);
         (countdown = new OperationStat()).readData(in);
         (other = new OperationStat()).readData(in);

@@ -24,6 +24,8 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -220,6 +222,18 @@ public class NodeIOService implements IOService {
 
     public void executeAsync(final Runnable runnable) {
         nodeEngine.getExecutionService().execute(runnable);
+    }
+
+    public Data toData(Object obj) {
+        return nodeEngine.toData(obj);
+    }
+
+    public Object toObject(Data data) {
+        return nodeEngine.toObject(data);
+    }
+
+    public SerializationContext getSerializationContext() {
+        return node.serializationService.getSerializationContext();
     }
 
     public Collection<Integer> getOutboundPorts() {

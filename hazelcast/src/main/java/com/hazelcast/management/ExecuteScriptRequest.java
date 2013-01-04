@@ -17,15 +17,12 @@
 package com.hazelcast.management;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
-
-import static com.hazelcast.nio.IOUtil.readObject;
-import static com.hazelcast.nio.IOUtil.writeObject;
 
 public class ExecuteScriptRequest implements ConsoleRequest {
 
@@ -65,7 +62,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_EXECUTE_SCRIPT;
     }
 
-    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         Object result = null;
         ScriptExecutorCallable callable = new ScriptExecutorCallable(engine, script);
         callable.setHazelcastInstance(mcs.getHazelcastInstance());
@@ -88,14 +85,14 @@ public class ExecuteScriptRequest implements ConsoleRequest {
                 writeCollection(dos, (Collection) result);
             } else {
                 dos.writeByte(OTHER);
-                writeObject(dos, result);
+                dos.writeObject(result);
             }
         } else {
             dos.writeByte(NULL);
         }
     }
 
-    public Object readResponse(DataInput in) throws IOException {
+    public Object readResponse(ObjectDataInput in) throws IOException {
         byte flag = in.readByte();
         switch (flag) {
             case MAP:
@@ -103,60 +100,60 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             case COLLECTION:
                 return readCollection(in);
             case OTHER:
-                return readObject(in);
+                return in.readObject();
         }
         return null;
     }
 
-    private void writeMap(DataOutput dos, Map result) throws IOException {
+    private void writeMap(ObjectDataOutput dos, Map result) throws IOException {
         int size = result != null ? result.size() : 0;
         dos.writeInt(size);
         if (size > 0) {
             Set<Entry<Object, Object>> entries = result.entrySet();
             for (Entry<Object, Object> entry : entries) {
-                writeObject(dos, entry.getKey());
-                writeObject(dos, entry.getValue());
+                dos.writeObject(entry.getKey());
+                dos.writeObject(entry.getValue());
             }
         }
     }
 
-    private Map readMap(DataInput in) throws IOException {
+    private Map readMap(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         Map props = new HashMap(size);
         if (size > 0) {
             for (int i = 0; i < size; i++) {
-                Object key = readObject(in);
-                Object value = readObject(in);
+                Object key = in.readObject();
+                Object value = in.readObject();
                 props.put(key, value);
             }
         }
         return props;
     }
 
-    private void writeCollection(DataOutput dos, Collection result) throws IOException {
+    private void writeCollection(ObjectDataOutput dos, Collection result) throws IOException {
         int size = result != null ? result.size() : 0;
         dos.writeInt(size);
         if (size > 0) {
             Iterator iter = result.iterator();
             while (iter.hasNext()) {
-                writeObject(dos, iter.next());
+                dos.writeObject(iter.next());
             }
         }
     }
 
-    private Collection readCollection(DataInput in) throws IOException {
+    private Collection readCollection(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         Collection coll = new ArrayList(size);
         if (size > 0) {
             for (int i = 0; i < size; i++) {
-                Object value = readObject(in);
+                Object value = in.readObject();
                 coll.add(value);
             }
         }
         return coll;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(script);
         out.writeUTF(engine);
         out.writeBoolean(targetAllMembers);
@@ -167,7 +164,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         writeMap(out, bindings);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         script = in.readUTF();
         engine = in.readUTF();
         targetAllMembers = in.readBoolean();

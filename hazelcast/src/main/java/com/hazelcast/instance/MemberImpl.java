@@ -21,10 +21,12 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -143,15 +145,15 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         logger = instance.node.getLogger(this.getClass().getName());
     }
 
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        writeData(out);
-    }
+//    private void writeObject(ObjectOutputStream out) throws IOException {
+//        writeData(out);
+//    }
+//
+//    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+//        readData(in);
+//    }
 
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        readData(in);
-    }
-
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
@@ -161,7 +163,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeInt(nodeType.getValue());
         boolean hasUuid = uuid != null;

@@ -17,10 +17,10 @@
 package com.hazelcast.management;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
@@ -51,11 +51,11 @@ public class ManagementCenterConfigCallable extends ClusterServiceCallable imple
         return null;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(newUrl);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         newUrl = in.readUTF();
     }
 }

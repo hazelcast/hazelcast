@@ -18,13 +18,12 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionPartitionContainer;
-import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.CollectionProxy;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
@@ -83,7 +82,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     private Set<K> toObjectSet(Set<Data> dataSet) {
         Set<K> keySet = new HashSet<K>(dataSet.size());
         for (Data dataKey : dataSet) {
-            keySet.add((K) IOUtil.toObject(dataKey));
+//            keySet.add((K) IOUtil.toObject(dataKey));
         }
         return keySet;
     }
@@ -169,10 +168,10 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
                 CollectionContainer container = entry.getValue();
                 Map<Data, Object> map = container.getObjects();
                 for (Map.Entry<Data, Object> en : map.entrySet()) {
-                    System.out.println("\t\tkey: " + IOUtil.toObject(en.getKey()));
+                    System.out.println("\t\tkey: " + nodeEngine.toObject(en.getKey()));
                     Collection col = (Collection) en.getValue();
                     for (Object o : col) {
-                        System.out.println("\t\t\tval: " + IOUtil.toObject(o));
+                        System.out.println("\t\t\tval: " + nodeEngine.toObject(o));
                     }
                 }
             }

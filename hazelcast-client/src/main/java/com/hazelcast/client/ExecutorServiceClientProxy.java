@@ -18,16 +18,13 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.executor.ExecutionManagerCallback;
 import com.hazelcast.impl.InnerFutureTask;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 import static com.hazelcast.client.ProxyHelper.check;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ExecutorServiceClientProxy implements ExecutorService {
 

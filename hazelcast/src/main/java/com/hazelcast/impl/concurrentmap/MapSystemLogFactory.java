@@ -28,7 +28,7 @@
 //import com.hazelcast.partition.PartitionService;
 //import com.hazelcast.nio.Address;
 //import com.hazelcast.nio.Connection;
-//import com.hazelcast.nio.Data;
+//import com.hazelcast.nio.serialization.Data;
 //
 //import java.util.HashSet;
 //import java.util.Set;

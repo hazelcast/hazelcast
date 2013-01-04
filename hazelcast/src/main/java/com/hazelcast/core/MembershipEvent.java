@@ -17,10 +17,10 @@
 package com.hazelcast.core;
 
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -67,12 +67,12 @@ public class MembershipEvent implements DataSerializable {
         return member;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         member.writeData(out);
         out.writeInt(eventType);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         member = new MemberImpl();
         member.readData(in);
         eventType = in.readInt();

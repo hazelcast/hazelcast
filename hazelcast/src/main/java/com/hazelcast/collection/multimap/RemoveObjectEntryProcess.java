@@ -19,11 +19,11 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.BaseEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -47,7 +47,7 @@ public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implem
         if (coll == null){
             return false;
         }
-        boolean result = coll.remove(isBinary() ? data : IOUtil.toObject(data));
+        boolean result = false; //coll.remove(isBinary() ? data : IOUtil.toObject(data));
         if (coll.isEmpty()){
             entry.removeEntry();
         }
@@ -59,18 +59,18 @@ public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implem
         if (coll == null){
             return;
         }
-        coll.remove(isBinary() ? data : IOUtil.toObject(data));
+//        coll.remove(isBinary() ? data : IOUtil.toObject(data));
         if (coll.isEmpty()){
             entry.removeEntry();
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         IOUtil.writeNullableData(out, data);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         data = IOUtil.readNullableData(in);
     }

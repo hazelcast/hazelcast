@@ -22,12 +22,10 @@ import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.impl.DataAwareItemEvent;
-import com.hazelcast.nio.Data;
-
-import com.hazelcast.nio.serialization.SerializerRegistry;
-
 import com.hazelcast.nio.Protocol;
-
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,13 +33,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class QueueItemListenerManager {
     final private ConcurrentHashMap<String, List<ItemListenerHolder>> queueItemListeners = new ConcurrentHashMap<String, List<ItemListenerHolder>>();
-    final private SerializerRegistry serializerRegistry;
+    final private SerializationService serializerRegistry;
 
-    public QueueItemListenerManager(final SerializerRegistry serializerRegistry) {
+    public QueueItemListenerManager(final SerializationService serializerRegistry) {
         this.serializerRegistry = serializerRegistry;
     }
 
@@ -84,7 +81,8 @@ public class QueueItemListenerManager {
         if (list != null) {
             for (ItemListenerHolder listenerHolder : list) {
                 ItemListener<Object> listener = listenerHolder.listener;
-                Data item = listenerHolder.includeValue?new Data(protocol.buffers[0].array()):null;
+                Data item = listenerHolder.includeValue? new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY,
+                        protocol.buffers[0].array()):null;
                 ItemEventType itemEventType = ItemEventType.valueOf(protocol.args[1]);
                 if (ItemEventType.ADDED.equals(itemEventType)) {
                     listener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, item, null,  serializerRegistry));

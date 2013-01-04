@@ -16,11 +16,11 @@
 
 package com.hazelcast.hibernate.local;
 
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -47,13 +47,13 @@ public class Timestamp implements DataSerializable {
         return timestamp;
     }
 
-    public void writeData(final DataOutput out) throws IOException {
-        IOUtil.writeObject(out, key);
+    public void writeData(final ObjectDataOutput out) throws IOException {
+        IOUtil.writeNullableObject(out, key);
         out.writeLong(timestamp);
     }
 
-    public void readData(final DataInput in) throws IOException {
-        key = IOUtil.readObject(in);
+    public void readData(final ObjectDataInput in) throws IOException {
+        key = IOUtil.readNullableObject(in);
         timestamp = in.readLong();
     }
 

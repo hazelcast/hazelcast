@@ -17,10 +17,10 @@
 package com.hazelcast.web;
 
 import com.hazelcast.core.*;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
 import javax.servlet.*;
@@ -47,7 +47,7 @@ public class WebFilter implements Filter {
 
     private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
 
-    private HazelcastInstance hazelcastInstance;
+    private HazelcastInstanceImpl hazelcastInstance;
 
     private String clusterMapName = "none";
 
@@ -154,7 +154,7 @@ public class WebFilter implements Filter {
         setProperty(USE_CLIENT);
         setProperty(CLIENT_CONFIG_LOCATION);
 
-        hazelcastInstance = getInstance(properties);
+        hazelcastInstance = (HazelcastInstanceImpl) getInstance(properties);
     }
 
     private void setProperty(String propertyName) {
@@ -507,7 +507,7 @@ public class WebFilter implements Filter {
         public synchronized Data writeObject(final Object obj) {
             if (obj == null)
                 return null;
-            return ThreadContext.get().toData(obj);
+            return hazelcastInstance.node.serializationService.toData(obj);
         }
 
         void destroy() {

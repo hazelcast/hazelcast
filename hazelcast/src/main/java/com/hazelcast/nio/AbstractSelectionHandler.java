@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.SystemLogService;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;

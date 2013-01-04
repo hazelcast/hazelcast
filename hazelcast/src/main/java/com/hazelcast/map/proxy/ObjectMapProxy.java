@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.ObjectFuture;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -33,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K, V> {
 
@@ -44,7 +42,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public V get(Object k) {
         Data key = nodeEngine.toData(k);
-        return toObject(getInternal(key));
+        return nodeEngine.toObject(getInternal(key));
     }
 
     public V put(final K k, final V v) {
@@ -55,7 +53,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         final Data result = putInternal(key, value, ttl, timeunit);
-        return toObject(result);
+        return nodeEngine.toObject(result);
     }
 
     public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
@@ -72,7 +70,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
-        return toObject(result);
+        return nodeEngine.toObject(result);
     }
 
     public void putTransient(final K k, final V v, final long ttl, final TimeUnit timeunit) {
@@ -91,7 +89,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public V replace(final K k, final V v) {
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
-        return toObject(replaceInternal(key, value));
+        return nodeEngine.toObject(replaceInternal(key, value));
     }
 
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
@@ -103,7 +101,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public V remove(Object k) {
         final Data key = nodeEngine.toData(k);
         final Data result = removeInternal(key);
-        return toObject(result);
+        return nodeEngine.toObject(result);
     }
 
     public boolean remove(final Object k, final Object v) {
@@ -134,12 +132,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public Object tryRemove(final K key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
         Data k = nodeEngine.toData(key);
-        return toObject(tryRemoveInternal(k, timeout, timeunit));
+        return nodeEngine.toObject(tryRemoveInternal(k, timeout, timeunit));
     }
 
     public Future<V> getAsync(final K k) {
         Data key = nodeEngine.toData(k);
-        return new ObjectFuture(getAsyncInternal(key));
+        return new ObjectFuture(getAsyncInternal(key), nodeEngine.getSerializationService());
     }
 
     public boolean isLocked(final K k) {
@@ -150,12 +148,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public Future putAsync(final K key, final V value) {
         Data k = nodeEngine.toData(key);
         Data v = nodeEngine.toData(value);
-        return new ObjectFuture(putAsyncInternal(k, v));
+        return new ObjectFuture(putAsyncInternal(k, v), nodeEngine.getSerializationService());
     }
 
     public Future removeAsync(final K key) {
         Data k = nodeEngine.toData(key);
-        return new ObjectFuture(removeAsyncInternal(k));
+        return new ObjectFuture(removeAsyncInternal(k), nodeEngine.getSerializationService());
     }
 
     public Map<K, V> getAll(final Set<K> keys) {
@@ -223,7 +221,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         Set<Data> dataSet = keySetInternal();
         HashSet<K> keySet = new HashSet<K>();
         for (Data data : dataSet) {
-            keySet.add((K) toObject(data));
+            keySet.add((K) nodeEngine.toObject(data));
         }
         return keySet;
     }
@@ -232,7 +230,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         Collection<Data> dataSet = valuesInternal();
         Collection<V> valueSet = new ArrayList<V>();
         for (Data data : dataSet) {
-            valueSet.add((V) toObject(data));
+            valueSet.add((V) nodeEngine.toObject(data));
         }
         return valueSet;
     }
@@ -257,7 +255,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         Set<Data> dataSet = localKeySetInternal();
         HashSet<K> keySet = new HashSet<K>();
         for (Data data : dataSet) {
-            keySet.add((K) toObject(data));
+            keySet.add((K) nodeEngine.toObject(data));
         }
         return keySet;
     }

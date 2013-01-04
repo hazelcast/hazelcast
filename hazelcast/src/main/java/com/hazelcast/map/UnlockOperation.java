@@ -16,10 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
-import com.hazelcast.nio.Data;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class UnlockOperation extends TTLAwareOperation implements BackupAwareOperation, Notifier {
 
@@ -81,7 +79,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
 
     public Object getNotifiedKey() {
         if (keyObject == null) {
-            keyObject = toObject(dataKey);
+            keyObject = getNodeEngine().toObject(dataKey);
         }
         return new MapWaitKey(getName(), keyObject, "lock");
     }

@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.serialization;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 
-public interface DataSerializable extends Serializable {
+/**
+ * @mdogan 12/26/12
+ */
+public interface SerializationContext {
 
-    void writeData(DataOutput out) throws IOException;
+    ClassDefinitionImpl lookup(int classId);
 
-    void readData(DataInput in) throws IOException;
+    ClassDefinitionImpl lookup(int classId, int version);
+
+    Portable createPortable(int classId);
+
+    ClassDefinitionImpl createClassDefinition(byte[] binary) throws IOException;
+
+    void registerClassDefinition(int classId, ClassDefinitionImpl cd) throws IOException;
+
+    void registerClassDefinition(long versionedClassId, ClassDefinitionImpl cd) throws IOException;
+
+    int getVersion();
 }

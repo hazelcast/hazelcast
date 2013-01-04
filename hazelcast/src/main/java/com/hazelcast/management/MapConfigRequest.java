@@ -18,9 +18,9 @@ package com.hazelcast.management;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class MapConfigRequest implements ConsoleRequest {
@@ -60,7 +60,7 @@ public class MapConfigRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_CONFIG;
     }
 
-    public void writeResponse(ManagementCenterService mcs, DataOutput dos)
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos)
             throws Exception {
         dos.writeBoolean(update);
 
@@ -78,7 +78,7 @@ public class MapConfigRequest implements ConsoleRequest {
         }
     }
 
-    public Object readResponse(DataInput in) throws IOException {
+    public Object readResponse(ObjectDataInput in) throws IOException {
         update = in.readBoolean();
 
         if (!update) {
@@ -94,7 +94,7 @@ public class MapConfigRequest implements ConsoleRequest {
         return in.readUTF();
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(map);
         out.writeBoolean(update);
         if (update) {
@@ -104,7 +104,7 @@ public class MapConfigRequest implements ConsoleRequest {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         map = in.readUTF();
         update = in.readBoolean();
         if (update) {

@@ -14,24 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.client;
 
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Protocol;
 
-/**
- * This is an exception thrown when an exception occurs while serializing/deserializing objects.
- */
-public class HazelcastSerializationException extends HazelcastException {
+public interface CommandHandler {
 
-    public HazelcastSerializationException(final String message) {
-        super(message);
-    }
-
-    public HazelcastSerializationException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public HazelcastSerializationException(Throwable e) {
-        super(e);
-    }
+    public void handle(Node node, Protocol protocol);
 }

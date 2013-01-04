@@ -17,7 +17,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;

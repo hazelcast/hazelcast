@@ -19,7 +19,7 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.HashSet;

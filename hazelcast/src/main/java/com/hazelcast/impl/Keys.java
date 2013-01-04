@@ -16,11 +16,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class Keys extends AbstractSet<Data> implements DataSerializable {
         return this.keys;
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             Data data = new Data();
@@ -52,7 +52,7 @@ public class Keys extends AbstractSet<Data> implements DataSerializable {
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         int size = (keys == null) ? 0 : keys.size();
         out.writeInt(size);
         if (size > 0) {

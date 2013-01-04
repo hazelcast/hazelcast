@@ -16,11 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class RemoveIfSameOperation extends BaseRemoveOperation {
@@ -44,13 +44,13 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, testValue);
     }
 
     @Override
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         testValue = IOUtil.readNullableData(in);
     }

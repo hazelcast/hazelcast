@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,15 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.nio.serialization;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Protocol;
+/**
+ * @mdogan 12/26/12
+ */
+public interface PortableFactory {
 
-public interface CommandHandler {
-
-    public void handle(Node node, Protocol protocol);
+    Portable create(int classId);
 }

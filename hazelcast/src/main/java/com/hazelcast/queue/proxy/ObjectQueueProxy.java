@@ -18,8 +18,7 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -77,7 +76,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
         final Data data = pollInternal(timeUnit.toMillis(timeout));
-        return IOUtil.toObject(data);
+        return nodeEngine.toObject(data);
     }
 
     public int remainingCapacity() {
@@ -106,7 +105,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         }
         List<Data> dataList = drainInternal(i);
         for (Data data : dataList) {
-            E e = IOUtil.toObject(data);
+            E e = nodeEngine.toObject(data);
             objects.add(e);
         }
         return dataList.size();
@@ -147,7 +146,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public Iterator<E> iterator() {
-        return new QueueIterator<E>(listInternal().iterator(), false);
+        return new QueueIterator<E>(listInternal().iterator(), nodeEngine.getSerializationService(), false);
     }
 
     public Object[] toArray() {
@@ -155,7 +154,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         int size = list.size();
         Object[] array = new Object[size];
         for (int i = 0; i < size; i++) {
-            array[i] = IOUtil.toObject(list.get(i));
+            array[i] = nodeEngine.toObject(list.get(i));
         }
         return array;
     }
@@ -167,7 +166,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
             ts = (T[])java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
         }
         for (int i = 0; i < size; i++) {
-            ts[i] = IOUtil.toObject(list.get(i));
+            ts[i] = nodeEngine.toObject(list.get(i));
         }
         return ts;
     }
@@ -219,7 +218,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     private List<Data> getDataList(Collection<?> objects) {
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
-            dataList.add(IOUtil.toData(o));
+            dataList.add(nodeEngine.toData(o));
         }
         return dataList;
     }

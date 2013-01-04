@@ -18,14 +18,11 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MembershipListenerManager {
 

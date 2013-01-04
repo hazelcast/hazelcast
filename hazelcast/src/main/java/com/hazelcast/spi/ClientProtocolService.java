@@ -19,7 +19,6 @@ package com.hazelcast.spi;
 
 import com.hazelcast.client.ClientCommandHandler;
 
-import java.util.Collection;
 import java.util.Map;
 
 public interface ClientProtocolService {

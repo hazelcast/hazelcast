@@ -16,15 +16,12 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 
 
@@ -109,7 +106,7 @@ public abstract class AbstractRecord implements Record, DataSerializable {
         return null;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(id);
         if(state != null) {
             out.writeBoolean(true);
@@ -128,7 +125,7 @@ public abstract class AbstractRecord implements Record, DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         id = in.readLong();
         boolean stateEnabled = in.readBoolean();
         if(stateEnabled) {

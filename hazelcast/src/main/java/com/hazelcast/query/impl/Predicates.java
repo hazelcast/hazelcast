@@ -17,15 +17,15 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateType;
 import com.hazelcast.util.Util;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -34,8 +34,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.nio.IOUtil.readObject;
-import static com.hazelcast.nio.IOUtil.writeObject;
+//import static com.hazelcast.nio.IOUtil.readObject;
+//import static com.hazelcast.nio.IOUtil.writeObject;
 
 public final class Predicates {
 
@@ -75,14 +75,14 @@ public final class Predicates {
         }
 
         @Override
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
             equal = in.readBoolean();
             less = in.readBoolean();
         }
 
         @Override
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
             out.writeBoolean(equal);
             out.writeBoolean(less);
@@ -136,14 +136,14 @@ public final class Predicates {
             return index.getSubRecordsBetween(index.getLongValue(second), index.getLongValue(to));
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
-            writeObject(out, to);
+            out.writeObject(to);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
-            to = readObject(in);
+            to = in.readObject();
         }
 
         @Override
@@ -197,12 +197,12 @@ public final class Predicates {
             return !predicate.apply(mapEntry);
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, predicate);
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(predicate);
         }
 
-        public void readData(DataInput in) throws IOException {
-            predicate = (Predicate) readObject(in);
+        public void readData(ObjectDataInput in) throws IOException {
+            predicate = (Predicate) in.readObject();
         }
 
         @Override
@@ -303,21 +303,21 @@ public final class Predicates {
             return inValues;
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(first);
             out.writeInt(inValueArray.length);
             for (Object value : inValueArray) {
-                writeObject(out, value);
+                out.writeObject(value);
             }
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             try {
-                first = (Expression) readObject(in);
+                first = (Expression) in.readObject();
                 int len = in.readInt();
                 inValueArray = new Object[len];
                 for (int i = 0; i < len; i++) {
-                    inValueArray[i] = readObject(in);
+                    inValueArray[i] = in.readObject();
                 }
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
@@ -366,14 +366,14 @@ public final class Predicates {
             }
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(first);
             out.writeUTF(regex);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             try {
-                first = (Expression) readObject(in);
+                first = (Expression) in.readObject();
                 regex = in.readUTF();
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
@@ -414,14 +414,14 @@ public final class Predicates {
             }
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(first);
             out.writeUTF(second);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             try {
-                first = (Expression) readObject(in);
+                first = (Expression) in.readObject();
                 second = in.readUTF();
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
@@ -520,17 +520,17 @@ public final class Predicates {
             return second;
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(first);
             out.writeBoolean(secondIsExpression);
-            writeObject(out, second);
+            out.writeObject(second);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             try {
-                first = (Expression) readObject(in);
+                first = (Expression) in.readObject();
                 secondIsExpression = in.readBoolean();
-                second = readObject(in);
+                second = in.readObject();
             } catch (Exception e) {
                 throw new IOException(e.getMessage());
             }
@@ -749,20 +749,20 @@ public final class Predicates {
             }
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeBoolean(and);
             out.writeInt(predicates.length);
             for (Predicate predicate : predicates) {
-                writeObject(out, predicate);
+                out.writeObject(predicate);
             }
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             and = in.readBoolean();
             int len = in.readInt();
             predicates = new Predicate[len];
             for (int i = 0; i < len; i++) {
-                predicates[i] = (Predicate) readObject(in);
+                predicates[i] = (Predicate) in.readObject();
             }
         }
 
@@ -1043,11 +1043,11 @@ public final class Predicates {
             }
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(input);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             input = in.readUTF();
         }
 

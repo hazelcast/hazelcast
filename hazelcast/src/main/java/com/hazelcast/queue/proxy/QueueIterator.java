@@ -16,8 +16,8 @@
 
 package com.hazelcast.queue.proxy;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Iterator;
 
@@ -27,11 +27,13 @@ import java.util.Iterator;
 public class QueueIterator<E> implements Iterator<E> {
 
     final Iterator<Data> iter;
+    final SerializationService serializationService;
 
     final boolean isData;
 
-    public QueueIterator(Iterator<Data> iter, boolean isData) {
+    public QueueIterator(Iterator<Data> iter, SerializationService serializationService, boolean isData) {
         this.iter = iter;
+        this.serializationService = serializationService;
         this.isData = isData;
     }
 
@@ -42,9 +44,9 @@ public class QueueIterator<E> implements Iterator<E> {
     public E next() {
         Data data = iter.next();
         if (isData){
-            return (E)data;
+            return (E) data;
         }
-        return IOUtil.toObject(data);
+        return (E) serializationService.toObject(data);
     }
 
     public void remove() {

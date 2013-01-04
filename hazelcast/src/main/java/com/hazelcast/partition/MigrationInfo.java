@@ -17,11 +17,11 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class MigrationInfo implements DataSerializable {
@@ -92,7 +92,7 @@ public class MigrationInfo implements DataSerializable {
         return creationTime;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
         out.writeInt(copyBackReplicaIndex);
@@ -105,7 +105,7 @@ public class MigrationInfo implements DataSerializable {
         to.writeData(out);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         partitionId = in.readInt();
         replicaIndex = in.readInt();
         copyBackReplicaIndex = in.readInt();

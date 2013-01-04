@@ -16,11 +16,10 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class ObjectRecord extends AbstractRecord {
@@ -29,15 +28,16 @@ public class ObjectRecord extends AbstractRecord {
 
     public ObjectRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
         super(id, keyData, ttl, maxIdleMillis);
-        this.value = IOUtil.toObject(valueData);
+//        this.value = IOUtil.toObject(valueData);
     }
 
     public Data getValueData() {
-        return IOUtil.toData(value);
+//        return IOUtil.toData(value);
+        return null;
     }
 
     public void setValueData(Data dataValue) {
-        value = IOUtil.toObject(dataValue);
+//        value = IOUtil.toObject(dataValue);
     }
 
     public Object getValue() {
@@ -51,19 +51,19 @@ public class ObjectRecord extends AbstractRecord {
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         keyData.writeData(out);
         getValueData().writeData(out);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         keyData = new Data();
         keyData.readData(in);
         Data valueData = new Data();
         valueData.readData(in);
-        value = IOUtil.toObject(valueData);
+//        value = IOUtil.toObject(valueData);
     }
 }

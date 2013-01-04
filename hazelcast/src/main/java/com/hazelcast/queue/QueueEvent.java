@@ -18,12 +18,12 @@ package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -49,14 +49,14 @@ public class QueueEvent implements DataSerializable {
         this.caller = caller;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(eventType.getType());
         caller.writeData(out);
         IOUtil.writeNullableData(out, data);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         eventType = ItemEventType.getByType(in.readInt());
         caller = new Address();

@@ -16,8 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.*;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 
 public class LockOperation extends LockAwareOperation implements BackupAwareOperation {
 

@@ -16,13 +16,12 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -97,13 +96,13 @@ public class PostJoinOperation extends AbstractOperation implements JoinOperatio
             int len = operations.length;
             operationData = new Data[len];
             for (int i = 0; i < len; i++) {
-                operationData[i] = IOUtil.toData(operations[i]);
+                operationData[i] = getNodeEngine().toData(operations[i]);
             }
         }
     }
 
     @Override
-    protected void writeInternal(final DataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         prepareToWrite();
         int len = operationData.length;
         out.writeInt(len);
@@ -113,7 +112,7 @@ public class PostJoinOperation extends AbstractOperation implements JoinOperatio
     }
 
     @Override
-    protected void readInternal(final DataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         int len = in.readInt();
         operationData = new Data[len];
         for (int i = 0; i < len; i++) {

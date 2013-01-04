@@ -22,7 +22,11 @@ import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
@@ -57,6 +61,7 @@ final class OperationServiceImpl implements OperationService {
     private final FastExecutor executor;
     private final long defaultCallTimeout;
     private final ConcurrentHashSet<CallKey> executingCalls = new ConcurrentHashSet<CallKey>();
+    private final SerializationContext serializationContext;
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -76,6 +81,7 @@ final class OperationServiceImpl implements OperationService {
         for (int i = 0; i < partitionCount; i++) {
             partitionLocks[i] = new SpinReadWriteLock(1, TimeUnit.MILLISECONDS);
         }
+        serializationContext = node.serializationService.getSerializationContext();
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
@@ -303,8 +309,8 @@ final class OperationServiceImpl implements OperationService {
         }
 
         final Object response = op.returnsResponse()
-                ? (backupResponse == null ? op.getResponse() : new MultiResponse(backupResponse, op.getResponse()))
-                : null;
+                ? (backupResponse == null ? op.getResponse() :
+                new MultiResponse(nodeEngine.getSerializationService(), backupResponse, op.getResponse())) : null;
 
         waitFutureResponses(syncBackups);
         sendResponse(op, response);
@@ -368,7 +374,7 @@ final class OperationServiceImpl implements OperationService {
         final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionCount());
         for (Map.Entry<Address, Future> response : responses.entrySet()) {
             try {
-                PartitionResponse result = (PartitionResponse) IOUtil.toObject(response.getValue().get());
+                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(response.getValue().get());
                 partitionResults.putAll(result.asMap());
             } catch (Throwable t) {
                 if (logger.isLoggable(Level.FINEST)) {
@@ -478,8 +484,8 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public boolean send(final Operation op, final Connection connection) {
-        Data opData = IOUtil.toData(op);
-        final Packet packet = new Packet(opData, connection);
+        Data opData = nodeEngine.toData(op);
+        final Packet packet = new Packet(opData, connection, serializationContext);
         packet.setHeader(Packet.HEADER_OP, true);
         return node.clusterService.send(packet, connection);
     }
@@ -538,7 +544,7 @@ final class OperationServiceImpl implements OperationService {
             final Data data = packet.getValue();
             final Address caller = packet.getConn().getEndPoint();
             try {
-                final Operation op = (Operation) IOUtil.toObject(data);
+                final Operation op = (Operation) nodeEngine.toObject(data);
                 op.setNodeEngine(nodeEngine).setCaller(caller);
                 op.setConnection(packet.getConn());
                 if (op instanceof ResponseOperation) {

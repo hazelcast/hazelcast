@@ -16,8 +16,9 @@
 
 package com.hazelcast.management;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 public class EvictLocalMapRequest implements ConsoleRequest {
@@ -38,22 +39,22 @@ public class EvictLocalMapRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_EVICT_LOCAL_MAP;
     }
 
-    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
 //        EvictLocalMapEntriesCallable call = new EvictLocalMapEntriesCallable(map, percent);
 //        call.setHazelcastInstance(mcs.getHazelcastInstance());
 //        mcs.callOnAllMembers(call);
     }
 
-    public Object readResponse(DataInput in) throws IOException {
+    public Object readResponse(ObjectDataInput in) throws IOException {
         return null;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(map);
         out.writeInt(percent);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         map = in.readUTF();
         percent = in.readInt();
     }

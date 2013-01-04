@@ -16,17 +16,17 @@
 
 package com.hazelcast.ascii;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.ascii.memcache.*;
 import com.hazelcast.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.ascii.rest.RestValue;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.SimpleBlockingQueue;
 
@@ -76,6 +76,11 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     public Node getNode() {
         return node;
+    }
+
+    public byte[] toByteArray(Object value) {
+        Data data = node.serializationService.toData(value);
+        return data.buffer;
     }
 
     public Stats getStats() {
@@ -144,7 +149,8 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             } else if (value instanceof byte[]) {
                 result = (byte[]) value;
             } else {
-                result = ThreadContext.get().toByteArray(value);
+//                result = ThreadContext.get().toByteArray(value);
+                result = toByteArray(value);
             }
         }
         return result;

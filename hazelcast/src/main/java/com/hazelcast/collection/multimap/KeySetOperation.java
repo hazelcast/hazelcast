@@ -18,7 +18,7 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 

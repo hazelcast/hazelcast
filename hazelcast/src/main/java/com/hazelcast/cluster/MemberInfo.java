@@ -18,10 +18,10 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.instance.NodeType;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class MemberInfo implements DataSerializable {
@@ -44,7 +44,7 @@ public class MemberInfo implements DataSerializable {
         this.uuid = uuid;
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         nodeType = NodeType.create(in.readInt());
@@ -53,7 +53,7 @@ public class MemberInfo implements DataSerializable {
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeInt(nodeType.getValue());
         boolean hasUuid = uuid != null;

@@ -24,8 +24,9 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.NodeEngine;
@@ -53,7 +54,10 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
             }
             credentials = new UsernamePasswordCredentials(args[0], args[1]);
         } else {
-            credentials = (Credentials) node.nodeEngine.toObject(new Data(protocol.buffers[0].array()));
+            // TODO: !!! FIX ME !!!
+            final byte[] array = protocol.buffers[0].array();
+            Data data = new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, array);
+            credentials = (Credentials) node.nodeEngine.toObject(data);
         }
         boolean authenticated = doAuthenticate(node, credentials, protocol.conn);
         return authenticated ? protocol.success() : protocol.error(null);

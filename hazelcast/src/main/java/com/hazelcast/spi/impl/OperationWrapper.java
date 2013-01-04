@@ -16,22 +16,22 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
 * @mdogan 10/1/12
 */
 
-class OperationWrapper extends AbstractOperation {
+class OperationWrapper extends AbstractOperation implements IdentifiedDataSerializable {
 
     private Data operationData;
 
@@ -42,11 +42,6 @@ class OperationWrapper extends AbstractOperation {
 
     public OperationWrapper(final Data operation) {
         this.operationData = operation;
-    }
-
-    public OperationWrapper(final Operation operation) {
-        this.operationData = IOUtil.toData(operation);
-        this.operation = operation;
     }
 
     @Override
@@ -81,13 +76,17 @@ class OperationWrapper extends AbstractOperation {
     }
 
     @Override
-    protected void writeInternal(final DataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         operationData.writeData(out);
     }
 
     @Override
-    protected void readInternal(final DataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         operationData = new Data();
         operationData.readData(in);
+    }
+
+    public int getId() {
+        return DataSerializerInitHook.OPERATION_WRAPPER;
     }
 }

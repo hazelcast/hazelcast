@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.processor;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * @ali 1/1/13

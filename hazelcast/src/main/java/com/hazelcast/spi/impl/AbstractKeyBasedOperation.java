@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.KeyBasedOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class AbstractKeyBasedOperation extends AbstractOperation implements KeyBasedOperation {
@@ -70,13 +70,13 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
         return dataKey != null ? dataKey.getPartitionHash() : 0;
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         dataKey.writeData(out);
         out.writeInt(threadId);
         out.writeLong(timeout);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         dataKey = new Data();
         dataKey.readData(in);
         threadId = in.readInt();

@@ -16,12 +16,12 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -61,13 +61,13 @@ public class PublishOperation extends AbstractNamedOperation implements KeyBased
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         message.writeData(out);
     }
 
     @Override
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         message = new Data();
         message.readData(in);

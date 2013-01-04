@@ -17,15 +17,11 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class Operation implements DataSerializable {
@@ -187,7 +183,7 @@ public abstract class Operation implements DataSerializable {
         this.callTimeout = callTimeout;
     }
 
-    public final void writeData(DataOutput out) throws IOException {
+    public final void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeNullableString(out, serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
@@ -198,7 +194,7 @@ public abstract class Operation implements DataSerializable {
         writeInternal(out);
     }
 
-    public final void readData(DataInput in) throws IOException {
+    public final void readData(ObjectDataInput in) throws IOException {
         serviceName = IOUtil.readNullableString(in);
         partitionId = in.readInt();
         replicaIndex = in.readInt();
@@ -209,7 +205,7 @@ public abstract class Operation implements DataSerializable {
         readInternal(in);
     }
 
-    protected abstract void writeInternal(DataOutput out) throws IOException;
+    protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
 
-    protected abstract void readInternal(DataInput in) throws IOException;
+    protected abstract void readInternal(ObjectDataInput in) throws IOException;
 }

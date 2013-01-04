@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalQueueOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalQueueOperationStatsImpl extends LocalOperationStatsSupport
@@ -32,7 +32,7 @@ public class LocalQueueOperationStatsImpl extends LocalOperationStatsSupport
     long numberOfOtherOperations;
     long numberOfEvents;
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(numberOfOffers);
         out.writeLong(numberOfPolls);
         out.writeLong(numberOfRejectedOffers);
@@ -41,7 +41,7 @@ public class LocalQueueOperationStatsImpl extends LocalOperationStatsSupport
         out.writeLong(numberOfEvents);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         numberOfOffers = in.readLong();
         numberOfPolls = in.readLong();
         numberOfRejectedOffers = in.readLong();

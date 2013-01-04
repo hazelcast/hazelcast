@@ -16,13 +16,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
 
 import java.util.Collection;
 
@@ -108,4 +110,9 @@ public interface IOService {
 
     Collection<Integer> getOutboundPorts();
 
+    Data toData(Object obj);
+
+    Object toObject(Data data);
+
+    SerializationContext getSerializationContext();
 }

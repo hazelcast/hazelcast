@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
@@ -27,8 +27,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class MapIndexService {
     private final ConcurrentMap<Long, Record> records = new ConcurrentHashMap<Long, Record>(10000, 0.75f, 1);
@@ -95,7 +93,7 @@ public class MapIndexService {
             int indexCount = mapIndexes.size();
             Long[] newIndexes = new Long[indexCount];
             if (value instanceof Data) {
-                value = toObject((Data) value);
+//                value = toObject((Data) value);
             }
             Collection<Index> indexes = mapIndexes.values();
             for (Index index : indexes) {

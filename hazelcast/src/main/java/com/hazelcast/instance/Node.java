@@ -27,12 +27,13 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.*;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -72,6 +73,8 @@ public class Node {
     private final boolean liteMember;
 
     private final NodeType localNodeType;
+
+    public final SerializationServiceImpl serializationService;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -127,6 +130,7 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
+        serializationService = new SerializationServiceImpl(null, hazelcastInstance.managedContext);
         systemLogService = new SystemLogService(this);
         final AddressPicker addressPicker = new AddressPicker(this);
         try {
@@ -238,6 +242,10 @@ public class Node {
     public void failedConnection(Address address) {
         logger.log(Level.FINEST, getThisAddress() + " failed connecting to " + address);
         failedConnections.add(address);
+    }
+
+    public SerializationServiceImpl getSerializationService() {
+        return serializationService;
     }
 
     public ClusterService getClusterService() {
@@ -409,6 +417,7 @@ public class Node {
                 securityContext.destroy();
             }
             initializer.destroy();
+            serializationService.destroy();
             int numThreads = threadGroup.activeCount();
             Thread[] threads = new Thread[numThreads * 2];
             numThreads = threadGroup.enumerate(threads, false);

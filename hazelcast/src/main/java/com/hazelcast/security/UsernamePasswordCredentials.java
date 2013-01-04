@@ -16,8 +16,9 @@
 
 package com.hazelcast.security;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 /**
@@ -59,14 +60,14 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
         this.password = password.getBytes();
     }
 
-    public void writeDataInternal(DataOutput out) throws IOException {
+    public void writeDataInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(password != null ? password.length : 0);
         if (password != null) {
             out.write(password);
         }
     }
 
-    public void readDataInternal(DataInput in) throws IOException {
+    public void readDataInternal(ObjectDataInput in) throws IOException {
         int s = in.readInt();
         if (s > 0) {
             password = new byte[s];

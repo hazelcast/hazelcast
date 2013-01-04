@@ -16,11 +16,11 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ResponseHandler;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class MapTxnBackupRollbackOperation extends AbstractOperation {
@@ -44,13 +44,13 @@ public class MapTxnBackupRollbackOperation extends AbstractOperation {
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeUTF(txnId);
     }
 
     @Override
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readData(in);
         txnId = in.readUTF();
     }

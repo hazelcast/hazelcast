@@ -20,11 +20,12 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -66,11 +67,24 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             final Collection<Operation> tasks = prepareMigrationTasks();
             if (tasks.size() > 0) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
-                        new MigrationOperation(migrationInfo, tasks), to)
-                        .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
-                Future future = inv.invoke();
-                success = (Boolean) IOUtil.toObject(future.get(timeout, TimeUnit.SECONDS));
+
+                final SerializationService serializationService = nodeEngine.getSerializationService();
+                final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+                try {
+                    out.writeInt(tasks.size());
+                    for (Operation task : tasks) {
+                        serializationService.writeObject(out, task);
+                    }
+                    final byte[] data = IOUtil.compress(out.toByteArray());
+                    final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, data, tasks.size());
+                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
+                            migrationOperation, to)
+                            .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
+                    Future future = inv.invoke();
+                    success = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
+                } finally {
+                    IOUtil.closeResource(out);
+                }
             } else {
                 success = true;
             }
@@ -118,11 +132,11 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         success = false;
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
     }
 }

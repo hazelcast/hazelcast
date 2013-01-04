@@ -19,8 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.map.proxy.MapProxy;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * @mdogan 7/31/12
@@ -44,7 +43,7 @@ public class SimpleMapEntry implements MapEntry {
     }
 
     public Object getValue() {
-        return IOUtil.toObject(value);
+        return instance.node.serializationService.toObject(value);
     }
 
     public Object setValue(Object newValue) {

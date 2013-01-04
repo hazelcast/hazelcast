@@ -21,10 +21,10 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.impl.DataMessage;
-import com.hazelcast.nio.Data;
-
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.SerializerRegistry;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,10 +35,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class MessageListenerManager {
 
     final private ConcurrentHashMap<String, List<MessageListener>> messageListeners = new ConcurrentHashMap<String, List<MessageListener>>();
-    final private SerializerRegistry serializerRegistry;
+    final private SerializationService serializationService;
 
-    public MessageListenerManager(final SerializerRegistry serializerRegistry) {
-        this.serializerRegistry = serializerRegistry;
+    public MessageListenerManager(final SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     public void registerListener(String name, MessageListener messageListener) {
@@ -72,7 +72,7 @@ public class MessageListenerManager {
 //        if (list != null) {
 //            for (MessageListener<Object> messageListener : list) {
 //                messageListener.onMessage(new DataMessage(packet.getName(), new Data(packet.getKey()),
-//                        serializerRegistry));
+//                        serializationService));
 //            }
 //        }
 //    }
@@ -82,7 +82,9 @@ public class MessageListenerManager {
         List<MessageListener> list = messageListeners.get(name);
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
-                messageListener.onMessage(new DataMessage(name, new Data(protocol.buffers[0].array()), serializerRegistry));
+                messageListener.onMessage(new DataMessage(name,
+                        new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[0].array()),
+                        serializationService));
             }
         }
     }

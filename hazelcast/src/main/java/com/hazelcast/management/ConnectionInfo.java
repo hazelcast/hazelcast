@@ -16,10 +16,10 @@
 
 package com.hazelcast.management;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -58,14 +58,14 @@ public class ConnectionInfo implements DataSerializable {
         return memberIndex;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(memberIndex);
         out.writeLong(lastRead);
         out.writeLong(lastWrite);
         out.writeBoolean(live);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         memberIndex = in.readInt();
         lastRead = in.readLong();
         lastWrite = in.readLong();

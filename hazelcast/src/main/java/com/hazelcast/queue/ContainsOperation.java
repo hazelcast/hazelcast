@@ -16,10 +16,10 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,7 +43,7 @@ public class ContainsOperation extends QueueOperation {
         response = getContainer().contains(dataList);
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataList.size());
         for (Data data: dataList){
@@ -51,7 +51,7 @@ public class ContainsOperation extends QueueOperation {
         }
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);

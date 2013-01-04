@@ -20,10 +20,10 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
@@ -67,12 +67,12 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
         return masterAddress;
     }
 
-    public void readInternal(final DataInput in) throws IOException {
+    public void readInternal(final ObjectDataInput in) throws IOException {
         masterAddress = new Address();
         masterAddress.readData(in);
     }
 
-    public void writeInternal(final DataOutput out) throws IOException {
+    public void writeInternal(final ObjectDataOutput out) throws IOException {
         masterAddress.writeData(out);
     }
 

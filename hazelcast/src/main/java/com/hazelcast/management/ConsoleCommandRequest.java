@@ -16,8 +16,9 @@
 
 package com.hazelcast.management;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 import static com.hazelcast.nio.IOUtil.readLongString;
@@ -39,7 +40,7 @@ public class ConsoleCommandRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_CONSOLE_COMMAND;
     }
 
-    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         ConsoleCommandHandler handler = mcs.getCommandHandler();
         try {
             final String output = handler.handleCommand(command);
@@ -49,15 +50,15 @@ public class ConsoleCommandRequest implements ConsoleRequest {
         }
     }
 
-    public Object readResponse(DataInput in) throws IOException {
+    public Object readResponse(ObjectDataInput in) throws IOException {
         return readLongString(in);
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(command);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         command = in.readUTF();
     }
 }

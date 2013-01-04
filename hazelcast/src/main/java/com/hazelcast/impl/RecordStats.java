@@ -16,10 +16,10 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class RecordStats implements DataSerializable {
@@ -88,7 +88,7 @@ public class RecordStats implements DataSerializable {
         this.lastUpdateTime = lastUpdateTime;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(hits);
         out.writeInt(version);
         out.writeLong(writeTime);
@@ -98,7 +98,7 @@ public class RecordStats implements DataSerializable {
         out.writeLong(lastUpdateTime);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         hits = in.readInt();
         version = in.readInt();
         writeTime = in.readLong();

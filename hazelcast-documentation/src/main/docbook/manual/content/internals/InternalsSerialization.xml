@@ -27,14 +27,14 @@
         be<literal>Serializable</literal>.
     </para>
     <para>Hazelcast serializes all your objects into an instance
-        of<literal>com.hazelcast.nio.Data</literal>.
+        of<literal>com.hazelcast.nio.serialization.Data</literal>.
         <literal>Data</literal>
         is the binary
         representation of an object. When Hazelcast serializes an object into<literal>Data</literal>,
         it first checks whether the object is an instance of well-known, optimizable object
         such as<literal>String, Long, Integer, byte[], ByteBuffer, Date</literal>. If not, it then checks
         whether the object is an instance
-        of<literal>com.hazelcast.nio.DataSerializable</literal>. If not, Hazelcast
+        of<literal>com.hazelcast.nio.serialization.DataSerializable</literal>. If not, Hazelcast
         uses standard java serialization to convert the object into binary format. See
         <literal>com.hazelcast.nio.serialization.SerializerSupport</literal>
         for details.
@@ -44,12 +44,12 @@
             Integer, byte[]
         </literal>
         objects or to implement
-        <literal>com.hazelcast.nio.DataSerializable</literal>
+        <literal>com.hazelcast.nio.serialization.DataSerializable</literal>
         interface. Here is an
         example of a class implementing
-        <literal>com.hazelcast.nio.DataSerializable</literal>
+        <literal>com.hazelcast.nio.serialization.DataSerializable</literal>
         interface.
-        <programlisting language="java"><![CDATA[public class Address implements com.hazelcast.nio.DataSerializable {
+        <programlisting language="java"><![CDATA[public class Address implements com.hazelcast.nio.serialization.DataSerializable {
     private String street;
     private int zipCode;
     private String city;
@@ -76,7 +76,7 @@
 ]]></programlisting>
         Lets take a look at another example which is encapsulating a
         <literal>DataSerializable</literal>
-        field.<programlisting language="java"><![CDATA[public class Employee implements com.hazelcast.nio.DataSerializable {
+        field.<programlisting language="java"><![CDATA[public class Employee implements com.hazelcast.nio.serialization.DataSerializable {
     private String firstName;
     private String lastName;
     private int age;

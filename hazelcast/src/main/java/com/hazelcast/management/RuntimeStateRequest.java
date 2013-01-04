@@ -18,12 +18,12 @@ package com.hazelcast.management;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.*;
+import com.hazelcast.impl.Record;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -78,12 +78,12 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
         return lockedRecords;
     }
 
-    public void writeResponse(final ManagementCenterService mcs, final DataOutput dos) throws Exception {
+    public void writeResponse(final ManagementCenterService mcs, final ObjectDataOutput dos) throws Exception {
         ClusterRuntimeState clusterRuntimeState = createState(mcs.getHazelcastInstance());
         clusterRuntimeState.writeData(dos);
     }
 
-    public Object readResponse(final DataInput in) throws IOException {
+    public Object readResponse(final ObjectDataInput in) throws IOException {
         ClusterRuntimeState clusterRuntimeState = new ClusterRuntimeState();
         clusterRuntimeState.readData(in);
         return clusterRuntimeState;
@@ -93,9 +93,9 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    public void writeData(final DataOutput out) throws IOException {
+    public void writeData(final ObjectDataOutput out) throws IOException {
     }
 
-    public void readData(final DataInput in) throws IOException {
+    public void readData(final ObjectDataInput in) throws IOException {
     }
 }

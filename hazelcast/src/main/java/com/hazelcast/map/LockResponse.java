@@ -16,10 +16,10 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LockResponse implements DataSerializable {
@@ -36,13 +36,13 @@ public class LockResponse implements DataSerializable {
         this.backupCount = backupCount;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(success);
         out.writeLong(version);
         out.writeInt(backupCount);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         success = in.readBoolean();
         version = in.readLong();
         backupCount = in.readInt();

@@ -17,10 +17,10 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class DistributedSemaphore implements DataSerializable {
         available = initialPermits;
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         Address address;
         attachedPermits.clear();
         available = in.readInt();
@@ -48,7 +48,7 @@ public class DistributedSemaphore implements DataSerializable {
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(available);
         out.writeInt(attachedPermits.size());
         for (Map.Entry<Address, Integer> entry : attachedPermits.entrySet()) {

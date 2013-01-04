@@ -18,10 +18,10 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,7 +78,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 //    }
 
     @Override
-    protected void readInternal(DataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         masterTime = in.readLong();
         int size = in.readInt();
         memberInfos = new ArrayList<MemberInfo>(size);
@@ -90,7 +90,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     }
 
     @Override
-    protected void writeInternal(DataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(masterTime);
         out.writeInt(memberInfos.size());
         for (MemberInfo memberInfo : memberInfos) {

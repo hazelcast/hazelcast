@@ -16,16 +16,14 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 public class MapValueCollection implements DataSerializable {
 
@@ -43,7 +41,7 @@ public class MapValueCollection implements DataSerializable {
         return values;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         int size = values.size();
         out.writeInt(size);
         for (Data o : values) {
@@ -51,7 +49,7 @@ public class MapValueCollection implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         values = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {

@@ -16,14 +16,8 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.EventFilter;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 
 public class EntryEventFilter implements EventFilter,Serializable {

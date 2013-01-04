@@ -17,10 +17,10 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
-import com.hazelcast.util.Clock;
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.util.Clock;
 
 import java.io.Serializable;
 import java.util.*;

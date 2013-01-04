@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,14 +129,14 @@ public final class QueueConfig implements DataSerializable {
         return (name != null ? name.equals(queueConfig.name) : queueConfig.name == null);
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(syncBackupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         syncBackupCount = in.readInt();
         asyncBackupCount = in.readInt();

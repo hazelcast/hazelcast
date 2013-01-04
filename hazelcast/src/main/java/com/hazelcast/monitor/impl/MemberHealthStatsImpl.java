@@ -17,10 +17,10 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.MemberHealthStats;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class MemberHealthStatsImpl implements MemberHealthStats, DataSerializable {
@@ -28,12 +28,12 @@ public class MemberHealthStatsImpl implements MemberHealthStats, DataSerializabl
     boolean outOfMemory;
     boolean active;
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         outOfMemory = in.readBoolean();
         active = in.readBoolean();
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(outOfMemory);
         out.writeBoolean(active);
     }

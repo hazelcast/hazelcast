@@ -16,13 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.DataSerializable;
-
 /**
- * @mdogan 10/2/12
+ * @mdogan 1/2/13
  */
-
 public interface DataSerializableFactory {
 
     DataSerializable create();
+
 }

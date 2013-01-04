@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class ProxyHelper {
     }
 //    Packet prepareRequest(ClusterOperation operation, Object key, Object value, long ttl, TimeUnit timeunit) {
 //        final ThreadContext threadContext = ThreadContext.get();
-//        threadContext.setCurrentSerializerRegistry(client.getSerializerRegistry());
+//        threadContext.setCurrentSerializerRegistry(client.getSerializationService());
 //        byte[] k = null;
 //        byte[] v = null;
 //        if (key != null) {
@@ -158,5 +159,13 @@ public class ProxyHelper {
         if (timeunit == null) {
             throw new NullPointerException("TimeUnit can not be null.");
         }
+    }
+
+    public Data toData(Object obj) {
+        return client.getSerializationService().toData(obj);
+    }
+
+    public Object toObject(Data data) {
+        return client.getSerializationService().toObject(data);
     }
 }

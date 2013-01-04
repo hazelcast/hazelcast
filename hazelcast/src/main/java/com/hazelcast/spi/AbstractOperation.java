@@ -16,8 +16,9 @@
 
 package com.hazelcast.spi;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 public abstract class AbstractOperation extends Operation {
@@ -41,10 +42,10 @@ public abstract class AbstractOperation extends Operation {
     }
 
     @Override
-    protected void writeInternal(DataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
     }
 
     @Override
-    protected void readInternal(DataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
     }
 }

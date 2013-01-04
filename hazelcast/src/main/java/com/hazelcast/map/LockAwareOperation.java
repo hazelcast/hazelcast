@@ -16,10 +16,8 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitSupport;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class LockAwareOperation extends TTLAwareOperation implements WaitSupport{
 
@@ -62,7 +60,7 @@ public abstract class LockAwareOperation extends TTLAwareOperation implements Wa
 
     public Object getWaitKey() {
         if (keyObject == null) {
-            keyObject = toObject(dataKey);
+            keyObject = getNodeEngine().toObject(dataKey);
         }
         return new MapWaitKey(getName(), keyObject,"lock");
     }

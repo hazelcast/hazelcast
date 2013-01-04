@@ -21,7 +21,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
 
 import java.util.ArrayList;
@@ -30,9 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DefaultRecordStore implements RecordStore {
     final String name;
@@ -120,7 +117,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean containsValue(Data dataValue) {
         for (Record record : records.values()) {
-            Object value = toObject(dataValue);
+            Object value = mapService.getNodeEngine().toObject(dataValue);
             if (record.getValue().equals(value))
                 return true;
         }
@@ -161,8 +158,8 @@ public class DefaultRecordStore implements RecordStore {
         boolean removed = false;
         if (record == null) {
             if (loader != null) {
-                Object oldValue = loader.load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
+                oldValueData = mapService.getNodeEngine().toData(oldValue);
             }
         } else {
             oldValueData = record.getValueData();
@@ -194,8 +191,8 @@ public class DefaultRecordStore implements RecordStore {
         Data oldValueData = null;
         if (record == null) {
             if (loader != null) {
-                Object oldValue = loader.load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
+                oldValueData = mapService.getNodeEngine().toData(oldValue);
             }
         } else {
             oldValueData = record.getValueData();
@@ -218,8 +215,8 @@ public class DefaultRecordStore implements RecordStore {
         boolean removed = false;
         if (record == null) {
             if (loader != null) {
-                Object oldValue = loader.load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
+                oldValueData = mapService.getNodeEngine().toData(oldValue);
             }
             if (oldValueData == null)
                 return false;
@@ -243,10 +240,10 @@ public class DefaultRecordStore implements RecordStore {
         Data result = null;
         if (record == null) {
             if (loader != null) {
-                Object key = toObject(dataKey);
+                Object key = mapService.getNodeEngine().toObject(dataKey);
                 Object value = loader.load(key);
                 if (value != null) {
-                    result = toData(value);
+                    result = mapService.getNodeEngine().toData(value);
                     record = mapService.createRecord(name, dataKey, result, -1);
                     records.put(dataKey, record);
                 }
@@ -266,8 +263,8 @@ public class DefaultRecordStore implements RecordStore {
         Data oldValueData = null;
         if (record == null) {
             if (loader != null) {
-                Object oldValue = loader.load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
+                oldValueData = mapService.getNodeEngine().toData(oldValue);
             }
             record = mapService.createRecord(name, dataKey, dataValue, ttl);
             records.put(dataKey, record);
@@ -305,7 +302,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Data oldValue, Data newValue) {
         Record record = records.get(dataKey);
         boolean replaced = false;
-        if (record != null && record.getValue().equals(toObject(oldValue))) {
+        if (record != null && record.getValue().equals(mapService.getNodeEngine().toObject(oldValue))) {
             record.setValueData(newValue);
             replaced = true;
         } else {
@@ -374,8 +371,8 @@ public class DefaultRecordStore implements RecordStore {
         boolean absent = true;
         if (record == null) {
             if (loader != null) {
-                Object oldValue = loader.load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
+                oldValueData = mapService.getNodeEngine().toData(oldValue);
                 absent = oldValueData == null;
             }
             if (absent) {

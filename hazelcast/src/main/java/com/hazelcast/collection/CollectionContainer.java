@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

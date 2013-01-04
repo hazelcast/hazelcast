@@ -19,11 +19,11 @@ package com.hazelcast.map;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,7 +83,7 @@ public class MapMigrationOperation extends AbstractOperation {
         return MapService.MAP_SERVICE_NAME;
     }
 
-    public void readInternal(final DataInput in) throws IOException {
+    public void readInternal(final ObjectDataInput in) throws IOException {
         diff = in.readBoolean();
         int size = in.readInt();
         data = new HashMap<String, Map<Data, Record>>(size);
@@ -102,7 +102,7 @@ public class MapMigrationOperation extends AbstractOperation {
         }
     }
 
-    public void writeInternal(final DataOutput out) throws IOException {
+    public void writeInternal(final ObjectDataOutput out) throws IOException {
         out.writeBoolean(diff);
         out.writeInt(data.size());
         for (Entry<String, Map<Data, Record>> mapEntry : data.entrySet()) {

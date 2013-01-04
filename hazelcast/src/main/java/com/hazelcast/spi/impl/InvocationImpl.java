@@ -22,7 +22,8 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
@@ -31,8 +32,6 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Util;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -213,7 +212,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                     inv.invoke();
                     // TODO: improve logging (see SystemLogService)
                     logger.log(Level.WARNING, "Asking if operation execution has been started: " + toString());
-                    executing = (Boolean) IOUtil.toObject(inv.get(5000, TimeUnit.MILLISECONDS));
+                    executing = (Boolean) nodeEngine.toObject(inv.get(5000, TimeUnit.MILLISECONDS));
                 } catch (Exception ignored) {
                     logger.log(Level.WARNING, "While asking 'is-executing': " + toString(), ignored);
                 }
@@ -358,13 +357,13 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
         }
 
         @Override
-        protected void readInternal(DataInput in) throws IOException {
+        protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
             operationCallId = in.readLong();
         }
 
         @Override
-        protected void writeInternal(DataOutput out) throws IOException {
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
             out.writeLong(operationCallId);
         }

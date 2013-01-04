@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalLockOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalLockOperationStatsImpl extends LocalOperationStatsSupport
@@ -45,13 +45,13 @@ public class LocalLockOperationStatsImpl extends LocalOperationStatsSupport
         return numberOfLocks + numberOfUnlocks + numberOfFailedLocks;
     }
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(numberOfLocks);
         out.writeLong(numberOfUnlocks);
         out.writeLong(numberOfFailedLocks);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         numberOfLocks = in.readLong();
         numberOfUnlocks = in.readLong();
         numberOfFailedLocks = in.readLong();

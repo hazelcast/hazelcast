@@ -16,11 +16,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class RecordState implements DataSerializable {
@@ -86,7 +86,7 @@ public class RecordState implements DataSerializable {
         this.active = active;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(maxIdleMillis);
         out.writeLong(lastAccessTime);
         out.writeLong(creationTime);
@@ -95,7 +95,7 @@ public class RecordState implements DataSerializable {
         out.writeBoolean(active);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         maxIdleMillis = in.readLong();
         lastAccessTime = in.readLong();
         creationTime = in.readLong();

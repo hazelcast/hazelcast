@@ -19,11 +19,11 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.BaseEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -44,20 +44,21 @@ public class PutEntryProcessor extends BaseEntryProcessor<Boolean> implements Ba
 
     public Boolean execute(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-        return coll.add(isBinary() ? data : IOUtil.toObject(data));
+//        return coll.add(isBinary() ? data : IOUtil.toObject(data));
+        return null;
     }
 
     public void executeBackup(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-        coll.add(isBinary() ? data : IOUtil.toObject(data));
+//        coll.add(isBinary() ? data : IOUtil.toObject(data));
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         IOUtil.writeNullableData(out, data);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         data = IOUtil.readNullableData(in);
     }

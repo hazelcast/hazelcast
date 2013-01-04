@@ -17,10 +17,10 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.TextCommandConstants;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -54,14 +54,14 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     public MemcacheEntry() {
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         bytes = new byte[size];
         in.readFully(bytes);
         flag = in.readInt();
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(bytes.length);
         out.write(bytes);
         out.writeInt(flag);

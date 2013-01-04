@@ -17,7 +17,7 @@
 package com.hazelcast.collection.processor;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * @ali 1/1/13
@@ -40,18 +40,18 @@ public class Entry {
         return key;
     }
 
-    public void removeEntry(){
+    public void removeEntry() {
         container.removeObject(key);
     }
 
-    public <T> T getOrCreateValue(){
-        if (value == null){
-            return (T)container.putNewObject(key);
+    public <T> T getOrCreateValue() {
+        if (value == null) {
+            return (T) container.putNewObject(key);
         }
-        return (T)value;
+        return (T) value;
     }
 
-    public <T> T getValue(){
-        return (T)value;
+    public <T> T getValue() {
+        return (T) value;
     }
 }

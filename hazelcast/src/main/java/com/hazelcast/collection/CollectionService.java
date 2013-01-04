@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.processor.EntryProcessor;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
-import com.hazelcast.nio.Data;
+import com.hazelcast.collection.processor.EntryProcessor;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 
 import java.util.Collection;

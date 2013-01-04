@@ -16,12 +16,12 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
-import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;

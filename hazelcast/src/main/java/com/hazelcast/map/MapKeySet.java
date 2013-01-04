@@ -16,11 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,7 +41,7 @@ public class MapKeySet implements DataSerializable {
         return keySet;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         int size = keySet.size();
         out.writeInt(size);
         for (Data o : keySet) {
@@ -49,7 +49,7 @@ public class MapKeySet implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         keySet = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {

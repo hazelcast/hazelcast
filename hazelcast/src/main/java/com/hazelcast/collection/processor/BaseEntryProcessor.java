@@ -16,8 +16,9 @@
 
 package com.hazelcast.collection.processor;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 /**
@@ -38,12 +39,11 @@ public abstract class BaseEntryProcessor<T> implements EntryProcessor<T> {
         return binary;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(binary);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         binary = in.readBoolean();
     }
-
 }

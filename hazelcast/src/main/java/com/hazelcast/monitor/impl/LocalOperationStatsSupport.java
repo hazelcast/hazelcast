@@ -17,10 +17,10 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalInstanceOperationStats;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 abstract class LocalOperationStatsSupport implements LocalInstanceOperationStats {
@@ -36,21 +36,21 @@ abstract class LocalOperationStatsSupport implements LocalInstanceOperationStats
         return periodEnd;
     }
 
-    public final void writeData(DataOutput out) throws IOException {
+    public final void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(periodStart);
         out.writeLong(periodEnd);
         writeDataInternal(out);
     }
 
-    abstract void writeDataInternal(DataOutput out) throws IOException;
+    abstract void writeDataInternal(ObjectDataOutput out) throws IOException;
 
-    public final void readData(DataInput in) throws IOException {
+    public final void readData(ObjectDataInput in) throws IOException {
         periodStart = in.readLong();
         periodEnd = in.readLong();
         readDataInternal(in);
     }
 
-    abstract void readDataInternal(DataInput in) throws IOException;
+    abstract void readDataInternal(ObjectDataInput in) throws IOException;
 
     class OperationStat implements DataSerializable {
         long count;
@@ -71,12 +71,12 @@ abstract class LocalOperationStatsSupport implements LocalInstanceOperationStats
                     + ((count == 0) ? 0 : totalLatency / count) + '}';
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeLong(count);
             out.writeLong(totalLatency);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             count = in.readLong();
             totalLatency = in.readLong();
         }

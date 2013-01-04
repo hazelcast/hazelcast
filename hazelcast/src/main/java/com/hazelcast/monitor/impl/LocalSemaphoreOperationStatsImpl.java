@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalSemaphoreOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalSemaphoreOperationStatsImpl extends LocalOperationStatsSupport
@@ -34,7 +34,7 @@ public class LocalSemaphoreOperationStatsImpl extends LocalOperationStatsSupport
     long numberOfPermitsDetached;
     long numberOfPermitsReduced;
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         acquires.writeData(out);
         nonAcquires.writeData(out);
         out.writeLong(numberOfRejectedAcquires);
@@ -45,7 +45,7 @@ public class LocalSemaphoreOperationStatsImpl extends LocalOperationStatsSupport
         out.writeLong(numberOfPermitsReduced);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         (acquires = new OperationStat()).readData(in);
         (nonAcquires = new OperationStat()).readData(in);
         numberOfRejectedAcquires = in.readLong();

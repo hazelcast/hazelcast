@@ -16,16 +16,19 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.FastDataInputStream;
-import com.hazelcast.nio.FastDataOutputStream;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 public interface TypeSerializer<T> {
 
     int getTypeId();
 
-    void write(FastDataOutputStream out, T object) throws Exception;
+    void write(ObjectDataOutput out, T object) throws IOException;
 
-    T read(FastDataInputStream in) throws Exception;
+    T read(ObjectDataInput in) throws IOException;
 
     void destroy();
+
 }

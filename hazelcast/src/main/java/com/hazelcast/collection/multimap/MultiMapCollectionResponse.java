@@ -17,12 +17,12 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -67,12 +67,12 @@ public class MultiMapCollectionResponse implements DataSerializable {
             coll = new LinkedList();
         }
         for (Object obj : collection) {
-            coll.add(IOUtil.toObject(obj));
+//            coll.add(IOUtil.toObject(obj));
         }
         return coll;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(collectionType);
         if (collection == null){
             out.writeInt(-1);
@@ -80,11 +80,11 @@ public class MultiMapCollectionResponse implements DataSerializable {
         }
         out.writeInt(collection.size());
         for (Object obj : collection) {
-            IOUtil.writeObject(out, obj);
+            out.writeObject(obj);
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         collectionType = in.readUTF();
         int size = in.readInt();
         if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.toString())) {

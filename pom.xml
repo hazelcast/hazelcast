@@ -33,7 +33,7 @@
         <module>hazelcast-client</module>
         <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>
-        <!--<module>hazelcast-ra</module>-->
+        <module>hazelcast-ra</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
         <module>hazelcast-cloud</module>

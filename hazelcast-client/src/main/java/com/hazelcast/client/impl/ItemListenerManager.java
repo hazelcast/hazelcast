@@ -21,7 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.DataAwareItemEvent;
-import com.hazelcast.nio.serialization.SerializerRegistry;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,9 +32,9 @@ public class ItemListenerManager {
 
     final Map<ItemListener, EntryListener> itemListener2EntryListener = new ConcurrentHashMap<ItemListener, EntryListener>();
     final private EntryListenerManager entryListenerManager;
-    final private SerializerRegistry serializerRegistry;
+    final private SerializationService serializerRegistry;
 
-    public ItemListenerManager(EntryListenerManager entryListenerManager, final SerializerRegistry serializerRegistry) {
+    public ItemListenerManager(EntryListenerManager entryListenerManager, final SerializationService serializerRegistry) {
         this.entryListenerManager = entryListenerManager;
         this.serializerRegistry = serializerRegistry;
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
-import com.hazelcast.impl.base.Values;
 import org.junit.Ignore;
 import org.junit.Test;
 

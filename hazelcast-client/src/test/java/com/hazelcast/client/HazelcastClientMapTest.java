@@ -18,7 +18,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.*;
 import com.hazelcast.impl.base.DataRecordEntry;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -329,7 +331,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             return age;
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             this.age = in.readInt();
             int size = in.readInt();
             byte[] bytes = new byte[size];
@@ -337,7 +339,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             this.name = new String(bytes);
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(age);
             byte[] bytes = name.getBytes();
             out.writeInt(bytes.length);
@@ -975,7 +977,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             return sb.toString();
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeBoolean(name == null);
             if (name != null)
                 out.writeUTF(name);
@@ -990,7 +992,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             out.writeDouble(salary);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             if (!in.readBoolean())
                 this.name = in.readUTF();
             if (!in.readBoolean())

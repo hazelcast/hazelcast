@@ -16,23 +16,23 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.ResponseQueueFactory;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 
-class PartitionIteratingOperation extends AbstractOperation {
+class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
     private List<Integer> partitions;
     private Data operationData;
 
@@ -110,7 +110,7 @@ class PartitionIteratingOperation extends AbstractOperation {
     }
 
     // To make serialization of HashMap faster.
-    public static class PartitionResponse implements DataSerializable {
+    public static class PartitionResponse implements IdentifiedDataSerializable {
 
         private Map<Integer, Object> results;
 
@@ -121,24 +121,24 @@ class PartitionIteratingOperation extends AbstractOperation {
             this.results = results != null ? results : Collections.<Integer, Object>emptyMap();
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             int len = results != null ? results.size() : 0;
             out.writeInt(len);
             if (len > 0) {
                 for (Map.Entry<Integer, Object> entry : results.entrySet()) {
                     out.writeInt(entry.getKey());
-                    IOUtil.writeObject(out, entry.getValue());
+                    IOUtil.writeNullableObject(out, entry.getValue());
                 }
             }
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             int len = in.readInt();
             if (len > 0) {
                 results = new HashMap<Integer, Object>(len);
                 for (int i = 0; i < len; i++) {
                     int pid = in.readInt();
-                    Object value = IOUtil.readObject(in);
+                    Object value = IOUtil.readNullableObject(in);
                     results.put(pid, value);
                 }
             } else {
@@ -149,10 +149,14 @@ class PartitionIteratingOperation extends AbstractOperation {
         public Map<? extends Integer, ?> asMap() {
             return results;
         }
+
+        public int getId() {
+            return DataSerializerInitHook.PARTITION_RESPONSE;
+        }
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         int pCount = partitions.size();
         out.writeInt(pCount);
@@ -163,7 +167,7 @@ class PartitionIteratingOperation extends AbstractOperation {
     }
 
     @Override
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int pCount = in.readInt();
         partitions = new ArrayList<Integer>(pCount);
@@ -172,5 +176,9 @@ class PartitionIteratingOperation extends AbstractOperation {
         }
         operationData = new Data();
         operationData.readData(in);
+    }
+
+    public int getId() {
+        return DataSerializerInitHook.PARTITION_ITERATOR;
     }
 }

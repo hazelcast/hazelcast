@@ -17,7 +17,7 @@
 package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;

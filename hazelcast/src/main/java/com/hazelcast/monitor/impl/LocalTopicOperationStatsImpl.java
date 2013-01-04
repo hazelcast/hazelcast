@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalTopicOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalTopicOperationStatsImpl extends LocalOperationStatsSupport
@@ -28,12 +28,12 @@ public class LocalTopicOperationStatsImpl extends LocalOperationStatsSupport
     long numberOfPublishes;
     long numberOfReceives;
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(numberOfPublishes);
         out.writeLong(numberOfReceives);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         numberOfPublishes = in.readLong();
         numberOfReceives = in.readLong();
     }

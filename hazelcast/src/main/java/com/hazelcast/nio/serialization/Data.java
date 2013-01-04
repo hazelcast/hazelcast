@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.serialization;
 
-import com.hazelcast.util.Util;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class Data implements DataSerializable {
 
+    public static final int NO_CLASS_ID = -1;
+
+    public int type = -1;
+    public ClassDefinition cd = null;
     public byte[] buffer = null;
-    public int partitionHash = -1;
+    int partitionHash = -1;
 
     public Data() {
     }
 
-    public Data(byte[] bytes) {
+    public Data(int type, byte[] bytes) {
+        this.type = type;
         this.buffer = bytes;
     }
 
@@ -38,7 +42,35 @@ public class Data implements DataSerializable {
         return (buffer == null) ? 0 : buffer.length;
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void postConstruct(SerializationContext context) {
+        if (cd != null && cd instanceof ClassDefinitionBinaryProxy) {
+            ClassDefinition realCD = context.lookup(cd.getClassId(), cd.getVersion());
+            if (realCD == null) {
+                try {
+                    cd = context.createClassDefinition(cd.getBinary());
+                } catch (IOException e) {
+                    throw new HazelcastSerializationException(e);
+                }
+            }
+        }
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        type = in.readInt();
+        final int classId = in.readInt();
+        if (classId != NO_CLASS_ID) {
+            final int version = in.readInt();
+            SerializationContext context = ((SerializationContextAware) in).getSerializationContext();
+            cd = context.lookup(classId, version);
+            int classDefSize = in.readInt();
+            if (cd != null) {
+                in.skipBytes(classDefSize);
+            } else {
+                byte[] classDefBytes = new byte[classDefSize];
+                in.readFully(classDefBytes);
+                cd = context.createClassDefinition(classDefBytes);
+            }
+        }
         int size = in.readInt();
         if (size > 0) {
             buffer = new byte[size];
@@ -47,7 +79,17 @@ public class Data implements DataSerializable {
         partitionHash = in.readInt();
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(type);
+        if (cd != null) {
+            out.writeInt(cd.getClassId());
+            out.writeInt(cd.getVersion());
+            byte[] classDefBytes = cd.getBinary();
+            out.writeInt(classDefBytes.length);
+            out.write(classDefBytes);
+        } else {
+            out.writeInt(NO_CLASS_ID);
+        }
         int size = size();
         out.writeInt(size);
         if (size > 0) {
@@ -58,7 +100,14 @@ public class Data implements DataSerializable {
 
     @Override
     public int hashCode() {
-        return Util.hashCode(buffer);
+        if (buffer == null) return Integer.MIN_VALUE;
+        // FNV (Fowler/Noll/Vo) Hash "1a"
+        final int prime = 0x01000193;
+        int hash = 0x811c9dc5;
+        for (int i = buffer.length - 1; i >= 0; i--) {
+            hash = (hash ^ buffer[i]) * prime;
+        }
+        return hash;
     }
 
     public int getPartitionHash() {
@@ -82,7 +131,8 @@ public class Data implements DataSerializable {
         if (this == obj)
             return true;
         Data data = (Data) obj;
-        return size() == data.size() && equals(buffer, data.buffer);
+        return type == data.type && size() == data.size()
+                && equals(buffer, data.buffer);
     }
 
     // Same as Arrays.equals(byte[] a, byte[] a2) but loop order is reversed.
@@ -108,6 +158,7 @@ public class Data implements DataSerializable {
     @Override
     public String toString() {
         return "Data{" +
+                "type=" + type + ", " +
                 "partitionHash=" + partitionHash +
                 "} size= " + size();
     }

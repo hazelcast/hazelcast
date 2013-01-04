@@ -16,9 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
-
-import static com.hazelcast.nio.IOUtil.toObject;
+import com.hazelcast.nio.serialization.Data;
 
 public class ReplaceOperation extends BasePutOperation {
 

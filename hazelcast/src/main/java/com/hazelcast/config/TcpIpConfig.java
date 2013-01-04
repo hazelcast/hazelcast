@@ -17,11 +17,11 @@
 package com.hazelcast.config;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,7 +133,7 @@ public class TcpIpConfig implements DataSerializable {
                 + ", addresses=" + addresses + "]";
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         boolean hasMembers = members != null && !members.isEmpty();
         boolean hasAddresses = addresses != null && !addresses.isEmpty();
         boolean hasRequiredMember = requiredMember != null;
@@ -156,7 +156,7 @@ public class TcpIpConfig implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         boolean[] b = ByteUtil.fromByte(in.readByte());
         enabled = b[0];
         boolean hasRequiredMember = b[1];

@@ -16,14 +16,14 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-public class SystemLogRecord implements Comparable, DataSerializable{
-    
+public class SystemLogRecord implements Comparable, DataSerializable {
+
     private long date;
     private String node;
     private String message;
@@ -88,16 +88,16 @@ public class SystemLogRecord implements Comparable, DataSerializable{
         return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(callId);
         out.writeLong(date);
         out.writeUTF(message);
         out.writeUTF(type);
     }
 
-    public void readData(DataInput in) throws IOException {
-        callId =  in.readLong();
-        date =  in.readLong();
+    public void readData(ObjectDataInput in) throws IOException {
+        callId = in.readLong();
+        date = in.readLong();
         message = in.readUTF();
         type = in.readUTF();
     }

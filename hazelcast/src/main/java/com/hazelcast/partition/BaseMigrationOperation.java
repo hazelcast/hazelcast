@@ -17,11 +17,11 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.PartitionLevelOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class BaseMigrationOperation extends AbstractOperation
@@ -67,11 +67,11 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return getNodeEngine().getLogger(getClass().getName());
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         migrationInfo.writeData(out);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
     }

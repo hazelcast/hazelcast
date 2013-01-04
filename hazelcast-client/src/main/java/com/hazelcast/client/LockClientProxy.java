@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 import static com.hazelcast.client.PacketProxyHelper.check;
-import static com.hazelcast.nio.IOUtil.toData;
 
 public class LockClientProxy implements ILock {
     final ProtocolProxyHelper protocolProxyHelper;
@@ -47,30 +46,30 @@ public class LockClientProxy implements ILock {
     }
 
     public void lock() {
-        protocolProxyHelper.doCommand(Command.LOCK,new String[]{}, toData(lockObject));
+        protocolProxyHelper.doCommand(Command.LOCK,new String[]{}, protocolProxyHelper.toData(lockObject));
     }
 
     public boolean isLocked() {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.ISLOCKED, new String[]{}, toData(lockObject));
+        Protocol protocol = protocolProxyHelper.doCommand(Command.ISLOCKED, new String[]{}, protocolProxyHelper.toData(lockObject));
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public boolean tryLock() {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.TRYLOCK, new String[]{}, toData(lockObject));
+        Protocol protocol = protocolProxyHelper.doCommand(Command.TRYLOCK, new String[]{}, protocolProxyHelper.toData(lockObject));
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public boolean tryLock(long time, TimeUnit timeunit) {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.TRYLOCK, new String[]{String.valueOf(timeunit.toMillis(time))}, toData(lockObject));
+        Protocol protocol = protocolProxyHelper.doCommand(Command.TRYLOCK, new String[]{String.valueOf(timeunit.toMillis(time))}, protocolProxyHelper.toData(lockObject));
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public void unlock() {
-        protocolProxyHelper.doCommand(Command.UNLOCK,new String[]{}, toData(lockObject));
+        protocolProxyHelper.doCommand(Command.UNLOCK,new String[]{}, protocolProxyHelper.toData(lockObject));
     }
 
     public void forceUnlock() {
-        protocolProxyHelper.doCommand(Command.FORCEUNLOCK,new String[]{}, toData(lockObject));
+        protocolProxyHelper.doCommand(Command.FORCEUNLOCK,new String[]{}, protocolProxyHelper.toData(lockObject));
     }
 
     public Condition newCondition() {
@@ -82,7 +81,7 @@ public class LockClientProxy implements ILock {
     }
 
     public void destroy() {
-        protocolProxyHelper.doCommand(Command.DESTROY, InstanceType.LOCK.name(), toData(lockObject));
+        protocolProxyHelper.doCommand(Command.DESTROY, InstanceType.LOCK.name(), protocolProxyHelper.toData(lockObject));
     }
 
     public Object getId() {

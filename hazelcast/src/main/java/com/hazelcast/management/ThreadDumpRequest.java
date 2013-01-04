@@ -17,9 +17,9 @@
 package com.hazelcast.management;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 import static com.hazelcast.nio.IOUtil.readLongString;
@@ -42,7 +42,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_GET_THREAD_DUMP;
     }
 
-    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         String threadDump = (String) mcs.call(target, new ThreadDumpCallable(isDeadlock));
         if (threadDump != null) {
             dos.writeBoolean(true);
@@ -52,7 +52,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
         }
     }
 
-    public String readResponse(DataInput in) throws IOException {
+    public String readResponse(ObjectDataInput in) throws IOException {
         if (in.readBoolean()) {
             return readLongString(in);
         } else {
@@ -60,12 +60,12 @@ public class ThreadDumpRequest implements ConsoleRequest {
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         target.writeData(out);
         out.writeBoolean(isDeadlock);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         target = new Address();
         target.readData(in);
         isDeadlock = in.readBoolean();

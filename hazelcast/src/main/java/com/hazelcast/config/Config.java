@@ -21,11 +21,11 @@ import com.hazelcast.merge.AddNewEntryMergePolicy;
 import com.hazelcast.merge.HigherHitsMergePolicy;
 import com.hazelcast.merge.LatestUpdateMergePolicy;
 import com.hazelcast.merge.PassThroughMergePolicy;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -756,7 +756,7 @@ public class Config implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         groupConfig = new GroupConfig();
         groupConfig.readData(in);
         boolean[] b1 = ByteUtil.fromByte(in.readByte());
@@ -833,7 +833,7 @@ public class Config implements DataSerializable {
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         getGroupConfig().writeData(out);
         boolean hasMapConfigs = mapConfigs != null && !mapConfigs.isEmpty();
         boolean hasMapExecutors = executorConfigs != null && !executorConfigs.isEmpty();

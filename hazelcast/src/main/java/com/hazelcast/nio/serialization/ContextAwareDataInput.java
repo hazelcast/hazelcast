@@ -14,103 +14,100 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.serialization;
 
-import java.io.*;
+import com.hazelcast.nio.ObjectDataInput;
 
-public final class FastDataInputStream extends InputStream implements DataInput {
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UTFDataFormatException;
 
-    private byte buf[];
+/**
+* @mdogan 12/26/12
+*/
+class ContextAwareDataInput extends InputStream implements ObjectDataInput, SerializationContextAware {
 
-    private int pos;
+    static final int STRING_CHUNK_SIZE = ContextAwareDataOutput.STRING_CHUNK_SIZE;
+
+    private final byte buffer[];
+
+    private final int size;
+
+    private final int offset;
+
+    private final byte longBuffer[] = new byte[8];
+
+    private int pos = 0;
 
     private int mark = 0;
 
-    private int count;
+    private final SerializationServiceImpl service;
 
-    private final byte readBuffer[] = new byte[8];
+    private int classId;
 
-    private char lineBuffer[];
+    public ContextAwareDataInput(byte[] buffer, SerializationServiceImpl service) {
+        this(buffer, 0, service, -1);
+    }
 
-    public FastDataInputStream(byte buf[]) {
+    public ContextAwareDataInput(Data data, SerializationServiceImpl service) {
+        this(data.buffer, 0, service, data.cd != null ? data.cd.getClassId() : -1);
+    }
+
+    private ContextAwareDataInput(byte buffer[], int offset, SerializationServiceImpl service, int classId) {
         super();
-        this.buf = buf;
-        this.pos = 0;
-        this.count = buf.length;
+        this.buffer = buffer;
+        this.size = buffer.length - offset;
+        this.offset = offset;
+        this.service = service;
+        this.classId = classId;
     }
 
     @Override
-    public int read() {
-        return (pos < count) ? (buf[pos++] & 0xff) : -1;
+    public int read() throws IOException {
+        return (pos < size) ? (buffer[offset + pos++] & 0xff) : -1;
+    }
+
+    public int read(int index) throws IOException {
+        return (index < size) ? (buffer[offset + index] & 0xff) : -1;
     }
 
     @Override
-    public int read(byte b[], int off, int len) {
+    public int read(byte b[], int off, int len) throws IOException {
+        final int read = read(pos, b, off, len);
+        pos += read;
+        return read;
+    }
+
+    public int read(int index, byte b[], int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
         }
-        if (pos >= count) {
+        if (index >= size) {
             return -1;
         }
-        if (pos + len > count) {
-            len = count - pos;
+        if (index + len > size) {
+            len = size - index;
         }
         if (len <= 0) {
             return 0;
         }
-        System.arraycopy(buf, pos, b, off, len);
-        pos += len;
+        System.arraycopy(buffer, offset + index, b, off, len);
         return len;
     }
 
-    @Override
-    public long skip(long n) {
-        if (pos + n > count) {
-            n = count - pos;
-        }
-        if (n < 0) {
-            return 0;
-        }
-        pos += n;
-        return n;
-    }
-
-    public final int skipBytes(final int n) throws IOException {
-        int total = 0;
-        int cur = 0;
-        while ((total < n) && ((cur = (int) skip(n - total)) > 0)) {
-            total += cur;
-        }
-        return total;
-    }
-
-    @Override
-    public int available() {
-        return count - pos;
-    }
-
-    @Override
-    public boolean markSupported() {
-        return true;
-    }
-
-    @Override
-    public void reset() {
-        pos = mark;
-    }
-
-    public void set(byte[] bytes, int size) {
-        this.buf = bytes;
-        this.pos = 0;
-        this.count = size;
-        this.mark = 0;
-    }
-
-    public final boolean readBoolean() throws IOException {
+    public boolean readBoolean() throws IOException {
         final int ch = read();
+        if (ch < 0)
+            throw new EOFException();
+        return (ch != 0);
+    }
+
+    public boolean readBoolean(int index) throws IOException {
+        final int ch = read(index);
         if (ch < 0)
             throw new EOFException();
         return (ch != 0);
@@ -124,12 +121,19 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next byte of this input stream as a signed 8-bit
      *         <code>byte</code>.
-     * @throws EOFException if this input stream has reached the end.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.EOFException if this input stream has reached the end.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public final byte readByte() throws IOException {
+    public byte readByte() throws IOException {
         final int ch = read();
+        if (ch < 0)
+            throw new EOFException();
+        return (byte) (ch);
+    }
+
+    public byte readByte(int index) throws IOException {
+        final int ch = read(index);
         if (ch < 0)
             throw new EOFException();
         return (byte) (ch);
@@ -142,14 +146,20 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next two bytes of this input stream as a Unicode character.
-     * @throws EOFException if this input stream reaches the end before reading two
+     * @throws java.io.EOFException if this input stream reaches the end before reading two
      *                      bytes.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public final char readChar() throws IOException {
-        final int ch1 = read();
-        final int ch2 = read();
+    public char readChar() throws IOException {
+        final char c = readChar(pos);
+        pos += 2;
+        return c;
+    }
+
+    public char readChar(int index) throws IOException {
+        final int ch1 = read(index);
+        final int ch2 = read(index + 1);
         if ((ch1 | ch2) < 0)
             throw new EOFException();
         return (char) ((ch1 << 8) + (ch2 << 0));
@@ -163,14 +173,18 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next eight bytes of this input stream, interpreted as a
      *         <code>double</code>.
-     * @throws EOFException if this input stream reaches the end before reading eight
+     * @throws java.io.EOFException if this input stream reaches the end before reading eight
      *                      bytes.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.DataInputStream#readLong()
-     * @see java.lang.Double#longBitsToDouble(long)
+     * @see Double#longBitsToDouble(long)
      */
-    public final double readDouble() throws IOException {
+    public double readDouble() throws IOException {
         return Double.longBitsToDouble(readLong());
+    }
+
+    public double readDouble(int index) throws IOException {
+        return Double.longBitsToDouble(readLong(index));
     }
 
     /**
@@ -181,25 +195,25 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next four bytes of this input stream, interpreted as a
      *         <code>float</code>.
-     * @throws EOFException if this input stream reaches the end before reading four
+     * @throws java.io.EOFException if this input stream reaches the end before reading four
      *                      bytes.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.DataInputStream#readInt()
-     * @see java.lang.Float#intBitsToFloat(int)
+     * @see Float#intBitsToFloat(int)
      */
-    public final float readFloat() throws IOException {
+    public float readFloat() throws IOException {
         return Float.intBitsToFloat(readInt());
     }
 
-    public final void readFully(final byte b[]) throws IOException {
-        readFully(b, 0, b.length);
+    public float readFloat(int index) throws IOException {
+        return Float.intBitsToFloat(readInt(index));
     }
 
-    public final void readFully(final byte b[], final int off, final int len) throws IOException {
-        if (len < 0)
-            throw new IndexOutOfBoundsException();
-        if (b.length - off < len)
-            throw new RuntimeException();
+    public void readFully(final byte b[]) throws IOException {
+        read(b);
+    }
+
+    public void readFully(final byte b[], final int off, final int len) throws IOException {
         read(b, off, len);
     }
 
@@ -211,16 +225,22 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next four bytes of this input stream, interpreted as an
      *         <code>int</code>.
-     * @throws EOFException if this input stream reaches the end before reading four
+     * @throws java.io.EOFException if this input stream reaches the end before reading four
      *                      bytes.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public final int readInt() throws IOException {
-        final int ch1 = read();
-        final int ch2 = read();
-        final int ch3 = read();
-        final int ch4 = read();
+    public int readInt() throws IOException {
+        final int i = readInt(pos);
+        pos += 4;
+        return i;
+    }
+
+    public int readInt(int index) throws IOException {
+        final int ch1 = read(index);
+        final int ch2 = read(index + 1);
+        final int ch3 = read(index + 2);
+        final int ch4 = read(index + 3);
         if ((ch1 | ch2 | ch3 | ch4) < 0)
             throw new EOFException();
         return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
@@ -233,7 +253,7 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next line of text from this input stream.
-     * @throws IOException if an I/O error occurs.
+     * @throws java.io.IOException if an I/O error occurs.
      * @see java.io.BufferedReader#readLine()
      * @see java.io.FilterInputStream#in
      * @deprecated This method does not properly convert bytes to characters. As
@@ -244,41 +264,8 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *             <code>BufferedReader</code> class.
      */
     @Deprecated
-    public final String readLine() throws IOException {
-        char buf[] = lineBuffer;
-        if (buf == null) {
-            buf = lineBuffer = new char[128];
-        }
-        int room = buf.length;
-        int offset = 0;
-        int c;
-        loop:
-        while (true) {
-            switch (c = read()) {
-                case -1:
-                case '\n':
-                    break loop;
-                case '\r':
-                    final int c2 = read();
-                    if ((c2 != '\n') && (c2 != -1)) {
-                        new PushbackInputStream(this).unread(c2);
-                    }
-                    break loop;
-                default:
-                    if (--room < 0) {
-                        buf = new char[offset + 128];
-                        room = buf.length - offset - 1;
-                        System.arraycopy(lineBuffer, 0, buf, 0, offset);
-                        lineBuffer = buf;
-                    }
-                    buf[offset++] = (char) c;
-                    break;
-            }
-        }
-        if ((c == -1) && (offset == 0)) {
-            return null;
-        }
-        return String.copyValueOf(buf, 0, offset);
+    public String readLine() throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -289,17 +276,23 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next eight bytes of this input stream, interpreted as a
      *         <code>long</code>.
-     * @throws EOFException if this input stream reaches the end before reading eight
+     * @throws java.io.EOFException if this input stream reaches the end before reading eight
      *                      bytes.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public final long readLong() throws IOException {
-        readFully(readBuffer, 0, 8);
-        return (((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48)
-                + ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32)
-                + ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16)
-                + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
+    public long readLong() throws IOException {
+        final long l = readLong(pos);
+        pos += 8;
+        return l;
+    }
+
+    public long readLong(int index) throws IOException {
+        read(index, longBuffer, 0, 8);
+        return (((long) longBuffer[0] << 56) + ((long) (longBuffer[1] & 255) << 48)
+                + ((long) (longBuffer[2] & 255) << 40) + ((long) (longBuffer[3] & 255) << 32)
+                + ((long) (longBuffer[4] & 255) << 24) + ((longBuffer[5] & 255) << 16)
+                + ((longBuffer[6] & 255) << 8) + ((longBuffer[7] & 255) << 0));
     }
 
     /**
@@ -310,14 +303,22 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next two bytes of this input stream, interpreted as a signed
      *         16-bit number.
-     * @throws EOFException if this input stream reaches the end before reading two
+     * @throws java.io.EOFException if this input stream reaches the end before reading two
      *                      bytes.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public final short readShort() throws IOException {
+    public short readShort() throws IOException {
         final int ch1 = read();
         final int ch2 = read();
+        if ((ch1 | ch2) < 0)
+            throw new EOFException();
+        return (short) ((ch1 << 8) + (ch2 << 0));
+    }
+
+    public short readShort(int index) throws IOException {
+        final int ch1 = read(index);
+        final int ch2 = read(index + 1);
         if ((ch1 | ch2) < 0)
             throw new EOFException();
         return (short) ((ch1 << 8) + (ch2 << 0));
@@ -331,11 +332,11 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next byte of this input stream, interpreted as an unsigned
      *         8-bit number.
-     * @throws EOFException if this input stream has reached the end.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.EOFException if this input stream has reached the end.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public final int readUnsignedByte() throws IOException {
+    public int readUnsignedByte() throws IOException {
         final int ch = read();
         if (ch < 0)
             throw new EOFException();
@@ -350,12 +351,12 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      *
      * @return the next two bytes of this input stream, interpreted as an
      *         unsigned 16-bit integer.
-     * @throws EOFException if this input stream reaches the end before reading two
+     * @throws java.io.EOFException if this input stream reaches the end before reading two
      *                      bytes.
-     * @throws IOException  if an I/O error occurs.
+     * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public final int readUnsignedShort() throws IOException {
+    public int readUnsignedShort() throws IOException {
         final int ch1 = read();
         final int ch2 = read();
         if ((ch1 | ch2) < 0)
@@ -370,19 +371,19 @@ public final class FastDataInputStream extends InputStream implements DataInput 
      * Bytes for this operation are read from the contained input stream.
      *
      * @return a Unicode string.
-     * @throws EOFException           if this input stream reaches the end before reading all
+     * @throws java.io.EOFException           if this input stream reaches the end before reading all
      *                                the bytes.
-     * @throws IOException            if an I/O error occurs.
-     * @throws UTFDataFormatException if the bytes do not represent a valid modified UTF-8
+     * @throws java.io.IOException            if an I/O error occurs.
+     * @throws java.io.UTFDataFormatException if the bytes do not represent a valid modified UTF-8
      *                                encoding of a string.
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
-    public final String readUTF() throws IOException {
+    public String readUTF() throws IOException {
         boolean isNull = readBoolean();
         if (isNull) return null;
         int length = readInt();
         StringBuilder result = new StringBuilder(length);
-        int chunkSize = length / FastDataOutputStream.STRING_CHUNK_SIZE + 1;
+        int chunkSize = length / STRING_CHUNK_SIZE + 1;
         while (chunkSize > 0) {
             result.append(readShortUTF());
             chunkSize--;
@@ -390,7 +391,84 @@ public final class FastDataInputStream extends InputStream implements DataInput 
         return result.toString();
     }
 
-    private final String readShortUTF() throws IOException {
+    public Object readObject() throws IOException {
+        return service.readObject(this);
+    }
+
+    public Data readData() throws IOException {
+        final Data data = new Data();
+        data.readData(this);
+        return data;
+    }
+
+    public ContextAwareDataInput duplicate() {
+        return new ContextAwareDataInput(buffer, 0, service, classId);
+    }
+
+    public ContextAwareDataInput slice() {
+        return new ContextAwareDataInput(buffer, pos, service, classId);
+    }
+
+    @Override
+    public long skip(long n) {
+        if (pos + n > size) {
+            n = size - pos;
+        }
+        if (n < 0) {
+            return 0;
+        }
+        pos += n;
+        return n;
+    }
+
+    public int skipBytes(final int n) throws IOException {
+        int total = 0;
+        int cur = 0;
+        while ((total < n) && ((cur = (int) skip(n - total)) > 0)) {
+            total += cur;
+        }
+        return total;
+    }
+
+    /**
+     * Returns this buffer's position.
+     */
+    public int position() {
+        return pos;
+    }
+
+    public void position(int newPos) {
+        if ((newPos > size) || (newPos < 0))
+            throw new IllegalArgumentException();
+        pos = newPos;
+        if (mark > pos) mark = -1;
+    }
+
+    @Override
+    public int available() {
+        return size - pos;
+    }
+
+    @Override
+    public boolean markSupported() {
+        return true;
+    }
+
+    @Override
+    public void mark(int readlimit) {
+        mark = pos;
+    }
+
+    @Override
+    public void reset() {
+        pos = mark;
+    }
+
+    @Override
+    public void close() {
+    }
+
+    private String readShortUTF() throws IOException {
         final int utflen = readShort();
         byte[] bytearr = null;
         char[] chararr = null;
@@ -451,5 +529,30 @@ public final class FastDataInputStream extends InputStream implements DataInput 
         }
         // The number of chars produced may be less than utflen
         return new String(chararr, 0, chararr_count);
+    }
+
+    public SerializationContext getSerializationContext() {
+        return service.serializationContext;
+    }
+
+    public int getClassId() {
+        return classId;
+    }
+
+    public void setClassId(int classId) {
+        this.classId = classId;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ContextAwareDataInput");
+        sb.append("{size=").append(size);
+        sb.append(", offset=").append(offset);
+        sb.append(", pos=").append(pos);
+        sb.append(", mark=").append(mark);
+        sb.append(", classId=").append(classId);
+        sb.append('}');
+        return sb.toString();
     }
 }

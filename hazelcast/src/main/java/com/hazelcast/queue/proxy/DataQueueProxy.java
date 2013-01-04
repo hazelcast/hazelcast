@@ -18,7 +18,7 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -104,7 +104,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public Iterator<Data> iterator() {
-        return new QueueIterator<Data>(listInternal().iterator(), true);
+        return new QueueIterator<Data>(listInternal().iterator(), null, true);
     }
 
     public Object[] toArray() {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 
@@ -28,27 +28,32 @@ import java.util.Map;
  */
 public final class DataSerializerMapHook implements DataSerializerHook {
 
-    public Map<String, DataSerializableFactory> createFactoryMap() {
-        final Map<String, DataSerializableFactory> factories = new HashMap<String, DataSerializableFactory>();
+    static final int PUT = 100;
+    static final int GET = 101;
+    static final int REMOVE = 102;
+    static final int GENERIC_BACKUP = 110;
 
-        factories.put(PutOperation.class.getName(), new DataSerializableFactory() {
+    public Map<Integer, DataSerializableFactory> getFactories() {
+        final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
+
+        factories.put(PUT, new DataSerializableFactory() {
             public DataSerializable create() {
                 return new PutOperation();
             }
         });
-        factories.put(RemoveOperation.class.getName(), new DataSerializableFactory() {
+        factories.put(GET, new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new GetOperation();
+            }
+        });
+        factories.put(REMOVE, new DataSerializableFactory() {
             public DataSerializable create() {
                 return new RemoveOperation();
             }
         });
-        factories.put(GenericBackupOperation.class.getName(), new DataSerializableFactory() {
+        factories.put(GENERIC_BACKUP, new DataSerializableFactory() {
             public DataSerializable create() {
                 return new GenericBackupOperation();
-            }
-        });
-        factories.put(GetOperation.class.getName(), new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new GetOperation();
             }
         });
 

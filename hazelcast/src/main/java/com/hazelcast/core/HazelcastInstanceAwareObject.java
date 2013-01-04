@@ -17,10 +17,12 @@
 package com.hazelcast.core;
 
 import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.*;
+import java.io.IOException;
 
-public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceAware, Serializable {
+public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceAware {
     protected transient HazelcastInstance hazelcastInstance = null;
 
     public HazelcastInstance getHazelcastInstance() {
@@ -31,18 +33,18 @@ public abstract class HazelcastInstanceAwareObject implements HazelcastInstanceA
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         hazelcastInstance = ThreadContext.get().getCurrentInstance();
     }
 
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        writeData(out);
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        readData(in);
-    }
+//    private void writeObject(ObjectOutputStream out) throws IOException {
+//        writeData(out);
+//    }
+//
+//    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+//        readData(in);
+//    }
 }

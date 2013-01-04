@@ -20,9 +20,9 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.Util;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;

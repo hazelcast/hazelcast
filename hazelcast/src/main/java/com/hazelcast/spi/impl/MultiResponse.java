@@ -16,22 +16,23 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
  * @mdogan 10/1/12
  */
 
-public final class MultiResponse extends AbstractOperation implements ResponseOperation {
+public final class MultiResponse extends AbstractOperation implements ResponseOperation, IdentifiedDataSerializable {
 
     private Data[] operationData;
 
@@ -42,10 +43,10 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
     public MultiResponse() {
     }
 
-    public MultiResponse(final Object... responses) {
+    public MultiResponse(SerializationService serializationService, final Object... responses) {
         operationData = new Data[responses.length];
         for (int i = 0; i < responses.length; i++) {
-            if (responses[i] instanceof MultiResponse) {
+            /*if (responses[i] instanceof MultiResponse) {
                 MultiResponse mr = (MultiResponse) responses[i];
                 if (mr.hasResponse) {
                     markHasResponse();
@@ -55,14 +56,14 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
                 System.arraycopy(mr.operationData, 0, newOperationData, i, mr.operationData.length);
                 operationData = newOperationData;
             }
-            else if (responses[i] instanceof Operation) {
+            else */if (responses[i] instanceof Operation) {
                 if (responses[i] instanceof Response) {
                     markHasResponse();
                 }
-                operationData[i] = IOUtil.toData(responses[i]);
+                operationData[i] = serializationService.toData(responses[i]);
             } else {
                 markHasResponse();
-                operationData[i] = IOUtil.toData(new Response(responses[i]));
+                operationData[i] = serializationService.toData(new Response(responses[i]));
             }
         }
     }
@@ -115,7 +116,7 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
     }
 
     @Override
-    protected void writeInternal(final DataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         int len = operationData.length;
         out.writeInt(len);
         for (Data op : operationData) {
@@ -124,12 +125,16 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
     }
 
     @Override
-    protected void readInternal(final DataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         int len = in.readInt();
         operationData = new Data[len];
         for (int i = 0; i < len; i++) {
             operationData[i] = new Data();
             operationData[i].readData(in);
         }
+    }
+
+    public int getId() {
+        return DataSerializerInitHook.MULTI_RESPONSE;
     }
 }

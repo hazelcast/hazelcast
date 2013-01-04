@@ -18,12 +18,12 @@ package com.hazelcast.queue;
 
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.exception.RetryableException;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 
@@ -386,7 +386,7 @@ public class QueueContainer implements DataSerializable {
         return dataMap.remove(itemId);
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
         out.writeInt(itemQueue.size());
         for (QueueItem item : itemQueue) {
@@ -394,7 +394,7 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         partitionId = in.readInt();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
