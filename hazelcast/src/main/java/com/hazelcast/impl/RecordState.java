@@ -25,82 +25,63 @@ import java.io.IOException;
 
 public class RecordState implements DataSerializable {
 
-    protected volatile long maxIdleMillis = Long.MAX_VALUE;
-    protected volatile long lastAccessTime = 0;
-    protected volatile long creationTime = 0;
-    protected volatile long ttl = -1;
+    protected volatile long ttlExpireTime = 0;
+    protected volatile long idleExpireTime = 0;
+    protected volatile long storeTime = 0;
 
-    protected volatile boolean dirty = false;
-    protected volatile boolean active = true;
 
-    public long getMaxIdleMillis() {
-        return maxIdleMillis;
-    }
-
-    public void setMaxIdleMillis(long maxIdleMillis) {
-        this.maxIdleMillis = maxIdleMillis;
-    }
-
-    public long getLastAccessTime() {
-        return lastAccessTime;
-    }
-
-    public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime = lastAccessTime;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
-    }
-
-    public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
-    }
-
-    public long getTtl() {
-        return ttl;
-    }
-
-    public void setTtl(long ttl) {
-        this.ttl = ttl;
+    public boolean isExpired() {
+        return (ttlExpireTime > 0 && ttlExpireTime < Clock.currentTimeMillis())
+                || (idleExpireTime > 0 && idleExpireTime < Clock.currentTimeMillis());
     }
 
     public boolean isDirty() {
-        return dirty;
+        return storeTime > 0 && storeTime < Clock.currentTimeMillis();
     }
 
-    public void setDirty(boolean dirty) {
-        this.dirty = dirty;
+    public long getTtlExpireTime() {
+        return ttlExpireTime;
     }
 
-    public boolean isActive() {
-        // check if record has expired, if so make active false
-        if(active && ttl > 0 && Clock.currentTimeMillis() > creationTime + ttl)
-            active = false;
-        if(active && maxIdleMillis > 0 && Clock.currentTimeMillis() > lastAccessTime + maxIdleMillis)
-            active = false;
-        return active;
+    public long getIdleExpireTime() {
+        return idleExpireTime;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void resetStoreTime() {
+        storeTime = 0;
+    }
+
+    // todo is this required
+    public void resetExpiration() {
+        ttlExpireTime = 0;
+        idleExpireTime = 0;
+    }
+
+    public long getStoreTime() {
+        return storeTime;
+    }
+
+    public void updateTtlExpireTime(long ttl) {
+        this.ttlExpireTime = Clock.currentTimeMillis() + ttl;
+    }
+
+    public void updateStoreTime(long writeDelay) {
+        this.storeTime = Clock.currentTimeMillis() + writeDelay;
+    }
+
+    public void updateIdleExpireTime(long maxIdle) {
+        this.idleExpireTime = Clock.currentTimeMillis() + maxIdle;
     }
 
     public void writeData(DataOutput out) throws IOException {
-        out.writeLong(maxIdleMillis);
-        out.writeLong(lastAccessTime);
-        out.writeLong(creationTime);
-        out.writeLong(ttl);
-        out.writeBoolean(dirty);
-        out.writeBoolean(active);
+        out.writeLong(ttlExpireTime);
+        out.writeLong(idleExpireTime);
+        out.writeLong(storeTime);
     }
 
     public void readData(DataInput in) throws IOException {
-        maxIdleMillis = in.readLong();
-        lastAccessTime = in.readLong();
-        creationTime = in.readLong();
-        ttl = in.readLong();
-        dirty = in.readBoolean();
-        active = in.readBoolean();
+        ttlExpireTime = in.readLong();
+        idleExpireTime = in.readLong();
+        storeTime = in.readLong();
     }
 }

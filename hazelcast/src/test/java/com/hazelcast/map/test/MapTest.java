@@ -38,7 +38,7 @@ import static org.junit.Assert.*;
 public class MapTest {
 
     private static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
-    private static int instanceCount = 2;
+    private static int instanceCount = 4;
     private Random rand = new Random(Clock.currentTimeMillis());
     private static Config cfg = new Config();
 
@@ -600,6 +600,23 @@ public class MapTest {
 
     }
 
+    @Test
+    public void testMapPutBackups() throws InterruptedException {
+        IMap map = getInstance(0).getMap("testMapBackups");
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+
+        getInstance(1).getLifecycleService().shutdown();
+        Thread.sleep(1000);
+
+        assertEquals(map.size(), size);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
+        }
+    }
 
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {

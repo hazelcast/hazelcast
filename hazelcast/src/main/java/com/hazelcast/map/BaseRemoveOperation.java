@@ -76,17 +76,15 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public Operation getBackupOperation() {
-        final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
-        op.setBackupOpType(BackupOpType.REMOVE);
-        return op;
+        return new RemoveBackupOperation(name, dataKey);
     }
 
     public int getAsyncBackupCount() {
-        return recordStore.getAsyncBackupCount();
+        return mapService.getMapInfo(name).getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return recordStore.getBackupCount();
+        return mapService.getMapInfo(name).getBackupCount();
     }
 
     public boolean shouldBackup() {

@@ -22,10 +22,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
+import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
+import com.hazelcast.impl.RecordState;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.MapGetHandler;
@@ -41,12 +44,10 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ConcurrentHashSet;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -60,36 +61,38 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final PartitionContainer[] partitionContainers;
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
+    private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
     private final Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
+    private final ScheduledThreadPoolExecutor recordTaskExecutor;
 
-    private final Set<String> mapsWithTTL;
 
     public MapService(final NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-        mapsWithTTL = new ConcurrentHashSet<String>();
+        recordTaskExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(3);
+        recordTaskExecutor.setMaximumPoolSize(50);
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
         int partitionCount = nodeEngine.getPartitionCount();
-        final Config config = nodeEngine.getConfig();
         for (int i = 0; i < partitionCount; i++) {
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
-            partitionContainers[i] = new PartitionContainer(config, this, partition);
+            partitionContainers[i] = new PartitionContainer(this, partition);
         }
 
-        for (String mapName : proxies.keySet()) {
-            MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
-            if (mapConfig.getTimeToLiveSeconds() > 0 || mapConfig.getMaxIdleSeconds() > 0)
-                mapsWithTTL.add(mapName);
-        }
-
-        // todo make this 1 second configurable
-        nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
+    }
+
+    public MapInfo getMapInfo(String mapName){
+        MapInfo mapInfo = mapInfos.get(mapName);
+        if(mapInfo == null) {
+            mapInfo = new MapInfo(mapName, nodeEngine.getConfig().getMapConfig(mapName));
+            mapInfos.put(mapName, mapInfo);
+        }
+        return mapInfo;
     }
 
     private void registerClientOperationHandlers() {
@@ -132,7 +135,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
                 final PartitionContainer container = partitionContainers[event.getPartitionId()];
                 for (DefaultRecordStore mapPartition : container.maps.values()) {
-                    final MapConfig mapConfig = container.getMapConfig(mapPartition.name);
+                    final MapConfig mapConfig = getMapInfo(mapPartition.name).getMapConfig();
                     if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
                         mapPartition.clear();
                     }
@@ -166,13 +169,19 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         container.transactions.clear(); // TODO: not sure?
     }
 
-    public Record createRecord(String mapName, Data keyData, Data valueData, long ttl) {
-        MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
-        long maxIdleMillis = mapConfig.getMaxIdleSeconds() * 1000;
-        if (ttl == -1) {
-            ttl = mapConfig.getTimeToLiveSeconds() * 1000;
+    public Record createRecord(String name, Data dataKey, Data valueData, long ttl) {
+        // todo based on map config choose the record impl
+        DefaultRecord record = new DefaultRecord(nextId(), dataKey, valueData);
+        MapInfo mapInfo = getMapInfo(name);
+        if (ttl <= 0 && mapInfo.getMapConfig().getTimeToLiveSeconds() > 0) {
+            record.getState().updateTtlExpireTime(mapInfo.getMapConfig().getTimeToLiveSeconds());
+            scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
         }
-        return new DefaultRecord(nextId(), keyData, valueData, ttl, maxIdleMillis);
+        if (mapInfo.getMapConfig().getMaxIdleSeconds() > 0) {
+            record.getState().updateIdleExpireTime(mapInfo.getMapConfig().getMaxIdleSeconds());
+            scheduleOperation(name, dataKey, record.getState().getIdleExpireTime());
+        }
+        return record;
     }
 
     public void prepare(String txnId, int partitionId) throws TransactionException {
@@ -309,38 +318,54 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
-    public void notifyMapTtl(String mapName) {
-        mapsWithTTL.add(mapName);
-    }
 
+    public void scheduleOperation(String mapName, Data key, long executeTime) {
+        MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
+        MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation);
+        recordTaskExecutor.schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
+    }
 
     private class CleanupTask implements Runnable {
         public void run() {
             cleanExpiredRecords();
+            executeDelayedMapStoreOperations();
+        }
+
+        private void executeDelayedMapStoreOperations() {
+//            List<DelayedOperation> removeList = new ArrayList<DelayedOperation>();
+//            for (DelayedOperation operation : delayedMapStoreOperations) {
+//                if(operation.shouldExecute()) {
+//                    operation.execute();
+//                    removeList.add(operation);
+//                }
+//            }
+//            for (DelayedOperation operation : removeList) {
+//                delayedMapStoreOperations.remove(operation);
+//            }
         }
 
         private void cleanExpiredRecords() {
-            if (mapsWithTTL.isEmpty())
-                return;
 
-            for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
-                Node node = nodeEngine.getNode();
-                Address owner = node.partitionService.getPartitionOwner(i);
-                if (node.address.equals(owner)) {
-                    for (String mapName : mapsWithTTL) {
-                        PartitionContainer pc = partitionContainers[i];
-                        RecordStore recordStore = pc.getRecordStore(mapName);
-                        Set<Map.Entry<Data, Record>> recordEntries = recordStore.getRecords().entrySet();
-                        List<Data> keysToRemoved = new ArrayList<Data>();
-                        for (Map.Entry<Data, Record> entry : recordEntries) {
-                            Record record = entry.getValue();
-                            if (!record.isActive())
-                                keysToRemoved.add(entry.getKey());
-                        }
-                        recordStore.removeAll(keysToRemoved);
-                    }
-                }
-            }
+//            Node node = nodeEngine.getNode();
+//            for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
+//                Address owner = node.partitionService.getPartitionOwner(i);
+//                if (node.address.equals(owner)) {
+//                    for (String mapName : mapInfos.keySet()) {
+//                        if(!mapInfos.get(mapName).shouldCheckExpiredRecords())
+//                            continue;
+//                        PartitionContainer pc = partitionContainers[i];
+//                        RecordStore recordStore = pc.getRecordStore(mapName);
+//                        Set<Map.Entry<Data, Record>> recordEntries = recordStore.getRecords().entrySet();
+//                        List<Data> keysToRemoved = new ArrayList<Data>();
+//                        for (Map.Entry<Data, Record> entry : recordEntries) {
+//                            Record record = entry.getValue();
+//                            if (!record.isActive() && !record.isDirty())
+//                                keysToRemoved.add(entry.getKey());
+//                        }
+//                        recordStore.evictAll(keysToRemoved);
+//                    }
+//                }
+//            }
         }
     }
 }

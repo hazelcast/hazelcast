@@ -75,17 +75,15 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
 
     public Operation getBackupOperation() {
-        final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
-        op.setBackupOpType(BackupOpType.PUT);
-        return op;
+        return new PutBackupOperation(name, dataKey, dataValue, ttl);
     }
 
     public int getAsyncBackupCount() {
-        return recordStore.getAsyncBackupCount();
+        return mapService.getMapInfo(name).getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return recordStore.getBackupCount();
+        return mapService.getMapInfo(name).getBackupCount();
     }
 
     @Override

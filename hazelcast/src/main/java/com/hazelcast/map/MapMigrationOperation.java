@@ -46,7 +46,7 @@ public class MapMigrationOperation extends AbstractOperation {
         data = new HashMap<String, Map<Data, Record>>(container.maps.size());
         for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
-            final MapConfig mapConfig = container.getMapConfig(name);
+            final MapConfig mapConfig = entry.getValue().getMapInfo().getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
@@ -73,7 +73,7 @@ public class MapMigrationOperation extends AbstractOperation {
             for (Entry<Data, Record> entry : dataMap.entrySet()) {
                 final Record recordEntry = entry.getValue();
                 DefaultRecord record = new DefaultRecord(  mapService.nextId(),
-                        recordEntry.getKey(), recordEntry.getValueData(), -1, -1);
+                        recordEntry.getKey(), recordEntry.getValueData());
                 recordStore.getRecords().put(entry.getKey(), record);
             }
         }

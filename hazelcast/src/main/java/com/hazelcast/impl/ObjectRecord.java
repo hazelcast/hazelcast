@@ -28,7 +28,7 @@ public class ObjectRecord extends AbstractRecord {
     private volatile Object value;
 
     public ObjectRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
-        super(id, keyData, ttl, maxIdleMillis);
+        super(id, keyData);
         this.value = IOUtil.toObject(valueData);
     }
 

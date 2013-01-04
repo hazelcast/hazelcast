@@ -31,19 +31,16 @@ import static com.hazelcast.nio.IOUtil.toObject;
 @SuppressWarnings("VolatileLongOrDoubleField")
 public abstract class AbstractRecord implements Record, DataSerializable {
 
+    // todo remove id
     protected volatile long id;
     protected volatile RecordState state;
     protected volatile RecordStats stats;
     protected volatile Data keyData;
 
-    public AbstractRecord(long id, Data keyData, long ttl, long maxIdleMillis) {
+    public AbstractRecord(long id, Data keyData) {
         this.id = id;
-        if(ttl > 0 || maxIdleMillis > 0){
-            state = new RecordState();
-            state.setTtl(ttl);
-            state.setMaxIdleMillis(maxIdleMillis);
-        }
         this.keyData = keyData;
+        state = new RecordState();
     }
 
     public AbstractRecord() {
@@ -57,51 +54,8 @@ public abstract class AbstractRecord implements Record, DataSerializable {
         return keyData;
     }
 
-    public void setMaxIdleMillis(long maxIdleMillis){
-        if(maxIdleMillis > 0 && state == null) {
-            state = new RecordState();
-        }
-        if(state != null) {
-            state.setMaxIdleMillis(maxIdleMillis);
-        }
-    }
-
-    public void setTtl(long ttl){
-        if(ttl > 0 && state == null) {
-            state = new RecordState();
-        }
-        if(state != null) {
-            state.setTtl(ttl);
-        }
-    }
-
-    public void setActive(boolean b) {
-        if (state != null)
-            state.setActive(b);
-    }
-
-    public void setDirty(boolean b) {
-        if (state != null)
-            state.setDirty(b);
-    }
-
-    public boolean isDirty() {
-        if(state != null)
-            return state.isDirty();
-        return false;
-    }
-
-    public boolean isActive() {
-        if(state != null)
-            return state.isActive();
-        return true;
-    }
-
-    public long getTtl() {
-        if(state != null)
-            return -1;
-        return state.getTtl();
-
+    public RecordState getState() {
+        return state;
     }
 
     public Record clone() {
