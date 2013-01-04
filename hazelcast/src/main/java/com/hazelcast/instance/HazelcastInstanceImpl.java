@@ -34,6 +34,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceProxy;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -137,7 +138,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Transaction getTransaction() {
-        return null;
+        return new TransactionImpl(this);
     }
 
     public IdGenerator getIdGenerator(final String name) {

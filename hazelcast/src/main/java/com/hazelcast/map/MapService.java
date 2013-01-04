@@ -80,13 +80,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(config, this, partition);
         }
-
         for (String mapName : proxies.keySet()) {
             MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
             if (mapConfig.getTimeToLiveSeconds() > 0 || mapConfig.getMaxIdleSeconds() > 0)
                 mapsWithTTL.add(mapName);
         }
-
         // todo make this 1 second configurable
         nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
@@ -195,8 +193,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         try {
             nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception e) {
-            throw new TransactionException(e);
+        } catch (Exception ignored) {
+            //commit can never fail
         }
     }
 
@@ -255,7 +253,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
-
     public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
@@ -272,12 +269,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
-
         String source = nodeEngine.getNode().address.toString();
         final SerializerRegistry serializerRegistry = nodeEngine.getNode().hazelcastInstance.getSerializerRegistry();
         Member callerMember = nodeEngine.getClusterService().getMember(caller);
         EntryEvent event = new DataAwareEntryEvent(callerMember, eventType, source, dataKey, dataValue, dataOldValue, false, serializerRegistry);
-
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
@@ -313,7 +308,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         mapsWithTTL.add(mapName);
     }
 
-
     private class CleanupTask implements Runnable {
         public void run() {
             cleanExpiredRecords();
@@ -322,7 +316,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         private void cleanExpiredRecords() {
             if (mapsWithTTL.isEmpty())
                 return;
-
             for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
                 Node node = nodeEngine.getNode();
                 Address owner = node.partitionService.getPartitionOwner(i);
