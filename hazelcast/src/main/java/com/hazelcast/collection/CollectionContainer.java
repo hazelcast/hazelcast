@@ -42,10 +42,6 @@ public class CollectionContainer {
         return objects.get(dataKey);
     }
 
-    public void putObject(Data dataKey, Object object){
-        objects.put(dataKey, object);
-    }
-
     public void removeObject(Data dataKey){
         objects.remove(dataKey);
     }
@@ -58,6 +54,10 @@ public class CollectionContainer {
 
     public Set<Data> keySet(){
         return objects.keySet();
+    }
+
+    public SerializationContext getSerializationService(){
+        return service.getSerializationContext();
     }
 
     public ConcurrentMap<Data, Object> getObjects() {

@@ -17,6 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.SerializationContext;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -41,7 +42,10 @@ public class KeySetOperation extends AbstractNamedOperation implements Partition
     public void run() throws Exception {
         CollectionService service = getService();
         Set<Data> keySet = service.localKeySet(name, getPartitionId());
-        response = keySet == null ? null : new MultiMapCollectionResponse(keySet, MultiMapConfig.ValueCollectionType.SET.toString());
+        if (keySet != null){
+            SerializationContext context = new SerializationContext(getNodeEngine().getSerializationService());
+            response = new MultiMapCollectionResponse(keySet, MultiMapConfig.ValueCollectionType.SET.toString(), true, context);
+        }
     }
 
     public Object getResponse() {

@@ -54,7 +54,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> get(K key) {
         Data dataKey = nodeEngine.toData(key);
         MultiMapCollectionResponse result = getInternal(dataKey);
-        return result.getCollection();
+        return result.getCollection(nodeEngine.getSerializationService());
     }
 
     public boolean remove(Object key, Object value) {
@@ -66,7 +66,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> remove(Object key) {
         Data dataKey = nodeEngine.toData(key);
         MultiMapCollectionResponse result = removeInternal(dataKey);
-        return result.getCollection();
+        return result.getCollection(nodeEngine.getSerializationService());
     }
 
     public Set<K> localKeySet() {
@@ -159,7 +159,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         int count = nodeEngine.getPartitionCount();
         for (int i = 0; i < count; i++) {
             CollectionPartitionContainer partitionContainer = service.getPartitionContainer(i);
-            Map<String, CollectionContainer> multiMaps = partitionContainer.getMultiMaps();
+            Map<String, CollectionContainer> multiMaps = partitionContainer.getContainerMap();
             if (multiMaps.size() > 0) {
                 System.out.println("partitionId: " + i);
             }

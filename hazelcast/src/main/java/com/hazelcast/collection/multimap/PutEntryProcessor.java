@@ -44,13 +44,12 @@ public class PutEntryProcessor extends BaseEntryProcessor<Boolean> implements Ba
 
     public Boolean execute(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-//        return coll.add(isBinary() ? data : IOUtil.toObject(data));
-        return null;
+        return coll.add(isBinary() ? data : entry.getSerializationContext().toObject(data));
     }
 
     public void executeBackup(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-//        coll.add(isBinary() ? data : IOUtil.toObject(data));
+        coll.add(isBinary() ? data : entry.getSerializationContext().toObject(data));
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

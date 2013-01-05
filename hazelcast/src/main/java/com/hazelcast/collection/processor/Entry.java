@@ -17,6 +17,7 @@
 package com.hazelcast.collection.processor;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.SerializationContext;
 import com.hazelcast.nio.serialization.Data;
 
 /**
@@ -24,9 +25,9 @@ import com.hazelcast.nio.serialization.Data;
  */
 public class Entry {
 
-    Data key;
+    private Data key;
 
-    Object value;
+    private Object value;
 
     private CollectionContainer container;
 
@@ -42,6 +43,10 @@ public class Entry {
 
     public void removeEntry() {
         container.removeObject(key);
+    }
+
+    public SerializationContext getSerializationContext(){
+        return container.getSerializationService();
     }
 
     public <T> T getOrCreateValue() {

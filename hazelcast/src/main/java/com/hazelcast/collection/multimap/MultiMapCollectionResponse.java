@@ -16,12 +16,13 @@
 
 package com.hazelcast.collection.multimap;
 
+import com.hazelcast.collection.SerializationContext;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -37,12 +38,18 @@ public class MultiMapCollectionResponse implements DataSerializable {
 
     private String collectionType;
 
+    private boolean binary;
+
+    private transient SerializationContext serializationContext;
+
     public MultiMapCollectionResponse() {
     }
 
-    public MultiMapCollectionResponse(Collection collection, String collectionType) {
+    public MultiMapCollectionResponse(Collection collection, String collectionType, boolean binary, SerializationContext context) {
         this.collection = collection;
         this.collectionType = collectionType;
+        this.binary = binary;
+        this.serializationContext = context;
     }
 
     public Collection<Data> getDataCollection() {
@@ -56,7 +63,7 @@ public class MultiMapCollectionResponse implements DataSerializable {
         return collection;
     }
 
-    public Collection getCollection() {
+    public Collection getCollection(SerializationService serializationService) {
         if (collection == null){
             return getDataCollection();
         }
@@ -66,21 +73,23 @@ public class MultiMapCollectionResponse implements DataSerializable {
         } else if (collectionType.equals(MultiMapConfig.ValueCollectionType.LIST.toString())) {
             coll = new LinkedList();
         }
-        for (Object obj : collection) {
-//            coll.add(IOUtil.toObject(obj));
+        for (Data data : (Collection<Data>)collection) {
+            coll.add(serializationService.toObject(data));
         }
         return coll;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(collectionType);
+        out.writeBoolean(binary);
         if (collection == null){
             out.writeInt(-1);
             return;
         }
         out.writeInt(collection.size());
         for (Object obj : collection) {
-            out.writeObject(obj);
+            Data data = binary ? (Data)obj : serializationContext.toData(obj);
+            out.writeData(data);
         }
     }
 
@@ -93,7 +102,7 @@ public class MultiMapCollectionResponse implements DataSerializable {
             collection = new LinkedList();
         }
         for (int i = 0; i < size; i++) {
-            collection.add(IOUtil.readNullableData(in));
+            collection.add(in.readData());
         }
     }
 

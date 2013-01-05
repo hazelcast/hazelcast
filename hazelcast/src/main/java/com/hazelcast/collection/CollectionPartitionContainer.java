@@ -26,27 +26,27 @@ public class CollectionPartitionContainer {
 
     CollectionService service;
 
-    private final ConcurrentMap<String, CollectionContainer> multiMaps = new ConcurrentHashMap<String, CollectionContainer>(1000);
+    private final ConcurrentMap<String, CollectionContainer> containerMap = new ConcurrentHashMap<String, CollectionContainer>(1000);
 
     public CollectionPartitionContainer(CollectionService service) {
         this.service = service;
     }
 
-    public CollectionContainer getCreateCollectionContainer(String name){
-        CollectionContainer multiMap = multiMaps.get(name);
-        if (multiMap == null){
-            multiMap = new CollectionContainer(name, service);
-            CollectionContainer current = multiMaps.putIfAbsent(name, multiMap);
-            multiMap = current == null ? multiMap : current;
+    public CollectionContainer getOrCreateCollectionContainer(String name){
+        CollectionContainer collectionContainer = containerMap.get(name);
+        if (collectionContainer == null){
+            collectionContainer = new CollectionContainer(name, service);
+            CollectionContainer current = containerMap.putIfAbsent(name, collectionContainer);
+            collectionContainer = current == null ? collectionContainer : current;
         }
-        return multiMap;
+        return collectionContainer;
     }
 
     public CollectionContainer getCollectionContainer(String name){
-        return multiMaps.get(name);
+        return containerMap.get(name);
     }
 
-    public ConcurrentMap<String, CollectionContainer> getMultiMaps() {
-        return multiMaps; //TODO for testing only
+    public ConcurrentMap<String, CollectionContainer> getContainerMap() {
+        return containerMap; //TODO for testing only
     }
 }

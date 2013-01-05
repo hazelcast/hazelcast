@@ -47,7 +47,7 @@ public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implem
         if (coll == null){
             return false;
         }
-        boolean result = false; //coll.remove(isBinary() ? data : IOUtil.toObject(data));
+        boolean result = coll.remove(isBinary() ? data : entry.getSerializationContext().toObject(data));
         if (coll.isEmpty()){
             entry.removeEntry();
         }
@@ -59,7 +59,7 @@ public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implem
         if (coll == null){
             return;
         }
-//        coll.remove(isBinary() ? data : IOUtil.toObject(data));
+        coll.remove(isBinary() ? data : entry.getSerializationContext().toObject(data));
         if (coll.isEmpty()){
             entry.removeEntry();
         }

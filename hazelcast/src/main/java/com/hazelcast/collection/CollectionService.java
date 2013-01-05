@@ -42,13 +42,16 @@ public class CollectionService implements ManagedService, RemoteService {
 
     private final CollectionPartitionContainer[] partitionContainers;
 
+    private final SerializationContext serializationContext;
+
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         partitionContainers = new CollectionPartitionContainer[nodeEngine.getPartitionCount()];
+        serializationContext = new SerializationContext(nodeEngine.getSerializationService());
     }
 
     public CollectionContainer getCollectionContainer(int partitionId, String name) {
-        return partitionContainers[partitionId].getCreateCollectionContainer(name);
+        return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
     }
 
     public CollectionPartitionContainer getPartitionContainer(int partitionId) {
@@ -114,6 +117,9 @@ public class CollectionService implements ManagedService, RemoteService {
         return container != null ? container.keySet() : null;
     }
 
+    public SerializationContext getSerializationContext(){
+        return serializationContext;
+    }
 
     public <T> T process(String name, Data dataKey, EntryProcessor processor) {
         try {

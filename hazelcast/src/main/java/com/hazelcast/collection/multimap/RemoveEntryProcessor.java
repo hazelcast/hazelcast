@@ -37,7 +37,7 @@ public class RemoveEntryProcessor extends GetEntryProcessor implements BackupAwa
     public MultiMapCollectionResponse execute(Entry entry) {
         Collection collection = entry.getValue();
         entry.removeEntry();
-        return new MultiMapCollectionResponse(collection, collectionType);
+        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationContext());
     }
 
     public void executeBackup(Entry entry) {
