@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.IOException;
@@ -42,16 +43,19 @@ public class QueueContainer implements DataSerializable {
 
     private QueueConfig config;
 
+    private SerializationService serializationService;
+
     private long idGen = 0;
 
-    private final QueueStoreWrapper store = new QueueStoreWrapper();
+    private final QueueStoreWrapper store = new QueueStoreWrapper(serializationService);
 
     public QueueContainer() {
     }
 
-    public QueueContainer(int partitionId, QueueConfig config, boolean fromBackup) throws Exception {
+    public QueueContainer(int partitionId, QueueConfig config, SerializationService serializationService, boolean fromBackup) throws Exception {
         this.partitionId = partitionId;
         setConfig(config);
+        this.serializationService = serializationService;
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
@@ -367,7 +371,7 @@ public class QueueContainer implements DataSerializable {
                 return;
             }
             dataMap.putAll(values);
-            item.setData(getData(item.getItemId()));
+            item.setData(getDataFromMap(item.getItemId()));
         }
     }
 
@@ -382,8 +386,12 @@ public class QueueContainer implements DataSerializable {
         return true;
     }
 
-    public Data getData(long itemId) {
+    public Data getDataFromMap(long itemId) {
         return dataMap.remove(itemId);
+    }
+
+    public void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

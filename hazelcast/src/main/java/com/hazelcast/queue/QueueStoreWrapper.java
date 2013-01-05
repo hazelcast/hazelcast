@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,7 +47,10 @@ public class QueueStoreWrapper {
 
     private boolean binary = false;
 
-    public QueueStoreWrapper() {
+    private final SerializationService serializationService;
+
+    public QueueStoreWrapper(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     public void setConfig(QueueStoreConfig storeConfig) {
@@ -91,7 +95,7 @@ public class QueueStoreWrapper {
 
     public void store(Long key, Data value) throws Exception {
         if (enabled) {
-//            store.store(key, binary ? value.buffer : IOUtil.toObject(value));
+            store.store(key, binary ? value.buffer : serializationService.toObject(value));
         }
     }
 
@@ -102,7 +106,7 @@ public class QueueStoreWrapper {
             } else {
                 Map<Long, Object> objectMap = new HashMap<Long, Object>(map.size());
                 for (Map.Entry<Long, Data> entry : map.entrySet()) {
-//                    objectMap.put(entry.getKey(), IOUtil.toObject(entry.getValue()));
+                    objectMap.put(entry.getKey(), serializationService.toObject(entry.getValue()));
                 }
                 store.storeAll(objectMap);
             }
@@ -127,7 +131,7 @@ public class QueueStoreWrapper {
             if (binary) {
                 return (Data) val;
             }
-//            return IOUtil.toData(val);
+            return serializationService.toData(val);
         }
         return null;
     }
@@ -140,7 +144,7 @@ public class QueueStoreWrapper {
             }
             Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
             for (Map.Entry<Long, ?> entry : map.entrySet()) {
-//                dataMap.put(entry.getKey(), IOUtil.toData(entry.getValue()));
+                dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
             }
             return dataMap;
         }

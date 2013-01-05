@@ -18,38 +18,50 @@ package com.hazelcast.queue;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
- * @ali 12/24/12
+ * @ali 1/4/13
  */
-public class QueueEventFilter implements EventFilter, DataSerializable {
+public class SerializableCollectionContainer implements DataSerializable {
 
-    boolean includeValue;
+    private Collection<Data> collection;
 
-    public QueueEventFilter() {
+    public SerializableCollectionContainer() {
     }
 
-    public QueueEventFilter(boolean includeValue) {
-        this.includeValue = includeValue;
+    public SerializableCollectionContainer(Collection<Data> collection) {
+        this.collection = collection;
     }
 
-    public boolean isIncludeValue() {
-        return includeValue;
-    }
-
-    public boolean eval(Object arg) {
-        return false;
+    public Collection<Data> getCollection() {
+        return collection;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(includeValue);
+        if (collection == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(collection.size());
+        for (Data data : collection) {
+            out.writeData(data);
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        includeValue = in.readBoolean();
+        int size = in.readInt();
+        if (size == -1) {
+            return;
+        }
+        collection = new ArrayList<Data>(size);
+        for (int i = 0; i < size; i++) {
+            collection.add(in.readData());
+        }
     }
 }

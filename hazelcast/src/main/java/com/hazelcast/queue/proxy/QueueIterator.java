@@ -29,12 +29,12 @@ public class QueueIterator<E> implements Iterator<E> {
     final Iterator<Data> iter;
     final SerializationService serializationService;
 
-    final boolean isData;
+    final boolean binary;
 
-    public QueueIterator(Iterator<Data> iter, SerializationService serializationService, boolean isData) {
+    public QueueIterator(Iterator<Data> iter, SerializationService serializationService, boolean binary) {
         this.iter = iter;
         this.serializationService = serializationService;
-        this.isData = isData;
+        this.binary = binary;
     }
 
     public boolean hasNext() {
@@ -43,7 +43,7 @@ public class QueueIterator<E> implements Iterator<E> {
 
     public E next() {
         Data data = iter.next();
-        if (isData){
+        if (binary){
             return (E) data;
         }
         return (E) serializationService.toObject(data);

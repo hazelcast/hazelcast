@@ -64,13 +64,12 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        data.writeData(out);
+        out.writeData(data);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        data = new Data();
-        data.readData(in);
+        data = in.readData();
     }
 
     public boolean shouldNotify() {

@@ -51,7 +51,7 @@ public class QueueItem implements DataSerializable {
 
     public Data getData() {
         if (data == null){
-            data = container.getData(itemId);
+            data = container.getDataFromMap(itemId);
         }
         return data;
     }

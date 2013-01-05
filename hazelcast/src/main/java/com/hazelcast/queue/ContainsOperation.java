@@ -47,7 +47,7 @@ public class ContainsOperation extends QueueOperation {
         super.writeInternal(out);
         out.writeInt(dataList.size());
         for (Data data: dataList){
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -56,9 +56,7 @@ public class ContainsOperation extends QueueOperation {
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
         for (int i=0; i<size; i++){
-            Data data = new Data();
-            data.readData(in);
-            dataList.add(data);
+            dataList.add(in.readData());
         }
     }
 }
