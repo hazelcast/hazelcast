@@ -1543,6 +1543,6 @@ public abstract class BaseManager {
     }
 
     long getOperationTimeout(long timeout) {
-        return timeout < 0 ? maxOperationTimeout : timeout;
+        return timeout <= 0 ? maxOperationTimeout : timeout;
     }
 }
