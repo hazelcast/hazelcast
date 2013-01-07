@@ -44,6 +44,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
     final private String name;
     final NearCache<K, V> nearCache;
+    private static String PROP_CLIENT_NEAR_CACHE_CONFIG_ENABLED = "hazelcast.client.near.cache.enabled";
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
@@ -51,8 +52,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         Config config = (Config) proxyHelper.doOp(ClusterOperation.GET_CONFIG, null, null);
         MapConfig mapConfig = config.getMapConfig(name);
         NearCacheConfig ncc = mapConfig.getNearCacheConfig();
-        nearCache = (ncc != null) ? new GuavaNearCacheImpl<K, V>(ncc, this) : null;
-        if (ncc != null) {
+
+        boolean nearCacheEnabled = "true".equalsIgnoreCase(System.getProperty(PROP_CLIENT_NEAR_CACHE_CONFIG_ENABLED, "false"));
+        nearCache = (nearCacheEnabled && ncc != null) ? new GuavaNearCacheImpl<K, V>(ncc, this) : null;
+        if (nearCache != null) {
             if (ncc.isInvalidateOnChange()) {
                 addEntryListener(new EntryListener<K, V>() {
                     public void entryAdded(EntryEvent<K, V> kvEntryEvent) {
