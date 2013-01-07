@@ -22,6 +22,7 @@ import com.hazelcast.collection.processor.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
@@ -31,7 +32,7 @@ import java.io.IOException;
 /**
  * @ali 1/1/13
  */
-public class CollectionOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation {
+public class CollectionOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation, IdentifiedDataSerializable {
 
     EntryProcessor processor;
 
@@ -82,5 +83,9 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         processor = in.readObject();
+    }
+
+    public int getId() {
+        return DataSerializerCollectionHook.COLLECTION_OPERATION;
     }
 }

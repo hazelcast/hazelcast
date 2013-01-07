@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.io.IOException;
 /**
  * @ali 12/11/12
  */
-public class OfferBackupOperation extends QueueOperation implements BackupOperation {
+public class OfferBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 
     private Data data;
 
@@ -51,5 +52,9 @@ public class OfferBackupOperation extends QueueOperation implements BackupOperat
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         data = in.readData();
+    }
+
+    public int getId() {
+        return DataSerializerQueueHook.OFFER_BACKUP;
     }
 }

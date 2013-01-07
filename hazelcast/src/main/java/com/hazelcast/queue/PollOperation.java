@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
@@ -25,7 +26,7 @@ import com.hazelcast.spi.WaitSupport;
 /**
  * @ali 12/6/12
  */
-public class PollOperation extends QueueTimedOperation implements WaitSupport, Notifier {
+public class PollOperation extends QueueTimedOperation implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
     public PollOperation() {
     }
@@ -70,5 +71,9 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
 
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
+    }
+
+    public int getId() {
+        return DataSerializerQueueHook.POLL;
     }
 }

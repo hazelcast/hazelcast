@@ -16,12 +16,13 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 
 /**
  * @ali 12/11/12
  */
-public class PollBackupOperation extends QueueOperation implements BackupOperation {
+public class PollBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 
     public PollBackupOperation() {
     }
@@ -33,5 +34,9 @@ public class PollBackupOperation extends QueueOperation implements BackupOperati
     public void run() throws Exception {
         getContainer().pollBackup();
         response = Boolean.TRUE;
+    }
+
+    public int getId() {
+        return DataSerializerQueueHook.POLL_BACKUP;
     }
 }
