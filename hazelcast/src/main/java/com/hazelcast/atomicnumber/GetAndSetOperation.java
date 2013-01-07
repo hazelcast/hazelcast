@@ -13,11 +13,11 @@ public class GetAndSetOperation extends AtomicNumberBackupAwareOperation {
 
     private long returnValue;
 
-    public GetAndSetOperation(){
+    public GetAndSetOperation() {
         super();
     }
 
-    public GetAndSetOperation(String name, long newValue){
+    public GetAndSetOperation(String name, long newValue) {
         super(name);
         this.newValue = newValue;
     }
@@ -52,6 +52,6 @@ public class GetAndSetOperation extends AtomicNumberBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name,newValue);
+        return new SetBackupOperation(name, newValue);
     }
 }

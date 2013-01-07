@@ -17,7 +17,6 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.exception.TransactionException;
 
@@ -27,6 +26,7 @@ import java.io.IOException;
 
 public class PrepareOperation extends AbstractOperation {
     String txnId = null;
+    Object response = null;
 
     public PrepareOperation(String txnId) {
         this.txnId = txnId;
@@ -37,13 +37,16 @@ public class PrepareOperation extends AbstractOperation {
 
     public void run() {
         TransactionalService txnalService = (TransactionalService) getService();
-        ResponseHandler responseHandler = getResponseHandler();
         try {
             txnalService.prepare(txnId, getPartitionId());
-            responseHandler.sendResponse(null);
         } catch (TransactionException e) {
-            responseHandler.sendResponse(e);
+            response = e;
         }
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     public void writeInternal(DataOutput out) throws IOException {

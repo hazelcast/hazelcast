@@ -44,10 +44,13 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -83,6 +86,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
 
+        // todo make this 1 second configurable
+        nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
 
@@ -204,8 +209,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         try {
             nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception e) {
-            throw new TransactionException(e);
+        } catch (Exception ignored) {
+            //commit can never fail
         }
     }
 
@@ -264,7 +269,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
-
     public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
@@ -281,12 +285,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
-
         String source = nodeEngine.getNode().address.toString();
         final SerializerRegistry serializerRegistry = nodeEngine.getNode().hazelcastInstance.getSerializerRegistry();
         Member callerMember = nodeEngine.getClusterService().getMember(caller);
         EntryEvent event = new DataAwareEntryEvent(callerMember, eventType, source, dataKey, dataValue, dataOldValue, false, serializerRegistry);
-
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }

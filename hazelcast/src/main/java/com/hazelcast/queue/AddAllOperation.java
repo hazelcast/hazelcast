@@ -21,13 +21,12 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitSupport;
-import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @ali 12/20/12
@@ -35,12 +34,12 @@ import java.util.*;
 
 public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private List<Data> dataList;
+    private Collection<Data> dataList;
 
     public AddAllOperation() {
     }
 
-    public AddAllOperation(String name, List<Data> dataList) {
+    public AddAllOperation(String name, Collection<Data> dataList) {
         super(name);
         this.dataList = dataList;
     }

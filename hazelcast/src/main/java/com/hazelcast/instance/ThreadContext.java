@@ -106,10 +106,6 @@ public final class ThreadContext {
         return getCallContext().getTransaction();
     }
 
-    public long getTxnId() {
-        return getCallContext().getTxnId();
-    }
-
     public HazelcastInstanceImpl getCurrentInstance() {
         return currentInstance;
     }

@@ -49,6 +49,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     protected boolean prepareTransaction() {
+        System.out.println("Put txn " + txnId);
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
             return true;

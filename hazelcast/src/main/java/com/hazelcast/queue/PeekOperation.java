@@ -16,8 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.exception.RetryableException;
-
 /**
  * User: ali
  * Date: 11/23/12

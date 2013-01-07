@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.SerializerRegistry;
 import com.hazelcast.nio.serialization.TypeSerializer;
@@ -32,6 +33,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceProxy;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -122,7 +124,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return getOrCreateInstance(Prefix.MULTIMAP + name);
+        return (MultiMap<K, V>) getServiceProxy(MultiMapService.class, name);
     }
 
     public ILock getLock(Object key) {
@@ -135,7 +137,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Transaction getTransaction() {
-        return null;
+        return new TransactionImpl(this);
     }
 
     public IdGenerator getIdGenerator(final String name) {

@@ -20,7 +20,6 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.queue.QueueItem;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -39,6 +38,11 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public LocalQueueStats getLocalQueueStats() {
+        try {
+            System.out.println(queueService.getContainer(name, false).size());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
@@ -69,6 +73,11 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public E take() throws InterruptedException {
         return poll(-1, TimeUnit.MILLISECONDS);
+    }
+
+    public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        final Data data = pollInternal(timeUnit.toMillis(timeout));
+        return IOUtil.toObject(data);
     }
 
     public int remainingCapacity() {
@@ -111,10 +120,6 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         return res;
     }
 
-    public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        final Data data = pollInternal(timeUnit.toMillis(timeout));
-        return IOUtil.toObject(data);
-    }
 
     public E poll() {
         try {
@@ -142,7 +147,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public Iterator<E> iterator() {
-        return new QueueIterator<E>(listInternal().iterator());
+        return new QueueIterator<E>(listInternal().iterator(), false);
     }
 
     public Object[] toArray() {
@@ -176,11 +181,11 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean removeAll(Collection<?> objects) {
-        return compareCollectionInternal(getDataList(objects), false);
+        return compareAndRemove(getDataList(objects), false);
     }
 
     public boolean retainAll(Collection<?> objects) {
-        return compareCollectionInternal(getDataList(objects), true);
+        return compareAndRemove(getDataList(objects), true);
     }
 
     public String getName() {
@@ -197,9 +202,6 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public InstanceType getInstanceType() {
         return InstanceType.QUEUE;
-    }
-
-    public void destroy() {
     }
 
     public Object getId() {

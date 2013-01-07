@@ -27,6 +27,7 @@ import java.io.IOException;
 
 public class CommitOperation extends AbstractOperation {
     String txnId = null;
+    private Object response = null;
 
     public CommitOperation(String txnId) {
         this.txnId = txnId;
@@ -37,13 +38,16 @@ public class CommitOperation extends AbstractOperation {
 
     public void run() {
         TransactionalService txnalService = (TransactionalService) getService();
-        ResponseHandler responseHandler = getResponseHandler();
         try {
             txnalService.commit(txnId, getPartitionId());
-            responseHandler.sendResponse(null);
         } catch (TransactionException e) {
-            responseHandler.sendResponse(e);
+            response = e;
         }
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override

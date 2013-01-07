@@ -24,19 +24,19 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * @ali 12/20/12
  */
 public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
 
-    List<Data> dataList;
+    Collection<Data> dataList;
 
     public AddAllBackupOperation() {
     }
 
-    public AddAllBackupOperation(String name, List<Data> dataList) {
+    public AddAllBackupOperation(String name, Collection<Data> dataList) {
         super(name);
         this.dataList = dataList;
     }

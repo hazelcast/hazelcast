@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.queue.QueueService;
@@ -68,9 +69,10 @@ class ServiceManager {
             if (servicesConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeEngine));
-                registerService(QueueService.NAME, new QueueService(nodeEngine));
+                registerService(QueueService.QUEUE_SERVICE_NAME, new QueueService(nodeEngine));
                 registerService(AtomicNumberService.NAME, new AtomicNumberService());
                 registerService(TopicService.NAME, new TopicService());
+                registerService(MultiMapService.MULTI_MAP_SERVICE_NAME, new MultiMapService(nodeEngine));
                 // TODO: add other services
                 // ...
                 // ...

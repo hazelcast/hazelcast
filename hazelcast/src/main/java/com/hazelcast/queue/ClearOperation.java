@@ -20,11 +20,8 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.exception.RetryableException;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @ali 12/6/12

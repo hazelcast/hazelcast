@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.DataInput;

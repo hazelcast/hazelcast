@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DefaultProxyFactory implements ProxyFactory {
 
     private final HazelcastInstanceImpl instance;
-    private final TransactionFactory transactionFactory = new TransactionFactory();
 
     public DefaultProxyFactory(HazelcastInstanceImpl instance) {
         super();
@@ -78,22 +77,4 @@ public class DefaultProxyFactory implements ProxyFactory {
 //        return new ExecutorServiceProxy(factory.node, name);
 //    }
 
-    public TransactionImpl createTransaction() {
-        return transactionFactory.newTransaction();
-    }
-
-//    public void checkProxy(ProxyKey proxyKey) {
-//    }
-
-    private class TransactionFactory {
-        final AtomicLong ids = new AtomicLong(0);
-
-        TransactionImpl newTransaction() {
-            return new TransactionImpl(instance, newTransactionId());
-        }
-
-        long newTransactionId() {
-            return ids.incrementAndGet();
-        }
-    }
 }

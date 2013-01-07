@@ -45,6 +45,4 @@ public interface ProxyFactory {
 //    IdGeneratorProxy createIdGeneratorProxy(String name);
 //
 //    ExecutorService createExecutorServiceProxy(String name);
-
-    TransactionImpl createTransaction();
 }
