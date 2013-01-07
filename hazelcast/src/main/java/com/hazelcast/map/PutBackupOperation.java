@@ -18,15 +18,18 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class PutBackupOperation extends PutOperation {
+public class PutBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
 
     Data dataValue = null;
     long ttl = -1;
@@ -35,12 +38,6 @@ public class PutBackupOperation extends PutOperation {
         super(name, dataKey);
         this.ttl = ttl;
         this.dataValue = dataValue;
-    }
-
-    public PutBackupOperation(String name, TTLAwareOperation op) {
-        super(name, op.getKey());
-        this.ttl = op.ttl;
-        this.dataValue = op.getValue();
     }
 
     public PutBackupOperation() {
@@ -56,9 +53,7 @@ public class PutBackupOperation extends PutOperation {
             recordStore.getRecords().put(dataKey, record);
         } else {
             record.setValueData(dataValue);
-//777            record.setTtl(ttl);
         }
-//777        record.setActive(true);
     }
 
     @Override
@@ -73,6 +68,16 @@ public class PutBackupOperation extends PutOperation {
         super.readInternal(in);
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
+    }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,17 +27,16 @@ public class ObjectRecord extends AbstractRecord {
 
     private volatile Object value;
 
-    public ObjectRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
+    public ObjectRecord(long id, Data keyData, Object value, long ttl, long maxIdleMillis) {
         super(id, keyData);
-        this.value = IOUtil.toObject(valueData);
+        this.value = value;
     }
 
     public Data getValueData() {
-        return IOUtil.toData(value);
+        return null;
     }
 
     public void setValueData(Data dataValue) {
-        value = IOUtil.toObject(dataValue);
     }
 
     public Object getValue() {
@@ -61,8 +61,6 @@ public class ObjectRecord extends AbstractRecord {
         super.readData(in);
         keyData = new Data();
         keyData.readData(in);
-        Data valueData = new Data();
-        valueData.readData(in);
-        value = IOUtil.toObject(valueData);
+        value = in.readObject();
     }
 }

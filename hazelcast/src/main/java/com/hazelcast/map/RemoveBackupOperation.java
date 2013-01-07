@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.impl.Record;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 

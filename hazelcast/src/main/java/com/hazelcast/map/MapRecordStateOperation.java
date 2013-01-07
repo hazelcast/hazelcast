@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.RecordState;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 
 public class MapRecordStateOperation extends LockAwareOperation implements BackupAwareOperation {

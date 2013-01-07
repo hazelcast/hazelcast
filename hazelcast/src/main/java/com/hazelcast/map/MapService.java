@@ -25,10 +25,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.ExecutorThreadFactory;
-import com.hazelcast.impl.DataAwareEntryEvent;
-import com.hazelcast.impl.DefaultRecord;
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.RecordState;
+import com.hazelcast.impl.*;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.MapGetHandler;
@@ -46,15 +43,12 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EntryEvent, EntryListener>, ClientProtocolService {
+        TransactionalService, RemoteService, EventPublishingService<Data, EntryListener>, ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
@@ -285,12 +279,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
         String source = nodeEngine.getNode().address.toString();
-        Member callerMember = nodeEngine.getClusterService().getMember(caller);
-        EntryEvent event = new DataAwareEntryEvent(callerMember, eventType, source, dataKey, dataValue,
-                dataOldValue, false, nodeEngine.getSerializationService());
+        EventData event = new EventData(source, caller,  dataKey, dataValue,
+                dataOldValue, eventType);
 
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, toData(event));
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, toData(event.cloneWithoutValues()));
     }
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
@@ -303,7 +296,28 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getEventService().deregisterListener(MAP_SERVICE_NAME, mapName, registrationId);
     }
 
-    public void dispatchEvent(EntryEvent event, EntryListener listener) {
+    private Data toData(Object obj) {
+        return nodeEngine.getSerializationService().toData(obj);
+    }
+
+    private Object toObject(Data data) {
+        return nodeEngine.getSerializationService().toObject(data);
+    }
+
+    public void dispatchEvent(Data data, EntryListener listener) {
+        EventData eventData = (EventData) nodeEngine.toObject(data);
+
+        Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
+        EntryEvent event = null;
+
+        if(eventData.getDataOldValue() == null) {
+            event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataNewValue()) );
+        }
+        else {
+            event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataOldValue()), toObject(eventData.getDataNewValue()) );
+        }
+
+
         switch (event.getEventType()) {
             case ADDED:
                 listener.entryAdded(event);

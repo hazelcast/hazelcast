@@ -98,8 +98,9 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean containsValue(Data dataValue) {
         for (Record record : records.values()) {
-            Object value = mapService.getNodeEngine().toObject(dataValue);
-            if (record.getValue().equals(value))
+            Object value = toObject(dataValue);
+            Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
+            if (recordValue.equals(value))
                 return true;
         }
         return false;
@@ -186,6 +187,15 @@ public class DefaultRecordStore implements RecordStore {
         return oldValueData;
     }
 
+    private Object toObject(Data dataKey) {
+        return mapService.getNodeEngine().toObject(dataKey);
+    }
+
+    private Data toData(Object oldValue) {
+        return mapService.getNodeEngine().toData(oldValue);
+    }
+
+
     public boolean evict(Data dataKey) {
         return records.remove(dataKey) != null;
     }
@@ -221,7 +231,7 @@ public class DefaultRecordStore implements RecordStore {
                 Object key = toObject(dataKey);
                 Object value = mapInfo.getStore().load(key);
                 if (value != null) {
-                    result = mapService.getNodeEngine().toData(value);
+                    result = toData(value);
                     record = mapService.createRecord(name, dataKey, result, -1);
                     records.put(dataKey, record);
                 }
@@ -309,7 +319,8 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Data oldValue, Data newValue) {
         Record record = records.get(dataKey);
         boolean replaced = false;
-        if (record != null && record.getValue().equals(mapService.getNodeEngine().toObject(oldValue))) {
+        Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
+        if (recordValue != null && recordValue.equals(toObject(oldValue))) {
             record.setValueData(newValue);
             replaced = true;
         } else {
