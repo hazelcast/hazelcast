@@ -61,11 +61,11 @@ public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation impleme
     }
 
     public int getSyncBackupCount() {
-        return recordStore.getBackupCount();
+        return mapService.getMapInfo(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {
-        return recordStore.getAsyncBackupCount();
+        return mapService.getMapInfo(name).getAsyncBackupCount();
     }
 
     public Operation getBackupOperation() {

@@ -195,7 +195,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
                 return (S) ((RemoteService) service).getProxy(name);
             }
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException(serviceClass.getName());
     }
 
     public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, Object... params) {

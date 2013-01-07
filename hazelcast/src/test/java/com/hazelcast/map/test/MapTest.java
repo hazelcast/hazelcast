@@ -34,75 +34,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class MapTest {
+public class MapTest extends BaseTest {
 
-    private static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
-    private static int instanceCount = 2;
-    private Random rand = new Random(Clock.currentTimeMillis());
-    private static Config cfg = new Config();
-
-
-    @AfterClass
-    public static void shutdown() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
-    @BeforeClass
-    public static void init() throws Exception {
-        startInstances();
-    }
-
-    private HazelcastInstance getInstance() {
-        return instances.get(rand.nextInt(instanceCount));
-    }
-
-    private HazelcastInstance getInstance(int index) {
-        return instances.get(index);
-    }
-
-    private void newInstance() {
-        instanceCount++;
-        instances.add(Hazelcast.newHazelcastInstance(cfg));
-    }
-
-    private void newInstanceMany(int count) {
-        for (int i = 0; i < count; i++) {
-            instanceCount++;
-            instances.add(Hazelcast.newHazelcastInstance(cfg));
-        }
-    }
-
-    private void removeInstance() {
-        instanceCount--;
-        instances.remove(0).getLifecycleService().shutdown();
-    }
-
-    private void removeInstance(int index) {
-        instanceCount--;
-        instances.remove(index).getLifecycleService().shutdown();
-    }
-
-    private void removeInstanceMany(int count) {
-        for (int i = 0; i < count; i++) {
-            instanceCount--;
-            instances.remove(0).getLifecycleService().shutdown();
-        }
-    }
-
-    private void startInstances(int instanceCount) {
-        MapTest.instanceCount = instanceCount;
-        startInstances();
-    }
-
-
-    private static void startInstances() {
-        Hazelcast.shutdownAll();
-        instances.clear();
-        for (int i = 0; i < instanceCount; i++) {
-            instances.add(Hazelcast.newHazelcastInstance(cfg));
-        }
-    }
 
     @Test
     public void testMapPutAndGet() {
@@ -147,7 +80,7 @@ public class MapTest {
 
     @Test
     public void testMapEvict() {
-        IMap<String, String> map = getInstance().getMap("testMapRemove");
+        IMap<String, String> map = getInstance().getMap("testMapEvict");
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -323,7 +256,7 @@ public class MapTest {
 
     @Test
     public void testMapLockAndUnlockAndTryLock() throws InterruptedException {
-        final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlock");
+        final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlockAndTryLock");
         map.lock("key1");
         map.lock("key2");
         map.lock("key3");
@@ -410,7 +343,7 @@ public class MapTest {
 
     @Test
     public void testGetPutRemoveAsync() {
-        final IMap<Object, Object> map = getInstance().getMap("testGetAsync");
+        final IMap<Object, Object> map = getInstance().getMap("testGetPutRemoveAsync");
         Future<Object> ff = map.putAsync(1, 1);
         try {
             assertEquals(null, ff.get());
@@ -595,12 +528,11 @@ public class MapTest {
     public void testPutWithTtl() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testPutWithTtl");
         map.put("key", "value", 1, TimeUnit.SECONDS);
+        assertEquals("value", map.get("key"));
         Thread.sleep(3000);
         assertNull(map.get("key"));
 
     }
-
-
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {
 //        IMap<String, String> map = getInstance().getMap("testGetPutAndSizeWhileStartShutdown");

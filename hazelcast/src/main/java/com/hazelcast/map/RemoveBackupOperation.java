@@ -16,11 +16,8 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
@@ -29,18 +26,14 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class PutBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class RemoveBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
 
-    Data dataValue = null;
-    long ttl = -1;
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
+    public RemoveBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
-        this.ttl = ttl;
-        this.dataValue = dataValue;
     }
 
-    public PutBackupOperation() {
+    public RemoveBackupOperation() {
     }
 
     public void run() {
@@ -48,26 +41,9 @@ public class PutBackupOperation extends AbstractNamedKeyBasedOperation implement
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Record record = recordStore.getRecords().get(dataKey);
-        if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl);
-            recordStore.getRecords().put(dataKey, record);
-        } else {
-            record.setValueData(dataValue);
+        if (record != null) {
+            recordStore.getRecords().remove(dataKey);
         }
-    }
-
-    @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        IOUtil.writeNullableData(out, dataValue);
-        out.writeLong(ttl);
-    }
-
-    @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        dataValue = IOUtil.readNullableData(in);
-        ttl = in.readLong();
     }
 
     @Override
@@ -78,10 +54,5 @@ public class PutBackupOperation extends AbstractNamedKeyBasedOperation implement
     @Override
     public boolean returnsResponse() {
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "PutBackupOperation{}";
     }
 }

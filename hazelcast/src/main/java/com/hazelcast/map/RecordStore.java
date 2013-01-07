@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 
 import com.hazelcast.impl.Record;
+import com.hazelcast.impl.RecordState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
@@ -52,7 +53,7 @@ public interface RecordStore {
 
     ConcurrentMap<Data, Record> getRecords();
 
-    void removeAll(List<Data> keys);
+    void evictAll(List<Data> keys);
 
     Set<Data> keySet();
 
@@ -63,10 +64,6 @@ public interface RecordStore {
     boolean isLocked(Data dataKey);
 
     boolean lock(Data key, Address caller, int threadId, long ttl);
-
-    int getBackupCount();
-
-    int getAsyncBackupCount();
 
     boolean containsValue(Data testValue);
 
@@ -81,4 +78,7 @@ public interface RecordStore {
     boolean unlock(Data dataKey, Address caller, int threadId);
 
     Collection<Data> values();
+
+    MapInfo getMapInfo();
+
 }

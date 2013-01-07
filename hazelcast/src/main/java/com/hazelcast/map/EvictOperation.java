@@ -88,11 +88,11 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public int getAsyncBackupCount() {
-        return recordStore.getAsyncBackupCount();
+        return mapService.getMapInfo(name).getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return recordStore.getBackupCount();
+        return mapService.getMapInfo(name).getBackupCount();
     }
 
     public boolean shouldBackup() {

@@ -74,8 +74,8 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
             } else {
                 record.setValueData(dataValue);
             }
-            record.setActive(true);
-            record.setDirty(true);
+//  777          record.setActive(true);
+//  777          record.setDirty(true);
         } else if (backupOpType == BackupOpType.REMOVE) {
             Record record = mapPartition.getRecords().remove(dataKey);
             if (record != null) {
@@ -90,7 +90,6 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
                 if (lock != null) {
                     lock.unlock(caller, threadId);
                 }
-                lock.lock(caller, threadId, ttl);
             }
         }
     }

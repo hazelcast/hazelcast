@@ -27,8 +27,8 @@ public final class DefaultRecord extends AbstractRecord {
     private volatile Data valueData;
     protected volatile Object valueObject;
 
-    public DefaultRecord(long id, Data keyData, Data valueData, long ttl, long maxIdleMillis) {
-        super(id, keyData, ttl, maxIdleMillis);
+    public DefaultRecord(long id, Data keyData, Data valueData) {
+        super(id, keyData);
         this.valueData = valueData;
     }
 

@@ -28,16 +28,13 @@ import java.util.concurrent.ConcurrentMap;
 
 
 public class PartitionContainer {
-    // todo remove config why it is necessary here?
-    private final Config config;
     private final MapService mapService;
     final PartitionInfo partitionInfo;
     final ConcurrentMap<String, DefaultRecordStore> maps = new ConcurrentHashMap<String, DefaultRecordStore>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
 
 
-    public PartitionContainer(Config config, final MapService mapService, final PartitionInfo partitionInfo) {
-        this.config = config;
+    public PartitionContainer(final MapService mapService, final PartitionInfo partitionInfo) {
         this.mapService = mapService;
         this.partitionInfo = partitionInfo;
     }
@@ -52,18 +49,14 @@ public class PartitionContainer {
         return mapService;
     }
 
-    MapConfig getMapConfig(String name) {
-        return config.findMatchingMapConfig(name.substring(2));
-    }
-
     public RecordStore getRecordStore(String name) {
-        DefaultRecordStore mapPartition = maps.get(name);
-        if (mapPartition == null) {
-            mapPartition = new DefaultRecordStore(name, PartitionContainer.this);
-            final DefaultRecordStore currentMapPartition = maps.putIfAbsent(name, mapPartition);
-            mapPartition = currentMapPartition == null ? mapPartition : currentMapPartition;
+        DefaultRecordStore recordStore = maps.get(name);
+        if (recordStore == null) {
+            recordStore = new DefaultRecordStore(name, PartitionContainer.this);
+            final DefaultRecordStore currentRecordStore = maps.putIfAbsent(name, recordStore);
+            recordStore = currentRecordStore == null ? recordStore : currentRecordStore;
         }
-        return mapPartition;
+        return recordStore;
     }
 
     public TransactionLog getTransactionLog(String txnId) {
@@ -105,8 +98,8 @@ public class PartitionContainer {
                 } else {
                     record.setValueData(txnLogItem.getValue());
                 }
-                record.setActive(true);
-                record.setDirty(true);
+//         777       record.setActive(true);
+//                record.setDirty(true);
             }
         }
     }
@@ -115,7 +108,7 @@ public class PartitionContainer {
     public int getMaxBackupCount() {
         int max = 1;
         for (DefaultRecordStore mapPartition : maps.values()) {
-            max = Math.max(max, mapPartition.getTotalBackupCount());
+//        777    max = Math.max(max, mapPartition.get);
         }
         return max;
     }

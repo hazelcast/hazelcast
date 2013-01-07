@@ -31,17 +31,7 @@ public interface Record extends DataSerializable, Map.Entry, Cloneable {
 
     Data getKey();
 
-    void setActive(boolean b);
-
-    boolean isActive();
-
-    void setDirty(boolean b);
-
-    boolean isDirty();
-
     Record clone();
 
-    long getTtl();
-
-    void setTtl(long ttl);
+    RecordState getState();
 }

@@ -16,10 +16,8 @@
 
 package com.hazelcast.topic.test;
 
-import apple.awt.CFileDialog;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
 import org.junit.*;

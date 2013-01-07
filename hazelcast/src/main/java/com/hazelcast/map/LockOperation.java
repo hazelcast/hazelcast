@@ -76,16 +76,14 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
 
 
     public int getSyncBackupCount() {
-        return recordStore.getBackupCount();
+        return mapService.getMapInfo(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {
-        return recordStore.getAsyncBackupCount();
+        return mapService.getMapInfo(name).getAsyncBackupCount();
     }
 
     public Operation getBackupOperation() {
-        GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
-        backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
-        return backupOp;
+        return new LockBackupOperation(name, dataKey, null, ttl);
     }
 }

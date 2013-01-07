@@ -16,9 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -37,24 +34,16 @@ public class DefaultRecordStore implements RecordStore {
     final PartitionContainer partitionContainer;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
-    final MapLoader loader;
-    final MapStore store;
-    final long writeDelayMillis;
-    final int backupCount;
-    final int asyncBackupCount;
+    final MapInfo mapInfo;
+
     final MapService mapService;
 
     public DefaultRecordStore(String name, PartitionContainer partitionContainer) {
         this.name = name;
         this.partitionInfo = partitionContainer.partitionInfo;
         this.partitionContainer = partitionContainer;
-        loader = null;
-        store = null;
-        MapConfig mapConfig = partitionContainer.getMapConfig(name);
-        backupCount = mapConfig.getBackupCount();
-        asyncBackupCount = mapConfig.getAsyncBackupCount();
-        writeDelayMillis = mapConfig.getMapStoreConfig() == null ? 0 : mapConfig.getMapStoreConfig().getWriteDelaySeconds() * 1000;
         mapService = partitionContainer.getMapService();
+        this.mapInfo = mapService.getMapInfo(name);
     }
 
     public LockInfo getOrCreateLock(Data key) {
@@ -74,16 +63,8 @@ public class DefaultRecordStore implements RecordStore {
         locks.remove(key);
     }
 
-    public int getBackupCount() {
-        return backupCount;
-    }
-
-    public int getAsyncBackupCount() {
-        return asyncBackupCount;
-    }
-
-    public int getTotalBackupCount() {
-        return backupCount + asyncBackupCount;
+    public MapInfo getMapInfo() {
+        return mapInfo;
     }
 
     public boolean canRun(LockAwareOperation op) {
@@ -95,9 +76,9 @@ public class DefaultRecordStore implements RecordStore {
         return records;
     }
 
-    public void removeAll(List<Data> keys) {
+    public void evictAll(List<Data> keys) {
         for (Data key : keys) {
-            remove(key);
+            evict(key);
         }
     }
 
@@ -117,8 +98,9 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean containsValue(Data dataValue) {
         for (Record record : records.values()) {
-            Object value = mapService.getNodeEngine().toObject(dataValue);
-            if (record.getValue().equals(value))
+            Object value = toObject(dataValue);
+            Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
+            if (recordValue.equals(value))
                 return true;
         }
         return false;
@@ -157,18 +139,19 @@ public class DefaultRecordStore implements RecordStore {
         Data oldValueData = null;
         boolean removed = false;
         if (record == null) {
-            if (loader != null) {
-                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
-                oldValueData = mapService.getNodeEngine().toData(oldValue);
+            if (mapInfo.getStore() != null) {
+                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
+                oldValueData = toData(oldValue);
             }
         } else {
             oldValueData = record.getValueData();
             records.remove(dataKey);
             removed = true;
         }
-        if (oldValueData != null && store != null && writeDelayMillis == 0) {
+        if (oldValueData != null && mapInfo.getStore() != null && mapInfo.getWriteDelayMillis() == 0) {
             Object key = record.getKey();
-            store.delete(key);
+            mapInfo.getStore().delete(key);
+            mapStoreDelete(record);
             removed = true;
         }
         return removed;
@@ -190,20 +173,28 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Data oldValueData = null;
         if (record == null) {
-            if (loader != null) {
-                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
-                oldValueData = mapService.getNodeEngine().toData(oldValue);
+            if (mapInfo.getStore() != null) {
+                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
+                oldValueData = toData(oldValue);
             }
         } else {
             oldValueData = record.getValueData();
             records.remove(dataKey);
         }
-        if (oldValueData != null && store != null && writeDelayMillis == 0) {
-            Object key = record.getKey();
-            store.delete(key);
+        if (oldValueData != null) {
+            mapStoreDelete(record);
         }
         return oldValueData;
     }
+
+    private Object toObject(Data dataKey) {
+        return mapService.getNodeEngine().toObject(dataKey);
+    }
+
+    private Data toData(Object oldValue) {
+        return mapService.getNodeEngine().toData(oldValue);
+    }
+
 
     public boolean evict(Data dataKey) {
         return records.remove(dataKey) != null;
@@ -214,9 +205,9 @@ public class DefaultRecordStore implements RecordStore {
         Data oldValueData = null;
         boolean removed = false;
         if (record == null) {
-            if (loader != null) {
-                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
-                oldValueData = mapService.getNodeEngine().toData(oldValue);
+            if (mapInfo.getStore() != null) {
+                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
+                oldValueData = toData(oldValue);
             }
             if (oldValueData == null)
                 return false;
@@ -226,10 +217,7 @@ public class DefaultRecordStore implements RecordStore {
 
         if (testValue.equals(oldValueData)) {
             records.remove(dataKey);
-            if (store != null && writeDelayMillis == 0) {
-                Object key = record.getKey();
-                store.delete(key);
-            }
+            mapStoreDelete(record);
             removed = true;
         }
         return removed;
@@ -239,11 +227,11 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Data result = null;
         if (record == null) {
-            if (loader != null) {
-                Object key = mapService.getNodeEngine().toObject(dataKey);
-                Object value = loader.load(key);
+            if (mapInfo.getStore() != null) {
+                Object key = toObject(dataKey);
+                Object value = mapInfo.getStore().load(key);
                 if (value != null) {
-                    result = mapService.getNodeEngine().toData(value);
+                    result = toData(value);
                     record = mapService.createRecord(name, dataKey, result, -1);
                     records.put(dataKey, record);
                 }
@@ -251,8 +239,8 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             result = record.getValueData();
         }
-        // check ıf record has expired or removed but waiting delay millis
-        if (record != null && !record.isActive()) {
+        // check if record has expired or removed but waiting delay millis
+        if (record != null && record.getState().isExpired()) {
             return null;
         }
         return result;
@@ -262,24 +250,57 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Data oldValueData = null;
         if (record == null) {
-            if (loader != null) {
-                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
-                oldValueData = mapService.getNodeEngine().toData(oldValue);
+            if (mapInfo.getStore() != null) {
+                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
+                oldValueData = toData(oldValue);
             }
             record = mapService.createRecord(name, dataKey, dataValue, ttl);
+            if (ttl <= 0 && mapInfo.getMapConfig().getTimeToLiveSeconds() > 0) {
+                record.getState().updateTtlExpireTime(mapInfo.getMapConfig().getTimeToLiveSeconds());
+                mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            }
+            if (mapInfo.getMapConfig().getMaxIdleSeconds() > 0) {
+                record.getState().updateIdleExpireTime(mapInfo.getMapConfig().getMaxIdleSeconds());
+                mapService.scheduleOperation(name, dataKey, record.getState().getIdleExpireTime());
+            }
             records.put(dataKey, record);
         } else {
             oldValueData = record.getValueData();
             record.setValueData(dataValue);
-            record.setTtl(ttl);
         }
-        record.setActive(true);
-        if (ttl > 0)
-            mapService.notifyMapTtl(name);
-        if (store != null && writeDelayMillis == 0) {
-            store.store(record.getKey(), record.getValue());
+
+        if (ttl > 0) {
+            record.getState().updateTtlExpireTime(ttl);
+            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
         }
+        mapStoreWrite(record);
         return oldValueData;
+    }
+
+    private void mapStoreWrite(Record record) {
+        if (mapInfo.getStore() != null) {
+            if (mapInfo.getWriteDelayMillis() <= 0) {
+                mapInfo.getStore().store(toObject(record.getKey()), record.getValue());
+            } else {
+                if (record.getState().getStoreTime() <= 0) {
+                    record.getState().updateStoreTime(mapInfo.getWriteDelayMillis());
+                    mapService.scheduleOperation(name, record.getKey(), record.getState().getStoreTime());
+                }
+            }
+        }
+    }
+
+    private void mapStoreDelete(Record record) {
+        if (mapInfo.getStore() != null) {
+            if (mapInfo.getWriteDelayMillis() == 0) {
+                mapInfo.getStore().delete(toObject(record.getKey()));
+            } else {
+                if (record.getState().getStoreTime() <= 0) {
+                    record.getState().updateStoreTime(mapInfo.getWriteDelayMillis());
+                    mapService.scheduleOperation(name, record.getKey(), record.getState().getStoreTime());
+                }
+            }
+        }
     }
 
     public Data replace(Data dataKey, Data dataValue) {
@@ -291,30 +312,23 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             return null;
         }
-        record.setActive(true);
-        if (store != null && writeDelayMillis == 0) {
-            store.store(record.getKey(), record.getValue());
-        }
+        mapStoreWrite(record);
         return oldValueData;
     }
-
 
     public boolean replace(Data dataKey, Data oldValue, Data newValue) {
         Record record = records.get(dataKey);
         boolean replaced = false;
-        if (record != null && record.getValue().equals(mapService.getNodeEngine().toObject(oldValue))) {
+        Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
+        if (recordValue != null && recordValue.equals(toObject(oldValue))) {
             record.setValueData(newValue);
             replaced = true;
         } else {
             return false;
         }
-        record.setActive(true);
-        if (store != null && writeDelayMillis == 0) {
-            store.store(record.getKey(), record.getValue());
-        }
+        mapStoreWrite(record);
         return replaced;
     }
-
 
     public void set(Data dataKey, Data dataValue, long ttl) {
         Record record = records.get(dataKey);
@@ -323,16 +337,15 @@ public class DefaultRecordStore implements RecordStore {
             records.put(dataKey, record);
         } else {
             record.setValueData(dataValue);
-            record.setTtl(ttl);
         }
-        record.setActive(true);
-        if (ttl > 0)
-            mapService.notifyMapTtl(name);
-        if (store != null && writeDelayMillis == 0) {
-            store.store(record.getKey(), record.getValue());
-        }
-    }
 
+        if (ttl > 0) {
+            record.getState().updateTtlExpireTime(ttl);
+            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+        }
+
+        mapStoreWrite(record);
+    }
 
     public void putTransient(Data dataKey, Data dataValue, long ttl) {
         Record record = records.get(dataKey);
@@ -341,11 +354,12 @@ public class DefaultRecordStore implements RecordStore {
             records.put(dataKey, record);
         } else {
             record.setValueData(dataValue);
-            record.setTtl(ttl);
         }
-        record.setActive(true);
-        if (ttl > 0)
-            mapService.notifyMapTtl(name);
+
+        if (ttl > 0) {
+            record.getState().updateTtlExpireTime(ttl);
+            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+        }
     }
 
     public boolean tryPut(Data dataKey, Data dataValue, long ttl) {
@@ -356,12 +370,12 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             record.setValueData(dataValue);
         }
-        if (ttl > 0)
-            mapService.notifyMapTtl(name);
-        record.setActive(true);
-        if (store != null && writeDelayMillis == 0) {
-            store.store(record.getKey(), record.getValue());
+
+        if (ttl > 0) {
+            record.getState().updateTtlExpireTime(ttl);
+            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
         }
+        mapStoreWrite(record);
         return true;
     }
 
@@ -370,20 +384,19 @@ public class DefaultRecordStore implements RecordStore {
         Data oldValueData = null;
         boolean absent = true;
         if (record == null) {
-            if (loader != null) {
-                Object oldValue = loader.load(mapService.getNodeEngine().toObject(dataKey));
-                oldValueData = mapService.getNodeEngine().toData(oldValue);
+            if (mapInfo.getStore() != null) {
+                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
+                oldValueData = toData(oldValue);
                 absent = oldValueData == null;
             }
             if (absent) {
                 record = mapService.createRecord(name, dataKey, dataValue, ttl);
                 records.put(dataKey, record);
-                record.setActive(true);
-                if (store != null && writeDelayMillis == 0) {
-                    store.store(record.getKey(), record.getValue());
+                if (ttl > 0) {
+                    record.getState().updateTtlExpireTime(ttl);
+                    mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
                 }
-                if (ttl > 0)
-                    mapService.notifyMapTtl(name);
+                mapStoreWrite(record);
             }
         } else {
             oldValueData = record.getValueData();
