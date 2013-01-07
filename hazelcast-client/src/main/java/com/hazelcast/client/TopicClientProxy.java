@@ -24,7 +24,6 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.protocol.Command;
 
 import static com.hazelcast.client.PacketProxyHelper.check;
-import static com.hazelcast.nio.IOUtil.toData;
 
 public class TopicClientProxy<T> implements ITopic {
     private final String name;
@@ -43,7 +42,7 @@ public class TopicClientProxy<T> implements ITopic {
 
     public void publish(Object message) {
         check(message);
-        protocolProxyHelper.doFireNForget(Command.TPUBLISH, new String[]{getName(), "noreply"}, toData(message));
+        protocolProxyHelper.doFireNForget(Command.TPUBLISH, new String[]{getName(), "noreply"}, protocolProxyHelper.toData(message));
     }
 
     public void addMessageListener(MessageListener messageListener) {

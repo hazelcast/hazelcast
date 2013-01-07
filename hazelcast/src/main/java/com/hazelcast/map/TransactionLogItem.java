@@ -16,12 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class TransactionLogItem implements DataSerializable {
@@ -42,7 +42,7 @@ public class TransactionLogItem implements DataSerializable {
     public TransactionLogItem() {
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         key.writeData(out);
         IOUtil.writeNullableData(out, value);
@@ -50,7 +50,7 @@ public class TransactionLogItem implements DataSerializable {
         out.writeBoolean(removed);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         key = new Data();
         key.readData(in);

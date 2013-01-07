@@ -16,12 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
-public class GetOperation extends AbstractNamedKeyBasedOperation {
+public class GetOperation extends AbstractNamedKeyBasedOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
 
@@ -52,5 +51,9 @@ public class GetOperation extends AbstractNamedKeyBasedOperation {
     public String toString() {
         return "GetOperation{" +
                '}';
+    }
+
+    public int getId() {
+        return DataSerializerMapHook.GET;
     }
 }

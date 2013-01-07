@@ -25,9 +25,10 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
@@ -99,6 +100,14 @@ public class NodeEngineImpl implements NodeEngine {
         return eventService;
     }
 
+    public SerializationService getSerializationService() {
+        return node.serializationService;
+    }
+
+    public SerializationContext getSerializationContext() {
+        return node.serializationService.getSerializationContext();
+    }
+
     public OperationService getOperationService() {
         return operationService;
     }
@@ -108,13 +117,18 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public Data toData(final Object object) {
-        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-        return IOUtil.toData(object);
+//        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
+//        return IOUtil.toData(object);
+        return node.serializationService.toData(object);
     }
 
     public Object toObject(final Object object) {
-        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-        return IOUtil.toObject(object);
+//        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
+//        return IOUtil.toObject(object);
+        if (object instanceof Data) {
+            return node.serializationService.toObject((Data) object);
+        }
+        return object;
     }
 
     public TransactionImpl getTransaction() {

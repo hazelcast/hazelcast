@@ -16,48 +16,57 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.logging.CallState;
-import com.hazelcast.logging.CallStateAware;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassDefinitionBinaryProxy;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
 
 import java.nio.ByteBuffer;
 
-public class Packet implements SocketWritable, CallStateAware {
+public class Packet implements SocketWritable {
 
     public static final byte PACKET_VERSION = 1;
 
     public static final int HEADER_OP = 0;
     public static final int HEADER_EVENT = 1;
-//    public static final int HEADER_RESERVED_2 = 2;
-//    public static final int HEADER_RESERVED_3 = 3;
-//    public static final int HEADER_RESERVED_4 = 4;
-//    public static final int HEADER_RESERVED_5 = 5;
-//    public static final int HEADER_RESERVED_6 = 6;
 
-    private static final byte ST_HEADER = 0x1;
-    private static final byte ST_SIZE = 0x2;
-    private static final byte ST_VALUE = 0x4;
+    private transient boolean stHeader;
+    private transient boolean stType;
+    private transient boolean stClassId;
+    private transient boolean stVersion;
+    private transient boolean stClassDefSize;
+    private transient boolean stClassDef;
+    private transient boolean stSize;
+    private transient boolean stValue;
+    private transient boolean stHash;
 
     private byte header;
-    private DataHolder value;
+    private ByteBuffer buffer;
+    private int classId = 0;
+    private int version = 0;
+    private int classDefSize = 0;
+    private Data value;
 
-    private transient byte status = 0x0;
     private transient Connection conn;
-    private transient CallState callState = null;
+    private transient SerializationContext context;
 
-    public Packet() {
+    public Packet(SerializationContext context) {
+        this.context = context;
     }
 
-    public Packet(Data value) {
-        this(value, null);
+    public Packet(Data value, SerializationContext context) {
+        this(value, null, context);
     }
 
-    public Packet(Data value, Connection conn) {
-        this.value = value == null || value.size() == 0 ? null : new DataHolder(value);
+    public Packet(Data value, Connection conn, SerializationContext context) {
+        this.value = value;
         this.conn = conn;
+        this.context = context;
     }
 
     public Data getValue() {
-        return value.toData();
+        value.postConstruct(context);
+        return value;
     }
 
     public Connection getConn() {
@@ -72,7 +81,7 @@ public class Packet implements SocketWritable, CallStateAware {
         if (b)
             header |= 1 << bit;
         else
-            header &= ~ 1 << bit;
+            header &= ~1 << bit;
     }
 
     public boolean isHeaderSet(int bit) {
@@ -85,75 +94,179 @@ public class Packet implements SocketWritable, CallStateAware {
 
     public final boolean writeTo(ByteBuffer destination) {
         // TODO: think about packet versions
-        if (!isStatusSet(ST_HEADER)) {
+        if (!stHeader) {
             if (!destination.hasRemaining()) {
                 return false;
             }
             destination.put(header);
-            setStatus(ST_HEADER);
+            stHeader = true;
         }
-
-        if (!isStatusSet(ST_SIZE)) {
+        if (!stType) {
             if (destination.remaining() < 4) {
                 return false;
             }
-            destination.putInt(value != null ? value.size() : 0);
-            setStatus(ST_SIZE);
+            destination.putInt(value.type);
+            stType = true;
         }
-
-        if (isStatusSet(ST_SIZE) && !isStatusSet(ST_VALUE)) {
-            if (value != null) {
-                IOUtil.copyToHeapBuffer(value.buffer, destination);
-                if (value.buffer.hasRemaining()) {
-                    return false;
-                }
+        if (!stClassId) {
+            if (destination.remaining() < 4) {
+                return false;
             }
-            setStatus(ST_VALUE);
+            final int classId = value.cd == null ? Data.NO_CLASS_ID : value.cd.getClassId();
+            destination.putInt(classId);
+            if (classId == Data.NO_CLASS_ID) {
+                stVersion = true;
+                stClassDefSize = true;
+                stClassDef = true;
+            }
+            stClassId = true;
+        }
+        if (!stVersion) {
+            if (destination.remaining() < 4) {
+                return false;
+            }
+            final int version = value.cd.getVersion();
+            destination.putInt(version);
+            stVersion = true;
+        }
+        if (!stClassDefSize) {
+            if (destination.remaining() < 4) {
+                return false;
+            }
+            final byte[] binary = value.cd.getBinary();
+            classDefSize = binary == null ? 0 : binary.length;
+            destination.putInt(classDefSize);
+            stClassDefSize = true;
+            if (classDefSize == 0) {
+                stClassDef = true;
+            } else {
+                buffer = ByteBuffer.wrap(binary);
+            }
+        }
+        if (!stClassDef) {
+            IOUtil.copyToHeapBuffer(buffer, destination);
+            if (buffer.hasRemaining()) {
+                return false;
+            }
+            stClassDef = true;
+        }
+        if (!stSize) {
+            if (destination.remaining() < 4) {
+                return false;
+            }
+            final int size = value.size();
+            destination.putInt(size);
+            stSize = true;
+            if (size <= 0) {
+                stValue = true;
+            } else {
+                buffer = ByteBuffer.wrap(value.buffer);
+            }
+        }
+        if (!stValue) {
+            IOUtil.copyToHeapBuffer(buffer, destination);
+            if (buffer.hasRemaining()) {
+                return false;
+            }
+            stValue = true;
+        }
+        if (!stHash) {
+            if (destination.remaining() < 4) {
+                return false;
+            }
+            destination.putInt(value.getPartitionHash());
+            stHash = true;
         }
         return true;
     }
 
     public final boolean readFrom(ByteBuffer source) {
         // TODO: think about packet versions
-        if (!isStatusSet(ST_HEADER)) {
+        if (!stHeader) {
             if (!source.hasRemaining()) {
                 return false;
             }
             header = source.get();
-            setStatus(ST_HEADER);
+            stHeader = true;
         }
-
-        if (!isStatusSet(ST_SIZE)) {
+        if (value == null) {
+            value = new Data();
+        }
+        if (!stType) {
+            if (source.remaining() < 4) {
+                return false;
+            }
+            value.type = source.getInt();
+            stType = true;
+        }
+        if (!stClassId) {
+            if (source.remaining() < 4) {
+                return false;
+            }
+            classId = source.getInt();
+            stClassId = true;
+            if (classId == Data.NO_CLASS_ID) {
+                stVersion = true;
+                stClassDefSize = true;
+                stClassDef = true;
+            }
+        }
+        if (!stVersion) {
+            if (source.remaining() < 4) {
+                return false;
+            }
+            version = source.getInt();
+            stVersion = true;
+        }
+        if (!stClassDef) {
+            ClassDefinition cd;
+            if ((cd = context.lookup(classId, version)) != null) {
+                value.cd = cd;
+                stClassDefSize = true;
+                stClassDef = true;
+            } else {
+                if (!stClassDefSize) {
+                    if (source.remaining() < 4) {
+                        return false;
+                    }
+                    classDefSize = source.getInt();
+                    stClassDefSize = true;
+                }
+                if (!stClassDef) {
+                    if (source.remaining() < classDefSize) {
+                        return false;
+                    }
+                    final byte[] binary = new byte[classDefSize];
+                    source.get(binary);
+                    value.cd = new ClassDefinitionBinaryProxy(classId, version, binary);
+                    stClassDef = true;
+                }
+            }
+        }
+        if (!stSize) {
             if (source.remaining() < 4) {
                 return false;
             }
             final int size = source.getInt();
-            if (value == null || value.size() < size) {
-                value = new DataHolder(size);
-            }
-            setStatus(ST_SIZE);
+            buffer = ByteBuffer.allocate(size);
+            stSize = true;
         }
-
-        if (isStatusSet(ST_SIZE) && !isStatusSet(ST_VALUE)) {
-            IOUtil.copyToHeapBuffer(source, value.buffer);
-            if (value.shouldRead()) {
+        if (!stValue) {
+            IOUtil.copyToHeapBuffer(source, buffer);
+            if (buffer.hasRemaining()) {
                 return false;
             }
-            value.postRead();
-            setStatus(ST_VALUE);
+            buffer.flip();
+            value.buffer = buffer.array();
+            stValue = true;
+        }
+        if (!stHash) {
+            if (source.remaining() < 4) {
+                return false;
+            }
+            value.setPartitionHash(source.getInt());
+            stHash = true;
         }
         return true;
-    }
-
-    private void setStatus(byte st) {
-        status |= st;
-    }
-
-    private boolean isStatusSet(byte st) {
-        return (status & st) != 0;
-    }
-
-    public CallState getCallState() {
-        return callState;
     }
 }

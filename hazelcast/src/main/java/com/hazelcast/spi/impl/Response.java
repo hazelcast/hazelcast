@@ -16,17 +16,16 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
-public final class Response extends AbstractOperation implements ResponseOperation {
+public final class Response extends AbstractOperation implements ResponseOperation, IdentifiedDataSerializable {
 
     private Object result = null;
     private boolean exception = false;
@@ -52,7 +51,7 @@ public final class Response extends AbstractOperation implements ResponseOperati
         final long callId = getCallId();
         final Object response;
         if (exception) {
-            response = toObject(result);
+            response = nodeEngine.toObject(result);
         } else {
             response = result;
         }
@@ -76,25 +75,25 @@ public final class Response extends AbstractOperation implements ResponseOperati
         return result;
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         final boolean isData = result instanceof Data;
         out.writeBoolean(isData);
         if (isData) {
             ((Data) result).writeData(out);
         } else {
-            IOUtil.writeObject(out, result);
+            IOUtil.writeNullableObject(out, result);
         }
         out.writeBoolean(exception);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         final boolean isData = in.readBoolean();
         if (isData) {
             Data data = new Data();
             data.readData(in);
             result = data;
         } else {
-            result = IOUtil.readObject(in);
+            result = IOUtil.readNullableObject(in);
         }
         exception = in.readBoolean();
     }
@@ -105,5 +104,9 @@ public final class Response extends AbstractOperation implements ResponseOperati
                "result=" + getResult() +
                ", exception=" + exception +
                '}';
+    }
+
+    public int getId() {
+        return DataSerializerInitHook.RESPONSE;
     }
 }

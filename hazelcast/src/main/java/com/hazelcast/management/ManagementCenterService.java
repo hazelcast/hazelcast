@@ -16,6 +16,7 @@
 
 package com.hazelcast.management;
 
+import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
@@ -25,16 +26,14 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.ascii.rest.HttpCommand;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.DetectDeadlockRequest.Edge;
 import com.hazelcast.management.DetectDeadlockRequest.Vertex;
 import com.hazelcast.management.LockInformationCallable.MapLockState;
-import com.hazelcast.monitor.impl.MemberStateImpl;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.TimedMemberState;
+import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.core.PartitionService;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -248,7 +247,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         connection.setReadTimeout(1000);
                         final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
                         TimedMemberState ts = getTimedMemberState();
-                        ts.writeData(out);
+//                        ts.writeData(out);
                         out.flush();
                         connection.getInputStream();
                     } catch (Exception e) {
@@ -296,7 +295,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 DataOutputStream output = new DataOutputStream(outputStream);
                 output.writeInt(taskId);
                 output.writeInt(request.getType());
-                request.writeResponse(ManagementCenterService.this, output);
+//                request.writeResponse(ManagementCenterService.this, output);
                 connection.getInputStream();
             } catch (Exception e) {
                 logger.log(Level.FINEST, e.getMessage(), e);
@@ -325,7 +324,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         if (taskId > 0 && requestType < consoleRequests.length) {
                             final ConsoleRequest request = consoleRequests[requestType];
                             if (request != null) {
-                                request.readData(input);
+//                                request.readData(input);
                                 sendResponse(taskId, request);
                             }
                         }

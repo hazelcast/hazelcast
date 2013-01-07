@@ -17,7 +17,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.impl.CommandHandler;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;

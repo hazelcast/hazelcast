@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalExecutorOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -83,7 +83,7 @@ public class LocalExecutorOperationStatsImpl extends LocalOperationStatsSupport 
         return maxCompletionTime.get();
     }
 
-    public void writeDataInternal(DataOutput out) throws IOException {
+    public void writeDataInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(executorName);
         out.writeLong(pending.get());
         out.writeLong(started.get());
@@ -94,7 +94,7 @@ public class LocalExecutorOperationStatsImpl extends LocalOperationStatsSupport 
         out.writeLong(maxCompletionTime.get());
     }
 
-    public void readDataInternal(DataInput in) throws IOException {
+    public void readDataInternal(ObjectDataInput in) throws IOException {
         executorName = in.readUTF();
         pending.set(in.readLong());
         started.set(in.readLong());

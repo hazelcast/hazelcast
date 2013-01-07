@@ -16,7 +16,6 @@
 
 package com.hazelcast.ascii.rest;
 
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.ascii.TextCommandService;
 
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
@@ -52,7 +51,7 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
                 } else if (value instanceof String) {
                     command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
                 } else {
-                    command.setResponse(null, ThreadContext.get().toByteArray(value));
+                    command.setResponse(null, textCommandService.toByteArray(value));
                 }
             }
         } else {

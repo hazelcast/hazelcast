@@ -36,8 +36,7 @@ import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.serialization.SerializerRegistry;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
@@ -286,9 +285,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
         String source = nodeEngine.getNode().address.toString();
-        final SerializerRegistry serializerRegistry = nodeEngine.getNode().hazelcastInstance.getSerializerRegistry();
         Member callerMember = nodeEngine.getClusterService().getMember(caller);
-        EntryEvent event = new DataAwareEntryEvent(callerMember, eventType, source, dataKey, dataValue, dataOldValue, false, serializerRegistry);
+        EntryEvent event = new DataAwareEntryEvent(callerMember, eventType, source, dataKey, dataValue,
+                dataOldValue, false, nodeEngine.getSerializationService());
+
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }

@@ -17,13 +17,12 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,22 +69,22 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         return new CompareAndRemoveBackupOperation(name, dataMap.keySet());
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(retain);
         out.writeInt(dataList.size());
         for (Data data : dataList) {
-            IOUtil.writeNullableData(out, data);
+            out.writeData(data);
         }
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         retain = in.readBoolean();
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            dataList.add(IOUtil.readNullableData(in));
+            dataList.add(in.readData());
         }
     }
 

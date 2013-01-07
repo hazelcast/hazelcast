@@ -16,9 +16,10 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class RemoveOperation extends BaseRemoveOperation {
+public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
     public RemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey, txnId);
@@ -44,5 +45,9 @@ public class RemoveOperation extends BaseRemoveOperation {
     @Override
     public String toString() {
         return "RemoveOperation{" + name + "}";
+    }
+
+    public int getId() {
+        return DataSerializerMapHook.REMOVE;
     }
 }

@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.Address;
-
 import java.util.EventObject;
 
 /**

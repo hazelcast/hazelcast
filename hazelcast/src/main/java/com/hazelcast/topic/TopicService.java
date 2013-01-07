@@ -16,7 +16,6 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
@@ -26,7 +25,6 @@ import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

@@ -17,35 +17,31 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.*;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class Operation implements DataSerializable {
 
     //serialized
-    private String serviceName = null;
+    private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
     private long callId = -1;
     private boolean validateTarget = true;
-
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
 
     // injected
-    private transient NodeEngine nodeEngine = null;
+    private transient NodeEngine nodeEngine;
     private transient Object service;
     private transient Address caller;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
+    private transient long startTime;
 
     public abstract void beforeRun() throws Exception;
 
@@ -160,6 +156,15 @@ public abstract class Operation implements DataSerializable {
         return responseHandler;
     }
 
+    public final long getStartTime() {
+        return startTime;
+    }
+
+    // Accessed using OperationAccessor
+    final void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
     public final long getInvocationTime() {
         return invocationTime;
     }
@@ -178,7 +183,7 @@ public abstract class Operation implements DataSerializable {
         this.callTimeout = callTimeout;
     }
 
-    public final void writeData(DataOutput out) throws IOException {
+    public final void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeNullableString(out, serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
@@ -189,7 +194,7 @@ public abstract class Operation implements DataSerializable {
         writeInternal(out);
     }
 
-    public final void readData(DataInput in) throws IOException {
+    public final void readData(ObjectDataInput in) throws IOException {
         serviceName = IOUtil.readNullableString(in);
         partitionId = in.readInt();
         replicaIndex = in.readInt();
@@ -200,7 +205,7 @@ public abstract class Operation implements DataSerializable {
         readInternal(in);
     }
 
-    protected abstract void writeInternal(DataOutput out) throws IOException;
+    protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
 
-    protected abstract void readInternal(DataInput in) throws IOException;
+    protected abstract void readInternal(ObjectDataInput in) throws IOException;
 }

@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalAtomicNumberOperationStatsImpl extends LocalOperationStatsSupport
@@ -28,12 +28,12 @@ public class LocalAtomicNumberOperationStatsImpl extends LocalOperationStatsSupp
     OperationStat modified = new OperationStat(0, 0);
     OperationStat nonModified = new OperationStat(0, 0);
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         modified.writeData(out);
         nonModified.writeData(out);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         (modified = new OperationStat()).readData(in);
         (nonModified = new OperationStat()).readData(in);
     }

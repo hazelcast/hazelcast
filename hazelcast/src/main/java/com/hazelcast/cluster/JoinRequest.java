@@ -20,10 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.NodeType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.security.Credentials;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class JoinRequest extends AbstractClusterOperation implements JoinOperation {
@@ -61,7 +61,7 @@ public class JoinRequest extends AbstractClusterOperation implements JoinOperati
         cm.handleJoinRequest(this);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         packetVersion = in.readByte();
         buildNumber = in.readInt();
         boolean hasTo = in.readBoolean();
@@ -75,13 +75,13 @@ public class JoinRequest extends AbstractClusterOperation implements JoinOperati
         config = new Config();
         config.readData(in);
         uuid = in.readUTF();
-        credentials = (Credentials) IOUtil.readObject(in);
+        credentials = IOUtil.readNullableObject(in);
         if (credentials != null) {
             credentials.setEndpoint(address.getHost());
         }
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeByte(packetVersion);
         out.writeInt(buildNumber);
         boolean hasTo = (to != null);
@@ -93,7 +93,7 @@ public class JoinRequest extends AbstractClusterOperation implements JoinOperati
         out.writeInt(nodeType.getValue());
         config.writeData(out);
         out.writeUTF(uuid);
-        IOUtil.writeObject(out, credentials);
+        IOUtil.writeNullableObject(out, credentials);
     }
 
     public void setCredentials(Credentials credentials) {

@@ -17,10 +17,10 @@
 package com.hazelcast.client;
 
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class ClientServiceException implements DataSerializable {
@@ -37,7 +37,7 @@ public class ClientServiceException implements DataSerializable {
         return throwable;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         boolean isDs = throwable instanceof DataSerializable;
         out.writeBoolean(isDs);
         if (isDs) {
@@ -47,7 +47,7 @@ public class ClientServiceException implements DataSerializable {
             out.writeUTF(throwable.getMessage());
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         boolean isDs = in.readBoolean();
         if (isDs) {
             String className = in.readUTF();

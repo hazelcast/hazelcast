@@ -16,28 +16,17 @@
 
 package com.hazelcast.topic.proxy;
 
-import com.hazelcast.cluster.FinalizeJoinOperation;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceProxy;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
-import sun.jvmstat.perfdata.monitor.CountedTimerTask;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.security.spec.DSAPublicKeySpec;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 /**

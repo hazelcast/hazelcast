@@ -16,16 +16,12 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.toObject;
-
-@SuppressWarnings("SynchronizeOnThis")
 public final class DefaultRecord extends AbstractRecord {
 
     private volatile Data valueData;
@@ -41,8 +37,9 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public Object getValue() {
-        if (valueObject == null)
-            valueObject = toObject(valueData);
+        if (valueObject == null) {
+//            valueObject = toObject(valueData);
+        }
         return valueObject;
     }
 
@@ -62,14 +59,14 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         keyData.writeData(out);
         valueData.writeData(out);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         keyData = new Data();
         keyData.readData(in);

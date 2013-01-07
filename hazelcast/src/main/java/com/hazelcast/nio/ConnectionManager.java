@@ -20,6 +20,8 @@ import com.hazelcast.cluster.BindOperation;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
@@ -85,6 +87,8 @@ public class ConnectionManager {
 
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();  // accessed only in synchronized block
 
+    private final SerializationContext serializationContext;
+
     private Thread socketAcceptorThread; // accessed only in synchronized block
 
     public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
@@ -137,6 +141,11 @@ public class ConnectionManager {
         } else {
             memberSocketInterceptor = null;
         }
+        serializationContext = ioService.getSerializationContext();
+    }
+
+    public SerializationContext getSerializationContext() {
+        return serializationContext;
     }
 
     interface SocketChannelWrapperFactory {
@@ -237,8 +246,8 @@ public class ConnectionManager {
         connection.setEndPoint(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
-        final Data bindData = IOUtil.toData(bind);
-        final Packet packet = new Packet(bindData, connection);
+        final Data bindData = ioService.toData(bind);
+        final Packet packet = new Packet(bindData, connection, ioService.getSerializationContext());
         packet.setHeader(Packet.HEADER_OP, true);
         connection.getWriteHandler().enqueueSocketWritable(packet);
         //now you can send anything...

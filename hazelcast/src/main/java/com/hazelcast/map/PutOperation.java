@@ -16,9 +16,10 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class PutOperation extends BasePutOperation {
+public class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
 
     public PutOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, txnId, ttl);
@@ -39,7 +40,6 @@ public class PutOperation extends BasePutOperation {
         getResponseHandler().sendResponse(null);
     }
 
-
     @Override
     public Object getResponse() {
         return dataOldValue;
@@ -52,5 +52,9 @@ public class PutOperation extends BasePutOperation {
     @Override
     public String toString() {
         return "PutOperation{" + name + "}";
+    }
+
+    public int getId() {
+        return DataSerializerMapHook.PUT;
     }
 }

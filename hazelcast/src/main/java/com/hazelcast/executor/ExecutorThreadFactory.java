@@ -16,9 +16,9 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;

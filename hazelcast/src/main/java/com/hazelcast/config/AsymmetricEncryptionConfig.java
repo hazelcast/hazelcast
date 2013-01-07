@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class AsymmetricEncryptionConfig implements DataSerializable {
@@ -109,7 +109,7 @@ public class AsymmetricEncryptionConfig implements DataSerializable {
                 .toString();
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
         if (enabled) {
             out.writeUTF(algorithm);
@@ -121,7 +121,7 @@ public class AsymmetricEncryptionConfig implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
         if (enabled) {
             algorithm = in.readUTF();

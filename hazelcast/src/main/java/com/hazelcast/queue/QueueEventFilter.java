@@ -16,14 +16,17 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.EventFilter;
 
-import java.io.Serializable;
+import java.io.IOException;
 
 /**
  * @ali 12/24/12
  */
-public class QueueEventFilter implements EventFilter, Serializable {
+public class QueueEventFilter implements EventFilter, DataSerializable {
 
     boolean includeValue;
 
@@ -40,5 +43,13 @@ public class QueueEventFilter implements EventFilter, Serializable {
 
     public boolean eval(Object arg) {
         return false;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(includeValue);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        includeValue = in.readBoolean();
     }
 }

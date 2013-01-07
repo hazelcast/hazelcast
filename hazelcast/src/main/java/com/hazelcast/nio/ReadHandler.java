@@ -16,9 +16,9 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.protocol.SocketProtocolReader;
 import com.hazelcast.util.Clock;
-import com.hazelcast.nio.ascii.SocketTextReader;
 
 import java.io.EOFException;
 import java.nio.ByteBuffer;

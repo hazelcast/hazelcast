@@ -19,10 +19,10 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
@@ -54,13 +54,13 @@ public class MergeClustersOperation extends AbstractClusterOperation {
         node.hazelcastInstance.getLifecycleService().restart();
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         newTargetAddress = new Address();
         newTargetAddress.readData(in);
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         newTargetAddress.writeData(out);
     }

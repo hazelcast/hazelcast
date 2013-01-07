@@ -16,10 +16,9 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.AddressUtil;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -76,7 +75,7 @@ public final class Address implements DataSerializable {
         this.hostSet = address.hostSet;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(port);
         out.write(type);
         if (host != null) {
@@ -88,7 +87,7 @@ public final class Address implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         port = in.readInt();
         type = in.readByte();
         int len = in.readInt();

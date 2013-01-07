@@ -16,12 +16,14 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.Transaction;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
@@ -346,7 +348,7 @@ abstract class MapProxySupport {
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
         Map<Object, Object> res = new HashMap(keys.size());
         for (Data key : keys) {
-            res.put(IOUtil.toObject(key), IOUtil.toObject(getInternal(key)));
+            res.put(nodeEngine.toObject(key), nodeEngine.toObject(getInternal(key)));
         }
         return res;
     }
@@ -361,7 +363,7 @@ abstract class MapProxySupport {
     // todo optimize these
     protected void putAllObjectInternal(final Map<? extends Object, ? extends Object> m) {
         for (Entry<? extends Object, ? extends Object> entry : m.entrySet()) {
-            putInternal(IOUtil.toData(entry.getKey()), IOUtil.toData(entry.getValue()), -1, null);
+            putInternal(nodeEngine.toData(entry.getKey()), nodeEngine.toData(entry.getValue()), -1, null);
         }
     }
 

@@ -16,8 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.impl.DefaultRecord;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 
 public class PutTransientOperation extends BasePutOperation {
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 
 public class ScheduledOperationKey {
     final Data key;

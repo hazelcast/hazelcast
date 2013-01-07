@@ -17,10 +17,10 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,11 +50,12 @@ public class QueueMigrationOperation extends AbstractOperation {
             QueueContainer container = entry.getValue();
             QueueConfig conf = getNodeEngine().getConfig().getQueueConfig(name);
             container.setConfig(conf);
+            container.setSerializationService(getNodeEngine().getSerializationService());
             service.addContainer(name, container);
         }
     }
 
-    protected void writeInternal(DataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -63,7 +64,7 @@ public class QueueMigrationOperation extends AbstractOperation {
         }
     }
 
-    protected void readInternal(DataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, QueueContainer>(mapSize);
         for (int i = 0; i < mapSize; i++) {

@@ -21,10 +21,10 @@ import com.hazelcast.instance.NodeType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
@@ -54,7 +54,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
     }
 
     @Override
-    public void readInternal(DataInput dis) throws IOException {
+    protected void readInternal(ObjectDataInput dis) throws IOException {
         super.readInternal(dis);
         this.request = dis.readBoolean();
         memberCount = dis.readInt();
@@ -62,7 +62,7 @@ public class JoinInfo extends JoinRequest implements DataSerializable {
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         try {
             super.writeInternal(out);
             out.writeBoolean(isRequest());

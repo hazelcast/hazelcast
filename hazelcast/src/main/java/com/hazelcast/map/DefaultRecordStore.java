@@ -18,7 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
 
 import java.util.ArrayList;
@@ -27,9 +27,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DefaultRecordStore implements RecordStore {
     final String name;
@@ -101,7 +98,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean containsValue(Data dataValue) {
         for (Record record : records.values()) {
-            Object value = toObject(dataValue);
+            Object value = mapService.getNodeEngine().toObject(dataValue);
             if (record.getValue().equals(value))
                 return true;
         }
@@ -224,7 +221,7 @@ public class DefaultRecordStore implements RecordStore {
                 Object key = toObject(dataKey);
                 Object value = mapInfo.getStore().load(key);
                 if (value != null) {
-                    result = toData(value);
+                    result = mapService.getNodeEngine().toData(value);
                     record = mapService.createRecord(name, dataKey, result, -1);
                     records.put(dataKey, record);
                 }
@@ -312,7 +309,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Data oldValue, Data newValue) {
         Record record = records.get(dataKey);
         boolean replaced = false;
-        if (record != null && record.getValue().equals(toObject(oldValue))) {
+        if (record != null && record.getValue().equals(mapService.getNodeEngine().toObject(oldValue))) {
             record.setValueData(newValue);
             replaced = true;
         } else {
@@ -395,5 +392,4 @@ public class DefaultRecordStore implements RecordStore {
         }
         return oldValueData;
     }
-
 }

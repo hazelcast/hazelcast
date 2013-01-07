@@ -18,7 +18,6 @@ package com.hazelcast.atomicnumber;
 
 import com.hazelcast.atomicnumber.proxy.AtomicNumberProxy;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;

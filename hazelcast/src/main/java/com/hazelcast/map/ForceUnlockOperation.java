@@ -16,11 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation, Notifier {
 
@@ -82,7 +80,7 @@ public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation impleme
 
     public Object getNotifiedKey() {
         if (keyObject == null) {
-            keyObject = toObject(dataKey);
+            keyObject = getNodeEngine().toObject(dataKey);
         }
         return new MapWaitKey(getName(), keyObject, "lock");
     }

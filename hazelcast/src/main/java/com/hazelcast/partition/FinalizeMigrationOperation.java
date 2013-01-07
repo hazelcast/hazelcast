@@ -16,14 +16,14 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.MigrationServiceEvent;
 import com.hazelcast.spi.PartitionLevelOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -92,7 +92,7 @@ public class FinalizeMigrationOperation extends AbstractOperation
     }
 
     @Override
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         success = in.readBoolean();
         copyBackReplicaIndex = in.readInt();
@@ -101,7 +101,7 @@ public class FinalizeMigrationOperation extends AbstractOperation
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(success);
         out.writeInt(copyBackReplicaIndex);

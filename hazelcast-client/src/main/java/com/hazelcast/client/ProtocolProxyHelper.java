@@ -18,10 +18,10 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -33,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ProtocolProxyHelper extends ProxyHelper {
     private final String name;
@@ -74,7 +72,8 @@ public class ProtocolProxyHelper extends ProxyHelper {
 
     private Object getSingleObjectFromResponse(Protocol response) {
         if (response!=null && response.buffers != null && response.hasBuffer()) {
-            return IOUtil.toObject(response.buffers[0].array());
+            return client.getSerializationService().toObject(
+                    new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, response.buffers[0].array()));
         } else return null;
     }
 
@@ -168,7 +167,8 @@ public class ProtocolProxyHelper extends ProxyHelper {
         List<E> list = new ArrayList<E>();
         if(protocol.hasBuffer()){
             for(ByteBuffer bb: protocol.buffers){
-                list.add((E)toObject(new Data(bb.array())));
+                list.add((E) client.getSerializationService().toObject(
+                        new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, bb.array())));
             }
         }
         return list;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.util.Clock;
 import com.hazelcast.monitor.LocalInstanceOperationStats;
+import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.List;

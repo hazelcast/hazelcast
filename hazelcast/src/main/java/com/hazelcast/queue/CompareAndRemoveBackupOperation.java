@@ -16,10 +16,10 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,7 +44,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
         response = true;
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(keySet.size());
         for (Long key : keySet) {
@@ -52,7 +52,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
         }
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
         keySet = new HashSet<Long>(size);

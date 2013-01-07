@@ -18,11 +18,11 @@ package com.hazelcast.partition;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 
@@ -119,7 +119,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return completedMigrations;
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         masterTime = in.readLong();
         version = in.readInt();
         int size = in.readInt();
@@ -147,7 +147,7 @@ public class PartitionRuntimeState implements DataSerializable {
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(masterTime);
         out.writeInt(version);
         int memberSize = members.size();
@@ -195,14 +195,14 @@ public class PartitionRuntimeState implements DataSerializable {
         ShortPartitionInfo() {
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(partitionId);
             for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
                 out.writeInt(addressIndexes[i]);
             }
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             partitionId = in.readInt();
             for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
                 addressIndexes[i] = in.readInt();

@@ -22,13 +22,18 @@ import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrentHashSet;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -45,6 +50,7 @@ public class EventServiceImpl implements EventService {
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, EventServiceSegment> segments;
     final ExecutorService eventExecutorService;
+    private final SerializationContext serializationContext;
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -54,6 +60,7 @@ public class EventServiceImpl implements EventService {
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         node.getThreadNamePrefix("event"), node.getConfig().getClassLoader()));
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
+        serializationContext = this.nodeEngine.getSerializationContext();
     }
 
     public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {
@@ -174,8 +181,8 @@ public class EventServiceImpl implements EventService {
             eventExecutorService.execute(new LocalEventDispatcher(serviceName, event, reg.listener));
         } else {
             final Address subscriber = registration.getSubscriber();
-            final Data data = IOUtil.toData(new EventPacket(registration.getId(), serviceName, event));
-            final Packet packet = new Packet(data);
+            final Data data = nodeEngine.toData(new EventPacket(registration.getId(), serviceName, event));
+            final Packet packet = new Packet(data, serializationContext);
             packet.setHeader(Packet.HEADER_EVENT, true);
             // TODO: event publishing requires flow control mechanism!
             nodeEngine.getClusterService().send(packet, subscriber);
@@ -195,11 +202,11 @@ public class EventServiceImpl implements EventService {
                 eventExecutorService.execute(new LocalEventDispatcher(serviceName, event, reg.listener));
             } else {
                 if (eventData == null) {
-                    eventData = IOUtil.toData(event);
+                    eventData = nodeEngine.toData(event);
                 }
                 final Address subscriber = registration.getSubscriber();
-                final Data data = IOUtil.toData(new EventPacket(registration.getId(), serviceName, eventData));
-                final Packet packet = new Packet(data);
+                final Data data = nodeEngine.toData(new EventPacket(registration.getId(), serviceName, eventData));
+                final Packet packet = new Packet(data, serializationContext);
                 packet.setHeader(Packet.HEADER_EVENT, true);
                 // TODO: event publishing requires flow control mechanism!
                 nodeEngine.getClusterService().send(packet, subscriber);
@@ -332,7 +339,7 @@ public class EventServiceImpl implements EventService {
 
         public void run() {
             Data data = packet.getValue();
-            EventPacket eventPacket = IOUtil.toObject(data);
+            EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
             final String serviceName = eventPacket.serviceName;
             EventPublishingService service = nodeEngine.getService(serviceName);
             if (service == null) {
@@ -439,21 +446,21 @@ public class EventServiceImpl implements EventService {
             return result;
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(id);
             out.writeUTF(serviceName);
             out.writeUTF(topic);
             subscriber.writeData(out);
-            IOUtil.writeObject(out, filter);
+            out.writeObject(filter);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             id = in.readUTF();
             serviceName = in.readUTF();
             topic = in.readUTF();
             subscriber = new Address();
             subscriber.readData(in);
-            filter = IOUtil.readObject(in);
+            filter = in.readObject();
         }
 
 
@@ -471,7 +478,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    public static class EventPacket implements DataSerializable {
+    public static class EventPacket implements IdentifiedDataSerializable {
 
         private String id;
         private String serviceName;
@@ -486,16 +493,20 @@ public class EventServiceImpl implements EventService {
             this.serviceName = serviceName;
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(id);
             out.writeUTF(serviceName);
-            IOUtil.writeObject(out, event);
+            out.writeObject(event);
         }
 
-        public void readData(DataInput in) throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             id = in.readUTF();
             serviceName = in.readUTF();
-            event = IOUtil.readObject(in);
+            event = in.readObject();
+        }
+
+        public int getId() {
+            return DataSerializerInitHook.EVENT_PACKET;
         }
     }
 
@@ -503,8 +514,8 @@ public class EventServiceImpl implements EventService {
         public boolean eval(Object arg) {
             return true;
         }
-        public void writeData(DataOutput out) throws IOException {}
-        public void readData(DataInput in) throws IOException {}
+        public void writeData(ObjectDataOutput out) throws IOException {}
+        public void readData(ObjectDataInput in) throws IOException {}
     }
 
     public static class RegistrationOperation extends AbstractOperation {
@@ -535,12 +546,12 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
-        protected void writeInternal(DataOutput out) throws IOException {
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
             registration.writeData(out);
         }
 
         @Override
-        protected void readInternal(DataInput in) throws IOException {
+        protected void readInternal(ObjectDataInput in) throws IOException {
             registration = new Registration();
             registration.readData(in);
         }
@@ -575,13 +586,13 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
-        protected void writeInternal(DataOutput out) throws IOException {
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
             out.writeUTF(topic);
             out.writeUTF(id);
         }
 
         @Override
-        protected void readInternal(DataInput in) throws IOException {
+        protected void readInternal(ObjectDataInput in) throws IOException {
             topic = in.readUTF();
             id = in.readUTF();
         }
@@ -615,7 +626,7 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
-        protected void writeInternal(DataOutput out) throws IOException {
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
             int len = registrations != null ? registrations.size() : 0;
             out.writeInt(len);
@@ -627,7 +638,7 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
-        protected void readInternal(DataInput in) throws IOException {
+        protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
             int len = in.readInt();
             if (len > 0) {

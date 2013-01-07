@@ -16,12 +16,12 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.exception.TransactionException;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class PrepareOperation extends AbstractOperation {
@@ -49,11 +49,11 @@ public class PrepareOperation extends AbstractOperation {
         return response;
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(txnId);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         txnId = in.readUTF();
     }
 }

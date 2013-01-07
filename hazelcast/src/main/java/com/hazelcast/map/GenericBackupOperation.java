@@ -18,16 +18,18 @@ package com.hazelcast.map;
 
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-public class GenericBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
     enum BackupOpType {
         PUT,
@@ -103,7 +105,7 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
@@ -111,10 +113,14 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation imple
     }
 
     @Override
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
         backupOpType = BackupOpType.values()[in.readInt()];
+    }
+
+    public int getId() {
+        return DataSerializerMapHook.GENERIC_BACKUP;
     }
 }

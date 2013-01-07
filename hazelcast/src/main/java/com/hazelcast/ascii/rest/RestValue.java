@@ -16,11 +16,11 @@
 
 package com.hazelcast.ascii.rest;
 
-import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class RestValue implements DataSerializable {
@@ -35,12 +35,12 @@ public class RestValue implements DataSerializable {
         this.contentType = contentType;
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         value = IOUtil.readByteArray(in);
         contentType = IOUtil.readByteArray(in);
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeByteArray(out, value);
         IOUtil.writeByteArray(out, contentType);
     }

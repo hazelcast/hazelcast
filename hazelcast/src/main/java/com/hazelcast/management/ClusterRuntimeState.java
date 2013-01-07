@@ -18,18 +18,17 @@ package com.hazelcast.management;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.impl.Record;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.Clock;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 
@@ -126,7 +125,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     @Override
-    public void readData(final DataInput in) throws IOException {
+    public void readData(final ObjectDataInput in) throws IOException {
         super.readData(in);
         localMemberIndex = in.readInt();
         lockTotalNum = in.readInt();
@@ -145,7 +144,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     @Override
-    public void writeData(final DataOutput out) throws IOException {
+    public void writeData(final ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeInt(localMemberIndex);
         out.writeInt(lockTotalNum);

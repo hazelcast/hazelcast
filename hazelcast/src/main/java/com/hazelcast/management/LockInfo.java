@@ -16,10 +16,10 @@
 
 package com.hazelcast.management;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -65,7 +65,7 @@ public class LockInfo implements DataSerializable {
         return waitingThreadCount;
     }
 
-    public void readData(final DataInput in) throws IOException {
+    public void readData(final ObjectDataInput in) throws IOException {
         name = in.readUTF();
         key = in.readUTF();
         ownerMemberIndex = in.readInt();
@@ -73,7 +73,7 @@ public class LockInfo implements DataSerializable {
         waitingThreadCount = in.readInt();
     }
 
-    public void writeData(final DataOutput out) throws IOException {
+    public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(key);
         out.writeInt(ownerMemberIndex);

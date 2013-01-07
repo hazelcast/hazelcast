@@ -21,7 +21,8 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.transaction.TransactionImpl;
 
@@ -35,6 +36,8 @@ public interface NodeEngine {
     ExecutionService getExecutionService();
 
     EventService getEventService();
+
+    SerializationService getSerializationService();
 
     Address getThisAddress();
 
@@ -54,7 +57,7 @@ public interface NodeEngine {
 
     Data toData(Object object);
 
-    Object toObject(Object object);
+    <T> T toObject(Object object);
 
     TransactionImpl getTransaction();
 }

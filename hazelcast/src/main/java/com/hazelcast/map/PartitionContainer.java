@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
 
 import java.util.concurrent.ConcurrentHashMap;

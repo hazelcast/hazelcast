@@ -16,12 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
@@ -65,7 +65,7 @@ public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
     }
 
     @Override
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
@@ -77,7 +77,7 @@ public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
     }
 
     @Override
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();

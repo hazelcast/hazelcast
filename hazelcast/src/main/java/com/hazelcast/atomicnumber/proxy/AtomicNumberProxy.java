@@ -17,19 +17,11 @@
 package com.hazelcast.atomicnumber.proxy;
 
 import com.hazelcast.atomicnumber.*;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.AtomicNumber;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
-import com.hazelcast.monitor.impl.LocalAtomicNumberStatsImpl;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceProxy;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import org.mockito.cglib.core.TinyBitSet;
 
 import java.util.concurrent.Future;
 

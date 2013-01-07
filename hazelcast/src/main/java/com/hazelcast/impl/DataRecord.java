@@ -16,11 +16,10 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class DataRecord extends AbstractRecord implements Record {
@@ -41,24 +40,25 @@ public class DataRecord extends AbstractRecord implements Record {
     }
 
     public Object getValue() {
-        return IOUtil.toObject(valueData);
+//        return IOUtil.toObject(valueData);
+        return null;
     }
 
     public Object setValue(Object o) {
         Object old = getValue();
-        valueData = IOUtil.toData(o);
+//        valueData = IOUtil.toData(o);
         return old;
     }
 
     @Override
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         keyData.writeData(out);
         valueData.writeData(out);
     }
 
     @Override
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         keyData = new Data();
         keyData.readData(in);

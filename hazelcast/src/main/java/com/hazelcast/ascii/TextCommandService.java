@@ -16,8 +16,8 @@
 
 package com.hazelcast.ascii;
 
-import com.hazelcast.instance.Node;
 import com.hazelcast.ascii.memcache.Stats;
+import com.hazelcast.instance.Node;
 
 public interface TextCommandService {
 
@@ -56,4 +56,6 @@ public interface TextCommandService {
     Stats getStats();
 
     Node getNode();
+
+    byte[] toByteArray(Object value);
 }

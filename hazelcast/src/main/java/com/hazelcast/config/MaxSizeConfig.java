@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class MaxSizeConfig implements DataSerializable {
@@ -31,12 +31,12 @@ public class MaxSizeConfig implements DataSerializable {
     int size = MapConfig.DEFAULT_MAX_SIZE;
     String maxSizePolicy = POLICY_CLUSTER_WIDE_MAP_SIZE;
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         size = in.readInt();
         maxSizePolicy = in.readUTF();
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(size);
         out.writeUTF(maxSizePolicy);
     }

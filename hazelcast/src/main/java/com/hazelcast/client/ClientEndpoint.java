@@ -18,24 +18,22 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.*;
 import com.hazelcast.instance.CallContext;
-import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Data;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ClientEndpoint implements ConnectionListener, Client {
     final Connection conn;

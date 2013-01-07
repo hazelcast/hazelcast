@@ -17,47 +17,41 @@
 package com.hazelcast.management;
 
 import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DetectDeadlockRequest implements ConsoleRequest {
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_DETECT_DEADLOCK;
     }
 
-    public Object readResponse(DataInput in) throws IOException {
+    public Object readResponse(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         List<Edge> list = new ArrayList<Edge>(size);
         for (int i = 0; i < size; i++) {
-            Data d = new Data();
-            d.readData(in);
-            Edge e = (Edge) toObject(d);
+            Edge e = in.readObject();
             list.add(e);
         }
         return list;
     }
 
-    public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         List<Edge> list = mcs.detectDeadlock();
         dos.writeInt(list == null ? 0 : list.size());
         for (Edge edge : list) {
-            Data data = toData(edge);
-            data.writeData(dos);
+            dos.writeObject(edge);
         }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
     }
 
     public static class Edge implements java.io.Serializable {

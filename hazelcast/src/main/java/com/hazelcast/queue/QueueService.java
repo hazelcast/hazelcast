@@ -19,7 +19,6 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.queue.proxy.DataQueueProxy;
@@ -54,7 +53,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name), fromBackup);
+            container = new QueueContainer(nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
+                    nodeEngine.getSerializationService(), fromBackup);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
@@ -133,7 +133,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
-        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, IOUtil.toObject(event.data), nodeEngine.getCluster().getMember(event.caller));
+        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, nodeEngine.toObject(event.data),
+                nodeEngine.getCluster().getMember(event.caller));
         if (event.eventType.equals(ItemEventType.ADDED)){
             listener.itemAdded(itemEvent);
         }

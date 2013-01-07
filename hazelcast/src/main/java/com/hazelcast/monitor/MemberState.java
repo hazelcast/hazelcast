@@ -17,7 +17,7 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.util.List;
 import java.util.Map;

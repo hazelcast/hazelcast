@@ -18,9 +18,9 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -54,7 +54,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     public LocalMapStatsImpl() {
     }
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(lastAccessTime.get());
         out.writeLong(hits.get());
         out.writeLong(ownedEntryCount);
@@ -71,7 +71,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         out.writeLong(dirtyEntryCount);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         lastAccessTime.set(in.readLong());
         hits.set(in.readLong());
         ownedEntryCount = in.readLong();

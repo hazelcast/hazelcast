@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.Clock;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.Clock;
 
 import java.util.logging.Level;
 

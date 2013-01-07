@@ -18,10 +18,10 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOperationStats>
@@ -44,7 +44,7 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         this.aveAge = aveAge;
     }
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(ownedItemCount);
         out.writeInt(backupItemCount);
         out.writeLong(minAge);
@@ -52,7 +52,7 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         out.writeLong(aveAge);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         ownedItemCount = in.readInt();
         backupItemCount = in.readInt();
         minAge = in.readLong();

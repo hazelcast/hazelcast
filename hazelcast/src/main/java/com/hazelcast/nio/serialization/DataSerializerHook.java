@@ -23,6 +23,7 @@ import java.util.Map;
  */
 public interface DataSerializerHook {
 
-    Map<String, DataSerializableFactory> createFactoryMap();
+    Map<Integer, DataSerializableFactory> getFactories();
 
 }
+

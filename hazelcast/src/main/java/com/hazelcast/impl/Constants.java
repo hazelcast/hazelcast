@@ -16,7 +16,7 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 
 public interface Constants {
 

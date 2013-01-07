@@ -20,15 +20,13 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.ExecutedBy;
 import com.hazelcast.spi.annotation.ThreadType;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
@@ -41,7 +39,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-import static com.hazelcast.partition.MigrationEndpoint.*;
+import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.partition.MigrationEndpoint.SOURCE;
 
 public class PartitionService implements CoreService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
@@ -744,7 +743,7 @@ public class PartitionService implements CoreService, ManagedService,
 
                         Future future = inv.invoke();
                         try {
-                            result = (Boolean) IOUtil.toObject(future.get(partitionMigrationTimeout, TimeUnit.SECONDS));
+                            result = (Boolean) nodeEngine.toObject(future.get(partitionMigrationTimeout, TimeUnit.SECONDS));
                         } catch (Throwable e) {
                             logger.log(Level.WARNING, "Failed migrating from " + fromMember, e);
                         }

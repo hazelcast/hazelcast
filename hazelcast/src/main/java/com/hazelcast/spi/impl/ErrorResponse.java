@@ -18,11 +18,11 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.logging.Level;
 
@@ -59,15 +59,15 @@ public class ErrorResponse extends AbstractOperation {
     }
 
     @Override
-    protected void writeInternal(final DataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         endPoint.writeData(out);
-        IOUtil.writeObject(out, error);
+        out.writeObject(error);
     }
 
     @Override
-    protected void readInternal(final DataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         endPoint = new Address();
         endPoint.readData(in);
-        error = IOUtil.readObject(in);
+        error = in.readObject();
     }
 }

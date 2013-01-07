@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.logging.SystemArgsLog;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.nio.protocol.SocketProtocolWriter;
 import com.hazelcast.util.Clock;
@@ -110,13 +109,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     SocketWritable poll() {
         SocketWritable sw = writeQueue.poll();
-//        if (sw instanceof Packet) {
-//            Packet ssw = (Packet) sw;
-//            Packet packet = connection.obtainPacket();
-//            ssw.setToPacket(packet);
-//            packet.onEnqueue();
-//            return packet;
-//        }
         return sw;
     }
 
@@ -145,10 +137,10 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                         if (lastWritable instanceof Packet) {
                             Packet packet = (Packet) lastWritable;
                             connection.releasePacket(packet);
-                            if (systemLogService.shouldTrace()) {
-                                systemLogService.trace(packet, new SystemArgsLog("WrittenOut ",
-                                        connection.getEndPoint()/*, packet.operation*/));
-                            }
+//                            if (systemLogService.shouldTrace()) {
+//                                systemLogService.trace(packet, new SystemArgsLog("WrittenOut ",
+//                                        connection.getEndPoint()/*, packet.operation*/));
+//                            }
                         }
                         lastWritable = null;
                     } else {

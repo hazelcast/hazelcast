@@ -17,20 +17,17 @@
 package com.hazelcast.impl.base;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class DataRecordEntry implements DataSerializable, MapEntry {
 
@@ -95,7 +92,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 //        }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         long now = Clock.currentTimeMillis();
         out.writeBoolean(valid);
         out.writeLong(cost);
@@ -136,7 +133,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         long now = Clock.currentTimeMillis();
         valid = in.readBoolean();
         cost = in.readLong();
@@ -208,7 +205,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public Object getKey() {
         if (key == null) {
-            key = toObject(keyData);
+//            key = toObject(keyData);
         }
         return key;
     }
@@ -239,7 +236,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public Object getValue() {
         if (value == null) {
-            value = toObject(valueData);
+//            value = toObject(valueData);
         }
         return value;
     }

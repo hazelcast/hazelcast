@@ -16,8 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.instance.ThreadContext;
-
 public abstract class ClientRunnable implements Runnable {
     protected volatile boolean running = true;
     protected volatile boolean terminated = false;
@@ -35,9 +33,6 @@ public abstract class ClientRunnable implements Runnable {
     protected abstract void customRun() throws InterruptedException;
 
     public void run() {
-        if (client != null) {
-            ThreadContext.get().setCurrentSerializerRegistry(client.getSerializerRegistry());
-        }
         try {
             while (running) {
                 try {

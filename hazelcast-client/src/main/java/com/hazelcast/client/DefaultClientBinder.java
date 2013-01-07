@@ -18,7 +18,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.security.Credentials;
@@ -54,7 +53,7 @@ public class DefaultClientBinder implements ClientBinder {
             UsernamePasswordCredentials upCredentials = (UsernamePasswordCredentials) credentials;
             args = new String[]{upCredentials.getUsername(), upCredentials.getPassword()};
         } else {
-            bb = new ByteBuffer[]{ByteBuffer.wrap(IOUtil.toByteArray(credentials))};
+//            bb = new ByteBuffer[]{ByteBuffer.wrap(IOUtil.toByteArray(credentials))};
         }
         Protocol auth = new Protocol(null, Command.AUTH, args, bb);
         Protocol response = writeAndRead(connection, auth);

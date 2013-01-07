@@ -17,10 +17,10 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class BindOperation extends AbstractClusterOperation implements JoinOperation {
@@ -48,7 +48,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
     }
 
     @Override
-    public void readInternal(final DataInput in) throws IOException {
+    public void readInternal(final ObjectDataInput in) throws IOException {
         localAddress = new Address();
         localAddress.readData(in);
         boolean hasTarget = in.readBoolean();
@@ -60,7 +60,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
     }
 
     @Override
-    public void writeInternal(final DataOutput out) throws IOException {
+    public void writeInternal(final ObjectDataOutput out) throws IOException {
         localAddress.writeData(out);
         boolean hasTarget = targetAddress != null;
         out.writeBoolean(hasTarget);

@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public abstract class AbstractNamedOperation extends AbstractOperation {
@@ -36,11 +36,11 @@ public abstract class AbstractNamedOperation extends AbstractOperation {
         return name;
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
     }
 }

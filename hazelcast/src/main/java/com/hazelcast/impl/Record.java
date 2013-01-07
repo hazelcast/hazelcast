@@ -16,14 +16,9 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.impl.base.DistributedLock;
-import com.hazelcast.impl.concurrentmap.ValueHolder;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Data;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.query.impl.IndexEntry;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.util.Collection;
 import java.util.Map;
 
 public interface Record extends DataSerializable, Map.Entry, Cloneable {

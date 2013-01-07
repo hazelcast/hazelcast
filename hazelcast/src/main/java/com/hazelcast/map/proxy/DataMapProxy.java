@@ -19,7 +19,7 @@ package com.hazelcast.map.proxy;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.NodeEngine;
 

@@ -16,10 +16,10 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -82,19 +82,19 @@ public abstract class AbstractCredentials implements Credentials, DataSerializab
         return true;
     }
 
-    public final void writeData(DataOutput out) throws IOException {
+    public final void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(principal);
         out.writeUTF(endpoint);
         writeDataInternal(out);
     }
 
-    public final void readData(DataInput in) throws IOException {
+    public final void readData(ObjectDataInput in) throws IOException {
         principal = in.readUTF();
         endpoint = in.readUTF();
         readDataInternal(in);
     }
 
-    protected abstract void writeDataInternal(DataOutput out) throws IOException;
+    protected abstract void writeDataInternal(ObjectDataOutput out) throws IOException;
 
-    protected abstract void readDataInternal(DataInput in) throws IOException;
+    protected abstract void readDataInternal(ObjectDataInput in) throws IOException;
 }

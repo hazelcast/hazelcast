@@ -27,8 +27,9 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeType;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.nio.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.ExecutedBy;
@@ -46,9 +47,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 
 public final class ClusterService implements CoreService, ConnectionListener, ManagedService,
@@ -89,6 +87,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     private final AtomicInteger dataMemberCount = new AtomicInteger(); // excluding lite members
 
     private final Data heartbeatOperationData;
+    private final SerializationContext serializationContext;
 
 //    private final List<MembershipListener> listeners = new CopyOnWriteArrayList<MembershipListener>();
 
@@ -117,8 +116,9 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
-        heartbeatOperationData = toData(new HeartbeatOperation());
+        heartbeatOperationData = nodeEngine.toData(new HeartbeatOperation());
         node.connectionManager.addConnectionListener(this);
+        serializationContext = node.serializationService.getSerializationContext();
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -174,7 +174,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                 new JoinCheckOperation(node.createJoinInfo()), target)
                 .setTryCount(1).build();
         try {
-            return (JoinInfo) toObject(inv.invoke().get());
+            return (JoinInfo) nodeEngine.toObject(inv.invoke().get());
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error during join check!", e);
         }
@@ -329,7 +329,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
 
     private void sendHeartbeat(Address target) {
         if (target == null) return;
-        final Packet packet = new Packet(heartbeatOperationData);
+        final Packet packet = new Packet(heartbeatOperationData, serializationContext);
         packet.setHeader(Packet.HEADER_OP, true);
         send(packet, target);
     }

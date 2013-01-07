@@ -27,7 +27,7 @@
 //import com.hazelcast.monitor.impl.LocalExecutorOperationStatsImpl;
 //import com.hazelcast.logging.ILogger;
 //import com.hazelcast.nio.Address;
-//import com.hazelcast.nio.Data;
+//import com.hazelcast.nio.serialization.Data;
 //import com.hazelcast.security.SecureCallable;
 //import com.hazelcast.util.Clock;
 //

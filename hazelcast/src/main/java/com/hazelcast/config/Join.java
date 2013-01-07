@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class Join implements DataSerializable {
@@ -75,12 +75,12 @@ public class Join implements DataSerializable {
         return this;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         multicastConfig.writeData(out);
         tcpIpConfig.writeData(out);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         multicastConfig = new MulticastConfig();
         multicastConfig.readData(in);
         tcpIpConfig = new TcpIpConfig();

@@ -22,9 +22,10 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.SerializationConstants;
 
 import java.nio.ByteBuffer;
 import java.util.AbstractQueue;
@@ -35,8 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.PacketProxyHelper.check;
 import static com.hazelcast.client.PacketProxyHelper.checkTime;
-import static com.hazelcast.nio.IOUtil.toData;
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected ProtocolProxyHelper protocolProxyHelper;
@@ -84,7 +83,8 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     public boolean offer(E e) {
         check(e);
-        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName()}, toData(e));
+        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName()},
+                protocolProxyHelper.toData(e));
     }
 
     public E poll() {
@@ -102,13 +102,15 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         if (e == null) {
             throw new NullPointerException();
         }
-        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName(), String.valueOf(timeUnit.toMillis(l))}, toData(e));
+        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName(),
+                String.valueOf(timeUnit.toMillis(l))}, protocolProxyHelper.toData(e));
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
         checkTime(l, timeUnit);
         l = (l < 0) ? 0 : l;
-        return (E) protocolProxyHelper.doCommandAsObject(Command.QPOLL, new String[]{getName(), String.valueOf(timeUnit.toMillis(l))}, null);
+        return (E) protocolProxyHelper.doCommandAsObject(Command.QPOLL, new String[]{getName(),
+                String.valueOf(timeUnit.toMillis(l))}, null);
     }
 
     public E take() throws InterruptedException {
@@ -117,7 +119,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     public void put(E e) throws InterruptedException {
         check(e);
-        protocolProxyHelper.doCommand(Command.QPUT, getName(), toData(e));
+        protocolProxyHelper.doCommand(Command.QPUT, getName(), protocolProxyHelper.toData(e));
     }
 
     public int remainingCapacity() {
@@ -162,7 +164,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     @Override
     public boolean remove(Object o) {
-        return protocolProxyHelper.doCommandAsBoolean(Command.QREMOVE, new String[]{getName()}, toData(o));
+        return protocolProxyHelper.doCommandAsBoolean(Command.QREMOVE, new String[]{getName()}, protocolProxyHelper.toData(o));
     }
 
     @Override
@@ -171,7 +173,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         List<E> list = new ArrayList<E>();
         if (protocol.hasBuffer()) {
             for (ByteBuffer bb : protocol.buffers) {
-                list.add((E) toObject(new Data(bb.array())));
+                list.add((E) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, bb.array())));
             }
         }
         return new QueueItemIterator(list.toArray(), this);

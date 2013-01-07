@@ -16,13 +16,12 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.FastDataInputStream;
-import com.hazelcast.nio.FastDataOutputStream;
-import com.hazelcast.nio.HazelcastSerializationException;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.ServiceLoader;
 import com.hazelcast.util.Util;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,17 +35,17 @@ import static com.hazelcast.nio.serialization.SerializationConstants.SERIALIZER_
  */
 public final class DataSerializer implements TypeSerializer<DataSerializable> {
 
-    private static final Map<String, DataSerializableFactory> factories;
+    private static final Map<Integer, DataSerializableFactory> factories;
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
     static {
-        final Map<String, DataSerializableFactory> map = new HashMap<String, DataSerializableFactory>();
+        final Map<Integer, DataSerializableFactory> map = new HashMap<Integer, DataSerializableFactory>();
         try {
             final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID);
             while (hooks.hasNext()) {
                 DataSerializerHook hook = hooks.next();
-                map.putAll(hook.createFactoryMap());
+                map.putAll(hook.getFactories());
             }
         } catch (Exception e) {
             Util.throwUncheckedException(e);
@@ -61,26 +60,39 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
         return SERIALIZER_TYPE_DATA;
     }
 
-    public final DataSerializable read(final FastDataInputStream in) throws Exception {
-        final String className = in.readUTF();
+    public final DataSerializable read(ObjectDataInput in) throws IOException {
+        final DataSerializable ds;
+        final boolean identified = in.readBoolean();
+        int id = -1;
+        String className = null;
         try {
-            DataSerializable ds;
-            DataSerializableFactory dsf = factories.get(className);
-            if (dsf != null) {
+            if (identified) {
+                id = in.readInt();
+                final DataSerializableFactory dsf = factories.get(id);
+                if (dsf == null) {
+                    throw new IllegalArgumentException("No DataSerializer factory for id: " + id);
+                }
                 ds = dsf.create();
             } else {
+                className = in.readUTF();
                 ds = (DataSerializable) newInstance(className);
             }
             ds.readData(in);
             return ds;
         } catch (final Exception e) {
-            throw new HazelcastSerializationException("Problem while reading DataSerializable class : "
-                    + className + ", exception: " + e.getMessage(), e);
+            throw new HazelcastSerializationException("Problem while reading DataSerializable " +
+                    "id: " + id + ", class: " + className + ", exception: " + e.getMessage(), e);
         }
     }
 
-    public final void write(final FastDataOutputStream out, final DataSerializable obj) throws Exception {
-        out.writeUTF(obj.getClass().getName());
+    public final void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
+        final boolean identified = obj instanceof IdentifiedDataSerializable;
+        out.writeBoolean(identified);
+        if (identified) {
+            out.writeInt(((IdentifiedDataSerializable) obj).getId());
+        } else {
+            out.writeUTF(obj.getClass().getName());
+        }
         obj.writeData(out);
     }
 

@@ -17,12 +17,12 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -86,9 +86,9 @@ public class HazelcastCache implements Cache {
     }
 
     final static class NullDataSerializable implements DataSerializable {
-        public void writeData(final DataOutput out) throws IOException {
+        public void writeData(final ObjectDataOutput out) throws IOException {
         }
-        public void readData(final DataInput in) throws IOException {
+        public void readData(final ObjectDataInput in) throws IOException {
         }
         @Override
         public boolean equals(Object obj) {

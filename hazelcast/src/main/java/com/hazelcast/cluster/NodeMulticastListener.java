@@ -16,8 +16,8 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.instance.Node;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 

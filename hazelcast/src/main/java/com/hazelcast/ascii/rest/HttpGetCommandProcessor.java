@@ -16,9 +16,8 @@
 
 package com.hazelcast.ascii.rest;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ConnectionManager;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -79,7 +78,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             } else if (value instanceof String) {
                 command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
             } else {
-                command.setResponse(HttpCommand.CONTENT_TYPE_BINARY, ThreadContext.get().toByteArray(value));
+                command.setResponse(HttpCommand.CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
             }
         }
     }

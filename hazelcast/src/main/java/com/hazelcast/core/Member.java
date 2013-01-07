@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

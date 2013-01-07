@@ -19,9 +19,9 @@ package com.hazelcast.wan;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.CoreService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.spi.CoreService;
 
 import java.util.List;
 import java.util.Map;

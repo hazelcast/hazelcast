@@ -18,10 +18,10 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.*;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,7 +48,7 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalExecutorOperationStatsImpl> internalThroughputStats = new HashMap<String, LocalExecutorOperationStatsImpl>();
     Map<String, LocalExecutorOperationStatsImpl> throughputStats = new HashMap<String, LocalExecutorOperationStatsImpl>();
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         memberHealthStats.writeData(out);
         out.writeInt(mapStats.size());
@@ -107,7 +107,7 @@ public class MemberStateImpl implements MemberState {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         address.readData(in);
         memberHealthStats.readData(in);
         DataSerializable impl;

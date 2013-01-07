@@ -16,17 +16,17 @@
 
 package com.hazelcast.management;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public interface ConsoleRequest extends DataSerializable {
 
     int getType();
 
-    Object readResponse(DataInput in) throws IOException;
+    Object readResponse(ObjectDataInput in) throws IOException;
 
-    void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception;
+    void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception;
 }

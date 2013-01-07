@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -26,7 +26,7 @@ import java.util.zip.Inflater;
 
 public final class IOUtil {
 
-    public static void writeByteArray(DataOutput out, byte[] value) throws IOException {
+    public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
         int size = (value == null) ? 0 : value.length;
         out.writeInt(size);
         if (size > 0) {
@@ -34,7 +34,7 @@ public final class IOUtil {
         }
     }
 
-    public static byte[] readByteArray(DataInput in) throws IOException {
+    public static byte[] readByteArray(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         if (size == 0) {
             return null;
@@ -45,17 +45,23 @@ public final class IOUtil {
         }
     }
 
-    public static void writeObject(DataOutput out, Object obj) throws IOException {
-        Data data = toData(obj);
-        writeNullableData(out, data);
+    public static void writeNullableObject(ObjectDataOutput out, Object obj) throws IOException {
+        boolean NULL = obj == null;
+        out.writeBoolean(NULL);
+        if (!NULL) {
+            out.writeObject(obj);
+        }
     }
 
-    public static <T> T readObject(DataInput in) throws IOException {
-        Data data = readNullableData(in);
-        return toObject(data);
+    public static <T> T readNullableObject(ObjectDataInput in) throws IOException {
+        boolean NULL = in.readBoolean();
+        if (!NULL) {
+            return in.readObject();
+        }
+        return null;
     }
 
-    public static void writeNullableString(DataOutput out, String obj) throws IOException {
+    public static void writeNullableString(ObjectDataOutput out, String obj) throws IOException {
         boolean NULL = obj == null;
         out.writeBoolean(NULL);
         if (!NULL) {
@@ -63,7 +69,7 @@ public final class IOUtil {
         }
     }
 
-    public static String readNullableString(DataInput in) throws IOException {
+    public static String readNullableString(ObjectDataInput in) throws IOException {
         boolean NULL = in.readBoolean();
         if (!NULL) {
             return in.readUTF();
@@ -71,7 +77,7 @@ public final class IOUtil {
         return null;
     }
 
-    public static void writeNullableData(DataOutput out, Data data) throws IOException {
+    public static void writeNullableData(ObjectDataOutput out, Data data) throws IOException {
         if (data != null) {
             out.writeBoolean(true);
             data.writeData(out);
@@ -81,7 +87,7 @@ public final class IOUtil {
         }
     }
 
-    public static Data readNullableData(DataInput in) throws IOException {
+    public static Data readNullableData(ObjectDataInput in) throws IOException {
         final boolean isNotNull = in.readBoolean();
         if (isNotNull) {
             Data data = new Data();
@@ -89,51 +95,6 @@ public final class IOUtil {
             return data;
         }
         return null;
-    }
-
-    public static byte[] toByteArray(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof byte[]) {
-            return (byte[]) obj;
-        }
-        return ThreadContext.get().toByteArray(obj);
-    }
-
-    public static Data toData(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof Data) {
-            return (Data) obj;
-        }
-        return ThreadContext.get().toData(obj);
-    }
-
-    public static <T> T toObject(byte[] data) {
-        return (T) ThreadContext.get().toObject(data);
-    }
-
-    public static <T> T toObject(Data data) {
-        if (data == null) {
-            return null;
-        }
-        return (T) ThreadContext.get().toObject(data);
-    }
-
-    public static Object toObject(Object data) {
-        if (data == null) {
-            return null;
-        }
-        if (data instanceof Data) {
-            return ThreadContext.get().toObject((Data) data);
-        }
-        return data;
-    }
-
-    public static <T> T toObject(DataHolder dataHolder) {
-        return toObject(dataHolder.toData());
     }
 
     public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
@@ -237,16 +198,6 @@ public final class IOUtil {
             sb.append(in.readUTF());
         }
         return sb.toString();
-    }
-
-    public static Data addDelta(Data longData, long delta) {
-        long longValue = (Long) toObject(longData);
-        return toData(longValue + delta);
-    }
-
-    public static Data addDelta(Data intData, int delta) {
-        int intValue = (Integer) toObject(intData);
-        return toData(intValue + delta);
     }
 
     public static byte[] compress(byte[] input) throws IOException {

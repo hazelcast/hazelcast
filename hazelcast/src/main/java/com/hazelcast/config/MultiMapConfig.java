@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +29,7 @@ public class MultiMapConfig implements DataSerializable {
     private String name;
     private String valueCollectionType = ValueCollectionType.SET.toString();
     private List<EntryListenerConfig> listenerConfigs;
+    private boolean binary = false;
 
     public MultiMapConfig() {
     }
@@ -36,20 +37,23 @@ public class MultiMapConfig implements DataSerializable {
     public MultiMapConfig(MultiMapConfig defConfig) {
         this.name = defConfig.getName();
         this.valueCollectionType = defConfig.getValueCollectionType().toString();
+        this.binary = defConfig.binary;
     }
 
     public enum ValueCollectionType {
         SET, LIST
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(valueCollectionType);
+        out.writeBoolean(binary);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         valueCollectionType = in.readUTF();
+        binary = in.readBoolean();
     }
 
     public String getName() {
@@ -89,6 +93,14 @@ public class MultiMapConfig implements DataSerializable {
 
     public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+    }
+
+    public boolean isBinary() {
+        return binary;
+    }
+
+    public void setBinary(boolean binary) {
+        this.binary = binary;
     }
 
     @Override

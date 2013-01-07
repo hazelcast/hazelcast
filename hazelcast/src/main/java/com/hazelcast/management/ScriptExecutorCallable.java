@@ -20,11 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -110,7 +109,7 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
         return (V) result;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(engineName);
         out.writeUTF(script);
         if (bindings != null) {
@@ -118,14 +117,14 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
             Set<Entry<String, Object>> entries = bindings.entrySet();
             for (Entry<String, Object> entry : entries) {
                 out.writeUTF(entry.getKey());
-                IOUtil.writeObject(out, entry.getValue());
+                out.writeObject(entry.getValue());
             }
         } else {
             out.writeInt(0);
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         engineName = in.readUTF();
         script = in.readUTF();
         int size = in.readInt();
@@ -133,7 +132,7 @@ public class ScriptExecutorCallable<V> implements DataSerializable, Callable<V>,
             bindings = new HashMap<String, Object>(size);
             for (int i = 0; i < size; i++) {
                 String key = in.readUTF();
-                Object value = IOUtil.readObject(in);
+                Object value = in.readObject();
                 bindings.put(key, value);
             }
         }

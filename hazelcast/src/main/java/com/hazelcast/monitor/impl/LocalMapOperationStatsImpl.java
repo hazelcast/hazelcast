@@ -17,9 +17,9 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalMapOperationStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class LocalMapOperationStatsImpl extends LocalOperationStatsSupport implements LocalMapOperationStats {
@@ -30,7 +30,7 @@ public class LocalMapOperationStatsImpl extends LocalOperationStatsSupport imple
     long numberOfOtherOperations;
     long numberOfEvents;
 
-    void writeDataInternal(DataOutput out) throws IOException {
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
         puts.writeData(out);
         gets.writeData(out);
         removes.writeData(out);
@@ -38,7 +38,7 @@ public class LocalMapOperationStatsImpl extends LocalOperationStatsSupport imple
         out.writeLong(numberOfEvents);
     }
 
-    void readDataInternal(DataInput in) throws IOException {
+    void readDataInternal(ObjectDataInput in) throws IOException {
         puts = new OperationStat();
         puts.readData(in);
         gets = new OperationStat();

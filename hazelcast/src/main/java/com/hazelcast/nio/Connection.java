@@ -85,7 +85,7 @@ public final class Connection {
 //            packet.reset();
 //        }
 //        return packet;
-        return new Packet();
+        return new Packet(connectionManager.getSerializationContext());
     }
 
     public ConnectionManager getConnectionManager() {

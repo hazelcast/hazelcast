@@ -16,11 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class SymmetricEncryptionConfig implements DataSerializable {
@@ -98,7 +98,7 @@ public class SymmetricEncryptionConfig implements DataSerializable {
         return sb.toString();
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         boolean hasKey = key != null && key.length > 0;
         out.writeByte(ByteUtil.toByte(enabled, hasKey));
         if (enabled) {
@@ -113,7 +113,7 @@ public class SymmetricEncryptionConfig implements DataSerializable {
         }
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         boolean[] b = ByteUtil.fromByte(in.readByte());
         enabled = b[0];
         if (enabled) {

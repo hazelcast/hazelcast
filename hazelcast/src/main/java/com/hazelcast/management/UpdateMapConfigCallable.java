@@ -17,9 +17,9 @@
 package com.hazelcast.management;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class UpdateMapConfigCallable extends GetMapConfigCallable {
@@ -46,12 +46,12 @@ public class UpdateMapConfigCallable extends GetMapConfigCallable {
         return null;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         mapConfig.writeData(out);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         mapConfig = new MapConfig();
         mapConfig.readData(in);

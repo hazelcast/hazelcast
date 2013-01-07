@@ -18,57 +18,45 @@ package com.hazelcast.partition;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.MigrationServiceEvent;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterInputStream;
 
 public class MigrationOperation extends BaseMigrationOperation {
 
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ErrorResponseHandler();
 
     private transient Collection<Operation> tasks;
-    private byte[] bytesRecordSet;
+    private byte[] zippedTaskData;
     private int taskCount;
 
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, Collection<Operation> tasks) throws IOException {
+    public MigrationOperation(MigrationInfo migrationInfo, byte[] taskData, int taskCount) throws IOException {
         super(migrationInfo);
-        this.tasks = tasks;
-        this.taskCount = tasks.size();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(8192 * taskCount);
-        DataOutputStream out = null;
-        try {
-            out = new DataOutputStream(new DeflaterOutputStream(bos));
-            out.writeInt(taskCount);
-            for (Operation task : tasks) {
-                IOUtil.writeObject(out, task);
-            }
-        } finally {
-            IOUtil.closeResource(out);
-        }
-        bytesRecordSet = bos.toByteArray();
+        this.taskCount = taskCount;
+        this.zippedTaskData = taskData;
     }
 
     public void run() {
-        DataInputStream in = null;
+        NodeEngine nodeEngine = getNodeEngine();
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        ObjectDataInput in = null;
         try {
-            ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
-            in = new DataInputStream(new InflaterInputStream(bais));
+            final byte[] taskData = IOUtil.decompress(zippedTaskData);
+            in = serializationService.createObjectDataInput(taskData);
             int size = in.readInt();
             tasks = new ArrayList<Operation>(size);
             for (int i = 0; i < size; i++) {
-                Operation task = IOUtil.readObject(in);
+                Operation task = (Operation) serializationService.readObject(in);
                 tasks.add(task);
             }
             if (taskCount != tasks.size()) {
@@ -131,19 +119,19 @@ public class MigrationOperation extends BaseMigrationOperation {
         }
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(taskCount);
-        out.writeInt(bytesRecordSet.length);
-        out.write(bytesRecordSet);
+        out.writeInt(zippedTaskData.length);
+        out.write(zippedTaskData);
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         taskCount = in.readInt();
         int size = in.readInt();
-        bytesRecordSet = new byte[size];
-        in.readFully(bytesRecordSet);
+        zippedTaskData = new byte[size];
+        in.readFully(zippedTaskData);
     }
 
     @Override

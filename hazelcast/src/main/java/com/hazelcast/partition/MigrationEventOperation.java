@@ -41,7 +41,7 @@
 //    }
 //
 //    @Override
-//    public void readInternal(DataInput in) throws IOException {
+//    public void readInternal(ObjectDataInput in) throws IOException {
 //        super.readInternal(in);
 //        migrationInfo = new MigrationInfo();
 //        migrationInfo.readData(in);
@@ -49,7 +49,7 @@
 //    }
 //
 //    @Override
-//    public void writeInternal(DataOutput out) throws IOException {
+//    public void writeInternal(ObjectDataOutput out) throws IOException {
 //        super.writeInternal(out);
 //        migrationInfo.writeData(out);
 //        MigrationStatus.writeTo(status, out);

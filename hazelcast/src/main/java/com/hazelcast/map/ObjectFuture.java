@@ -30,7 +30,8 @@ package com.hazelcast.map;/*
  * limitations under the License.
  */
 
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -39,10 +40,12 @@ import java.util.concurrent.TimeoutException;
 
 public class ObjectFuture implements Future {
 
-    private Future future;
+    private final Future future;
+    private final SerializationService serializationService;
 
-    public ObjectFuture(Future future) {
+    public ObjectFuture(Future future, SerializationService serializationService) {
         this.future = future;
+        this.serializationService = serializationService;
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -58,10 +61,18 @@ public class ObjectFuture implements Future {
     }
 
     public Object get() throws InterruptedException, ExecutionException {
-        return IOUtil.toObject(future.get());
+        final Object o = future.get();
+        return getObject(o);
     }
 
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return IOUtil.toObject(future.get(timeout, unit));
+        return getObject(future.get(timeout, unit));
+    }
+
+    private Object getObject(Object o) {
+        if (o instanceof Data) {
+            return serializationService.toObject((Data) o);
+        }
+        return o;
     }
 }

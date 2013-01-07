@@ -17,7 +17,7 @@
 package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -86,12 +86,14 @@ abstract class QueueProxySupport {
 
     List<Data> listInternal() {
         IteratorOperation operation = new IteratorOperation(name);
-        return (List<Data>) invoke(operation);
+        SerializableCollectionContainer collectionContainer = invoke(operation);
+        return (List<Data>)collectionContainer.getCollection();
     }
 
     List<Data> drainInternal(int maxSize) {
         DrainOperation operation = new DrainOperation(name, maxSize);
-        return (List<Data>) invoke(operation);
+        SerializableCollectionContainer collectionContainer = invoke(operation);
+        return (List<Data>)collectionContainer.getCollection();
     }
 
     boolean addAllInternal(Collection<Data> dataList) {

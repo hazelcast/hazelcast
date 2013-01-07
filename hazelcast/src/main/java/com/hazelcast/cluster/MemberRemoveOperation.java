@@ -17,9 +17,9 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 public class MemberRemoveOperation extends AbstractClusterOperation {
@@ -42,12 +42,12 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         }
     }
 
-    public void readInternal(DataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in) throws IOException {
         deadAddress = new Address();
         deadAddress.readData(in);
     }
 
-    public void writeInternal(DataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out) throws IOException {
         deadAddress.writeData(out);
     }
 }

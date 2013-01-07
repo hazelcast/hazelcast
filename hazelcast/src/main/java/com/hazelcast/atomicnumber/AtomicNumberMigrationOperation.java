@@ -16,11 +16,10 @@
 
 package com.hazelcast.atomicnumber;
 
-import com.hazelcast.queue.QueueService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +56,7 @@ public class AtomicNumberMigrationOperation extends AbstractOperation {
     }
 
 
-    protected void writeInternal(DataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Long> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -65,7 +64,7 @@ public class AtomicNumberMigrationOperation extends AbstractOperation {
         }
     }
 
-    protected void readInternal(DataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, Long>(mapSize);
         for (int i = 0; i < mapSize; i++) {

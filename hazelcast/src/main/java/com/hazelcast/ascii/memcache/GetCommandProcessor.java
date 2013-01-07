@@ -19,7 +19,6 @@ package com.hazelcast.ascii.memcache;
 import com.hazelcast.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -59,7 +58,7 @@ public class GetCommandProcessor extends AbstractTextCommandProcessor<GetCommand
                 entry = new MemcacheEntry(getCommand.getKey(), ((String) value).getBytes(), 0);
             } else {
                 try {
-                    entry = new MemcacheEntry(getCommand.getKey(), IOUtil.toByteArray(value), 0);
+                    entry = new MemcacheEntry(getCommand.getKey(), textCommandService.toByteArray(value), 0);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }

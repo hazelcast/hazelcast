@@ -20,10 +20,10 @@ import com.hazelcast.client.*;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.impl.DataAwareEntryEvent;
-import com.hazelcast.impl.Keys;
-import com.hazelcast.nio.Data;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.SerializerRegistry;
+import com.hazelcast.nio.serialization.SerializationConstants;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -31,18 +31,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.nio.IOUtil.toObject;
 
 public class EntryListenerManager {
 
-    private final SerializerRegistry serializerRegistry;
+    private final SerializationService serializationService;
     private final Object NULL_KEY = new Object();
     private final ConcurrentMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>> entryListeners =
             new ConcurrentHashMap<String, ConcurrentHashMap<Object, List<EntryListenerHolder>>>();
 
-    public EntryListenerManager(final SerializerRegistry serializerRegistry) {
-        this.serializerRegistry
-                = serializerRegistry;
+    public EntryListenerManager(final SerializationService serializationService) {
+        this.serializationService
+                = serializationService;
     }
 
     public synchronized void registerListener(String name, Object key, boolean includeValue, EntryListener<?, ?> entryListener) {
@@ -126,7 +125,7 @@ public class EntryListenerManager {
 //                new Data(packet.getKey()),
 //                newValue,
 //                oldValue,
-//                true, serializerRegistry);
+//                true, serializationService);
 //        String name = packet.getName();
 //        Object key = toKey(keyObj);
 //        if (entryListeners.get(name) != null) {
@@ -138,24 +137,24 @@ public class EntryListenerManager {
 //    }
 //
     public void notifyListeners(Protocol protocol) {
-        Data key = new Data(protocol.buffers[0].array());
+        Data key = new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[0].array());
         Data newValue = null;
         Data oldValue = null;
         if (protocol.buffers.length > 1) {
-            newValue = new Data(protocol.buffers[1].array());
+            newValue = new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[1].array());
             if (protocol.buffers.length > 2) {
-                oldValue = new Data(protocol.buffers[2].array());
+                oldValue = new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[2].array());
             }
         }
         String name = protocol.args[1];
         String eventType = protocol.args[2];
         EntryEventType entryEventType = EntryEventType.valueOf(eventType);
         final DataAwareEntryEvent event =
-                new DataAwareEntryEvent(null, entryEventType.getType(), name, key, newValue, oldValue, false, serializerRegistry);
+                new DataAwareEntryEvent(null, entryEventType.getType(), name, key, newValue, oldValue, false, serializationService);
         if (entryListeners.get(name) != null) {
             notifyListeners(event, entryListeners.get(name).get(NULL_KEY));
             if (key != NULL_KEY) {
-                notifyListeners(event, entryListeners.get(name).get(toObject(key)));
+                notifyListeners(event, entryListeners.get(name).get(serializationService.toObject(key)));
             }
         }
     }
@@ -166,7 +165,7 @@ public class EntryListenerManager {
         }
         DataAwareEntryEvent eventNoValue = event.getValue() != null ?
                 new DataAwareEntryEvent(event.getMember(), event.getEventType().getType(), event.getName(),
-                        event.getKeyData(), null, null, false, serializerRegistry) :
+                        event.getKeyData(), null, null, false, serializationService) :
                 event;
         switch (event.getEventType()) {
             case ADDED:

@@ -16,10 +16,10 @@
 
 package com.hazelcast.management;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
@@ -44,11 +44,11 @@ public class ThreadDumpCallable implements Callable<String>, DataSerializable {
         return result;
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(isDeadlock);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         isDeadlock = in.readBoolean();
     }
 }

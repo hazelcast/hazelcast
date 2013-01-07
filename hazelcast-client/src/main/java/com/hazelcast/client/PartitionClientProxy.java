@@ -29,7 +29,6 @@ import java.net.UnknownHostException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static com.hazelcast.nio.IOUtil.toData;
 
 public class PartitionClientProxy implements PartitionService {
     final private PacketProxyHelper proxyHelper;
@@ -76,7 +75,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public Partition getPartition(Object key) {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.PARTITIONS, new String[]{}, toData(key));
+        Protocol protocol = protocolProxyHelper.doCommand(Command.PARTITIONS, new String[]{}, protocolProxyHelper.toData(key));
         return partition(Integer.valueOf(protocol.args[0]), protocol.args[1]);
     }
 

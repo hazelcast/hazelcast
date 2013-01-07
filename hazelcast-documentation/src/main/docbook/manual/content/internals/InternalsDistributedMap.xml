@@ -43,7 +43,7 @@
         ownerships of the partitions and let every member know who owns which partitions. So at any
         given time, each member knows the owner member of a each partition. Hazelcast will convert
         your key object to
-        <literal>com.hazelcast.nio.Data</literal>
+        <literal>com.hazelcast.nio.serialization.Data</literal>
         then calculate the partition of
         the owner:<literal>partition-of-the-key = hash(keyData) % PARTITION_COUNT</literal>. Since
         each member(JVM) knows the owner of each partition, each member can find out which member
