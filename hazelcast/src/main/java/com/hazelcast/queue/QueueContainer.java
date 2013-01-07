@@ -47,15 +47,16 @@ public class QueueContainer implements DataSerializable {
 
     private long idGen = 0;
 
-    private final QueueStoreWrapper store = new QueueStoreWrapper(serializationService);
+    private QueueStoreWrapper store ;
 
     public QueueContainer() {
     }
 
     public QueueContainer(int partitionId, QueueConfig config, SerializationService serializationService, boolean fromBackup) throws Exception {
         this.partitionId = partitionId;
-        setConfig(config);
         this.serializationService = serializationService;
+        store = new QueueStoreWrapper(serializationService);
+        setConfig(config);
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
@@ -313,7 +314,8 @@ public class QueueContainer implements DataSerializable {
                 }
             }
             Iterator<QueueItem> iter = itemQueue.iterator();
-            for (QueueItem item = null; iter.hasNext(); item = iter.next()) {
+            while (iter.hasNext()){
+                QueueItem item = iter.next();
                 if (map.containsKey(item.getItemId())){
                     iter.remove();
                 }

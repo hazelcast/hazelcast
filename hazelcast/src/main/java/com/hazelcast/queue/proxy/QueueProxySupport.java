@@ -90,10 +90,10 @@ abstract class QueueProxySupport {
         return (List<Data>)collectionContainer.getCollection();
     }
 
-    List<Data> drainInternal(int maxSize) {
+    Collection<Data> drainInternal(int maxSize) {
         DrainOperation operation = new DrainOperation(name, maxSize);
         SerializableCollectionContainer collectionContainer = invoke(operation);
-        return (List<Data>)collectionContainer.getCollection();
+        return collectionContainer.getCollection();
     }
 
     boolean addAllInternal(Collection<Data> dataList) {
