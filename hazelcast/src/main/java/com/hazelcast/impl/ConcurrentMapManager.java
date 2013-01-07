@@ -1459,7 +1459,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         private long doAtomicOp(ClusterOperation op, Data name, long value, Data expected) {
             long begin = currentTimeMillis();
-            setLocal(op, MapConfig.ATOMIC_LONG_MAP_NAME, name, expected, 0, 0);
+            setLocal(op, MapConfig.ATOMIC_LONG_MAP_NAME, name, expected, Long.MAX_VALUE, 0);
             request.longValue = value;
             doOp();
             Data backup = (Data) getResultAsIs();
