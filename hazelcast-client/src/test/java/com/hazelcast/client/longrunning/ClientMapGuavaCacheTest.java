@@ -24,16 +24,25 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotSame;
+import static org.junit.Assert.assertFalse;
 
 public class ClientMapGuavaCacheTest {
 
+    @After
+    public void shutdown(){
+        Hazelcast.shutdownAll();
+    }
+
     @Test
     public void testReadFromCache() {
+        System.setProperty("hazelcast.client.near.cache.enabled", "true");
         Config config = new Config();
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setMaxSize(1000);
@@ -58,7 +67,34 @@ public class ClientMapGuavaCacheTest {
     }
 
     @Test
+    public void testNoNearCacheConfig() {
+        System.setProperty("hazelcast.client.near.cache.enabled", "false");
+        Config config = new Config();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setMaxSize(1000);
+        nearCacheConfig.setMaxIdleSeconds(10);
+        nearCacheConfig.setTimeToLiveSeconds(20);
+        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        String mapName = "testReadFromCache";
+        IMap<String, String> mapH = h.getMap(mapName);
+        mapH.put("a", "a");
+        HazelcastClient client = HazelcastClient.newHazelcastClient(new ClientConfig());
+        Map<Object, Object> mapC = client.getMap(mapName);
+
+        assertEquals("a", mapC.get("a"));
+        int hit = mapH.getMapEntry("a").getHits();
+        mapC.get("a");
+        assertEquals(mapH.getMapEntry("a").getHits(), ++hit);
+        for (int i = 0; i < 100; i++) {
+            mapC.get("a");
+        }
+        assertEquals(mapH.getMapEntry("a").getHits(), hit + 100);
+    }
+
+    @Test
     public void testInvalidateOnChange() throws InterruptedException {
+        System.setProperty("hazelcast.client.near.cache.enabled", "true");
         Config config = new Config();
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setMaxSize(1000);
@@ -79,9 +115,5 @@ public class ClientMapGuavaCacheTest {
         Thread.sleep(100);
         assertEquals("b", mapC.get("a"));
         assertEquals(mapH.getMapEntry("a").getHits(), ++hit);
-
-
-
-
     }
 }

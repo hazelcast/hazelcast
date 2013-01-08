@@ -21,7 +21,8 @@
        xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd"
+       id = 'MapNearCache'>
     <title>Near Cache</title>
     <para>Map entries in Hazelcast are partitioned across the cluster. Imagine that you are
         reading key
