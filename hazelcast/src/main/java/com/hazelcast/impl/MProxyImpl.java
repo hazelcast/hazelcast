@@ -417,7 +417,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     public String getLongName() {
-        return dynamicProxy.getLongName();
+        return name;
     }
 
     public void addGenericListener(Object listener, Object key, boolean includeValue,

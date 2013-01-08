@@ -52,6 +52,8 @@ public final class ClusterService implements Runnable, Constants {
 
     private final Queue<Processable> processableQueue = new ConcurrentLinkedQueue<Processable>();
 
+    private final Queue<Processable> processablePriorityQueue = new ConcurrentLinkedQueue<Processable>();
+
     private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.LENGTH];
 
     private final Runnable[] periodicRunnables = new Runnable[5];
@@ -155,6 +157,11 @@ public final class ClusterService implements Runnable, Constants {
         unpark();
     }
 
+    public void enqueuePriorityAndReturn(Processable processable) {
+        processablePriorityQueue.offer(processable);
+        unpark();
+    }
+
     private void unpark() {
         LockSupport.unpark(serviceThread);
     }
@@ -205,7 +212,6 @@ public final class ClusterService implements Runnable, Constants {
                         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
                         long now = System.nanoTime();
                         threadWatcher.addWait((now - startWait), now);
-                        checkPeriodics();
                     } catch (Exception e) {
                         node.handleInterruptedException(Thread.currentThread(), e);
                     }
@@ -228,12 +234,12 @@ public final class ClusterService implements Runnable, Constants {
         Packet packet = null;
         try {
             for (int i = 0; i < PACKET_BULK_SIZE; i++) {
-                checkPeriodics();
                 packet = packetQueue.poll();
                 if (packet == null) {
                     return i;
                 }
                 processPacket(packet);
+                dequeuePriorityProcessables();
             }
         } catch (OutOfMemoryError e) {
             throw e;
@@ -248,17 +254,33 @@ public final class ClusterService implements Runnable, Constants {
         Processable processable = null;
         try {
             for (int i = 0; i < PROCESSABLE_BULK_SIZE; i++) {
-                checkPeriodics();
                 processable = processableQueue.poll();
                 if (processable == null) {
                     return i;
                 }
                 processProcessable(processable);
+                dequeuePriorityProcessables();
             }
         } catch (OutOfMemoryError e) {
             throw e;
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "error processing messages  processable=" + processable, e);
+            throw e;
+        }
+        return PACKET_BULK_SIZE;
+    }
+
+    private int dequeuePriorityProcessables() throws Throwable {
+        Processable processable = processablePriorityQueue.poll();
+        try {
+            while (processable != null) {
+                processProcessable(processable);
+                processable = processablePriorityQueue.poll();
+            }
+        } catch (OutOfMemoryError e) {
+            throw e;
+        } catch (Throwable e) {
+            logger.log(Level.SEVERE, "error processing messages processable=" + processable, e);
             throw e;
         }
         return PACKET_BULK_SIZE;
@@ -296,7 +318,7 @@ public final class ClusterService implements Runnable, Constants {
                 + " isMaster= " + node.getMasterAddress();
     }
 
-    private void checkPeriodics() {
+    public void checkPeriodics() {
         final long now = Clock.currentTimeMillis();
         if (RESTART_ON_MAX_IDLE && (now - lastCheck) > MAX_IDLE_MILLIS) {
             if (logger.isLoggable(Level.INFO)) {

@@ -50,10 +50,6 @@ public class PartitionInfo {
         return addresses.get(0);
     }
 
-    public void setOwner(Address ownerAddress) {
-        setReplicaAddress(0, ownerAddress);
-    }
-
     public void setReplicaAddress(int index, Address address) {
         boolean changed = false;
         Address currentAddress = addresses.get(index);

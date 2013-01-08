@@ -185,10 +185,6 @@ public final class ThreadContext {
             return callCache;
         }
 
-        public FactoryImpl getFactory() {
-            return factory;
-        }
-
         public CallContext getCallContext() {
             return callContext;
         }

@@ -16,11 +16,8 @@
   -->
 
 <sect1 xml:id="NativeClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
-       xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Native Client</title>
     <para>Native Client enables you to do all Hazelcast operations without being a member of the
         cluster. It connects to one of the cluster members and delegates all cluster wide operations
@@ -28,8 +25,10 @@
         member.
     </para>
     <para>There can be hundreds, even thousands of clients connected to the cluster. But by default there is 40 threads
-    on server side that will handle all the requests. You may want to increase hazelcast.executor.client.thread.count
-    property for better performance. </para>
+        on server side that will handle all the requests. You may want to increase
+        hazelcast.executor.client.thread.count
+        property for better performance.
+    </para>
     <para>Imagine a trading application where all the trading data stored and managed in a 10 node
         Hazelcast cluster. Swing/Web applications at traders' desktops can use Native Java Client to
         access and modify the data in the Hazelcast cluster.
@@ -90,13 +89,51 @@ for (Customer customer : colCustomers) {
 }
 ]]></programlisting>
         </para>
+
+        <para>
+            <emphasis role="bold">
+                <emphasis role="italic">
+                    Near Cache on Java Client
+                </emphasis>
+            </emphasis>
+        </para>
+
+        <para>
+            By default, near Cache on Java Client is not enabled. Near Cache implementation on client side is based
+            on the Google
+            <ulink url="http://code.google.com/p/guava-libraries/wiki/CachesExplained">Guava</ulink>
+            cache. To enable it the following System property should be set
+            to "true": "hazelcast.client.near.cache.enabled" and the related Guava jar's should be added to classpath.
+            The current implementation uses 13.0.1 version of it.
+
+            You can add the maven dependency as follows:
+
+            <programlisting language="java"><![CDATA[
+    <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>13.0.1</version>
+    </dependency>
+
+            ]]></programlisting>
+
+            Client will use the near cache configuration on server for the maps. Only the maps having
+            proper near cache configuration will be cached on client. If max size is set, entries will be evicted
+            based on LRU eviction policy, as this is the only policy that Guava supports.
+
+        </para>
+
     </sect2>
     <sect2 xml:id="CSharpClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
             >
-        <title>CSharp Client <superscript>(Enterprise Edition Only)</superscript></title>
+        <title>CSharp Client
+            <superscript>(Enterprise Edition Only)</superscript>
+        </title>
         <para>You can use native C# client to connect to the running Hazelcast instances. All you need is to include
-            Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C# client
-            doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to another member.
+            Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C#
+            client
+            doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to
+            another member.
             User must connect to another member itself.
             <programlisting language="CSharp"><![CDATA[
 
@@ -129,7 +166,8 @@ foreach (Customer customer in colCustomers) {
         </para>
         <para>
             You can serialize back and forth Java and C# Objects between C# client and Hazelcast server.
-            All you need is to have your classes that you want to share to implement DataSerializable both on Java and C#
+            All you need is to have your classes that you want to share to implement DataSerializable both on Java and
+            C#
             in the exact same way. And on C# ClientConfig you must set a TypeConverter implementation that will convert
             Java Class name into C# Type and vice versa.
 

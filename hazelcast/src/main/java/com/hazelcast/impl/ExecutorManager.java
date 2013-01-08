@@ -68,7 +68,6 @@ public class ExecutorManager extends BaseManager {
     private final ConcurrentMap<String, ExecutorOperationsCounter> internalThroughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
     private final ConcurrentMap<String, ExecutorOperationsCounter> throughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
 
-
     final AtomicLong executionIdGen = new AtomicLong();
     private final int interval = 60000;
 
@@ -105,6 +104,15 @@ public class ExecutorManager extends BaseManager {
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
+        esScheduled.scheduleAtFixedRate(new Runnable() {
+            public void run() {
+                node.clusterService.enqueuePriorityAndReturn(new Processable() {
+                    public void process() {
+                        node.clusterService.checkPeriodics();
+                    }
+                });
+            }
+        }, 0, 1, TimeUnit.SECONDS);
     }
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {
@@ -289,7 +297,6 @@ public class ExecutorManager extends BaseManager {
 
     public void appendFullState(StringBuffer sbState) {
         Set<String> names = mapExecutors.keySet();
-
         for (String name : names) {
             NamedExecutorService namedExecutorService = mapExecutors.get(name);
             namedExecutorService.appendState(sbState);
