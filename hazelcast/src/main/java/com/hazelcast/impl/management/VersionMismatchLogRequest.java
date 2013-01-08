@@ -16,11 +16,14 @@
 
 package com.hazelcast.impl.management;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.logging.ILogger;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.logging.Level;
 
 // author: sancar - 17.12.2012
@@ -47,7 +50,10 @@ public class VersionMismatchLogRequest implements ConsoleRequest {
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
         final ILogger logger = mcs.getHazelcastInstance().node.getLogger(VersionMismatchLogRequest.class.getName());
         mcs.setVersionMismatch(true);
-        logger.log(Level.SEVERE, "The version of the management center is " + manCenterVersion);
+        String hazelcastVersion = mcs.getHazelcastInstance().node.initializer.getVersion();
+        logger.log(Level.SEVERE, "Version Mismatch\n"
+                                 + "\tmanagement center version : "+ manCenterVersion  + "\n"
+                                 + "\thazelcast version : "+ hazelcastVersion);
     }
 
     public void writeData(DataOutput out) throws IOException {
