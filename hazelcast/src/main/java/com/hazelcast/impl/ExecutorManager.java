@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.executor.ParallelExecutor;
@@ -616,7 +617,7 @@ public class ExecutorManager extends BaseManager {
             boolean done = true;
             try {
                 result = doGetResult((time == -1) ? -1 : unit.toMillis(time));
-                if (result == OBJECT_NO_RESPONSE) {
+                if (result == OBJECT_NO_RESPONSE || result == OBJECT_REDO) {
                     done = false;
                     innerFutureTask.innerSetException(new TimeoutException(), false);
                 } else if (result instanceof CancellationException) {
@@ -629,6 +630,9 @@ public class ExecutorManager extends BaseManager {
                     innerFutureTask.innerSet(result);
                 }
             } catch (Exception e) {
+                if (time > 0 && e instanceof OperationTimeoutException) {
+                    e = new TimeoutException();
+                }
                 innerFutureTask.innerSetException(e, done);
             } finally {
                 if (singleTask && done) {
