@@ -96,8 +96,7 @@ public class DistributedSemaphore implements DataSerializable {
 
     public void release(int permits, Address address) {
         available += permits;
-        int attachDetachDelta = -1 * permits;
-        attachDetach(attachDetachDelta, address);
+        attachDetach(permits, address);
     }
 
     public boolean tryAcquire(int permits, Address address) {
