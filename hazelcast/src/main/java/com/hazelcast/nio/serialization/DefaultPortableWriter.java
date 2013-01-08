@@ -24,7 +24,7 @@ import java.io.IOException;
 /**
  * @mdogan 12/26/12
  */
-class PortableWriterImpl implements PortableWriter {
+class DefaultPortableWriter implements PortableWriter {
 
     final PortableSerializer serializer;
     final ClassDefinitionImpl cd;
@@ -32,7 +32,7 @@ class PortableWriterImpl implements PortableWriter {
     final int offset;
 //    int fieldIndex = 0;
 
-    PortableWriterImpl(PortableSerializer serializer, ObjectDataOutput out, ClassDefinitionImpl cd) {
+    DefaultPortableWriter(PortableSerializer serializer, ObjectDataOutput out, ClassDefinitionImpl cd) {
         this.serializer = serializer;
         this.out = out;
         this.offset = out.position();

@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -35,7 +36,7 @@ import java.util.zip.Inflater;
 
 public final class SerializationServiceImpl implements SerializationService {
 
-    private static final int OUTPUT_STREAM_BUFFER_SIZE = 100 << 10;
+    private static final int OUTPUT_STREAM_BUFFER_SIZE = 32 * 1024;
 
     private final ConcurrentMap<Class, TypeSerializer> typeMap = new ConcurrentHashMap<Class, TypeSerializer>();
     private final ConcurrentMap<Integer, TypeSerializer> idMap = new ConcurrentHashMap<Integer, TypeSerializer>();
@@ -44,7 +45,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private final DataSerializer dataSerializer;
     private final PortableSerializer portableSerializer;
     private final ManagedContext managedContext;
-    final SerializationContext serializationContext;
+    private final SerializationContext serializationContext;
 
     public SerializationServiceImpl(int version, PortableFactory portableFactory) {
         this(version, portableFactory, null);
@@ -86,10 +87,12 @@ public final class SerializationServiceImpl implements SerializationService {
             if (obj instanceof Portable) {
                 data.cd = serializationContext.lookup(((Portable) obj).getClassId());
             }
-//            if (obj instanceof PartitionAware) {
-//                final Data partitionKey = writeObject(((PartitionAware) obj).getPartitionKey());
-//                final int partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
-//                data.setPartitionHash(partitionHash);
+            if (obj instanceof PartitionAware) {
+                final Object pk = ((PartitionAware) obj).getPartitionKey();
+                final Data partitionKey = toData(pk);
+                final int partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
+                data.setPartitionHash(partitionHash);
+            }
             return data;
         } catch (Throwable e) {
             if (e instanceof OutOfMemoryError) {
@@ -277,31 +280,25 @@ public final class SerializationServiceImpl implements SerializationService {
     private void safeRegister(final Class type, final TypeSerializer serializer) {
         if (DataSerializable.class.isAssignableFrom(type)
                 && serializer.getClass() != DataSerializer.class) {
-            throw new IllegalArgumentException("Internal DataSerializable[" + type + "] " +
-                    "serializer cannot be overridden!");
+            throw new IllegalArgumentException("DataSerializable[" + type + "] serializer cannot be overridden!");
         }
         if (Portable.class.isAssignableFrom(type)
                 && serializer.getClass() != PortableSerializer.class) {
-            throw new IllegalArgumentException("Internal DataSerializable[" + type + "] " +
-                    "serializer cannot be overridden!");
+            throw new IllegalArgumentException("Portable[" + type + "] serializer cannot be overridden!");
         }
-        TypeSerializer f = typeMap.putIfAbsent(type, serializer);
-        if (f != null && f.getClass() != serializer.getClass()) {
-            throw new IllegalStateException("Serializer[" + f + "] has been already registered for type: " + type);
+        TypeSerializer ts = typeMap.putIfAbsent(type, serializer);
+        if (ts != null && ts.getClass() != serializer.getClass()) {
+            throw new IllegalStateException("Serializer[" + ts + "] has been already registered for type: " + type);
         }
-        f = idMap.putIfAbsent(serializer.getTypeId(), serializer);
-        if (f != null && f.getClass() != serializer.getClass()) {
-            throw new IllegalStateException("Serializer [" + f + "] has been already registered for type-id: "
+        ts = idMap.putIfAbsent(serializer.getTypeId(), serializer);
+        if (ts != null && ts.getClass() != serializer.getClass()) {
+            throw new IllegalStateException("Serializer [" + ts + "] has been already registered for type-id: "
                     + serializer.getTypeId());
         }
     }
 
     public TypeSerializer serializerFor(final int typeId) {
         return idMap.get(typeId);
-    }
-
-    public int poolSize() {
-        return outputPool.size();
     }
 
     public SerializationContext getSerializationContext() {
@@ -356,12 +353,16 @@ public final class SerializationServiceImpl implements SerializationService {
             } finally {
                 push(out);
             }
-            ClassDefinitionImpl cd = new ClassDefinitionImpl();
+            final ClassDefinitionImpl cd = new ClassDefinitionImpl();
             cd.readData(new ContextAwareDataInput(binary, SerializationServiceImpl.this));
             cd.setBinary(binary);
-            versionedDefinitions.putIfAbsent(combineToLong(cd.classId, cd.version), cd);
-            registerNestedDefinitions(cd);
-            return cd;
+            final ClassDefinitionImpl currentCD = versionedDefinitions.putIfAbsent(combineToLong(cd.classId, version), cd);
+            if (currentCD == null) {
+                registerNestedDefinitions(cd);
+                return cd;
+            } else {
+                return currentCD;
+            }
         }
 
         private void registerNestedDefinitions(ClassDefinitionImpl cd) throws IOException {
