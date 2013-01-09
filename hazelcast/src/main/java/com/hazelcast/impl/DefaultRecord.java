@@ -37,9 +37,6 @@ public final class DefaultRecord extends AbstractRecord {
     }
 
     public Object getValue() {
-        if (valueObject == null) {
-//            valueObject = toObject(valueData);
-        }
         return valueObject;
     }
 

@@ -64,7 +64,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         init();
     }
 
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }
@@ -82,9 +82,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public Operation getBackupOperation() {
-        final GenericBackupOperation op = new GenericBackupOperation(name, dataKey, dataValue, ttl);
-        op.setBackupOpType(BackupOpType.REMOVE);
-        return op;
+        return new RemoveBackupOperation(name, dataKey);
     }
 
     public int getAsyncBackupCount() {
@@ -98,11 +96,6 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     public boolean shouldBackup() {
         return evicted;
     }
-
-    public void remove() {
-        recordStore.getRecords().remove(dataKey);
-    }
-
 
     public void afterRun() {
         int eventType = EntryEvent.TYPE_EVICTED;

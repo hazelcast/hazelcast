@@ -34,7 +34,7 @@ public class TryPutOperation extends BasePutOperation {
     public TryPutOperation() {
     }
 
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }

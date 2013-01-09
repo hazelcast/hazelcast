@@ -33,6 +33,7 @@ import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
@@ -46,17 +47,32 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
+
 public class MapRecordTask implements Runnable {
 
     NodeEngine nodeEngine;
     MapRecordStateOperation operation;
+    int partitionId;
 
-    public MapRecordTask(NodeEngine nodeEngine, MapRecordStateOperation operation) {
+
+    public MapRecordTask(NodeEngine nodeEngine, MapRecordStateOperation operation, int partitionId) {
         this.nodeEngine = nodeEngine;
         this.operation = operation;
+        this.partitionId = partitionId;
     }
 
     public void run() {
-        nodeEngine.getOperationService().runOperation(operation);
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future invoke = invocation.invoke();
+            invoke.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (ExecutionException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
     }
+
 }
