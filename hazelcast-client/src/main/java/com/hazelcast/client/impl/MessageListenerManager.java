@@ -20,7 +20,6 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.impl.DataMessage;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationConstants;

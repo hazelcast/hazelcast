@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Prefix;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
@@ -371,6 +372,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public LocalMapStats getLocalMapStats() {
         throw new UnsupportedOperationException();
+    }
+
+    public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+        return null;
     }
 
     public Set<K> keySet() {

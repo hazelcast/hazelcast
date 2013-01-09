@@ -19,7 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiTask;
-import com.hazelcast.impl.InnerFutureTask;
+import com.hazelcast.executor.InnerFutureTask;
 
 import java.util.*;
 import java.util.concurrent.*;

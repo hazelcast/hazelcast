@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.Constants.IO;
 import com.hazelcast.logging.ILogger;
 
 import javax.crypto.Cipher;
@@ -149,7 +148,7 @@ class SocketPacketReader implements SocketReader {
     class SymmetricCipherPacketReader implements PacketReader {
         int size = -1;
         final Cipher cipher;
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * ioService.getSocketReceiveBufferSize() * IO.KILO_BYTE);
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE);
 
         SymmetricCipherPacketReader() {
             cipher = init();

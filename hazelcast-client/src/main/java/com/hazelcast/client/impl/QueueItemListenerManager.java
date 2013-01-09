@@ -21,7 +21,6 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.impl.DataAwareItemEvent;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationConstants;

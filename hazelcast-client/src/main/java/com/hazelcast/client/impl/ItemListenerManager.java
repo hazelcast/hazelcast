@@ -19,8 +19,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.DataAwareEntryEvent;
-import com.hazelcast.impl.DataAwareItemEvent;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Collection;

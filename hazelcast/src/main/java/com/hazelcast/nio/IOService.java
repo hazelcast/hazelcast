@@ -30,6 +30,8 @@ import java.util.Collection;
 
 public interface IOService {
 
+    public static final int KILO_BYTE = 1024;
+
     boolean isActive();
 
     ILogger getLogger(String name);

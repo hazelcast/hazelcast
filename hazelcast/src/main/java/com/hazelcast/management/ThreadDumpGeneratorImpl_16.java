@@ -68,9 +68,6 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
         }
     }
 
-    /**
-     * copied from JDK 1.6 {@link ThreadInfo} toString()
-     */
     protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
         sb.append("\"").append(info.getThreadName()).append("\"").append(
                 " Id=").append(info.getThreadId()).append(" ").append(
@@ -91,7 +88,7 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
         sb.append('\n');
         final StackTraceElement[] stackTrace = info.getStackTrace();
         final Object lockInfo = objectCall(info, ThreadInfo_getLockInfo);
-        final Object[] monitorInfo = objectCall(info, ThreadInfo_getLockedMonitors);
+        final Object[] monitorInfo = (Object[]) objectCall(info, ThreadInfo_getLockedMonitors);
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
             sb.append("\tat ").append(ste.toString());
@@ -122,7 +119,7 @@ class ThreadDumpGeneratorImpl_16 extends ThreadDumpGenerator {
                 }
             }
         }
-        final Object[] locks = objectCall(info, ThreadInfo_getLockedSynchronizers);
+        final Object[] locks = (Object[]) objectCall(info, ThreadInfo_getLockedSynchronizers);
         if (locks.length > 0) {
             sb.append("\n\tNumber of locked synchronizers = ").append(locks.length);
             sb.append('\n');

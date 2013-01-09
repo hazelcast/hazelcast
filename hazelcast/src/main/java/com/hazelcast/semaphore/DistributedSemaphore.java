@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.semaphore;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.transaction.TransactionImpl;
@@ -80,14 +79,10 @@ public final class ThreadContext {
 
     private final Thread thread;
 
-//    private final Serializer serializer = new Serializer(this);
-
     private final Map<String, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts
             = new HashMap<String, HazelcastInstanceThreadContext>(2);
 
     private HazelcastInstanceImpl currentInstance;
-
-//    private SerializerRegistry currentSerializerRegistry;
 
     private Object currentOperation = null;
 
@@ -107,42 +102,13 @@ public final class ThreadContext {
         return currentInstance;
     }
 
-    public ManagedContext getCurrentManagedContext() {
-        return currentInstance != null ? currentInstance.getManagedContext() : null;
-    }
-
-//    public SerializerRegistry getCurrentSerializerRegistry() {
-//        return currentSerializerRegistry;
-//    }
-
     public void setCurrentInstance(HazelcastInstanceImpl instance) {
         this.currentInstance = instance;
-//        this.currentSerializerRegistry = instance.getSerializerRegistry();
     }
-
-//    public void setCurrentSerializerRegistry(SerializerRegistry serializerRegistry) {
-//        this.currentSerializerRegistry = serializerRegistry;
-//    }
 
     public void reset() {
         finalizeTxn();
     }
-
-//    public byte[] toByteArray(Object obj) {
-//        return serializer.toByteArray(obj);
-//    }
-//
-//    public Data toData(Object obj) {
-//        return serializer.writeObject(obj);
-//    }
-//
-//    public Object toObject(Data data) {
-//        return serializer.readObject(data);
-//    }
-//
-//    public Object toObject(byte[] data) {
-//        return serializer.toObject(data);
-//    }
 
     public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(HazelcastInstanceImpl instance) {
         if (instance == null) {
@@ -189,14 +155,11 @@ public final class ThreadContext {
     public void shutdown(HazelcastInstanceImpl instance) {
         mapHazelcastInstanceContexts.remove(instance.getName());
         currentInstance = null;
-//        currentSerializerRegistry = null;
     }
 
     private void destroy() {
-//        serializer.destroy();
         mapHazelcastInstanceContexts.clear();
         currentInstance = null;
-//        currentSerializerRegistry = null;
     }
 
     private class HazelcastInstanceThreadContext {

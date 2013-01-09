@@ -27,9 +27,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.management.DetectDeadlockRequest.Edge;
-import com.hazelcast.management.DetectDeadlockRequest.Vertex;
-import com.hazelcast.management.LockInformationCallable.MapLockState;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
@@ -184,47 +181,47 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
     }
 
-    List<Edge> detectDeadlock() {
-        Collection<Map<String, MapLockState>> collection =
-                (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());
-        List<Vertex> graph = new ArrayList<Vertex>();
-        for (Map<String, MapLockState> mapLockStateMap : collection) {
-            for (MapLockState map : mapLockStateMap.values()) {
-                for (Object key : map.getLockOwners().keySet()) {
-                    Vertex owner = new Vertex(map.getLockOwners().get(key));
-                    Vertex requester = new Vertex(map.getLockRequested().get(key));
-                    int index = graph.indexOf(owner);
-                    if (index >= 0) {
-                        owner = graph.get(index);
-                    } else {
-                        graph.add(owner);
-                    }
-                    index = graph.indexOf(requester);
-                    if (index >= 0) {
-                        requester = graph.get(index);
-                    } else {
-                        graph.add(requester);
-                    }
-                    Edge edge = new Edge();
-                    edge.from = requester;
-                    edge.to = owner;
-                    edge.key = key;
-                    edge.mapName = map.getMapName();
-                    edge.globalLock = map.isGlobalLock();
-                    owner.addIncoming(edge);
-                    requester.addOutgoing(edge);
-                }
-            }
-        }
-        List<Edge> list = new ArrayList<Edge>();
-        if (graph != null && graph.size() > 0) {
-            try {
-                graph.get(0).visit(list);
-            } catch (RuntimeException e) {
-            }
-        }
-        return list;
-    }
+//    List<Edge> detectDeadlock() {
+//        Collection<Map<String, MapLockState>> collection =
+//                (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());
+//        List<Vertex> graph = new ArrayList<Vertex>();
+//        for (Map<String, MapLockState> mapLockStateMap : collection) {
+//            for (MapLockState map : mapLockStateMap.values()) {
+//                for (Object key : map.getLockOwners().keySet()) {
+//                    Vertex owner = new Vertex(map.getLockOwners().get(key));
+//                    Vertex requester = new Vertex(map.getLockRequested().get(key));
+//                    int index = graph.indexOf(owner);
+//                    if (index >= 0) {
+//                        owner = graph.get(index);
+//                    } else {
+//                        graph.add(owner);
+//                    }
+//                    index = graph.indexOf(requester);
+//                    if (index >= 0) {
+//                        requester = graph.get(index);
+//                    } else {
+//                        graph.add(requester);
+//                    }
+//                    Edge edge = new Edge();
+//                    edge.from = requester;
+//                    edge.to = owner;
+//                    edge.key = key;
+//                    edge.mapName = map.getMapName();
+//                    edge.globalLock = map.isGlobalLock();
+//                    owner.addIncoming(edge);
+//                    requester.addOutgoing(edge);
+//                }
+//            }
+//        }
+//        List<Edge> list = new ArrayList<Edge>();
+//        if (graph != null && graph.size() > 0) {
+//            try {
+//                graph.get(0).visit(list);
+//            } catch (RuntimeException e) {
+//            }
+//        }
+//        return list;
+//    }
 
     class StateSender extends Thread {
         StateSender() {
@@ -276,7 +273,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new EvictLocalMapRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
-            register(new DetectDeadlockRequest());
+//            register(new DetectDeadlockRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
