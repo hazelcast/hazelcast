@@ -17,8 +17,8 @@
 package com.hazelcast.collection.processor;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.SerializationContext;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * @ali 1/1/13
@@ -45,7 +45,7 @@ public class Entry {
         container.removeObject(key);
     }
 
-    public SerializationContext getSerializationContext(){
+    public SerializationService getSerializationContext(){
         return container.getSerializationService();
     }
 

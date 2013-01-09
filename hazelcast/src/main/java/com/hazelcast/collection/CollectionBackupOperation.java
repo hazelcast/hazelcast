@@ -45,7 +45,7 @@ public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation im
 
     public void run() throws Exception {
         CollectionService service = getService();
-        CollectionContainer collectionContainer = service.getCollectionContainer(getPartitionId(), name);
+        CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), name);
         ((BackupAwareEntryProcessor)processor).executeBackup(new Entry(collectionContainer, dataKey));
     }
 

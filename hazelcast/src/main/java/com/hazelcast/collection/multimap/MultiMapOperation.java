@@ -17,24 +17,30 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
+import com.hazelcast.collection.CollectionService;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 /**
- * @ali 1/3/13
+ * @ali 1/8/13
  */
-public class KeySetOperation extends MultiMapOperation {
+public abstract class MultiMapOperation extends AbstractNamedOperation implements PartitionAwareOperation{
 
-    public KeySetOperation() {
+    transient Object response;
+
+    protected MultiMapOperation() {
     }
 
-    public KeySetOperation(String name) {
+    protected MultiMapOperation(String name) {
         super(name);
     }
 
-    public void run() throws Exception {
-        CollectionContainer container = getContainer();
-        if (container != null ){
-            response = new MultiMapCollectionResponse(container.keySet(), ValueCollectionType.SET, true, getNodeEngine().getSerializationService());
-        }
+    public CollectionContainer getContainer(){
+        CollectionService service = getService();
+        return service.getCollectionContainer(getPartitionId(), name);
+    }
+
+    public Object getResponse() {
+        return response;
     }
 }

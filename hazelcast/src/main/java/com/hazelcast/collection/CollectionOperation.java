@@ -49,7 +49,7 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
 
     public void run() throws Exception {
         CollectionService service = getService();
-        CollectionContainer collectionContainer = service.getCollectionContainer(getPartitionId(), name);
+        CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), name);
         response = processor.execute(new Entry(collectionContainer, dataKey));
     }
 
