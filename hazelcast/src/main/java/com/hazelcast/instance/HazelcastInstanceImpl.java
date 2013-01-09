@@ -195,7 +195,14 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
                 return (S) ((RemoteService) service).getProxy(name);
             }
         }
-        throw new IllegalArgumentException(serviceClass.getName());
+        checkActive();
+        throw new IllegalArgumentException("Service could not be found! -> " + serviceClass.getName());
+    }
+
+    private void checkActive() {
+        if (!node.isActive()) {
+            throw new IllegalStateException("Hazelcast instance is not active!");
+        }
     }
 
     public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, Object... params) {

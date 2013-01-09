@@ -338,7 +338,7 @@ class ContextAwareDataOutput extends OutputStream implements ObjectDataOutput, S
     }
 
     public SerializationContext getSerializationContext() {
-        return service.serializationContext;
+        return service.getSerializationContext();
     }
 
     @Override

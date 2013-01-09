@@ -24,14 +24,14 @@ import java.io.IOException;
 /**
  * @mdogan 12/28/12
  */
-public class PortableReaderImpl implements PortableReader {
+public class DefaultPortableReader implements PortableReader {
 
     final PortableSerializer serializer;
     final ClassDefinitionImpl cd;
     final ObjectDataInput in;
     final int offset;
 
-    public PortableReaderImpl(PortableSerializer serializer, ObjectDataInput in, ClassDefinitionImpl cd) {
+    public DefaultPortableReader(PortableSerializer serializer, ObjectDataInput in, ClassDefinitionImpl cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
@@ -172,10 +172,10 @@ public class PortableReaderImpl implements PortableReader {
         if (!NULL) {
             final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
             try {
-                ctxIn.setLocalClassId(fd.getClassId());
+                ctxIn.setDataClassId(fd.getClassId());
                 return serializer.read(in);
             } finally {
-                ctxIn.setLocalClassId(cd.classId);
+                ctxIn.setDataClassId(cd.classId);
             }
         }
         return null;
@@ -197,12 +197,12 @@ public class PortableReaderImpl implements PortableReader {
         final Portable[] portables = new Portable[len];
         final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
         try {
-            ctxIn.setLocalClassId(fd.getClassId());
+            ctxIn.setDataClassId(fd.getClassId());
             for (int i = 0; i < len; i++) {
                 portables[i] = serializer.read(in);
             }
         } finally {
-            ctxIn.setLocalClassId(cd.classId);
+            ctxIn.setDataClassId(cd.classId);
         }
         return portables;
     }
@@ -215,14 +215,14 @@ public class PortableReaderImpl implements PortableReader {
 //        final Map<Integer, Portable> portables = new HashMap<Integer, Portable>(len);
 //        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
 //        try {
-//            ctxIn.setLocalClassId(fd.getLocalClassId());
+//            ctxIn.setDataClassId(fd.getDataClassId());
 //            for (int i = 0; i < len; i++) {
 //                int key = in.readInt();
 //                Portable p = serializer.read(in);
 //                portables.put(key, p);
 //            }
 //        } finally {
-//            ctxIn.setLocalClassId(cd.classId);
+//            ctxIn.setDataClassId(cd.classId);
 //        }
 //        return portables;
 //    }
@@ -235,19 +235,19 @@ public class PortableReaderImpl implements PortableReader {
 //        final Map<String, Portable> portables = new HashMap<String, Portable>(len);
 //        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
 //        try {
-//            ctxIn.setLocalClassId(fd.getLocalClassId());
+//            ctxIn.setDataClassId(fd.getDataClassId());
 //            for (int i = 0; i < len; i++) {
 //                String key = in.readUTF();
 //                Portable p = serializer.read(in);
 //                portables.put(key, p);
 //            }
 //        } finally {
-//            ctxIn.setLocalClassId(cd.classId);
+//            ctxIn.setDataClassId(cd.classId);
 //        }
 //        return portables;
 //    }
 
-    private int getPosition(String fieldName) throws IOException {
+    protected int getPosition(String fieldName) throws IOException {
         FieldDefinition fd = cd.get(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
@@ -255,7 +255,7 @@ public class PortableReaderImpl implements PortableReader {
         return getPosition(fd);
     }
 
-    private int getPosition(FieldDefinition fd) throws IOException {
+    protected int getPosition(FieldDefinition fd) throws IOException {
         return in.readInt(offset + fd.getIndex() * 4);
     }
 }

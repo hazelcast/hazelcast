@@ -34,4 +34,5 @@ public interface SerializationContext {
     void registerClassDefinition(ClassDefinition cd) throws IOException;
 
     int getVersion();
+
 }
