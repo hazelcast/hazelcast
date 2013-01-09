@@ -17,8 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.impl.Record;
-import com.hazelcast.map.GenericBackupOperation.BackupOpType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
@@ -89,7 +87,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     public void afterRun() {
         int eventType = EntryEvent.TYPE_REMOVED;
-        mapService.publishEvent(getCaller(), name, eventType, dataKey, null, dataOldValue);
+        mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, null);
     }
 
     @Override

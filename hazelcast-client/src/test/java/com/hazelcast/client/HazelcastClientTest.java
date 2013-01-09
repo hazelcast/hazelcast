@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.*;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
-import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.partition.Partition;
 import org.junit.Ignore;
 import org.junit.Test;

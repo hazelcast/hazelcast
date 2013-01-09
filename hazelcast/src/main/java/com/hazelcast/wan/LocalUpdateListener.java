@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.wan;
 
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.map.Record;
 
-public interface MapMaxSizePolicy {
-
-    boolean overCapacity();
-
-    MaxSizeConfig getMaxSizeConfig();
-
+public interface LocalUpdateListener {
+    void recordUpdated(Record record);
 }

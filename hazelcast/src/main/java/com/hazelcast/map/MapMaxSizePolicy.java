@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.config.MaxSizeConfig;
 
-import java.util.Map;
+public interface MapMaxSizePolicy {
 
-public interface Record extends DataSerializable, Map.Entry, Cloneable {
+    boolean overCapacity();
 
-    long getId();
+    MaxSizeConfig getMaxSizeConfig();
 
-    Data getValueData();
-
-    void setValueData(Data dataValue);
-
-    Data getKey();
-
-    Record clone();
-
-    RecordState getState();
 }

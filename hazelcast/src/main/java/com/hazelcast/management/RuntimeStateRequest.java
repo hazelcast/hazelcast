@@ -18,7 +18,7 @@ package com.hazelcast.management;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.Record;
+import com.hazelcast.map.Record;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ObjectDataInput;

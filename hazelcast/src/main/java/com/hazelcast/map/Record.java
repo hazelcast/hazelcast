@@ -14,8 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.map;
 
-public interface LocalUpdateListener {
-    void recordUpdated(Record record);
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.util.Map;
+
+public interface Record extends DataSerializable, Map.Entry, Cloneable {
+
+    long getId();
+
+    Data getValueData();
+
+    void setValueData(Data dataValue);
+
+    Data getKey();
+
+    Record clone();
+
+    RecordState getState();
 }

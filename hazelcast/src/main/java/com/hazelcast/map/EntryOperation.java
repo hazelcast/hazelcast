@@ -17,36 +17,35 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class RemoveBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class EntryOperation extends AbstractNamedKeyBasedOperation {
 
+    EntryProcessor entryProcessor;
+    Object response;
 
-    public RemoveBackupOperation(String name, Data dataKey) {
+    public EntryOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public RemoveBackupOperation() {
+    public EntryOperation() {
     }
 
     public void run() {
         MapService mapService = (MapService) getService();
-        int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        Record record = recordStore.getRecords().get(dataKey);
-        if (record != null) {
-            recordStore.getRecords().remove(dataKey);
-        }
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        recordStore.getMapEntry(dataKey);
+
     }
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return response;
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public String toString() {
+        return "ContainsKeyOperation{" +
+                '}';
     }
 }

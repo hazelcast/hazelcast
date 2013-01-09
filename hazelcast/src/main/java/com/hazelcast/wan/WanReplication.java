@@ -16,8 +16,7 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.impl.LocalUpdateListener;
-import com.hazelcast.impl.Record;
+import com.hazelcast.map.Record;
 
 public class WanReplication implements LocalUpdateListener {
     final String name;

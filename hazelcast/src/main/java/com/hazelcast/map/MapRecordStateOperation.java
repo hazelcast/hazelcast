@@ -17,17 +17,9 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.RecordState;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
-
-import java.util.concurrent.Future;
-
-import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
 
 public class MapRecordStateOperation extends LockAwareOperation implements BackupAwareOperation {
 

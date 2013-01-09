@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.map;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.map.Record;
-import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class DummyWanReplication implements WanReplicationEndpoint {
+import java.util.Map;
 
-    public void init(Node node, String groupName, String password, String... targets) {
-    }
-
-    public void recordUpdated(Record record) {
-    }
-
-    public void shutdown() {
-    }
+public interface EntryProcessor extends DataSerializable {
+    Object process(Map.Entry entry);
+    void processBackup(Map.Entry entry);
 }

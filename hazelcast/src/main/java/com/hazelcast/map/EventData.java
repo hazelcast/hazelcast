@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 

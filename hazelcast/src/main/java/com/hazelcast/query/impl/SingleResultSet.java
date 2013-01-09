@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Record;
+import com.hazelcast.map.Record;
 
 import java.util.AbstractSet;
 import java.util.HashSet;

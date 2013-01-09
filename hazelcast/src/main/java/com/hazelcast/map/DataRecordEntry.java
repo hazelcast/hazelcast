@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl.base;
+package com.hazelcast.map;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Record;
+import com.hazelcast.map.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
