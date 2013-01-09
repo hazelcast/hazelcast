@@ -16,7 +16,10 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.impl.base.DataRecordEntry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,8 +32,6 @@ import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.Test;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -408,7 +409,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertNull(map.put("a", "b"));
         map.get("a");
         map.get("a");
-        MapEntry<String, String> entry = map.getMapEntry("a");
+        Map.Entry<String, String> entry = map.getMapEntry("a");
         assertEquals("a", entry.getKey());
         assertEquals("b", entry.getValue());
         assertEquals(2, ((DataRecordEntry)entry).getHits());
@@ -861,7 +862,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         final IMap imap = hClient.getMap("testGetNullMapEntry");
         String key = "key";
-        MapEntry mapEntry = imap.getMapEntry(key);
+        Map.Entry mapEntry = imap.getMapEntry(key);
         assertNull(mapEntry);
     }
 
