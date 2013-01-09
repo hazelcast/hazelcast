@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataInput;
+
 import java.io.IOException;
 
 /**
@@ -24,7 +26,7 @@ import java.io.IOException;
 public class MorphingPortableReader extends DefaultPortableReader {
 
 
-    public MorphingPortableReader(PortableSerializer serializer, IndexedObjectDataInput in, ClassDefinitionImpl cd) {
+    public MorphingPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinitionImpl cd) {
         super(serializer, in, cd);
     }
 

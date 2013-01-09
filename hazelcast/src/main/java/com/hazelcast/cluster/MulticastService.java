@@ -21,8 +21,8 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 
 import java.io.EOFException;
@@ -56,8 +56,8 @@ public class MulticastService implements Runnable {
     private final Deflater deflater = new Deflater(Deflater.BEST_SPEED);
     private final Inflater inflater = new Inflater();
 
-    private final ObjectDataOutput sendOutput;
-    private final ObjectDataOutput receiveOutput;
+    private final BufferObjectDataOutput sendOutput;
+    private final BufferObjectDataOutput receiveOutput;
 
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
@@ -65,8 +65,8 @@ public class MulticastService implements Runnable {
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
 
-        sendOutput = node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
-        receiveOutput = node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
+        sendOutput = (BufferObjectDataOutput) node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
+        receiveOutput = (BufferObjectDataOutput) node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
 
         this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
         final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
@@ -140,7 +140,7 @@ public class MulticastService implements Runnable {
     }
 
     private JoinInfo receive() {
-        final ObjectDataOutput out = receiveOutput;
+        final BufferObjectDataOutput out = receiveOutput;
         try {
             out.reset();
             inflater.reset();
@@ -181,7 +181,7 @@ public class MulticastService implements Runnable {
 
     public void send(JoinInfo joinInfo) {
         if (!running) return;
-        final ObjectDataOutput out = sendOutput;
+        final BufferObjectDataOutput out = sendOutput;
         synchronized (sendLock) {
             try {
                 out.reset();

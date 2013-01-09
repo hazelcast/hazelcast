@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataOutput;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UTFDataFormatException;
@@ -24,7 +26,7 @@ import java.nio.BufferOverflowException;
 /**
 * @mdogan 12/26/12
 */
-class ContextAwareDataOutput extends OutputStream implements IndexedObjectDataOutput, SerializationContextAware {
+class ContextAwareDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
 
     private static final int DEFAULT_SIZE = 1024 * 4;
 

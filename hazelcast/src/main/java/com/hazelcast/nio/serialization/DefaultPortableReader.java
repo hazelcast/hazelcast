@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
@@ -27,10 +28,10 @@ public class DefaultPortableReader implements PortableReader {
 
     final PortableSerializer serializer;
     final ClassDefinitionImpl cd;
-    final IndexedObjectDataInput in;
+    final BufferObjectDataInput in;
     final int offset;
 
-    public DefaultPortableReader(PortableSerializer serializer, IndexedObjectDataInput in, ClassDefinitionImpl cd) {
+    public DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinitionImpl cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;

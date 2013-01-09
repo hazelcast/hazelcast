@@ -25,15 +25,6 @@ import java.io.IOException;
  */
 public interface ObjectDataInput extends DataInput, Closeable {
 
-    int position();
-
-    void position(int newPos);
-
     <T> T readObject() throws IOException;
 
-    ObjectDataInput duplicate();
-
-    ObjectDataInput slice();
-
-    void reset();
 }

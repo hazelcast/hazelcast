@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataInput;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +26,7 @@ import java.io.UTFDataFormatException;
 /**
 * @mdogan 12/26/12
 */
-class ContextAwareDataInput extends InputStream implements IndexedObjectDataInput, SerializationContextAware {
+class ContextAwareDataInput extends InputStream implements BufferObjectDataInput, SerializationContextAware {
 
     static final int STRING_CHUNK_SIZE = ContextAwareDataOutput.STRING_CHUNK_SIZE;
 
