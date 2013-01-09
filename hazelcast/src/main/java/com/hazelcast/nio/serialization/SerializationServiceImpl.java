@@ -22,6 +22,8 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ConstantSerializers.*;
+import com.hazelcast.nio.serialization.DefaultSerializers.*;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -34,13 +36,20 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+
 public final class SerializationServiceImpl implements SerializationService {
 
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 32 * 1024;
+    private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
+
+    private final IdentityHashMap<Class, TypeSerializer> constantsTypeMap
+            = new IdentityHashMap<Class, TypeSerializer>(CONSTANT_SERIALIZERS_SIZE);
+    private final TypeSerializer[] constantTypeIds = new TypeSerializer[CONSTANT_SERIALIZERS_SIZE];
 
     private final ConcurrentMap<Class, TypeSerializer> typeMap = new ConcurrentHashMap<Class, TypeSerializer>();
     private final ConcurrentMap<Integer, TypeSerializer> idMap = new ConcurrentHashMap<Integer, TypeSerializer>();
     private final AtomicReference<TypeSerializer> fallback = new AtomicReference<TypeSerializer>();
+
     private final Queue<ContextAwareDataOutput> outputPool = new ConcurrentLinkedQueue<ContextAwareDataOutput>();
     private final DataSerializer dataSerializer;
     private final PortableSerializer portableSerializer;
@@ -54,18 +63,31 @@ public final class SerializationServiceImpl implements SerializationService {
     public SerializationServiceImpl(int version, PortableFactory portableFactory, ManagedContext managedContext) {
         this.managedContext = managedContext;
         serializationContext = new SerializationContextImpl(portableFactory, version);
-        safeRegister(DataSerializable.class, dataSerializer = new DataSerializer());
-        safeRegister(Portable.class, portableSerializer = new PortableSerializer(serializationContext));
-        safeRegister(String.class, new DefaultSerializers.StringSerializer());
-        safeRegister(Long.class, new DefaultSerializers.LongSerializer());
-        safeRegister(Integer.class, new DefaultSerializers.IntegerSerializer());
-        safeRegister(byte[].class, new DefaultSerializers.ByteArraySerializer());
-        safeRegister(Boolean.class, new DefaultSerializers.BooleanSerializer());
-        safeRegister(Date.class, new DefaultSerializers.DateSerializer());
-        safeRegister(BigInteger.class, new DefaultSerializers.BigIntegerSerializer());
-        safeRegister(Externalizable.class, new DefaultSerializers.Externalizer());
-        safeRegister(Serializable.class, new DefaultSerializers.ObjectSerializer());
-        safeRegister(Class.class, new DefaultSerializers.ClassSerializer());
+
+        registerDefault(DataSerializable.class, dataSerializer = new DataSerializer());
+        registerDefault(Portable.class, portableSerializer = new PortableSerializer(serializationContext));
+        registerDefault(Byte.class, new ByteSerializer());
+        registerDefault(Boolean.class, new BooleanSerializer());
+        registerDefault(Character.class, new CharSerializer());
+        registerDefault(Short.class, new ShortSerializer());
+        registerDefault(Integer.class, new IntegerSerializer());
+        registerDefault(Long.class, new LongSerializer());
+        registerDefault(Float.class, new FloatSerializer());
+        registerDefault(Double.class, new DoubleSerializer());
+        registerDefault(byte[].class, new ByteArraySerializer());
+        registerDefault(char[].class, new CharArraySerializer());
+        registerDefault(short[].class, new ShortArraySerializer());
+        registerDefault(int[].class, new IntegerArraySerializer());
+        registerDefault(long[].class, new LongArraySerializer());
+        registerDefault(float[].class, new FloatArraySerializer());
+        registerDefault(double[].class, new DoubleArraySerializer());
+        registerDefault(String.class, new StringSerializer());
+
+        safeRegister(Date.class, new DateSerializer());
+        safeRegister(BigInteger.class, new BigIntegerSerializer());
+        safeRegister(Externalizable.class, new Externalizer());
+        safeRegister(Serializable.class, new ObjectSerializer());
+        safeRegister(Class.class, new ClassSerializer());
     }
 
     @SuppressWarnings("unchecked")
@@ -131,7 +153,7 @@ public final class SerializationServiceImpl implements SerializationService {
             if (serializer == null) {
                 throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
             }
-            if (data.type == SerializationConstants.SERIALIZER_TYPE_PORTABLE) {
+            if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
                 serializationContext.registerClassDefinition(data.cd);
             }
             in = new ContextAwareDataInput(data, this);
@@ -222,48 +244,41 @@ public final class SerializationServiceImpl implements SerializationService {
         }
     }
 
-    public void deregister(final Class type) {
-        final TypeSerializer factory = typeMap.remove(type);
-        if (factory != null) {
-            idMap.remove(factory.getTypeId());
-        }
-    }
-
-    public void deregisterFallback() {
-        fallback.set(null);
-    }
-
     public TypeSerializer serializerFor(final Class type) {
-        TypeSerializer serializer = null;
         if (DataSerializable.class.isAssignableFrom(type)) {
-            serializer = dataSerializer;
+            return dataSerializer;
         } else if (Portable.class.isAssignableFrom(type)) {
-            serializer = portableSerializer;
+            return portableSerializer;
         } else {
-            serializer = typeMap.get(type);
+            final TypeSerializer serializer;
+            if ((serializer = constantsTypeMap.get(type)) != null) {
+                return serializer;
+            }
+        }
+
+        TypeSerializer serializer = typeMap.get(type);
+        if (serializer == null) {
+            // look for super classes
+            Class typeSuperclass = type.getSuperclass();
+            List<Class> interfaces = new LinkedList<Class>();
+            Collections.addAll(interfaces, type.getInterfaces());
+            while (typeSuperclass != null) {
+                if ((serializer = registerFromSuperType(type, typeSuperclass)) != null) {
+                    break;
+                }
+                Collections.addAll(interfaces, typeSuperclass.getInterfaces());
+                typeSuperclass = typeSuperclass.getSuperclass();
+            }
             if (serializer == null) {
-                // look for super classes
-                Class typeSuperclass = type.getSuperclass();
-                List<Class> interfaces = new LinkedList<Class>();
-                Collections.addAll(interfaces, type.getInterfaces());
-                while (typeSuperclass != null) {
-                    if ((serializer = registerFromSuperType(type, typeSuperclass)) != null) {
+                // look for interfaces
+                for (Class typeInterface : interfaces) {
+                    if ((serializer = registerFromSuperType(type, typeInterface)) != null) {
                         break;
                     }
-                    Collections.addAll(interfaces, typeSuperclass.getInterfaces());
-                    typeSuperclass = typeSuperclass.getSuperclass();
                 }
-                if (serializer == null) {
-                    // look for interfaces
-                    for (Class typeInterface : interfaces) {
-                        if ((serializer = registerFromSuperType(type, typeInterface)) != null) {
-                            break;
-                        }
-                    }
-                }
-                if (serializer == null && (serializer = fallback.get()) != null) {
-                    safeRegister(type, serializer);
-                }
+            }
+            if (serializer == null && (serializer = fallback.get()) != null) {
+                safeRegister(type, serializer);
             }
         }
         return serializer;
@@ -277,14 +292,14 @@ public final class SerializationServiceImpl implements SerializationService {
         return serializer;
     }
 
+    private void registerDefault(Class type, TypeSerializer serializer) {
+        constantsTypeMap.put(type, serializer);
+        constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
+    }
+
     private void safeRegister(final Class type, final TypeSerializer serializer) {
-        if (DataSerializable.class.isAssignableFrom(type)
-                && serializer.getClass() != DataSerializer.class) {
-            throw new IllegalArgumentException("DataSerializable[" + type + "] serializer cannot be overridden!");
-        }
-        if (Portable.class.isAssignableFrom(type)
-                && serializer.getClass() != PortableSerializer.class) {
-            throw new IllegalArgumentException("Portable[" + type + "] serializer cannot be overridden!");
+        if (constantsTypeMap.containsKey(type)) {
+            throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden!");
         }
         TypeSerializer ts = typeMap.putIfAbsent(type, serializer);
         if (ts != null && ts.getClass() != serializer.getClass()) {
@@ -298,7 +313,17 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public TypeSerializer serializerFor(final int typeId) {
+        if (typeId < 0) {
+            final int index = indexForDefaultType(typeId);
+            if (index < CONSTANT_SERIALIZERS_SIZE) {
+                return constantTypeIds[index];
+            }
+        }
         return idMap.get(typeId);
+    }
+
+    private int indexForDefaultType(final int typeId) {
+        return -typeId - 1;
     }
 
     public SerializationContext getSerializationContext() {

@@ -30,12 +30,12 @@ class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public int getTypeId() {
-        return SerializationConstants.SERIALIZER_TYPE_PORTABLE;
+        return SerializationConstants.CONSTANT_TYPE_PORTABLE;
     }
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
         ClassDefinitionImpl cd = getClassDefinition(p);
-        DefaultPortableWriter writer = new DefaultPortableWriter(this, out, cd);
+        DefaultPortableWriter writer = new DefaultPortableWriter(this, (IndexedObjectDataOutput) out, cd);
         p.writePortable(writer);
     }
 
@@ -60,10 +60,10 @@ class PortableSerializer implements TypeSerializer<Portable> {
         final ClassDefinitionImpl cd;
         if (context.getVersion() == dataVersion) {
             cd = context.lookup(dataClassId); // using context.version
-            reader = new DefaultPortableReader(this, in, cd);
+            reader = new DefaultPortableReader(this, (IndexedObjectDataInput) in, cd);
         } else {
             cd = context.lookup(dataClassId, dataVersion); // registered during read
-            reader = new MorphingPortableReader(this, in, cd);
+            reader = new MorphingPortableReader(this, (IndexedObjectDataInput) in, cd);
         }
         p.readPortable(reader);
         return p;

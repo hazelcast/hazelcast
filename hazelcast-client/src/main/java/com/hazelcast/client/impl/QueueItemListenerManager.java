@@ -81,7 +81,7 @@ public class QueueItemListenerManager {
         if (list != null) {
             for (ItemListenerHolder listenerHolder : list) {
                 ItemListener<Object> listener = listenerHolder.listener;
-                Data item = listenerHolder.includeValue? new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY,
+                Data item = listenerHolder.includeValue? new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY,
                         protocol.buffers[0].array()):null;
                 ItemEventType itemEventType = ItemEventType.valueOf(protocol.args[1]);
                 if (ItemEventType.ADDED.equals(itemEventType)) {

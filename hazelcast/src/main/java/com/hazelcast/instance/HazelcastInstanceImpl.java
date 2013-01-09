@@ -18,14 +18,16 @@ package com.hazelcast.instance;
 
 import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.RemoteService;
@@ -212,6 +214,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
                 return (S) ((RemoteService) service).getProxy(params);
             }
         }
+        checkActive();
         throw new IllegalArgumentException();
     }
 
@@ -223,15 +226,16 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (service instanceof RemoteService) {
             return (S) ((RemoteService) service).getProxy(name);
         }
+        checkActive();
         throw new IllegalArgumentException();
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {
-//        serializerRegistry.register(serializer, type);
+        node.serializationService.register(serializer, type);
     }
-//
+
     public void registerFallbackSerializer(final TypeSerializer serializer) {
-//        serializerRegistry.registerFallback(serializer);
+        node.serializationService.registerFallback(serializer);
     }
 
     public void addInstanceListener(InstanceListener instanceListener) {
@@ -322,24 +326,24 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     private void registerConfigSerializers(Config config) throws Exception {
-//        final Collection<SerializerConfig> serializerConfigs = config.getSerializerConfigs();
-//        if (serializerConfigs != null) {
-//            for (SerializerConfig serializerConfig : serializerConfigs) {
-//                TypeSerializer factory = serializerConfig.getImplementation();
-//                if (factory == null) {
-//                    factory = (TypeSerializer) ClassLoaderUtil.newInstance(serializerConfig.getClassName());
-//                }
-//                if (serializerConfig.isGlobal()) {
-//                    serializerRegistry.registerFallback(factory);
-//                } else {
-//                    Class typeClass = serializerConfig.getTypeClass();
-//                    if (typeClass == null) {
-//                        typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName());
-//                    }
-//                    serializerRegistry.register(factory, typeClass);
-//                }
-//            }
-//        }
+        final Collection<SerializerConfig> serializerConfigs = config.getSerializerConfigs();
+        if (serializerConfigs != null) {
+            for (SerializerConfig serializerConfig : serializerConfigs) {
+                TypeSerializer serializer = serializerConfig.getImplementation();
+                if (serializer == null) {
+                    serializer = (TypeSerializer) ClassLoaderUtil.newInstance(serializerConfig.getClassName());
+                }
+                if (serializerConfig.isGlobal()) {
+                    registerFallbackSerializer(serializer);
+                } else {
+                    Class typeClass = serializerConfig.getTypeClass();
+                    if (typeClass == null) {
+                        typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName());
+                    }
+                    registerSerializer(serializer, typeClass);
+                }
+            }
+        }
     }
 
     void shutdown() {

@@ -73,7 +73,7 @@ public class ProtocolProxyHelper extends ProxyHelper {
     private Object getSingleObjectFromResponse(Protocol response) {
         if (response!=null && response.buffers != null && response.hasBuffer()) {
             return client.getSerializationService().toObject(
-                    new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, response.buffers[0].array()));
+                    new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, response.buffers[0].array()));
         } else return null;
     }
 
@@ -168,7 +168,7 @@ public class ProtocolProxyHelper extends ProxyHelper {
         if(protocol.hasBuffer()){
             for(ByteBuffer bb: protocol.buffers){
                 list.add((E) client.getSerializationService().toObject(
-                        new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, bb.array())));
+                        new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bb.array())));
             }
         }
         return list;
