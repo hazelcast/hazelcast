@@ -14,47 +14,54 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.collection.multimap;
 
+import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
 /**
- * @ali 12/11/12
+ * @ali 1/9/13
  */
-public class OfferBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
+public class ContainsOperation extends MultiMapOperation {
 
-    private Data data;
+    boolean binary;
 
-    public OfferBackupOperation() {
+    Data key;
+
+    Data value;
+
+    public ContainsOperation() {
     }
 
-    public OfferBackupOperation(String name, Data data) {
+    public ContainsOperation(String name, boolean binary, Data key, Data value) {
         super(name);
-        this.data = data;
+        this.binary = binary;
+        this.key = key;
+        this.value = value;
     }
 
     public void run() throws Exception {
-        getContainer().offerBackup(data);
-        response = true;
+        CollectionContainer container = getContainer();
+        response = container.contains(binary, key, value);
+
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(data);
+        out.writeBoolean(binary);
+        IOUtil.writeNullableData(out, key);
+        IOUtil.writeNullableData(out, value);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        data = in.readData();
-    }
-
-    public int getId() {
-        return DataSerializerQueueHook.OFFER_BACKUP;
+        binary = in.readBoolean();
+        key = IOUtil.readNullableData(in);
+        value = IOUtil.readNullableData(in);
     }
 }

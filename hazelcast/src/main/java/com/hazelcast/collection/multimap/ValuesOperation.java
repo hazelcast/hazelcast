@@ -20,21 +20,22 @@ import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
 
 /**
- * @ali 1/3/13
+ * @ali 1/8/13
  */
-public class KeySetOperation extends MultiMapOperation {
+public class ValuesOperation extends MultiMapOperation {
 
-    public KeySetOperation() {
+    public ValuesOperation() {
     }
 
-    public KeySetOperation(String name) {
+    public ValuesOperation(String name) {
         super(name);
     }
 
     public void run() throws Exception {
         CollectionContainer container = getContainer();
-        if (container != null ){
-            response = new MultiMapCollectionResponse(container.keySet(), ValueCollectionType.SET, true, getNodeEngine().getSerializationService());
+        if (container != null){
+            response = new MultiMapCollectionResponse(container.values(), ValueCollectionType.SET, true, getNodeEngine().getSerializationService());
         }
     }
+
 }

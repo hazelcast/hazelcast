@@ -294,9 +294,9 @@ public interface HazelcastInstance {
     <S extends ServiceProxy> S getServiceProxy(String serviceName, String name);
 
 
-    void registerSerializer(final TypeSerializer serializer, Class type) ;
+    void registerSerializer(final TypeSerializer serializer, Class type);
 
 
-    void registerFallbackSerializer(final TypeSerializer serializer) ;
+    void registerFallbackSerializer(final TypeSerializer serializer);
 
 }

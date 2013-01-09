@@ -174,7 +174,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         if (protocol.hasBuffer()) {
             for (ByteBuffer bb : protocol.buffers) {
                 set.add(client.getSerializationService().toObject(
-                        new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, bb.array())));
+                        new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bb.array())));
             }
         }
         return set;

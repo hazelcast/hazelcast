@@ -20,6 +20,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
@@ -31,7 +32,7 @@ import java.io.IOException;
  * Date: 11/14/12
  * Time: 12:14 AM
  */
-public class OfferOperation extends QueueTimedOperation implements WaitSupport, Notifier {
+public class OfferOperation extends QueueTimedOperation implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
     private Data data;
 
@@ -99,5 +100,9 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         data = in.readData();
+    }
+
+    public int getId() {
+        return DataSerializerQueueHook.OFFER;
     }
 }

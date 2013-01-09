@@ -99,7 +99,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         if (this.equals(objects)) {
             throw new IllegalArgumentException("Can not drain to same Queue");
         }
-        List<Data> dataList = drainInternal(i);
+        Collection<Data> dataList = drainInternal(i);
         for (Data data : dataList) {
             E e = nodeEngine.toObject(data);
             objects.add(e);

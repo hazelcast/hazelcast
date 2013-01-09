@@ -17,7 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BaseEntryProcessor;
-import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -28,23 +28,23 @@ import java.io.IOException;
  */
 public abstract class MultiMapEntryProcessor<T> extends BaseEntryProcessor<T> {
 
-    String collectionType = MultiMapConfig.ValueCollectionType.SET.toString();
+    ValueCollectionType collectionType = ValueCollectionType.SET;
 
     protected MultiMapEntryProcessor() {
     }
 
-    protected MultiMapEntryProcessor(boolean binary, MultiMapConfig.ValueCollectionType collectionType) {
+    protected MultiMapEntryProcessor(boolean binary, ValueCollectionType collectionType) {
         super(binary);
-        this.collectionType = collectionType.toString();
+        this.collectionType = collectionType;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(collectionType);
+        out.writeUTF(collectionType.toString());
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        collectionType = in.readUTF();
+        collectionType = ValueCollectionType.valueOf(in.readUTF());
     }
 }

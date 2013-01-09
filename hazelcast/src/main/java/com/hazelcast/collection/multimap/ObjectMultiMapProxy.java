@@ -26,10 +26,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,7 +39,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public String getName() {
-        return null;
+        return name;
     }
 
     public boolean put(K key, V value) {
@@ -54,7 +51,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> get(K key) {
         Data dataKey = nodeEngine.toData(key);
         MultiMapCollectionResponse result = getInternal(dataKey);
-        return result.getCollection(nodeEngine.getSerializationService());
+        return result.getObjectCollection(nodeEngine.getSerializationService());
     }
 
     public boolean remove(Object key, Object value) {
@@ -66,7 +63,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> remove(Object key) {
         Data dataKey = nodeEngine.toData(key);
         MultiMapCollectionResponse result = removeInternal(dataKey);
-        return result.getCollection(nodeEngine.getSerializationService());
+        return result.getObjectCollection(nodeEngine.getSerializationService());
     }
 
     public Set<K> localKeySet() {
@@ -79,36 +76,47 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         return toObjectSet(dataKeySet);
     }
 
-    private Set<K> toObjectSet(Set<Data> dataSet) {
-        Set<K> keySet = new HashSet<K>(dataSet.size());
-        for (Data dataKey : dataSet) {
-//            keySet.add((K) IOUtil.toObject(dataKey));
-        }
-        return keySet;
-    }
-
     public Collection<V> values() {
-        return null;
+        Map map = valuesInternal();
+        Collection values = new LinkedList();
+        for (Object obj: map.values()){
+            if (obj == null) {
+                continue;
+            }
+            MultiMapCollectionResponse response = nodeEngine.toObject(obj);
+            values.addAll(response.getObjectCollection(nodeEngine.getSerializationService()));
+        }
+        return values;
     }
 
     public Set<Map.Entry<K, V>> entrySet() {
-        return null;
+        Map map = entrySetInternal();
+        Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
+        for (Object obj: map.values()){
+            if (obj == null) {
+                continue;
+            }
+            MultiMapResponse response = nodeEngine.toObject(obj);
+            Set<Map.Entry<K, V>> entries = response.getObjectEntrySet(nodeEngine);
+            entrySet.addAll(entries);
+        }
+        return entrySet;
     }
 
     public boolean containsKey(K key) {
-        return false;
+        Data dataKey = nodeEngine.toData(key);
+        return containsInternal(dataKey, null);
     }
 
     public boolean containsValue(Object value) {
-        return false;
+        Data valueKey = nodeEngine.toData(value);
+        return containsInternal(null, valueKey);
     }
 
     public boolean containsEntry(K key, V value) {
-        return false;
-    }
-
-    public int size() {
-        return 0;
+        Data dataKey = nodeEngine.toData(key);
+        Data valueKey = nodeEngine.toData(value);
+        return containsInternal(dataKey, valueKey);
     }
 
     public void clear() {
@@ -181,7 +189,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public InstanceType getInstanceType() {
-        return null;
+        return InstanceType.MULTIMAP;
     }
 
     public void destroy() {
@@ -189,6 +197,14 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public Object getId() {
-        return null;
+        return name;
+    }
+
+    private Set<K> toObjectSet(Set<Data> dataSet) {
+        Set<K> keySet = new HashSet<K>(dataSet.size());
+        for (Data dataKey : dataSet) {
+            keySet.add((K)nodeEngine.toObject(dataKey));
+        }
+        return keySet;
     }
 }

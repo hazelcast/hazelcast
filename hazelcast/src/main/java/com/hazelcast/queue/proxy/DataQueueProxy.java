@@ -94,7 +94,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
         if (this.equals(objects)) {
             throw new IllegalArgumentException("Can not drain to same Queue");
         }
-        List<Data> dataList = drainInternal(i);
+        Collection<Data> dataList = drainInternal(i);
         objects.addAll(dataList);
         return dataList.size();
     }

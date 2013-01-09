@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.collection;
 
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -24,42 +24,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @mdogan 8/24/12
+ * @ali 1/7/13
  */
-public final class DataSerializerQueueHook implements DataSerializerHook {
+public class DataSerializerCollectionHook implements DataSerializerHook {
 
-    static final int OFFER = 300;
-    static final int POLL = 301;
-    static final int PEEK = 302;
-
-    static final int OFFER_BACKUP = 330;
-    static final int POLL_BACKUP = 331;
+    static final int COLLECTION_OPERATION = 400;
+    static final int COLLECTION_BACKUP_OPERATION = 401;
 
     public Map<Integer, DataSerializableFactory> getFactories() {
         final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
-        factories.put(OFFER, new DataSerializableFactory() {
+        factories.put(COLLECTION_OPERATION, new DataSerializableFactory() {
             public DataSerializable create() {
-                return new OfferOperation();
+                return new CollectionOperation();
             }
         });
-        factories.put(OFFER_BACKUP, new DataSerializableFactory() {
+        factories.put(COLLECTION_BACKUP_OPERATION, new DataSerializableFactory() {
             public DataSerializable create() {
-                return new OfferBackupOperation();
-            }
-        });
-        factories.put(POLL, new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new PollOperation();
-            }
-        });
-        factories.put(POLL_BACKUP, new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new PollBackupOperation();
-            }
-        });
-        factories.put(PEEK, new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new PeekOperation();
+                return new CollectionBackupOperation();
             }
         });
         return factories;

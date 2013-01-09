@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
+package com.hazelcast.collection.multimap;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.collection.CollectionContainer;
 
 /**
- * @ali 1/5/13
+ * @ali 1/8/13
  */
-public class SerializationContext {
+public class EntrySetOperation extends MultiMapOperation {
 
-    SerializationService service;
-
-    public SerializationContext(SerializationService service) {
-        this.service = service;
+    public EntrySetOperation() {
     }
 
-    public Object toObject(Data data){
-        return service.toObject(data);
+    public EntrySetOperation(String name) {
+        super(name);
     }
 
-    public Data toData(Object obj){
-        return service.toData(obj);
+    public void run() throws Exception {
+        CollectionContainer container = getContainer();
+        if (container != null ){
+            response = new MultiMapResponse(container.entrySet(), getNodeEngine().getSerializationService());
+        }
     }
 }

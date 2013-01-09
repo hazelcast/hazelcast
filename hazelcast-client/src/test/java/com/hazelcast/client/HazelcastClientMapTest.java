@@ -406,7 +406,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertNull(map.put("a", "b"));
         map.get("a");
         map.get("a");
-        MapEntry<String, String> entry = map.getMapEntry("a");
+        Map.Entry<String, String> entry = map.getMapEntry("a");
         assertEquals("a", entry.getKey());
         assertEquals("b", entry.getValue());
         assertEquals(2, ((DataRecordEntry)entry).getHits());
@@ -859,7 +859,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         final IMap imap = hClient.getMap("testGetNullMapEntry");
         String key = "key";
-        MapEntry mapEntry = imap.getMapEntry(key);
+        Map.Entry mapEntry = imap.getMapEntry(key);
         assertNull(mapEntry);
     }
 

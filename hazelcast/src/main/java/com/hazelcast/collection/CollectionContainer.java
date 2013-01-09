@@ -17,8 +17,9 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -53,11 +54,53 @@ public class CollectionContainer {
     }
 
     public Set<Data> keySet(){
-        return objects.keySet();
+        Set<Data> keySet = objects.keySet();
+        Set<Data> keys = new HashSet<Data>(keySet.size());
+        keys.addAll(keySet);
+        return keys;
     }
 
-    public SerializationContext getSerializationService(){
-        return service.getSerializationContext();
+    public Collection values(){
+        //TODO can we lock per key
+        List valueList = new LinkedList();
+        for (Object obj: objects.values()){
+            valueList.addAll((Collection) obj);
+        }
+        return valueList;
+    }
+
+    public boolean contains(boolean binary, Data key, Data value){
+        if (key != null && !objects.containsKey(key)){
+             return false;
+        }
+        if (value != null && !objects.containsValue(binary ? value : getSerializationService().toObject(value))) {
+            return false;
+        }
+        return (key != null || value != null);
+    }
+
+    public Map<Data, Collection> entrySet(){
+        Map<Data, Collection> map = new HashMap<Data, Collection>(objects.size());
+        for (Map.Entry<Data, Object> entry: objects.entrySet()){
+            Data key = entry.getKey();
+            Collection col = copyCollection((Collection)entry.getValue());
+            map.put(key, col);
+        }
+        return map;
+    }
+
+    private Collection copyCollection(Collection coll){
+        Collection copy = new ArrayList(coll.size());
+        copy.addAll(coll);
+        return copy;
+    }
+
+    public int size(){
+        return objects.size();
+    }
+
+    public SerializationService getSerializationService(){
+        return service.getSerializationService();
     }
 
     public ConcurrentMap<Data, Object> getObjects() {

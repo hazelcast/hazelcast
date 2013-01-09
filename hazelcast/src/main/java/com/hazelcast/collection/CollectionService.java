@@ -19,6 +19,7 @@ package com.hazelcast.collection;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.processor.EntryProcessor;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 
 import java.util.Collection;
@@ -42,15 +43,16 @@ public class CollectionService implements ManagedService, RemoteService {
 
     private final CollectionPartitionContainer[] partitionContainers;
 
-    private final SerializationContext serializationContext;
-
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         partitionContainers = new CollectionPartitionContainer[nodeEngine.getPartitionCount()];
-        serializationContext = new SerializationContext(nodeEngine.getSerializationService());
     }
 
     public CollectionContainer getCollectionContainer(int partitionId, String name) {
+        return partitionContainers[partitionId].getCollectionContainer(name);
+    }
+
+    public CollectionContainer getOrCreateCollectionContainer(int partitionId, String name) {
         return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
     }
 
@@ -117,8 +119,8 @@ public class CollectionService implements ManagedService, RemoteService {
         return container != null ? container.keySet() : null;
     }
 
-    public SerializationContext getSerializationContext(){
-        return serializationContext;
+    public SerializationService getSerializationService(){
+        return nodeEngine.getSerializationService();
     }
 
     public <T> T process(String name, Data dataKey, EntryProcessor processor) {
