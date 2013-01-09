@@ -69,14 +69,25 @@ public class CollectionContainer {
         return valueList;
     }
 
-    public boolean contains(boolean binary, Data key, Data value){
-        if (key != null && !objects.containsKey(key)){
-             return false;
-        }
-        if (value != null && !objects.containsValue(binary ? value : getSerializationService().toObject(value))) {
+    public boolean containsKey(Data key){
+        return objects.containsKey(key);
+    }
+
+    public boolean containsEntry(boolean binary, Data key, Data value){
+        Collection coll = (Collection)objects.get(key);
+        if (coll == null){
             return false;
         }
-        return (key != null || value != null);
+        return coll.contains(binary ? value : getSerializationService().toObject(value));
+    }
+
+    public boolean containsValue(boolean binary, Data value){
+        for (Data key: objects.keySet()){
+            if (containsEntry(binary, key, value)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public Map<Data, Collection> entrySet(){
@@ -96,7 +107,15 @@ public class CollectionContainer {
     }
 
     public int size(){
-        return objects.size();
+        int size = 0;
+        for (Object obj: objects.values()){
+            size += ((Collection)obj).size();
+        }
+        return size;
+    }
+
+    public void clear(){
+        objects.clear();
     }
 
     public SerializationService getSerializationService(){

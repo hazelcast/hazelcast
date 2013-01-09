@@ -16,24 +16,20 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.processor.Entry;
+
+import java.util.Collection;
 
 /**
  * @ali 1/9/13
  */
-public class SizeOperation extends MultiMapOperation {
+public class CountEntryProcessor extends MultiMapEntryProcessor<Integer> {
 
-    public SizeOperation() {
+    public CountEntryProcessor() {
     }
 
-    public SizeOperation(String name) {
-        super(name);
-    }
-
-    public void run() throws Exception {
-        CollectionContainer container = getContainer();
-        if (container != null){
-            response = container.size();
-        }
+    public Integer execute(Entry entry) {
+        Collection coll = entry.getValue();
+        return coll == null ? 0 : coll.size();
     }
 }

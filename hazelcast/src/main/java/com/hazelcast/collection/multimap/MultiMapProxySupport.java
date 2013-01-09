@@ -96,7 +96,7 @@ public abstract class MultiMapProxySupport {
 
     Map valuesInternal() {
         try {
-            ValuesOperation operation = new ValuesOperation(name);
+            ValuesOperation operation = new ValuesOperation(name, config.isBinary());
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
             return results;
         } catch (Throwable throwable) {
@@ -150,6 +150,19 @@ public abstract class MultiMapProxySupport {
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
+    }
+
+    public void clear() {
+        try {
+            ClearOperation operation = new ClearOperation(name, config.getSyncBackupCount(), config.getAsyncBackupCount());
+            nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    public Integer countInternal(Data dataKey){
+        return service.process(name, dataKey, new CountEntryProcessor());
     }
 
 

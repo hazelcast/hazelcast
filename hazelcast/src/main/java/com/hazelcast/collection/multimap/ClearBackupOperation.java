@@ -17,23 +17,26 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.spi.BackupOperation;
 
 /**
  * @ali 1/9/13
  */
-public class SizeOperation extends MultiMapOperation {
+public class ClearBackupOperation extends MultiMapOperation implements BackupOperation {
 
-    public SizeOperation() {
+    public ClearBackupOperation() {
     }
 
-    public SizeOperation(String name) {
+    public ClearBackupOperation(String name) {
         super(name);
     }
 
     public void run() throws Exception {
         CollectionContainer container = getContainer();
         if (container != null){
-            response = container.size();
+            container.clear();
         }
+        response = true;
     }
+
 }

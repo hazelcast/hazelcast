@@ -18,24 +18,40 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 /**
  * @ali 1/8/13
  */
 public class ValuesOperation extends MultiMapOperation {
 
+    boolean binary;
+
     public ValuesOperation() {
     }
 
-    public ValuesOperation(String name) {
+    public ValuesOperation(String name, boolean binary) {
         super(name);
+        this.binary = binary;
     }
 
     public void run() throws Exception {
         CollectionContainer container = getContainer();
         if (container != null){
-            response = new MultiMapCollectionResponse(container.values(), ValueCollectionType.SET, true, getNodeEngine().getSerializationService());
+            response = new MultiMapCollectionResponse(container.values(), ValueCollectionType.SET, binary, getNodeEngine().getSerializationService());
         }
     }
 
+    public void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(binary);
+    }
+
+    public void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        binary = in.readBoolean();
+    }
 }

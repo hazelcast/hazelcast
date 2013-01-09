@@ -26,10 +26,16 @@ import java.util.List;
 
 public class MultiMapConfig implements DataSerializable {
 
+
+    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+
     private String name;
     private String valueCollectionType = ValueCollectionType.SET.toString();
     private List<EntryListenerConfig> listenerConfigs;
     private boolean binary = false;
+    private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
 
     public MultiMapConfig() {
     }
@@ -38,6 +44,8 @@ public class MultiMapConfig implements DataSerializable {
         this.name = defConfig.getName();
         this.valueCollectionType = defConfig.getValueCollectionType().toString();
         this.binary = defConfig.binary;
+        this.syncBackupCount = defConfig.syncBackupCount;
+        this.asyncBackupCount = defConfig.asyncBackupCount;
     }
 
     public enum ValueCollectionType {
@@ -101,6 +109,22 @@ public class MultiMapConfig implements DataSerializable {
 
     public void setBinary(boolean binary) {
         this.binary = binary;
+    }
+
+    public int getSyncBackupCount() {
+        return syncBackupCount;
+    }
+
+    public void setSyncBackupCount(int syncBackupCount) {
+        this.syncBackupCount = syncBackupCount;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public void setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = asyncBackupCount;
     }
 
     @Override

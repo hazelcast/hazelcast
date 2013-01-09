@@ -43,4 +43,8 @@ public abstract class MultiMapOperation extends AbstractNamedOperation implement
     public Object getResponse() {
         return response;
     }
+
+    public String getServiceName() {
+        return CollectionService.COLLECTION_SERVICE_NAME;
+    }
 }

@@ -119,12 +119,10 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         return containsInternal(dataKey, valueKey);
     }
 
-    public void clear() {
-
-    }
 
     public int valueCount(K key) {
-        return 0;
+        Data dataKey = nodeEngine.toData(key);
+        return countInternal(dataKey);
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
