@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -32,8 +30,6 @@ public interface ObjectDataOutput extends DataOutput, Closeable {
     void position(int newPos);
 
     void writeObject(Object object) throws IOException;
-
-    void writeData(Data data) throws IOException;
 
     byte[] getBuffer();
 

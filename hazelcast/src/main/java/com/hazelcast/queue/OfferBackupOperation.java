@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -46,12 +47,12 @@ public class OfferBackupOperation extends QueueOperation implements BackupOperat
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeData(data);
+        data.writeData(out);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        data = in.readData();
+        data = IOUtil.readData(in);
     }
 
     public int getId() {

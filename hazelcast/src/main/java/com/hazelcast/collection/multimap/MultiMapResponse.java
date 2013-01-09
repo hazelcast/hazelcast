@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.multimap;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -72,11 +73,12 @@ public class MultiMapResponse implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<Data, Collection> entry: map.entrySet()){
-            out.writeData(entry.getKey());
+            entry.getKey().writeData(out);
             Collection coll = entry.getValue();
             out.writeInt(coll.size());
             for (Object obj: coll){
-                out.writeData(serializationService.toData(obj));
+                Data data = serializationService.toData(obj);
+                data.writeData(out);
             }
         }
     }
@@ -85,11 +87,11 @@ public class MultiMapResponse implements DataSerializable {
         int size = in.readInt();
         map = new HashMap<Data, Collection>(size);
         for (int i=0; i<size; i++){
-            Data key = in.readData();
+            Data key = IOUtil.readData(in);
             int collSize = in.readInt();
             Collection coll = new ArrayList(collSize);
             for (int j=0; j<collSize; j++){
-                coll.add(in.readData());
+                coll.add(IOUtil.readData(in));
             }
             map.put(key, coll);
         }

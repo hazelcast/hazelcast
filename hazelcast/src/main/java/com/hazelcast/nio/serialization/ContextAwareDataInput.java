@@ -397,12 +397,6 @@ class ContextAwareDataInput extends InputStream implements IndexedObjectDataInpu
         return service.readObject(this);
     }
 
-    public Data readData() throws IOException {
-        final Data data = new Data();
-        data.readData(this);
-        return data;
-    }
-
     public ContextAwareDataInput duplicate() {
         return new ContextAwareDataInput(buffer, 0, service);
     }

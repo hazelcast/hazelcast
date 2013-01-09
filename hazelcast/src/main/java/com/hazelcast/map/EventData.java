@@ -78,7 +78,7 @@ public class EventData implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(source);
         out.writeObject(caller);
-        out.writeData(dataKey);
+        dataKey.writeData(out);
         IOUtil.writeNullableData(out, dataNewValue);
         IOUtil.writeNullableData(out, dataOldValue);
         out.writeInt(eventType);
@@ -87,7 +87,7 @@ public class EventData implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         source = in.readUTF();
         caller = in.readObject();
-        dataKey = in.readData();
+        dataKey = IOUtil.readData(in);
         dataNewValue = IOUtil.readNullableData(in);
         dataOldValue = IOUtil.readNullableData(in);
         eventType = in.readInt();

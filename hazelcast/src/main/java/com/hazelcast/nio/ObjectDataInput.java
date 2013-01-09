@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.io.Closeable;
 import java.io.DataInput;
 import java.io.IOException;
@@ -32,8 +30,6 @@ public interface ObjectDataInput extends DataInput, Closeable {
     void position(int newPos);
 
     <T> T readObject() throws IOException;
-
-    Data readData() throws IOException;
 
     ObjectDataInput duplicate();
 

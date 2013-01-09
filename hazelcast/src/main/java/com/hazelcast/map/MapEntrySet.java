@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -23,7 +24,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.AbstractMap;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -57,7 +57,7 @@ public class MapEntrySet implements DataSerializable {
         if(size > 0)
             entrySet = new HashSet<Map.Entry<Data, Data>>();
         for (int i = 0; i < size; i++) {
-            Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(in.readData(), in.readData());
+            Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(IOUtil.readData(in), IOUtil.readData(in));
             entrySet.add(entry);
         }
     }

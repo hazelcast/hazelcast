@@ -234,10 +234,6 @@ class ContextAwareDataOutput extends OutputStream implements IndexedObjectDataOu
         service.writeObject(this, object);
     }
 
-    public void writeData(Data data) throws IOException {
-        data.writeData(this);
-    }
-
     /**
      * Returns this buffer's position.
      */
