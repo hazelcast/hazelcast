@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.client.impl;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;

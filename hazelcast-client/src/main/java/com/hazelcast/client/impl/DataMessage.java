@@ -14,24 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.client.impl;
 
+import com.hazelcast.core.Message;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
 
-import java.util.Map;
+public class DataMessage<E> extends Message {
 
-public interface Record extends DataSerializable, Map.Entry, Cloneable {
+    final Data data;
+    private final transient SerializationService serializationService;
 
-    long getId();
+    public DataMessage(String topicName, Data data, SerializationService serializationService) {
+        super(topicName, null);
+        this.data = data;
+        this.serializationService = serializationService;
+    }
 
-    Data getValueData();
+    @Override
+    public E getMessageObject() {
+        return (E) serializationService.toObject(data);
+    }
 
-    void setValueData(Data dataValue);
-
-    Data getKey();
-
-    Record clone();
-
-    RecordState getState();
+    public Data getMessageData() {
+        return data;
+    }
 }

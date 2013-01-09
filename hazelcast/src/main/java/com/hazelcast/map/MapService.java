@@ -17,16 +17,11 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
-import com.hazelcast.executor.ExecutorThreadFactory;
-import com.hazelcast.impl.*;
-import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -40,8 +35,6 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
 import java.util.concurrent.*;

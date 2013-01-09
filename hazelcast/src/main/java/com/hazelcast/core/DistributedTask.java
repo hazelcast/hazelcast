@@ -18,7 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.executor.DistributedRunnableAdapter;
 import com.hazelcast.executor.ExecutionManagerCallback;
-import com.hazelcast.impl.InnerFutureTask;
+import com.hazelcast.executor.InnerFutureTask;
 import com.hazelcast.util.Util;
 
 import java.io.Serializable;

@@ -17,6 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -118,7 +119,7 @@ public class MultiMapCollectionResponse implements DataSerializable {
         out.writeInt(collection.size());
         for (Object obj : collection) {
             Data data = binary ? (Data)obj : serializationService.toData(obj);
-            out.writeData(data);
+            data.writeData(out);
         }
     }
 
@@ -130,7 +131,7 @@ public class MultiMapCollectionResponse implements DataSerializable {
         }
         collection = createCollection(size);
         for (int i = 0; i < size; i++) {
-            collection.add(in.readData());
+            collection.add(IOUtil.readData(in));
         }
     }
 

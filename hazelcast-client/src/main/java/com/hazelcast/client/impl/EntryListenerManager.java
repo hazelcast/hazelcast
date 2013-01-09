@@ -19,7 +19,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.*;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializationConstants;

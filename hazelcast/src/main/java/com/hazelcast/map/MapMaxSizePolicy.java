@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.map;
 
-interface IRemoveAwareProxy {
+import com.hazelcast.config.MaxSizeConfig;
 
-    boolean removeKey(Object key);
+public interface MapMaxSizePolicy {
+
+    boolean overCapacity();
+
+    MaxSizeConfig getMaxSizeConfig();
+
 }

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.executor;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
-import com.hazelcast.executor.ExecutionManagerCallback;
 
 import java.util.Set;
 import java.util.concurrent.Callable;

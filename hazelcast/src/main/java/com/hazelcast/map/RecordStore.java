@@ -17,8 +17,6 @@
 package com.hazelcast.map;
 
 
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.RecordState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 

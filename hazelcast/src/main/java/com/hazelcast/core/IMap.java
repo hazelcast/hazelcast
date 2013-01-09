@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
@@ -822,4 +823,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
      * @return this map's local statistics.
      */
     LocalMapStats getLocalMapStats();
+
+    Object executeOnKey(K key, EntryProcessor entryProcessor);
 }

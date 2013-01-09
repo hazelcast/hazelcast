@@ -29,6 +29,7 @@ import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionImpl;
@@ -584,6 +585,12 @@ abstract class MapProxySupport {
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
+    }
+
+    public Object executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
+
+
+        return null;
     }
 
     public void flush() {

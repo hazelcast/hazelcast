@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -35,7 +37,7 @@ class PortableSerializer implements TypeSerializer<Portable> {
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
         ClassDefinitionImpl cd = getClassDefinition(p);
-        DefaultPortableWriter writer = new DefaultPortableWriter(this, (IndexedObjectDataOutput) out, cd);
+        DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);
     }
 
@@ -60,10 +62,10 @@ class PortableSerializer implements TypeSerializer<Portable> {
         final ClassDefinitionImpl cd;
         if (context.getVersion() == dataVersion) {
             cd = context.lookup(dataClassId); // using context.version
-            reader = new DefaultPortableReader(this, (IndexedObjectDataInput) in, cd);
+            reader = new DefaultPortableReader(this, (BufferObjectDataInput) in, cd);
         } else {
             cd = context.lookup(dataClassId, dataVersion); // registered during read
-            reader = new MorphingPortableReader(this, (IndexedObjectDataInput) in, cd);
+            reader = new MorphingPortableReader(this, (BufferObjectDataInput) in, cd);
         }
         p.readPortable(reader);
         return p;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.impl.LocalUpdateListener;
 import com.hazelcast.instance.Node;
 
 public interface WanReplicationEndpoint extends LocalUpdateListener {

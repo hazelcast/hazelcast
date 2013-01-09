@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
@@ -27,11 +28,11 @@ class DefaultPortableWriter implements PortableWriter {
 
     final PortableSerializer serializer;
     final ClassDefinitionImpl cd;
-    final IndexedObjectDataOutput out;
+    final BufferObjectDataOutput out;
     final int offset;
 //    int fieldIndex = 0;
 
-    DefaultPortableWriter(PortableSerializer serializer, IndexedObjectDataOutput out, ClassDefinitionImpl cd) {
+    DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinitionImpl cd) {
         this.serializer = serializer;
         this.out = out;
         this.offset = out.position();

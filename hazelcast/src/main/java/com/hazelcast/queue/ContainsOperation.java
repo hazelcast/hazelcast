@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -47,7 +48,7 @@ public class ContainsOperation extends QueueOperation {
         super.writeInternal(out);
         out.writeInt(dataList.size());
         for (Data data: dataList){
-            out.writeData(data);
+            data.writeData(out);
         }
     }
 
@@ -56,7 +57,7 @@ public class ContainsOperation extends QueueOperation {
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
         for (int i=0; i<size; i++){
-            dataList.add(in.readData());
+            dataList.add(IOUtil.readData(in));
         }
     }
 }

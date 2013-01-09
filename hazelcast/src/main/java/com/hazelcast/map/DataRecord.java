@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.map;
 
+import com.hazelcast.map.AbstractRecord;
+import com.hazelcast.map.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

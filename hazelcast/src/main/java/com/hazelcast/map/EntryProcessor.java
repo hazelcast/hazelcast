@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.map;
 
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface MapMaxSizePolicy {
+import java.util.Map;
 
-    boolean overCapacity();
-
-    MaxSizeConfig getMaxSizeConfig();
-
+public interface EntryProcessor extends DataSerializable {
+    Object process(Map.Entry entry);
+    void processBackup(Map.Entry entry);
 }

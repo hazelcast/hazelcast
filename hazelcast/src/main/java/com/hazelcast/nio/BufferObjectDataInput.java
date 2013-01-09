@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
-
-import com.hazelcast.nio.ObjectDataInput;
+package com.hazelcast.nio;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -24,7 +22,7 @@ import java.io.IOException;
 /**
  * @mdogan 12/28/12
  */
-public interface IndexedObjectDataInput extends ObjectDataInput, Closeable {
+public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
 
     int read(int index) throws IOException;
 
@@ -45,4 +43,15 @@ public interface IndexedObjectDataInput extends ObjectDataInput, Closeable {
     float readFloat(int index) throws IOException;
 
     short readShort(int index) throws IOException;
+
+    int position();
+
+    void position(int newPos);
+
+    void reset();
+
+    BufferObjectDataInput duplicate();
+
+    BufferObjectDataInput slice();
+
 }

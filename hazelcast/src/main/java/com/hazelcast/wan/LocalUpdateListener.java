@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.wan;
 
-public interface IGetAwareProxy {
+import com.hazelcast.map.Record;
 
-    Object get(Object key);
+public interface LocalUpdateListener {
+    void recordUpdated(Record record);
 }

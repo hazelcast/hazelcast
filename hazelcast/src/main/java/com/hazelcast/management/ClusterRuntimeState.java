@@ -18,7 +18,7 @@ package com.hazelcast.management;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.Member;
-import com.hazelcast.impl.Record;
+import com.hazelcast.map.Record;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

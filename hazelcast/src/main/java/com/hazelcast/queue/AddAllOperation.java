@@ -17,6 +17,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -75,7 +76,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         super.writeInternal(out);
         out.writeInt(dataList.size());
         for (Data data : dataList) {
-            out.writeData(data);
+            data.writeData(out);
         }
     }
 
@@ -84,7 +85,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            dataList.add(in.readData());
+            dataList.add(IOUtil.readData(in));
         }
     }
 

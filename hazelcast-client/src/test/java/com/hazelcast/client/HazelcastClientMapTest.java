@@ -16,11 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.core.*;
+import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

@@ -39,8 +39,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.impl.Constants.IO.KILO_BYTE;
-
 public class ConnectionManager {
 
     protected final ILogger logger;
@@ -95,8 +93,8 @@ public class ConnectionManager {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(ConnectionManager.class.getName());
-        this.SOCKET_RECEIVE_BUFFER_SIZE = ioService.getSocketReceiveBufferSize() * KILO_BYTE;
-        this.SOCKET_SEND_BUFFER_SIZE = ioService.getSocketSendBufferSize() * KILO_BYTE;
+        this.SOCKET_RECEIVE_BUFFER_SIZE = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
+        this.SOCKET_SEND_BUFFER_SIZE = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.SOCKET_LINGER_SECONDS = ioService.getSocketLingerSeconds();
         this.SOCKET_KEEP_ALIVE = ioService.getSocketKeepAlive();
         this.SOCKET_NO_DELAY = ioService.getSocketNoDelay();
