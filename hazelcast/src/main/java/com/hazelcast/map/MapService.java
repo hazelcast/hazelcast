@@ -40,6 +40,7 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
@@ -68,7 +69,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-        recordTaskExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(3);
+        recordTaskExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
         recordTaskExecutor.setMaximumPoolSize(50);
     }
 
@@ -78,9 +79,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
-
-        // todo make this 1 second configurable
-        nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
 
@@ -173,11 +171,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         MapInfo mapInfo = getMapInfo(name);
         if (ttl <= 0 && mapInfo.getMapConfig().getTimeToLiveSeconds() > 0) {
             record.getState().updateTtlExpireTime(mapInfo.getMapConfig().getTimeToLiveSeconds());
-            scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            scheduleOperation(name, dataKey, mapInfo.getMapConfig().getTimeToLiveSeconds());
         }
         if (mapInfo.getMapConfig().getMaxIdleSeconds() > 0) {
             record.getState().updateIdleExpireTime(mapInfo.getMapConfig().getMaxIdleSeconds());
-            scheduleOperation(name, dataKey, record.getState().getIdleExpireTime());
+            scheduleOperation(name, dataKey, mapInfo.getMapConfig().getMaxIdleSeconds());
         }
         return record;
     }
@@ -337,7 +335,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void scheduleOperation(String mapName, Data key, long executeTime) {
         MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
-        MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation);
+        MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation, nodeEngine.getPartitionId(key));
         recordTaskExecutor.schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
 

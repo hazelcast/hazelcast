@@ -100,6 +100,9 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     }
 
     private void doInvoke() {
+        if (!isActive()) {
+            throw new IllegalStateException("Hazelcast instance is not active!");
+        }
         invokeCount++;
         final Address target = getTarget();
         final Address thisAddress = nodeEngine.getThisAddress();
@@ -126,6 +129,10 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                 }
             }
         }
+    }
+
+    private boolean isActive() {
+        return nodeEngine.getNode().isActive();
     }
 
     final void setResult(Object obj) {
@@ -168,6 +175,9 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                 // do not allow interruption while waiting for a response!
                 logger.log(Level.FINEST, Thread.currentThread().getName()  + " is interrupted while waiting " +
                         "response for operation " + op);
+                if (!isActive()) {
+                    throw e;
+                }
                 continue;
             }
             pollCount++;

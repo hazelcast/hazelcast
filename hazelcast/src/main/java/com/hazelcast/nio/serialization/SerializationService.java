@@ -39,4 +39,6 @@ public interface SerializationService {
     void register(TypeSerializer serializer, Class type);
 
     void registerFallback(TypeSerializer serializer);
+
+    SerializationContext getSerializationContext();
 }

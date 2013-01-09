@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
@@ -81,4 +82,9 @@ public interface RecordStore {
 
     MapInfo getMapInfo();
 
+    Set<Data> getRemovedDelayedKeys();
+
+    Set<Map.Entry<Data, Data>> entrySet();
+
+    Map.Entry<Data,Data> getMapEntry(Data dataKey);
 }

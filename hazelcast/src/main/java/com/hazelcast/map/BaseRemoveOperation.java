@@ -66,8 +66,6 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         init();
     }
 
-    public abstract void doOp();
-
     @Override
     public Object getResponse() {
         return dataOldValue;
@@ -91,7 +89,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     public void afterRun() {
         int eventType = EntryEvent.TYPE_REMOVED;
-        mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, null);
+        mapService.publishEvent(getCaller(), name, eventType, dataKey, null, dataOldValue);
     }
 
     @Override

@@ -506,8 +506,13 @@ abstract class MapProxySupport {
         }
     }
 
+    // todo certainly must be optimized
     public void clearInternal() {
         setThreadContext();
+        Set<Data> keys = keySetInternal();
+        for (Data key : keys) {
+            removeInternal(key);
+        }
     }
 
 
@@ -546,17 +551,42 @@ abstract class MapProxySupport {
         mapService.removeEventListener(listener, name, key);
     }
 
-    protected MapEntry<Data, Data> getMapEntryInternal(final Data key) {
-        return null;
-    }
-
-
-
-    public void flush() {
+    protected Map.Entry<Data, Data> getMapEntryInternal(final Data key) {
+        setThreadContext();
+        int partitionId = nodeEngine.getPartitionId(key);
+        GetMapEntryOperation getMapEntryOperation = new GetMapEntryOperation(name, key);
+        getMapEntryOperation.setServiceName(MAP_SERVICE_NAME);
+        getMapEntryOperation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, getMapEntryOperation,
+                    partitionId).build();
+            Future f = invocation.invoke();
+            Object o = nodeEngine.toObject(f.get());
+            return (Map.Entry<Data, Data>) o;
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
     }
 
     protected Set<Entry<Data, Data>> entrySetInternal() {
-        return null;
+        setThreadContext();
+        try {
+            MapEntrySetOperation mapEntrySetOperation = new MapEntrySetOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapEntrySetOperation, false);
+            Set<Entry<Data, Data>> entrySet = new HashSet<Entry<Data, Data>>();
+            for (Object result : results.values()) {
+                Set entries = ((MapEntrySet) nodeEngine.toObject(result)).getEntrySet();
+                if(entries != null)
+                entrySet.addAll(entries);
+            }
+            return entrySet;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    public void flush() {
     }
 
     protected Set<Data> keySetInternal(final Predicate predicate) {

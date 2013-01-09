@@ -40,7 +40,7 @@ public class MapGetHandler extends ClientCommandHandler {
         byte[] key = protocol.buffers[0].array();
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
         // TODO: !!! FIX ME !!!
-        Data value = dataMapProxy.get(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, key));
+        Data value = dataMapProxy.get(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, key));
         return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
     }
 }

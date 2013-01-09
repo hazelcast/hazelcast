@@ -28,12 +28,10 @@ public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDa
     public RemoveOperation() {
     }
 
-
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }
-
         dataOldValue = recordStore.remove(dataKey);
     }
 

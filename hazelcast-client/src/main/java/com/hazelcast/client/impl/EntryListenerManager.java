@@ -137,13 +137,13 @@ public class EntryListenerManager {
 //    }
 //
     public void notifyListeners(Protocol protocol) {
-        Data key = new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[0].array());
+        Data key = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[0].array());
         Data newValue = null;
         Data oldValue = null;
         if (protocol.buffers.length > 1) {
-            newValue = new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[1].array());
+            newValue = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[1].array());
             if (protocol.buffers.length > 2) {
-                oldValue = new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[2].array());
+                oldValue = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[2].array());
             }
         }
         String name = protocol.args[1];

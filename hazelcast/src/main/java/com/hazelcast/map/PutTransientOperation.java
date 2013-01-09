@@ -27,7 +27,7 @@ public class PutTransientOperation extends BasePutOperation {
     public PutTransientOperation() {
     }
 
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }

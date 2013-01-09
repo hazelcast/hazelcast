@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,42 +17,35 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class PutIfAbsentOperation extends BasePutOperation {
+import java.util.Map;
+import java.util.Set;
 
+public class MapEntrySetOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+    Set<Map.Entry<Data,Data>> entrySet;
 
-    public PutIfAbsentOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
-        super(name, dataKey, value, txnId, ttl);
+    public MapEntrySetOperation(String name) {
+        super(name);
     }
 
-    public PutIfAbsentOperation() {
+    public MapEntrySetOperation() {
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
-        dataOldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl);
+        MapService mapService = (MapService) getService();
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        entrySet = recordStore.entrySet();
     }
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return new MapEntrySet(entrySet);
     }
 
-    public boolean shouldBackup() {
+    @Override
+    public boolean returnsResponse() {
         return true;
-    }
-
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
-
-    @Override
-    public String toString() {
-        return "PutIfAbsentOperation{" + name + "}";
     }
 }

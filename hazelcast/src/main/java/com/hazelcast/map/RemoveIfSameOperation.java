@@ -36,7 +36,7 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     public RemoveIfSameOperation() {
     }
 
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }

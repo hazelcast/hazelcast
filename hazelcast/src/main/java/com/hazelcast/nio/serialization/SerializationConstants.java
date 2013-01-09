@@ -21,31 +21,59 @@ package com.hazelcast.nio.serialization;
  */
 public final class SerializationConstants {
 
-    private static byte ID = -1;
+    private static int ID = -1;
 
-    public static final byte SERIALIZER_TYPE_PORTABLE = ID--;
+    // !!! NEVER CHANGE THE ORDER OF SERIALIZERS !!!
 
-    public static final byte SERIALIZER_TYPE_DATA = ID--;
+    public static final int CONSTANT_TYPE_PORTABLE = ID--;
 
-    public static final byte SERIALIZER_TYPE_OBJECT = ID--;
+    public static final int CONSTANT_TYPE_DATA = ID--;
 
-    public static final byte SERIALIZER_TYPE_STRING = ID--;
+    public static final int CONSTANT_TYPE_BYTE = ID--;
 
-    public static final byte SERIALIZER_TYPE_LONG = ID--;
+    public static final int CONSTANT_TYPE_BOOLEAN = ID--;
 
-    public static final byte SERIALIZER_TYPE_INTEGER = ID--;
+    public static final int CONSTANT_TYPE_CHAR = ID--;
 
-    public static final byte SERIALIZER_TYPE_BYTE_ARRAY = ID--;
+    public static final int CONSTANT_TYPE_SHORT = ID--;
 
-    public static final byte SERIALIZER_TYPE_BOOLEAN = ID--;
+    public static final int CONSTANT_TYPE_INTEGER = ID--;
 
-    public static final byte SERIALIZER_TYPE_EXTERNALIZABLE = ID--;
+    public static final int CONSTANT_TYPE_LONG = ID--;
 
-    public static final byte SERIALIZER_TYPE_CLASS = ID--;
+    public static final int CONSTANT_TYPE_FLOAT = ID--;
 
-    public static final byte SERIALIZER_TYPE_DATE = ID--;
+    public static final int CONSTANT_TYPE_DOUBLE = ID--;
 
-    public static final byte SERIALIZER_TYPE_BIG_INTEGER = ID--;
+    public static final int CONSTANT_TYPE_STRING = ID--;
+
+    public static final int CONSTANT_TYPE_BYTE_ARRAY = ID--;
+
+    public static final int CONSTANT_TYPE_CHAR_ARRAY = ID--;
+
+    public static final int CONSTANT_TYPE_SHORT_ARRAY = ID--;
+
+    public static final int CONSTANT_TYPE_INTEGER_ARRAY = ID--;
+
+    public static final int CONSTANT_TYPE_LONG_ARRAY = ID--;
+
+    public static final int CONSTANT_TYPE_FLOAT_ARRAY = ID--;
+
+    public static final int CONSTANT_TYPE_DOUBLE_ARRAY = ID--;
+
+    public static final int CONSTANT_SERIALIZERS_LENGTH = -ID - 1;
+
+    // ------------------------------------------------------------
+
+    public static final int DEFAULT_TYPE_CLASS = ID--;
+
+    public static final int DEFAULT_TYPE_DATE = ID--;
+
+    public static final int DEFAULT_TYPE_BIG_INTEGER = ID--;
+
+    public static final int DEFAULT_TYPE_OBJECT = ID--;
+
+    public static final int DEFAULT_TYPE_EXTERNALIZABLE = ID--;
 
     private SerializationConstants() {}
 }

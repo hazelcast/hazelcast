@@ -313,6 +313,33 @@ public class MapTest extends BaseTest {
         thread.join();
     }
 
+    @Test
+    public void testEntrySet() {
+        final IMap<Object, Object> map = getInstance().getMap("testEntrySet");
+        map.put(1,1);
+        map.put(2,2);
+        map.put(3,3);
+        map.put(4,4);
+        map.put(5,5);
+        Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(1,1));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(2,2));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(3,3));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(4,4));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(5,5));
+        assertEquals(entrySet, map.entrySet());
+    }
+
+    @Test
+    public void testGetMapEntry() {
+        final IMap<Object, Object> map = getInstance().getMap("testGetMapEntry");
+        map.put(1,1);
+        map.put(2,2);
+        map.put(3,3);
+        assertEquals(new AbstractMap.SimpleImmutableEntry(1,1), map.getMapEntry(1));
+        assertEquals(new AbstractMap.SimpleImmutableEntry(2,2), map.getMapEntry(2));
+        assertEquals(new AbstractMap.SimpleImmutableEntry(3,3), map.getMapEntry(3));
+    }
 
     @Test
     public void testMapTryPut() throws InterruptedException {

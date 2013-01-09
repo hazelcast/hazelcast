@@ -62,7 +62,7 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
         init();
     }
 
-    public void doOp() {
+    public void run() {
         locked = recordStore.lock(getKey(), getCaller(), threadId, ttl);
     }
 

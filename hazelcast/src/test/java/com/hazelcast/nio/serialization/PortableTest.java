@@ -27,11 +27,11 @@ import java.util.Arrays;
  */
 public class PortableTest {
 
-    private final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());
-    private final SerializationService serializationService2 = new SerializationServiceImpl(2, new TestPortableFactory());
 
     @Test
     public void test() {
+        final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());
+        final SerializationService serializationService2 = new SerializationServiceImpl(2, new TestPortableFactory());
         Data data;
 
         NamedPortable[] nn = new NamedPortable[5];
@@ -58,6 +58,29 @@ public class PortableTest {
         data = serializationService.toData(main);
         Assert.assertEquals(main, serializationService.toObject(data));
         Assert.assertEquals(main, serializationService2.toObject(data));
+    }
+
+    @Test
+    public void testDifferentVersions() {
+        final SerializationService serializationService = new SerializationServiceImpl(1, new PortableFactory() {
+            public Portable create(int classId) {
+                return new NamedPortable();
+            }
+        });
+        final SerializationService serializationService2 = new SerializationServiceImpl(2, new PortableFactory() {
+            public Portable create(int classId) {
+                return new NamedPortableV2();
+            }
+        });
+
+        NamedPortable p1 = new NamedPortable("portable-v1");
+        Data data = serializationService.toData(p1);
+
+        NamedPortableV2 p2 = new NamedPortableV2("portable-v2", 123);
+        Data data2 = serializationService2.toData(p2);
+
+        serializationService2.toObject(data);
+        serializationService.toObject(data2);
     }
 
 
@@ -303,5 +326,35 @@ public class PortableTest {
             return name != null ? name.hashCode() : 0;
         }
     }
+
+    private static class NamedPortableV2 extends NamedPortable implements Portable {
+
+        private int v;
+
+        private NamedPortableV2() {
+        }
+
+        private NamedPortableV2(int v) {
+            this.v = v;
+        }
+
+        private NamedPortableV2(String name, int v) {
+            super(name);
+            this.v = v;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            super.writePortable(writer);
+            writer.writeInt("v", v);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            super.readPortable(reader);
+            v = reader.readInt("v");
+        }
+    }
+
 
 }

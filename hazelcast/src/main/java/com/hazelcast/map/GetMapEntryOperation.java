@@ -17,41 +17,42 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class ReplaceOperation extends BasePutOperation {
+import java.util.Map;
 
-    boolean shouldBackup = false;
+public class GetMapEntryOperation extends AbstractNamedKeyBasedOperation {
 
-    public ReplaceOperation(String name, Data dataKey, Data value, String txnId) {
-        super(name, dataKey, value, txnId);
+    private transient Map.Entry<Data,Data> result;
+
+    public GetMapEntryOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
-    public ReplaceOperation() {
+    public GetMapEntryOperation() {
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
-        dataOldValue = recordStore.replace(dataKey, dataValue);
+        MapService mapService = (MapService) getService();
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        result = recordStore.getMapEntry(dataKey);
     }
 
     @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
-    public boolean shouldBackup() {
-        return shouldBackup;
-    }
-
-    @Override
-    public String toString() {
-        return "ReplaceOperation{" + name + "}";
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return result;
     }
+
+    @Override
+    public String toString() {
+        return "GetMapEntryOperation{" +
+               '}';
+    }
+
 }

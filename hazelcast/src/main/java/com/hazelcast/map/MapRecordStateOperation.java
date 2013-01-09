@@ -16,11 +16,18 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.impl.Record;
 import com.hazelcast.impl.RecordState;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
+
+import java.util.concurrent.Future;
+
+import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
 
 public class MapRecordStateOperation extends LockAwareOperation implements BackupAwareOperation {
 
@@ -30,7 +37,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     RecordStore recordStore;
     MapService mapService;
     NodeEngine nodeEngine;
-    Operation backupOperation = null;
+    boolean evicted = false;
 
     public MapRecordStateOperation(String name, Data dataKey) {
         super(name, dataKey, -1);
@@ -49,16 +56,33 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     }
 
     @Override
-    void doOp() {
+    public void run() {
         Record record = recordStore.getRecords().get(dataKey);
-        if( record != null ) {
-            if(record.getState().isDirty()) {
+        if (record != null) {
+            if (record.getState().isDirty()) {
                 MapStore store = recordStore.getMapInfo().getStore();
-                if(store != null) {
-                    store.store(dataKey, record.getValue());
+                if (store != null) {
+                    Object value = record.getValue();
+                    if (value == null)
+                        value = nodeEngine.getSerializationService().toObject(record.getValueData());
+                    store.store(nodeEngine.getSerializationService().toObject(dataKey), value);
                 }
                 record.getState().resetStoreTime();
             }
+
+            if (record.getState().isExpired()) {
+                System.out.println("!!!!! expired");
+                record.getState().resetExpiration();
+                dataValue = record.getValueData();
+                recordStore.evict(dataKey);
+                evicted = true;
+            }
+        } else if (recordStore.getRemovedDelayedKeys().contains(record.getKey())) {
+            MapStore store = recordStore.getMapInfo().getStore();
+            if (store != null) {
+                store.delete(nodeEngine.getSerializationService().toObject(record.getKey()));
+            }
+            recordStore.getRemovedDelayedKeys().remove(record.getKey());
         }
     }
 
@@ -82,11 +106,14 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     }
 
     public void afterRun() {
+        if (evicted) {
+            int eventType = EntryEvent.TYPE_EVICTED;
+            mapService.publishEvent(getCaller(), name, eventType, dataKey, null, dataValue);
+        }
     }
 
-
     public Operation getBackupOperation() {
-        return backupOperation;
+        return new RemoveBackupOperation(name, dataKey);
     }
 
     public int getAsyncBackupCount() {
@@ -94,7 +121,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     }
 
     public boolean shouldBackup() {
-        return backupOperation != null;
+        return evicted;
     }
 
     public int getSyncBackupCount() {

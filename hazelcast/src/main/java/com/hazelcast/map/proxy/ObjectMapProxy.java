@@ -201,8 +201,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         removeEntryListenerInternal(listener, nodeEngine.toData(key));
     }
 
-    public MapEntry<K, V> getMapEntry(final K key) {
-        return null;
+    public Map.Entry<K, V> getMapEntry(final K key) {
+        Map.Entry<Data, Data> entry = getMapEntryInternal(nodeEngine.toData(key));
+        return new AbstractMap.SimpleImmutableEntry<K,V>((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()));
     }
 
     public boolean evict(final Object key) {
@@ -210,11 +211,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void clear() {
-
+        clearInternal();
     }
 
     public void flush() {
-
     }
 
     public Set<K> keySet() {
@@ -236,7 +236,13 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<Entry<K, V>> entrySet() {
-        return null;
+        Set<Entry<Data, Data>> entries = entrySetInternal();
+        Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
+        for (Entry<Data, Data> entry : entries) {
+            resultSet.add(new AbstractMap.SimpleImmutableEntry((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()) )) ;
+
+        }
+        return resultSet;
     }
 
     public Set<K> keySet(final Predicate predicate) {

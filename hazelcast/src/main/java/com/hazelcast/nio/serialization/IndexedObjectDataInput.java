@@ -14,34 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.Closeable;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
  * @mdogan 12/28/12
  */
-public interface ObjectDataOutput extends DataOutput, Closeable {
+public interface IndexedObjectDataInput extends ObjectDataInput, Closeable {
 
-    int position();
+    int read(int index) throws IOException;
 
-    void position(int newPos);
+    int read(int index, byte b[], int off, int len) throws IOException;
 
-    void writeObject(Object object) throws IOException;
+    int readInt(int index) throws IOException;
 
-    void writeData(Data data) throws IOException;
+    long readLong(int index) throws IOException;
 
-    byte[] getBuffer();
+    boolean readBoolean(int index) throws IOException;
 
-    byte[] toByteArray();
+    byte readByte(int index) throws IOException;
 
-    ObjectDataOutput duplicate();
+    char readChar(int index) throws IOException;
 
-    ObjectDataOutput slice();
+    double readDouble(int index) throws IOException;
 
-    void reset();
+    float readFloat(int index) throws IOException;
+
+    short readShort(int index) throws IOException;
 }

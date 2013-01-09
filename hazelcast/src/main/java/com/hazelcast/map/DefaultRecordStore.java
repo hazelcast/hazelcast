@@ -20,11 +20,9 @@ import com.hazelcast.impl.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.util.ConcurrentHashSet;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -34,6 +32,7 @@ public class DefaultRecordStore implements RecordStore {
     final PartitionContainer partitionContainer;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
+    final ConcurrentHashSet<Data> removedDelayedKeys = new ConcurrentHashSet<Data>();
     final MapInfo mapInfo;
 
     final MapService mapService;
@@ -157,8 +156,25 @@ public class DefaultRecordStore implements RecordStore {
         return removed;
     }
 
+    public Set<Map.Entry<Data, Data>> entrySet() {
+        Map<Data,Data> temp = new HashMap<Data,Data>(records.size());
+        for (Data key : records.keySet()) {
+            temp.put(key, records.get(key).getValueData());
+        }
+        return temp.entrySet();
+    }
+
+    public Map.Entry<Data, Data> getMapEntry(Data dataKey) {
+        Record record = records.get(dataKey);
+        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, record.getValueData());
+    }
+
     public Set<Data> keySet() {
-        return records.keySet();
+        Set<Data> keySet = new HashSet<Data>(records.size());
+        for (Data data : records.keySet()) {
+            keySet.add(data);
+        }
+        return keySet;
     }
 
     public Collection<Data> values() {
@@ -239,7 +255,7 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             result = record.getValueData();
         }
-        // check if record has expired or removed but waiting delay millis
+//        check if record has expired or removed but waiting delay millis
         if (record != null && record.getState().isExpired()) {
             return null;
         }
@@ -255,13 +271,15 @@ public class DefaultRecordStore implements RecordStore {
                 oldValueData = toData(oldValue);
             }
             record = mapService.createRecord(name, dataKey, dataValue, ttl);
-            if (ttl <= 0 && mapInfo.getMapConfig().getTimeToLiveSeconds() > 0) {
-                record.getState().updateTtlExpireTime(mapInfo.getMapConfig().getTimeToLiveSeconds());
-                mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            int timeToLiveSeconds = mapInfo.getMapConfig().getTimeToLiveSeconds() * 1000;
+            if (ttl <= 0 && timeToLiveSeconds > 0) {
+                record.getState().updateTtlExpireTime(timeToLiveSeconds);
+                mapService.scheduleOperation(name, dataKey, timeToLiveSeconds);
             }
-            if (mapInfo.getMapConfig().getMaxIdleSeconds() > 0) {
-                record.getState().updateIdleExpireTime(mapInfo.getMapConfig().getMaxIdleSeconds());
-                mapService.scheduleOperation(name, dataKey, record.getState().getIdleExpireTime());
+            int maxIdleSeconds = mapInfo.getMapConfig().getMaxIdleSeconds();
+            if (maxIdleSeconds > 0) {
+                record.getState().updateIdleExpireTime(maxIdleSeconds);
+                mapService.scheduleOperation(name, dataKey, maxIdleSeconds);
             }
             records.put(dataKey, record);
         } else {
@@ -271,7 +289,7 @@ public class DefaultRecordStore implements RecordStore {
 
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            mapService.scheduleOperation(name, dataKey, ttl);
         }
         mapStoreWrite(record);
         return oldValueData;
@@ -279,12 +297,13 @@ public class DefaultRecordStore implements RecordStore {
 
     private void mapStoreWrite(Record record) {
         if (mapInfo.getStore() != null) {
-            if (mapInfo.getWriteDelayMillis() <= 0) {
+            long writeDelayMillis = mapInfo.getWriteDelayMillis();
+            if (writeDelayMillis <= 0) {
                 mapInfo.getStore().store(toObject(record.getKey()), record.getValue());
             } else {
                 if (record.getState().getStoreTime() <= 0) {
-                    record.getState().updateStoreTime(mapInfo.getWriteDelayMillis());
-                    mapService.scheduleOperation(name, record.getKey(), record.getState().getStoreTime());
+                    record.getState().updateStoreTime(writeDelayMillis);
+                    mapService.scheduleOperation(name, record.getKey(), writeDelayMillis);
                 }
             }
         }
@@ -292,15 +311,21 @@ public class DefaultRecordStore implements RecordStore {
 
     private void mapStoreDelete(Record record) {
         if (mapInfo.getStore() != null) {
-            if (mapInfo.getWriteDelayMillis() == 0) {
+            long writeDelayMillis = mapInfo.getWriteDelayMillis();
+            if (writeDelayMillis == 0) {
                 mapInfo.getStore().delete(toObject(record.getKey()));
             } else {
                 if (record.getState().getStoreTime() <= 0) {
-                    record.getState().updateStoreTime(mapInfo.getWriteDelayMillis());
-                    mapService.scheduleOperation(name, record.getKey(), record.getState().getStoreTime());
+                    record.getState().updateStoreTime(writeDelayMillis);
+                    mapService.scheduleOperation(name, record.getKey(), writeDelayMillis);
+                    removedDelayedKeys.add(record.getKey());
                 }
             }
         }
+    }
+
+    public ConcurrentHashSet<Data> getRemovedDelayedKeys() {
+        return removedDelayedKeys;
     }
 
     public Data replace(Data dataKey, Data dataValue) {
@@ -319,6 +344,8 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Data oldValue, Data newValue) {
         Record record = records.get(dataKey);
         boolean replaced = false;
+        if(record == null)
+            return false;
         Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
         if (recordValue != null && recordValue.equals(toObject(oldValue))) {
             record.setValueData(newValue);
@@ -341,7 +368,7 @@ public class DefaultRecordStore implements RecordStore {
 
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            mapService.scheduleOperation(name, dataKey, ttl);
         }
 
         mapStoreWrite(record);
@@ -358,7 +385,7 @@ public class DefaultRecordStore implements RecordStore {
 
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            mapService.scheduleOperation(name, dataKey, ttl);
         }
     }
 
@@ -373,7 +400,7 @@ public class DefaultRecordStore implements RecordStore {
 
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            mapService.scheduleOperation(name, dataKey, ttl);
         }
         mapStoreWrite(record);
         return true;
@@ -394,7 +421,7 @@ public class DefaultRecordStore implements RecordStore {
                 records.put(dataKey, record);
                 if (ttl > 0) {
                     record.getState().updateTtlExpireTime(ttl);
-                    mapService.scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+                    mapService.scheduleOperation(name, dataKey, ttl);
                 }
                 mapStoreWrite(record);
             }

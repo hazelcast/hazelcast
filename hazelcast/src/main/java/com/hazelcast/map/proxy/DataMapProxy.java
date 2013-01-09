@@ -182,7 +182,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         removeEntryListenerInternal(listener, key);
     }
 
-    public MapEntry<Data, Data> getMapEntry(final Data key) {
+    public Map.Entry<Data, Data> getMapEntry(final Data key) {
         return getMapEntryInternal(key);
     }
 

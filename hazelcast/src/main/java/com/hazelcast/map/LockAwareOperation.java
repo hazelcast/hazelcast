@@ -36,13 +36,6 @@ public abstract class LockAwareOperation extends TTLAwareOperation implements Wa
     protected LockAwareOperation() {
     }
 
-    public void run() {
-        doOp();
-    }
-
-    abstract void doOp();
-
-
     public boolean shouldWait() {
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
