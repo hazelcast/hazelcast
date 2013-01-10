@@ -42,7 +42,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 32 * 1024;
     private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 
-    private final IdentityHashMap<Class, TypeSerializer> constantsTypeMap
+    private final IdentityHashMap<Class, TypeSerializer> constantTypesMap
             = new IdentityHashMap<Class, TypeSerializer>(CONSTANT_SERIALIZERS_SIZE);
     private final TypeSerializer[] constantTypeIds = new TypeSerializer[CONSTANT_SERIALIZERS_SIZE];
 
@@ -251,7 +251,7 @@ public final class SerializationServiceImpl implements SerializationService {
             return portableSerializer;
         } else {
             final TypeSerializer serializer;
-            if ((serializer = constantsTypeMap.get(type)) != null) {
+            if ((serializer = constantTypesMap.get(type)) != null) {
                 return serializer;
             }
         }
@@ -293,12 +293,12 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     private void registerDefault(Class type, TypeSerializer serializer) {
-        constantsTypeMap.put(type, serializer);
+        constantTypesMap.put(type, serializer);
         constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
     }
 
     private void safeRegister(final Class type, final TypeSerializer serializer) {
-        if (constantsTypeMap.containsKey(type)) {
+        if (constantTypesMap.containsKey(type)) {
             throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden!");
         }
         TypeSerializer ts = typeMap.putIfAbsent(type, serializer);
@@ -337,6 +337,7 @@ public final class SerializationServiceImpl implements SerializationService {
         typeMap.clear();
         idMap.clear();
         fallback.set(null);
+        constantTypesMap.clear();
         for (ContextAwareDataOutput output : outputPool) {
             output.close();
         }

@@ -19,7 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.util.ConcurrentHashSet;
+import com.hazelcast.util.*;
+import com.hazelcast.util.AbstractMap.SimpleImmutableEntry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -165,7 +166,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public Map.Entry<Data, Data> getMapEntry(Data dataKey) {
         Record record = records.get(dataKey);
-        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, record.getValueData());
+        return new SimpleImmutableEntry<Data, Data>(dataKey, record.getValueData());
     }
 
     public Set<Data> keySet() {

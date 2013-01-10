@@ -962,7 +962,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     public String toString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
         final Collection<MemberImpl> members = getMemberList();
-        sb.append(members.size());
+        sb.append(members != null ? members.size() : 0);
         sb.append("] {");
         for (Member member : members) {
             sb.append("\n\t").append(member);
