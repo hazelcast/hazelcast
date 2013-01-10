@@ -17,16 +17,9 @@
 package com.hazelcast.collection.processor;
 
 /**
- * @ali 1/2/13
+ * @ali 1/10/13
  */
-public interface BackupAwareEntryProcessor {
+public interface NotifySupportedEntryProcessor {
 
-    void executeBackup(Entry entry);
-
-    boolean shouldBackup();
-
-    int getSyncBackupCount();
-
-    int getAsyncBackupCount();
-
+    boolean shouldNotify(Entry entry);
 }

@@ -18,35 +18,35 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.collection.processor.NotifySupportedEntryProcessor;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.EntryEventType;
-
-import java.util.Collection;
 
 /**
- * @ali 1/3/13
+ * @ali 1/10/13
  */
-public class RemoveEntryProcessor extends GetEntryProcessor implements BackupAwareEntryProcessor {
+public class UnlockEntryProcessor extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor, NotifySupportedEntryProcessor {
 
-    public RemoveEntryProcessor() {
+    public UnlockEntryProcessor() {
     }
 
-    public RemoveEntryProcessor(MultiMapConfig config) {
-        super(config);
+    public UnlockEntryProcessor(MultiMapConfig config) {
         this.syncBackupCount = config.getSyncBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
-    public MultiMapCollectionResponse execute(Entry entry) {
-        Collection collection = entry.getValue();
-        if(entry.removeEntry()){
-            entry.publishEvent(EntryEventType.REMOVED, collection);
+    public Boolean execute(Entry entry) {
+        if (entry.unlock()){
             shouldBackup = true;
+            return true;
         }
-        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationService());
+        return false;
     }
 
     public void executeBackup(Entry entry) {
-        entry.removeEntry();
+        entry.unlock();
+    }
+
+    public boolean shouldNotify(Entry entry) {
+        return shouldBackup;
     }
 }

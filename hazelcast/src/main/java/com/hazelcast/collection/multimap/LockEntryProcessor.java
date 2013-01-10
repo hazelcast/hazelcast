@@ -18,55 +18,66 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.collection.processor.WaitSupportedEntryProcessor;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
-import java.util.Collection;
 
 /**
- * @ali 1/1/13
+ * @ali 1/10/13
  */
-public class PutEntryProcessor extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor {
+public class LockEntryProcessor extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor, WaitSupportedEntryProcessor {
 
-    Data data;
+    public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
 
-    public PutEntryProcessor() {
+    long ttl = DEFAULT_LOCK_TTL;
+
+    long timeout = -1;
+
+    public LockEntryProcessor() {
     }
 
-    public PutEntryProcessor(Data data, MultiMapConfig config) {
-        super(config.isBinary());
-        this.data = data;
+    public LockEntryProcessor(MultiMapConfig config, long timeout) {
         this.syncBackupCount = config.getSyncBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
+        this.timeout = timeout;
     }
 
     public Boolean execute(Entry entry) {
-        Collection coll = entry.getOrCreateValue();
-        boolean result = coll.add(isBinary() ? data : entry.getSerializationService().toObject(data));
-        if (result){
-            entry.publishEvent(EntryEventType.ADDED, data);
+        if(entry.lock(ttl)){
             shouldBackup = true;
+            return true;
         }
-        return result;
+        return false;
     }
 
     public void executeBackup(Entry entry) {
-        Collection coll = entry.getOrCreateValue();
-        coll.add(isBinary() ? data : entry.getSerializationService().toObject(data));
+        entry.lock(ttl);
+    }
+
+    public boolean shouldWait(Entry entry) {
+        return timeout != 0 && !entry.canAcquireLock();
+    }
+
+    public long getWaitTimeoutMillis() {
+        return timeout;
+    }
+
+    public Object onWaitExpire() {
+        return false;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        IOUtil.writeNullableData(out, data);
+        out.writeLong(ttl);
+        out.writeLong(timeout);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        data = IOUtil.readNullableData(in);
+        ttl = in.readLong();
+        timeout = in.readLong();
     }
 }

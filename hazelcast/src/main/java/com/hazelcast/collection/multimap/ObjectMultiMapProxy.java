@@ -22,11 +22,13 @@ import com.hazelcast.collection.CollectionProxy;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.LockInfo;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -148,19 +150,21 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public void lock(K key) {
-
+        tryLock(key, -1, TimeUnit.MILLISECONDS);
     }
 
     public boolean tryLock(K key) {
-        return false;
+        return tryLock(key, 0, TimeUnit.MILLISECONDS);
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
-        return false;
+        Data dataKey = nodeEngine.toData(key);
+        return lockInternal(dataKey, timeunit.toMillis(time));
     }
 
     public void unlock(K key) {
-
+        Data dataKey = nodeEngine.toData(key);
+        unlockInternal(dataKey);
     }
 
     public LocalMapStats getLocalMultiMapStats() {
@@ -182,6 +186,12 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
                         System.out.println("\t\t\tval: " + nodeEngine.toObject(o));
                     }
                 }
+                ConcurrentMap<Data, LockInfo> locks = container.getLocks();
+                System.out.println("\t\t\t\t\t-------------");
+                for (Data key : locks.keySet()) {
+                    System.out.println("\t\t\t\t\t\tkey: " + nodeEngine.toObject(key));
+                }
+                System.out.println("\t\t\t\t\t-------------");
             }
 
         }

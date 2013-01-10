@@ -19,6 +19,7 @@ package com.hazelcast.collection;
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
 import com.hazelcast.collection.processor.EntryProcessor;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,18 +36,24 @@ public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation im
 
     EntryProcessor processor;
 
+    Address firstCaller;
+
+    int firstThreadId;
+
     CollectionBackupOperation() {
     }
 
-    CollectionBackupOperation(String name, Data dataKey, EntryProcessor processor) {
+    CollectionBackupOperation(String name, Data dataKey, EntryProcessor processor, Address firstCaller, int firstThreadId) {
         super(name, dataKey);
         this.processor = processor;
+        this.firstCaller = firstCaller;
+        this.firstThreadId = firstThreadId;
     }
 
     public void run() throws Exception {
         CollectionService service = getService();
         CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), name);
-        ((BackupAwareEntryProcessor)processor).executeBackup(new Entry(collectionContainer, dataKey));
+        ((BackupAwareEntryProcessor) processor).executeBackup(new Entry(collectionContainer, dataKey, firstThreadId, firstCaller));
     }
 
     public Object getResponse() {
@@ -56,11 +63,16 @@ public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation im
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(processor);
+        out.writeInt(firstThreadId);
+        firstCaller.writeData(out);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         processor = in.readObject();
+        firstThreadId = in.readInt();
+        firstCaller = new Address();
+        firstCaller.readData(in);
     }
 
     public int getId() {

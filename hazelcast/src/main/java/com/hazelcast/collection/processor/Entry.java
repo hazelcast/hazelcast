@@ -18,6 +18,7 @@ package com.hazelcast.collection.processor;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -32,22 +33,40 @@ public class Entry {
 
     private CollectionContainer container;
 
+    private int threadId = -1;
+
+    private Address caller;
+
     private EntryEventType eventType;
 
     private Object eventValue;
 
-    public Entry(CollectionContainer container, Data key) {
+    public Entry(CollectionContainer container, Data key, int threadId, Address caller) {
         this.container = container;
         this.key = key;
         this.value = container.getObject(key);
+        this.threadId = threadId;
+        this.caller = caller;
     }
 
     public Data getKey() {
         return key;
     }
 
-    public void removeEntry() {
-        container.removeObject(key);
+    public boolean removeEntry() {
+        return container.removeObject(key);
+    }
+
+    public boolean canAcquireLock(){
+        return container.canAcquireLock(key, threadId, caller);
+    }
+
+    public boolean lock(long ttl){
+        return container.lock(key, caller, threadId, ttl);
+    }
+
+    public boolean unlock(){
+        return container.unlock(key, caller, threadId);
     }
 
     public <T> T getOrCreateValue() {

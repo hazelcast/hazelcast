@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.multimap;
 
+import com.hazelcast.collection.processor.BaseEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
 
 import java.util.Collection;
@@ -23,7 +24,7 @@ import java.util.Collection;
 /**
  * @ali 1/9/13
  */
-public class CountEntryProcessor extends MultiMapEntryProcessor<Integer> {
+public class CountEntryProcessor extends BaseEntryProcessor<Integer> {
 
     public CountEntryProcessor() {
     }

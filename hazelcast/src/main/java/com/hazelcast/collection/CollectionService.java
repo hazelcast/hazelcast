@@ -21,6 +21,7 @@ import com.hazelcast.collection.processor.EntryProcessor;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
@@ -172,6 +173,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         try {
             int partitionId = nodeEngine.getPartitionId(dataKey);
             CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId);
+            operation.setThreadId(ThreadContext.get().getThreadId());
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());

@@ -57,7 +57,7 @@ public class CollectionEventFilter implements EventFilter, DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
-        key = IOUtil.readData(in);
+        key = IOUtil.readNullableData(in);
     }
 
     public boolean eval(Object arg) {

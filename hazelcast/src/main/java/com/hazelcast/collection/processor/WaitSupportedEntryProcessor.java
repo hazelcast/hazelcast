@@ -17,16 +17,13 @@
 package com.hazelcast.collection.processor;
 
 /**
- * @ali 1/2/13
+ * @ali 1/10/13
  */
-public interface BackupAwareEntryProcessor {
+public interface WaitSupportedEntryProcessor {
 
-    void executeBackup(Entry entry);
+    public boolean shouldWait(Entry entry);
 
-    boolean shouldBackup();
+    public long getWaitTimeoutMillis();
 
-    int getSyncBackupCount();
-
-    int getAsyncBackupCount();
-
+    public Object onWaitExpire();
 }

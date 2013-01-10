@@ -17,8 +17,8 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
-import com.hazelcast.collection.processor.BaseEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,16 +31,18 @@ import java.util.Collection;
 /**
  * @ali 1/3/13
  */
-public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implements BackupAwareEntryProcessor {
+public class RemoveObjectEntryProcess extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor {
 
     Data data;
 
     public RemoveObjectEntryProcess() {
     }
 
-    public RemoveObjectEntryProcess(Data data, boolean binary) {
-        super(binary);
+    public RemoveObjectEntryProcess(Data data, MultiMapConfig config) {
+        super(config.isBinary());
         this.data = data;
+        this.syncBackupCount = config.getSyncBackupCount();
+        this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
     public Boolean execute(Entry entry) {
@@ -54,6 +56,7 @@ public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implem
         }
         if (result){
             entry.publishEvent(EntryEventType.REMOVED, data);
+            shouldBackup = true;
         }
         return result;
     }

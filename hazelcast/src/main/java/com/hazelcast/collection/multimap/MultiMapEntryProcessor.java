@@ -30,7 +30,17 @@ public abstract class MultiMapEntryProcessor<T> extends BaseEntryProcessor<T> {
 
     ValueCollectionType collectionType = ValueCollectionType.SET;
 
+    int syncBackupCount;
+
+    int asyncBackupCount;
+
+    transient boolean shouldBackup = false;
+
     protected MultiMapEntryProcessor() {
+    }
+
+    protected MultiMapEntryProcessor(boolean binary){
+        super(binary);
     }
 
     protected MultiMapEntryProcessor(boolean binary, ValueCollectionType collectionType) {
@@ -38,13 +48,29 @@ public abstract class MultiMapEntryProcessor<T> extends BaseEntryProcessor<T> {
         this.collectionType = collectionType;
     }
 
+    public int getSyncBackupCount() {
+        return syncBackupCount;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public boolean shouldBackup() {
+        return shouldBackup;
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeUTF(collectionType.toString());
+        out.writeInt(syncBackupCount);
+        out.writeInt(asyncBackupCount);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         collectionType = ValueCollectionType.valueOf(in.readUTF());
+        syncBackupCount = in.readInt();
+        asyncBackupCount = in.readInt();
     }
 }

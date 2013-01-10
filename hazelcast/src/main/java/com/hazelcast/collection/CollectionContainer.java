@@ -16,6 +16,8 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.map.LockInfo;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
@@ -33,18 +35,58 @@ public class CollectionContainer {
     CollectionService service;
 
     private final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
+    final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
 
     public CollectionContainer(String name, CollectionService service) {
         this.name = name;
         this.service = service;
     }
 
+    public LockInfo getOrCreateLock(Data key) {
+        LockInfo lock = locks.get(key);
+        if (lock == null) {
+            lock = new LockInfo();
+            locks.put(key, lock);
+        }
+        return lock;
+    }
+
+    public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
+        LockInfo lock = getOrCreateLock(dataKey);
+        return lock.lock(caller, threadId, ttl);
+    }
+
+    public boolean isLocked(Data dataKey) {
+        LockInfo lock = locks.get(dataKey);
+        if (lock == null)
+            return false;
+        return lock.isLocked();
+    }
+
+    public boolean canAcquireLock(Data key, int threadId, Address caller) {
+        LockInfo lock = locks.get(key);
+        return lock == null || lock.testLock(threadId, caller);
+    }
+
+    public boolean unlock(Data dataKey, Address caller, int threadId) {
+        LockInfo lock = locks.get(dataKey);
+        if (lock == null)
+            return false;
+        if (lock.testLock(threadId, caller)) {
+            if (lock.unlock(caller, threadId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     public Object getObject(Data dataKey){
         return objects.get(dataKey);
     }
 
-    public void removeObject(Data dataKey){
-        objects.remove(dataKey);
+    public boolean removeObject(Data dataKey){
+        return objects.remove(dataKey) != null;
     }
 
     public Object putNewObject(Data dataKey){
@@ -128,5 +170,9 @@ public class CollectionContainer {
 
     public ConcurrentMap<Data, Object> getObjects() {
         return objects; //TODO for testing only
+    }
+
+    public ConcurrentMap<Data, LockInfo> getLocks() {
+        return locks;   //TODO for testing only
     }
 }

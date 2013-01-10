@@ -29,8 +29,8 @@ public class GetEntryProcessor extends MultiMapEntryProcessor<MultiMapCollection
     public GetEntryProcessor() {
     }
 
-    public GetEntryProcessor(boolean binary, MultiMapConfig.ValueCollectionType collectionType) {
-        super(binary, collectionType);
+    public GetEntryProcessor(MultiMapConfig config) {
+        super(config.isBinary(), config.getValueCollectionType());
     }
 
     public MultiMapCollectionResponse execute(Entry entry) {

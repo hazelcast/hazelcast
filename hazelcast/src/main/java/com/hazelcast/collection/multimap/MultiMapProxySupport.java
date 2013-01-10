@@ -57,19 +57,19 @@ public abstract class MultiMapProxySupport {
     }
 
     Boolean putInternal(Data dataKey, Data dataValue) {
-        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config.isBinary()));
+        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config));
     }
 
     MultiMapCollectionResponse getInternal(Data dataKey) {
-        return service.process(name, dataKey, new GetEntryProcessor(config.isBinary(), config.getValueCollectionType()));
+        return service.process(name, dataKey, new GetEntryProcessor(config));
     }
 
     Boolean removeInternal(Data dataKey, Data dataValue) {
-        return service.process(name, dataKey, new RemoveObjectEntryProcess(dataValue, config.isBinary()));
+        return service.process(name, dataKey, new RemoveObjectEntryProcess(dataValue, config));
     }
 
     MultiMapCollectionResponse removeInternal(Data dataKey) {
-        return service.process(name, dataKey, new RemoveEntryProcessor(config.isBinary(), config.getValueCollectionType()));
+        return service.process(name, dataKey, new RemoveEntryProcessor(config));
     }
 
     Set<Data> localKeySetInternal() {
@@ -165,5 +165,12 @@ public abstract class MultiMapProxySupport {
         return service.process(name, dataKey, new CountEntryProcessor());
     }
 
+    public Boolean lockInternal(Data dataKey, long timeout){
+        return service.process(name, dataKey, new LockEntryProcessor(config, timeout));
+    }
+
+    public Boolean unlockInternal(Data dataKey){
+        return service.process(name, dataKey, new UnlockEntryProcessor(config));
+    }
 
 }
