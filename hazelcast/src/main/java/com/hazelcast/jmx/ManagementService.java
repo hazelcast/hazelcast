@@ -17,7 +17,7 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.executor.ExecutorThreadFactory;
+import com.hazelcast.executor.PoolExecutorThreadFactory;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -76,7 +76,8 @@ public class ManagementService {
 
     private static synchronized void startStatsCollector() {
         if (statCollectorExecutor == null) {
-            statCollectorExecutor = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(null, null, "hz.jmx", null));
+            statCollectorExecutor = new ScheduledThreadPoolExecutor(2,
+                    new PoolExecutorThreadFactory(null, null, "hz.jmx", null));
         }
     }
 

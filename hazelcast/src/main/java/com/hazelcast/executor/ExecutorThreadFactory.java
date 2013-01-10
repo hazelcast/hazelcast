@@ -21,30 +21,20 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class ExecutorThreadFactory implements ThreadFactory {
-    private final AtomicInteger threadNumber;
-    private final String namePrefix;
+public abstract class ExecutorThreadFactory implements ThreadFactory {
     private final ClassLoader classLoader;
     private final ThreadGroup threadGroup;
     private final HazelcastInstanceImpl hazelcastInstance;
 
-    public ExecutorThreadFactory(ThreadGroup threadGroup, HazelcastInstanceImpl hazelcastInstance, String threadNamePrefix, ClassLoader classLoader) {
-        this(threadGroup, hazelcastInstance, threadNamePrefix, new AtomicInteger(0), classLoader);
-    }
-
-    public ExecutorThreadFactory(ThreadGroup threadGroup, HazelcastInstanceImpl hazelcastInstance, String threadNamePrefix,
-                                 AtomicInteger threadNumber, ClassLoader classLoader) {
+    public ExecutorThreadFactory(ThreadGroup threadGroup, HazelcastInstanceImpl hazelcastInstance, ClassLoader classLoader) {
         this.threadGroup = threadGroup;
         this.hazelcastInstance = hazelcastInstance;
-        this.threadNumber = threadNumber;
         this.classLoader = classLoader;
-        this.namePrefix = threadNamePrefix;
     }
 
     public Thread newThread(Runnable r) {
-        final Thread t = new Thread(threadGroup, r, namePrefix + threadNumber.getAndIncrement(), 0) {
+        final Thread t = new Thread(threadGroup, r, newThreadName(), 0) {
             public void run() {
                 ThreadContext.get().setCurrentInstance(hazelcastInstance);
                 try {
@@ -69,4 +59,6 @@ public class ExecutorThreadFactory implements ThreadFactory {
         }
         return t;
     }
+
+    protected abstract String newThreadName();
 }

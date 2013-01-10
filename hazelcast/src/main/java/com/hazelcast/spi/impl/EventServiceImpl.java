@@ -55,10 +55,14 @@ public class EventServiceImpl implements EventService {
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(EventService.class.getName());
-        Node node = nodeEngine.getNode();
+        final Node node = nodeEngine.getNode();
         eventExecutorService = Executors.newSingleThreadExecutor(
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getThreadNamePrefix("event"), node.getConfig().getClassLoader()));
+                        node.getConfig().getClassLoader()) {
+                    protected String newThreadName() {
+                        return node.getThreadNamePrefix("event");
+                    }
+                });
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
         serializationContext = this.nodeEngine.getSerializationContext();
     }

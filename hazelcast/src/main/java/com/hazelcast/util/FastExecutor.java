@@ -24,15 +24,14 @@ import java.util.concurrent.*;
  */
 public class FastExecutor implements Executor {
 
-    private final BacklogDetector backlogDetector = new BacklogDetector();
     private final BlockingQueue<Task> queue = new LinkedBlockingQueue<Task>();
     private final Collection<Thread> threads = new ConcurrentHashSet<Thread>();
     private final ThreadFactory threadFactory;
     private volatile boolean live = true;
 
-    public FastExecutor(int coreSize, ThreadFactory threadFactory) {
+    public FastExecutor(int coreSize, String namePrefix, ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;
-        Thread t = threadFactory.newThread(backlogDetector);
+        Thread t = new Thread(new BacklogDetector(), namePrefix + "backlog");
         threads.add(t);
         t.start();
         for (int i = 0; i < coreSize; i++) {

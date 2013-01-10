@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.executor.ExecutorThreadFactory;
+import com.hazelcast.executor.PoolExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
@@ -68,8 +68,11 @@ final class OperationServiceImpl implements OperationService {
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class.getName());
         defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
-        executor = new FastExecutor(5, new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                node.getThreadPoolNamePrefix("operation"), node.getConfig().getClassLoader()));
+        final int coreSize = Runtime.getRuntime().availableProcessors();
+        final String poolNamePrefix = node.getThreadPoolNamePrefix("operation");
+        executor = new FastExecutor(coreSize, poolNamePrefix,
+                new PoolExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+                poolNamePrefix, node.getConfig().getClassLoader()));
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
         }
