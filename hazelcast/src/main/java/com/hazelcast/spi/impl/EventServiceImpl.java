@@ -344,6 +344,10 @@ public class EventServiceImpl implements EventService {
         public void run() {
             Data data = packet.getValue();
             EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
+            Object eventObject = eventPacket.event;
+            if (eventObject instanceof Data) {
+                eventObject = nodeEngine.toObject(eventObject);
+            }
             final String serviceName = eventPacket.serviceName;
             EventPublishingService service = nodeEngine.getService(serviceName);
             if (service == null) {
@@ -364,7 +368,7 @@ public class EventServiceImpl implements EventService {
                 logger.log(Level.WARNING, "Invalid target for  " + registration);
                 return;
             }
-            service.dispatchEvent(eventPacket.event, registration.listener);
+            service.dispatchEvent(eventObject, registration.listener);
         }
     }
 

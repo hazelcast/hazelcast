@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService, EventPublishingService<Data, EntryListener>, ClientProtocolService {
+        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>, ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
@@ -273,8 +273,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         EventData event = new EventData(source, caller,  dataKey, dataValue,
                 dataOldValue, eventType);
 
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, toData(event));
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, toData(event.cloneWithoutValues()));
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
@@ -295,9 +295,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return nodeEngine.getSerializationService().toObject(data);
     }
 
-    public void dispatchEvent(Data data, EntryListener listener) {
-        EventData eventData = (EventData) nodeEngine.toObject(data);
-
+    public void dispatchEvent(EventData eventData, EntryListener listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         EntryEvent event = null;
 
@@ -307,7 +305,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         else {
             event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataOldValue()), toObject(eventData.getDataNewValue()) );
         }
-
 
         switch (event.getEventType()) {
             case ADDED:
