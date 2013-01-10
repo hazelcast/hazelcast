@@ -126,23 +126,25 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
-
+        service.addEntryListener(name, listener, null, false, true);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-
+        service.addEntryListener(name, listener, null, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
-
+        service.removeEntryListener(name, listener, null);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-
+        Data dataKey = nodeEngine.toData(key);
+        service.addEntryListener(name, listener, dataKey, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
-
+        Data dataKey = nodeEngine.toData(key);
+        service.removeEntryListener(name, listener, dataKey);
     }
 
     public void lock(K key) {

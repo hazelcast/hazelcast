@@ -35,7 +35,7 @@ public class GetEntryProcessor extends MultiMapEntryProcessor<MultiMapCollection
 
     public MultiMapCollectionResponse execute(Entry entry) {
         Collection collection = entry.getValue();
-        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationContext());
+        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationService());
     }
 
 

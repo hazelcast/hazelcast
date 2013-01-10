@@ -19,6 +19,7 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.BaseEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -47,9 +48,12 @@ public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implem
         if (coll == null){
             return false;
         }
-        boolean result = coll.remove(isBinary() ? data : entry.getSerializationContext().toObject(data));
+        boolean result = coll.remove(isBinary() ? data : entry.getSerializationService().toObject(data));
         if (coll.isEmpty()){
             entry.removeEntry();
+        }
+        if (result){
+            entry.publishEvent(EntryEventType.REMOVED, data);
         }
         return result;
     }
@@ -59,7 +63,7 @@ public class RemoveObjectEntryProcess extends BaseEntryProcessor<Boolean> implem
         if (coll == null){
             return;
         }
-        coll.remove(isBinary() ? data : entry.getSerializationContext().toObject(data));
+        coll.remove(isBinary() ? data : entry.getSerializationService().toObject(data));
         if (coll.isEmpty()){
             entry.removeEntry();
         }

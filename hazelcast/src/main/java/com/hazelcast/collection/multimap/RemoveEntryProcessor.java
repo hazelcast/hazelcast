@@ -19,6 +19,7 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.EntryEventType;
 
 import java.util.Collection;
 
@@ -37,7 +38,8 @@ public class RemoveEntryProcessor extends GetEntryProcessor implements BackupAwa
     public MultiMapCollectionResponse execute(Entry entry) {
         Collection collection = entry.getValue();
         entry.removeEntry();
-        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationContext());
+        entry.publishEvent(EntryEventType.REMOVED, collection);
+        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationService());
     }
 
     public void executeBackup(Entry entry) {

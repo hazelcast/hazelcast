@@ -17,9 +17,18 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionEvent;
+import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+
+import java.util.Collection;
 
 /**
  * @ali 1/8/13
@@ -47,4 +56,25 @@ public abstract class MultiMapOperation extends AbstractNamedOperation implement
     public String getServiceName() {
         return CollectionService.COLLECTION_SERVICE_NAME;
     }
+
+    public boolean hasListener(){
+        EventService eventService = getNodeEngine().getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        return registrations.size() > 0;
+    }
+
+    public void publishEvent(EntryEventType eventType, Data key, Object value){
+        NodeEngine engine = getNodeEngine();
+        EventService eventService = engine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.COLLECTION_SERVICE_NAME, name);
+        for (EventRegistration registration: registrations){
+            CollectionEventFilter filter = (CollectionEventFilter)registration.getFilter();
+            if (filter.getKey() != null && filter.getKey().equals(key)){
+                Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
+                CollectionEvent event = new CollectionEvent(name,  key, dataValue, eventType, engine.getThisAddress());
+                eventService.publishEvent(CollectionService.COLLECTION_SERVICE_NAME, registration, event);
+            }
+        }
+    }
+
 }

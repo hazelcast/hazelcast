@@ -17,7 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,7 +78,7 @@ public class CollectionContainer {
         if (coll == null){
             return false;
         }
-        return coll.contains(binary ? value : getSerializationService().toObject(value));
+        return coll.contains(binary ? value : getNodeEngine().toObject(value));
     }
 
     public boolean containsValue(boolean binary, Data value){
@@ -118,8 +118,12 @@ public class CollectionContainer {
         objects.clear();
     }
 
-    public SerializationService getSerializationService(){
-        return service.getSerializationService();
+    public NodeEngine getNodeEngine(){
+        return service.getNodeEngine();
+    }
+
+    public String getName() {
+        return name;
     }
 
     public ConcurrentMap<Data, Object> getObjects() {

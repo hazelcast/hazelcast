@@ -19,6 +19,7 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.BaseEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,12 +45,16 @@ public class PutEntryProcessor extends BaseEntryProcessor<Boolean> implements Ba
 
     public Boolean execute(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-        return coll.add(isBinary() ? data : entry.getSerializationContext().toObject(data));
+        boolean result = coll.add(isBinary() ? data : entry.getSerializationService().toObject(data));
+        if (result){
+            entry.publishEvent(EntryEventType.ADDED, data);
+        }
+        return result;
     }
 
     public void executeBackup(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-        coll.add(isBinary() ? data : entry.getSerializationContext().toObject(data));
+        coll.add(isBinary() ? data : entry.getSerializationService().toObject(data));
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

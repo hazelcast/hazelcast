@@ -19,15 +19,16 @@ package com.hazelcast.collection;
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
 import com.hazelcast.collection.processor.EntryProcessor;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @ali 1/1/13
@@ -37,6 +38,7 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
     EntryProcessor processor;
 
     transient Object response;
+    transient Entry entry;
 
     CollectionOperation() {
     }
@@ -50,7 +52,22 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
     public void run() throws Exception {
         CollectionService service = getService();
         CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), name);
-        response = processor.execute(new Entry(collectionContainer, dataKey));
+        entry = new Entry(collectionContainer, dataKey);
+        response = processor.execute(entry);
+    }
+
+    public void afterRun() throws Exception {
+        if(entry != null && entry.getEventType() != null){
+            Object eventValue = entry.getEventValue();
+            if (eventValue instanceof Collection){
+                for (Object obj: (Collection)eventValue){
+                    publishEvent(entry.getEventType(), obj);
+                }
+            }
+            else {
+                publishEvent(entry.getEventType(), eventValue);
+            }
+        }
     }
 
     public Object getResponse() {
@@ -87,5 +104,19 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
 
     public int getId() {
         return DataSerializerCollectionHook.COLLECTION_OPERATION;
+    }
+
+    public void publishEvent(EntryEventType eventType, Object value){
+        NodeEngine engine = getNodeEngine();
+        EventService eventService = engine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.COLLECTION_SERVICE_NAME, name);
+        for (EventRegistration registration: registrations){
+            CollectionEventFilter filter = (CollectionEventFilter)registration.getFilter();
+            if (filter.getKey() == null || filter.getKey().equals(dataKey)){
+                Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
+                CollectionEvent event = new CollectionEvent(name,  dataKey, dataValue, eventType, engine.getThisAddress());
+                eventService.publishEvent(CollectionService.COLLECTION_SERVICE_NAME, registration, event);
+            }
+        }
     }
 }

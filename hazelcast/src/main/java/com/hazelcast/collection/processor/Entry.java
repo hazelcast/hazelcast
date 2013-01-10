@@ -17,6 +17,7 @@
 package com.hazelcast.collection.processor;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -30,6 +31,10 @@ public class Entry {
     private Object value;
 
     private CollectionContainer container;
+
+    private EntryEventType eventType;
+
+    private Object eventValue;
 
     public Entry(CollectionContainer container, Data key) {
         this.container = container;
@@ -45,10 +50,6 @@ public class Entry {
         container.removeObject(key);
     }
 
-    public SerializationService getSerializationContext(){
-        return container.getSerializationService();
-    }
-
     public <T> T getOrCreateValue() {
         if (value == null) {
             return (T) container.putNewObject(key);
@@ -58,5 +59,22 @@ public class Entry {
 
     public <T> T getValue() {
         return (T) value;
+    }
+
+    public SerializationService getSerializationService(){
+        return container.getNodeEngine().getSerializationService();
+    }
+
+    public void publishEvent(EntryEventType eventType, Object eventValue){
+        this.eventType = eventType;
+        this.eventValue = eventValue;
+    }
+
+    public EntryEventType getEventType() {
+        return eventType;
+    }
+
+    public Object getEventValue() {
+        return eventValue;
     }
 }

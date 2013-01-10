@@ -17,13 +17,17 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionLevelOperation;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * @ali 1/9/13
@@ -34,6 +38,8 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
 
     int asyncBackupCount;
 
+    transient Map<Data, Collection> entries;
+
     public ClearOperation() {
     }
 
@@ -43,12 +49,35 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
         this.asyncBackupCount = asyncBackupCount;
     }
 
+    public void beforeRun() throws Exception {
+        if (hasListener()){
+            CollectionContainer container = getContainer();
+            if (container != null){
+                entries = container.entrySet();
+            }
+        }
+    }
+
     public void run() throws Exception {
         CollectionContainer container = getContainer();
         if (container != null){
             container.clear();
         }
         response = true;
+    }
+
+    public void afterRun() throws Exception {
+        if (entries != null){
+            for (Map.Entry<Data, Collection> entry: entries.entrySet()){
+                Data key = entry.getKey();
+                Collection coll = entry.getValue();
+                for (Object obj: coll){
+                    publishEvent(EntryEventType.REMOVED, key, obj);
+                }
+            }
+            entries.clear();
+            entries = null;
+        }
     }
 
     public boolean shouldBackup() {
