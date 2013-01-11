@@ -224,6 +224,8 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
     }
 
     private void registerPeriodicProcessable(final Processable p, long delay, long period) {
+        delay = delay < 0 ? 0 : delay;
+        period = period <= 0 ? 1: period;
         node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
             public void run() {
                 node.clusterService.enqueuePriorityAndReturn(p);
