@@ -23,11 +23,12 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.client.MapGetHandler;
+import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -52,7 +53,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
-    private final Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
+    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
     private final ScheduledThreadPoolExecutor recordTaskExecutor;
 
@@ -85,10 +86,21 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     private void registerClientOperationHandlers() {
-        registerHandler("MGET", new MapGetHandler(this));
+        registerHandler(Command.MGET, new MapGetHandler(this));
+        registerHandler(Command.MLOCK, new MapLockHandler(this));
+        registerHandler(Command.MTRYLOCK, new MapLockHandler(this));
+        registerHandler(Command.MUNLOCK, new MapUnlockHandler(this));
+        registerHandler(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
+        registerHandler(Command.MPUT, new MapPutHandler(this));
+        registerHandler(Command.MSIZE, new MapSizeHandler(this));
+        registerHandler(Command.MGETALL, new MapGetAllHandler(this));
+        registerHandler(Command.MTRYPUT, new MapTryPutHandler(this));
+        registerHandler(Command.MSET, new MapSetHandler(this));
+        registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
+
     }
 
-    void registerHandler(String command, ClientCommandHandler handler) {
+    void registerHandler(Command command, ClientCommandHandler handler) {
         commandHandlers.put(command, handler);
     }
 
@@ -249,7 +261,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void destroy() {
     }
 
-    public Map<String, ClientCommandHandler> getCommandMap() {
+    public Map<Command, ClientCommandHandler> getCommandMap() {
         return commandHandlers;
     }
 

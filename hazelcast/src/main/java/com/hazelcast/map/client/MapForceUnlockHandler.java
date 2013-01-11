@@ -17,25 +17,22 @@
 
 package com.hazelcast.map.client;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.Protocol;
 
-import java.util.concurrent.TimeUnit;
-
-public class MapPutHandler extends MapCommandHandlerWithTTL {
-
-    public MapPutHandler(MapService mapService) {
+public class MapForceUnlockHandler extends MapCommandHandler {
+    public MapForceUnlockHandler(MapService mapService) {
         super(mapService);
     }
 
     @Override
-    protected Data processMapOp(DataMapProxy dataMapProxy, Data keyData, Data valueData, long ttl) {
-        if (ttl <= 0) {
-            Data result = dataMapProxy.put(keyData, valueData);
-            return result;
-        } else {
-            return dataMapProxy.put(keyData, valueData, ttl, TimeUnit.MILLISECONDS);
-        }
+    public Protocol processCall(Node node, Protocol protocol) {
+        String name = protocol.args[0];
+        byte[] key = protocol.buffers[0].array();
+        DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
+        dataMapProxy.forceUnlock(binaryToData(key));
+        return protocol.success();
     }
 }

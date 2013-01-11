@@ -23,19 +23,15 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
-public class MapPutHandler extends MapCommandHandlerWithTTL {
+public class MapPutTransientHandler extends MapCommandHandlerWithTTL {
 
-    public MapPutHandler(MapService mapService) {
+    public MapPutTransientHandler(MapService mapService) {
         super(mapService);
     }
 
     @Override
     protected Data processMapOp(DataMapProxy dataMapProxy, Data keyData, Data valueData, long ttl) {
-        if (ttl <= 0) {
-            Data result = dataMapProxy.put(keyData, valueData);
-            return result;
-        } else {
-            return dataMapProxy.put(keyData, valueData, ttl, TimeUnit.MILLISECONDS);
-        }
+        dataMapProxy.putTransient(keyData, valueData, ttl, TimeUnit.MILLISECONDS);
+        return null;
     }
 }

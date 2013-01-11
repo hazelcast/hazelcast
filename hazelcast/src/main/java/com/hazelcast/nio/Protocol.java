@@ -18,6 +18,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -118,6 +119,8 @@ public class Protocol implements SocketWritable {
     public Protocol success(String... args) {
         return success((ByteBuffer) null, args);
     }
+
+
 
     public Protocol success(ByteBuffer buffer, String... args) {
         int size = buffer == null ? 0 : 1;

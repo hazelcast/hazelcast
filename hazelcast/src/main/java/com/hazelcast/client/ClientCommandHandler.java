@@ -23,6 +23,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.logging.Level;
@@ -35,9 +37,7 @@ public abstract class ClientCommandHandler implements CommandHandler {
         this.logger = node.getLogger(this.getClass().getName());
     }
 
-    public Protocol processCall(Node node, Protocol protocol) {
-        return protocol;
-    }
+    public abstract Protocol processCall(Node node, Protocol protocol) ;
 
     public void handle(Node node, Protocol protocol) {
         Protocol response;
@@ -57,5 +57,11 @@ public abstract class ClientCommandHandler implements CommandHandler {
         } else {
             logger.log(Level.WARNING, "unable to send response " + request);
         }
+    }
+
+
+    // TODO: !!! FIX ME !!!
+    public Data binaryToData(byte[] bytes){
+        return new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bytes);
     }
 }

@@ -25,19 +25,41 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationConstants;
 
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class MapGetHandler extends MapCommandHandler {
-
-    public MapGetHandler(MapService mapService) {
+public class MapGetAllHandler extends MapCommandHandler {
+    public MapGetAllHandler(MapService mapService) {
         super(mapService);
     }
 
+    @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        byte[] key = protocol.buffers[0].array();
+        int size = protocol.hasBuffer() ? protocol.buffers.length : 0;
+        Set<Object> set = new HashSet<Object>();
+        for (int i = 0; i < size; i++) {
+            set.add(binaryToData(protocol.buffers[i].array()));
+        }
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
-        // TODO: !!! FIX ME !!!
-        Data value = dataMapProxy.get(binaryToData(key));
-        return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
+        ByteBuffer[] buffers = new ByteBuffer[size * 2];
+        int i = 0;
+        for (Object k : set) {
+            buffers[i++] = ByteBuffer.wrap(((Data) k).buffer);
+            Data v = dataMapProxy.get(k);
+            if (v == null) {
+                buffers[i++] = ByteBuffer.wrap(new byte[0]);
+            } else {
+                buffers[i++] = ByteBuffer.wrap(v.buffer);
+            }
+        }
+        return protocol.success(buffers);
+    }
+
+    @Override
+    protected Protocol processMapOp(Protocol protocol, DataMapProxy dataMapProxy, Data data, Data data1) {
+        return null;
     }
 }
+

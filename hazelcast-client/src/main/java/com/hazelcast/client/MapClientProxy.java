@@ -331,7 +331,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public V get(Object key) {
         check(key);
-        return (V) protocolProxyHelper.doCommandAsObject(Command.MGET, getName(), protocolProxyHelper.toData((K) key));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MGET, getName(), protocolProxyHelper.toData(key));
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {
