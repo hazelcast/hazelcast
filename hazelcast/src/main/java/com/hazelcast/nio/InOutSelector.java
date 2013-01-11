@@ -54,7 +54,7 @@ public final class InOutSelector implements Runnable {
     public InOutSelector(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         logger = connectionManager.ioService.getLogger(this.getClass().getName());
-        this.waitTime = 1000;  // TODO: This value has significant effect on idle CPU usage!
+        this.waitTime = 500;  // TODO: This value has significant effect on idle CPU usage!
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();
