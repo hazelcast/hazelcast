@@ -26,6 +26,9 @@ public class ClasspathXmlConfig extends Config {
 
     private final ILogger logger = Logger.getLogger(ClasspathXmlConfig.class.getName());
 
+    public ClasspathXmlConfig() {
+    }
+
     public ClasspathXmlConfig(String resource) {
         this(Thread.currentThread().getContextClassLoader(), resource);
     }
