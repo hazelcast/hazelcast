@@ -105,7 +105,7 @@ public abstract class BaseManager {
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
-        maxOperationTimeout = Math.max(node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong(), 0L);
+        maxOperationTimeout = Math.max(node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong(), MIN_POLL_TIMEOUT);
         maxOperationLimit = node.getGroupProperties().MAX_CONCURRENT_OPERATION_LIMIT.getInteger();
         responsePollTimeout = Math.min(Math.max(maxOperationTimeout / 5, MIN_POLL_TIMEOUT), MAX_POLL_TIMEOUT);
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
@@ -561,7 +561,37 @@ public abstract class BaseManager {
         }
 
         public Object getResult(long time, TimeUnit unit) throws InterruptedException {
-            return responses.poll(time, unit);
+//            return responses.poll(time, unit);
+            long timeout = unit.toMillis(time);
+            while (timeout > 0) {
+                long start = Clock.currentTimeMillis();
+                Object result = waitAndGetResult();
+                if (Thread.interrupted()) {
+                    handleInterruption();
+                }
+                if (result == OBJECT_REDO) {
+                    request.redoCount++;
+                    logRedo(request, redoType, true);
+                    if (request.redoCount > redoGiveUpThreshold) {
+                        throw new OperationTimeoutException(request.operation.toString(), "Redo threshold[" + redoGiveUpThreshold
+                                + "] exceeded! Last redo cause: " + redoType + ", Name: " + request.name);
+                    }
+                    try {
+                        //noinspection BusyWait
+                        Thread.sleep(redoWaitMillis);
+                    } catch (InterruptedException e) {
+                        handleInterruption();
+                    }
+                    timeout -= (Clock.currentTimeMillis() - start);
+                    if (timeout >= 0) {
+                        beforeRedo();
+                        doOp();
+                    }
+                } else {
+                    return result;
+                }
+            }
+            throw new OperationTimeoutException();
         }
 
         public boolean getResultAsBoolean(int timeoutSeconds) {
@@ -581,10 +611,12 @@ public abstract class BaseManager {
 
         public Object waitAndGetResult() {
             // should be more than request timeout
+//            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
+//                                           ? Long.MAX_VALUE
+//                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
+//                                                                         : responsePollTimeout;
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
-                                           ? Long.MAX_VALUE
-                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
-                                                                         : responsePollTimeout;
+                    ? Long.MAX_VALUE : maxOperationTimeout;
 
             final long start = Clock.currentTimeMillis();
             while (true) {
@@ -606,7 +638,7 @@ public abstract class BaseManager {
                         }
                         if (canTimeout() && noResponseTimeout <= (Clock.currentTimeMillis() - start)) {
                             throw new OperationTimeoutException(request.operation.toString(),
-                                    "Operation Timeout (with no response!): " + request.timeout);
+                                    "Operation Timeout (with no response!): " + noResponseTimeout);
                         }
                     }
                     node.checkNodeState();

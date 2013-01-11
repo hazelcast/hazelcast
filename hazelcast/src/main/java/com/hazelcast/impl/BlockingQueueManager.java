@@ -170,10 +170,7 @@ public class BlockingQueueManager extends BaseManager {
             for (Long key : keys) {
                 Data keyData = toData(key);
                 if (removeKey(name, keyData)) {
-                    try {
-                        getStorageMap(name).tryRemove(keyData, 0, TimeUnit.SECONDS);
-                    } catch (TimeoutException ignored) {
-                    }
+                    getStorageMap(name).remove(keyData);
                     fireQueueEvent(name, EntryEventType.REMOVED, dataValue);
                     return true;
                 }
@@ -235,11 +232,7 @@ public class BlockingQueueManager extends BaseManager {
             throw new IndexOutOfBoundsException();
         }
         IMap imap = getStorageMap(name);
-        try {
-            return imap.tryRemove(key, 0, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            return null;
-        }
+        return imap.remove(key);
     }
 
     public void offerCommit(String name, Object key, Data item, int index) {
@@ -282,19 +275,15 @@ public class BlockingQueueManager extends BaseManager {
                 return null;
             }
             IMap imap = getStorageMap(name);
-            try {
-                removedItem = imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
-                if (removedItem != null) {
-                    ThreadContext threadContext = ThreadContext.get();
-                    TransactionImpl txn = threadContext.getCallContext().getTransaction();
-                    final Data removedItemData = toData(removedItem);
-                    if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                        txn.attachRemoveOp(name, key, removedItemData, true);
-                    }
-                    fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
+            removedItem = imap.remove(key);
+            if (removedItem != null) {
+                ThreadContext threadContext = ThreadContext.get();
+                TransactionImpl txn = threadContext.getCallContext().getTransaction();
+                final Data removedItemData = toData(removedItem);
+                if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                    txn.attachRemoveOp(name, key, removedItemData, true);
                 }
-            } catch (TimeoutException e) {
-                throw new OperationTimeoutException(e);
+                fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
             }
             long now = Clock.currentTimeMillis();
             timeout -= (now - start);
@@ -519,14 +508,11 @@ public class BlockingQueueManager extends BaseManager {
 
             public void remove() {
                 if (key != null) {
-                    try {
-                        final Data dataKey = toData(key);
-                        final Object removedItem = imap.tryRemove(dataKey, 0, TimeUnit.MILLISECONDS);
-                        removeKey(name, dataKey);
-                        final Data removedItemData = toData(removedItem);
-                        fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
-                    } catch (TimeoutException ignored) {
-                    }
+                    final Data dataKey = toData(key);
+                    final Object removedItem = imap.remove(dataKey);
+                    removeKey(name, dataKey);
+                    final Data removedItemData = toData(removedItem);
+                    fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                 }
             }
 

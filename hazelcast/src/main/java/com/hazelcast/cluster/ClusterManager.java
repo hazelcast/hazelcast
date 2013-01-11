@@ -244,7 +244,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         JoinInfo checkJoin() {
-            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), 0, 0);
+            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), -1, 0);
             doOp();
             return (JoinInfo) getResultAsObject();
         }
@@ -909,7 +909,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        logger.log(Level.INFO, "Sending join request to " + toAddress);
+        logger.log(Level.FINEST, "Sending join request to " + toAddress);
         final boolean send = sendProcessableTo(node.createJoinInfo(withCredentials), toAddress);
         if (!send) {
             logger.log(Level.WARNING, "Could not send join request to " + toAddress);

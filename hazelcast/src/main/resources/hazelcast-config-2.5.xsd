@@ -1060,11 +1060,11 @@
                 <xs:element ref="id-generator-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="executor-service-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="transaction-permission" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="listener-permisson" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="listener-permission" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-    <xs:complexType name="base-permisson">
+    <xs:complexType name="base-permission">
         <xs:sequence>
             <xs:element ref="endpoints" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
@@ -1076,9 +1076,9 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="instance-permisson">
+    <xs:complexType name="instance-permission">
         <xs:complexContent>
-            <xs:extension base="base-permisson">
+            <xs:extension base="base-permission">
                 <xs:sequence>
                     <xs:element ref="actions" minOccurs="1" maxOccurs="1"/>
                 </xs:sequence>
@@ -1092,10 +1092,10 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="listener-permisson">
+    <xs:element name="listener-permission">
         <xs:complexType>
             <xs:complexContent>
-                <xs:extension base="base-permisson">
+                <xs:extension base="base-permission">
                     <xs:attribute name="name" use="required">
                         <xs:simpleType>
                             <xs:restriction base="xs:string">
@@ -1166,18 +1166,18 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="map-permission" type="instance-permisson"/>
-    <xs:element name="queue-permission" type="instance-permisson"/>
-    <xs:element name="multimap-permission" type="instance-permisson"/>
-    <xs:element name="topic-permission" type="instance-permisson"/>
-    <xs:element name="list-permission" type="instance-permisson"/>
-    <xs:element name="set-permission" type="instance-permisson"/>
-    <xs:element name="lock-permission" type="instance-permisson"/>
-    <xs:element name="atomic-number-permission" type="instance-permisson"/>
-    <xs:element name="countdown-latch-permission" type="instance-permisson"/>
-    <xs:element name="semaphore-permission" type="instance-permisson"/>
-    <xs:element name="id-generator-permission" type="instance-permisson"/>
-    <xs:element name="executor-service-permission" type="instance-permisson"/>
-    <xs:element name="transaction-permission" type="base-permisson"/>
-    <xs:element name="all-permissions" type="base-permisson"/>
+    <xs:element name="map-permission" type="instance-permission"/>
+    <xs:element name="queue-permission" type="instance-permission"/>
+    <xs:element name="multimap-permission" type="instance-permission"/>
+    <xs:element name="topic-permission" type="instance-permission"/>
+    <xs:element name="list-permission" type="instance-permission"/>
+    <xs:element name="set-permission" type="instance-permission"/>
+    <xs:element name="lock-permission" type="instance-permission"/>
+    <xs:element name="atomic-number-permission" type="instance-permission"/>
+    <xs:element name="countdown-latch-permission" type="instance-permission"/>
+    <xs:element name="semaphore-permission" type="instance-permission"/>
+    <xs:element name="id-generator-permission" type="instance-permission"/>
+    <xs:element name="executor-service-permission" type="instance-permission"/>
+    <xs:element name="transaction-permission" type="base-permission"/>
+    <xs:element name="all-permissions" type="base-permission"/>
 </xs:schema>
