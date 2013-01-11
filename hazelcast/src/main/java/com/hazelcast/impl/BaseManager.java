@@ -561,37 +561,7 @@ public abstract class BaseManager {
         }
 
         public Object getResult(long time, TimeUnit unit) throws InterruptedException {
-//            return responses.poll(time, unit);
-            long timeout = unit.toMillis(time);
-            while (timeout > 0) {
-                long start = Clock.currentTimeMillis();
-                Object result = waitAndGetResult();
-                if (Thread.interrupted()) {
-                    handleInterruption();
-                }
-                if (result == OBJECT_REDO) {
-                    request.redoCount++;
-                    logRedo(request, redoType, true);
-                    if (request.redoCount > redoGiveUpThreshold) {
-                        throw new OperationTimeoutException(request.operation.toString(), "Redo threshold[" + redoGiveUpThreshold
-                                + "] exceeded! Last redo cause: " + redoType + ", Name: " + request.name);
-                    }
-                    try {
-                        //noinspection BusyWait
-                        Thread.sleep(redoWaitMillis);
-                    } catch (InterruptedException e) {
-                        handleInterruption();
-                    }
-                    timeout -= (Clock.currentTimeMillis() - start);
-                    if (timeout >= 0) {
-                        beforeRedo();
-                        doOp();
-                    }
-                } else {
-                    return result;
-                }
-            }
-            throw new OperationTimeoutException();
+            return responses.poll(time, unit);
         }
 
         public boolean getResultAsBoolean(int timeoutSeconds) {

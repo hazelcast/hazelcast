@@ -88,7 +88,7 @@ public class ExecutorManager extends BaseManager {
                 threadPoolBeforeExecute(t, r);
             }
         };
-        esScheduled = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
+        esScheduled = new ScheduledThreadPoolExecutor(3, new ExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);
@@ -105,15 +105,6 @@ public class ExecutorManager extends BaseManager {
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
-        esScheduled.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                node.clusterService.enqueuePriorityAndReturn(new Processable() {
-                    public void process() {
-                        node.clusterService.checkPeriodics();
-                    }
-                });
-            }
-        }, 0, 1, TimeUnit.SECONDS);
     }
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {

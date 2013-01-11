@@ -397,7 +397,7 @@
                 </actions>
             </queue-permission>
             <transaction-permission/>
-            <listener-permisson name="instance"/>
+            <listener-permission name="instance"/>
         </client-permissions>
     </security>
 
