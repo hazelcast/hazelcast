@@ -40,6 +40,7 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_SET_LOG_LEVEL = 16;
     public static final int REQUEST_TYPE_LOG_VERSION_MISMATCH = 17;
     public static final int REQUEST_TYPE_MEMBER_SHUTDOWN = 18;
+    public static final int REQUEST_TYPE_MEMBER_RESTART = 19;
     private ConsoleRequestConstants() {
     }
 }
