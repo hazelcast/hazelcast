@@ -32,7 +32,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.IOException;
 import java.util.*;
@@ -288,7 +287,7 @@ public class EventServiceImpl implements EventService {
         private Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
             Collection<Registration> listenerList = registrations.get(topic);
             if (listenerList == null && forceCreate) {
-                listenerList = new ConcurrentHashSet<Registration>();
+                listenerList = Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
                 Collection<Registration> current = registrations.putIfAbsent(topic, listenerList);
                 listenerList = current == null ? listenerList : current;
             }

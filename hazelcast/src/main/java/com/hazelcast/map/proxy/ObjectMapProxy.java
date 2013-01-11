@@ -26,7 +26,6 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
-import com.hazelcast.util.AbstractMap.SimpleImmutableEntry;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -204,7 +203,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public Map.Entry<K, V> getMapEntry(final K key) {
         Map.Entry<Data, Data> entry = getMapEntryInternal(nodeEngine.toData(key));
-        return new SimpleImmutableEntry<K,V>((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()));
+        return new AbstractMap.SimpleImmutableEntry<K,V>((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()));
     }
 
     public boolean evict(final Object key) {
@@ -240,7 +239,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         Set<Entry<Data, Data>> entries = entrySetInternal();
         Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
         for (Entry<Data, Data> entry : entries) {
-            resultSet.add(new SimpleImmutableEntry((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()) )) ;
+            resultSet.add(new AbstractMap.SimpleImmutableEntry((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()) )) ;
 
         }
         return resultSet;

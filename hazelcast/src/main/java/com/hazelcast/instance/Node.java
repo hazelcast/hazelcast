@@ -40,7 +40,6 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrentHashSet;
 import com.hazelcast.util.Util;
 import com.hazelcast.util.VersionCheck;
 import com.hazelcast.wan.WanReplicationService;
@@ -50,8 +49,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -67,7 +68,7 @@ public class Node {
 
     private volatile boolean completelyShutdown = false;
 
-    private final Set<Address> failedConnections = new ConcurrentHashSet<Address>();
+    private final Set<Address> failedConnections = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 

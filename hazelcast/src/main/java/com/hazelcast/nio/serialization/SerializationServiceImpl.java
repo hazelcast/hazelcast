@@ -442,7 +442,7 @@ public final class SerializationServiceImpl implements SerializationService {
                     int count = inflater.inflate(buf);
                     out.write(buf, 0, count);
                 } catch (DataFormatException e) {
-                    throw new IOException(e.getClass().getName() + ": " + e.getMessage());
+                    throw new IOException(e);
                 }
             }
             inflater.end();

@@ -17,6 +17,7 @@
 package com.hazelcast.util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.*;
 
 /**
@@ -25,7 +26,7 @@ import java.util.concurrent.*;
 public class FastExecutor implements Executor {
 
     private final BlockingQueue<Task> queue = new LinkedBlockingQueue<Task>();
-    private final Collection<Thread> threads = new ConcurrentHashSet<Thread>();
+    private final Collection<Thread> threads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
     private final ThreadFactory threadFactory;
     private volatile boolean live = true;
 

@@ -18,12 +18,12 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.query.PredicateType;
-import com.hazelcast.util.NavigableSet;
-import com.hazelcast.util.concurrent.ConcurrentSkipListSet;
 
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class SortedIndexStore implements IndexStore {
     private final ConcurrentMap<Long, ConcurrentMap<Long, IndexEntry>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, IndexEntry>>(100, 0.75f, 1);

@@ -26,7 +26,6 @@ import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -57,11 +56,11 @@ public class ConnectionManager {
 
     private final ConcurrentMap<Address, ConnectionMonitor> mapMonitors = new ConcurrentHashMap<Address, ConnectionMonitor>(100);
 
-    private final Set<Address> setConnectionInProgress = new ConcurrentHashSet<Address>();
+    private final Set<Address> setConnectionInProgress = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     private final Set<ConnectionListener> setConnectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
-    private final Set<Connection> setActiveConnections = new ConcurrentHashSet<Connection>();
+    private final Set<Connection> setActiveConnections = Collections.newSetFromMap(new ConcurrentHashMap<Connection, Boolean>());
 
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
