@@ -211,8 +211,8 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return localKeySetInternal(predicate);
     }
 
-    public Object executeOnKey(Data key, EntryProcessor entryProcessor) {
-        return null;
+    public Data executeOnKey(Data key, EntryProcessor entryProcessor) {
+        return executeOnKeyInternal(key, entryProcessor);
     }
 
     public Object getId() {

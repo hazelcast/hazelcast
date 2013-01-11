@@ -38,6 +38,8 @@ public interface RecordStore {
 
     Data put(Data dataKey, Data dataValue, long ttl);
 
+    void put(Map.Entry<Data, Data> entry);
+
     Data replace(Data dataKey, Data dataValue);
 
     boolean replace(Data dataKey, Data oldValue, Data newValue);

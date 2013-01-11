@@ -272,7 +272,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
-        return null;
+        return nodeEngine.toObject(executeOnKeyInternal(nodeEngine.toData(key), entryProcessor));
     }
 
     public Object getId() {

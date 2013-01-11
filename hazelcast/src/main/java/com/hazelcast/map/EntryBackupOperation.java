@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
@@ -28,19 +29,19 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
-public class EntryOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation {
+public class EntryBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
 
     EntryProcessor entryProcessor;
-    Object response;
+
     Map.Entry entry;
     MapService mapService;
 
-    public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
+    public EntryBackupOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
         this.entryProcessor = entryProcessor;
     }
 
-    public EntryOperation() {
+    public EntryBackupOperation() {
     }
 
     public void run() {
@@ -51,7 +52,7 @@ public class EntryOperation extends AbstractNamedKeyBasedOperation implements Ba
         Object key = nodeEngine.toObject(dataKey);
         Object value = nodeEngine.toObject(dataEntry.getValue());
         entry = new AbstractMap.SimpleEntry(key, value);
-        response = nodeEngine.toData(entryProcessor.process(entry));
+        entryProcessor.processBackup(entry);
         recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, nodeEngine.toData(entry.getValue())));
     }
 
@@ -69,28 +70,12 @@ public class EntryOperation extends AbstractNamedKeyBasedOperation implements Ba
 
     @Override
     public Object getResponse() {
-        return response;
+        return true;
     }
 
     @Override
     public String toString() {
         return "EntryOperation{}";
-    }
-
-    public Operation getBackupOperation() {
-        return new EntryBackupOperation(name, dataKey, entryProcessor);
-    }
-
-    public boolean shouldBackup() {
-        return entryProcessor.shouldBackup();
-    }
-
-    public int getAsyncBackupCount() {
-        return mapService.getMapInfo(name).getAsyncBackupCount();
-    }
-
-    public int getSyncBackupCount() {
-        return mapService.getMapInfo(name).getBackupCount();
     }
 
 }
