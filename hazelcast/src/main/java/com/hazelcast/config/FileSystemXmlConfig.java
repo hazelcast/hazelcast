@@ -29,6 +29,9 @@ public class FileSystemXmlConfig extends Config {
 
     private final ILogger logger = Logger.getLogger(FileSystemXmlConfig.class.getName());
 
+    public FileSystemXmlConfig() {
+    }
+
     public FileSystemXmlConfig(String configFilename) throws FileNotFoundException {
         this(new File(configFilename));
     }

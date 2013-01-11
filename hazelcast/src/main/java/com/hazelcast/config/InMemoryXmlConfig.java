@@ -27,6 +27,9 @@ public class InMemoryXmlConfig extends Config {
 
     private final ILogger logger = Logger.getLogger(InMemoryXmlConfig.class.getName());
 
+    public InMemoryXmlConfig() {
+    }
+
     public InMemoryXmlConfig(String xml) {
         super();
         logger.log(Level.INFO, "Configuring Hazelcast from 'in-memory xml'.");
