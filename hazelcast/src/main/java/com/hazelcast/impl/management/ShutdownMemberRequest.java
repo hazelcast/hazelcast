@@ -36,7 +36,7 @@ public class ShutdownMemberRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, DataOutput dos) throws Exception {
-        mcs.getHazelcastInstance().shutdown();
+        mcs.getHazelcastInstance().getLifecycleService().shutdown();
         dos.writeUTF("successful");
     }
 
