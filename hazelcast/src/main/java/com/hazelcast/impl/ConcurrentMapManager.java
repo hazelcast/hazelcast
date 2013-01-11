@@ -1514,7 +1514,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public Address getOwnerAddress(Data name) {
             begin = currentTimeMillis();
-            setLocal(COUNT_DOWN_LATCH_GET_OWNER, MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, null, 0, -1);
+            setLocal(COUNT_DOWN_LATCH_GET_OWNER, MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, null, -1, -1);
             doOp();
             return (Address) getResultAsObject(false);
         }

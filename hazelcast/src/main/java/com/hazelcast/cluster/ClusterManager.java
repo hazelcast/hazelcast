@@ -244,7 +244,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         JoinInfo checkJoin() {
-            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), 0, 0);
+            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), -1, 0);
             doOp();
             return (JoinInfo) getResultAsObject();
         }
