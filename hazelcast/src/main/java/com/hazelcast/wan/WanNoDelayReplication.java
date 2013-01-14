@@ -17,8 +17,8 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.cluster.AuthorizationOperation;
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.map.Record;
+import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

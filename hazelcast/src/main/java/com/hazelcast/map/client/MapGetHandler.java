@@ -17,7 +17,6 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -27,12 +26,10 @@ import com.hazelcast.nio.serialization.SerializationConstants;
 
 import java.nio.ByteBuffer;
 
-public class MapGetHandler extends ClientCommandHandler {
-    final MapService mapService;
+public class MapGetHandler extends MapCommandHandler {
 
     public MapGetHandler(MapService mapService) {
-        super(mapService.getNodeEngine());
-        this.mapService = mapService;
+        super(mapService);
     }
 
     public Protocol processCall(Node node, Protocol protocol) {
@@ -40,7 +37,7 @@ public class MapGetHandler extends ClientCommandHandler {
         byte[] key = protocol.buffers[0].array();
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
         // TODO: !!! FIX ME !!!
-        Data value = dataMapProxy.get(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, key));
+        Data value = dataMapProxy.get(binaryToData(key));
         return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
     }
 }

@@ -269,4 +269,22 @@ public class Packet implements SocketWritable {
         }
         return true;
     }
+
+    public void reset() {
+        stHeader = false;
+        stType = false;
+        stClassId = false;
+        stVersion = false;
+        stClassDefSize = false;
+        stClassDef = false;
+        stSize = false;
+        stValue = false;
+        stHash = false;
+        header = 0;
+        buffer = null;
+        classId = 0;
+        version = 0;
+        classDefSize = 0;
+        value = null;
+    }
 }

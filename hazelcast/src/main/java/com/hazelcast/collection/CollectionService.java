@@ -18,7 +18,12 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.processor.EntryProcessor;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 
 import java.util.Collection;
@@ -32,25 +37,27 @@ import java.util.concurrent.Future;
 /**
  * @ali 1/1/13
  */
-public class CollectionService implements ManagedService, RemoteService {
+public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EntryListener> {
 
     private NodeEngine nodeEngine;
 
     public static final String COLLECTION_SERVICE_NAME = "hz:impl:collectionService";
 
     private final ConcurrentMap<String, CollectionProxy> proxies = new ConcurrentHashMap<String, CollectionProxy>();
+    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     private final CollectionPartitionContainer[] partitionContainers;
-
-    private final SerializationContext serializationContext;
 
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         partitionContainers = new CollectionPartitionContainer[nodeEngine.getPartitionCount()];
-        serializationContext = new SerializationContext(nodeEngine.getSerializationService());
     }
 
     public CollectionContainer getCollectionContainer(int partitionId, String name) {
+        return partitionContainers[partitionId].getCollectionContainer(name);
+    }
+
+    public CollectionContainer getOrCreateCollectionContainer(int partitionId, String name) {
         return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
     }
 
@@ -117,14 +124,56 @@ public class CollectionService implements ManagedService, RemoteService {
         return container != null ? container.keySet() : null;
     }
 
-    public SerializationContext getSerializationContext(){
-        return serializationContext;
+    public SerializationService getSerializationService() {
+        return nodeEngine.getSerializationService();
+    }
+
+    public NodeEngine getNodeEngine(){
+        return nodeEngine;
+    }
+
+    public void addEntryListener(String name, EntryListener listener, Data key, boolean includeValue, boolean local) {
+        ListenerKey listenerKey = new ListenerKey(name, key, listener);
+        String id = eventRegistrations.putIfAbsent(listenerKey, "tempId");
+        if (id != null) {
+            return;
+        }
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration = null;
+        if (local) {
+            registration = eventService.registerLocalListener(COLLECTION_SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
+        } else {
+            registration = eventService.registerListener(COLLECTION_SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
+        }
+
+        eventRegistrations.put(listenerKey, registration.getId());
+    }
+
+    public void removeEntryListener(String name, EntryListener listener, Data key) {
+        ListenerKey listenerKey = new ListenerKey(name, key, listener);
+        String id = eventRegistrations.remove(listenerKey);
+        if (id != null) {
+            EventService eventService = nodeEngine.getEventService();
+            eventService.deregisterListener(COLLECTION_SERVICE_NAME, name, id);
+        }
+    }
+
+    public void dispatchEvent(CollectionEvent event, EntryListener listener) {
+        EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getCluster().getMember(event.getCaller()),
+                event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+        if (event.eventType.equals(EntryEventType.ADDED)){
+            listener.entryAdded(entryEvent);
+        }
+        else if (event.eventType.equals(EntryEventType.REMOVED)){
+            listener.entryRemoved(entryEvent);
+        }
     }
 
     public <T> T process(String name, Data dataKey, EntryProcessor processor) {
         try {
             int partitionId = nodeEngine.getPartitionId(dataKey);
             CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId);
+            operation.setThreadId(ThreadContext.get().getThreadId());
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());

@@ -34,7 +34,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     public TryRemoveOperation() {
     }
 
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }

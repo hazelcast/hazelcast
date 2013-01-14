@@ -28,8 +28,7 @@ public class PutIfAbsentOperation extends BasePutOperation {
     public PutIfAbsentOperation() {
     }
 
-
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }

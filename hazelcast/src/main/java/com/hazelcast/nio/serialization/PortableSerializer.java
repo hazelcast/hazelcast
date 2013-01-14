@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -30,12 +32,12 @@ class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public int getTypeId() {
-        return SerializationConstants.SERIALIZER_TYPE_PORTABLE;
+        return SerializationConstants.CONSTANT_TYPE_PORTABLE;
     }
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
         ClassDefinitionImpl cd = getClassDefinition(p);
-        PortableWriterImpl writer = new PortableWriterImpl(this, out, cd);
+        DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);
     }
 
@@ -52,10 +54,19 @@ class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public Portable read(ObjectDataInput in) throws IOException {
-        ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
-        ClassDefinitionImpl cd = context.lookup(ctxIn.getLocalClassId(), ctxIn.getLocalVersionId());
-        PortableReaderImpl reader = new PortableReaderImpl(this, in, cd);
-        Portable p = context.createPortable(cd.classId);
+        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+        final int dataClassId = ctxIn.getDataClassId();
+        final int dataVersion = ctxIn.getDataVersion();
+        final Portable p = context.createPortable(dataClassId);
+        final PortableReader reader;
+        final ClassDefinitionImpl cd;
+        if (context.getVersion() == dataVersion) {
+            cd = context.lookup(dataClassId); // using context.version
+            reader = new DefaultPortableReader(this, (BufferObjectDataInput) in, cd);
+        } else {
+            cd = context.lookup(dataClassId, dataVersion); // registered during read
+            reader = new MorphingPortableReader(this, (BufferObjectDataInput) in, cd);
+        }
         p.readPortable(reader);
         return p;
     }

@@ -17,13 +17,12 @@
 package com.hazelcast.map;
 
 
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.RecordState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
@@ -38,6 +37,8 @@ public interface RecordStore {
     Data get(Data dataKey);
 
     Data put(Data dataKey, Data dataValue, long ttl);
+
+    void put(Map.Entry<Data, Data> entry);
 
     Data replace(Data dataKey, Data dataValue);
 
@@ -81,4 +82,9 @@ public interface RecordStore {
 
     MapInfo getMapInfo();
 
+    Set<Data> getRemovedDelayedKeys();
+
+    Set<Map.Entry<Data, Data>> entrySet();
+
+    Map.Entry<Data,Data> getMapEntry(Data dataKey);
 }

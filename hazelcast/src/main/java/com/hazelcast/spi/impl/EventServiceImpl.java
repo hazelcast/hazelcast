@@ -55,10 +55,14 @@ public class EventServiceImpl implements EventService {
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(EventService.class.getName());
-        Node node = nodeEngine.getNode();
+        final Node node = nodeEngine.getNode();
         eventExecutorService = Executors.newSingleThreadExecutor(
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getThreadNamePrefix("event"), node.getConfig().getClassLoader()));
+                        node.getConfig().getClassLoader()) {
+                    protected String newThreadName() {
+                        return node.getThreadNamePrefix("event");
+                    }
+                });
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
         serializationContext = this.nodeEngine.getSerializationContext();
     }
@@ -340,6 +344,10 @@ public class EventServiceImpl implements EventService {
         public void run() {
             Data data = packet.getValue();
             EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
+            Object eventObject = eventPacket.event;
+            if (eventObject instanceof Data) {
+                eventObject = nodeEngine.toObject(eventObject);
+            }
             final String serviceName = eventPacket.serviceName;
             EventPublishingService service = nodeEngine.getService(serviceName);
             if (service == null) {
@@ -360,7 +368,7 @@ public class EventServiceImpl implements EventService {
                 logger.log(Level.WARNING, "Invalid target for  " + registration);
                 return;
             }
-            service.dispatchEvent(eventPacket.event, registration.listener);
+            service.dispatchEvent(eventObject, registration.listener);
         }
     }
 

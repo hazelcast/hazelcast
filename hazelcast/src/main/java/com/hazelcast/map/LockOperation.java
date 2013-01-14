@@ -56,7 +56,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
         init();
     }
 
-    public void doOp() {
+    public void run() {
         locked = recordStore.lock(getKey(), getCaller(), threadId, ttl);
     }
 

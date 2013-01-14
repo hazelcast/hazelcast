@@ -50,7 +50,11 @@ class WaitNotifyService {
 
         expirationExecutor = Executors.newSingleThreadExecutor(
                 new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getThreadNamePrefix("wait-notify"), node.getConfig().getClassLoader()));
+                        node.getConfig().getClassLoader()) {
+                    protected String newThreadName() {
+                        return node.getThreadNamePrefix("wait-notify");
+                    }
+                });
 
         expirationTask = expirationExecutor.submit(new Runnable() {
             public void run() {

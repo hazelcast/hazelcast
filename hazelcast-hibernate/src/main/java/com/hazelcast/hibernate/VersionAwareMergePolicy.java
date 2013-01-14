@@ -17,7 +17,7 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.merge.MergePolicy;
 import org.hibernate.cache.entry.CacheEntry;
 

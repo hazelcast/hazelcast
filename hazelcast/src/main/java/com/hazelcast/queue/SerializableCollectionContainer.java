@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -50,7 +51,7 @@ public class SerializableCollectionContainer implements DataSerializable {
         }
         out.writeInt(collection.size());
         for (Data data : collection) {
-            out.writeData(data);
+            data.writeData(out);
         }
     }
 
@@ -61,7 +62,7 @@ public class SerializableCollectionContainer implements DataSerializable {
         }
         collection = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            collection.add(in.readData());
+            collection.add(IOUtil.readData(in));
         }
     }
 }

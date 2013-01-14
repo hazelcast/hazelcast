@@ -16,26 +16,27 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
-import com.hazelcast.collection.processor.Entry;
-import com.hazelcast.collection.processor.EntryProcessor;
+import com.hazelcast.collection.processor.*;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @ali 1/1/13
  */
-public class CollectionOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation {
+public class CollectionOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation, IdentifiedDataSerializable, WaitSupport, Notifier {
 
     EntryProcessor processor;
 
     transient Object response;
+    transient Entry entry;
 
     CollectionOperation() {
     }
@@ -46,10 +47,27 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
         setPartitionId(partitionId);
     }
 
-    public void run() throws Exception {
+    public void beforeRun() throws Exception {
         CollectionService service = getService();
-        CollectionContainer collectionContainer = service.getCollectionContainer(getPartitionId(), name);
-        response = processor.execute(new Entry(collectionContainer, dataKey));
+        CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), name);
+        entry = new Entry(collectionContainer, dataKey, threadId, getCaller());
+    }
+
+    public void run() throws Exception {
+        response = processor.execute(entry);
+    }
+
+    public void afterRun() throws Exception {
+        if (entry != null && entry.getEventType() != null) {
+            Object eventValue = entry.getEventValue();
+            if (eventValue instanceof Collection) {
+                for (Object obj : (Collection) eventValue) {
+                    publishEvent(entry.getEventType(), obj);
+                }
+            } else {
+                publishEvent(entry.getEventType(), eventValue);
+            }
+        }
     }
 
     public Object getResponse() {
@@ -57,21 +75,25 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
     }
 
     public boolean shouldBackup() {
-        return processor instanceof BackupAwareEntryProcessor && response != null;
+        return processor instanceof BackupAwareEntryProcessor && ((BackupAwareEntryProcessor) processor).shouldBackup();
     }
 
     public int getSyncBackupCount() {
-        //TODO config
-        return 1;
+        if (processor instanceof BackupAwareEntryProcessor) {
+            return ((BackupAwareEntryProcessor) processor).getSyncBackupCount();
+        }
+        return 0;
     }
 
     public int getAsyncBackupCount() {
-        //TODO config
+        if (processor instanceof BackupAwareEntryProcessor) {
+            return ((BackupAwareEntryProcessor) processor).getAsyncBackupCount();
+        }
         return 0;
     }
 
     public Operation getBackupOperation() {
-        return new CollectionBackupOperation(name, dataKey, processor);
+        return new CollectionBackupOperation(name, dataKey, processor, getCaller(), getThreadId());
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
@@ -82,5 +104,58 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         processor = in.readObject();
+    }
+
+    public int getId() {
+        return DataSerializerCollectionHook.COLLECTION_OPERATION;
+    }
+
+    public void publishEvent(EntryEventType eventType, Object value) {
+        NodeEngine engine = getNodeEngine();
+        EventService eventService = engine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.COLLECTION_SERVICE_NAME, name);
+        for (EventRegistration registration : registrations) {
+            CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
+            if (filter.getKey() == null || filter.getKey().equals(dataKey)) {
+                Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
+                CollectionEvent event = new CollectionEvent(name, dataKey, dataValue, eventType, engine.getThisAddress());
+                eventService.publishEvent(CollectionService.COLLECTION_SERVICE_NAME, registration, event);
+            }
+        }
+    }
+
+    public Object getWaitKey() {
+        return new WaitKey(name, dataKey, "processor");
+    }
+
+    public boolean shouldWait() {
+        if (processor instanceof WaitSupportedEntryProcessor) {
+            return ((WaitSupportedEntryProcessor) processor).shouldWait(entry);
+        }
+        return false;
+    }
+
+    public long getWaitTimeoutMillis() {
+        if (processor instanceof WaitSupportedEntryProcessor) {
+            return ((WaitSupportedEntryProcessor) processor).getWaitTimeoutMillis();
+        }
+        return 0;
+    }
+
+    public void onWaitExpire() {
+        if (processor instanceof WaitSupportedEntryProcessor) {
+            getResponseHandler().sendResponse(((WaitSupportedEntryProcessor) processor).onWaitExpire());
+        }
+    }
+
+    public boolean shouldNotify() {
+        if (processor instanceof NotifySupportedEntryProcessor) {
+            return ((NotifySupportedEntryProcessor) processor).shouldNotify(entry);
+        }
+        return false;
+    }
+
+    public Object getNotifiedKey() {
+        return getWaitKey();
     }
 }

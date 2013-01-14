@@ -33,7 +33,7 @@ public class ClientCommandService {
     private final Node node;
     private final ILogger logger;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
-    private ConcurrentHashMap<String, ClientCommandHandler> services = new ConcurrentHashMap<String, ClientCommandHandler>();
+    private ConcurrentHashMap<Command, ClientCommandHandler> services = new ConcurrentHashMap<Command, ClientCommandHandler>();
 
     public ClientCommandService(Node node) {
         this.node = node;
@@ -74,11 +74,11 @@ public class ClientCommandService {
     }
 
     public void register(ClientProtocolService service) {
-        Map<String, ClientCommandHandler> commandMap = service.getCommandMap();
+        Map<Command, ClientCommandHandler> commandMap = service.getCommandMap();
         services.putAll(commandMap);
     }
 
     public ClientCommandHandler getService(Protocol protocol) {
-        return services.get(protocol.command.name());
+        return services.get(protocol.command);
     }
 }

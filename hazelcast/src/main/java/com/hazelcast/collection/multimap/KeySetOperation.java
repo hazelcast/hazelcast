@@ -16,21 +16,13 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.SerializationContext;
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-
-import java.util.Set;
+import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
 
 /**
  * @ali 1/3/13
  */
-public class KeySetOperation extends AbstractNamedOperation implements PartitionAwareOperation {
-
-    transient MultiMapCollectionResponse response;
+public class KeySetOperation extends MultiMapOperation {
 
     public KeySetOperation() {
     }
@@ -40,15 +32,9 @@ public class KeySetOperation extends AbstractNamedOperation implements Partition
     }
 
     public void run() throws Exception {
-        CollectionService service = getService();
-        Set<Data> keySet = service.localKeySet(name, getPartitionId());
-        if (keySet != null){
-            SerializationContext context = new SerializationContext(getNodeEngine().getSerializationService());
-            response = new MultiMapCollectionResponse(keySet, MultiMapConfig.ValueCollectionType.SET.toString(), true, context);
+        CollectionContainer container = getContainer();
+        if (container != null ){
+            response = new MultiMapCollectionResponse(container.keySet(), ValueCollectionType.SET, true, getNodeEngine().getSerializationService());
         }
-    }
-
-    public Object getResponse() {
-        return response;
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataInput;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.io.UTFDataFormatException;
 /**
 * @mdogan 12/26/12
 */
-class ContextAwareDataInput extends InputStream implements ObjectDataInput, SerializationContextAware {
+class ContextAwareDataInput extends InputStream implements BufferObjectDataInput, SerializationContextAware {
 
     static final int STRING_CHUNK_SIZE = ContextAwareDataOutput.STRING_CHUNK_SIZE;
 
@@ -42,24 +42,24 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
 
     private int mark = 0;
 
-    private final SerializationServiceImpl service;
+    private final SerializationService service;
 
-    private int localClassId;
+    private int dataClassId;
 
-    private int localVersionId;
+    private int dataVersion;
 
-    public ContextAwareDataInput(byte[] buffer, SerializationServiceImpl service) {
+    public ContextAwareDataInput(byte[] buffer, SerializationService service) {
         this(buffer, 0, service);
     }
 
-    public ContextAwareDataInput(Data data, SerializationServiceImpl service) {
+    public ContextAwareDataInput(Data data, SerializationService service) {
         this(data.buffer, 0, service);
         final ClassDefinition cd = data.cd;
-        this.localClassId = cd != null ? cd.getClassId() : -1;
-        this.localVersionId = cd != null ? cd.getVersion() : -1;
+        this.dataClassId = cd != null ? cd.getClassId() : -1;
+        this.dataVersion = cd != null ? cd.getVersion() : -1;
     }
 
-    private ContextAwareDataInput(byte buffer[], int offset, SerializationServiceImpl service) {
+    private ContextAwareDataInput(byte buffer[], int offset, SerializationService service) {
         super();
         this.buffer = buffer;
         this.size = buffer.length - offset;
@@ -399,12 +399,6 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
         return service.readObject(this);
     }
 
-    public Data readData() throws IOException {
-        final Data data = new Data();
-        data.readData(this);
-        return data;
-    }
-
     public ContextAwareDataInput duplicate() {
         return new ContextAwareDataInput(buffer, 0, service);
     }
@@ -470,8 +464,8 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
 
     @Override
     public void close() {
-        localClassId = -1;
-        localVersionId = -1;
+        dataClassId = -1;
+        dataVersion = -1;
     }
 
     private String readShortUTF() throws IOException {
@@ -538,23 +532,23 @@ class ContextAwareDataInput extends InputStream implements ObjectDataInput, Seri
     }
 
     public SerializationContext getSerializationContext() {
-        return service.serializationContext;
+        return service.getSerializationContext();
     }
 
-    int getLocalClassId() {
-        return localClassId;
+    int getDataClassId() {
+        return dataClassId;
     }
 
-    void setLocalClassId(int classId) {
-        this.localClassId = classId;
+    void setDataClassId(int classId) {
+        this.dataClassId = classId;
     }
 
-    int getLocalVersionId() {
-        return localVersionId;
+    int getDataVersion() {
+        return dataVersion;
     }
 
-    void setLocalVersionId(int localVersionId) {
-        this.localVersionId = localVersionId;
+    void setDataVersion(int dataVersion) {
+        this.dataVersion = dataVersion;
     }
 
     @Override

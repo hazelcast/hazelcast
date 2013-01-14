@@ -57,13 +57,15 @@ public class MapEntryMBean extends AbstractMBean<MapEntry> {
 
     @SuppressWarnings("unchecked")
     public MapEntryMBean(IMap map, Object key) {
-        super(map.getMapEntry(key), null);  // Is immutable...
+//        super(map.getMapEntry(key), null);  // Is immutable...
+        super(null, null);  // Is immutable...
         this.map = map;
         this.key = key;
     }
 
     protected MapEntry refresh() {
-        return map.getMapEntry(key);
+//        return map.getMapEntry(key);
+        return null;
     }
 
     @JMXAttribute("KeyClass")

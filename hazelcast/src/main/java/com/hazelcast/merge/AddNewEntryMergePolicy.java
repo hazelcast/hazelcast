@@ -17,7 +17,7 @@
 package com.hazelcast.merge;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.map.DataRecordEntry;
 
 public class AddNewEntryMergePolicy implements MergePolicy {
     public static final String NAME = "hz.ADD_NEW_ENTRY";

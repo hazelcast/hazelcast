@@ -18,6 +18,7 @@ package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -182,7 +183,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         removeEntryListenerInternal(listener, key);
     }
 
-    public MapEntry<Data, Data> getMapEntry(final Data key) {
+    public Map.Entry<Data, Data> getMapEntry(final Data key) {
         return getMapEntryInternal(key);
     }
 
@@ -208,6 +209,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     public Set<Data> localKeySet(final Predicate predicate) {
         return localKeySetInternal(predicate);
+    }
+
+    public Data executeOnKey(Data key, EntryProcessor entryProcessor) {
+        return executeOnKeyInternal(key, entryProcessor);
     }
 
     public Object getId() {

@@ -19,17 +19,16 @@ package com.hazelcast.topic.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.GroupProperties;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import sun.tools.tree.NewArrayExpression;
 
-import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -38,28 +37,25 @@ public class TopicTest {
 
     @BeforeClass
     public static void init() throws Exception {
-
         Hazelcast.shutdownAll();
 
     }
-
-
 
     @Test
     public void testTopicTotalOrder() throws Exception {
         //final Config cfg = new XmlConfigBuilder("/Users/msk/IdeaProjects/sample/src/main/resources/hazelcast.xml").build();
         final Config cfg = new Config();
-        Map<String,TopicConfig> tpCfgs = new HashMap<String, TopicConfig>();
+        Map<String, TopicConfig> tpCfgs = new HashMap<String, TopicConfig>();
         TopicConfig topicConfig = new TopicConfig();
         topicConfig.setGlobalOrderingEnabled(true);
-        tpCfgs.put("*",topicConfig);
+        tpCfgs.put("*", topicConfig);
         cfg.setTopicConfigs(tpCfgs);
 
-        final Map<Long,String> stringMap = new HashMap<Long,String>();
+        final Map<Long, String> stringMap = new HashMap<Long, String>();
         final CountDownLatch countDownLatch = new CountDownLatch(4);
         final CountDownLatch mainLatch = new CountDownLatch(4);
 
-        for(int i = 0; i < 4 ; i++){
+        for (int i = 0; i < 4; i++) {
             new Thread(new Runnable() {
 
                 public void run() {
@@ -79,15 +75,15 @@ public class TopicTest {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    for(int j = 0 ; j < 20 ; j++){
-                        if(x % 2 == 0)
-                            topic.publish((long)j);
+                    for (int j = 0; j < 20; j++) {
+                        if (x % 2 == 0)
+                            topic.publish((long) j);
                         else
                             topic.publish(Long.valueOf(-1));
                     }
                     mainLatch.countDown();
                 }
-            },String.valueOf(i)).start();
+            }, String.valueOf(i)).start();
 
         }
         mainLatch.await();
@@ -95,12 +91,12 @@ public class TopicTest {
 
         String ref = stringMap.values().iterator().next();
         for (String s : stringMap.values()) {
-            if(!ref.equals(s)){
-                assertFalse("no total order",true);
+            if (!ref.equals(s)) {
+                assertFalse("no total order", true);
                 return;
             }
         }
-        assertTrue("total order",true);
+        assertTrue("total order", true);
     }
 
 }

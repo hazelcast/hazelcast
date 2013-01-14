@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.*;
 import com.hazelcast.core.InstanceEvent.InstanceEventType;
-import com.hazelcast.impl.base.DataRecordEntry;
+import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.partition.Partition;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -718,7 +718,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
     public void testGetMapEntryHits() {
         IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryHits");
         map.put("Hello", "World");
-        MapEntry<String, String> me = map.getMapEntry("Hello");
+        Map.Entry<String, String> me = map.getMapEntry("Hello");
         assertEquals(0, ((DataRecordEntry)me).getHits());
         map.get("Hello");
         map.get("Hello");
@@ -731,7 +731,7 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
     public void testGetMapEntryVersion() {
         IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryVersion");
         map.put("Hello", "World");
-        MapEntry<String, String> me = map.getMapEntry("Hello");
+        Map.Entry<String, String> me = map.getMapEntry("Hello");
         assertEquals(0, ((DataRecordEntry)me).getVersion());
         map.put("Hello", "1");
         map.put("Hello", "2");

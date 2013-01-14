@@ -28,7 +28,7 @@ public class SetOperation extends BasePutOperation {
     }
 
     @Override
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }

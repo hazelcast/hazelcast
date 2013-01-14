@@ -20,12 +20,17 @@ package com.hazelcast.map.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -313,6 +318,33 @@ public class MapTest extends BaseTest {
         thread.join();
     }
 
+    @Test
+    public void testEntrySet() {
+        final IMap<Object, Object> map = getInstance().getMap("testEntrySet");
+        map.put(1,1);
+        map.put(2,2);
+        map.put(3,3);
+        map.put(4,4);
+        map.put(5,5);
+        Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(1,1));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(2,2));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(3,3));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(4,4));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(5,5));
+        assertEquals(entrySet, map.entrySet());
+    }
+
+    @Test
+    public void testGetMapEntry() {
+        final IMap<Object, Object> map = getInstance().getMap("testGetMapEntry");
+        map.put(1,1);
+        map.put(2,2);
+        map.put(3,3);
+        assertEquals(new AbstractMap.SimpleImmutableEntry(1,1), map.getMapEntry(1));
+        assertEquals(new AbstractMap.SimpleImmutableEntry(2,2), map.getMapEntry(2));
+        assertEquals(new AbstractMap.SimpleImmutableEntry(3,3), map.getMapEntry(3));
+    }
 
     @Test
     public void testMapTryPut() throws InterruptedException {
@@ -533,6 +565,33 @@ public class MapTest extends BaseTest {
         assertNull(map.get("key"));
 
     }
+
+
+    @Test
+    public void testMapEntryProcessor() throws InterruptedException {
+        IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
+        map.put(1,1);
+        EntryProcessor entryProcessor = new SampleEntryProcessor();
+        map.executeOnKey(1, entryProcessor);
+        assertEquals(map.get(1), (Object) 2);
+    }
+
+    static class SampleEntryProcessor implements EntryProcessor, Serializable {
+        public Object process(Map.Entry entry) {
+            entry.setValue((Integer)entry.getValue() + 1);
+            return true;
+        }
+
+        public void processBackup(Map.Entry entry) {
+            entry.setValue((Integer)entry.getValue() + 1);
+        }
+
+        public boolean shouldBackup() {
+            return true;
+        }
+    }
+
+
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {
 //        IMap<String, String> map = getInstance().getMap("testGetPutAndSizeWhileStartShutdown");

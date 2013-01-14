@@ -80,7 +80,7 @@ public final class Connection {
     public Packet obtainPacket() {
 //        Packet packet = packetQueue.poll();
 //        if (packet == null) {
-//            packet = new Packet();
+//            packet = new Packet(connectionManager.getSerializationContext());
 //        } else {
 //            packet.reset();
 //        }

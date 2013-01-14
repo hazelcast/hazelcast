@@ -17,7 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BaseEntryProcessor;
-import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -28,23 +28,49 @@ import java.io.IOException;
  */
 public abstract class MultiMapEntryProcessor<T> extends BaseEntryProcessor<T> {
 
-    String collectionType = MultiMapConfig.ValueCollectionType.SET.toString();
+    ValueCollectionType collectionType = ValueCollectionType.SET;
+
+    int syncBackupCount;
+
+    int asyncBackupCount;
+
+    transient boolean shouldBackup = false;
 
     protected MultiMapEntryProcessor() {
     }
 
-    protected MultiMapEntryProcessor(boolean binary, MultiMapConfig.ValueCollectionType collectionType) {
+    protected MultiMapEntryProcessor(boolean binary){
         super(binary);
-        this.collectionType = collectionType.toString();
+    }
+
+    protected MultiMapEntryProcessor(boolean binary, ValueCollectionType collectionType) {
+        super(binary);
+        this.collectionType = collectionType;
+    }
+
+    public int getSyncBackupCount() {
+        return syncBackupCount;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public boolean shouldBackup() {
+        return shouldBackup;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(collectionType);
+        out.writeUTF(collectionType.toString());
+        out.writeInt(syncBackupCount);
+        out.writeInt(asyncBackupCount);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        collectionType = in.readUTF();
+        collectionType = ValueCollectionType.valueOf(in.readUTF());
+        syncBackupCount = in.readInt();
+        asyncBackupCount = in.readInt();
     }
 }

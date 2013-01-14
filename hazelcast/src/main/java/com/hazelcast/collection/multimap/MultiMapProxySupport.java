@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * @ali 1/2/13
  */
-public abstract class MultiMapProxySupport{
+public abstract class MultiMapProxySupport {
 
     final String name;
 
@@ -48,36 +48,35 @@ public abstract class MultiMapProxySupport{
     }
 
     public Object createNew() {
-        if(config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
+        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
             return new HashSet(10);//TODO hardcoded initial
-        }
-        else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
+        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
             return new LinkedList();
         }
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
 
-    Boolean putInternal(Data dataKey, Data dataValue){
-        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config.isBinary()));
+    Boolean putInternal(Data dataKey, Data dataValue) {
+        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config));
     }
 
-    MultiMapCollectionResponse getInternal(Data dataKey){
-        return service.process(name, dataKey, new GetEntryProcessor(config.isBinary(), config.getValueCollectionType()));
+    MultiMapCollectionResponse getInternal(Data dataKey) {
+        return service.process(name, dataKey, new GetEntryProcessor(config));
     }
 
-    Boolean removeInternal(Data dataKey, Data dataValue){
-        return service.process(name, dataKey, new RemoveObjectEntryProcess(dataValue, config.isBinary()));
+    Boolean removeInternal(Data dataKey, Data dataValue) {
+        return service.process(name, dataKey, new RemoveObjectEntryProcess(dataValue, config));
     }
 
-    MultiMapCollectionResponse removeInternal(Data dataKey){
-        return service.process(name, dataKey, new RemoveEntryProcessor(config.isBinary(), config.getValueCollectionType()));
+    MultiMapCollectionResponse removeInternal(Data dataKey) {
+        return service.process(name, dataKey, new RemoveEntryProcessor(config));
     }
 
-    Set<Data> localKeySetInternal(){
+    Set<Data> localKeySetInternal() {
         return service.localKeySet(name);
     }
 
-    Set<Data> keySetInternal(){
+    Set<Data> keySetInternal() {
         try {
             KeySetOperation operation = new KeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
@@ -86,8 +85,8 @@ public abstract class MultiMapProxySupport{
                 if (result == null) {
                     continue;
                 }
-                MultiMapCollectionResponse response = (MultiMapCollectionResponse)nodeEngine.toObject(result);
-                keySet.addAll(response.getDataCollection());
+                MultiMapCollectionResponse response = (MultiMapCollectionResponse) nodeEngine.toObject(result);
+                keySet.addAll(response.getCollection());
             }
             return keySet;
         } catch (Throwable throwable) {
@@ -95,11 +94,83 @@ public abstract class MultiMapProxySupport{
         }
     }
 
+    Map valuesInternal() {
+        try {
+            ValuesOperation operation = new ValuesOperation(name, config.isBinary());
+            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
+            return results;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
 
 
+    Map entrySetInternal() {
+        try {
+            EntrySetOperation operation = new EntrySetOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
+            return results;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
 
+    boolean containsInternal(Data key, Data value){
+        try {
+            ContainsOperation operation = new ContainsOperation(name, config.isBinary(), key, value);
+            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
+            for (Object obj: results.values()){
+                if (obj == null){
+                    continue;
+                }
+                Boolean result = nodeEngine.toObject(obj);
+                if (result){
+                    return true;
+                }
+            }
+            return false;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
 
+    public int size() {
+        try {
+            SizeOperation operation = new SizeOperation(name);
+            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
+            int size = 0;
+            for (Object obj: results.values()){
+                if (obj == null){
+                    continue;
+                }
+                Integer result = nodeEngine.toObject(obj);
+                size += result;
+            }
+            return size;
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
 
+    public void clear() {
+        try {
+            ClearOperation operation = new ClearOperation(name, config.getSyncBackupCount(), config.getAsyncBackupCount());
+            nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
 
+    public Integer countInternal(Data dataKey){
+        return service.process(name, dataKey, new CountEntryProcessor());
+    }
+
+    public Boolean lockInternal(Data dataKey, long timeout){
+        return service.process(name, dataKey, new LockEntryProcessor(config, timeout));
+    }
+
+    public Boolean unlockInternal(Data dataKey){
+        return service.process(name, dataKey, new UnlockEntryProcessor(config));
+    }
 
 }

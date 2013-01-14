@@ -29,7 +29,7 @@ public class ReplaceOperation extends BasePutOperation {
     public ReplaceOperation() {
     }
 
-    public void doOp() {
+    public void run() {
         if (prepareTransaction()) {
             return;
         }

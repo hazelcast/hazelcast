@@ -16,9 +16,12 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.map.LockInfo;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -32,18 +35,58 @@ public class CollectionContainer {
     CollectionService service;
 
     private final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
+    final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
 
     public CollectionContainer(String name, CollectionService service) {
         this.name = name;
         this.service = service;
     }
 
+    public LockInfo getOrCreateLock(Data key) {
+        LockInfo lock = locks.get(key);
+        if (lock == null) {
+            lock = new LockInfo();
+            locks.put(key, lock);
+        }
+        return lock;
+    }
+
+    public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
+        LockInfo lock = getOrCreateLock(dataKey);
+        return lock.lock(caller, threadId, ttl);
+    }
+
+    public boolean isLocked(Data dataKey) {
+        LockInfo lock = locks.get(dataKey);
+        if (lock == null)
+            return false;
+        return lock.isLocked();
+    }
+
+    public boolean canAcquireLock(Data key, int threadId, Address caller) {
+        LockInfo lock = locks.get(key);
+        return lock == null || lock.testLock(threadId, caller);
+    }
+
+    public boolean unlock(Data dataKey, Address caller, int threadId) {
+        LockInfo lock = locks.get(dataKey);
+        if (lock == null)
+            return false;
+        if (lock.testLock(threadId, caller)) {
+            if (lock.unlock(caller, threadId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     public Object getObject(Data dataKey){
         return objects.get(dataKey);
     }
 
-    public void removeObject(Data dataKey){
-        objects.remove(dataKey);
+    public boolean removeObject(Data dataKey){
+        return objects.remove(dataKey) != null;
     }
 
     public Object putNewObject(Data dataKey){
@@ -53,14 +96,83 @@ public class CollectionContainer {
     }
 
     public Set<Data> keySet(){
-        return objects.keySet();
+        Set<Data> keySet = objects.keySet();
+        Set<Data> keys = new HashSet<Data>(keySet.size());
+        keys.addAll(keySet);
+        return keys;
     }
 
-    public SerializationContext getSerializationService(){
-        return service.getSerializationContext();
+    public Collection values(){
+        //TODO can we lock per key
+        List valueList = new LinkedList();
+        for (Object obj: objects.values()){
+            valueList.addAll((Collection) obj);
+        }
+        return valueList;
+    }
+
+    public boolean containsKey(Data key){
+        return objects.containsKey(key);
+    }
+
+    public boolean containsEntry(boolean binary, Data key, Data value){
+        Collection coll = (Collection)objects.get(key);
+        if (coll == null){
+            return false;
+        }
+        return coll.contains(binary ? value : getNodeEngine().toObject(value));
+    }
+
+    public boolean containsValue(boolean binary, Data value){
+        for (Data key: objects.keySet()){
+            if (containsEntry(binary, key, value)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Map<Data, Collection> entrySet(){
+        Map<Data, Collection> map = new HashMap<Data, Collection>(objects.size());
+        for (Map.Entry<Data, Object> entry: objects.entrySet()){
+            Data key = entry.getKey();
+            Collection col = copyCollection((Collection)entry.getValue());
+            map.put(key, col);
+        }
+        return map;
+    }
+
+    private Collection copyCollection(Collection coll){
+        Collection copy = new ArrayList(coll.size());
+        copy.addAll(coll);
+        return copy;
+    }
+
+    public int size(){
+        int size = 0;
+        for (Object obj: objects.values()){
+            size += ((Collection)obj).size();
+        }
+        return size;
+    }
+
+    public void clear(){
+        objects.clear();
+    }
+
+    public NodeEngine getNodeEngine(){
+        return service.getNodeEngine();
+    }
+
+    public String getName() {
+        return name;
     }
 
     public ConcurrentMap<Data, Object> getObjects() {
         return objects; //TODO for testing only
+    }
+
+    public ConcurrentMap<Data, LockInfo> getLocks() {
+        return locks;   //TODO for testing only
     }
 }

@@ -97,6 +97,12 @@ public final class IOUtil {
         return null;
     }
 
+    public static Data readData(ObjectDataInput in) throws IOException {
+        Data data = new Data();
+        data.readData(in);
+        return data;
+    }
+
     public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
         return new ObjectInputStream(in) {
             protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {

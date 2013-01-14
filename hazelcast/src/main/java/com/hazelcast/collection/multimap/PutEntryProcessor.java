@@ -17,8 +17,9 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
-import com.hazelcast.collection.processor.BaseEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,26 +31,33 @@ import java.util.Collection;
 /**
  * @ali 1/1/13
  */
-public class PutEntryProcessor extends BaseEntryProcessor<Boolean> implements BackupAwareEntryProcessor {
+public class PutEntryProcessor extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor {
 
     Data data;
 
     public PutEntryProcessor() {
     }
 
-    public PutEntryProcessor(Data data, boolean binary) {
-        super(binary);
+    public PutEntryProcessor(Data data, MultiMapConfig config) {
+        super(config.isBinary());
         this.data = data;
+        this.syncBackupCount = config.getSyncBackupCount();
+        this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
     public Boolean execute(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-        return coll.add(isBinary() ? data : entry.getSerializationContext().toObject(data));
+        boolean result = coll.add(isBinary() ? data : entry.getSerializationService().toObject(data));
+        if (result){
+            entry.publishEvent(EntryEventType.ADDED, data);
+            shouldBackup = true;
+        }
+        return result;
     }
 
     public void executeBackup(Entry entry) {
         Collection coll = entry.getOrCreateValue();
-        coll.add(isBinary() ? data : entry.getSerializationContext().toObject(data));
+        coll.add(isBinary() ? data : entry.getSerializationService().toObject(data));
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

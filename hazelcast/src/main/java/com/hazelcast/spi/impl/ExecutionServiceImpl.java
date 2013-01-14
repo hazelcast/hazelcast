@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.executor.ExecutorThreadFactory;
+import com.hazelcast.executor.PoolExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -38,7 +39,7 @@ final class ExecutionServiceImpl implements ExecutionService {
         Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
         final ClassLoader classLoader = node.getConfig().getClassLoader();
-        final ExecutorThreadFactory threadFactory = new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
+        final ExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                 node.getThreadPoolNamePrefix("cached"), classLoader);
         cachedExecutorService = new ThreadPoolExecutor(
                 1, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
@@ -48,7 +49,7 @@ final class ExecutionServiceImpl implements ExecutionService {
             }
         });
         scheduledExecutorService = Executors.newScheduledThreadPool(2,
-                new ExecutorThreadFactory(node.threadGroup,
+                new PoolExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
                         node.getThreadPoolNamePrefix("scheduled"), classLoader));
     }

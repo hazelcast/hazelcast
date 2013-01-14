@@ -17,22 +17,18 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
-import com.hazelcast.executor.ExecutorThreadFactory;
-import com.hazelcast.impl.*;
-import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.client.MapGetHandler;
+import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -40,7 +36,6 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ConcurrentHashSet;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -48,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService, EventPublishingService<Data, EntryListener>, ClientProtocolService {
+        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>, ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
@@ -58,7 +53,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
-    private final Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
+    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
     private final ScheduledThreadPoolExecutor recordTaskExecutor;
 
@@ -68,7 +63,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-        recordTaskExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(3);
+        recordTaskExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
         recordTaskExecutor.setMaximumPoolSize(50);
     }
 
@@ -78,9 +73,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
-
-        // todo make this 1 second configurable
-        nodeEngine.getExecutionService().scheduleAtFixedRate(new CleanupTask(), 1, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
 
@@ -94,10 +86,21 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     private void registerClientOperationHandlers() {
-        registerHandler("MGET", new MapGetHandler(this));
+        registerHandler(Command.MGET, new MapGetHandler(this));
+        registerHandler(Command.MLOCK, new MapLockHandler(this));
+        registerHandler(Command.MTRYLOCK, new MapLockHandler(this));
+        registerHandler(Command.MUNLOCK, new MapUnlockHandler(this));
+        registerHandler(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
+        registerHandler(Command.MPUT, new MapPutHandler(this));
+        registerHandler(Command.MSIZE, new MapSizeHandler(this));
+        registerHandler(Command.MGETALL, new MapGetAllHandler(this));
+        registerHandler(Command.MTRYPUT, new MapTryPutHandler(this));
+//        registerHandler(Command.MSET, new MapSetHandler(this));
+        registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
+
     }
 
-    void registerHandler(String command, ClientCommandHandler handler) {
+    void registerHandler(Command command, ClientCommandHandler handler) {
         commandHandlers.put(command, handler);
     }
 
@@ -173,11 +176,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         MapInfo mapInfo = getMapInfo(name);
         if (ttl <= 0 && mapInfo.getMapConfig().getTimeToLiveSeconds() > 0) {
             record.getState().updateTtlExpireTime(mapInfo.getMapConfig().getTimeToLiveSeconds());
-            scheduleOperation(name, dataKey, record.getState().getTtlExpireTime());
+            scheduleOperation(name, dataKey, mapInfo.getMapConfig().getTimeToLiveSeconds());
         }
         if (mapInfo.getMapConfig().getMaxIdleSeconds() > 0) {
             record.getState().updateIdleExpireTime(mapInfo.getMapConfig().getMaxIdleSeconds());
-            scheduleOperation(name, dataKey, record.getState().getIdleExpireTime());
+            scheduleOperation(name, dataKey, mapInfo.getMapConfig().getMaxIdleSeconds());
         }
         return record;
     }
@@ -258,7 +261,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void destroy() {
     }
 
-    public Map<String, ClientCommandHandler> getCommandMap() {
+    public Map<Command, ClientCommandHandler> getCommandMap() {
         return commandHandlers;
     }
 
@@ -282,8 +285,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         EventData event = new EventData(source, caller,  dataKey, dataValue,
                 dataOldValue, eventType);
 
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, toData(event));
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, toData(event.cloneWithoutValues()));
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
+        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
@@ -304,9 +307,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return nodeEngine.getSerializationService().toObject(data);
     }
 
-    public void dispatchEvent(Data data, EntryListener listener) {
-        EventData eventData = (EventData) nodeEngine.toObject(data);
-
+    public void dispatchEvent(EventData eventData, EntryListener listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         EntryEvent event = null;
 
@@ -316,7 +317,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         else {
             event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataOldValue()), toObject(eventData.getDataNewValue()) );
         }
-
 
         switch (event.getEventType()) {
             case ADDED:
@@ -337,7 +337,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void scheduleOperation(String mapName, Data key, long executeTime) {
         MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
-        MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation);
+        MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation, nodeEngine.getPartitionId(key));
         recordTaskExecutor.schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
 

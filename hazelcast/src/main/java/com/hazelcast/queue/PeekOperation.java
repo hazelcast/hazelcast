@@ -16,12 +16,14 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 /**
  * User: ali
  * Date: 11/23/12
  * Time: 3:56 AM
  */
-public class PeekOperation extends QueueOperation {
+public class PeekOperation extends QueueOperation implements IdentifiedDataSerializable {
 
     public PeekOperation() {
     }
@@ -33,5 +35,9 @@ public class PeekOperation extends QueueOperation {
     public void run() {
         QueueItem item = getContainer().peek();
         response = item != null ? item.getData() : null;
+    }
+
+    public int getId() {
+        return DataSerializerQueueHook.PEEK;
     }
 }

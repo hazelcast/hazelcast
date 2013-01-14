@@ -28,6 +28,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.security.Credentials;
@@ -101,7 +102,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
 
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
-    private Map<String, ClientCommandHandler> commandHandlers = new HashMap<String, ClientCommandHandler>();
+    private Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
 
     public ClusterService(final Node node) {
         this.node = node;
@@ -152,11 +153,11 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     }
 
     private void registerClientOperationHandlers() {
-        registerHandler("AUTH", new ClientAuthenticateHandler(nodeEngine));
-        registerHandler("MEMBERS", new GetMembersHandler(nodeEngine));
+        registerHandler(Command.AUTH, new ClientAuthenticateHandler(nodeEngine));
+        registerHandler(Command.MEMBERS, new GetMembersHandler(nodeEngine));
     }
 
-    void registerHandler(String command, ClientCommandHandler handler) {
+    void registerHandler(Command command, ClientCommandHandler handler) {
         commandHandlers.put(command, handler);
     }
 
@@ -962,7 +963,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     public String toString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
         final Collection<MemberImpl> members = getMemberList();
-        sb.append(members.size());
+        sb.append(members != null ? members.size() : 0);
         sb.append("] {");
         for (Member member : members) {
             sb.append("\n\t").append(member);
@@ -972,7 +973,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     }
 
 
-    public Map<String, ClientCommandHandler> getCommandMap() {
+    public Map<Command, ClientCommandHandler> getCommandMap() {
         return commandHandlers;
     }
 }

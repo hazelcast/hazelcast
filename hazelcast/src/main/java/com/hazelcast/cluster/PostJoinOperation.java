@@ -18,7 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
@@ -28,8 +27,6 @@ import java.io.IOException;
  * @mdogan 12/24/12
  */
 public class PostJoinOperation extends AbstractOperation implements JoinOperation {
-
-    private Data[] operationData;
 
     private transient Operation[] operations;
 
@@ -51,12 +48,11 @@ public class PostJoinOperation extends AbstractOperation implements JoinOperatio
 
     @Override
     public void beforeRun() throws Exception {
-        if (operations == null && operationData != null) {
+        if (operations != null && operations.length > 0) {
             final NodeEngine nodeEngine = getNodeEngine();
-            final int len = operationData.length;
-            operations = new Operation[len];
+            final int len = operations.length;
             for (int i = 0; i < len; i++) {
-                final Operation op = (Operation) nodeEngine.toObject(operationData[i]);
+                final Operation op = operations[i];
                 op.setNodeEngine(nodeEngine)
                         .setCaller(getCaller())
                         .setConnection(getConnection())
@@ -91,33 +87,23 @@ public class PostJoinOperation extends AbstractOperation implements JoinOperatio
         return false;
     }
 
-    private void prepareToWrite() {
-        if (operationData == null && operations != null) {
-            int len = operations.length;
-            operationData = new Data[len];
-            for (int i = 0; i < len; i++) {
-                operationData[i] = getNodeEngine().toData(operations[i]);
+    @Override
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
+        final int len = operations != null ? operations.length : 0;
+        out.writeInt(len);
+        if (len > 0) {
+            for (Operation op : operations) {
+                out.writeObject(op);
             }
         }
     }
 
     @Override
-    protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        prepareToWrite();
-        int len = operationData.length;
-        out.writeInt(len);
-        for (Data op : operationData) {
-            op.writeData(out);
-        }
-    }
-
-    @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        int len = in.readInt();
-        operationData = new Data[len];
+        final int len = in.readInt();
+        operations = new Operation[len];
         for (int i = 0; i < len; i++) {
-            operationData[i] = new Data();
-            operationData[i].readData(in);
+            operations[i] = in.readObject();
         }
     }
 }

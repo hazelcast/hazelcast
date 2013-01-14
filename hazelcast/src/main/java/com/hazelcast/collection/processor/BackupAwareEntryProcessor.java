@@ -23,4 +23,10 @@ public interface BackupAwareEntryProcessor {
 
     void executeBackup(Entry entry);
 
+    boolean shouldBackup();
+
+    int getSyncBackupCount();
+
+    int getAsyncBackupCount();
+
 }

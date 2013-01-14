@@ -18,9 +18,10 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.nio.protocol.Command;
 
 import java.util.Map;
 
 public interface ClientProtocolService {
-    Map<String, ClientCommandHandler> getCommandMap();
+    Map<Command, ClientCommandHandler> getCommandMap();
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.ObjectFuture;
 import com.hazelcast.nio.serialization.Data;
@@ -26,6 +26,7 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
+import com.hazelcast.util.AbstractMap.SimpleImmutableEntry;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -201,8 +202,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         removeEntryListenerInternal(listener, nodeEngine.toData(key));
     }
 
-    public MapEntry<K, V> getMapEntry(final K key) {
-        return null;
+    public Map.Entry<K, V> getMapEntry(final K key) {
+        Map.Entry<Data, Data> entry = getMapEntryInternal(nodeEngine.toData(key));
+        return new SimpleImmutableEntry<K,V>((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()));
     }
 
     public boolean evict(final Object key) {
@@ -210,11 +212,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void clear() {
-
+        clearInternal();
     }
 
     public void flush() {
-
     }
 
     public Set<K> keySet() {
@@ -236,7 +237,13 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<Entry<K, V>> entrySet() {
-        return null;
+        Set<Entry<Data, Data>> entries = entrySetInternal();
+        Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
+        for (Entry<Data, Data> entry : entries) {
+            resultSet.add(new SimpleImmutableEntry((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()) )) ;
+
+        }
+        return resultSet;
     }
 
     public Set<K> keySet(final Predicate predicate) {
@@ -262,6 +269,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public Set<K> localKeySet(final Predicate predicate) {
         return null;
+    }
+
+    public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+        return nodeEngine.toObject(executeOnKeyInternal(nodeEngine.toData(key), entryProcessor));
     }
 
     public Object getId() {

@@ -20,7 +20,6 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.impl.DataMessage;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationConstants;
@@ -83,7 +82,7 @@ public class MessageListenerManager {
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
                 messageListener.onMessage(new DataMessage(name,
-                        new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[0].array()),
+                        new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[0].array()),
                         serializationService));
             }
         }

@@ -32,6 +32,7 @@ import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.*;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionService;
@@ -244,7 +245,7 @@ public class Node {
         failedConnections.add(address);
     }
 
-    public SerializationServiceImpl getSerializationService() {
+    public SerializationService getSerializationService() {
         return serializationService;
     }
 

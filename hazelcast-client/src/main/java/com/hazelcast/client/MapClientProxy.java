@@ -22,7 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Prefix;
-import com.hazelcast.impl.Keys;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
@@ -104,8 +104,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         int size = protocol.buffers == null ? 0 : protocol.buffers.length;
         Map<K, V> map = new HashMap<K, V>();
         for (int i = 0; i < size; ) {
-            K key = (K) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[i++].array()));
-            V value = (V) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[i++].array()));
+            K key = (K) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[i++].array()));
+            V value = (V) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[i++].array()));
             map.put(key, value);
         }
         return map;
@@ -137,7 +137,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         final long lastUpdateTime = Long.valueOf(protocol.args[6]);
         final long version = Long.valueOf(protocol.args[7]);
         final boolean valid = Boolean.valueOf(protocol.args[7]);
-        final V v = (V) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY,
+        final V v = (V) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY,
                 protocol.buffers[0].array()));
         return new MapEntry<K, V>() {
             public long getCost() {
@@ -199,7 +199,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         if (!protocol.hasBuffer()) return Collections.emptySet();
         Set<K> set = new HashSet<K>(protocol.buffers.length);
         for (ByteBuffer b : protocol.buffers) {
-            set.add((K) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, b.array())));
+            set.add((K) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, b.array())));
         }
         return set;
     }
@@ -240,7 +240,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
                 throw new TimeoutException();
             }
         }
-        return protocol.hasBuffer() ? (V) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[0].array())) : null;
+        return protocol.hasBuffer() ? (V) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[0].array())) : null;
     }
 
     public void putAndUnlock(K key, V value) {
@@ -331,7 +331,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public V get(Object key) {
         check(key);
-        return (V) protocolProxyHelper.doCommandAsObject(Command.MGET, getName(), protocolProxyHelper.toData((K) key));
+        return (V) protocolProxyHelper.doCommandAsObject(Command.MGET, getName(), protocolProxyHelper.toData(key));
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {
@@ -346,9 +346,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
             int i = 0;
             System.out.println("Get all and buffer length is " + protocol.buffers.length);
             while (i < protocol.buffers.length) {
-                K key = protocol.buffers[i].array().length == 0 ? null : (K) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[i].array()));
+                K key = protocol.buffers[i].array().length == 0 ? null : (K) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[i].array()));
                 i++;
-                V value = protocol.buffers[i].array().length == 0 ? null : (V) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[i].array()));
+                V value = protocol.buffers[i].array().length == 0 ? null : (V) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[i].array()));
                 i++;
                 if (value != null) {
                     map.put(key, value);
@@ -372,6 +372,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public LocalMapStats getLocalMapStats() {
         throw new UnsupportedOperationException();
+    }
+
+    public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+        return null;
     }
 
     public Set<K> keySet() {
@@ -452,7 +456,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
                 throw new TimeoutException();
             }
         }
-        return protocol.hasBuffer() ? (V) protocolProxyHelper.toObject(new Data(SerializationConstants.SERIALIZER_TYPE_BYTE_ARRAY, protocol.buffers[0].array())) : null;
+        return protocol.hasBuffer() ? (V) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[0].array())) : null;
     }
 
     public int size() {

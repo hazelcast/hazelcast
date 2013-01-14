@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -36,109 +36,10 @@ import static com.hazelcast.nio.serialization.SerializationConstants.*;
  */
 public class DefaultSerializers {
 
-    public static final class IntegerSerializer extends SingletonTypeSerializer<Integer> {
-
-        public boolean isSuitable(final Class clazz) {
-            return clazz == Integer.class || clazz == int.class;
-        }
-
-        public int getTypeId() {
-            return SERIALIZER_TYPE_INTEGER;
-        }
-
-        public Integer read(final ObjectDataInput in) throws IOException {
-            return in.readInt();
-        }
-
-        public void write(final ObjectDataOutput out, final Integer obj) throws IOException {
-            out.writeInt(obj.intValue());
-        }
-    }
-
-    public static final class LongSerializer extends SingletonTypeSerializer<Long> {
-
-        public boolean isSuitable(final Class clazz) {
-            return clazz == Long.class || clazz == long.class;
-        }
-
-        public int getTypeId() {
-            return SERIALIZER_TYPE_LONG;
-        }
-
-        public Long read(final ObjectDataInput in) throws IOException {
-            return in.readLong();
-        }
-
-        public void write(final ObjectDataOutput out, final Long obj) throws IOException {
-            out.writeLong(obj.longValue());
-        }
-    }
-
-    public static final class StringSerializer extends SingletonTypeSerializer<String> {
-
-        public boolean isSuitable(final Class clazz) {
-            return clazz == String.class;
-        }
-
-        public int getTypeId() {
-            return SERIALIZER_TYPE_STRING;
-        }
-
-        public String read(final ObjectDataInput in) throws IOException {
-            return in.readUTF();
-        }
-
-        public void write(final ObjectDataOutput out, final String obj) throws IOException {
-            out.writeUTF(obj);
-        }
-    }
-
-    public static final class ByteArraySerializer extends SingletonTypeSerializer<byte[]> {
-
-        public boolean isSuitable(final Class clazz) {
-            return clazz == byte[].class;
-        }
-
-        public int getTypeId() {
-            return SERIALIZER_TYPE_BYTE_ARRAY;
-        }
-
-        public byte[] read(final ObjectDataInput in) throws IOException {
-            return IOUtil.readByteArray(in);
-        }
-
-        public void write(final ObjectDataOutput out, final byte[] obj) throws IOException {
-            IOUtil.writeByteArray(out, obj);
-        }
-    }
-
-    public static final class BooleanSerializer extends SingletonTypeSerializer<Boolean> {
-
-        public boolean isSuitable(final Class clazz) {
-            return clazz == Boolean.class || clazz == boolean.class;
-        }
-
-        public int getTypeId() {
-            return SERIALIZER_TYPE_BOOLEAN;
-        }
-
-        public void write(ObjectDataOutput out, Boolean obj) throws IOException {
-            out.write((obj ? 1 : 0));
-        }
-
-        public Boolean read(ObjectDataInput in) throws IOException {
-            return in.readByte() != 0;
-        }
-    }
-
     public static final class BigIntegerSerializer extends SingletonTypeSerializer<BigInteger> {
 
-        public boolean isSuitable(final Class clazz) {
-            return BigInteger.class.isAssignableFrom(clazz);
-        }
-
         public int getTypeId() {
-            return SERIALIZER_TYPE_BIG_INTEGER;
+            return DEFAULT_TYPE_BIG_INTEGER;
         }
 
         public BigInteger read(final ObjectDataInput in) throws IOException {
@@ -156,12 +57,8 @@ public class DefaultSerializers {
 
     public static final class DateSerializer extends SingletonTypeSerializer<Date> {
 
-        public boolean isSuitable(final Class clazz) {
-            return Date.class.isAssignableFrom(clazz);
-        }
-
         public int getTypeId() {
-            return SERIALIZER_TYPE_DATE;
+            return DEFAULT_TYPE_DATE;
         }
 
         public Date read(final ObjectDataInput in) throws IOException {
@@ -175,12 +72,8 @@ public class DefaultSerializers {
 
     public static final class ClassSerializer extends SingletonTypeSerializer<Class> {
 
-        public boolean isSuitable(final Class clazz) {
-            return clazz == Class.class;
-        }
-
         public int getTypeId() {
-            return SERIALIZER_TYPE_CLASS;
+            return DEFAULT_TYPE_CLASS;
         }
 
         public Class read(final ObjectDataInput in) throws IOException {
@@ -198,12 +91,8 @@ public class DefaultSerializers {
 
     public static final class Externalizer extends SingletonTypeSerializer<Externalizable> {
 
-        public boolean isSuitable(final Class clazz) {
-            return Externalizable.class.isAssignableFrom(clazz);
-        }
-
         public int getTypeId() {
-            return SERIALIZER_TYPE_EXTERNALIZABLE;
+            return DEFAULT_TYPE_EXTERNALIZABLE;
         }
 
         public Externalizable read(final ObjectDataInput in) throws IOException {
@@ -227,15 +116,11 @@ public class DefaultSerializers {
 
     public static final class ObjectSerializer extends SingletonTypeSerializer<Object> {
 
-        private static final boolean shared = false; //GroupProperties.SERIALIZER_SHARED.getBoolean();
-        private static final boolean gzipEnabled = false; //GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
-
-        public boolean isSuitable(final Class clazz) {
-            return Serializable.class.isAssignableFrom(clazz);
-        }
+        private static final boolean shared = GroupProperties.SERIALIZER_SHARED.getBoolean();
+        private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
 
         public int getTypeId() {
-            return SERIALIZER_TYPE_OBJECT;
+            return DEFAULT_TYPE_OBJECT;
         }
 
         public Object read(final ObjectDataInput in) throws IOException {
@@ -278,15 +163,6 @@ public class DefaultSerializers {
     }
 
     private abstract static class SingletonTypeSerializer<T> implements TypeSerializer<T> {
-
-        abstract boolean isSuitable(Class clazz);
-
-        public final Data toData(ObjectDataOutput out, T object) throws IOException {
-            write(out, object);
-            return new Data(getTypeId(), out.toByteArray());
-        }
-
-        public abstract T read(ObjectDataInput in) throws IOException ;
 
         public void destroy() {
         }

@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
-import static com.hazelcast.nio.serialization.SerializationConstants.SERIALIZER_TYPE_DATA;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
 /**
  * @mdogan 6/19/12
@@ -57,7 +57,7 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
     }
 
     public int getTypeId() {
-        return SERIALIZER_TYPE_DATA;
+        return CONSTANT_TYPE_DATA;
     }
 
     public final DataSerializable read(ObjectDataInput in) throws IOException {

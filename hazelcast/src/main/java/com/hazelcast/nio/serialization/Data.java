@@ -21,8 +21,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class Data implements DataSerializable {
+public class Data implements IdentifiedDataSerializable {
 
+    public static final int ID = 0;
     public static final int NO_CLASS_ID = -1;
 
     public int type = -1;
@@ -158,5 +159,9 @@ public class Data implements DataSerializable {
                 "type=" + type + ", " +
                 "partitionHash=" + partitionHash +
                 "} size= " + size();
+    }
+
+    public int getId() {
+        return ID;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
@@ -30,6 +31,7 @@ import java.util.Map;
  */
 public final class DataSerializerInitHook implements DataSerializerHook {
 
+    static final int DATA = Data.ID;
     static final int RESPONSE = 1;
     static final int MULTI_RESPONSE = 2;
     static final int PARTITION_ITERATOR = 3;
@@ -40,6 +42,11 @@ public final class DataSerializerInitHook implements DataSerializerHook {
     public Map<Integer, DataSerializableFactory> getFactories() {
         final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
+        factories.put(DATA, new DataSerializableFactory() {
+            public DataSerializable create() {
+                return new Data();
+            }
+        });
         factories.put(RESPONSE, new DataSerializableFactory() {
             public DataSerializable create() {
                 return new Response();

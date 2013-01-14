@@ -29,9 +29,6 @@ class ThreadDumpGeneratorImpl_15 extends ThreadDumpGenerator {
         super(bean);
     }
 
-    /**
-     * copied from JDK 1.6 {@link ThreadInfo} toString()
-     */
     protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
         sb.append("\"").append(info.getThreadName()).append("\"")
                 .append(" Id=").append(info.getThreadId()).append(" ").append(info.getThreadState());
