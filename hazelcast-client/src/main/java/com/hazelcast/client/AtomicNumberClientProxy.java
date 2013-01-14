@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.AtomicNumber;
-import com.hazelcast.core.Prefix;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
 
 public class AtomicNumberClientProxy implements AtomicNumber {
@@ -74,12 +73,8 @@ public class AtomicNumberClientProxy implements AtomicNumber {
         return name;
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.ATOMIC_NUMBER;
-    }
-
     public String getName() {
-        return name.substring(Prefix.ATOMIC_NUMBER.length());
+        return name;
     }
 
     @Deprecated

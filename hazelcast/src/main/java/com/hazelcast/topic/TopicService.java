@@ -23,11 +23,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * User: sancar
@@ -40,8 +36,6 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, TopicProxy> proxies = new ConcurrentHashMap<String, TopicProxy>();
-
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
     }
@@ -50,27 +44,23 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     }
 
-    public ServiceProxy getProxy(Object... params) {
-        final String name = String.valueOf(params[0]);
-        if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new TopicProxy(name, nodeEngine);
-        }
-        TopicProxy proxy = proxies.get(name);
-        if (proxy == null) {
-            TopicConfig topicConfig = nodeEngine.getConfig().getTopicConfig(name);
-            if(topicConfig.isGlobalOrderingEnabled())
-                proxy = new TotalOrderedTopicProxy(name,nodeEngine);
-            else
-                proxy = new TopicProxy(name, nodeEngine);
+    public String getServiceName() {
+        return NAME;
+    }
 
-            final TopicProxy currentProxy = proxies.putIfAbsent(name, proxy);
-            proxy = currentProxy != null ? currentProxy : proxy;
-        }
+    public ServiceProxy createProxy(Object proxyId) {
+        final String name = String.valueOf(proxyId);
+        TopicProxy proxy;
+        TopicConfig topicConfig = nodeEngine.getConfig().getTopicConfig(name);
+        if(topicConfig.isGlobalOrderingEnabled())
+            proxy = new TotalOrderedTopicProxy(name,nodeEngine);
+        else
+            proxy = new TopicProxy(name, nodeEngine);
         return proxy;
     }
 
-    public Collection<ServiceProxy> getProxies() {
-        return new HashSet<ServiceProxy>(proxies.values());
+    public ServiceProxy createClientProxy(Object proxyId) {
+        return createProxy(proxyId);
     }
 
     public void dispatchEvent(Object event, Object listener) {

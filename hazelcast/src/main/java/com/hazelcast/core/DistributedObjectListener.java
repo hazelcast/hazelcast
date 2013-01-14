@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.core;
 
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Instance;
+import java.util.EventListener;
 
-public interface HazelcastInstanceAwareInstance extends Instance, HazelcastInstanceAware {
+public interface DistributedObjectListener extends EventListener {
+
+    void instanceCreated(DistributedObjectEvent event);
+
+    void instanceDestroyed(DistributedObjectEvent event);
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
-import com.hazelcast.core.InstanceEvent.InstanceEventType;
 import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.partition.Partition;
 import org.junit.Ignore;
@@ -59,29 +58,29 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
     public void addInstanceListener() throws InterruptedException {
         final CountDownLatch destroyedLatch = new CountDownLatch(1);
         final CountDownLatch createdLatch = new CountDownLatch(1);
-        final IMap<Integer, Integer> instance = getHazelcastClient().getMap("addInstanceListener");
-        InstanceListener listener = new InstanceListener() {
+        final IMap<Integer, Integer> instance = getHazelcastClient().getMap("addDistributedObjectListener");
+        DistributedObjectListener listener = new DistributedObjectListener() {
 
-            public void instanceDestroyed(InstanceEvent event) {
-                assertEquals(InstanceEventType.DESTROYED, event.getEventType());
-                assertEquals(instance, event.getInstance());
+            public void instanceDestroyed(DistributedObjectEvent event) {
+                assertEquals(DistributedObjectEvent.EventType.DESTROYED, event.getEventType());
+                assertEquals(instance, event.getDistributedObject());
                 destroyedLatch.countDown();
             }
 
-            public void instanceCreated(InstanceEvent event) {
-                assertEquals(InstanceEventType.CREATED, event.getEventType());
-                IMap<Integer, Integer> map = (IMap<Integer, Integer>) event.getInstance();
+            public void instanceCreated(DistributedObjectEvent event) {
+                assertEquals(DistributedObjectEvent.EventType.CREATED, event.getEventType());
+                IMap<Integer, Integer> map = (IMap<Integer, Integer>) event.getDistributedObject();
                 assertEquals(instance.getName(), map.getName());
                 createdLatch.countDown();
             }
         };
-        getHazelcastClient().addInstanceListener(listener);
+        getHazelcastClient().addDistributedObjectListener(listener);
         instance.put(1, 1);
         assertEquals(1, instance.size());
         assertTrue(createdLatch.await(10, TimeUnit.SECONDS));
         instance.destroy();
         assertTrue(destroyedLatch.await(10, TimeUnit.SECONDS));
-        getHazelcastClient().removeInstanceListener(listener);
+        getHazelcastClient().removeDistributedObjectListener(listener);
     }
 
     @Test
@@ -745,11 +744,11 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         IMap<String, String> map = getHazelcastClient().getMap("testMapDestroy");
         map.get("test");  // force map to be created
         Thread.sleep(1000);
-        Collection<Instance> instances = getHazelcastClient().getInstances();
+        Collection<DistributedObject> distributedObjects = getHazelcastClient().getDistributedObjects();
         boolean found = false;
-        for (Instance instance : instances) {
-            if (instance.getInstanceType().isMap()) {
-                IMap imap = (IMap) instance;
+        for (DistributedObject distributedObject : distributedObjects) {
+            if (distributedObject instanceof IMap) {
+                IMap imap = (IMap) distributedObject;
                 if (imap.getName().equals("testMapDestroy")) {
                     found = true;
                 }
@@ -759,10 +758,10 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         map.destroy();
         Thread.sleep(1000);
         found = false;
-        instances = getHazelcastClient().getInstances();
-        for (Instance instance : instances) {
-            if (instance.getInstanceType().isMap()) {
-                IMap imap = (IMap) instance;
+        distributedObjects = getHazelcastClient().getDistributedObjects();
+        for (DistributedObject distributedObject : distributedObjects) {
+            if (distributedObject instanceof IMap) {
+                IMap imap = (IMap) distributedObject;
                 if (imap.getName().equals("testMapDestroy")) {
                     found = true;
                 }

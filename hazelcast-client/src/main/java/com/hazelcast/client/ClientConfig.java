@@ -153,7 +153,7 @@ public class ClientConfig {
 
     /**
      * Adds a listener object to configuration to be registered when {@code HazelcastClient} starts.
-     * @param listener one of {@link com.hazelcast.core.LifecycleListener}, {@link com.hazelcast.core.InstanceListener}
+     * @param listener one of {@link com.hazelcast.core.LifecycleListener}, {@link com.hazelcast.core.DistributedObjectListener}
      *                 or {@link com.hazelcast.core.MembershipListener}
      * @return
      */

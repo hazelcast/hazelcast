@@ -62,13 +62,13 @@
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java15</artifactId>
+                        <artifactId>java16</artifactId>
                         <version>1.0</version>
                     </signature>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java5-check</id>
+                        <id>source-java6-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>

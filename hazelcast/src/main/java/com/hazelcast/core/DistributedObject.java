@@ -16,11 +16,21 @@
 
 package com.hazelcast.core;
 
-import java.util.EventListener;
+public interface DistributedObject {
 
-public interface InstanceListener extends EventListener {
+    /**
+     * Returns the unique id for this instance.
+     *
+     * @return id the of this instance
+     */
+    Object getId();
 
-    void instanceCreated(InstanceEvent event);
+    String getName();
 
-    void instanceDestroyed(InstanceEvent event);
+    /**
+     * Destroys this instance cluster-wide.
+     * Clears and releases all resources for this instance.
+     */
+    void destroy();
+
 }

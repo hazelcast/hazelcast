@@ -76,16 +76,16 @@ public class LockClientProxy implements ILock {
         return null;
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.LOCK;
-    }
-
     public void destroy() {
-        protocolProxyHelper.doCommand(Command.DESTROY, InstanceType.LOCK.name(), protocolProxyHelper.toData(lockObject));
+        protocolProxyHelper.doCommand(Command.DESTROY, "lock", protocolProxyHelper.toData(lockObject));
     }
 
     public Object getId() {
         return new HazelcastInstanceFactory.ProxyKey("lock", lockObject);
+    }
+
+    public String getName() {
+        return null;
     }
 
     @Override

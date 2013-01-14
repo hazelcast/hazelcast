@@ -30,15 +30,15 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionContainer {
 
-    String name;
+    CollectionProxyId proxyId;
 
     CollectionService service;
 
     private final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
 
-    public CollectionContainer(String name, CollectionService service) {
-        this.name = name;
+    public CollectionContainer(CollectionProxyId proxyId, CollectionService service) {
+        this.proxyId = proxyId;
         this.service = service;
     }
 
@@ -90,7 +90,7 @@ public class CollectionContainer {
     }
 
     public Object putNewObject(Data dataKey){
-        Object obj = service.createNew(name);
+        Object obj = service.createNew(proxyId);
         objects.put(dataKey, obj);
         return obj;
     }
@@ -164,8 +164,8 @@ public class CollectionContainer {
         return service.getNodeEngine();
     }
 
-    public String getName() {
-        return name;
+    public Object getProxyId() {
+        return proxyId;
     }
 
     public ConcurrentMap<Data, Object> getObjects() {

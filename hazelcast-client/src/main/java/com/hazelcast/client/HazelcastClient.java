@@ -166,7 +166,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getClientProxy(Prefix.MAP + name);
+        return (IMap<K, V>) getClientProxy(name);
     }
 
     public <K, V, E> Object getClientProxy(Object o) {
@@ -177,29 +177,29 @@ public class HazelcastClient implements HazelcastInstance {
                 if (proxy == null) {
                     if (o instanceof String) {
                         String name = (String) o;
-                        if (name.startsWith(Prefix.MAP)) {
-                            proxy = new MapClientProxy<K, V>(this, name);
-                        } else if (name.startsWith(Prefix.AS_LIST)) {
-                            proxy = new ListClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.SET)) {
-                            proxy = new SetClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.QUEUE)) {
-                            proxy = new QueueClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.TOPIC)) {
-                            proxy = new TopicClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
-                            proxy = new AtomicNumberClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
-                            proxy = new CountDownLatchClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.IDGEN)) {
-                            proxy = new IdGeneratorClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.MULTIMAP)) {
-                            proxy = new MultiMapClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.SEMAPHORE)) {
-                            proxy = new SemaphoreClientProxy(this, name);
-                        } else {
-                            proxy = new LockClientProxy(o, this);
-                        }
+//                        if (name.startsWith(Prefix.MAP)) {
+//                            proxy = new MapClientProxy<K, V>(this, name);
+//                        } else if (name.startsWith(Prefix.AS_LIST)) {
+//                            proxy = new ListClientProxy<E>(this, name);
+//                        } else if (name.startsWith(Prefix.SET)) {
+//                            proxy = new SetClientProxy<E>(this, name);
+//                        } else if (name.startsWith(Prefix.QUEUE)) {
+//                            proxy = new QueueClientProxy<E>(this, name);
+//                        } else if (name.startsWith(Prefix.TOPIC)) {
+//                            proxy = new TopicClientProxy<E>(this, name);
+//                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
+//                            proxy = new AtomicNumberClientProxy(this, name);
+//                        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
+//                            proxy = new CountDownLatchClientProxy(this, name);
+//                        } else if (name.startsWith(Prefix.IDGEN)) {
+//                            proxy = new IdGeneratorClientProxy(this, name);
+//                        } else if (name.startsWith(Prefix.MULTIMAP)) {
+//                            proxy = new MultiMapClientProxy(this, name);
+//                        } else if (name.startsWith(Prefix.SEMAPHORE)) {
+//                            proxy = new SemaphoreClientProxy(this, name);
+//                        } else {
+//                            proxy = new LockClientProxy(o, this);
+//                        }
                     } else {
                         proxy = new LockClientProxy(o, this);
                     }
@@ -222,8 +222,8 @@ public class HazelcastClient implements HazelcastInstance {
         return serializationService;
     }
 
-    public void addInstanceListener(InstanceListener instanceListener) {
-        clusterClientProxy.addInstanceListener(instanceListener);
+    public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        clusterClientProxy.addInstanceListener(distributedObjectListener);
     }
 
     public Cluster getCluster() {
@@ -249,27 +249,27 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(String name) {
-        return (IdGenerator) getClientProxy(Prefix.IDGEN + name);
+        return (IdGenerator) getClientProxy(name);
     }
 
     public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
+        return (AtomicNumber) getClientProxy(name);
     }
 
     public ICountDownLatch getCountDownLatch(String name) {
-        return (ICountDownLatch) getClientProxy(Prefix.COUNT_DOWN_LATCH + name);
+        return (ICountDownLatch) getClientProxy(name);
     }
 
     public ISemaphore getSemaphore(String name) {
-        return (ISemaphore) getClientProxy(Prefix.SEMAPHORE + name);
+        return (ISemaphore) getClientProxy(name);
     }
 
-    public Collection<Instance> getInstances() {
+    public Collection<DistributedObject> getDistributedObjects() {
         return clusterClientProxy.getInstances();
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList<E>) getClientProxy(Prefix.AS_LIST + name);
+        return (IList<E>) getClientProxy(name);
     }
 
     public ILock getLock(Object obj) {
@@ -277,7 +277,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getClientProxy(Prefix.MULTIMAP + name);
+        return (MultiMap<K, V>) getClientProxy(name);
     }
 
     public String getName() {
@@ -285,19 +285,19 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getClientProxy(Prefix.QUEUE + name);
+        return (IQueue<E>) getClientProxy(name);
     }
 
     public <E> ISet<E> getSet(String name) {
-        return (ISet<E>) getClientProxy(Prefix.SET + name);
+        return (ISet<E>) getClientProxy(name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return (ITopic) getClientProxy(Prefix.TOPIC + name);
+        return (ITopic) getClientProxy(name);
     }
 
-    public void removeInstanceListener(InstanceListener instanceListener) {
-        clusterClientProxy.removeInstanceListener(instanceListener);
+    public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        clusterClientProxy.removeInstanceListener(distributedObjectListener);
     }
 
     public static void shutdownAll() {
@@ -344,6 +344,14 @@ public class HazelcastClient implements HazelcastInstance {
 
     public LifecycleService getLifecycleService() {
         return lifecycleService;
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object id) {
+        return null;
+    }
+
+    public <S extends ServiceProxy> S getServiceProxy(String serviceName, Object id) {
+        return null;
     }
 
     public <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, String name) {

@@ -25,8 +25,8 @@ import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -43,7 +43,6 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
 
     public static final String COLLECTION_SERVICE_NAME = "hz:impl:collectionService";
 
-    private final ConcurrentMap<String, CollectionProxy> proxies = new ConcurrentHashMap<String, CollectionProxy>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     private final CollectionPartitionContainer[] partitionContainers;
@@ -76,36 +75,34 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     public void destroy() {
     }
 
-    Object createNew(String name) {
-        CollectionProxy proxy = proxies.get(name);
-        return proxy.createNew();
+    Object createNew(CollectionProxyId proxyId) {
+        final NodeEngineImpl nodeEngineImpl = (NodeEngineImpl) nodeEngine;
+        return nodeEngineImpl.getProxyService().getProxy(COLLECTION_SERVICE_NAME, proxyId);
     }
 
-    public ServiceProxy getProxy(Object... params) {
-        final String name = String.valueOf(params[0]);
-        CollectionProxy proxy;
-        if ((proxy = proxies.get(name)) != null) {
-            return proxy;
-        }
-        final CollectionProxyType type = (CollectionProxyType) params[1];
-        boolean dataProxy = params.length > 2 && Boolean.TRUE.equals(params[2]);
-        if (type.equals(CollectionProxyType.LIST)) {
-
-        } else if (type.equals(CollectionProxyType.SET)) {
-
-        } else if (type.equals(CollectionProxyType.MULTI_MAP)) {
-            if (dataProxy) {
-
-            } else {
-                proxy = new ObjectMultiMapProxy(name, this, nodeEngine);
-            }
-        }
-        final CollectionProxy currentProxy = proxies.putIfAbsent(name, proxy);
-        return currentProxy != null ? currentProxy : proxy;
+    public String getServiceName() {
+        return COLLECTION_SERVICE_NAME;
     }
 
-    public Collection<ServiceProxy> getProxies() {
-        return new HashSet<ServiceProxy>(proxies.values());
+    public ServiceProxy createProxy(Object proxyId) {
+        CollectionProxyId collectionProxyId = (CollectionProxyId) proxyId;
+        final String name = collectionProxyId.name;
+        final CollectionProxyType type = collectionProxyId.type;
+        switch (type) {
+            case MULTI_MAP:
+                return new ObjectMultiMapProxy(name, this, nodeEngine);
+            case LIST:
+                return null;
+            case SET:
+                return null;
+            case QUEUE:
+                return null;
+        }
+        throw new IllegalArgumentException();
+    }
+
+    public ServiceProxy createClientProxy(Object proxyId) {
+        return null;
     }
 
     public Set<Data> localKeySet(String name) {

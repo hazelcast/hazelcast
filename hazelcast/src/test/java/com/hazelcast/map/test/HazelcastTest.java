@@ -16,21 +16,12 @@
 
 package com.hazelcast.map.test;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.GroupProperties;
-import com.hazelcast.util.Clock;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -140,7 +131,7 @@ public class HazelcastTest extends BaseTest {
         instance.getQueue("A");
         instance.getSet("A");
         instance.getTopic("A");
-        Collection<Instance> caches = instance.getInstances();
+        Collection<DistributedObject> caches = instance.getDistributedObjects();
         assertEquals(6, caches.size());
     }
 
@@ -1203,7 +1194,7 @@ public class HazelcastTest extends BaseTest {
 //    public void testMapInstanceDestroy() throws Exception {
 //        IMap<String, String> map = getInstance().getMap("testMapDestroy");
 //        Thread.sleep(1000);
-//        Collection<Instance> instances = getInstance().getInstances();
+//        Collection<Instance> instances = getInstance().getDistributedObjects();
 //        boolean found = false;
 //        for (Instance instance : instances) {
 //            if (instance.getInstanceType().isMap()) {
@@ -1217,7 +1208,7 @@ public class HazelcastTest extends BaseTest {
 //        map.destroy();
 //        Thread.sleep(1000);
 //        found = false;
-//        instances = getInstance().getInstances();
+//        instances = getInstance().getDistributedObjects();
 //        for (Instance instance : instances) {
 //            if (instance.getInstanceType().isMap()) {
 //                IMap imap = (IMap) instance;

@@ -16,10 +16,9 @@
 
 package com.hazelcast.spring.cache;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.Instance.InstanceType;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -45,10 +44,10 @@ public class HazelcastCacheManager implements CacheManager, InitializingBean {
     }
 
     public void afterPropertiesSet() throws Exception {
-        final Collection<Instance> instances = hazelcastInstance.getInstances();
-        for (Instance instance : instances) {
-            if (instance.getInstanceType() == InstanceType.MAP) {
-                final IMap<Object, Object> map = (IMap) instance;
+        final Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
+        for (DistributedObject distributedObject : distributedObjects) {
+            if (distributedObject instanceof IMap) {
+                final IMap<Object, Object> map = (IMap) distributedObject;
                 caches.put(map.getName(), new HazelcastCache(map));
             }
         }

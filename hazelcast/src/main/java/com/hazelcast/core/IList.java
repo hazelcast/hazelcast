@@ -18,6 +18,6 @@ package com.hazelcast.core;
 
 import java.util.List;
 
-public interface IList<E> extends ICollection<E>, List<E>, Instance {
+public interface IList<E> extends ICollection<E>, List<E>, DistributedObject {
 
 }

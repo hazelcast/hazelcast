@@ -16,12 +16,13 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.spi.annotation.PrivateApi;
-
 /**
  * @mdogan 7/25/12
  */
 
-@PrivateApi
+/**
+ * Marker interface for join and post-join operations.
+ */
 public interface JoinOperation {
+
 }

@@ -60,7 +60,7 @@ final class OperationServiceImpl implements OperationService {
     private final SpinReadWriteLock[] partitionLocks;
     private final FastExecutor executor;
     private final long defaultCallTimeout;
-    private final ConcurrentHashSet<CallKey> executingCalls = new ConcurrentHashSet<CallKey>();
+    private final Set<CallKey> executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<CallKey, Boolean>());
     private final SerializationContext serializationContext;
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {

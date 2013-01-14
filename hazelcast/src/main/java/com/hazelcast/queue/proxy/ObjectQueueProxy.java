@@ -195,10 +195,6 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         queueService.removeItemListener(name, listener);
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.QUEUE;
-    }
-
     public Object getId() {
         return name;
     }

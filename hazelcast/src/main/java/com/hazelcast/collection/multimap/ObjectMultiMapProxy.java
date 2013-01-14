@@ -198,10 +198,6 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         return null;
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.MULTIMAP;
-    }
-
     public void destroy() {
 
     }

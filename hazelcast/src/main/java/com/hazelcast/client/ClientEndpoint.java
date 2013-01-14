@@ -23,15 +23,11 @@ import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.ConcurrentHashSet;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,7 +41,7 @@ public class ClientEndpoint implements ConnectionListener, Client {
     final List<Map.Entry<MultiMap, Object>> listeningKeysOfMultiMaps = new ArrayList<Map.Entry<MultiMap, Object>>();
     final Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
     final Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
-    final ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
+    final Set<ClientRequestHandler> currentRequests = Collections.newSetFromMap(new ConcurrentHashMap<ClientRequestHandler, Boolean>());
     final Node node;
     final Map<String, AtomicInteger> attachedSemaphorePermits = new ConcurrentHashMap<String, AtomicInteger>();
     volatile boolean authenticated = false;

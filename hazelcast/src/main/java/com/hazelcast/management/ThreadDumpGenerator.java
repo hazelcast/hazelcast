@@ -19,46 +19,25 @@ package com.hazelcast.management;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Constructor;
+import java.lang.management.LockInfo;
+import java.lang.management.*;
 import java.util.logging.Level;
 
-public abstract class ThreadDumpGenerator {
+public class ThreadDumpGenerator {
 
     protected static final ILogger logger = Logger.getLogger(ThreadDumpGenerator.class.getName());
-
-    private static final String THREAD_DUMP_15_CNAME = "ThreadDumpGeneratorImpl_15";
-    private static final String THREAD_DUMP_16_CNAME = "ThreadDumpGeneratorImpl_16";
-    private static final Class[] TYPE = new Class[]{ThreadMXBean.class};
 
     public static ThreadDumpGenerator newInstance() throws Exception {
         return newInstance(ManagementFactory.getThreadMXBean());
     }
 
     public static ThreadDumpGenerator newInstance(ThreadMXBean bean) throws Exception {
-        String p = System.getProperty("java.specification.version");
-        // 1.4, 1.5, 1.6 ...
-        int v = Integer.parseInt(p.split("\\.")[1]);
-        String cname = null;
-        if (v >= 6) {
-            cname = THREAD_DUMP_16_CNAME;
-        } else if (v == 5) {
-            cname = THREAD_DUMP_15_CNAME;
-        } else {
-            throw new UnsupportedOperationException("ThreadDumpGenerator can not run on JVM version: " + p);
-        }
-        String pkg = ThreadDumpGenerator.class.getPackage().getName();
-        String className = pkg + "." + cname;
-        Class clazz = ThreadDumpGenerator.class.getClassLoader().loadClass(className);
-        Constructor<ThreadDumpGenerator> cons = clazz.getConstructor(TYPE);
-        return cons.newInstance(bean);
+        return new ThreadDumpGenerator(bean);
     }
 
     protected final ThreadMXBean threadMxBean;
 
-    ThreadDumpGenerator(ThreadMXBean bean) {
+    private ThreadDumpGenerator(ThreadMXBean bean) {
         super();
         this.threadMxBean = bean;
     }
@@ -86,12 +65,24 @@ public abstract class ThreadDumpGenerator {
         return s.toString();
     }
 
-    public ThreadInfo[] getAllThreads() {
-        return getThreads(threadMxBean.getAllThreadIds());
+    public ThreadInfo[] findDeadlockedThreads() {
+        if (threadMxBean.isSynchronizerUsageSupported()) {
+            long[] tids = threadMxBean.findDeadlockedThreads();
+            if (tids == null || tids.length == 0) {
+                return null;
+            }
+            return threadMxBean.getThreadInfo(tids, true, true);
+        } else {
+            return getThreads(threadMxBean.findMonitorDeadlockedThreads());
+        }
     }
 
-    public ThreadInfo[] findDeadlockedThreads() {
-        return getThreads(threadMxBean.findMonitorDeadlockedThreads());
+    public ThreadInfo[] getAllThreads() {
+        if (threadMxBean.isObjectMonitorUsageSupported()
+                && threadMxBean.isSynchronizerUsageSupported()) {
+            return threadMxBean.dumpAllThreads(true, true);
+        }
+        return getThreads(threadMxBean.getAllThreadIds());
     }
 
     private void header(StringBuilder s) {
@@ -112,7 +103,68 @@ public abstract class ThreadDumpGenerator {
         }
     }
 
-    protected abstract void appendThreadInfo(ThreadInfo info, StringBuilder sb);
+    protected void appendThreadInfo(ThreadInfo info, StringBuilder sb) {
+        sb.append("\"").append(info.getThreadName()).append("\"").append(
+                " Id=").append(info.getThreadId()).append(" ").append(
+                info.getThreadState());
+        if (info.getLockName() != null) {
+            sb.append(" on ").append(info.getLockName());
+        }
+        if (info.getLockOwnerName() != null) {
+            sb.append(" owned by \"").append(info.getLockOwnerName()).
+                    append("\" Id=").append(+info.getLockOwnerId());
+        }
+        if (info.isSuspended()) {
+            sb.append(" (suspended)");
+        }
+        if (info.isInNative()) {
+            sb.append(" (in native)");
+        }
+        sb.append('\n');
+        final StackTraceElement[] stackTrace = info.getStackTrace();
+        final Object lockInfo = info.getLockInfo();
+        final MonitorInfo[] monitorInfo = info.getLockedMonitors();
+        for (int i = 0; i < stackTrace.length; i++) {
+            StackTraceElement ste = stackTrace[i];
+            sb.append("\tat ").append(ste.toString());
+            sb.append('\n');
+            if (i == 0 && lockInfo != null) {
+                Thread.State ts = info.getThreadState();
+                switch (ts) {
+                    case BLOCKED:
+                        sb.append("\t-  blocked on ").append(lockInfo);
+                        sb.append('\n');
+                        break;
+                    case WAITING:
+                        sb.append("\t-  waiting on ").append(lockInfo);
+                        sb.append('\n');
+                        break;
+                    case TIMED_WAITING:
+                        sb.append("\t-  waiting on ").append(lockInfo);
+                        sb.append('\n');
+                        break;
+                    default:
+                }
+            }
+            for (MonitorInfo mi : monitorInfo) {
+                int depth = mi.getLockedStackDepth();
+                if (depth == i) {
+                    sb.append("\t-  locked ").append(mi);
+                    sb.append('\n');
+                }
+            }
+        }
+        final LockInfo[] locks = info.getLockedSynchronizers();
+        if (locks.length > 0) {
+            sb.append("\n\tNumber of locked synchronizers = ").append(locks.length);
+            sb.append('\n');
+            for (LockInfo li : locks) {
+                sb.append("\t- ").append(li);
+                sb.append('\n');
+            }
+        }
+        sb.append('\n');
+    }
 
     protected ThreadInfo[] getThreads(long[] tids) {
         if (tids == null || tids.length == 0) return null;
