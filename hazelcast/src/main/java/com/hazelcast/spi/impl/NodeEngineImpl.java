@@ -44,20 +44,20 @@ public class NodeEngineImpl implements NodeEngine {
     private final Node node;
     private final ILogger logger;
     private final int partitionCount;
-    private final ServiceManager serviceManager;
 
+    final ProxyServiceImpl proxyService;
+    final ServiceManager serviceManager;
     final OperationServiceImpl operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final WaitNotifyService waitNotifyService;
-    final ProxyService proxyService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
         logger = node.getLogger(NodeEngine.class.getName());
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
+        proxyService = new ProxyServiceImpl(this);
         serviceManager = new ServiceManager(this);
-        proxyService = new ProxyService(serviceManager);
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
@@ -67,6 +67,7 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void start() {
         serviceManager.start();
+        proxyService.init();
     }
 
     public Cluster getCluster() {
@@ -241,6 +242,7 @@ public class NodeEngineImpl implements NodeEngine {
     public void shutdown() {
         logger.log(Level.FINEST, "Shutting down services...");
         waitNotifyService.shutdown();
+        proxyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
         eventService.shutdown();

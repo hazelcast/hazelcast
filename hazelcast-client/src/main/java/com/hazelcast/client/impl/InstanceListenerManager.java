@@ -64,10 +64,10 @@ public class InstanceListenerManager {
 //        for (final DistributedObjectListener listener : distributedObjectListeners) {
 //            switch (instanceEventType) {
 //                case CREATED:
-//                    listener.instanceCreated(event);
+//                    listener.distributedObjectCreated(event);
 //                    break;
 //                case DESTROYED:
-//                    listener.instanceDestroyed(event);
+//                    listener.distributedObjectDestroyed(event);
 //                    break;
 //                default:
 //                    break;

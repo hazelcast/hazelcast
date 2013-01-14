@@ -102,7 +102,15 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     public ServiceProxy createClientProxy(Object proxyId) {
-        return null;
+        return createProxy(proxyId);
+    }
+
+    public void onProxyCreate(Object proxyId) {
+
+    }
+
+    public void onProxyDestroy(Object proxyId) {
+
     }
 
     public Set<Data> localKeySet(String name) {

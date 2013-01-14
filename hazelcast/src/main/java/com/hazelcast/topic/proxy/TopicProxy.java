@@ -21,10 +21,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ServiceProxy;
+import com.hazelcast.spi.*;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
 
@@ -37,20 +34,17 @@ import java.util.logging.Level;
  * Date: 12/26/12
  * Time: 2:06 PM
  */
-public class TopicProxy<E> implements ITopic<E>, ServiceProxy {
+public class TopicProxy<E> extends AbstractServiceProxy implements ITopic<E>, ServiceProxy {
 
     private final String name;
-    protected final NodeEngine nodeEngine;
     private final EventService eventService;
     private final ILogger logger = Logger.getLogger(TopicProxy.class.getName());
     private final ConcurrentMap<String, String> registeredIds = new ConcurrentHashMap<String, String>();
 
     public TopicProxy(String name, NodeEngine nodeEngine) {
-
+        super(nodeEngine);
         this.name = name;
-        this.nodeEngine = nodeEngine;
         this.eventService = nodeEngine.getEventService();
-
     }
 
     public String getName() {
@@ -82,14 +76,13 @@ public class TopicProxy<E> implements ITopic<E>, ServiceProxy {
         return null;
     }
 
-    public void destroy() {
-        registeredIds.remove(name);
-    }
-
     public Object getId() {
         return getName();
     }
 
+    public String getServiceName() {
+        return TopicService.NAME;
+    }
 }
 
 

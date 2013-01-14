@@ -75,6 +75,14 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         return createProxy(proxyId);
     }
 
+    public void onProxyCreate(Object proxyId) {
+
+    }
+
+    public void onProxyDestroy(Object proxyId) {
+
+    }
+
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
     }
 

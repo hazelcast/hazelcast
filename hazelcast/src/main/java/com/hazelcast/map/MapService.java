@@ -236,6 +236,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return new DataMapProxy(String.valueOf(proxyId), this, nodeEngine);
     }
 
+    public void onProxyCreate(Object proxyId) {
+        logger.log(Level.INFO, "Creating proxy: " + proxyId);
+    }
+
+    public void onProxyDestroy(Object proxyId) {
+        logger.log(Level.WARNING, "Destroying proxy: " + proxyId);
+    }
+
     public void memberAdded(final MembershipServiceEvent membershipEvent) {
     }
 

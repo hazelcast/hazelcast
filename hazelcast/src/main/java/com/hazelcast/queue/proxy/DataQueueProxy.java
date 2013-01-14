@@ -124,20 +124,12 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
         return compareAndRemove((Collection<Data>)objects, false);
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void addItemListener(ItemListener<Data> listener, boolean includeValue) {
         queueService.addItemListener(name, listener, includeValue);
     }
 
     public void removeItemListener(ItemListener<Data> listener) {
         queueService.removeItemListener(name, listener);
-    }
-
-    public Object getId() {
-        return name;
     }
 
     public Data remove() {

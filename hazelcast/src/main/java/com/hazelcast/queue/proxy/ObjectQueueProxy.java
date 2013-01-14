@@ -183,20 +183,12 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         return compareAndRemove(getDataList(objects), true);
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         queueService.addItemListener(name, listener, includeValue);
     }
 
     public void removeItemListener(ItemListener<E> listener) {
         queueService.removeItemListener(name, listener);
-    }
-
-    public Object getId() {
-        return name;
     }
 
     public String toString() {
