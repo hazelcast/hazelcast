@@ -587,10 +587,19 @@ abstract class MapProxySupport {
         }
     }
 
-    public Object executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
-
-
-        return null;
+    public Data executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
+        setThreadContext();
+        int partitionId = nodeEngine.getPartitionId(key);
+        EntryOperation operation = new EntryOperation(name, key, entryProcessor);
+        operation.setThreadId(ThreadContext.get().getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
+            return (Data) future.get();
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
     }
 
     public void flush() {

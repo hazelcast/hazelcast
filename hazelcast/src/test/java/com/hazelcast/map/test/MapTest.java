@@ -20,12 +20,17 @@ package com.hazelcast.map.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -560,6 +565,33 @@ public class MapTest extends BaseTest {
         assertNull(map.get("key"));
 
     }
+
+
+    @Test
+    public void testMapEntryProcessor() throws InterruptedException {
+        IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
+        map.put(1,1);
+        EntryProcessor entryProcessor = new SampleEntryProcessor();
+        map.executeOnKey(1, entryProcessor);
+        assertEquals(map.get(1), (Object) 2);
+    }
+
+    static class SampleEntryProcessor implements EntryProcessor, Serializable {
+        public Object process(Map.Entry entry) {
+            entry.setValue((Integer)entry.getValue() + 1);
+            return true;
+        }
+
+        public void processBackup(Map.Entry entry) {
+            entry.setValue((Integer)entry.getValue() + 1);
+        }
+
+        public boolean shouldBackup() {
+            return true;
+        }
+    }
+
+
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {
 //        IMap<String, String> map = getInstance().getMap("testGetPutAndSizeWhileStartShutdown");

@@ -260,6 +260,18 @@ public class DefaultRecordStore implements RecordStore {
         return result;
     }
 
+    public void put(Map.Entry<Data, Data> entry) {
+        Data dataKey = entry.getKey();
+        Data dataValue = entry.getValue();
+        Record record = records.get(dataKey);
+        if(record == null){
+            record = mapService.createRecord(name, dataKey, dataValue, -1);
+            records.put(dataKey, record);
+        }
+        else
+            record.setValueData(entry.getValue());
+    }
+
     public Data put(Data dataKey, Data dataValue, long ttl) {
         Record record = records.get(dataKey);
         Data oldValueData = null;
@@ -292,6 +304,7 @@ public class DefaultRecordStore implements RecordStore {
         mapStoreWrite(record);
         return oldValueData;
     }
+
 
     private void mapStoreWrite(Record record) {
         if (mapInfo.getStore() != null) {

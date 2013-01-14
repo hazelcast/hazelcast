@@ -18,9 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.DataSerializable;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public interface EntryProcessor extends DataSerializable {
+public interface EntryProcessor extends Serializable {
     Object process(Map.Entry entry);
     void processBackup(Map.Entry entry);
+    boolean shouldBackup();
 }
