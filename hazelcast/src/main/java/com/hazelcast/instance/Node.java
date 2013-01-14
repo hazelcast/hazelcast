@@ -24,7 +24,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.Join;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.core.InstanceListener;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
@@ -217,8 +217,8 @@ public class Node {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 }
             }
-            if (listener instanceof InstanceListener) {
-                hazelcastInstance.addInstanceListener((InstanceListener) listener);
+            if (listener instanceof DistributedObjectListener) {
+                hazelcastInstance.addDistributedObjectListener((DistributedObjectListener) listener);
             } else if (listener instanceof MembershipListener) {
                 clusterService.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {

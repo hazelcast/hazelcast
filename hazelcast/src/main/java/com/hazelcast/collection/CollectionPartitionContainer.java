@@ -35,7 +35,7 @@ public class CollectionPartitionContainer {
     public CollectionContainer getOrCreateCollectionContainer(String name){
         CollectionContainer collectionContainer = containerMap.get(name);
         if (collectionContainer == null){
-            collectionContainer = new CollectionContainer(name, service);
+//            collectionContainer = new CollectionContainer(name, service);
             CollectionContainer current = containerMap.putIfAbsent(name, collectionContainer);
             collectionContainer = current == null ? collectionContainer : current;
         }

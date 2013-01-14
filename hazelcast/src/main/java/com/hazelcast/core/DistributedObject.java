@@ -14,10 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.core;
 
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Instance;
+public interface DistributedObject {
 
-public interface HazelcastInstanceAwareInstance extends Instance, HazelcastInstanceAware {
+    /**
+     * Returns the unique id for this instance.
+     *
+     * @return id the of this instance
+     */
+    Object getId();
+
+    String getName();
+
+    /**
+     * Destroys this instance cluster-wide.
+     * Clears and releases all resources for this instance.
+     */
+    void destroy();
+
 }

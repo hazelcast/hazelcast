@@ -39,9 +39,9 @@ public class ClusterClientProxy implements Cluster {
         protocolProxyHelper = new ProtocolProxyHelper("", client);
     }
 
-    public Collection<Instance> getInstances() {
+    public Collection<DistributedObject> getInstances() {
 //        Keys instances = (Keys) proxyHelper.doOp(ClusterOperation.GET_INSTANCES, null, null);
-        List<Instance> list = new ArrayList<Instance>();
+        List<DistributedObject> list = new ArrayList<DistributedObject>();
 //        if (instances != null) {
 //            for (Data data : instances) {
 //                Object o = IOUtil.toObject(data.buffer);
@@ -102,7 +102,7 @@ public class ClusterClientProxy implements Cluster {
         return 0;
     }
 
-    public void addInstanceListener(InstanceListener listener) {
+    public void addInstanceListener(DistributedObjectListener listener) {
 //        check(listener);
 //        if (instanceListenerManager().noListenerRegistered()) {
 //            Call c = instanceListenerManager().createNewAddListenerCall(proxyHelper);
@@ -111,9 +111,9 @@ public class ClusterClientProxy implements Cluster {
 //        instanceListenerManager().registerListener(listener);
     }
 
-    public void removeInstanceListener(InstanceListener instanceListener) {
-        check(instanceListener);
-        instanceListenerManager().removeListener(instanceListener);
+    public void removeInstanceListener(DistributedObjectListener distributedObjectListener) {
+        check(distributedObjectListener);
+        instanceListenerManager().removeListener(distributedObjectListener);
     }
 
     private InstanceListenerManager instanceListenerManager() {

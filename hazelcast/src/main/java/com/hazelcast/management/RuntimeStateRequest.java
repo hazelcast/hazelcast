@@ -59,13 +59,13 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
 
     private Collection<Record> collectLockState(final HazelcastInstanceImpl factory) {
         final List<String> mapNames = new LinkedList<String>();
-        mapNames.add(Prefix.LOCKS_MAP_HAZELCAST);
-        for (Instance instance : factory.getInstances()) {
-            if (instance.getInstanceType().isMap()) {
-                IMap imap = (IMap) instance;
-                mapNames.add(Prefix.MAP + imap.getName());
-            }
-        }
+//        mapNames.add(Prefix.LOCKS_MAP_HAZELCAST);
+//        for (DistributedObject distributedObject : factory.getDistributedObjects()) {
+//            if (distributedObject.getInstanceType().isMap()) {
+//                IMap imap = (IMap) distributedObject;
+//                mapNames.add(Prefix.MAP + imap.getName());
+//            }
+//        }
         final Node node = factory.node;
         final Collection<Record> lockedRecords = new LinkedList<Record>();
 //        for (final String mapName : mapNames) {

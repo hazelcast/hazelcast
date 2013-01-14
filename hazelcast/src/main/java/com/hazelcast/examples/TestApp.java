@@ -472,9 +472,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     protected void handleInstances(String[] args) {
-        Collection<Instance> instances = hazelcast.getInstances();
-        for (Instance instance : instances) {
-            println(instance);
+        Collection<DistributedObject> distributedObjects = hazelcast.getDistributedObjects();
+        for (DistributedObject distributedObject : distributedObjects) {
+            println(distributedObject);
         }
     }
 

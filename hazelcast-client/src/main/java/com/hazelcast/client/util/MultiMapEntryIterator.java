@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.core.Instance;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,8 +25,8 @@ public class MultiMapEntryIterator extends MapEntryIterator {
     private volatile Object lastKey;
     protected volatile Map.Entry lastMultiMapEntry;
 
-    public MultiMapEntryIterator(Iterator it, EntryHolder proxy, Instance.InstanceType instanceType) {
-        super(it, proxy, instanceType);
+    public MultiMapEntryIterator(Iterator it, EntryHolder proxy) {
+        super(it, proxy);
     }
 
     public boolean hasNext() {

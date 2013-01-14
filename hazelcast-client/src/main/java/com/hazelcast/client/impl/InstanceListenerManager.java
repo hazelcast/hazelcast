@@ -20,7 +20,7 @@ import com.hazelcast.client.Call;
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.PacketProxyHelper;
-import com.hazelcast.core.InstanceListener;
+import com.hazelcast.core.DistributedObjectListener;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class InstanceListenerManager {
 
-    final private List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    final private List<DistributedObjectListener> distributedObjectListeners = new CopyOnWriteArrayList<DistributedObjectListener>();
     final private HazelcastClient client;
 
     public InstanceListenerManager(HazelcastClient client) {
@@ -37,31 +37,31 @@ public class InstanceListenerManager {
         final ClientConfig clientConfig = client.getClientConfig();
         if (clientConfig != null) {
             for (Object listener : clientConfig.getListeners()) {
-                if (listener instanceof InstanceListener) {
-                    registerListener((InstanceListener) listener);
+                if (listener instanceof DistributedObjectListener) {
+                    registerListener((DistributedObjectListener) listener);
                 }
             }
         }
     }
 
-    public void registerListener(InstanceListener listener) {
-        this.instanceListeners.add(listener);
+    public void registerListener(DistributedObjectListener listener) {
+        this.distributedObjectListeners.add(listener);
     }
 
-    public void removeListener(InstanceListener instanceListener) {
-        this.instanceListeners.remove(instanceListener);
+    public void removeListener(DistributedObjectListener distributedObjectListener) {
+        this.distributedObjectListeners.remove(distributedObjectListener);
     }
 
     public synchronized boolean noListenerRegistered() {
-        return instanceListeners.isEmpty();
+        return distributedObjectListeners.isEmpty();
     }
 //    public void notifyListeners(Packet packet) {
 //        String id = (String) toObject(packet.getKey());
 //        int i = (Integer) toObject(packet.getValue());
-//        InstanceEvent.InstanceEventType instanceEventType = (i == 0) ? InstanceEvent.InstanceEventType.CREATED
-//                : InstanceEvent.InstanceEventType.DESTROYED;
-//        InstanceEvent event = new InstanceEvent(instanceEventType, (Instance) client.getClientProxy(id));
-//        for (final InstanceListener listener : instanceListeners) {
+//        DistributedObjectEvent.EventType instanceEventType = (i == 0) ? DistributedObjectEvent.EventType.CREATED
+//                : DistributedObjectEvent.EventType.DESTROYED;
+//        DistributedObjectEvent event = new DistributedObjectEvent(instanceEventType, (Instance) client.getClientProxy(id));
+//        for (final DistributedObjectListener listener : distributedObjectListeners) {
 //            switch (instanceEventType) {
 //                case CREATED:
 //                    listener.instanceCreated(event);
@@ -82,7 +82,7 @@ public class InstanceListenerManager {
     }
 
     public Collection<Call> calls(final HazelcastClient client) {
-        if (instanceListeners.isEmpty()) {
+        if (distributedObjectListeners.isEmpty()) {
             return Collections.emptyList();
         }
         return Collections.singletonList(createNewAddListenerCall(new PacketProxyHelper("", client)));

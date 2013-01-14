@@ -123,15 +123,7 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
     }
 
     public LocalAtomicNumberStats getLocalAtomicNumberStats() {
-        for (String proxy : atomicNumberService.getProxyNames()) {
-            System.out.println(proxy + "->" + atomicNumberService.getNumber(proxy));
-        }
-
         return null;
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.ATOMIC_NUMBER;
     }
 
     public void destroy() {

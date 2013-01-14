@@ -16,14 +16,14 @@
 
 package com.hazelcast.spi;
 
-import java.util.Collection;
-
 /**
  * @mdogan 10/31/12
  */
 public interface RemoteService {
 
-    ServiceProxy getProxy(Object... params);
+    String getServiceName();
 
-    Collection<ServiceProxy> getProxies();
+    ServiceProxy createProxy(Object proxyId);
+
+    ServiceProxy createClientProxy(Object proxyId);
 }

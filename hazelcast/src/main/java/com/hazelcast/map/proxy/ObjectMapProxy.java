@@ -282,10 +282,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return name;
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.MAP;
-    }
-
     public void destroy() {
         super.destroy();
     }

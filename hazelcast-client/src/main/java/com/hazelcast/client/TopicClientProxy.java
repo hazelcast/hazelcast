@@ -19,7 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.MessageListenerManager;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.core.Prefix;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.protocol.Command;
 
@@ -37,7 +36,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public String getName() {
-        return name.substring(Prefix.TOPIC.length());
+        return name;
     }
 
     public void publish(Object message) {
@@ -70,12 +69,8 @@ public class TopicClientProxy<T> implements ITopic {
         return protocolProxyHelper.client.getListenerManager().getMessageListenerManager();
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.TOPIC;
-    }
-
     public void destroy() {
-        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{InstanceType.TOPIC.name(), getName()}, null);
+        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{"topic", getName()}, null);
     }
 
     public Object getId() {

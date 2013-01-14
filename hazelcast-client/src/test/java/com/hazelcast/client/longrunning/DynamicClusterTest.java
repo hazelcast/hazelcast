@@ -288,17 +288,17 @@
 //        listOfInstances.add(set);
 //        listOfInstances.add(topic);
 //        listOfInstances.add(lock);
-//        assertEquals(0, client.getInstances().size());
+//        assertEquals(0, client.getDistributedObjects().size());
 //        list.add("List");
 //        map.put("key", "value");
-//        assertEquals(2, client.getInstances().size());
+//        assertEquals(2, client.getDistributedObjects().size());
 //        mmap.put("key", "value1");
 //        q.offer("Element");
-//        assertEquals(4, client.getInstances().size());
+//        assertEquals(4, client.getDistributedObjects().size());
 //        set.add("element");
 //        topic.publish("Message");
-//        assertEquals(6, client.getInstances().size());
-//        for (Instance instance : client.getInstances()) {
+//        assertEquals(6, client.getDistributedObjects().size());
+//        for (Instance instance : client.getDistributedObjects()) {
 //            assertTrue(instance.getId().toString().endsWith(instanceName));
 //            instance.destroy();
 //        }
@@ -324,7 +324,7 @@
 //        listOfInstanceIds.add(topic.getId());
 //        listOfInstanceIds.add(lock.getId());
 //        client = TestUtility.newHazelcastClient(h);
-//        Collection<Instance> caches = client.getInstances();
+//        Collection<Instance> caches = client.getDistributedObjects();
 //        assertEquals(listOfInstanceIds.size(), caches.size());
 //        for (Instance instance : caches) {
 //            assertTrue(listOfInstanceIds.contains(instance.getId()));
@@ -786,7 +786,7 @@
 //        final CountDownLatch latch = new CountDownLatch(1);
 //        new Thread(new Runnable() {
 //            public void run() {
-//                client.getInstances();
+//                client.getDistributedObjects();
 //                latch.countDown();
 //            }
 //        }).start();

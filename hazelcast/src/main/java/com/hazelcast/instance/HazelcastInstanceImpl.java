@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.atomicnumber.AtomicNumberService;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.Config;
@@ -36,11 +37,9 @@ import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
@@ -48,13 +47,14 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
  * @mdogan 7/31/12
  */
 
+@SuppressWarnings("unchecked")
 public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public final Node node;
 
     final ILogger logger;
 
-    final List<InstanceListener> instanceListeners = new CopyOnWriteArrayList<InstanceListener>();
+    final List<DistributedObjectListener> distributedObjectListeners = new CopyOnWriteArrayList<DistributedObjectListener>();
 
     final String name;
 
@@ -99,39 +99,36 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-//        return getOrCreateInstance(Prefix.MAP + name);
-        return (IMap<K, V>) getServiceProxy(MapService.class, name);
+        return (IMap<K, V>) getServiceProxy(MapService.MAP_SERVICE_NAME, name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
-//        return getOrCreateInstance(Prefix.QUEUE + name);
-        return (IQueue<E>) getServiceProxy(QueueService.class, name);
+        return (IQueue<E>) getServiceProxy(QueueService.QUEUE_SERVICE_NAME, name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
-//        return getOrCreateInstance(Prefix.TOPIC + name);
-        return (ITopic<E>) getServiceProxy(TopicService.class, name);
+        return (ITopic<E>) getServiceProxy(TopicService.NAME, name);
     }
 
     public <E> ISet<E> getSet(String name) {
-        return getOrCreateInstance(Prefix.SET + name);
+        throw new UnsupportedOperationException();
     }
 
     public <E> IList<E> getList(String name) {
-        return getOrCreateInstance(Prefix.AS_LIST + name);
+        throw new UnsupportedOperationException();
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getServiceProxy(CollectionService.class, name, CollectionProxyType.MULTI_MAP);
+        return (MultiMap<K, V>) getServiceProxy(CollectionService.COLLECTION_SERVICE_NAME,
+                new CollectionProxyId(name, CollectionProxyType.MULTI_MAP));
     }
 
     public ILock getLock(Object key) {
-//        return getOrCreateInstance(new ProxyKey("lock", key));
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public ExecutorService getExecutorService(final String name) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public Transaction getTransaction() {
@@ -139,35 +136,27 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(final String name) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public AtomicNumber getAtomicNumber(final String name) {
-        return (AtomicNumber)getServiceProxy(AtomicNumberService.class, name);
+        return (AtomicNumber)getServiceProxy(AtomicNumberService.NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public ISemaphore getSemaphore(final String name) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public Cluster getCluster() {
         return node.clusterService.getClusterProxy();
     }
 
-    public Collection<Instance> getInstances() {
-        final Collection<Instance> instances = new LinkedList<Instance>();
-        Collection<RemoteService> services = node.nodeEngine.getServices(RemoteService.class);
-        for (RemoteService service : services) {
-            final Collection<ServiceProxy> proxies = service.getProxies();
-            if (proxies != null && !proxies.isEmpty()) {
-                instances.addAll(proxies);
-            }
-        }
-        return instances;
+    public Collection<DistributedObject> getDistributedObjects() {
+        return node.nodeEngine.getProxyService().getAllProxies();
     }
 
     public Config getConfig() {
@@ -190,15 +179,9 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return lifecycleService;
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, String name) {
-        Collection services = node.nodeEngine.getServices(serviceClass);
-        for (Object service : services) {
-            if (serviceClass.isAssignableFrom(service.getClass())) {
-                return (S) ((RemoteService) service).getProxy(name);
-            }
-        }
+    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, Object id) {
         checkActive();
-        throw new IllegalArgumentException("Service could not be found! -> " + serviceClass.getName());
+        return (S) node.nodeEngine.getProxyService().getProxy(serviceClass, id);
     }
 
     private void checkActive() {
@@ -207,27 +190,9 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, Object... params) {
-        Collection services = node.nodeEngine.getServices(serviceClass);
-        for (Object service : services) {
-            if (serviceClass.isAssignableFrom(service.getClass())) {
-                return (S) ((RemoteService) service).getProxy(params);
-            }
-        }
+    public <S extends ServiceProxy> S getServiceProxy(final String serviceName, Object id) {
         checkActive();
-        throw new IllegalArgumentException();
-    }
-
-    public <S extends ServiceProxy> S getServiceProxy(final String serviceName, String name) {
-        Object service = node.nodeEngine.getService(serviceName);
-        if (service == null) {
-            throw new NullPointerException();
-        }
-        if (service instanceof RemoteService) {
-            return (S) ((RemoteService) service).getProxy(name);
-        }
-        checkActive();
-        throw new IllegalArgumentException();
+        return (S) node.nodeEngine.getProxyService().getProxy(serviceName, id);
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {
@@ -238,91 +203,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         node.serializationService.registerFallback(serializer);
     }
 
-    public void addInstanceListener(InstanceListener instanceListener) {
-        instanceListeners.add(instanceListener);
+    public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        distributedObjectListeners.add(distributedObjectListener);
     }
 
-    public void removeInstanceListener(InstanceListener instanceListener) {
-        instanceListeners.remove(instanceListener);
-    }
-
-    public <I> I getOrCreateInstance(String name) {
-        boolean created = false;
-        Instance proxy = null; //proxies.get(name);
-        if (proxy == null) {
-            created = true;
-            if (name.startsWith(Prefix.QUEUE)) {
-//                proxy = proxyFactory.createQueueProxy(name);
-            } else if (name.startsWith(Prefix.TOPIC)) {
-//                proxy = proxyFactory.createTopicProxy(name);
-            } else if (name.startsWith(Prefix.MAP)) {
-//                proxy = proxyFactory.createMapProxy(name);
-            } else if (name.startsWith(Prefix.AS_LIST)) {
-//                proxy = proxyFactory.createListProxy(name);
-            } else if (name.startsWith(Prefix.MULTIMAP)) {
-//                proxy = proxyFactory.createMultiMapProxy(name);
-            } else if (name.startsWith(Prefix.SET)) {
-//                proxy = proxyFactory.createSetProxy(name);
-            } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
-//                proxy = proxyFactory.createAtomicNumberProxy(name);
-            } else if (name.startsWith(Prefix.IDGEN)) {
-//                proxy = proxyFactory.createIdGeneratorProxy(name);
-            } else if (name.startsWith(Prefix.SEMAPHORE)) {
-//                proxy = proxyFactory.createSemaphoreProxy(name);
-            } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
-//                proxy = proxyFactory.createCountDownLatchProxy(name);
-            } else if (name.equals("lock")) {
-//                proxy = proxyFactory.createLockProxy(proxyKey.key);
-            }
-//            final Instance anotherProxy = proxies.putIfAbsent(name, proxy);
-//            if (anotherProxy != null) {
-//                created = false;
-//                proxy = anotherProxy;
-//            }
-        }
-        if (created) {
-            logger.log(Level.FINEST, "Instance created " + name);
-            fireInstanceCreateEvent(proxy);
-        }
-        return (I) proxy;
-    }
-
-    public void destroyInstance(final String name) {
-        Instance proxy = null; //proxies.remove(name);
-        if (proxy != null) {
-            logger.log(Level.FINEST, "Instance destroyed " + name);
-            destroyInstanceClusterWide(proxy);
-            fireInstanceDestroyEvent(proxy);
-        }
-    }
-
-    private void destroyInstanceClusterWide(final Instance instance) {
-    }
-
-    private void fireInstanceCreateEvent(Instance instance) {
-        if (instanceListeners.size() > 0) {
-            final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.CREATED, instance);
-            for (final InstanceListener instanceListener : instanceListeners) {
-                node.nodeEngine.getEventService().executeEvent(new Runnable() {
-                    public void run() {
-                        instanceListener.instanceCreated(instanceEvent);
-                    }
-                });
-            }
-        }
-    }
-
-    private void fireInstanceDestroyEvent(Instance instance) {
-        if (instanceListeners.size() > 0) {
-            final InstanceEvent instanceEvent = new InstanceEvent(InstanceEvent.InstanceEventType.DESTROYED, instance);
-            for (final InstanceListener instanceListener : instanceListeners) {
-                node.nodeEngine.getEventService().executeEvent(new Runnable() {
-                    public void run() {
-                        instanceListener.instanceDestroyed(instanceEvent);
-                    }
-                });
-            }
-        }
+    public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        distributedObjectListeners.remove(distributedObjectListener);
     }
 
     private void registerConfigSerializers(Config config) throws Exception {

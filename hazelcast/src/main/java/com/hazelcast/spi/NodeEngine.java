@@ -43,6 +43,8 @@ public interface NodeEngine {
 
     int getPartitionId(Data key);
 
+    int getPartitionId(Object obj);
+
     int getPartitionCount();
 
     PartitionInfo getPartitionInfo(int partitionId);
@@ -60,4 +62,5 @@ public interface NodeEngine {
     <T> T toObject(Object object);
 
     TransactionImpl getTransaction();
+
 }

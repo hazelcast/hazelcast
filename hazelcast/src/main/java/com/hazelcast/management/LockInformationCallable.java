@@ -37,7 +37,7 @@
 //        final String globalLockMapName = Prefix.HAZELCAST + "Locks";
 //        final List<String> mapNames = new ArrayList<String>();
 //        mapNames.add(globalLockMapName);
-//        for (Instance instance : hazelcastInstance.getInstances()) {
+//        for (Instance instance : hazelcastInstance.getDistributedObjects()) {
 //            if (instance.getInstanceType().isMap()) {
 //                IMap imap = (IMap) instance;
 //                mapNames.add(imap.getName());

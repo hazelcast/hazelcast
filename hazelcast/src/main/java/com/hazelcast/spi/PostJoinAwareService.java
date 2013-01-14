@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.spi;
 
-import java.util.EventListener;
+/**
+ * @mdogan 1/11/13
+ */
+public interface PostJoinAwareService {
 
-public interface InstanceListener extends EventListener {
+    /**
+     * Post join operations must be lock free; means no locks at all;
+     * no partition locks, no key-based locks, no service level locks!
+     *
+     * Post join operations should return response, at least a null response.
+     *
+     * Also making post-join operation a JoinOperation will help a lot.
+     *
+     * @see com.hazelcast.cluster.JoinOperation
+     */
+    Operation getPostJoinOperation();
 
-    void instanceCreated(InstanceEvent event);
-
-    void instanceDestroyed(InstanceEvent event);
 }

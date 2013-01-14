@@ -235,7 +235,6 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         MultiMap<String, String> map = hClient.getMultiMap("testMultiMapGetNameAndType");
         assertEquals("testMultiMapGetNameAndType", map.getName());
-        assertTrue(map.getInstanceType().isMultiMap());
     }
 
     @Test

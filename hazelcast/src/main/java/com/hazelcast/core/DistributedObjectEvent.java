@@ -18,13 +18,13 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
-public class InstanceEvent extends EventObject {
+public class DistributedObjectEvent extends EventObject {
 
-    public enum InstanceEventType {
+    public enum EventType {
         CREATED(0), DESTROYED(2);
         private int id;
 
-        InstanceEventType(int i) {
+        EventType(int i) {
             this.id = i;
         }
 
@@ -33,24 +33,20 @@ public class InstanceEvent extends EventObject {
         }
     }
 
-    private final InstanceEventType instanceEventType;
-    private final Instance instance;
+    private final EventType eventType;
+    private final DistributedObject distributedObject;
 
-    public InstanceEvent(InstanceEventType instanceEventType, Instance instance) {
-        super(instance);
-        this.instanceEventType = instanceEventType;
-        this.instance = instance;
+    public DistributedObjectEvent(EventType eventType, DistributedObject distributedObject) {
+        super(distributedObject);
+        this.eventType = eventType;
+        this.distributedObject = distributedObject;
     }
 
-    public InstanceEventType getEventType() {
-        return instanceEventType;
+    public EventType getEventType() {
+        return eventType;
     }
 
-    public Instance.InstanceType getInstanceType() {
-        return instance.getInstanceType();
-    }
-
-    public Instance getInstance() {
-        return instance;
+    public DistributedObject getDistributedObject() {
+        return distributedObject;
     }
 }

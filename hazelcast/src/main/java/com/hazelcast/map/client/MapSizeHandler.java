@@ -30,7 +30,7 @@ public class MapSizeHandler extends MapCommandHandler {
 
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
+        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createClientProxy(name);
         int size = dataMapProxy.size();
         return protocol.success(String.valueOf(size));
     }

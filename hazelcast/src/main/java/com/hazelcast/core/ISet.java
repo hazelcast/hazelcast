@@ -26,6 +26,6 @@ import java.util.Set;
  * use of the <tt>equals</tt> method when comparing objects. Instead of the equals method this implementation
  * compares the serialized byte version of the objects.</b>
  */
-public interface ISet<E> extends ICollection<E>, Set<E>, Instance {
+public interface ISet<E> extends ICollection<E>, Set<E>, DistributedObject {
 
 }

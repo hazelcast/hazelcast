@@ -31,7 +31,7 @@ public class MapForceUnlockHandler extends MapCommandHandler {
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
         byte[] key = protocol.buffers[0].array();
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
+        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createClientProxy(name);
         dataMapProxy.forceUnlock(binaryToData(key));
         return protocol.success();
     }

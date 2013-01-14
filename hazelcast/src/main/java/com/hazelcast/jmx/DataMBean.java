@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  * @author Marco Ferrante, DISI - University of Genova
  */
 @JMXDescription("Cluster statistics")
-public class DataMBean extends AbstractMBean<HazelcastInstance> implements InstanceListener {
+public class DataMBean extends AbstractMBean<HazelcastInstance> implements DistributedObjectListener {
 
     private final static Logger logger = Logger.getLogger(DataMBean.class.getName());
 
@@ -42,40 +42,40 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
      * Return the instrumentation wrapper to a instance.
      * See http://java.sun.com/javase/technologies/core/mntr-mgmt/javamanagement/best-practices.jsp
      *
-     * @param instance
+     * @param distributedObject
      * @return dynamic mbean for the hazelcast instance
      * @throws Exception
      */
-    private AbstractMBean buildMBean(Instance instance) throws Exception {
-        if (instance.getInstanceType().isTopic()) {
-            return new TopicMBean((ITopic) instance, managementService);
+    private AbstractMBean buildMBean(DistributedObject distributedObject) throws Exception {
+        if (distributedObject instanceof ITopic) {
+            return new TopicMBean((ITopic) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isQueue()) {
-            return new QueueMBean((IQueue) instance, managementService);
+        if (distributedObject instanceof IQueue) {
+            return new QueueMBean((IQueue) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isList()) {
-            return new ListMBean((IList) instance, managementService);
+        if (distributedObject instanceof IList) {
+            return new ListMBean((IList) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isSet()) {
-            return new SetMBean((ISet) instance, managementService);
+        if (distributedObject instanceof ISet) {
+            return new SetMBean((ISet) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isMultiMap()) {
-            return new MultiMapMBean((MultiMap) instance, managementService);
+        if (distributedObject instanceof MultiMap) {
+            return new MultiMapMBean((MultiMap) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isMap()) {
-            return new MapMBean((IMap) instance, managementService);
+        if (distributedObject instanceof IMap) {
+            return new MapMBean((IMap) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isLock()) {
-            return new LockMBean((ILock) instance, managementService);
+        if (distributedObject instanceof ILock) {
+            return new LockMBean((ILock) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isAtomicNumber()) {
-            return new AtomicNumberMBean((AtomicNumber) instance, managementService);
+        if (distributedObject instanceof AtomicNumber) {
+            return new AtomicNumberMBean((AtomicNumber) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isCountDownLatch()) {
-            return new CountDownLatchMBean((ICountDownLatch) instance, managementService);
+        if (distributedObject instanceof ICountDownLatch) {
+            return new CountDownLatchMBean((ICountDownLatch) distributedObject, managementService);
         }
-        if (instance.getInstanceType().isSemaphore()) {
-            return new SemaphoreMBean((ISemaphore) instance, managementService);
+        if (distributedObject instanceof ISemaphore) {
+            return new SemaphoreMBean((ISemaphore) distributedObject, managementService);
         }
         return null;
     }
@@ -93,15 +93,15 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
         if (registrationDone) {
             creationStats = ManagementService.newStatisticsCollector();
             destructionStats = ManagementService.newStatisticsCollector();
-            getManagedObject().addInstanceListener(this);
-            for (final Instance instance : getManagedObject().getInstances()) {
-                registerInstance(instance);
+            getManagedObject().addDistributedObjectListener(this);
+            for (final DistributedObject distributedObject : getManagedObject().getDistributedObjects()) {
+                registerInstance(distributedObject);
             }
         }
     }
 
     public void preDeregister() throws Exception {
-        getManagedObject().removeInstanceListener(this);
+        getManagedObject().removeDistributedObjectListener(this);
         if (creationStats != null) {
             creationStats.destroy();
             creationStats = null;
@@ -116,30 +116,30 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
         // Required by MBeanRegistration interface
     }
 
-    public void instanceCreated(InstanceEvent event) {
+    public void instanceCreated(DistributedObjectEvent event) {
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Received created notification {0} {1}",
-                    new String[]{event.getInstance().getInstanceType().toString(), event.getInstance().toString()});
+                    new String[]{event.getDistributedObject().getName(), event.getDistributedObject().toString()});
         }
         if (creationStats != null) {
             creationStats.addEvent();
         }
-        registerInstance(event.getInstance());
+        registerInstance(event.getDistributedObject());
     }
 
-    public void instanceDestroyed(InstanceEvent event) {
+    public void instanceDestroyed(DistributedObjectEvent event) {
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Received destroyed notification " + event.getInstance().toString());
+            logger.log(Level.FINE, "Received destroyed notification " + event.getDistributedObject().toString());
         }
         if (destructionStats != null) {
             destructionStats.addEvent();
         }
-        unregisterInstance(event.getInstance());
+        unregisterInstance(event.getDistributedObject());
     }
 
     public void registerInstance(Object instance) {
         try {
-            AbstractMBean mbean = buildMBean((Instance) instance);
+            AbstractMBean mbean = buildMBean((DistributedObject) instance);
             if (mbean == null) {
                 logger.log(Level.FINE, "Unsupported instance type " + instance.getClass().getName());
             } else {
@@ -161,7 +161,7 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
 
     public void unregisterInstance(Object instance) {
         try {
-            AbstractMBean mbean = buildMBean((Instance) instance);
+            AbstractMBean mbean = buildMBean((DistributedObject) instance);
             if (mbean == null) {
                 logger.log(Level.FINE, "Unsupported instance type " + instance.getClass().getName());
             } else {
@@ -195,8 +195,8 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Insta
     @JMXAttribute("InstanceCount")
     @JMXDescription("Total data structures registered")
     public int getInstanceCount() {
-        Collection<Instance> instances = getManagedObject().getInstances();
-        return instances.size();
+        Collection<DistributedObject> distributedObjects = getManagedObject().getDistributedObjects();
+        return distributedObjects.size();
     }
 
     @JMXAttribute("InstancesCreated")

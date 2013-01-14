@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * to count reaching zero all awaiting threads will be notified.  This provides a
  * safety mechanism in the distributed environment.
  */
-public interface ICountDownLatch extends Instance {
+public interface ICountDownLatch extends DistributedObject {
     /**
      * Returns the name of this ICountDownLatch instance.
      *
@@ -62,8 +62,6 @@ public interface ICountDownLatch extends Instance {
      * <li>Some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread.
      * </ul>
-     * <p/>If the ICountDownLatch instance is destroyed while waiting then
-     * {@link InstanceDestroyedException} will be thrown.
      * <p/>If the countdown owner becomes disconnected while waiting then
      * {@link MemberLeftException} will be thrown.
      * <p>If the current thread:
@@ -74,12 +72,11 @@ public interface ICountDownLatch extends Instance {
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
      *
-     * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws MemberLeftException        if the countdown owner becomes disconnected while waiting
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
-    public void await() throws InstanceDestroyedException, MemberLeftException, InterruptedException;
+    public void await() throws MemberLeftException, InterruptedException;
 
     /**
      * Causes the current thread to wait until the latch has counted down to
@@ -104,8 +101,6 @@ public interface ICountDownLatch extends Instance {
      * <p>If the count reaches zero then the method returns with the
      * value {@code true}.
      * <p/>
-     * <p/>If the ICountDownLatch instance is destroyed while waiting then
-     * {@link InstanceDestroyedException} will be thrown.
      * <p/>If the countdown owner becomes disconnected while waiting then
      * {@link MemberLeftException} will be thrown.
      * <p>If the current thread:
@@ -123,12 +118,11 @@ public interface ICountDownLatch extends Instance {
      * @param unit    the time unit of the {@code timeout} argument
      * @return {@code true} if the count reached zero and {@code false}
      *         if the waiting time elapsed before the count reached zero
-     * @throws InstanceDestroyedException if the instance is destroyed while waiting
      * @throws MemberLeftException        if the countdown owner becomes disconnected while waiting
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
-    public boolean await(long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException, InterruptedException;
+    public boolean await(long timeout, TimeUnit unit) throws MemberLeftException, InterruptedException;
 
     /**
      * Decrements the count of the latch, releasing all waiting threads if

@@ -18,11 +18,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.proxy.DataMapProxy;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.Data;
 
 public abstract class MapCommandHandler extends ClientCommandHandler {
     final MapService mapService;

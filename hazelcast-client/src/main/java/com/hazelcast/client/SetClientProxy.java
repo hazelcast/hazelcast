@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ISet;
-import com.hazelcast.core.Prefix;
 //import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
@@ -70,10 +69,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
     }
 
     public String getName() {
-        return name.substring(Prefix.SET.length());
+        return name;
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.SET;
-    }
 }

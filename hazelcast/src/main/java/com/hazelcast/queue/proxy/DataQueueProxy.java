@@ -136,10 +136,6 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
         queueService.removeItemListener(name, listener);
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.QUEUE;
-    }
-
     public Object getId() {
         return name;
     }

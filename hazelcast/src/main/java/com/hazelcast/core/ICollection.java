@@ -21,7 +21,7 @@ package com.hazelcast.core;
  *
  * @param <E> item
  */
-public interface ICollection<E> extends Instance {
+public interface ICollection<E> extends DistributedObject {
     /**
      * Returns the name of this collection
      *

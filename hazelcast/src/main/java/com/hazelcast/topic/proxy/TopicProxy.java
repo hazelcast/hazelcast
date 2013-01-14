@@ -82,10 +82,6 @@ public class TopicProxy<E> implements ITopic<E>, ServiceProxy {
         return null;
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.TOPIC;
-    }
-
     public void destroy() {
         registeredIds.remove(name);
     }

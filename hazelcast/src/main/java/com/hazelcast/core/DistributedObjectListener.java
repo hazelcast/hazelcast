@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.core;
 
-import com.hazelcast.core.DistributedObject;
+import java.util.EventListener;
 
-/**
- * Marker interface for service proxies.
- *
- * @mdogan 9/18/12
- */
+public interface DistributedObjectListener extends EventListener {
 
-public interface ServiceProxy extends DistributedObject {
+    void instanceCreated(DistributedObjectEvent event);
 
-
+    void instanceDestroyed(DistributedObjectEvent event);
 }
