@@ -116,4 +116,9 @@ public class Connection {
     public Member getMember() {
         return new MemberImpl(new Address(address), false);
     }
+
+    //TODO implement release where it will put itself back into the socket pool
+    public void release() {
+
+    }
 }

@@ -18,13 +18,11 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.Protocol;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-public class ProtocolWriter extends PacketHandler {
-//    final Map<String, byte[]> nameCache = new HashMap<String, byte[]>(100);
+public class ProtocolWriter {
+    protected static final byte[] HEADER = new byte[]{'H', 'Z', 'C'};
 
     public void write(Connection connection, Protocol command) throws IOException {
         if (connection != null) {

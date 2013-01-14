@@ -24,15 +24,15 @@ import java.util.Collection;
 import java.util.Iterator;
 
 public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
-    final protected PacketProxyHelper proxyHelper;
+    final protected ProxyHelper proxyHelper;
     final protected String name;
 
     public CollectionClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new PacketProxyHelper(name, hazelcastClient);
+        proxyHelper = new ProxyHelper(name, hazelcastClient);
     }
 
-    public CollectionClientProxy(PacketProxyHelper proxyHelper, String name) {
+    public CollectionClientProxy(ProxyHelper proxyHelper, String name) {
         this.name = name;
         this.proxyHelper = proxyHelper;
     }
@@ -91,7 +91,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
 
 
     private ItemListenerManager itemListenerManager() {
-        return proxyHelper.getHazelcastClient().getListenerManager().getItemListenerManager();
+        return proxyHelper.client.getListenerManager().getItemListenerManager();
     }
 
     @Override

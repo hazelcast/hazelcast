@@ -209,7 +209,7 @@ public class EntryListenerManager {
                     includeValue |= entryListenerHolder.includeValue;
                     if (includeValue) break;
                 }
-                final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
+                final ProxyHelper proxyHelper = new ProxyHelper(name, client);
                 calls.add(createNewAddListenerCall(proxyHelper, key, includeValue));
             }
         }

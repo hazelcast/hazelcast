@@ -20,18 +20,18 @@ import com.hazelcast.core.Transaction;
 import com.hazelcast.nio.protocol.Command;
 
 public class TransactionClientProxy implements Transaction {
-    final ProtocolProxyHelper protocolProxyHelper;
+    final ProxyHelper proxyHelper;
 
     public TransactionClientProxy(String name, HazelcastClient client) {
-        protocolProxyHelper = new ProtocolProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(name, client);
     }
 
     public void begin() throws IllegalStateException {
-        protocolProxyHelper.doCommand(Command.TRXBEGIN, new String[]{}, null);
+        proxyHelper.doCommand(Command.TRXBEGIN, new String[]{}, null);
     }
 
     public void commit() throws IllegalStateException {
-        protocolProxyHelper.doCommand(Command.TRXCOMMIT, new String[]{}, null);
+        proxyHelper.doCommand(Command.TRXCOMMIT, new String[]{}, null);
 //        ClientThreadContext threadContext = ClientThreadContext.get();
 //        threadContext.removeTransaction();
     }
@@ -41,7 +41,7 @@ public class TransactionClientProxy implements Transaction {
     }
 
     public void rollback() throws IllegalStateException {
-        protocolProxyHelper.doCommand(Command.TRXROLLBACK, new String[]{}, null);
+        proxyHelper.doCommand(Command.TRXROLLBACK, new String[]{}, null);
 //        ClientThreadContext threadContext = ClientThreadContext.get();
 //        threadContext.removeTransaction();
     }

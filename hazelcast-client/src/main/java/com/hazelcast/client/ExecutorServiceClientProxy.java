@@ -28,11 +28,11 @@ import static com.hazelcast.client.ProxyHelper.check;
 
 public class ExecutorServiceClientProxy implements ExecutorService {
 
-    final PacketProxyHelper proxyHelper;
+    final ProxyHelper proxyHelper;
     final ExecutorService callBackExecutors = Executors.newFixedThreadPool(5);
 
     public ExecutorServiceClientProxy(HazelcastClient client, String name) {
-        proxyHelper = new PacketProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(name, client);
     }
 
     public void shutdown() {

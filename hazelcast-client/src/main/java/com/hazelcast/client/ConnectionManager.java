@@ -188,6 +188,8 @@ public class ConnectionManager implements MembershipListener {
         }
     }
 
+
+
     public Connection getConnection() throws IOException {
         if (currentConnection == null && running && !lookingForLiveConnection) {
             boolean restored = false;
@@ -267,7 +269,7 @@ public class ConnectionManager implements MembershipListener {
 
         while (counter > 0) {
             try {
-                connection = getNextConnection();
+                connection = createNextConnection();
                 break;
             } catch (Exception e) {
                 logger.log(Level.FINEST, e.getMessage(), e);
@@ -279,7 +281,8 @@ public class ConnectionManager implements MembershipListener {
         return connection;
     }
 
-    protected Connection getNextConnection() {
+
+    protected Connection createNextConnection() {
         InetSocketAddress address = clusterMembers.get(0);
         return new Connection(address, connectionIdGenerator.incrementAndGet());
     }

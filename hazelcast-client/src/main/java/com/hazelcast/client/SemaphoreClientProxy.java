@@ -25,15 +25,14 @@ import com.hazelcast.monitor.LocalSemaphoreStats;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-
 public class SemaphoreClientProxy implements ISemaphore {
 
     private final String name;
-    private final PacketProxyHelper proxyHelper;
+    private final ProxyHelper proxyHelper;
 
     public SemaphoreClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new PacketProxyHelper(getName(), hazelcastClient);
+        proxyHelper = new ProxyHelper(getName(), hazelcastClient);
     }
 
     public void acquire() throws InstanceDestroyedException, InterruptedException {

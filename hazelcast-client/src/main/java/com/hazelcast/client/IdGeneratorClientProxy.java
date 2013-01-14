@@ -21,11 +21,11 @@ import com.hazelcast.core.Prefix;
 
 public class IdGeneratorClientProxy implements IdGenerator {
     private final String name;
-    private final PacketProxyHelper proxyHelper;
+    private final ProxyHelper proxyHelper;
 
     public IdGeneratorClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new PacketProxyHelper(name, hazelcastClient);
+        proxyHelper = new ProxyHelper(name, hazelcastClient);
     }
 
     public String getName() {

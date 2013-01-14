@@ -17,12 +17,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Prefix;
 
 import java.util.*;
 
-import static com.hazelcast.client.PacketProxyHelper.check;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class ListClientProxy<E> extends CollectionClientProxy<E> implements IList<E> {
     public ListClientProxy(HazelcastClient hazelcastClient, String name) {
