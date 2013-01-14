@@ -18,6 +18,7 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.collection.processor.WaitSupportedEntryProcessor;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
@@ -31,7 +32,7 @@ import java.util.Collection;
 /**
  * @ali 1/1/13
  */
-public class PutEntryProcessor extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor {
+public class PutEntryProcessor extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor, WaitSupportedEntryProcessor {
 
     Data data;
 
@@ -68,5 +69,17 @@ public class PutEntryProcessor extends MultiMapEntryProcessor<Boolean> implement
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         data = IOUtil.readNullableData(in);
+    }
+
+    public boolean shouldWait(Entry entry) {
+        return entry.isLocked();
+    }
+
+    public long getWaitTimeoutMillis() {
+        return -1;
+    }
+
+    public Object onWaitExpire() {
+        return false;
     }
 }

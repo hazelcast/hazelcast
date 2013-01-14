@@ -61,6 +61,10 @@ public class Entry {
         return container.canAcquireLock(key, threadId, caller);
     }
 
+    public boolean isLocked(){
+        return container.isLocked(key);
+    }
+
     public boolean lock(long ttl){
         return container.lock(key, caller, threadId, ttl);
     }

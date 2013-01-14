@@ -18,6 +18,7 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.collection.processor.WaitSupportedEntryProcessor;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 
@@ -26,7 +27,7 @@ import java.util.Collection;
 /**
  * @ali 1/3/13
  */
-public class RemoveEntryProcessor extends GetEntryProcessor implements BackupAwareEntryProcessor {
+public class RemoveEntryProcessor extends GetEntryProcessor implements BackupAwareEntryProcessor, WaitSupportedEntryProcessor {
 
     public RemoveEntryProcessor() {
     }
@@ -48,5 +49,17 @@ public class RemoveEntryProcessor extends GetEntryProcessor implements BackupAwa
 
     public void executeBackup(Entry entry) {
         entry.removeEntry();
+    }
+
+    public boolean shouldWait(Entry entry) {
+        return entry.isLocked();
+    }
+
+    public long getWaitTimeoutMillis() {
+        return -1;
+    }
+
+    public Object onWaitExpire() {
+        return new MultiMapCollectionResponse(null, collectionType, isBinary(), null);
     }
 }
