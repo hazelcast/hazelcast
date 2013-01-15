@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.processor.EntryProcessor;
 import com.hazelcast.core.EntryEvent;
@@ -56,8 +57,8 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         return partitionContainers[partitionId].getCollectionContainer(name);
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(int partitionId, String name) {
-        return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
+    public CollectionContainer getOrCreateCollectionContainer(int partitionId, CollectionProxyId proxyId) {
+        return partitionContainers[partitionId].getOrCreateCollectionContainer(proxyId);
     }
 
     public CollectionPartitionContainer getPartitionContainer(int partitionId) {
@@ -77,7 +78,8 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
 
     Object createNew(CollectionProxyId proxyId) {
         final NodeEngineImpl nodeEngineImpl = (NodeEngineImpl) nodeEngine;
-        return nodeEngineImpl.getProxyService().getProxy(COLLECTION_SERVICE_NAME, proxyId);
+        CollectionProxy proxy = (CollectionProxy)nodeEngineImpl.getProxyService().getProxy(COLLECTION_SERVICE_NAME, proxyId);
+        return proxy.createNew();
     }
 
     public String getServiceName() {
@@ -90,9 +92,9 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         final CollectionProxyType type = collectionProxyId.type;
         switch (type) {
             case MULTI_MAP:
-                return new ObjectMultiMapProxy(name, this, nodeEngine);
+                return new ObjectMultiMapProxy(name, this, nodeEngine, (CollectionProxyId)proxyId);
             case LIST:
-                return null;
+                return new ObjectListProxy(name, this, nodeEngine, (CollectionProxyId)proxyId);
             case SET:
                 return null;
             case QUEUE:
@@ -166,14 +168,27 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         }
     }
 
-    public <T> T process(String name, Data dataKey, EntryProcessor processor) {
+    public <T> T process(String name, Data dataKey, EntryProcessor processor, CollectionProxyId proxyId) {
         try {
             int partitionId = nodeEngine.getPartitionId(dataKey);
-            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId);
+            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId, proxyId);
             operation.setThreadId(ThreadContext.get().getThreadId());
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    public Data processData(String name, Data dataKey, EntryProcessor processor, CollectionProxyId proxyId) {
+        try {
+            int partitionId = nodeEngine.getPartitionId(dataKey);
+            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId, proxyId);
+            operation.setThreadId(ThreadContext.get().getThreadId());
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
+            Future<Data> f = inv.invoke();
+            return f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

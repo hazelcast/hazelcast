@@ -115,7 +115,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        throw new UnsupportedOperationException();
+        return (IList<E>) getServiceProxy(CollectionService.COLLECTION_SERVICE_NAME,
+                new CollectionProxyId(name, CollectionProxyType.LIST));
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {

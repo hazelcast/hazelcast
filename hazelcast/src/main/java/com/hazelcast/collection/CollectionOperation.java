@@ -34,6 +34,7 @@ import java.util.Collection;
 public class CollectionOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation, IdentifiedDataSerializable, WaitSupport, Notifier {
 
     EntryProcessor processor;
+    CollectionProxyId proxyId;
 
     transient Object response;
     transient Entry entry;
@@ -41,15 +42,16 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
     CollectionOperation() {
     }
 
-    CollectionOperation(String name, Data dataKey, EntryProcessor processor, int partitionId) {
+    CollectionOperation(String name, Data dataKey, EntryProcessor processor, int partitionId, CollectionProxyId proxyId) {
         super(name, dataKey);
         this.processor = processor;
+        this.proxyId = proxyId;
         setPartitionId(partitionId);
     }
 
     public void beforeRun() throws Exception {
         CollectionService service = getService();
-        CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), name);
+        CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), proxyId);
         entry = new Entry(collectionContainer, dataKey, threadId, getCaller());
     }
 
@@ -93,17 +95,20 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
     }
 
     public Operation getBackupOperation() {
-        return new CollectionBackupOperation(name, dataKey, processor, getCaller(), getThreadId());
+        return new CollectionBackupOperation(name, dataKey, processor, getCaller(), getThreadId(), proxyId);
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(processor);
+        proxyId.writeData(out);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         processor = in.readObject();
+        proxyId = new CollectionProxyId();
+        proxyId.readData(in);
     }
 
     public int getId() {

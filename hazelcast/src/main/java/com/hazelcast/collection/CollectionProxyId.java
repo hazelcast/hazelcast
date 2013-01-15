@@ -16,14 +16,23 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+
 /**
  * @mdogan 1/14/13
  */
-public class CollectionProxyId {
+public class CollectionProxyId implements DataSerializable {
 
-    final String name;
+    String name;
 
-    final CollectionProxyType type;
+    CollectionProxyType type;
+
+    public CollectionProxyId() {
+    }
 
     public CollectionProxyId(String name, CollectionProxyType type) {
         this.name = name;
@@ -48,5 +57,15 @@ public class CollectionProxyId {
         int result = name.hashCode();
         result = 31 * result + type.hashCode();
         return result;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(type.toString());
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        type = CollectionProxyType.valueOf(in.readUTF());
     }
 }

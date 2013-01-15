@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.multimap;
 
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastException;
@@ -40,36 +41,40 @@ public abstract class MultiMapProxySupport {
 
     protected final MultiMapConfig config;
 
-    protected MultiMapProxySupport(String name, CollectionService service, NodeEngine nodeEngine, MultiMapConfig config) {
+    protected final CollectionProxyId proxyId;
+
+    protected MultiMapProxySupport(String name, CollectionService service, NodeEngine nodeEngine,
+                                   CollectionProxyId proxyId, MultiMapConfig config) {
         this.name = name;
         this.service = service;
         this.nodeEngine = nodeEngine;
+        this.proxyId = proxyId;
         this.config = new MultiMapConfig(config);
     }
 
     public Object createNew() {
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
             return new HashSet(10);//TODO hardcoded initial
-        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
+        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
             return new LinkedList();
         }
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
 
-    protected Boolean putInternal(Data dataKey, Data dataValue) {
-        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config));
+    protected Boolean putInternal(Data dataKey, Data dataValue, int index) {
+        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config, index), proxyId);
     }
 
-    protected MultiMapCollectionResponse getInternal(Data dataKey) {
-        return service.process(name, dataKey, new GetEntryProcessor(config));
+    protected MultiMapCollectionResponse getAllInternal(Data dataKey) {
+        return service.process(name, dataKey, new GetAllEntryProcessor(config), proxyId);
     }
 
     protected Boolean removeInternal(Data dataKey, Data dataValue) {
-        return service.process(name, dataKey, new RemoveObjectEntryProcess(dataValue, config));
+        return service.process(name, dataKey, new RemoveEntryProcess(dataValue, config), proxyId);
     }
 
     protected MultiMapCollectionResponse removeInternal(Data dataKey) {
-        return service.process(name, dataKey, new RemoveEntryProcessor(config));
+        return service.process(name, dataKey, new RemoveAllEntryProcessor(config), proxyId);
     }
 
     protected Set<Data> localKeySetInternal() {
@@ -162,15 +167,27 @@ public abstract class MultiMapProxySupport {
     }
 
     protected Integer countInternal(Data dataKey) {
-        return service.process(name, dataKey, new CountEntryProcessor());
+        return service.process(name, dataKey, new CountEntryProcessor(), proxyId);
     }
 
     protected Boolean lockInternal(Data dataKey, long timeout) {
-        return service.process(name, dataKey, new LockEntryProcessor(config, timeout));
+        return service.process(name, dataKey, new LockEntryProcessor(config, timeout), proxyId);
     }
 
     protected Boolean unlockInternal(Data dataKey) {
-        return service.process(name, dataKey, new UnlockEntryProcessor(config));
+        return service.process(name, dataKey, new UnlockEntryProcessor(config), proxyId);
+    }
+
+    protected Data getInternal(Data dataKey, int index){
+        return service.processData(name, dataKey, new GetEntryProcessor(config, index), proxyId);
+    }
+
+    protected Boolean containsInternalList(Data dataKey, Data dataValue){
+        return service.process(name, dataKey, new ContainsEntryProcessor(config.isBinary(), dataValue), proxyId);
+    }
+
+    protected Boolean containsAllInternal(Data dataKey, Set<Data> dataSet){
+        return service.process(name, dataKey, new ContainsAllEntryProcessor(config.isBinary(), dataSet),proxyId);
     }
 
 }

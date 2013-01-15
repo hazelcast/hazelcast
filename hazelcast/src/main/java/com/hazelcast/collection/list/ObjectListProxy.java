@@ -17,17 +17,17 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionProxy;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.multimap.MultiMapCollectionResponse;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 /**
  * @ali 1/14/13
@@ -40,8 +40,9 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     final Data key;
 
-    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine) {
-        super(COLLECTION_LIST_NAME, service, nodeEngine, nodeEngine.getConfig().getMultiMapConfig("list:"+name));
+    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
+        super(COLLECTION_LIST_NAME, service, nodeEngine, proxyId,
+                nodeEngine.getConfig().getMultiMapConfig("list:" + name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST));
         listName = name;
         key = nodeEngine.toData(name);
     }
@@ -59,40 +60,50 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public int size() {
-        return 0;
+        return countInternal(key);
     }
 
     public boolean isEmpty() {
-        return false;
+        return countInternal(key) == 0;
     }
 
     public boolean contains(Object o) {
-        return false;
+        Data data = nodeEngine.toData(o);
+        return containsInternalList(key, data);
     }
 
     public Iterator<E> iterator() {
-        return null;
+        MultiMapCollectionResponse result = getAllInternal(key);
+        return result.getObjectCollection(nodeEngine.getSerializationService()).iterator();
     }
 
     public Object[] toArray() {
-        return new Object[0];
+        MultiMapCollectionResponse result = getAllInternal(key);
+        return result.getObjectCollection(nodeEngine.getSerializationService()).toArray();
     }
 
     public <T> T[] toArray(T[] a) {
-        return null;
+        MultiMapCollectionResponse result = getAllInternal(key);
+        Collection<T> col = result.getObjectCollection(nodeEngine.getSerializationService());
+        return col.toArray(a);
     }
 
     public boolean add(E e) {
         Data data = nodeEngine.toData(e);
-        return putInternal(key, data);
+        return putInternal(key, data, -1);
     }
 
     public boolean remove(Object o) {
-        return false;
+        Data data = nodeEngine.toData(o);
+        return removeInternal(key, data);
     }
 
     public boolean containsAll(Collection<?> c) {
-        return false;
+        Set<Data> dataSet = new HashSet<Data>(c.size());
+        for (Object o: c){
+            dataSet.add(nodeEngine.toData(o));
+        }
+        return containsAllInternal(key, dataSet);
     }
 
     public boolean addAll(Collection<? extends E> c) {
@@ -116,7 +127,11 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public E get(int index) {
-        return null;
+        Data data = getInternal(key, index);
+        if (data == null) {
+            throw new IndexOutOfBoundsException();
+        }
+        return nodeEngine.toObject(data);
     }
 
     public E set(int index, E element) {
@@ -124,7 +139,8 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public void add(int index, E element) {
-
+        Data data = nodeEngine.toData(element);
+        putInternal(key, data, index);
     }
 
     public E remove(int index) {
@@ -149,10 +165,6 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     public List<E> subList(int fromIndex, int toIndex) {
         return null;
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.LIST;
     }
 
     public void destroy() {

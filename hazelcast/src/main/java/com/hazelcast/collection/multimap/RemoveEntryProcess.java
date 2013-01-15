@@ -32,14 +32,14 @@ import java.util.Collection;
 /**
  * @ali 1/3/13
  */
-public class RemoveObjectEntryProcess extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor, WaitSupportedEntryProcessor {
+public class RemoveEntryProcess extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor, WaitSupportedEntryProcessor {
 
     Data data;
 
-    public RemoveObjectEntryProcess() {
+    public RemoveEntryProcess() {
     }
 
-    public RemoveObjectEntryProcess(Data data, MultiMapConfig config) {
+    public RemoveEntryProcess(Data data, MultiMapConfig config) {
         super(config.isBinary());
         this.data = data;
         this.syncBackupCount = config.getSyncBackupCount();
