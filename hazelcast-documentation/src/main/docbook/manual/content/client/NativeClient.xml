@@ -17,7 +17,9 @@
 
 <sect1 xml:id="NativeClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Native Client</title>
     <para>Native Client enables you to do all Hazelcast operations without being a member of the
         cluster. It connects to one of the cluster members and delegates all cluster wide operations
@@ -90,7 +92,7 @@ for (Customer customer : colCustomers) {
 ]]></programlisting>
         </para>
 
-        <para>
+        <para xml:id="NativeClientNearCache">
             <emphasis role="bold">
                 <emphasis role="italic">
                     Near Cache on Java Client
@@ -101,7 +103,7 @@ for (Customer customer : colCustomers) {
         <para>
             By default, near Cache on Java Client is not enabled. Near Cache implementation on client side is based
             on the Google
-            <ulink url="http://code.google.com/p/guava-libraries/wiki/CachesExplained">Guava</ulink>
+            <link xlink:href="http://code.google.com/p/guava-libraries/wiki/CachesExplained">Guava</link>
             cache. To enable it the following System property should be set
             to "true": "hazelcast.client.near.cache.enabled" and the related Guava jar's should be added to classpath.
             The current implementation uses 13.0.1 version of it.

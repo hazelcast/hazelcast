@@ -28,6 +28,34 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.5</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><emphasis role="italic">New Feature:</emphasis>
+                    Java Client has now 'near-cache' support. See <link xlink:href="#NativeClientNearCache">Near Cache on Java Client</link>
+                for additional details.</para>
+            </listitem>
+            <listitem>
+                <para><emphasis role="italic">New Feature:</emphasis>
+                    Management Center alert system, receive alerts based on custom filters. See
+                    <link xlink:href="#NativeClientNearCache">Management Center Alert System</link>
+                    for additional details.</para>
+            </listitem>
+            <listitem>
+                <para>Management Center has now better support for Hazelcast cluster running in OSGI environment.</para>
+            </listitem>
+            <listitem>
+                <para>Nodes can be easily shutdown or restarted using Management Center interface.</para>
+            </listitem>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=17&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>377, 386, 389, 392, 394</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.4.1</emphasis>
         <itemizedlist>
             <listitem>
