@@ -27,7 +27,5 @@ public interface RemoteService {
 
     ServiceProxy createClientProxy(Object proxyId);
 
-    void onProxyCreate(Object proxyId);
-
-    void onProxyDestroy(Object proxyId);
+    void destroyDistributedObject(Object objectId);
 }

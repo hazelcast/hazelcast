@@ -66,8 +66,7 @@ class PartitionIteratingOperation extends AbstractOperation implements Identifie
                         .setService(getService());
                 responses.put(partitionId, responseQueue);
 
-                // TODO: !too many threads may start!
-                nodeEngine.getExecutionService().execute(new Runnable() {
+                nodeEngine.getExecutionService().execute("system", new Runnable() {
                     public void run() {
                         nodeEngine.getOperationService().runOperation(op);
                     }

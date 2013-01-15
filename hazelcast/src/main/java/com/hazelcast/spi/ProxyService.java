@@ -24,9 +24,12 @@ import java.util.Collection;
  * @mdogan 1/14/13
  */
 public interface ProxyService extends CoreService {
+
     ServiceProxy getProxy(String serviceName, Object proxyId);
 
     ServiceProxy getProxy(Class<? extends RemoteService> serviceClass, Object proxyId);
+
+//    ServiceProxy getProxy(String serviceName, Object proxyId);
 
     void destroyProxy(String serviceName, Object proxyId);
 

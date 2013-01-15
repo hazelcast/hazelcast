@@ -63,11 +63,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return createProxy(proxyId);
     }
 
-    public void onProxyCreate(Object proxyId) {
-
-    }
-
-    public void onProxyDestroy(Object proxyId) {
+    public void destroyDistributedObject(Object objectId) {
 
     }
 

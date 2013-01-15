@@ -105,11 +105,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         return createProxy(proxyId);
     }
 
-    public void onProxyCreate(Object proxyId) {
-
-    }
-
-    public void onProxyDestroy(Object proxyId) {
+    public void destroyDistributedObject(Object objectId) {
 
     }
 
