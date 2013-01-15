@@ -90,15 +90,11 @@ public class BaseTest {
         startInstances();
     }
 
-    protected static void beforeStart() {
-        //
-    }
-
 
     protected static void startInstances() {
         Hazelcast.shutdownAll();
         instances.clear();
-        beforeStart();
+        cfg.getMapConfig("default").setRecordType("OBJECT");
         for (int i = 0; i < instanceCount; i++) {
             instances.add(Hazelcast.newHazelcastInstance(cfg));
         }

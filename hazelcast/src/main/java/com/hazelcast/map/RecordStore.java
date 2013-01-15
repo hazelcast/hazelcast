@@ -40,17 +40,17 @@ public interface RecordStore {
 
     void put(Map.Entry<Data, Data> entry);
 
-    Data replace(Data dataKey, Data dataValue);
+    Data replace(Data dataKey, Data value);
 
     boolean replace(Data dataKey, Data oldValue, Data newValue);
 
-    void set(Data dataKey, Data dataValue, long ttl);
+    void set(Data dataKey, Data value, long ttl);
 
-    void putTransient(Data dataKey, Data dataValue, long ttl);
+    void putTransient(Data dataKey, Data value, long ttl);
 
-    boolean tryPut(Data dataKey, Data dataValue, long ttl);
+    boolean tryPut(Data dataKey, Data value, long ttl);
 
-    Data putIfAbsent(Data dataKey, Data dataValue, long ttl);
+    Data putIfAbsent(Data dataKey, Data value, long ttl);
 
     ConcurrentMap<Data, Record> getRecords();
 
@@ -58,9 +58,9 @@ public interface RecordStore {
 
     int size();
 
-    boolean forceUnlock(Data dataKey);
+    boolean forceUnlock(Data key);
 
-    boolean isLocked(Data dataKey);
+    boolean isLocked(Data key);
 
     boolean lock(Data key, Address caller, int threadId, long ttl);
 
@@ -72,9 +72,9 @@ public interface RecordStore {
 
     LockInfo getLock(Data key);
 
-    boolean evict(Data dataKey);
+    boolean evict(Data key);
 
-    boolean unlock(Data dataKey, Address caller, int threadId);
+    boolean unlock(Data key, Address caller, int threadId);
 
     Collection<Data> values();
 
@@ -85,4 +85,6 @@ public interface RecordStore {
     Set<Map.Entry<Data, Data>> entrySet();
 
     Map.Entry<Data,Data> getMapEntry(Data dataKey);
+
+    void setRecordValue(Record record, Object value);
 }

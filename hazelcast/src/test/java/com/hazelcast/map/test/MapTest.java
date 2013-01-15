@@ -41,8 +41,6 @@ import static org.junit.Assert.*;
 
 public class MapTest extends BaseTest {
 
-
-
     @Test
     public void testMapPutAndGet() {
         IMap<String, String> map = getInstance().getMap("testMapPutAndGet");
@@ -564,7 +562,6 @@ public class MapTest extends BaseTest {
         assertEquals("value", map.get("key"));
         Thread.sleep(3000);
         assertNull(map.get("key"));
-
     }
 
     @Test

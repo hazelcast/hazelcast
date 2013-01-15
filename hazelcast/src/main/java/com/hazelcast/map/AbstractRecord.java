@@ -20,24 +20,20 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import sun.text.normalizer.VersionInfo;
 
 import java.io.IOException;
 
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-public abstract class AbstractRecord implements Record, DataSerializable {
+public abstract class AbstractRecord implements DataSerializable {
 
-    // todo remove id
-    protected volatile long id;
     protected volatile RecordState state;
     protected volatile RecordStats stats;
-    protected volatile Data keyData;
+    protected volatile Data key;
 
-    public AbstractRecord(long id, Data keyData) {
-        this.id = id;
-        this.keyData = keyData;
+    public AbstractRecord(Data key) {
+        this.key = key;
         state = new RecordState();
         stats = new RecordStats();
     }
@@ -45,16 +41,24 @@ public abstract class AbstractRecord implements Record, DataSerializable {
     public AbstractRecord() {
     }
 
-    public long getId() {
-        return id;
-    }
-
     public Data getKey() {
-        return keyData;
+        return key;
     }
 
     public RecordState getState() {
         return state;
+    }
+
+    public void setState(RecordState state) {
+        this.state = state;
+    }
+
+    public RecordStats getStats() {
+        return stats;
+    }
+
+    public void setStats(RecordStats stats) {
+        this.stats = stats;
     }
 
     public Long getLastAccessTime() {
@@ -72,7 +76,7 @@ public abstract class AbstractRecord implements Record, DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(id);
+        key.writeData(out);
         if(state != null) {
             out.writeBoolean(true);
             state.writeData(out);
@@ -91,7 +95,8 @@ public abstract class AbstractRecord implements Record, DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        id = in.readLong();
+        key = new Data();
+        key.readData(in);
         boolean stateEnabled = in.readBoolean();
         if(stateEnabled) {
             state = new RecordState();
@@ -104,21 +109,29 @@ public abstract class AbstractRecord implements Record, DataSerializable {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AbstractRecord)) return false;
-        Record record = (Record) o;
-        return record.getId() == getId();
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AbstractRecord that = (AbstractRecord) o;
+
+        if (!key.equals(that.key)) return false;
+
+        return true;
     }
 
-    public String toString() {
-        return "Record id=" + getId();
-    }
-
+    @Override
     public int hashCode() {
-        return (int) (id ^ (id >>> 32));
+        return key.hashCode();
     }
 
+    @Override
+    public String toString() {
+        return "AbstractRecord{" +
+                "key=" + key +
+                '}';
+    }
 
     public Integer getHits() {
         return stats == null ? 0 : stats.getHits();

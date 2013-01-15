@@ -176,13 +176,23 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         container.transactions.clear(); // TODO: not sure?
     }
 
-    public Record createRecord(String name, Data dataKey, Data valueData, long ttl) {
-        // todo based on map config choose the record impl
-        DefaultRecord record = new DefaultRecord(nextId(), dataKey, valueData);
+    public Record createRecord(String name, Data dataKey, Object value, long ttl) {
+        Record record = null;
         MapInfo mapInfo = getMapInfo(name);
+        if(mapInfo.getMapConfig().getRecordType().equals("DATA")) {
+            record = new DataRecord(dataKey, toData(value));
+        }
+        else if(mapInfo.getMapConfig().getRecordType().equals("OBJECT"))  {
+            record = new ObjectRecord(dataKey, toObject(value));
+        }
+
         if (ttl <= 0 && mapInfo.getMapConfig().getTimeToLiveSeconds() > 0) {
             record.getState().updateTtlExpireTime(mapInfo.getMapConfig().getTimeToLiveSeconds());
             scheduleOperation(name, dataKey, mapInfo.getMapConfig().getTimeToLiveSeconds());
+        }
+        if (ttl > 0) {
+            record.getState().updateTtlExpireTime(ttl);
+            scheduleOperation(name, record.getKey(), ttl);
         }
         if (mapInfo.getMapConfig().getMaxIdleSeconds() > 0) {
             record.getState().updateIdleExpireTime(mapInfo.getMapConfig().getMaxIdleSeconds());
@@ -303,12 +313,22 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getEventService().deregisterListener(MAP_SERVICE_NAME, mapName, registrationId);
     }
 
-    private Data toData(Object obj) {
-        return nodeEngine.getSerializationService().toData(obj);
+    public Object toObject(Object data) {
+        if(data == null)
+            return null;
+        if (data instanceof Data)
+            return nodeEngine.toObject(data);
+        else
+            return data;
     }
 
-    private Object toObject(Data data) {
-        return nodeEngine.getSerializationService().toObject(data);
+    public Data toData(Object object) {
+        if(object == null)
+            return null;
+        if (object instanceof Data)
+            return (Data) object;
+        else
+            return nodeEngine.toData(object);
     }
 
     public void dispatchEvent(EventData eventData, EntryListener listener) {
@@ -356,7 +376,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 MaxSizeConfig maxSizeConfig = mapInfo.getMapConfig().getMaxSizeConfig();
                 if (!evictionPolicy.equals("NONE") && maxSizeConfig.getSize() > 0){
                     boolean check = checkLimits(mapInfo);
-                    System.out.println("check::"+check);
                     if (check) {
                         evictMap(mapInfo);
                     }

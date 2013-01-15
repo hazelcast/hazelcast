@@ -30,6 +30,7 @@ public class DefaultRecordStore implements RecordStore {
     final PartitionContainer partitionContainer;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
+    // todo remove this.
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapInfo mapInfo;
 
@@ -89,8 +90,8 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean containsValue(Data dataValue) {
         for (Record record : records.values()) {
-            Object value = toObject(dataValue);
-            Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
+            Object value = mapService.toObject(dataValue);
+            Object recordValue = mapService.toObject(record.getValue());
             if (recordValue.equals(value))
                 return true;
         }
@@ -127,39 +128,36 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean tryRemove(Data dataKey) {
         Record record = records.get(dataKey);
-        Data oldValueData = null;
         boolean removed = false;
+        boolean evicted = false;
         if (record == null) {
-            if (mapInfo.getStore() != null) {
-                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+            // already removed from map by eviction but still need to delete it
+            if (mapInfo.getStore() != null && mapInfo.getStore().load(mapService.toObject(dataKey)) != null) {
+                evicted = true;
             }
         } else {
-            record.access();
-            oldValueData = record.getValueData();
+            accessRecord(record);
             records.remove(dataKey);
             removed = true;
         }
-        if (oldValueData != null && mapInfo.getStore() != null && mapInfo.getWriteDelayMillis() == 0) {
-            Object key = record.getKey();
-            mapInfo.getStore().delete(key);
+
+        if ((removed || evicted) && mapInfo.getStore() != null) {
             mapStoreDelete(record);
-            removed = true;
         }
         return removed;
     }
 
     public Set<Map.Entry<Data, Data>> entrySet() {
-        Map<Data,Data> temp = new HashMap<Data,Data>(records.size());
+        Map<Data, Data> temp = new HashMap<Data, Data>(records.size());
         for (Data key : records.keySet()) {
-            temp.put(key, records.get(key).getValueData());
+            temp.put(key, mapService.toData(records.get(key).getValue()));
         }
         return temp.entrySet();
     }
 
     public Map.Entry<Data, Data> getMapEntry(Data dataKey) {
         Record record = records.get(dataKey);
-        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, record.getValueData());
+        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(record.getValue()) );
     }
 
     public Set<Data> keySet() {
@@ -173,37 +171,27 @@ public class DefaultRecordStore implements RecordStore {
     public Collection<Data> values() {
         Collection<Data> values = new ArrayList<Data>(records.size());
         for (Record record : records.values()) {
-            values.add(record.getValueData());
+            values.add(mapService.toData(record.getValue()));
         }
         return values;
     }
 
     public Data remove(Data dataKey) {
         Record record = records.get(dataKey);
-        Data oldValueData = null;
+        Data oldValue = null;
         if (record == null) {
             if (mapInfo.getStore() != null) {
-                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+                oldValue = mapService.toData(mapInfo.getStore().load(mapService.toObject(dataKey)));
             }
         } else {
-            oldValueData = record.getValueData();
+            oldValue = mapService.toData(record.getValue());
             records.remove(dataKey);
         }
-        if (oldValueData != null) {
+        if (oldValue != null) {
             mapStoreDelete(record);
         }
-        return oldValueData;
+        return oldValue;
     }
-
-    private Object toObject(Data dataKey) {
-        return mapService.getNodeEngine().toObject(dataKey);
-    }
-
-    private Data toData(Object oldValue) {
-        return mapService.getNodeEngine().toData(oldValue);
-    }
-
 
     public boolean evict(Data dataKey) {
         return records.remove(dataKey) != null;
@@ -211,105 +199,184 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean remove(Data dataKey, Data testValue) {
         Record record = records.get(dataKey);
-        Data oldValueData = null;
+        Object oldValue = null;
         boolean removed = false;
         if (record == null) {
             if (mapInfo.getStore() != null) {
-                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
-                oldValueData = toData(oldValue);
+                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
             }
-            if (oldValueData == null)
+            if (oldValue == null)
                 return false;
         } else {
-            oldValueData = record.getValueData();
+            oldValue = record.getValue();
         }
 
-        if (testValue.equals(oldValueData)) {
+        if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
             records.remove(dataKey);
-            mapStoreDelete(record);
             removed = true;
+            mapStoreDelete(record);
         }
         return removed;
     }
 
     public Data get(Data dataKey) {
         Record record = records.get(dataKey);
-        Data result = null;
+        Object value = null;
         if (record == null) {
             if (mapInfo.getStore() != null) {
-                Object key = toObject(dataKey);
-                Object value = mapInfo.getStore().load(key);
+                value = mapInfo.getStore().load(mapService.toObject(dataKey));
                 if (value != null) {
-                    result = toData(value);
-                    record = mapService.createRecord(name, dataKey, result, -1);
+                    record = mapService.createRecord(name, dataKey, value, -1);
                     records.put(dataKey, record);
                 }
             }
         } else {
-            record.access();
-            result = record.getValueData();
+            accessRecord(record);
+            value = record.getValue();
         }
 //        check if record has expired or removed but waiting delay millis
         if (record != null && record.getState().isExpired()) {
             return null;
         }
-        return result;
+        return mapService.toData(value);
     }
 
     public void put(Map.Entry<Data, Data> entry) {
         Data dataKey = entry.getKey();
-        Data dataValue = entry.getValue();
+        Data value = entry.getValue();
         Record record = records.get(dataKey);
-        if(record == null){
-            record = mapService.createRecord(name, dataKey, dataValue, -1);
-            records.put(dataKey, record);
-        }
-        else {
-            record.access();
-            record.setValueData(entry.getValue());
-        }
-    }
-
-    public Data put(Data dataKey, Data dataValue, long ttl) {
-        Record record = records.get(dataKey);
-        Data oldValueData = null;
         if (record == null) {
-            if (mapInfo.getStore() != null) {
-                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
-                oldValueData = toData(oldValue);
-            }
-            record = mapService.createRecord(name, dataKey, dataValue, ttl);
-            int timeToLiveSeconds = mapInfo.getMapConfig().getTimeToLiveSeconds() * 1000;
-            if (ttl <= 0 && timeToLiveSeconds > 0) {
-                record.getState().updateTtlExpireTime(timeToLiveSeconds);
-                mapService.scheduleOperation(name, dataKey, timeToLiveSeconds);
-            }
-            int maxIdleSeconds = mapInfo.getMapConfig().getMaxIdleSeconds();
-            if (maxIdleSeconds > 0) {
-                record.getState().updateIdleExpireTime(maxIdleSeconds);
-                mapService.scheduleOperation(name, dataKey, maxIdleSeconds);
-            }
+            record = mapService.createRecord(name, dataKey, value, -1);
             records.put(dataKey, record);
         } else {
-            record.access();
-            oldValueData = record.getValueData();
-            record.setValueData(dataValue);
+            setRecordValue(record, entry.getValue());
         }
-
-        if (ttl > 0) {
-            record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, ttl);
-        }
-        mapStoreWrite(record);
-        return oldValueData;
     }
 
+    public Data put(Data dataKey, Data value, long ttl) {
+        Record record = records.get(dataKey);
+        Object oldValue = null;
+        if (record == null) {
+            if (mapInfo.getStore() != null) {
+                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
+            }
+            record = mapService.createRecord(name, dataKey, value, ttl);
+            records.put(dataKey, record);
+        } else {
+            oldValue = record.getValue();
+            setRecordValue(record, value);
+            updateTtl(record, ttl);
+        }
+        mapStoreWrite(record);
+        return mapService.toData(oldValue);
+    }
+
+    public Set<Data> getRemovedDelayedKeys() {
+        return removedDelayedKeys;
+    }
+
+    public Data replace(Data dataKey, Data value) {
+        Record record = records.get(dataKey);
+        Object oldValue = null;
+        if (record != null) {
+            oldValue = record.getValue();
+            setRecordValue(record, value);
+        } else {
+            return null;
+        }
+        mapStoreWrite(record);
+        return mapService.toData(oldValue);
+    }
+
+    public boolean replace(Data dataKey, Data testValue, Data newValue) {
+        Record record = records.get(dataKey);
+        if (record == null)
+            return false;
+        Object recordValue = mapService.toObject(record.getValue());
+        if (recordValue != null && recordValue.equals(mapService.toObject(testValue))) {
+            setRecordValue(record, newValue);
+        } else {
+            return false;
+        }
+        mapStoreWrite(record);
+        return true;
+    }
+
+    public void set(Data dataKey, Data value, long ttl) {
+        Record record = records.get(dataKey);
+        if (record == null) {
+            record = mapService.createRecord(name, dataKey, value, ttl);
+            records.put(dataKey, record);
+        } else {
+            setRecordValue(record, value);
+            updateTtl(record, ttl);
+        }
+        mapStoreWrite(record);
+    }
+
+    public void putTransient(Data dataKey, Data value, long ttl) {
+        Record record = records.get(dataKey);
+        if (record == null) {
+            record = mapService.createRecord(name, dataKey, value, ttl);
+            records.put(dataKey, record);
+        } else {
+            setRecordValue(record, value);
+            updateTtl(record, ttl);
+        }
+    }
+
+    public boolean tryPut(Data dataKey, Data value, long ttl) {
+        Record record = records.get(dataKey);
+        if (record == null) {
+            record = mapService.createRecord(name, dataKey, value, ttl);
+            records.put(dataKey, record);
+        } else {
+            setRecordValue(record, value);
+            updateTtl(record, ttl);
+        }
+        mapStoreWrite(record);
+        return true;
+    }
+
+    public Data putIfAbsent(Data dataKey, Data value, long ttl) {
+        Record record = records.get(dataKey);
+        Object oldValue = null;
+        if (record == null) {
+            if (mapInfo.getStore() != null) {
+                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
+                if (oldValue != null) {
+                    record = mapService.createRecord(name, dataKey, oldValue, -1);
+                    records.put(dataKey, record);
+                }
+            }
+        } else {
+            accessRecord(record);
+            oldValue = record.getValue();
+        }
+
+        if (oldValue == null) {
+            record = mapService.createRecord(name, dataKey, value, ttl);
+            records.put(dataKey, record);
+            updateTtl(record, ttl);
+            mapStoreWrite(record);
+        }
+        return mapService.toData(oldValue);
+    }
+
+    private void accessRecord(Record record) {
+        record.access();
+        int maxIdleSeconds = mapInfo.getMapConfig().getMaxIdleSeconds();
+        if (maxIdleSeconds > 0) {
+            record.getState().updateIdleExpireTime(maxIdleSeconds);
+            mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds);
+        }
+    }
 
     private void mapStoreWrite(Record record) {
         if (mapInfo.getStore() != null) {
             long writeDelayMillis = mapInfo.getWriteDelayMillis();
             if (writeDelayMillis <= 0) {
-                mapInfo.getStore().store(toObject(record.getKey()), record.getValue());
+                mapInfo.getStore().store(mapService.toObject(record.getKey()), record.getValue());
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
@@ -323,7 +390,7 @@ public class DefaultRecordStore implements RecordStore {
         if (mapInfo.getStore() != null) {
             long writeDelayMillis = mapInfo.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
-                mapInfo.getStore().delete(toObject(record.getKey()));
+                mapInfo.getStore().delete(mapService.toObject(record.getKey()));
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
@@ -334,116 +401,20 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    public Set<Data> getRemovedDelayedKeys() {
-        return removedDelayedKeys;
-    }
-
-    public Data replace(Data dataKey, Data dataValue) {
-        Record record = records.get(dataKey);
-        Data oldValueData = null;
-        if (record != null) {
-            record.access();
-            oldValueData = record.getValueData();
-            record.setValueData(dataValue);
-        } else {
-            return null;
-        }
-        mapStoreWrite(record);
-        return oldValueData;
-    }
-
-    public boolean replace(Data dataKey, Data oldValue, Data newValue) {
-        Record record = records.get(dataKey);
-        boolean replaced = false;
-        if(record == null)
-            return false;
-        Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
-        if (recordValue != null && recordValue.equals(toObject(oldValue))) {
-            record.access();
-            record.setValueData(newValue);
-            replaced = true;
-        } else {
-            return false;
-        }
-        mapStoreWrite(record);
-        return replaced;
-    }
-
-    public void set(Data dataKey, Data dataValue, long ttl) {
-        Record record = records.get(dataKey);
-        if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl);
-            records.put(dataKey, record);
-        } else {
-            record.access();
-            record.setValueData(dataValue);
-        }
-
+    private void updateTtl(Record record, long ttl) {
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, ttl);
-        }
-
-        mapStoreWrite(record);
-    }
-
-    public void putTransient(Data dataKey, Data dataValue, long ttl) {
-        Record record = records.get(dataKey);
-        if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl);
-            records.put(dataKey, record);
-        } else {
-            record.access();
-            record.setValueData(dataValue);
-        }
-
-        if (ttl > 0) {
-            record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, ttl);
+            mapService.scheduleOperation(name, record.getKey(), ttl);
         }
     }
 
-    public boolean tryPut(Data dataKey, Data dataValue, long ttl) {
-        Record record = records.get(dataKey);
-        if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl);
-            records.put(dataKey, record);
-        } else {
-            record.access();
-            record.setValueData(dataValue);
-        }
-
-        if (ttl > 0) {
-            record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, dataKey, ttl);
-        }
-        mapStoreWrite(record);
-        return true;
+    public void setRecordValue(Record record, Object value) {
+        accessRecord(record);
+        if (record instanceof DataRecord)
+            ((DataRecord) record).setValue(mapService.toData(value));
+        else if (record instanceof ObjectRecord)
+            ((ObjectRecord) record).setValue(mapService.toObject(value));
     }
 
-    public Data putIfAbsent(Data dataKey, Data dataValue, long ttl) {
-        Record record = records.get(dataKey);
-        Data oldValueData = null;
-        boolean absent = true;
-        if (record == null) {
-            if (mapInfo.getStore() != null) {
-                Object oldValue = mapInfo.getStore().load(toObject(dataKey));
-                oldValueData = toData(oldValue);
-                absent = oldValueData == null;
-            }
-            if (absent) {
-                record = mapService.createRecord(name, dataKey, dataValue, ttl);
-                records.put(dataKey, record);
-                if (ttl > 0) {
-                    record.getState().updateTtlExpireTime(ttl);
-                    mapService.scheduleOperation(name, dataKey, ttl);
-                }
-                mapStoreWrite(record);
-            }
-        } else {
-            record.access();
-            oldValueData = record.getValueData();
-        }
-        return oldValueData;
-    }
+  
 }

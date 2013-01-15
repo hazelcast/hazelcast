@@ -48,7 +48,7 @@ public class PutBackupOperation extends AbstractNamedKeyBasedOperation implement
             record = mapService.createRecord(name, dataKey, dataValue, ttl);
             recordStore.getRecords().put(dataKey, record);
         } else {
-            record.setValueData(dataValue);
+            recordStore.setRecordValue(record, dataValue);
         }
     }
 

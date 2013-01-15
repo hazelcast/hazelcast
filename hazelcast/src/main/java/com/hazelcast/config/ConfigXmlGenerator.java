@@ -207,6 +207,7 @@ public class ConfigXmlGenerator {
         final Collection<MapConfig> mCfgs = config.getMapConfigs().values();
         for (MapConfig m : mCfgs) {
             xml.append("<map name=\"").append(m.getName()).append("\">");
+            xml.append("<record-type>").append(m.getRecordType()).append("</record-type>");
             xml.append("<backup-count>").append(m.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(m.getAsyncBackupCount()).append("</async-backup-count>");
             xml.append("<time-to-live-seconds>").append(m.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
@@ -215,7 +216,6 @@ public class ConfigXmlGenerator {
             xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy()).append("\">").append(m.getMaxSizeConfig().getSize()).append("</max-size>");
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
             xml.append("<merge-policy>").append(m.getMergePolicy()).append("</merge-policy>");
-            xml.append("<cache-value>").append(m.isCacheValue()).append("</cache-value>");
             xml.append("<read-backup-data>").append(m.isReadBackupData()).append("</read-backup-data>");
             if (m.getMapStoreConfig() != null) {
                 final MapStoreConfig s = m.getMapStoreConfig();

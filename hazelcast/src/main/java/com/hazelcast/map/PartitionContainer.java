@@ -93,10 +93,8 @@ public class PartitionContainer {
                     record = mapService.createRecord(txnLogItem.getName(), key, txnLogItem.getValue(), -1);
                     recordStore.getRecords().put(key, record);
                 } else {
-                    record.setValueData(txnLogItem.getValue());
+                    recordStore.setRecordValue(record, txnLogItem.getValue());
                 }
-//         777       record.setActive(true);
-//                record.setDirty(true);
             }
         }
     }

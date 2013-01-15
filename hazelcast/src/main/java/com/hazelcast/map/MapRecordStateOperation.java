@@ -56,25 +56,24 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
                 if (store != null) {
                     Object value = record.getValue();
                     if (value == null)
-                        value = nodeEngine.getSerializationService().toObject(record.getValueData());
-                    store.store(nodeEngine.getSerializationService().toObject(dataKey), value);
+                        value = mapService.toObject(record.getValue());
+                    store.store(mapService.toObject(dataKey), value);
                 }
                 record.getState().resetStoreTime();
             }
 
             if (record.getState().isExpired()) {
-                System.out.println("!!!!! expired");
                 record.getState().resetExpiration();
-                dataValue = record.getValueData();
+                dataValue = mapService.toData(record.getValue());
                 recordStore.evict(dataKey);
                 evicted = true;
             }
-        } else if (recordStore.getRemovedDelayedKeys().contains(record.getKey())) {
+        } else if (recordStore.getRemovedDelayedKeys().contains(dataKey)) {
             MapStore store = recordStore.getMapInfo().getStore();
             if (store != null) {
-                store.delete(nodeEngine.getSerializationService().toObject(record.getKey()));
+                store.delete(nodeEngine.getSerializationService().toObject(dataKey));
             }
-            recordStore.getRemovedDelayedKeys().remove(record.getKey());
+            recordStore.getRemovedDelayedKeys().remove(dataKey);
         }
     }
 

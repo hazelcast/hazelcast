@@ -16,6 +16,7 @@
 
 package com.hazelcast.examples;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -57,7 +58,9 @@ public class SimpleMapTest {
         this.getPercentage = getPercentage;
         this.putPercentage = putPercentage;
         this.load = load;
-        instance = Hazelcast.newHazelcastInstance(null);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setRecordType("OBJECT");
+        instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
     }
 

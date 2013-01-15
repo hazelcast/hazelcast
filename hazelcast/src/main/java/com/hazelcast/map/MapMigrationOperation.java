@@ -70,8 +70,9 @@ public class MapMigrationOperation extends AbstractOperation {
             RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
             for (Entry<Data, Record> entry : dataMap.entrySet()) {
                 final Record recordEntry = entry.getValue();
-                DefaultRecord record = new DefaultRecord(  mapService.nextId(),
-                        recordEntry.getKey(), recordEntry.getValueData());
+                Record record = mapService.createRecord(mapName, recordEntry.getKey(), recordEntry.getValue(), -1);
+                record.setState(recordEntry.getState());
+                record.setStats(recordEntry.getStats());
                 recordStore.getRecords().put(entry.getKey(), record);
             }
         }
@@ -90,11 +91,10 @@ public class MapMigrationOperation extends AbstractOperation {
             int mapSize = in.readInt();
             Map<Data, Record> map = new HashMap<Data, Record>(mapSize);
             for (int j = 0; j < mapSize; j++) {
-                Data data = new Data();
-                data.readData(in);
-                Record recordEntry = new DefaultRecord();
-                recordEntry.readData(in);
-                map.put(data, recordEntry);
+                Data key = new Data();
+                key.readData(in);
+                Record recordEntry = in.readObject();
+                map.put(key, recordEntry);
             }
             data.put(name, map);
         }
@@ -109,7 +109,7 @@ public class MapMigrationOperation extends AbstractOperation {
             out.writeInt(map.size());
             for (Entry<Data, Record> entry : map.entrySet()) {
                 entry.getKey().writeData(out);
-                entry.getValue().writeData(out);
+                out.writeObject(entry.getValue());
             }
         }
     }

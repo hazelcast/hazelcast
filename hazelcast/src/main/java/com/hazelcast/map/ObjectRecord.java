@@ -16,28 +16,22 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.AbstractRecord;
-import com.hazelcast.map.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-public class ObjectRecord extends AbstractRecord {
+public class ObjectRecord extends AbstractRecord implements Record<Object> {
 
     private volatile Object value;
 
-    public ObjectRecord(long id, Data keyData, Object value, long ttl, long maxIdleMillis) {
-        super(id, keyData);
+    public ObjectRecord(Data keyData, Object value) {
+        super(keyData);
         this.value = value;
     }
 
-    public Data getValueData() {
-        return null;
-    }
-
-    public void setValueData(Data dataValue) {
+    public ObjectRecord() {
     }
 
     public Object getValue() {
@@ -45,7 +39,7 @@ public class ObjectRecord extends AbstractRecord {
     }
 
     public Object setValue(Object o) {
-        Record old = ((Record) o).clone();
+        Object old = null;
         value = o;
         return old;
     }
@@ -53,15 +47,16 @@ public class ObjectRecord extends AbstractRecord {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        keyData.writeData(out);
-        getValueData().writeData(out);
+        out.writeObject(value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        keyData = new Data();
-        keyData.readData(in);
         value = in.readObject();
+    }
+
+    public int getId() {
+        return DataSerializerMapHook.OBJECT_RECORD;
     }
 }

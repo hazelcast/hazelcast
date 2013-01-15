@@ -662,6 +662,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(n).trim();
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
+            } else if ("record-type".equals(nodeName)) {
+                mapConfig.setRecordType(value);
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
@@ -711,8 +713,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
-            } else if ("cache-value".equals(nodeName)) {
-                mapConfig.setCacheValue(checkTrue(value));
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
@@ -910,7 +910,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             if ("serializer".equals(cleanNodeName(child))) {
                 SerializerConfig serializerConfig = new SerializerConfig();
-                serializerConfig.setClassName(getValue(node)) ;
+                serializerConfig.setClassName(getValue(node));
 
                 final NamedNodeMap atts = node.getAttributes();
                 final Node globalNode = atts.getNamedItem("global");

@@ -16,55 +16,49 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.AbstractRecord;
-import com.hazelcast.map.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-public class DataRecord extends AbstractRecord implements Record {
+public class DataRecord extends AbstractRecord implements Record<Data> {
 
-    private volatile Data valueData;
+    private volatile Data value;
 
-    public DataRecord(long id, Data keyData, Data valueData) {
-        super(id, keyData);
-        this.valueData = valueData;
+    public DataRecord(Data keyData, Data value) {
+        super(keyData);
+        this.value = value;
     }
 
-    public Data getValueData() {
-        return valueData;
+    public DataRecord() {
     }
 
-    public void setValueData(Data dataValue) {
-        this.valueData = valueData;
+    public Data getValue() {
+        return value;
     }
 
-    public Object getValue() {
-//        return IOUtil.toObject(valueData);
-        return null;
-    }
-
-    public Object setValue(Object o) {
-        Object old = getValue();
-//        valueData = IOUtil.toData(o);
+    public Data setValue(Data o) {
+        // todo clone old value
+        Data old = null;
+        this.value = o;
         return old;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        keyData.writeData(out);
-        valueData.writeData(out);
+        value.writeData(out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        keyData = new Data();
-        keyData.readData(in);
-        valueData = new Data();
-        valueData.readData(in);
+        value = new Data();
+        value.readData(in);
+    }
+
+    public int getId() {
+        return DataSerializerMapHook.DATA_RECORD;
     }
 }

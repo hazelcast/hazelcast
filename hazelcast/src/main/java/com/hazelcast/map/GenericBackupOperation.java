@@ -64,28 +64,26 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         Address caller = getCaller();
-        RecordStore mapPartition = mapService.getRecordStore(partitionId, name);
+        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         if (backupOpType == BackupOpType.PUT) {
-            Record record = mapPartition.getRecords().get(dataKey);
+            Record record = recordStore.getRecords().get(dataKey);
             if (record == null) {
                 record = mapService.createRecord(name, dataKey, dataValue, -1);
-                mapPartition.getRecords().put(dataKey, record);
+                recordStore.getRecords().put(dataKey, record);
             } else {
-                record.setValueData(dataValue);
+                recordStore.setRecordValue(record, dataValue);
             }
-//  777          record.setActive(true);
-//  777          record.setDirty(true);
         } else if (backupOpType == BackupOpType.REMOVE) {
-            Record record = mapPartition.getRecords().remove(dataKey);
+            Record record = recordStore.getRecords().remove(dataKey);
             if (record != null) {
 //                record.markRemoved();
             }
         } else {
             if (backupOpType == BackupOpType.LOCK) {
-                LockInfo lock = mapPartition.getOrCreateLock(getKey());
+                LockInfo lock = recordStore.getOrCreateLock(getKey());
                 lock.lock(caller, threadId, ttl);
             } else if (backupOpType == BackupOpType.UNLOCK) {
-                LockInfo lock = mapPartition.getLock(getKey());
+                LockInfo lock = recordStore.getLock(getKey());
                 if (lock != null) {
                     lock.unlock(caller, threadId);
                 }

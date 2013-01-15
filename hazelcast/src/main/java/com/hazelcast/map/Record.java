@@ -18,22 +18,23 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
 
-public interface Record extends DataSerializable, Map.Entry, Cloneable {
-
-    long getId();
-
-    Data getValueData();
-
-    void setValueData(Data dataValue);
+public interface Record<V> extends IdentifiedDataSerializable, Map.Entry<Data,V>, Cloneable {
 
     Data getKey();
 
     Record clone();
 
     RecordState getState();
+
+    void setState(RecordState state);
+
+    RecordStats getStats();
+
+    void setStats(RecordStats stats);
 
     void access();
 }

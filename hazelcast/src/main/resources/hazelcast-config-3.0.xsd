@@ -45,6 +45,7 @@
     <xs:element name="map">
         <xs:complexType>
             <xs:sequence>
+                <xs:element ref="record-type" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="backup-count" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="async-backup-count" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="time-to-live-seconds" minOccurs="0" maxOccurs="1"/>
@@ -53,7 +54,6 @@
                 <xs:element ref="max-size" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="eviction-percentage" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="merge-policy" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="cache-value" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="read-backup-data" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="map-store" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="near-cache" minOccurs="0" maxOccurs="1"/>
