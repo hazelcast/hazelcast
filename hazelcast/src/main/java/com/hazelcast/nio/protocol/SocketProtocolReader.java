@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.nio.protocol;
@@ -26,9 +25,9 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.nio.Protocol.NOREPLY;
-//    COMMAND <arg1>É<argN> \r\n
-//    #M  <s1>É<sM> \r\n
-//    B1B2É. BM
+//    COMMAND <arg1>ï¿½<argN> \r\n
+//    #M  <s1>ï¿½<sM> \r\n
+//    B1B2ï¿½. BM
 
 public class SocketProtocolReader implements SocketReader {
 
