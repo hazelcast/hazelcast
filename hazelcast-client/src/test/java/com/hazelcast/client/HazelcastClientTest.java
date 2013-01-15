@@ -61,13 +61,13 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         final IMap<Integer, Integer> instance = getHazelcastClient().getMap("addDistributedObjectListener");
         DistributedObjectListener listener = new DistributedObjectListener() {
 
-            public void instanceDestroyed(DistributedObjectEvent event) {
+            public void distributedObjectDestroyed(DistributedObjectEvent event) {
                 assertEquals(DistributedObjectEvent.EventType.DESTROYED, event.getEventType());
                 assertEquals(instance, event.getDistributedObject());
                 destroyedLatch.countDown();
             }
 
-            public void instanceCreated(DistributedObjectEvent event) {
+            public void distributedObjectCreated(DistributedObjectEvent event) {
                 assertEquals(DistributedObjectEvent.EventType.CREATED, event.getEventType());
                 IMap<Integer, Integer> map = (IMap<Integer, Integer>) event.getDistributedObject();
                 assertEquals(instance.getName(), map.getName());

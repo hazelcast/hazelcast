@@ -75,12 +75,12 @@ public class Sample implements InstanceListener {
         }
     }
 
-    public void instanceCreated(InstanceEvent event) {
+    public void distributedObjectCreated(InstanceEvent event) {
         Instance instance = event.getInstance();
         System.out.println("Created " + instance.getInstanceType() + "," + instance.getId());
     }
 
-    public void instanceDestroyed(InstanceEvent event) {
+    public void distributedObjectDestroyed(InstanceEvent event) {
         Instance instance = event.getInstance();
         System.out.println("Destroyed " + instance.getInstanceType() + "," + instance.getId());
     }

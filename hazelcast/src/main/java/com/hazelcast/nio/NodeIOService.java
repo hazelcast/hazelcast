@@ -122,7 +122,7 @@ public class NodeIOService implements IOService {
     }
 
     public void removeEndpoint(final Address endPoint) {
-        nodeEngine.getExecutionService().execute(new Runnable() {
+        nodeEngine.getExecutionService().execute("io", new Runnable() {
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
@@ -191,7 +191,7 @@ public class NodeIOService implements IOService {
 
     public void disconnectExistingCalls(final Address deadEndpoint) {
         if (deadEndpoint != null) {
-            nodeEngine.getExecutionService().execute(new Runnable() {
+            nodeEngine.getExecutionService().execute("io", new Runnable() {
                 public void run() {
                     nodeEngine.onMemberDisconnect(deadEndpoint);
                 }
@@ -221,7 +221,7 @@ public class NodeIOService implements IOService {
     }
 
     public void executeAsync(final Runnable runnable) {
-        nodeEngine.getExecutionService().execute(runnable);
+        nodeEngine.getExecutionService().execute("io", runnable);
     }
 
     public Data toData(Object obj) {

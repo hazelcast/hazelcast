@@ -21,6 +21,7 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.AbstractServiceProxy;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.HashSet;
@@ -31,13 +32,11 @@ import java.util.Set;
 /**
  * @ali 1/2/13
  */
-public abstract class MultiMapProxySupport {
+public abstract class MultiMapProxySupport extends AbstractServiceProxy {
 
     protected final String name;
 
     protected final CollectionService service;
-
-    protected final NodeEngine nodeEngine;
 
     protected final MultiMapConfig config;
 
@@ -45,11 +44,12 @@ public abstract class MultiMapProxySupport {
 
     protected MultiMapProxySupport(String name, CollectionService service, NodeEngine nodeEngine,
                                    CollectionProxyId proxyId, MultiMapConfig config) {
+        super(nodeEngine);
         this.name = name;
         this.service = service;
-        this.nodeEngine = nodeEngine;
         this.proxyId = proxyId;
         this.config = new MultiMapConfig(config);
+
     }
 
     public Object createNew() {
@@ -178,16 +178,28 @@ public abstract class MultiMapProxySupport {
         return service.process(name, dataKey, new UnlockEntryProcessor(config), proxyId);
     }
 
-    protected Data getInternal(Data dataKey, int index){
+    protected Data getInternal(Data dataKey, int index) {
         return service.processData(name, dataKey, new GetEntryProcessor(config, index), proxyId);
     }
 
-    protected Boolean containsInternalList(Data dataKey, Data dataValue){
+    protected Boolean containsInternalList(Data dataKey, Data dataValue) {
         return service.process(name, dataKey, new ContainsEntryProcessor(config.isBinary(), dataValue), proxyId);
     }
 
-    protected Boolean containsAllInternal(Data dataKey, Set<Data> dataSet){
-        return service.process(name, dataKey, new ContainsAllEntryProcessor(config.isBinary(), dataSet),proxyId);
+    protected Boolean containsAllInternal(Data dataKey, Set<Data> dataSet) {
+        return service.process(name, dataKey, new ContainsAllEntryProcessor(config.isBinary(), dataSet), proxyId);
+    }
+
+    public Object getId() {
+        return name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getServiceName() {
+        return CollectionService.COLLECTION_SERVICE_NAME;
     }
 
 }

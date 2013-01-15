@@ -26,5 +26,6 @@ import com.hazelcast.core.DistributedObject;
 
 public interface ServiceProxy extends DistributedObject {
 
+    String getServiceName();
 
 }

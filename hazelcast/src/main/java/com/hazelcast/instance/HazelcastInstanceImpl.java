@@ -33,12 +33,12 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceProxy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
@@ -52,9 +52,9 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public final Node node;
 
-    final ILogger logger;
+    final NodeEngineImpl nodeEngine;
 
-    final List<DistributedObjectListener> distributedObjectListeners = new CopyOnWriteArrayList<DistributedObjectListener>();
+    final ILogger logger;
 
     final String name;
 
@@ -78,6 +78,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         registerConfigSerializers(config);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         node = new Node(this, config);
+        nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
         lifecycleService.fireLifecycleEvent(STARTING);
         proxyFactory = node.initializer.getProxyFactory();
@@ -157,7 +158,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Collection<DistributedObject> getDistributedObjects() {
-        return node.nodeEngine.getProxyService().getAllProxies();
+        return nodeEngine.getProxyService().getAllProxies();
     }
 
     public Config getConfig() {
@@ -182,7 +183,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, Object id) {
         checkActive();
-        return (S) node.nodeEngine.getProxyService().getProxy(serviceClass, id);
+        return (S) nodeEngine.getProxyService().getProxy(serviceClass, id);
     }
 
     private void checkActive() {
@@ -193,7 +194,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public <S extends ServiceProxy> S getServiceProxy(final String serviceName, Object id) {
         checkActive();
-        return (S) node.nodeEngine.getProxyService().getProxy(serviceName, id);
+        return (S) nodeEngine.getProxyService().getProxy(serviceName, id);
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {
@@ -205,11 +206,13 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        distributedObjectListeners.add(distributedObjectListener);
+        final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
+        proxyService.addProxyListener(distributedObjectListener);
     }
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        distributedObjectListeners.remove(distributedObjectListener);
+        final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
+        proxyService.removeProxyListener(distributedObjectListener);
     }
 
     private void registerConfigSerializers(Config config) throws Exception {

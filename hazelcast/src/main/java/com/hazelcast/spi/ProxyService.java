@@ -14,13 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.spi;
 
-import java.util.EventListener;
+import com.hazelcast.core.DistributedObject;
 
-public interface DistributedObjectListener extends EventListener {
+import java.util.Collection;
 
-    void distributedObjectCreated(DistributedObjectEvent event);
+/**
+ * @mdogan 1/14/13
+ */
+public interface ProxyService extends CoreService {
 
-    void distributedObjectDestroyed(DistributedObjectEvent event);
+    ServiceProxy getProxy(String serviceName, Object proxyId);
+
+    ServiceProxy getProxy(Class<? extends RemoteService> serviceClass, Object proxyId);
+
+//    ServiceProxy getProxy(String serviceName, Object proxyId);
+
+    void destroyProxy(String serviceName, Object proxyId);
+
+    Collection<DistributedObject> getProxies(String serviceName);
+
+    Collection<DistributedObject> getAllProxies();
 }

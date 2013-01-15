@@ -156,6 +156,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         return new DataQueueProxy(String.valueOf(proxyId), this, nodeEngine);
     }
 
+    public void destroyDistributedObject(Object objectId) {
+
+    }
+
     public void addItemListener(String name, ItemListener listener, boolean includeValue){
         ListenerKey listenerKey = new ListenerKey(listener, name);
         String id = eventRegistrations.putIfAbsent(listenerKey, "tempId");

@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -24,9 +26,13 @@ import java.util.concurrent.TimeUnit;
  */
 public interface ExecutionService {
 
-    void execute(Runnable command);
+    void execute(String name, Runnable command);
 
-    Future<?> submit(Runnable task);
+    Future<?> submit(String name, Runnable task);
+
+    <T> Future<T> submit(String name, Callable<T> task);
+
+    ExecutorService getExecutorService(String name);
 
     void schedule(Runnable command, long delay, TimeUnit unit);
 

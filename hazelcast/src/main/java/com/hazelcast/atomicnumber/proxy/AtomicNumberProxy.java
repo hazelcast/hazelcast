@@ -19,6 +19,7 @@ package com.hazelcast.atomicnumber.proxy;
 import com.hazelcast.atomicnumber.*;
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
+import com.hazelcast.spi.AbstractServiceProxy;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceProxy;
@@ -26,17 +27,15 @@ import com.hazelcast.spi.ServiceProxy;
 import java.util.concurrent.Future;
 
 // author: sancar - 21.12.2012
-public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
+public class AtomicNumberProxy extends AbstractServiceProxy implements ServiceProxy, AtomicNumber {
 
     private final String name;
-    private final NodeEngine nodeEngine;
     private final AtomicNumberService atomicNumberService;
     private final int partitionId;
 
     public AtomicNumberProxy(String name, AtomicNumberService atomicNumberService, NodeEngine nodeEngine) {
-
+        super(nodeEngine);
         this.name = name;
-        this.nodeEngine = nodeEngine;
         this.atomicNumberService = atomicNumberService;
         this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
     }
@@ -126,10 +125,6 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
         return null;
     }
 
-    public void destroy() {
-
-    }
-
     public Object getId() {
         return name;
     }
@@ -138,4 +133,7 @@ public class AtomicNumberProxy implements ServiceProxy, AtomicNumber {
         return partitionId;
     }
 
+    public String getServiceName() {
+        return AtomicNumberService.NAME;
+    }
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -81,7 +80,7 @@ public class LockClientProxy implements ILock {
     }
 
     public Object getId() {
-        return new HazelcastInstanceFactory.ProxyKey("lock", lockObject);
+        return null;
     }
 
     public String getName() {

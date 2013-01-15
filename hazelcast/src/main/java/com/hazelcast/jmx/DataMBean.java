@@ -116,10 +116,10 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Distr
         // Required by MBeanRegistration interface
     }
 
-    public void instanceCreated(DistributedObjectEvent event) {
+    public void distributedObjectCreated(DistributedObjectEvent event) {
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Received created notification {0} {1}",
-                    new String[]{event.getDistributedObject().getName(), event.getDistributedObject().toString()});
+                    new String[]{event.getServiceName(), event.getObjectId().toString()});
         }
         if (creationStats != null) {
             creationStats.addEvent();
@@ -127,7 +127,7 @@ public class DataMBean extends AbstractMBean<HazelcastInstance> implements Distr
         registerInstance(event.getDistributedObject());
     }
 
-    public void instanceDestroyed(DistributedObjectEvent event) {
+    public void distributedObjectDestroyed(DistributedObjectEvent event) {
         if (logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "Received destroyed notification " + event.getDistributedObject().toString());
         }

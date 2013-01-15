@@ -42,6 +42,10 @@ public class MapInfo {
         }
     }
 
+    public String getName() {
+        return name;
+    }
+
     public int getBackupCount() {
         return mapConfig.getBackupCount();
     }

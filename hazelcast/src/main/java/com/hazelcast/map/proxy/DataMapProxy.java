@@ -213,15 +213,4 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     public Data executeOnKey(Data key, EntryProcessor entryProcessor) {
         return executeOnKeyInternal(key, entryProcessor);
     }
-
-    public Object getId() {
-        return name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void destroy() {
-    }
 }

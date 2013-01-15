@@ -153,15 +153,15 @@ public class Data implements IdentifiedDataSerializable {
         return true;
     }
 
+    public int getId() {
+        return ID;
+    }
+
     @Override
     public String toString() {
         return "Data{" +
                 "type=" + type + ", " +
                 "partitionHash=" + partitionHash +
                 "} size= " + size();
-    }
-
-    public int getId() {
-        return ID;
     }
 }

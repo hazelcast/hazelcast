@@ -39,6 +39,8 @@ public interface NodeEngine {
 
     SerializationService getSerializationService();
 
+    ProxyService getProxyService();
+
     Address getThisAddress();
 
     int getPartitionId(Data key);

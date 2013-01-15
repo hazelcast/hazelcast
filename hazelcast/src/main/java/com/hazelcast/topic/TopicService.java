@@ -63,6 +63,10 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return createProxy(proxyId);
     }
 
+    public void destroyDistributedObject(Object objectId) {
+
+    }
+
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
         Message message = new Message(topicEvent.name, nodeEngine.toObject(topicEvent.data));

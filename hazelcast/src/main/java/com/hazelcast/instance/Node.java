@@ -162,8 +162,6 @@ public class Node {
         clusterService = new ClusterService(this);
         partitionService = new PartitionService(this);
         clientCommandService = new ClientCommandService(this);
-//        clientHandlerService = new ClientHandlerService(this);
-//        clientService = new ClientServiceImpl(concurrentMapManager);
         textCommandService = new TextCommandServiceImpl(this);
         clusterService.addMember(localMember);
         initializer.printNodeInfo(this);

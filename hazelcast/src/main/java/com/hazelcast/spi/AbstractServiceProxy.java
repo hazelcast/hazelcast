@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.spi;
 
-import java.util.EventListener;
+/**
+ * @mdogan 1/14/13
+ */
+public abstract class AbstractServiceProxy implements ServiceProxy {
 
-public interface DistributedObjectListener extends EventListener {
+    protected final NodeEngine nodeEngine;
 
-    void distributedObjectCreated(DistributedObjectEvent event);
+    protected AbstractServiceProxy(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
 
-    void distributedObjectDestroyed(DistributedObjectEvent event);
+    public final void destroy() {
+        nodeEngine.getProxyService().destroyProxy(getServiceName(), getId());
+    }
 }

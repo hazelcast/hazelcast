@@ -16,37 +16,61 @@
 
 package com.hazelcast.core;
 
-import java.util.EventObject;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class DistributedObjectEvent extends EventObject {
+import java.io.IOException;
+
+public class DistributedObjectEvent implements DataSerializable, HazelcastInstanceAware {
 
     public enum EventType {
-        CREATED(0), DESTROYED(2);
-        private int id;
-
-        EventType(int i) {
-            this.id = i;
-        }
-
-        public int getId() {
-            return id;
-        }
+        CREATED, DESTROYED
     }
 
-    private final EventType eventType;
-    private final DistributedObject distributedObject;
+    private EventType eventType;
+    private String serviceName;
+    private Object objectId;
+    private transient HazelcastInstance hazelcastInstance;
 
-    public DistributedObjectEvent(EventType eventType, DistributedObject distributedObject) {
-        super(distributedObject);
+    public DistributedObjectEvent() {
+    }
+
+    public DistributedObjectEvent(EventType eventType, String serviceName, Object objectId) {
         this.eventType = eventType;
-        this.distributedObject = distributedObject;
+        this.serviceName = serviceName;
+        this.objectId = objectId;
+    }
+
+    public String getServiceName() {
+        return serviceName;
     }
 
     public EventType getEventType() {
         return eventType;
     }
 
+    public Object getObjectId() {
+        return objectId;
+    }
+
     public DistributedObject getDistributedObject() {
-        return distributedObject;
+        return hazelcastInstance != null ? hazelcastInstance.getServiceProxy(serviceName, objectId) : null;
+    }
+
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        this.hazelcastInstance = hazelcastInstance;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(eventType == EventType.CREATED);
+        out.writeUTF(serviceName);
+        out.writeObject(objectId);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        eventType = in.readBoolean() ? EventType.CREATED : EventType.DESTROYED;
+        serviceName = in.readUTF();
+        objectId = in.readObject();
     }
 }

@@ -101,6 +101,19 @@ final class OperationServiceImpl implements OperationService {
         executor.execute(new RemoteOperationProcessor(packet));
     }
 
+    /**
+     * Executes operation in operation executor pool.
+     * @param op
+     */
+    @PrivateApi
+    void executeOperation(final Operation op) {
+        executor.execute(new OperationExecutor(op));
+    }
+
+    /**
+     * Runs operation in caller thread.
+     * @param op
+     */
     public void runOperation(final Operation op) {
         final ThreadContext threadContext = ThreadContext.get();
         SpinLock partitionLock = null;
@@ -534,6 +547,18 @@ final class OperationServiceImpl implements OperationService {
         logger.log(Level.FINEST, "Stopping operation threads...");
         executor.shutdown();
         mapCalls.clear();
+    }
+
+    private class OperationExecutor implements Runnable {
+        private final Operation op;
+
+        private OperationExecutor(Operation op) {
+            this.op = op;
+        }
+
+        public void run() {
+            runOperation(op);
+        }
     }
 
     private class RemoteOperationProcessor implements Runnable {

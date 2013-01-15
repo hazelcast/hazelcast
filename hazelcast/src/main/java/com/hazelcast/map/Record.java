@@ -34,4 +34,6 @@ public interface Record extends DataSerializable, Map.Entry, Cloneable {
     Record clone();
 
     RecordState getState();
+
+    void access();
 }

@@ -142,45 +142,4 @@ public class HazelcastInstanceFactory {
             ManagementService.shutdown();
         }
     }
-
-    public static class ProxyKey  {
-        String name;
-        Object key;
-
-        public ProxyKey() {
-        }
-
-        public ProxyKey(String name, Object key) {
-            this.name = name;
-            this.key = key;
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ProxyKey pk = (ProxyKey) o;
-            return (name != null ? name.equals(pk.name) : pk.name == null)
-                    && (key != null ? key.equals(pk.key) : pk.key == null);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = name != null ? name.hashCode() : 0;
-            result = 31 * result + (key != null ? key.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "ProxyKey {name='" + name + "', key=" + key + '}';
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Object getKey() {
-            return key;
-        }
-    }
 }

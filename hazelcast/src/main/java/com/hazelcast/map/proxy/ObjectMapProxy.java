@@ -274,18 +274,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return nodeEngine.toObject(executeOnKeyInternal(nodeEngine.toData(key), entryProcessor));
     }
 
-    public Object getId() {
-        return name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void destroy() {
-        super.destroy();
-    }
-
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
         Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();

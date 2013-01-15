@@ -19,6 +19,7 @@ package com.hazelcast.queue.proxy;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.*;
+import com.hazelcast.spi.AbstractServiceProxy;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 
@@ -31,18 +32,17 @@ import java.util.concurrent.Future;
  * Date: 11/14/12
  * Time: 12:47 AM
  */
-abstract class QueueProxySupport {
+abstract class QueueProxySupport extends AbstractServiceProxy {
 
     final String name;
     final QueueService queueService;
-    final NodeEngine nodeEngine;
     final int partitionId;
     final QueueConfig config;
 
     QueueProxySupport(final String name, final QueueService queueService, NodeEngine nodeEngine) {
+        super(nodeEngine);
         this.name = name;
         this.queueService = queueService;
-        this.nodeEngine = nodeEngine;
         this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
         this.config = nodeEngine.getConfig().getQueueConfig(name);
     }
@@ -117,10 +117,6 @@ abstract class QueueProxySupport {
         }
     }
 
-    public void destroy() {
-        //TODO
-    }
-
     private <T> T invoke(QueueOperation operation) {
         try {
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.QUEUE_SERVICE_NAME, operation, getPartitionId()).build();
@@ -141,5 +137,15 @@ abstract class QueueProxySupport {
         }
     }
 
+    public final String getServiceName() {
+        return QueueService.QUEUE_SERVICE_NAME;
+    }
 
+    public final Object getId() {
+        return name;
+    }
+
+    public final String getName() {
+        return name;
+    }
 }
