@@ -22,7 +22,6 @@ import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Prefix;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
@@ -53,7 +52,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public String getName() {
-        return name.substring(Prefix.MULTIMAP.length());
+        return name;
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
@@ -187,7 +186,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public Set entrySet() {
         Set<Object> keySet = keySet();
-        return new LightMultiMapEntrySet<Object, Collection>(keySet, this, getInstanceType());
+        return new LightMultiMapEntrySet<Object, Collection>(keySet, this);
     }
 
     public boolean containsKey(Object key) {
@@ -224,10 +223,6 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         check(key);
         return protocolProxyHelper.doCommandAsInt(Command.MMVALUECOUNT, new String[]{getName()},
                 client.getSerializationService().toData(key));
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.MULTIMAP;
     }
 
     public void destroy() {

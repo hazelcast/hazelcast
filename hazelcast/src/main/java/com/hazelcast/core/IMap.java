@@ -66,7 +66,7 @@ import java.util.concurrent.TimeoutException;
  * @see java.util.concurrent.ConcurrentMap
  * @see java.util.IdentityHashMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, Instance {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
 
     /**
      * {@inheritDoc}

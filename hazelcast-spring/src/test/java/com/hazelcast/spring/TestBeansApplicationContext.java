@@ -53,7 +53,7 @@ public class TestBeansApplicationContext {
         Assert.assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
 
         HazelcastInstance hazelcast = Hazelcast.getAllHazelcastInstances().iterator().next();
-        Assert.assertEquals(2, hazelcast.getInstances().size());
+        Assert.assertEquals(2, hazelcast.getDistributedObjects().size());
     }
 
     @Test

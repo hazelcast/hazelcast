@@ -20,6 +20,7 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.AbstractServiceProxy;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.HashSet;
@@ -30,20 +31,18 @@ import java.util.Set;
 /**
  * @ali 1/2/13
  */
-public abstract class MultiMapProxySupport {
+public abstract class MultiMapProxySupport extends AbstractServiceProxy {
 
     final String name;
 
     final CollectionService service;
 
-    final NodeEngine nodeEngine;
-
     protected final MultiMapConfig config;
 
     protected MultiMapProxySupport(String name, CollectionService service, NodeEngine nodeEngine) {
+        super(nodeEngine);
         this.name = name;
         this.service = service;
-        this.nodeEngine = nodeEngine;
         config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(name));
     }
 
@@ -171,6 +170,18 @@ public abstract class MultiMapProxySupport {
 
     public Boolean unlockInternal(Data dataKey){
         return service.process(name, dataKey, new UnlockEntryProcessor(config));
+    }
+
+    public Object getId() {
+        return name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getServiceName() {
+        return CollectionService.COLLECTION_SERVICE_NAME;
     }
 
 }

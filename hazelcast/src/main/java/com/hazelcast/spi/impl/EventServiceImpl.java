@@ -32,7 +32,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.ConcurrentHashSet;
 
 import java.io.IOException;
 import java.util.*;
@@ -43,7 +42,7 @@ import java.util.logging.Level;
  * @mdogan 12/14/12
  */
 
-public class EventServiceImpl implements EventService {
+public class EventServiceImpl implements EventService, PostJoinAwareService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
     private final ILogger logger;
@@ -237,16 +236,7 @@ public class EventServiceImpl implements EventService {
         eventExecutorService.execute(new EventPacketProcessor(packet));
     }
 
-    /**
-     * Post join operations must be lock free; means no locks at all;
-     * no partition locks, no key-based locks, no service level locks!
-     *
-     * Post join operations should return response, at least a null response.
-     *
-     * Also making post-join operation a JoinOperation will help a lot.
-     */
-    @PrivateApi
-    Operation getPostJoinOperation() {
+    public PostJoinRegistrationOperation getPostJoinOperation() {
         final Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
             for (Registration reg : segment.registrationIdMap.values()) {
@@ -288,7 +278,7 @@ public class EventServiceImpl implements EventService {
         private Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
             Collection<Registration> listenerList = registrations.get(topic);
             if (listenerList == null && forceCreate) {
-                listenerList = new ConcurrentHashSet<Registration>();
+                listenerList = Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
                 Collection<Registration> current = registrations.putIfAbsent(topic, listenerList);
                 listenerList = current == null ? listenerList : current;
             }

@@ -36,6 +36,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.logging.Level;
 
 public class NodeEngineImpl implements NodeEngine {
@@ -43,8 +44,9 @@ public class NodeEngineImpl implements NodeEngine {
     private final Node node;
     private final ILogger logger;
     private final int partitionCount;
-    private final ServiceManager serviceManager;
 
+    final ProxyServiceImpl proxyService;
+    final ServiceManager serviceManager;
     final OperationServiceImpl operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
@@ -54,6 +56,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.node = node;
         logger = node.getLogger(NodeEngine.class.getName());
         partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
+        proxyService = new ProxyServiceImpl(this);
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
@@ -64,6 +67,7 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void start() {
         serviceManager.start();
+        proxyService.init();
     }
 
     public Cluster getCluster() {
@@ -76,6 +80,10 @@ public class NodeEngineImpl implements NodeEngine {
 
     public final int getPartitionId(Data key) {
         return node.partitionService.getPartitionId(key);
+    }
+
+    public final int getPartitionId(Object obj) {
+        return getPartitionId(toData(obj));
     }
 
     public PartitionInfo getPartitionInfo(int partitionId) {
@@ -116,15 +124,15 @@ public class NodeEngineImpl implements NodeEngine {
         return executionService;
     }
 
+    public ProxyService getProxyService() {
+        return proxyService;
+    }
+
     public Data toData(final Object object) {
-//        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-//        return IOUtil.toData(object);
         return node.serializationService.toData(object);
     }
 
     public Object toObject(final Object object) {
-//        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-//        return IOUtil.toObject(object);
         if (object instanceof Data) {
             return node.serializationService.toObject((Data) object);
         }
@@ -206,8 +214,24 @@ public class NodeEngineImpl implements NodeEngine {
      */
     @PrivateApi
     public Operation[] getPostJoinOperations() {
+        final Collection<Operation> postJoinOps = new LinkedList<Operation>();
         final Operation eventPostJoinOp = eventService.getPostJoinOperation();
-        return eventPostJoinOp != null ? new Operation[]{eventPostJoinOp} : null;
+        if (eventPostJoinOp != null) {
+            postJoinOps.add(eventPostJoinOp);
+        }
+        Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
+        for (PostJoinAwareService service : services) {
+            final Operation pjOp = service.getPostJoinOperation();
+            if (pjOp != null) {
+                if (pjOp instanceof PartitionAwareOperation) {
+                    logger.log(Level.SEVERE, "Post-join operations cannot implement PartitionAwareOperation!" +
+                            " Service: " + service + ", Operation: " + pjOp);
+                    continue;
+                }
+                postJoinOps.add(pjOp);
+            }
+        }
+        return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
     }
 
     public long getClusterTime() {
@@ -218,6 +242,7 @@ public class NodeEngineImpl implements NodeEngine {
     public void shutdown() {
         logger.log(Level.FINEST, "Shutting down services...");
         waitNotifyService.shutdown();
+        proxyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
         eventService.shutdown();

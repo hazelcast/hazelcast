@@ -18,18 +18,16 @@ package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.Transaction;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.AbstractServiceProxy;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionImpl;
@@ -42,16 +40,15 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
 
-abstract class MapProxySupport {
+abstract class MapProxySupport extends AbstractServiceProxy {
 
     protected final String name;
     protected final MapService mapService;
-    protected final NodeEngine nodeEngine;
 
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
+        super(nodeEngine);
         this.name = name;
         this.mapService = mapService;
-        this.nodeEngine = nodeEngine;
     }
 
     protected void setThreadContext() {
@@ -633,9 +630,6 @@ abstract class MapProxySupport {
         return null;
     }
 
-    public void destroy() {
-    }
-
     protected String prepareTransaction(int partitionId) {
         TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = null;
@@ -648,5 +642,17 @@ abstract class MapProxySupport {
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
+    }
+
+    public final Object getId() {
+        return name;
+    }
+
+    public final String getName() {
+        return name;
+    }
+
+    public final String getServiceName() {
+        return MAP_SERVICE_NAME;
     }
 }

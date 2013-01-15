@@ -223,24 +223,24 @@ public interface HazelcastInstance {
      *
      * @return the collection of instances created by Hazelcast.
      */
-    Collection<Instance> getInstances();
+    Collection<DistributedObject> getDistributedObjects();
 
     /**
      * Add a instance listener which will be notified when a
      * new instance such as map, queue, multimap, topic, lock is
      * added or removed.
      *
-     * @param instanceListener instance listener
+     * @param distributedObjectListener instance listener
      */
-    void addInstanceListener(InstanceListener instanceListener);
+    void addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
     /**
      * Removes the specified instance listener. Returns silently
      * if specified instance listener doesn't exist.
      *
-     * @param instanceListener instance listener to remove
+     * @param distributedObjectListener instance listener to remove
      */
-    void removeInstanceListener(InstanceListener instanceListener);
+    void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
     /**
      * Returns the configuration of this Hazelcast instance.
@@ -286,12 +286,9 @@ public interface HazelcastInstance {
     LifecycleService getLifecycleService();
 
 
-    <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, String name);
+    <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object id);
 
-    <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object... params);
-
-
-    <S extends ServiceProxy> S getServiceProxy(String serviceName, String name);
+    <S extends ServiceProxy> S getServiceProxy(String serviceName, Object id);
 
 
     void registerSerializer(final TypeSerializer serializer, Class type);

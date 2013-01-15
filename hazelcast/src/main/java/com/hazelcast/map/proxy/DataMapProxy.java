@@ -17,7 +17,6 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
@@ -213,20 +212,5 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     public Data executeOnKey(Data key, EntryProcessor entryProcessor) {
         return executeOnKeyInternal(key, entryProcessor);
-    }
-
-    public Object getId() {
-        return name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.MAP;
-    }
-
-    public void destroy() {
     }
 }

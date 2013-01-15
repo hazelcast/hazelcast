@@ -22,7 +22,7 @@ import com.hazelcast.monitor.LocalAtomicNumberStats;
  * AtomicNumber is a backed-up distributed implementation of
  * {@link java.util.concurrent.atomic.AtomicLong java.util.concurrent.atomic.AtomicLong}.
  */
-public interface AtomicNumber extends Instance {
+public interface AtomicNumber extends DistributedObject {
     /**
      * Returns the name of this IAtomicLong instance.
      *

@@ -17,9 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.InstanceDestroyedException;
-import com.hazelcast.core.Prefix;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 
 import java.util.concurrent.Future;
@@ -36,11 +33,11 @@ public class SemaphoreClientProxy implements ISemaphore {
         proxyHelper = new PacketProxyHelper(getName(), hazelcastClient);
     }
 
-    public void acquire() throws InstanceDestroyedException, InterruptedException {
+    public void acquire() throws InterruptedException {
         acquire(1);
     }
 
-    public void acquire(int permits) throws InstanceDestroyedException, InterruptedException {
+    public void acquire(int permits) throws InterruptedException {
         if (Thread.currentThread().isInterrupted())
             throw new InterruptedException();
 //        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, -1, TimeUnit.MILLISECONDS);
@@ -54,11 +51,11 @@ public class SemaphoreClientProxy implements ISemaphore {
         return doAcquireAsync(permits, false);
     }
 
-    public void acquireAttach() throws InstanceDestroyedException, InterruptedException {
+    public void acquireAttach() throws InterruptedException {
         acquireAttach(1);
     }
 
-    public void acquireAttach(int permits) throws InstanceDestroyedException, InterruptedException {
+    public void acquireAttach(int permits) throws InterruptedException {
 //        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, -1, TimeUnit.MILLISECONDS);
     }
 
@@ -133,11 +130,11 @@ public class SemaphoreClientProxy implements ISemaphore {
         }
     }
 
-    public boolean tryAcquire(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+    public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
         return tryAcquire(1, timeout, unit);
     }
 
-    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
 //        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, timeout, unit);
         return false;
     }
@@ -154,17 +151,13 @@ public class SemaphoreClientProxy implements ISemaphore {
         }
     }
 
-    public boolean tryAcquireAttach(long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+    public boolean tryAcquireAttach(long timeout, TimeUnit unit) throws InterruptedException {
         return tryAcquireAttach(1, timeout, unit);
     }
 
-    public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
+    public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InterruptedException {
 //        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, timeout, unit);
         return false;
-    }
-
-    public InstanceType getInstanceType() {
-        return Instance.InstanceType.SEMAPHORE;
     }
 
     public void destroy() {
@@ -176,7 +169,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public String getName() {
-        return name.substring(Prefix.SEMAPHORE.length());
+        return name;
     }
 
     private Future doAcquireAsync(final int permits, final boolean attach) {

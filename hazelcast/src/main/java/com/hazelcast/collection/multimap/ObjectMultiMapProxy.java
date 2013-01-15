@@ -40,10 +40,6 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         super(name, service, nodeEngine);
     }
 
-    public String getName() {
-        return name;
-    }
-
     public boolean put(K key, V value) {
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
@@ -196,18 +192,6 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
 
         }
         return null;
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.MULTIMAP;
-    }
-
-    public void destroy() {
-
-    }
-
-    public Object getId() {
-        return name;
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {

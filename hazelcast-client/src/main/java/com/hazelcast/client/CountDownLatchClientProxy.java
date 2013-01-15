@@ -33,19 +33,17 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
         this.proxyHelper = new PacketProxyHelper(name, hazelcastClient);
     }
 
-    public void await() throws InstanceDestroyedException, MemberLeftException, InterruptedException {
+    public void await() throws MemberLeftException, InterruptedException {
         await(Long.MAX_VALUE, MILLISECONDS);
     }
 
-    public boolean await(long timeout, TimeUnit unit) throws InstanceDestroyedException, MemberLeftException, InterruptedException {
+    public boolean await(long timeout, TimeUnit unit) throws  MemberLeftException, InterruptedException {
         try {
             return false;
 //            return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_AWAIT, null, null, timeout, unit);
         } catch (RuntimeException re) {
             Throwable e = re.getCause();
-            if (e instanceof InstanceDestroyedException) {
-                throw (InstanceDestroyedException) e;
-            } else if (e instanceof MemberLeftException) {
+            if (e instanceof MemberLeftException) {
                 throw (MemberLeftException) e;
             } else if (e instanceof InterruptedException) {
                 throw (InterruptedException) e;
@@ -87,12 +85,8 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
         return name;
     }
 
-    public InstanceType getInstanceType() {
-        return InstanceType.COUNT_DOWN_LATCH;
-    }
-
     public String getName() {
-        return name.substring(Prefix.COUNT_DOWN_LATCH.length());
+        return name;
     }
 
     public LocalCountDownLatchStats getLocalCountDownLatchStats() {

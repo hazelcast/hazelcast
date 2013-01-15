@@ -27,7 +27,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
-import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.protocol.Command;
@@ -54,7 +53,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final PartitionContainer[] partitionContainers;
     private final NodeEngineImpl nodeEngine;
-    private final ConcurrentMap<String, MapProxy> proxies = new ConcurrentHashMap<String, MapProxy>();
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
@@ -234,26 +232,24 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return nodeEngine;
     }
 
-    public String getName() {
+    public String getServiceName() {
         return MAP_SERVICE_NAME;
     }
 
-    public MapProxy getProxy(Object... params) {
-        final String name = String.valueOf(params[0]);
-        if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new DataMapProxy(name, this, nodeEngine);
-        }
-        MapProxy proxy = proxies.get(name);
-        if (proxy == null) {
-            proxy = new ObjectMapProxy(name, this, nodeEngine);
-            final MapProxy currentProxy = proxies.putIfAbsent(name, proxy);
-            proxy = currentProxy != null ? currentProxy : proxy;
-        }
-        return proxy;
+    public ServiceProxy createProxy(Object proxyId) {
+        return new ObjectMapProxy(String.valueOf(proxyId), this, nodeEngine);
     }
 
-    public Collection<ServiceProxy> getProxies() {
-        return new HashSet<ServiceProxy>(proxies.values());
+    public ServiceProxy createClientProxy(Object proxyId) {
+        return new DataMapProxy(String.valueOf(proxyId), this, nodeEngine);
+    }
+
+    public void onProxyCreate(Object proxyId) {
+        logger.log(Level.INFO, "Creating proxy: " + proxyId);
+    }
+
+    public void onProxyDestroy(Object proxyId) {
+        logger.log(Level.WARNING, "Destroying proxy: " + proxyId);
     }
 
     public void memberAdded(final MembershipServiceEvent membershipEvent) {

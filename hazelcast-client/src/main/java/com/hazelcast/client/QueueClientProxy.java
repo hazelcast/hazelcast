@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.QueueItemListenerManager;
 import com.hazelcast.client.util.QueueItemIterator;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.Prefix;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
@@ -50,15 +49,11 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public String getName() {
-        return name.substring(Prefix.QUEUE.length());
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.QUEUE;
+        return name;
     }
 
     public void destroy() {
-        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{InstanceType.QUEUE.name(), getName()});
+        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{"queue", getName()});
     }
 
     public Object getId() {

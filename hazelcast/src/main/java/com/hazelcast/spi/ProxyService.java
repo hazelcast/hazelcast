@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.spi;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.core.DistributedObject;
 
-import java.io.IOException;
+import java.util.Collection;
 
-public class DistributedTimeoutException implements DataSerializable {
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
+/**
+ * @mdogan 1/14/13
+ */
+public interface ProxyService extends CoreService {
+    ServiceProxy getProxy(String serviceName, Object proxyId);
 
-    public void readData(ObjectDataInput in) throws IOException {
-    }
+    ServiceProxy getProxy(Class<? extends RemoteService> serviceClass, Object proxyId);
+
+    void destroyProxy(String serviceName, Object proxyId);
+
+    Collection<DistributedObject> getProxies(String serviceName);
+
+    Collection<DistributedObject> getAllProxies();
 }

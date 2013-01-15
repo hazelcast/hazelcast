@@ -21,7 +21,6 @@ import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.InstanceDestroyedException;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -83,8 +82,6 @@ public class HazelcastClientSemaphoreTest {
             assertEquals(10, semaphore.availablePermits());
         } catch (InterruptedException e) {
             fail(e.getMessage());
-        } catch (com.hazelcast.core.InstanceDestroyedException e) {
-            e.printStackTrace();
         }
     }
 
@@ -236,8 +233,6 @@ public class HazelcastClientSemaphoreTest {
                         Thread.sleep(random.nextInt(rndTimeMax));
                     } catch (InterruptedException e) {
                         fail(e.getMessage());
-                    } catch (InstanceDestroyedException e) {
-                        fail(e.getMessage());
                     }
                 }
             }
@@ -254,8 +249,6 @@ public class HazelcastClientSemaphoreTest {
                         Thread.sleep(random.nextInt(rndTimeMax));
                     } catch (InterruptedException e) {
                         fail(e.getMessage());
-                    } catch (InstanceDestroyedException e) {
-                        fail(e.getMessage());
                     }
                 }
             }
@@ -271,8 +264,6 @@ public class HazelcastClientSemaphoreTest {
                         semaphore3.release();
                         Thread.sleep(random.nextInt(rndTimeMax));
                     } catch (InterruptedException e) {
-                        fail(e.getMessage());
-                    } catch (InstanceDestroyedException e) {
                         fail(e.getMessage());
                     }
                 }

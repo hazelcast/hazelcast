@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.spi;
 
-import java.io.Serializable;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+/**
+ * @mdogan 1/11/13
+ */
+public interface PostJoinAwareService {
 
-public class ConcurrentHashSet<E> extends SetFromMap<E> implements Set<E>, Serializable {
+    /**
+     * Post join operations must be lock free; means no locks at all;
+     * no partition locks, no key-based locks, no service level locks!
+     *
+     * Post join operations should return response, at least a null response.
+     *
+     * Also making post-join operation a JoinOperation will help a lot.
+     *
+     * @see com.hazelcast.cluster.JoinOperation
+     */
+    Operation getPostJoinOperation();
 
-    public ConcurrentHashSet() {
-        super(new ConcurrentHashMap<E, Boolean>());
-    }
 }

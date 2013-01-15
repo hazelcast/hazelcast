@@ -20,7 +20,7 @@ import com.hazelcast.monitor.LocalLockStats;
 
 import java.util.concurrent.locks.Lock;
 
-public interface ILock extends Lock, Instance {
+public interface ILock extends Lock, DistributedObject {
 
     /**
      * Returns the lock object, the key for this lock instance.

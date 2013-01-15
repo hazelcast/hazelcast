@@ -33,40 +33,22 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
 
     private NodeEngine nodeEngine;
 
-    private final Map<String, Long> numbers = new HashMap<String, Long>();
-
-    private final ConcurrentMap<String, AtomicNumberProxy> proxies = new ConcurrentHashMap<String, AtomicNumberProxy>();
-
+    private final ConcurrentMap<String, Long> numbers = new ConcurrentHashMap<String, Long>();
 
     public AtomicNumberService() {
-
     }
 
     public long getNumber(String name) {
         Long value = numbers.get(name);
         if (value == null) {
-            value = Long.valueOf(0);
+            value = 0L;
             numbers.put(name, value);
         }
         return value;
     }
 
-    public Set<String> getProxyNames() {
-        return proxies.keySet();
-    }
-
     public void setNumber(String name, long newValue) {
         numbers.put(name, newValue);
-    }
-
-    public void removeNumber(int partitionId) {
-        Iterator<Map.Entry<String, AtomicNumberProxy>> iterator = proxies.entrySet().iterator();
-        while (iterator.hasNext()) {
-            AtomicNumberProxy atomicNumberProxy = iterator.next().getValue();
-            if (atomicNumberProxy.getPartitionId() == partitionId) {
-                numbers.remove(atomicNumberProxy.getName());
-            }
-        }
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -81,22 +63,24 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         return nodeEngine.getConfig();
     }
 
-    public ServiceProxy getProxy(Object... params) {
-        final String name = String.valueOf(params[0]);
-        if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new AtomicNumberProxy(name, this, nodeEngine);
-        }
-        AtomicNumberProxy proxy = proxies.get(name);
-        if (proxy == null) {
-            proxy = new AtomicNumberProxy(name, this, nodeEngine);
-            final AtomicNumberProxy currentProxy = proxies.putIfAbsent(name, proxy);
-            proxy = currentProxy != null ? currentProxy : proxy;
-        }
-        return proxy;
+    public String getServiceName() {
+        return NAME;
     }
 
-    public Collection<ServiceProxy> getProxies() {
-        return new HashSet<ServiceProxy>(proxies.values());
+    public ServiceProxy createProxy(Object proxyId) {
+        return new AtomicNumberProxy(String.valueOf(proxyId), this, nodeEngine);
+    }
+
+    public ServiceProxy createClientProxy(Object proxyId) {
+        return createProxy(proxyId);
+    }
+
+    public void onProxyCreate(Object proxyId) {
+
+    }
+
+    public void onProxyDestroy(Object proxyId) {
+
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
@@ -121,6 +105,16 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     public void rollbackMigration(MigrationServiceEvent migrationServiceEvent) {
         if (migrationServiceEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             removeNumber(migrationServiceEvent.getPartitionId());
+        }
+    }
+
+    public void removeNumber(int partitionId) {
+        final Iterator<String> iter = numbers.keySet().iterator();
+        while (iter.hasNext()) {
+            String name = iter.next();
+            if (nodeEngine.getPartitionId(name) == partitionId) {
+                iter.remove();
+            }
         }
     }
 

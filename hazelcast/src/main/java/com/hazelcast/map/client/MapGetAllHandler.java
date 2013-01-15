@@ -21,11 +21,9 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationConstants;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class MapGetAllHandler extends MapCommandHandler {
@@ -41,7 +39,7 @@ public class MapGetAllHandler extends MapCommandHandler {
         for (int i = 0; i < size; i++) {
             set.add(binaryToData(protocol.buffers[i].array()));
         }
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.getProxy(name, true);
+        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createClientProxy(name);
         ByteBuffer[] buffers = new ByteBuffer[size * 2];
         int i = 0;
         for (Object k : set) {

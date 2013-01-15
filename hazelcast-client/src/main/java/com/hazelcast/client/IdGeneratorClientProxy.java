@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.Prefix;
 
 public class IdGeneratorClientProxy implements IdGenerator {
     private final String name;
@@ -29,16 +28,12 @@ public class IdGeneratorClientProxy implements IdGenerator {
     }
 
     public String getName() {
-        return name.substring(Prefix.IDGEN.length());
+        return name;
     }
 
     public long newId() {
         return 0;
 //        return (Long) proxyHelper.doOp(ClusterOperation.NEW_ID, null, null);
-    }
-
-    public InstanceType getInstanceType() {
-        return InstanceType.ID_GENERATOR;
     }
 
     public void destroy() {

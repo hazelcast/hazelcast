@@ -17,7 +17,6 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Instance;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -26,16 +25,14 @@ import java.util.Map.Entry;
 public class MapEntrySetIterator<K, V> implements Iterator<java.util.Map.Entry<K, V>> {
     protected final Iterator it;
     protected final EntryHolder<K, V> proxy;
-    protected final Instance.InstanceType instanceType;
     protected volatile Entry<K, V> lastEntry;
     K currentIteratedKey;
     V currentIteratedValue;
     boolean hasNextCalled = false;
 
-    public MapEntrySetIterator(Iterator iterator, EntryHolder<K, V> proxy, Instance.InstanceType instanceType) {
+    public MapEntrySetIterator(Iterator iterator, EntryHolder<K, V> proxy) {
         this.it = iterator;
         this.proxy = proxy;
-        this.instanceType = instanceType;
     }
 
     public boolean hasNext() {
@@ -86,9 +83,6 @@ public class MapEntrySetIterator<K, V> implements Iterator<java.util.Map.Entry<K
         }
 
         public V setValue(V arg0) {
-            if (instanceType.equals(Instance.InstanceType.MULTIMAP)) {
-                throw new UnsupportedOperationException();
-            }
             return (V) ((IMap) proxy).put(key, arg0);
         }
     }

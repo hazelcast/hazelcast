@@ -18,9 +18,9 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
-public interface InstanceListener extends EventListener {
+public interface DistributedObjectListener extends EventListener {
 
-    void instanceCreated(InstanceEvent event);
+    void distributedObjectCreated(DistributedObjectEvent event);
 
-    void instanceDestroyed(InstanceEvent event);
+    void distributedObjectDestroyed(DistributedObjectEvent event);
 }

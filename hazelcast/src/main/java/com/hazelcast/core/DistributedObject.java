@@ -16,8 +16,26 @@
 
 package com.hazelcast.core;
 
-import java.util.List;
+public interface DistributedObject {
 
-public interface IList<E> extends ICollection<E>, List<E>, DistributedObject {
+    /**
+     * Returns the unique id for this instance.
+     *
+     * @return id the of this instance
+     */
+    Object getId();
+
+
+    /**
+     * Returns the name for this instance.
+     *
+     */
+    String getName();
+
+    /**
+     * Destroys this instance cluster-wide.
+     * Clears and releases all resources for this instance.
+     */
+    void destroy();
 
 }

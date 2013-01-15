@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.spi;
 
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Instance;
+/**
+ * @mdogan 1/14/13
+ */
+public abstract class AbstractServiceProxy implements ServiceProxy {
 
-public interface HazelcastInstanceAwareInstance extends Instance, HazelcastInstanceAware {
+    protected final NodeEngine nodeEngine;
+
+    protected AbstractServiceProxy(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
+
+    public final void destroy() {
+        nodeEngine.getProxyService().destroyProxy(getServiceName(), getId());
+    }
 }

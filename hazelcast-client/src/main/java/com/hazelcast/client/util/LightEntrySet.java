@@ -17,8 +17,6 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.MapClientProxy;
-import com.hazelcast.client.util.MapEntryIterator;
-import com.hazelcast.core.Instance;
 
 import java.util.AbstractCollection;
 import java.util.Iterator;
@@ -29,16 +27,14 @@ public class LightEntrySet<K, V> extends AbstractCollection<java.util.Map.Entry<
 
     private final Set<K> keySet;
     private final MapClientProxy<K, V> proxy;
-    private final Instance.InstanceType instanceType;
 
-    public LightEntrySet(Set<K> set, MapClientProxy<K, V> proxy, Instance.InstanceType instanceType) {
+    public LightEntrySet(Set<K> set, MapClientProxy<K, V> proxy) {
         this.keySet = set;
         this.proxy = proxy;
-        this.instanceType = instanceType;
     }
 
     public Iterator<Entry<K, V>> iterator() {
-        return new MapEntryIterator<K, V>(keySet.iterator(), proxy, instanceType);
+        return new MapEntryIterator<K, V>(keySet.iterator(), proxy);
     }
 
     public int size() {

@@ -18,7 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.monitor.LocalTopicStats;
 
-public interface ITopic<E> extends Instance {
+public interface ITopic<E> extends DistributedObject {
 
     String getName();
 

@@ -19,8 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.util.*;
-import com.hazelcast.util.AbstractMap.SimpleImmutableEntry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +30,7 @@ public class DefaultRecordStore implements RecordStore {
     final PartitionContainer partitionContainer;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
-    final ConcurrentHashSet<Data> removedDelayedKeys = new ConcurrentHashSet<Data>();
+    final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapInfo mapInfo;
 
     final MapService mapService;
@@ -161,7 +159,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public Map.Entry<Data, Data> getMapEntry(Data dataKey) {
         Record record = records.get(dataKey);
-        return new SimpleImmutableEntry<Data, Data>(dataKey, record.getValueData());
+        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, record.getValueData());
     }
 
     public Set<Data> keySet() {
@@ -336,7 +334,7 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    public ConcurrentHashSet<Data> getRemovedDelayedKeys() {
+    public Set<Data> getRemovedDelayedKeys() {
         return removedDelayedKeys;
     }
 

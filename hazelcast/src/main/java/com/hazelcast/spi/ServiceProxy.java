@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.core.Instance;
+import com.hazelcast.core.DistributedObject;
 
 /**
  * Marker interface for service proxies.
@@ -24,6 +24,8 @@ import com.hazelcast.core.Instance;
  * @mdogan 9/18/12
  */
 
-public interface ServiceProxy extends Instance {
+public interface ServiceProxy extends DistributedObject {
+
+    String getServiceName();
 
 }

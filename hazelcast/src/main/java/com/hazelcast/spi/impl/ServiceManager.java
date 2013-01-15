@@ -64,6 +64,8 @@ class ServiceManager {
         logger.log(Level.FINEST, "Registering core services...");
         registerService(ClusterService.SERVICE_NAME, node.getClusterService());
         registerService(PartitionService.SERVICE_NAME, node.getPartitionService());
+        registerService(ProxyServiceImpl.NAME, nodeEngine.getProxyService());
+
         final Services servicesConfig = node.getConfig().getServicesConfig();
         if (servicesConfig != null) {
             if (servicesConfig.isEnableDefaults()) {

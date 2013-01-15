@@ -23,11 +23,13 @@ import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
-import com.hazelcast.queue.proxy.QueueProxy;
 import com.hazelcast.spi.*;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -43,7 +45,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public static final String QUEUE_SERVICE_NAME = "hz:impl:queueService";
 
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
-    private final ConcurrentMap<String, QueueProxy> proxies = new ConcurrentHashMap<String, QueueProxy>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     public QueueService(NodeEngine nodeEngine) {
@@ -143,18 +144,24 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         }
     }
 
-    public ServiceProxy getProxy(Object... params) {
-        final String name = String.valueOf(params[0]);
-        if (params.length > 1 && Boolean.TRUE.equals(params[1])) {
-            return new DataQueueProxy(name, this, nodeEngine);
-        }
-        final QueueProxy proxy = new ObjectQueueProxy(name, this, nodeEngine);
-        final QueueProxy currentProxy = proxies.putIfAbsent(name, proxy);
-        return currentProxy != null ? currentProxy : proxy;
+    public String getServiceName() {
+        return QUEUE_SERVICE_NAME;
     }
 
-    public Collection<ServiceProxy> getProxies() {
-        return new HashSet<ServiceProxy>(proxies.values());
+    public ServiceProxy createProxy(Object proxyId) {
+        return new ObjectQueueProxy(String.valueOf(proxyId), this, nodeEngine);
+    }
+
+    public ServiceProxy createClientProxy(Object proxyId) {
+        return new DataQueueProxy(String.valueOf(proxyId), this, nodeEngine);
+    }
+
+    public void onProxyCreate(Object proxyId) {
+
+    }
+
+    public void onProxyDestroy(Object proxyId) {
+
     }
 
     public void addItemListener(String name, ItemListener listener, boolean includeValue){
