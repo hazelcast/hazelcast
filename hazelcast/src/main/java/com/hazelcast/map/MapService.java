@@ -56,7 +56,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
-    private final ScheduledThreadPoolExecutor recordTaskExecutor;
 
 
     public MapService(final NodeEngine nodeEngine) {
@@ -64,8 +63,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-        // todo move to frameworks thread pool, ıf a long running task call cacheThread pool
-        recordTaskExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -74,11 +71,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
-        nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                nodeEngine.getExecutionService().execute(new MapEvictTask());
-            }
-        }, 10, 1, TimeUnit.SECONDS);
+        nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 10, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
 
@@ -101,7 +94,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         registerHandler(Command.MSIZE, new MapSizeHandler(this));
         registerHandler(Command.MGETALL, new MapGetAllHandler(this));
         registerHandler(Command.MTRYPUT, new MapTryPutHandler(this));
-//        registerHandler(Command.MSET, new MapSetHandler(this));
+        registerHandler(Command.MSET, new MapSetHandler(this));
         registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
 
     }
@@ -337,13 +330,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void scheduleOperation(String mapName, Data key, long executeTime) {
         MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
         final MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation, nodeEngine.getPartitionId(key));
-        nodeEngine.getExecutionService().schedule(new Runnable() {
-            public void run() {
-                nodeEngine.getExecutionService().execute(recordTask);
-            }
-        }, executeTime, TimeUnit.MILLISECONDS);
+        nodeEngine.getExecutionService().schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
-
 
     private class MapEvictTask implements Runnable {
         public void run() {
