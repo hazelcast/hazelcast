@@ -73,4 +73,16 @@ public class DistributedObjectEvent implements DataSerializable, HazelcastInstan
         serviceName = in.readUTF();
         objectId = in.readObject();
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("DistributedObjectEvent");
+        sb.append("{eventType=").append(eventType);
+        sb.append(", serviceName='").append(serviceName).append('\'');
+        sb.append(", objectId=").append(objectId);
+        sb.append('}');
+        return sb.toString();
+    }
 }
