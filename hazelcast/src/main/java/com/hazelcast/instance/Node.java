@@ -39,6 +39,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Util;
 import com.hazelcast.util.VersionCheck;
@@ -216,7 +217,8 @@ public class Node {
                 }
             }
             if (listener instanceof DistributedObjectListener) {
-                hazelcastInstance.addDistributedObjectListener((DistributedObjectListener) listener);
+                final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
+                proxyService.addProxyListener((DistributedObjectListener) listener);
             } else if (listener instanceof MembershipListener) {
                 clusterService.addMembershipListener((MembershipListener) listener);
             } else if (listener instanceof MigrationListener) {

@@ -17,7 +17,6 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.Entry;
-import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,37 +27,36 @@ import java.util.List;
 /**
  * @ali 1/14/13
  */
-public class GetEntryProcessor extends MultiMapEntryProcessor<Data> {
+public class ContainsEntryProcessor extends MultiMapEntryProcessor<Boolean> {
 
-    int index;
+    Data data;
 
-    public GetEntryProcessor() {
+    public ContainsEntryProcessor() {
     }
 
-    public GetEntryProcessor(MultiMapConfig config, int index) {
-        super(config.isBinary());
-        this.index = index;
+    public ContainsEntryProcessor(boolean binary, Data data) {
+        super(binary);
+        this.data = data;
     }
 
-    public Data execute(Entry entry) {
+    public Boolean execute(Entry entry) {
         List list = entry.getValue();
-        try {
-            if (list != null) {
-                Object obj = list.get(index);
-                return isBinary() ? (Data) obj : entry.getSerializationService().toData(obj);
-            }
-        } catch (IndexOutOfBoundsException e) {
+        if (list !=null){
+            return list.contains(isBinary() ? data : entry.getSerializationService().toObject(data));
         }
-        return null;
+        return false;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeInt(index);
+        data.writeData(out);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        index = in.readInt();
+        data = new Data();
+        data.readData(in);
     }
 }

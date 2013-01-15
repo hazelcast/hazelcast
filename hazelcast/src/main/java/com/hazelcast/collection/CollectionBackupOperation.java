@@ -36,6 +36,8 @@ public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation im
 
     EntryProcessor processor;
 
+    CollectionProxyId proxyId;
+
     Address firstCaller;
 
     int firstThreadId;
@@ -43,16 +45,17 @@ public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation im
     CollectionBackupOperation() {
     }
 
-    CollectionBackupOperation(String name, Data dataKey, EntryProcessor processor, Address firstCaller, int firstThreadId) {
+    CollectionBackupOperation(String name, Data dataKey, EntryProcessor processor, Address firstCaller, int firstThreadId, CollectionProxyId proxyId) {
         super(name, dataKey);
         this.processor = processor;
         this.firstCaller = firstCaller;
         this.firstThreadId = firstThreadId;
+        this.proxyId = proxyId;
     }
 
     public void run() throws Exception {
         CollectionService service = getService();
-        CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), name);
+        CollectionContainer collectionContainer = service.getOrCreateCollectionContainer(getPartitionId(), proxyId);
         ((BackupAwareEntryProcessor) processor).executeBackup(new Entry(collectionContainer, dataKey, firstThreadId, firstCaller));
     }
 
@@ -65,6 +68,7 @@ public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation im
         out.writeObject(processor);
         out.writeInt(firstThreadId);
         firstCaller.writeData(out);
+        proxyId.writeData(out);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
@@ -73,6 +77,8 @@ public class CollectionBackupOperation extends AbstractNamedKeyBasedOperation im
         firstThreadId = in.readInt();
         firstCaller = new Address();
         firstCaller.readData(in);
+        proxyId = new CollectionProxyId();
+        proxyId.readData(in);
     }
 
     public int getId() {

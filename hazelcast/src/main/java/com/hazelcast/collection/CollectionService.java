@@ -16,8 +16,10 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.processor.EntryProcessor;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
@@ -25,7 +27,6 @@ import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.HashSet;
 import java.util.Properties;
@@ -56,8 +57,8 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         return partitionContainers[partitionId].getCollectionContainer(name);
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(int partitionId, String name) {
-        return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
+    public CollectionContainer getOrCreateCollectionContainer(int partitionId, CollectionProxyId proxyId) {
+        return partitionContainers[partitionId].getOrCreateCollectionContainer(proxyId);
     }
 
     public CollectionPartitionContainer getPartitionContainer(int partitionId) {
@@ -76,23 +77,23 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     Object createNew(CollectionProxyId proxyId) {
-        final NodeEngineImpl nodeEngineImpl = (NodeEngineImpl) nodeEngine;
-        return nodeEngineImpl.getProxyService().getProxy(COLLECTION_SERVICE_NAME, proxyId);
+        CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(COLLECTION_SERVICE_NAME, proxyId);
+        return proxy.createNew();
     }
 
     public String getServiceName() {
         return COLLECTION_SERVICE_NAME;
     }
 
-    public ServiceProxy createProxy(Object proxyId) {
-        CollectionProxyId collectionProxyId = (CollectionProxyId) proxyId;
+    public DistributedObject createDistributedObject(Object objectId) {
+        CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
         final String name = collectionProxyId.name;
         final CollectionProxyType type = collectionProxyId.type;
         switch (type) {
             case MULTI_MAP:
-                return new ObjectMultiMapProxy(name, this, nodeEngine);
+                return new ObjectMultiMapProxy(name, this, nodeEngine, (CollectionProxyId)objectId);
             case LIST:
-                return null;
+                return new ObjectListProxy(name, this, nodeEngine, (CollectionProxyId)objectId);
             case SET:
                 return null;
             case QUEUE:
@@ -101,15 +102,11 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         throw new IllegalArgumentException();
     }
 
-    public ServiceProxy createClientProxy(Object proxyId) {
-        return createProxy(proxyId);
+    public DistributedObject createDistributedObjectForClient(Object objectId) {
+        return createDistributedObject(objectId);
     }
 
-    public void onProxyCreate(Object proxyId) {
-
-    }
-
-    public void onProxyDestroy(Object proxyId) {
+    public void destroyDistributedObject(Object objectId) {
 
     }
 
@@ -174,14 +171,27 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         }
     }
 
-    public <T> T process(String name, Data dataKey, EntryProcessor processor) {
+    public <T> T process(String name, Data dataKey, EntryProcessor processor, CollectionProxyId proxyId) {
         try {
             int partitionId = nodeEngine.getPartitionId(dataKey);
-            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId);
+            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId, proxyId);
             operation.setThreadId(ThreadContext.get().getThreadId());
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    public Data processData(String name, Data dataKey, EntryProcessor processor, CollectionProxyId proxyId) {
+        try {
+            int partitionId = nodeEngine.getPartitionId(dataKey);
+            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId, proxyId);
+            operation.setThreadId(ThreadContext.get().getThreadId());
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
+            Future<Data> f = inv.invoke();
+            return f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

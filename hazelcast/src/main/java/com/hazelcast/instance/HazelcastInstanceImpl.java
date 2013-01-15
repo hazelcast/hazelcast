@@ -32,8 +32,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ServiceProxy;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionImpl;
@@ -51,8 +49,6 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public final Node node;
-
-    final NodeEngineImpl nodeEngine;
 
     final ILogger logger;
 
@@ -78,7 +74,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         registerConfigSerializers(config);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         node = new Node(this, config);
-        nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
         lifecycleService.fireLifecycleEvent(STARTING);
         proxyFactory = node.initializer.getProxyFactory();
@@ -100,15 +95,15 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getServiceProxy(MapService.MAP_SERVICE_NAME, name);
+        return (IMap<K, V>) getDistributedObject(MapService.MAP_SERVICE_NAME, name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getServiceProxy(QueueService.QUEUE_SERVICE_NAME, name);
+        return (IQueue<E>) getDistributedObject(QueueService.QUEUE_SERVICE_NAME, name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return (ITopic<E>) getServiceProxy(TopicService.NAME, name);
+        return (ITopic<E>) getDistributedObject(TopicService.NAME, name);
     }
 
     public <E> ISet<E> getSet(String name) {
@@ -116,11 +111,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        throw new UnsupportedOperationException();
+        return (IList<E>) getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
+                new CollectionProxyId(name, CollectionProxyType.LIST));
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getServiceProxy(CollectionService.COLLECTION_SERVICE_NAME,
+        return (MultiMap<K, V>) getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
                 new CollectionProxyId(name, CollectionProxyType.MULTI_MAP));
     }
 
@@ -141,7 +137,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public AtomicNumber getAtomicNumber(final String name) {
-        return (AtomicNumber)getServiceProxy(AtomicNumberService.NAME, name);
+        return (AtomicNumber) getDistributedObject(AtomicNumberService.NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {
@@ -157,7 +153,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Collection<DistributedObject> getDistributedObjects() {
-        return nodeEngine.getProxyService().getAllProxies();
+        return node.nodeEngine.getProxyService().getAllProxies();
     }
 
     public Config getConfig() {
@@ -180,9 +176,9 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return lifecycleService;
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends RemoteService> serviceClass, Object id) {
+    public <S extends DistributedObject> S getDistributedObject(final Class<? extends RemoteService> serviceClass, Object id) {
         checkActive();
-        return (S) nodeEngine.getProxyService().getProxy(serviceClass, id);
+        return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceClass, id);
     }
 
     private void checkActive() {
@@ -191,9 +187,9 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(final String serviceName, Object id) {
+    public <S extends DistributedObject> S getDistributedObject(final String serviceName, Object id) {
         checkActive();
-        return (S) nodeEngine.getProxyService().getProxy(serviceName, id);
+        return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
     }
 
     public void registerSerializer(final TypeSerializer serializer, final Class type) {
@@ -205,12 +201,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
+        final ProxyServiceImpl proxyService = (ProxyServiceImpl) node.nodeEngine.getProxyService();
         proxyService.addProxyListener(distributedObjectListener);
     }
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
+        final ProxyServiceImpl proxyService = (ProxyServiceImpl) node.nodeEngine.getProxyService();
         proxyService.removeProxyListener(distributedObjectListener);
     }
 

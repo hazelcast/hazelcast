@@ -19,13 +19,18 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.*;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
@@ -42,40 +47,68 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
     private final ConcurrentMap<String, ProxyRegistry> registries = new ConcurrentHashMap<String, ProxyRegistry>();
     private final Collection<DistributedObjectListener> listeners
             = Collections.newSetFromMap(new ConcurrentHashMap<DistributedObjectListener, Boolean>());
+    private final ILogger logger;
 
     ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(ProxyService.class.getName());
     }
 
     void init() {
-        nodeEngine.getEventService().registerListener(NAME, NAME, this);
+        nodeEngine.getEventService().registerListener(NAME, NAME, new Object());
     }
 
-    public ServiceProxy getProxy(String serviceName, Object proxyId) {
+    public DistributedObject getDistributedObject(String serviceName, Object objectId) {
         ProxyRegistry registry = registries.get(serviceName);
         if (registry == null) {
             registry = new ProxyRegistry(serviceName);
             ProxyRegistry current = registries.putIfAbsent(serviceName, registry);
             registry = current != null ? current : registry;
         }
-        return registry.getProxy(proxyId);
+        return registry.getProxy(objectId);
     }
 
-    public ServiceProxy getProxy(Class<? extends RemoteService> serviceClass, Object proxyId) {
+    public DistributedObject getDistributedObject(Class<? extends RemoteService> serviceClass, Object objectId) {
         Collection services = nodeEngine.serviceManager.getServices(serviceClass);
         for (Object service : services) {
             if (serviceClass.isAssignableFrom(service.getClass())) {
-                return getProxy(((RemoteService) service).getServiceName(), proxyId);
+                return getDistributedObject(((RemoteService) service).getServiceName(), objectId);
             }
         }
         throw new IllegalArgumentException();
     }
 
-    public void destroyProxy(String serviceName, Object proxyId) {
+    public void destroyDistributedObject(String serviceName, Object objectId) {
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Future> calls = new ArrayList<Future>(members.size());
+        for (MemberImpl member : members) {
+            if (member.localMember()) continue;
+
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(NAME,
+                    new DistributedObjectDestroyOperation(serviceName, objectId), member.getAddress())
+                    .setTryCount(10).build();
+            calls.add(inv.invoke());
+        }
+        destroyInternalDistributedObject(serviceName, objectId);
+        for (Future f : calls) {
+            try {
+                f.get(3, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
+            }
+        }
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
-            registry.destroyProxy(proxyId);
+            registry.destroyProxy(objectId);
         }
+    }
+
+    private void destroyInternalDistributedObject(String serviceName, Object objectId) {
+        final RemoteService service = nodeEngine.serviceManager.getService(serviceName);
+        if (service != null) {
+            service.destroyDistributedObject(objectId);
+        }
+        nodeEngine.waitNotifyService.onDistributedObjectDestroy(serviceName, objectId);
     }
 
     public Collection<DistributedObject> getProxies(String serviceName) {
@@ -104,29 +137,29 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
     }
 
     public void dispatchEvent(final DistributedObjectEvent event, Object ignore) {
-        nodeEngine.getExecutionService().execute(new Runnable() {
-            public void run() {
-                final String serviceName = event.getServiceName();
-                final RemoteService service = nodeEngine.serviceManager.getService(serviceName);
-                if (service == null) {
-                    nodeEngine.getLogger(ProxyServiceImpl.class.getName())
-                            .log(Level.WARNING, "Service: " + serviceName + " could not be found!");
-                    return;
-                }
-                if (event.getEventType() == CREATED) {
-                    service.onProxyCreate(event.getObjectId());
-                } else {
-                    service.onProxyDestroy(event.getObjectId());
+        final String serviceName = event.getServiceName();
+        final ProxyRegistry registry = registries.get(serviceName);
+        if (event.getEventType() == CREATED) {
+            if (registry == null || !registry.contains(event.getObjectId())) {
+                for (DistributedObjectListener listener : listeners) {
+                    listener.distributedObjectCreated(event);
                 }
             }
-        });
+        } else {
+            if (registry != null) {
+                registry.removeProxy(event.getObjectId());
+            }
+            for (DistributedObjectListener listener : listeners) {
+                listener.distributedObjectDestroyed(event);
+            }
+        }
     }
 
     private class ProxyRegistry {
 
         final RemoteService service;
 
-        final ConcurrentMap<Object, ServiceProxy> proxies = new ConcurrentHashMap<Object, ServiceProxy>();
+        final ConcurrentMap<Object, DistributedObject> proxies = new ConcurrentHashMap<Object, DistributedObject>();
 
         private ProxyRegistry(String serviceName) {
             this.service = nodeEngine.serviceManager.getService(serviceName);
@@ -135,13 +168,13 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             }
         }
 
-        ServiceProxy getProxy(Object proxyId) {
-            ServiceProxy proxy = proxies.get(proxyId);
+        DistributedObject getProxy(Object objectId) {
+            DistributedObject proxy = proxies.get(objectId);
             if (proxy == null) {
-                proxy = service.createProxy(proxyId);
-                ServiceProxy current = proxies.putIfAbsent(proxyId, proxy);
+                proxy = service.createDistributedObject(objectId);
+                DistributedObject current = proxies.putIfAbsent(objectId, proxy);
                 if (current == null) {
-                    final DistributedObjectEvent event = createEvent(proxyId, CREATED);
+                    final DistributedObjectEvent event = createEvent(objectId, CREATED);
                     publish(event);
                     nodeEngine.getEventService().executeEvent(new Runnable() {
                         public void run() {
@@ -157,18 +190,15 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             return proxy;
         }
 
-        void destroyProxy(Object proxyId) {
-            if (proxies.remove(proxyId) != null) {
-                final DistributedObjectEvent event = createEvent(proxyId, DESTROYED);
+        void destroyProxy(Object objectId) {
+            if (proxies.remove(objectId) != null) {
+                final DistributedObjectEvent event = createEvent(objectId, DESTROYED);
                 publish(event);
-                nodeEngine.getEventService().executeEvent(new Runnable() {
-                    public void run() {
-                        for (DistributedObjectListener listener : listeners) {
-                            listener.distributedObjectDestroyed(event);
-                        }
-                    }
-                });
             }
+        }
+
+        void removeProxy(Object objectId) {
+            proxies.remove(objectId);
         }
 
         private void publish(DistributedObjectEvent event) {
@@ -177,16 +207,64 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             eventService.publishEvent(NAME, registrations, event);
         }
 
-        private DistributedObjectEvent createEvent(Object proxyId, DistributedObjectEvent.EventType type) {
-            final DistributedObjectEvent event = new DistributedObjectEvent(type, service.getServiceName(), proxyId);
+        private DistributedObjectEvent createEvent(Object objectId, DistributedObjectEvent.EventType type) {
+            final DistributedObjectEvent event = new DistributedObjectEvent(type, service.getServiceName(), objectId);
             event.setHazelcastInstance(nodeEngine.getNode().hazelcastInstance);
             return event;
+        }
+
+        private boolean contains(Object objectId) {
+            return proxies.containsKey(objectId);
         }
 
         void destroy() {
             proxies.clear();
         }
+    }
 
+    public static class DistributedObjectDestroyOperation extends AbstractOperation {
+
+        private String serviceName;
+        private Object objectId;
+
+        public DistributedObjectDestroyOperation() {
+        }
+
+        public DistributedObjectDestroyOperation(String serviceName, Object objectId) {
+            this.serviceName = serviceName;
+            this.objectId = objectId;
+        }
+
+        public void run() throws Exception {
+            ProxyServiceImpl proxyService = getService();
+            ProxyRegistry registry = proxyService.registries.get(serviceName);
+            if (registry != null) {
+                registry.removeProxy(objectId);
+            }
+            proxyService.destroyInternalDistributedObject(serviceName, objectId);
+        }
+
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        public Object getResponse() {
+            return Boolean.TRUE;
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeUTF(serviceName);
+            out.writeObject(objectId);
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            serviceName = in.readUTF();
+            objectId = in.readObject();
+        }
     }
 
     void shutdown() {

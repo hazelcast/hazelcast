@@ -74,7 +74,6 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
         getResponseHandler().sendResponse(false);
     }
 
-
     public int getSyncBackupCount() {
         return mapService.getMapInfo(name).getBackupCount();
     }

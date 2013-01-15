@@ -27,11 +27,8 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.core.PartitionService;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ServiceProxy;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -346,31 +343,11 @@ public class HazelcastClient implements HazelcastInstance {
         return lifecycleService;
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object id) {
+    public <S extends DistributedObject> S getDistributedObject(Class<? extends RemoteService> serviceClass, Object id) {
         return null;
     }
 
-    public <S extends ServiceProxy> S getServiceProxy(String serviceName, Object id) {
-        return null;
-    }
-
-    public <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, String name) {
-        return null;
-    }
-
-    public <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object... params) {
-        return null;
-    }
-
-    public <S extends ServiceProxy> S getServiceProxy(String serviceName, String name) {
-        return null;
-    }
-
-    public <S extends ServiceProxy> S getServiceProxy(final Class<? extends ManagedService> serviceClass) {
-        return null;
-    }
-
-    public <S extends ServiceProxy> S getServiceProxy(final String serviceName) {
+    public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
         return null;
     }
 

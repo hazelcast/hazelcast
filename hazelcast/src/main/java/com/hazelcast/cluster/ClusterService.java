@@ -88,9 +88,8 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     private final AtomicInteger dataMemberCount = new AtomicInteger(); // excluding lite members
 
     private final Data heartbeatOperationData;
-    private final SerializationContext serializationContext;
 
-//    private final List<MembershipListener> listeners = new CopyOnWriteArrayList<MembershipListener>();
+    private final SerializationContext serializationContext;
 
     private boolean joinInProgress = false;
 
@@ -303,7 +302,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     private void ping(final MemberImpl memberImpl) {
         memberImpl.didPing();
         if (!icmpEnabled) return;
-        nodeEngine.getExecutionService().execute(new Runnable() {
+        nodeEngine.getExecutionService().execute("system", new Runnable() {
             public void run() {
                 try {
                     final Address address = memberImpl.getAddress();
@@ -939,7 +938,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     }
 
     public void addMembershipListener(MembershipListener listener) {
-        // listeners.add(listener);
         nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
     }
 

@@ -155,7 +155,7 @@ public class PartitionService implements CoreService, ManagedService,
         try {
             if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
                 // since partition threads can not invoke operations...
-                final Future f = nodeEngine.getExecutionService().submit(new Runnable() {
+                final Future f = nodeEngine.getExecutionService().submit("system", new Runnable() {
                     public void run() {
                         try {
                             Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),

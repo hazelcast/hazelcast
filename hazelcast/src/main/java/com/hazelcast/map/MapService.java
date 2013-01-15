@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
@@ -40,12 +41,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>, ClientProtocolService {
+        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
+        ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
@@ -56,7 +60,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations;
-    private final ScheduledThreadPoolExecutor recordTaskExecutor;
 
 
     public MapService(final NodeEngine nodeEngine) {
@@ -64,8 +67,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         this.logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
         eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-        // todo move to frameworks thread pool, ıf a long running task call cacheThread pool
-        recordTaskExecutor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -74,11 +75,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             PartitionInfo partition = nodeEngine.getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
-        nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                nodeEngine.getExecutionService().execute(new MapEvictTask());
-            }
-        }, 10, 1, TimeUnit.SECONDS);
+        nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 10, 1, TimeUnit.SECONDS);
         registerClientOperationHandlers();
     }
 
@@ -101,7 +98,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         registerHandler(Command.MSIZE, new MapSizeHandler(this));
         registerHandler(Command.MGETALL, new MapGetAllHandler(this));
         registerHandler(Command.MTRYPUT, new MapTryPutHandler(this));
-//        registerHandler(Command.MSET, new MapSetHandler(this));
+        registerHandler(Command.MSET, new MapSetHandler(this));
         registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
 
     }
@@ -246,20 +243,16 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return MAP_SERVICE_NAME;
     }
 
-    public ServiceProxy createProxy(Object proxyId) {
-        return new ObjectMapProxy(String.valueOf(proxyId), this, nodeEngine);
+    public DistributedObject createDistributedObject(Object objectId) {
+        return new ObjectMapProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public ServiceProxy createClientProxy(Object proxyId) {
-        return new DataMapProxy(String.valueOf(proxyId), this, nodeEngine);
+    public DistributedObject createDistributedObjectForClient(Object objectId) {
+        return new DataMapProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public void onProxyCreate(Object proxyId) {
-        logger.log(Level.INFO, "Creating proxy: " + proxyId);
-    }
-
-    public void onProxyDestroy(Object proxyId) {
-        logger.log(Level.WARNING, "Destroying proxy: " + proxyId);
+    public void destroyDistributedObject(Object objectId) {
+        logger.log(Level.WARNING, "Destroying object: " + objectId);
     }
 
     public void memberAdded(final MembershipServiceEvent membershipEvent) {
@@ -361,13 +354,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void scheduleOperation(String mapName, Data key, long executeTime) {
         MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
         final MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation, nodeEngine.getPartitionId(key));
-        nodeEngine.getExecutionService().schedule(new Runnable() {
-            public void run() {
-                nodeEngine.getExecutionService().execute(recordTask);
-            }
-        }, executeTime, TimeUnit.MILLISECONDS);
+        nodeEngine.getExecutionService().schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
-
 
     private class MapEvictTask implements Runnable {
         public void run() {

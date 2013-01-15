@@ -18,6 +18,7 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.processor.BackupAwareEntryProcessor;
 import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.collection.processor.WaitSupportedEntryProcessor;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
@@ -31,14 +32,14 @@ import java.util.Collection;
 /**
  * @ali 1/3/13
  */
-public class RemoveObjectEntryProcess extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor {
+public class RemoveEntryProcess extends MultiMapEntryProcessor<Boolean> implements BackupAwareEntryProcessor, WaitSupportedEntryProcessor {
 
     Data data;
 
-    public RemoveObjectEntryProcess() {
+    public RemoveEntryProcess() {
     }
 
-    public RemoveObjectEntryProcess(Data data, MultiMapConfig config) {
+    public RemoveEntryProcess(Data data, MultiMapConfig config) {
         super(config.isBinary());
         this.data = data;
         this.syncBackupCount = config.getSyncBackupCount();
@@ -80,5 +81,17 @@ public class RemoveObjectEntryProcess extends MultiMapEntryProcessor<Boolean> im
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         data = IOUtil.readNullableData(in);
+    }
+
+    public boolean shouldWait(Entry entry) {
+        return entry.isLocked();
+    }
+
+    public long getWaitTimeoutMillis() {
+        return -1;
+    }
+
+    public Object onWaitExpire() {
+        return false;
     }
 }

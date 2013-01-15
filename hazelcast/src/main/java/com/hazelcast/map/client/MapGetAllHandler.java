@@ -39,7 +39,7 @@ public class MapGetAllHandler extends MapCommandHandler {
         for (int i = 0; i < size; i++) {
             set.add(binaryToData(protocol.buffers[i].array()));
         }
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createClientProxy(name);
+        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
         ByteBuffer[] buffers = new ByteBuffer[size * 2];
         int i = 0;
         for (Object k : set) {

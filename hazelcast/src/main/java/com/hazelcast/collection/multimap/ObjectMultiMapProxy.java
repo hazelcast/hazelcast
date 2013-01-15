@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionPartitionContainer;
-import com.hazelcast.collection.CollectionProxy;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.*;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.map.LockInfo;
@@ -36,19 +33,19 @@ import java.util.concurrent.TimeUnit;
  */
 public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V> {
 
-    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine) {
-        super(name, service, nodeEngine);
+    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
+        super(name, service, nodeEngine, proxyId, nodeEngine.getConfig().getMultiMapConfig(name));
     }
 
     public boolean put(K key, V value) {
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
-        return putInternal(dataKey, dataValue);
+        return putInternal(dataKey, dataValue, -1);
     }
 
     public Collection<V> get(K key) {
         Data dataKey = nodeEngine.toData(key);
-        MultiMapCollectionResponse result = getInternal(dataKey);
+        MultiMapCollectionResponse result = getAllInternal(dataKey);
         return result.getObjectCollection(nodeEngine.getSerializationService());
     }
 

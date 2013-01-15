@@ -26,6 +26,7 @@ import com.hazelcast.spi.ClientProtocolService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
 public class ClientCommandService {
@@ -34,10 +35,12 @@ public class ClientCommandService {
     private final ILogger logger;
     private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private ConcurrentHashMap<Command, ClientCommandHandler> services = new ConcurrentHashMap<Command, ClientCommandHandler>();
+    private ExecutorService executorService;
 
     public ClientCommandService(Node node) {
         this.node = node;
         logger = node.getLogger(ClientCommandService.class.getName());
+        executorService = node.nodeEngine.getExecutionService().getExecutorService("client");
     }
 
     //Always called by an io-thread.
@@ -49,7 +52,7 @@ public class ClientCommandService {
             return;
         }
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, protocol, callContext, clientEndpoint.getSubject());
-        node.nodeEngine.getExecutionService().execute(clientRequestHandler);
+        executorService.execute(clientRequestHandler);
     }
 
     public ClientEndpoint getClientEndpoint(Connection conn) {

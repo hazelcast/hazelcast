@@ -16,11 +16,12 @@
 
 package com.hazelcast.collection.multimap;
 
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractServiceProxy;
+import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.HashSet;
@@ -31,51 +32,56 @@ import java.util.Set;
 /**
  * @ali 1/2/13
  */
-public abstract class MultiMapProxySupport extends AbstractServiceProxy {
+public abstract class MultiMapProxySupport extends AbstractDistributedObject {
 
-    final String name;
+    protected final String name;
 
-    final CollectionService service;
+    protected final CollectionService service;
 
     protected final MultiMapConfig config;
 
-    protected MultiMapProxySupport(String name, CollectionService service, NodeEngine nodeEngine) {
+    protected final CollectionProxyId proxyId;
+
+    protected MultiMapProxySupport(String name, CollectionService service, NodeEngine nodeEngine,
+                                   CollectionProxyId proxyId, MultiMapConfig config) {
         super(nodeEngine);
         this.name = name;
         this.service = service;
-        config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(name));
+        this.proxyId = proxyId;
+        this.config = new MultiMapConfig(config);
+
     }
 
     public Object createNew() {
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
             return new HashSet(10);//TODO hardcoded initial
-        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
+        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
             return new LinkedList();
         }
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
 
-    Boolean putInternal(Data dataKey, Data dataValue) {
-        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config));
+    protected Boolean putInternal(Data dataKey, Data dataValue, int index) {
+        return service.process(name, dataKey, new PutEntryProcessor(dataValue, config, index), proxyId);
     }
 
-    MultiMapCollectionResponse getInternal(Data dataKey) {
-        return service.process(name, dataKey, new GetEntryProcessor(config));
+    protected MultiMapCollectionResponse getAllInternal(Data dataKey) {
+        return service.process(name, dataKey, new GetAllEntryProcessor(config), proxyId);
     }
 
-    Boolean removeInternal(Data dataKey, Data dataValue) {
-        return service.process(name, dataKey, new RemoveObjectEntryProcess(dataValue, config));
+    protected Boolean removeInternal(Data dataKey, Data dataValue) {
+        return service.process(name, dataKey, new RemoveEntryProcess(dataValue, config), proxyId);
     }
 
-    MultiMapCollectionResponse removeInternal(Data dataKey) {
-        return service.process(name, dataKey, new RemoveEntryProcessor(config));
+    protected MultiMapCollectionResponse removeInternal(Data dataKey) {
+        return service.process(name, dataKey, new RemoveAllEntryProcessor(config), proxyId);
     }
 
-    Set<Data> localKeySetInternal() {
+    protected Set<Data> localKeySetInternal() {
         return service.localKeySet(name);
     }
 
-    Set<Data> keySetInternal() {
+    protected Set<Data> keySetInternal() {
         try {
             KeySetOperation operation = new KeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
@@ -93,7 +99,7 @@ public abstract class MultiMapProxySupport extends AbstractServiceProxy {
         }
     }
 
-    Map valuesInternal() {
+    protected Map valuesInternal() {
         try {
             ValuesOperation operation = new ValuesOperation(name, config.isBinary());
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
@@ -104,7 +110,7 @@ public abstract class MultiMapProxySupport extends AbstractServiceProxy {
     }
 
 
-    Map entrySetInternal() {
+    protected Map entrySetInternal() {
         try {
             EntrySetOperation operation = new EntrySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
@@ -114,16 +120,16 @@ public abstract class MultiMapProxySupport extends AbstractServiceProxy {
         }
     }
 
-    boolean containsInternal(Data key, Data value){
+    protected boolean containsInternal(Data key, Data value) {
         try {
             ContainsOperation operation = new ContainsOperation(name, config.isBinary(), key, value);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
-            for (Object obj: results.values()){
-                if (obj == null){
+            for (Object obj : results.values()) {
+                if (obj == null) {
                     continue;
                 }
                 Boolean result = nodeEngine.toObject(obj);
-                if (result){
+                if (result) {
                     return true;
                 }
             }
@@ -138,8 +144,8 @@ public abstract class MultiMapProxySupport extends AbstractServiceProxy {
             SizeOperation operation = new SizeOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.COLLECTION_SERVICE_NAME, operation, false);
             int size = 0;
-            for (Object obj: results.values()){
-                if (obj == null){
+            for (Object obj : results.values()) {
+                if (obj == null) {
                     continue;
                 }
                 Integer result = nodeEngine.toObject(obj);
@@ -160,16 +166,28 @@ public abstract class MultiMapProxySupport extends AbstractServiceProxy {
         }
     }
 
-    public Integer countInternal(Data dataKey){
-        return service.process(name, dataKey, new CountEntryProcessor());
+    protected Integer countInternal(Data dataKey) {
+        return service.process(name, dataKey, new CountEntryProcessor(), proxyId);
     }
 
-    public Boolean lockInternal(Data dataKey, long timeout){
-        return service.process(name, dataKey, new LockEntryProcessor(config, timeout));
+    protected Boolean lockInternal(Data dataKey, long timeout) {
+        return service.process(name, dataKey, new LockEntryProcessor(config, timeout), proxyId);
     }
 
-    public Boolean unlockInternal(Data dataKey){
-        return service.process(name, dataKey, new UnlockEntryProcessor(config));
+    protected Boolean unlockInternal(Data dataKey) {
+        return service.process(name, dataKey, new UnlockEntryProcessor(config), proxyId);
+    }
+
+    protected Data getInternal(Data dataKey, int index) {
+        return service.processData(name, dataKey, new GetEntryProcessor(config, index), proxyId);
+    }
+
+    protected Boolean containsInternalList(Data dataKey, Data dataValue) {
+        return service.process(name, dataKey, new ContainsEntryProcessor(config.isBinary(), dataValue), proxyId);
+    }
+
+    protected Boolean containsAllInternal(Data dataKey, Set<Data> dataSet) {
+        return service.process(name, dataKey, new ContainsAllEntryProcessor(config.isBinary(), dataSet), proxyId);
     }
 
     public Object getId() {

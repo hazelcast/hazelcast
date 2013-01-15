@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
@@ -148,19 +149,15 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         return QUEUE_SERVICE_NAME;
     }
 
-    public ServiceProxy createProxy(Object proxyId) {
-        return new ObjectQueueProxy(String.valueOf(proxyId), this, nodeEngine);
+    public DistributedObject createDistributedObject(Object objectId) {
+        return new ObjectQueueProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public ServiceProxy createClientProxy(Object proxyId) {
-        return new DataQueueProxy(String.valueOf(proxyId), this, nodeEngine);
+    public DistributedObject createDistributedObjectForClient(Object objectId) {
+        return new DataQueueProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public void onProxyCreate(Object proxyId) {
-
-    }
-
-    public void onProxyDestroy(Object proxyId) {
+    public void destroyDistributedObject(Object objectId) {
 
     }
 

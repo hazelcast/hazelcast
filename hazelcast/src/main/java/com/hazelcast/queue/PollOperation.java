@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 /**
@@ -57,12 +58,12 @@ public class PollOperation extends QueueTimedOperation implements WaitSupport, N
         return response != null;
     }
 
-    public Object getNotifiedKey() {
-        return getName() + ":offer";
+    public WaitNotifyKey getNotifiedKey() {
+        return new QueueWaitNotifyKey(getName(), "offer");
     }
 
-    public Object getWaitKey() {
-        return getName() + ":poll";
+    public WaitNotifyKey getWaitKey() {
+        return new QueueWaitNotifyKey(getName(), "poll");
     }
 
     public boolean shouldWait() {

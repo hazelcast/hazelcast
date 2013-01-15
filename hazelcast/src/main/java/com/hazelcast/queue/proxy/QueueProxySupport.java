@@ -19,7 +19,7 @@ package com.hazelcast.queue.proxy;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.*;
-import com.hazelcast.spi.AbstractServiceProxy;
+import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 
@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
  * Date: 11/14/12
  * Time: 12:47 AM
  */
-abstract class QueueProxySupport extends AbstractServiceProxy {
+abstract class QueueProxySupport extends AbstractDistributedObject {
 
     final String name;
     final QueueService queueService;

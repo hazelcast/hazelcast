@@ -24,6 +24,7 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
 
@@ -34,7 +35,7 @@ import java.util.logging.Level;
 
 @PrivateApi
 class WaitNotifyService {
-    private final ConcurrentMap<Object, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<Object, Queue<WaitingOp>>(100);
+    private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationExecutor;
     private final Future expirationTask;
@@ -69,7 +70,7 @@ class WaitNotifyService {
                             WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
                             if (waitingOp != null) {
                                 if (waitingOp.isValid()) {
-                                    waitingOpProcessor.process(waitingOp);
+                                    waitingOpProcessor.invalidate(waitingOp);
                                 }
                             }
                             long end = System.currentTimeMillis();
@@ -79,15 +80,13 @@ class WaitNotifyService {
                             }
                         }
                         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
-                            Iterator<WaitingOp> it = q.iterator();
-                            while (it.hasNext()) {
+                            for (WaitingOp waitingOp : q) {
                                 if (Thread.interrupted()) {
                                     return;
                                 }
-                                WaitingOp waitingOp = it.next();
                                 if (waitingOp.isValid()) {
-                                    if (waitingOp.expired() || waitingOp.timedOut()) {
-                                        waitingOpProcessor.process(waitingOp);
+                                    if (waitingOp.isExpired() || waitingOp.isCancelled()) {
+                                        waitingOpProcessor.invalidate(waitingOp);
                                     }
                                 }
                             }
@@ -104,7 +103,7 @@ class WaitNotifyService {
 
     // runs after queue lock
     public void wait(WaitSupport so) {
-        final Object key = so.getWaitKey();
+        final WaitNotifyKey key = so.getWaitKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
         if (q == null) {
             q = new ConcurrentLinkedQueue<WaitingOp>();
@@ -124,15 +123,15 @@ class WaitNotifyService {
 
     // runs after queue lock
     public void notify(Notifier notifier) {
-        Object key = notifier.getNotifiedKey();
+        WaitNotifyKey key = notifier.getNotifiedKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
         if (q == null) return;
         WaitingOp so = q.peek();
         while (so != null) {
             if (so.isValid()) {
-                if (so.expired()) {
+                if (so.isExpired()) {
                     // expired
-                    so.expire();
+                    so.onExpire();
                 } else {
                     if (so.shouldWait()) {
                         return;
@@ -146,19 +145,13 @@ class WaitNotifyService {
         }
     }
 
-    private Queue<WaitingOp> getScheduleQueue(Object scheduleQueueKey) {
-        return mapWaitingOps.get(scheduleQueueKey);
-    }
-
     // invalidated waiting ops will removed from queue eventually by notifiers.
     public void onMemberDisconnect(Address leftMember) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
-            Iterator<WaitingOp> it = q.iterator();
-            while (it.hasNext()) {
+            for (WaitingOp waitingOp : q) {
                 if (Thread.interrupted()) {
                     return;
                 }
-                WaitingOp waitingOp = it.next();
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
                     if (leftMember.equals(op.getCaller())) {
@@ -197,21 +190,26 @@ class WaitNotifyService {
         }
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("SchedulingService{");
-        sb.append("delayQueue=" + delayQueue.size());
-        sb.append(" \n[");
-        for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
-            sb.append("\t");
-            sb.append(ScheduledOps.size() + ", ");
+    public void onDistributedObjectDestroy(String serviceName, Object objectId) {
+        for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+            for (WaitingOp waitingOp : q) {
+                if (Thread.interrupted()) {
+                    return;
+                }
+                if (waitingOp.isValid()) {
+                    WaitNotifyKey wnk = waitingOp.waitSupport.getWaitKey();
+                    if (serviceName.equals(wnk.getServiceName())
+                            && objectId.equals(wnk.getDistributedObjectId())) {
+                        waitingOp.cancel(new DistributedObjectDestroyedException(serviceName, objectId));
+                    }
+                }
+            }
         }
-        sb.append("]\n}");
-        return sb.toString();
     }
 
     interface WaitingOpProcessor {
-        void process(WaitingOp so) throws Exception;
+
+        void invalidate(WaitingOp so) throws Exception;
 
         void processUnderExistingLock(Operation operation);
     }
@@ -238,6 +236,7 @@ class WaitNotifyService {
         final WaitSupport waitSupport;
         final long expirationTime;
         volatile boolean valid = true;
+        volatile Throwable error = null;
 
         WaitingOp(Queue<WaitingOp> queue, WaitSupport waitSupport) {
             this.op = (Operation) waitSupport;
@@ -260,13 +259,21 @@ class WaitNotifyService {
             return valid;
         }
 
-        public boolean expired() {
+        public boolean isExpired() {
             return expirationTime != -1 && Clock.currentTimeMillis() >= expirationTime;
         }
 
-        public boolean timedOut() {
-            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            return nodeEngine.operationService.isCallTimedOut(op);
+        public boolean isCancelled() {
+            if (error == null) {
+                final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+                if(nodeEngine.operationService.isCallTimedOut(op)) {
+                    cancel(new CallTimeoutException("Call timed out for "
+                            + op.getClass().getName()));
+                    return true;
+                }
+                return false;
+            }
+            return true;
         }
 
         public boolean shouldWait() {
@@ -288,14 +295,12 @@ class WaitNotifyService {
         @Override
         public void run() throws Exception {
             if (valid) {
-                if (expired()) {
+                if (isExpired()) {
                     queue.remove(this);
                     waitSupport.onWaitExpire();
-                } else if (timedOut()) {
+                } else if (isCancelled()) {
                     queue.remove(this);
-                    Object response = new CallTimeoutException("Call timed out for "
-                            + op.getClass().getName());
-                    op.getResponseHandler().sendResponse(response);
+                    op.getResponseHandler().sendResponse(error);
                 }
             }
         }
@@ -310,12 +315,36 @@ class WaitNotifyService {
             return op.getServiceName();
         }
 
-        public void expire() {
+        public void onExpire() {
             waitSupport.onWaitExpire();
         }
 
-        public String toString() {
-            return "W_" + Integer.toHexString(op.hashCode());
+        public void cancel(Throwable t) {
+            error = t;
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("WaitingOp");
+            sb.append("{op=").append(op);
+            sb.append(", expirationTime=").append(expirationTime);
+            sb.append(", valid=").append(valid);
+            sb.append('}');
+            return sb.toString();
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("SchedulingService{");
+        sb.append("delayQueue=" + delayQueue.size());
+        sb.append(" \n[");
+        for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
+            sb.append("\t");
+            sb.append(ScheduledOps.size() + ", ");
+        }
+        sb.append("]\n}");
+        return sb.toString();
     }
 }

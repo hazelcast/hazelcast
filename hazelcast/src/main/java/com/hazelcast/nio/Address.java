@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-public final class Address implements DataSerializable {
+public final class Address implements DataSerializable, Endpoint {
 
     private static final long serialVersionUID = -7626390274220424603L;
     private static final byte IPv4 = 4;

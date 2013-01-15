@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
+package com.hazelcast.cluster;
 
-
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * @ali 1/1/13
+ * @mdogan 1/15/13
  */
-public interface CollectionProxy extends DistributedObject {
-
-    public Object createNew();
-
+public interface Endpoint extends DataSerializable {
 }

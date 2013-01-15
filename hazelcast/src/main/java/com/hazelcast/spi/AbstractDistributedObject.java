@@ -19,13 +19,17 @@ package com.hazelcast.spi;
 import com.hazelcast.core.DistributedObject;
 
 /**
- * Marker interface for service proxies.
- *
- * @mdogan 9/18/12
+ * @mdogan 1/14/13
  */
+public abstract class AbstractDistributedObject implements DistributedObject {
 
-public interface ServiceProxy extends DistributedObject {
+    protected final NodeEngine nodeEngine;
 
-    String getServiceName();
+    protected AbstractDistributedObject(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
 
+    public final void destroy() {
+        nodeEngine.getProxyService().destroyDistributedObject(getServiceName(), getId());
+    }
 }

@@ -78,7 +78,7 @@ public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation impleme
         return unlocked;
     }
 
-    public Object getNotifiedKey() {
+    public WaitNotifyKey getNotifiedKey() {
         if (keyObject == null) {
             keyObject = getNodeEngine().toObject(dataKey);
         }

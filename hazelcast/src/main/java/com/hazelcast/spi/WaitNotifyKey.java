@@ -17,17 +17,12 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 1/14/13
+ * @mdogan 1/15/13
  */
-public abstract class AbstractServiceProxy implements ServiceProxy {
+public interface WaitNotifyKey {
 
-    protected final NodeEngine nodeEngine;
+    String getServiceName();
 
-    protected AbstractServiceProxy(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
-    }
+    Object getDistributedObjectId();
 
-    public final void destroy() {
-        nodeEngine.getProxyService().destroyProxy(getServiceName(), getId());
-    }
 }

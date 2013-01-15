@@ -22,10 +22,7 @@ import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.Collection;
@@ -33,7 +30,7 @@ import java.util.Collection;
 /**
  * @ali 1/8/13
  */
-public abstract class MultiMapOperation extends AbstractNamedOperation implements PartitionAwareOperation{
+public abstract class MultiMapOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
     transient Object response;
 

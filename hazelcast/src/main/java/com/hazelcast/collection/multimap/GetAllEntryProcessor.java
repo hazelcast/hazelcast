@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.collection.multimap;
 
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.collection.processor.Entry;
+import com.hazelcast.config.MultiMapConfig;
 
 import java.util.Collection;
 
 /**
- * @mdogan 1/14/13
+ * @ali 1/2/13
  */
-public interface ProxyService extends CoreService {
+public class GetAllEntryProcessor extends MultiMapEntryProcessor<MultiMapCollectionResponse> {
 
-    DistributedObject getDistributedObject(String serviceName, Object objectId);
+    public GetAllEntryProcessor() {
+    }
 
-    DistributedObject getDistributedObject(Class<? extends RemoteService> serviceClass, Object objectId);
+    public GetAllEntryProcessor(MultiMapConfig config) {
+        super(config.isBinary(), config.getValueCollectionType());
+    }
 
-    void destroyDistributedObject(String serviceName, Object objectId);
+    public MultiMapCollectionResponse execute(Entry entry) {
+        Collection collection = entry.getValue();
+        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationService());
+    }
 
-    Collection<DistributedObject> getProxies(String serviceName);
 
-    Collection<DistributedObject> getAllProxies();
+
 }

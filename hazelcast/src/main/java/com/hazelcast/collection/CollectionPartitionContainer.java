@@ -32,11 +32,11 @@ public class CollectionPartitionContainer {
         this.service = service;
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(String name){
-        CollectionContainer collectionContainer = containerMap.get(name);
+    public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId){
+        CollectionContainer collectionContainer = containerMap.get(proxyId.name);
         if (collectionContainer == null){
-//            collectionContainer = new CollectionContainer(name, service);
-            CollectionContainer current = containerMap.putIfAbsent(name, collectionContainer);
+            collectionContainer = new CollectionContainer(proxyId, service);
+            CollectionContainer current = containerMap.putIfAbsent(proxyId.name, collectionContainer);
             collectionContainer = current == null ? collectionContainer : current;
         }
         return collectionContainer;
