@@ -251,7 +251,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private class WaitingOpProcessorImpl implements WaitNotifyService.WaitingOpProcessor {
 
-        public void process(final WaitNotifyService.WaitingOp so) throws Exception {
+        public void invalidate(final WaitNotifyService.WaitingOp so) throws Exception {
             operationService.executeOperation(so);
         }
 

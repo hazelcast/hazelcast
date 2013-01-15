@@ -19,6 +19,7 @@ package com.hazelcast.collection;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.processor.EntryProcessor;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
@@ -26,7 +27,6 @@ import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.HashSet;
 import java.util.Properties;
@@ -77,8 +77,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     Object createNew(CollectionProxyId proxyId) {
-        final NodeEngineImpl nodeEngineImpl = (NodeEngineImpl) nodeEngine;
-        CollectionProxy proxy = (CollectionProxy)nodeEngineImpl.getProxyService().getProxy(COLLECTION_SERVICE_NAME, proxyId);
+        CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(COLLECTION_SERVICE_NAME, proxyId);
         return proxy.createNew();
     }
 
@@ -86,15 +85,15 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         return COLLECTION_SERVICE_NAME;
     }
 
-    public ServiceProxy createProxy(Object proxyId) {
-        CollectionProxyId collectionProxyId = (CollectionProxyId) proxyId;
+    public DistributedObject createDistributedObject(Object objectId) {
+        CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
         final String name = collectionProxyId.name;
         final CollectionProxyType type = collectionProxyId.type;
         switch (type) {
             case MULTI_MAP:
-                return new ObjectMultiMapProxy(name, this, nodeEngine, (CollectionProxyId)proxyId);
+                return new ObjectMultiMapProxy(name, this, nodeEngine, (CollectionProxyId)objectId);
             case LIST:
-                return new ObjectListProxy(name, this, nodeEngine, (CollectionProxyId)proxyId);
+                return new ObjectListProxy(name, this, nodeEngine, (CollectionProxyId)objectId);
             case SET:
                 return null;
             case QUEUE:
@@ -103,8 +102,8 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         throw new IllegalArgumentException();
     }
 
-    public ServiceProxy createClientProxy(Object proxyId) {
-        return createProxy(proxyId);
+    public DistributedObject createDistributedObjectForClient(Object objectId) {
+        return createDistributedObject(objectId);
     }
 
     public void destroyDistributedObject(Object objectId) {

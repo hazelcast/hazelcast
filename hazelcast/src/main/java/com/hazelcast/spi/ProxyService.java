@@ -25,11 +25,11 @@ import java.util.Collection;
  */
 public interface ProxyService extends CoreService {
 
-    ServiceProxy getProxy(String serviceName, Object proxyId);
+    DistributedObject getDistributedObject(String serviceName, Object objectId);
 
-    ServiceProxy getProxy(Class<? extends RemoteService> serviceClass, Object proxyId);
+    DistributedObject getDistributedObject(Class<? extends RemoteService> serviceClass, Object objectId);
 
-    void destroyProxy(String serviceName, Object proxyId);
+    void destroyDistributedObject(String serviceName, Object objectId);
 
     Collection<DistributedObject> getProxies(String serviceName);
 

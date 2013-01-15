@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
+package com.hazelcast.queue;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 import com.hazelcast.spi.WaitNotifyKey;
 
 /**
- * @ali 1/10/13
+ * @mdogan 1/15/13
  */
-public class WaitKey extends AbstractWaitNotifyKey implements WaitNotifyKey {
+public class QueueWaitNotifyKey extends AbstractWaitNotifyKey implements WaitNotifyKey {
 
-    final Data key;
+    private final String type;
 
-    final String value;
-
-    public WaitKey(String name, Data key, String value) {
-        super(CollectionService.COLLECTION_SERVICE_NAME, name);
-        this.key = key;
-        this.value = value;
+    public QueueWaitNotifyKey(Object id, String type) {
+        super(QueueService.QUEUE_SERVICE_NAME, id);
+        this.type = type;
     }
 
     @Override
@@ -41,10 +37,9 @@ public class WaitKey extends AbstractWaitNotifyKey implements WaitNotifyKey {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        WaitKey waitKey = (WaitKey) o;
+        QueueWaitNotifyKey that = (QueueWaitNotifyKey) o;
 
-        if (key != null ? !key.equals(waitKey.key) : waitKey.key != null) return false;
-        if (value != null ? !value.equals(waitKey.value) : waitKey.value != null) return false;
+        if (!type.equals(that.type)) return false;
 
         return true;
     }
@@ -52,8 +47,7 @@ public class WaitKey extends AbstractWaitNotifyKey implements WaitNotifyKey {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (key != null ? key.hashCode() : 0);
-        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + type.hashCode();
         return result;
     }
 }

@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
+package com.hazelcast.spi.exception;
 
-
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastException;
 
 /**
- * @ali 1/1/13
+ * @mdogan 1/15/13
  */
-public interface CollectionProxy extends DistributedObject {
+public class DistributedObjectDestroyedException extends HazelcastException {
 
-    public Object createNew();
-
+    public DistributedObjectDestroyedException(String service, Object objectId) {
+        super("DistributedObject[" + objectId + "] of service: " + service + " has been destroyed!");
+    }
 }

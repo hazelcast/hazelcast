@@ -77,7 +77,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
         return unlocked;
     }
 
-    public Object getNotifiedKey() {
+    public WaitNotifyKey getNotifiedKey() {
         if (keyObject == null) {
             keyObject = getNodeEngine().toObject(dataKey);
         }

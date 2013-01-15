@@ -14,39 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.spi;
 
-import com.hazelcast.spi.AbstractWaitNotifyKey;
+/**
+ * @mdogan 1/15/13
+ */
+public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
-public class MapWaitKey extends AbstractWaitNotifyKey {
-    private Object key;
-    private String operation;
+    private final String service;
+    private final Object id;
 
-    public MapWaitKey(String mapName, Object key, String operation) {
-        super(MapService.MAP_SERVICE_NAME, mapName);
-        this.key = key;
-        this.operation = operation;
+    protected AbstractWaitNotifyKey(String service, Object id) {
+        this.service = service;
+        this.id = id;
+    }
+
+    public final String getServiceName() {
+        return service;
+    }
+
+    public final Object getDistributedObjectId() {
+        return id;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
 
-        MapWaitKey that = (MapWaitKey) o;
+        AbstractWaitNotifyKey that = (AbstractWaitNotifyKey) o;
 
-        if (key != null ? !key.equals(that.key) : that.key != null) return false;
-        if (operation != null ? !operation.equals(that.operation) : that.operation != null) return false;
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (service != null ? !service.equals(that.service) : that.service != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (key != null ? key.hashCode() : 0);
-        result = 31 * result + (operation != null ? operation.hashCode() : 0);
+        int result = service != null ? service.hashCode() : 0;
+        result = 31 * result + (id != null ? id.hashCode() : 0);
         return result;
     }
 }

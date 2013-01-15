@@ -18,7 +18,7 @@ package com.hazelcast.spi;
 
 public interface WaitSupport {
 
-    Object getWaitKey();
+    WaitNotifyKey getWaitKey();
 
     boolean shouldWait();
 

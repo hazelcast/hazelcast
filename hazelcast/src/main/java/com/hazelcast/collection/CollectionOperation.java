@@ -129,7 +129,7 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
         }
     }
 
-    public Object getWaitKey() {
+    public WaitNotifyKey getWaitKey() {
         return new WaitKey(name, dataKey, "processor");
     }
 
@@ -160,7 +160,7 @@ public class CollectionOperation extends AbstractNamedKeyBasedOperation implemen
         return false;
     }
 
-    public Object getNotifiedKey() {
+    public WaitNotifyKey getNotifiedKey() {
         return getWaitKey();
     }
 }

@@ -21,7 +21,10 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
 
@@ -34,7 +37,7 @@ import java.util.logging.Level;
  * Date: 12/26/12
  * Time: 2:06 PM
  */
-public class TopicProxy<E> extends AbstractServiceProxy implements ITopic<E>, ServiceProxy {
+public class TopicProxy<E> extends AbstractDistributedObject implements ITopic<E> {
 
     private final String name;
     private final EventService eventService;

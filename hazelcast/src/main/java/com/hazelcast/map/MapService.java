@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
@@ -40,12 +41,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>, ClientProtocolService {
+        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
+        ClientProtocolService {
 
     public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
 
@@ -229,12 +233,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return MAP_SERVICE_NAME;
     }
 
-    public ServiceProxy createProxy(Object proxyId) {
-        return new ObjectMapProxy(String.valueOf(proxyId), this, nodeEngine);
+    public DistributedObject createDistributedObject(Object objectId) {
+        return new ObjectMapProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public ServiceProxy createClientProxy(Object proxyId) {
-        return new DataMapProxy(String.valueOf(proxyId), this, nodeEngine);
+    public DistributedObject createDistributedObjectForClient(Object objectId) {
+        return new DataMapProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
     public void destroyDistributedObject(Object objectId) {

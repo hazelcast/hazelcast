@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.DistributedObject;
+
 /**
  * @mdogan 10/31/12
  */
@@ -23,9 +25,9 @@ public interface RemoteService {
 
     String getServiceName();
 
-    ServiceProxy createProxy(Object proxyId);
+    DistributedObject createDistributedObject(Object objectId);
 
-    ServiceProxy createClientProxy(Object proxyId);
+    DistributedObject createDistributedObjectForClient(Object objectId);
 
     void destroyDistributedObject(Object objectId);
 }

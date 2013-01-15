@@ -55,7 +55,7 @@ public class DistributedObjectEvent implements DataSerializable, HazelcastInstan
     }
 
     public DistributedObject getDistributedObject() {
-        return hazelcastInstance != null ? hazelcastInstance.getServiceProxy(serviceName, objectId) : null;
+        return hazelcastInstance != null ? hazelcastInstance.getDistributedObject(serviceName, objectId) : null;
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {

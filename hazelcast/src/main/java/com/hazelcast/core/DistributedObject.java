@@ -19,7 +19,7 @@ package com.hazelcast.core;
 public interface DistributedObject {
 
     /**
-     * Returns the unique id for this instance.
+     * Returns the unique id for this object.
      *
      * @return id the of this instance
      */
@@ -27,14 +27,19 @@ public interface DistributedObject {
 
 
     /**
-     * Returns the name for this instance.
+     * Returns the name for this object.
      *
      */
     String getName();
 
     /**
-     * Destroys this instance cluster-wide.
-     * Clears and releases all resources for this instance.
+     * Returns the service name for this object.
+     */
+    String getServiceName();
+
+    /**
+     * Destroys this object cluster-wide.
+     * Clears and releases all resources for this object.
      */
     void destroy();
 

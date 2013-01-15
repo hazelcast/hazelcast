@@ -25,7 +25,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.AbstractServiceProxy;
+import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
 
-abstract class MapProxySupport extends AbstractServiceProxy {
+abstract class MapProxySupport extends AbstractDistributedObject {
 
     protected final String name;
     protected final MapService mapService;

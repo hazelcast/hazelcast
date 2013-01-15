@@ -167,9 +167,6 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
         return null;
     }
 
-    public void destroy() {
-    }
-
     public Object getId() {
         return null;
     }

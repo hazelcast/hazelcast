@@ -18,11 +18,13 @@ package com.hazelcast.atomicnumber;
 
 import com.hazelcast.atomicnumber.proxy.AtomicNumberProxy;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -67,12 +69,12 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         return NAME;
     }
 
-    public ServiceProxy createProxy(Object proxyId) {
-        return new AtomicNumberProxy(String.valueOf(proxyId), this, nodeEngine);
+    public DistributedObject createDistributedObject(Object objectId) {
+        return new AtomicNumberProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public ServiceProxy createClientProxy(Object proxyId) {
-        return createProxy(proxyId);
+    public DistributedObject createDistributedObjectForClient(Object objectId) {
+        return createDistributedObject(objectId);
     }
 
     public void destroyDistributedObject(Object objectId) {

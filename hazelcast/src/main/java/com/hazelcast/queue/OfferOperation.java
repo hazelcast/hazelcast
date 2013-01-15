@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
@@ -76,12 +77,12 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
         return Boolean.TRUE.equals(response);
     }
 
-    public Object getNotifiedKey() {
-        return getName() + ":poll";
+    public WaitNotifyKey getNotifiedKey() {
+        return new QueueWaitNotifyKey(getName(), "poll");
     }
 
-    public Object getWaitKey() {
-        return getName() + ":offer";
+    public WaitNotifyKey getWaitKey() {
+        return new QueueWaitNotifyKey(getName(), "offer");
     }
 
     public boolean shouldWait() {

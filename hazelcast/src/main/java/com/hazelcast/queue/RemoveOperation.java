@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
@@ -77,7 +78,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
         return itemId != -1;
     }
 
-    public Object getNotifiedKey() {
-        return name + ":offer";
+    public WaitNotifyKey getNotifiedKey() {
+        return new QueueWaitNotifyKey(name, "offer");
     }
 }

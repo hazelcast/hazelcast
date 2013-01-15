@@ -17,9 +17,13 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 
@@ -48,8 +52,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return NAME;
     }
 
-    public ServiceProxy createProxy(Object proxyId) {
-        final String name = String.valueOf(proxyId);
+    public DistributedObject createDistributedObject(Object objectId) {
+        final String name = String.valueOf(objectId);
         TopicProxy proxy;
         TopicConfig topicConfig = nodeEngine.getConfig().getTopicConfig(name);
         if(topicConfig.isGlobalOrderingEnabled())
@@ -59,8 +63,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return proxy;
     }
 
-    public ServiceProxy createClientProxy(Object proxyId) {
-        return createProxy(proxyId);
+    public DistributedObject createDistributedObjectForClient(Object objectId) {
+        return createDistributedObject(objectId);
     }
 
     public void destroyDistributedObject(Object objectId) {

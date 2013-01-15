@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ServiceProxy;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -286,9 +285,9 @@ public interface HazelcastInstance {
     LifecycleService getLifecycleService();
 
 
-    <S extends ServiceProxy> S getServiceProxy(Class<? extends RemoteService> serviceClass, Object id);
+    <S extends DistributedObject> S getDistributedObject(Class<? extends RemoteService> serviceClass, Object id);
 
-    <S extends ServiceProxy> S getServiceProxy(String serviceName, Object id);
+    <S extends DistributedObject> S getDistributedObject(String serviceName, Object id);
 
 
     void registerSerializer(final TypeSerializer serializer, Class type);

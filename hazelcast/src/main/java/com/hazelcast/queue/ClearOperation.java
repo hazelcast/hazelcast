@@ -20,6 +20,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
         return Boolean.TRUE.equals(response);
     }
 
-    public Object getNotifiedKey() {
-        return name + ":offer";
+    public WaitNotifyKey getNotifiedKey() {
+        return new QueueWaitNotifyKey(name, "offer");
     }
 }

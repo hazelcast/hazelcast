@@ -18,16 +18,16 @@ package com.hazelcast.atomicnumber.proxy;
 
 import com.hazelcast.atomicnumber.*;
 import com.hazelcast.core.AtomicNumber;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
-import com.hazelcast.spi.AbstractServiceProxy;
+import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ServiceProxy;
 
 import java.util.concurrent.Future;
 
 // author: sancar - 21.12.2012
-public class AtomicNumberProxy extends AbstractServiceProxy implements ServiceProxy, AtomicNumber {
+public class AtomicNumberProxy extends AbstractDistributedObject implements DistributedObject, AtomicNumber {
 
     private final String name;
     private final AtomicNumberService atomicNumberService;
