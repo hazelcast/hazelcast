@@ -160,6 +160,7 @@
         <xi:include href="mancenter/MC_Queues.xml"/>
         <xi:include href="mancenter/MC_Topics.xml"/>
         <xi:include href="mancenter/MC_Members.xml"/>
+        <xi:include href="mancenter/MC_Alerts.xml"/>
         <xi:include href="mancenter/MC_Logs.xml"/>
         <xi:include href="mancenter/MC_Scripting.xml"/>
         <xi:include href="mancenter/MC_TimeTravel.xml"/>
