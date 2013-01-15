@@ -30,17 +30,17 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final SocketChannelWrapper socketChannel;
 
-    protected final Connection connection;
+    protected final TcpIpConnection connection;
 
     protected final InOutSelector inOutSelector;
 
-    protected final ConnectionManager connectionManager;
+    protected final TcpIpConnectionManager connectionManager;
 
     protected final SystemLogService systemLogService;
 
     protected SelectionKey sk = null;
 
-    public AbstractSelectionHandler(final Connection connection, final InOutSelector inOutSelector) {
+    public AbstractSelectionHandler(final TcpIpConnection connection, final InOutSelector inOutSelector) {
         super();
         this.connection = connection;
         this.inOutSelector = inOutSelector;

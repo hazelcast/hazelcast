@@ -18,9 +18,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationConstants;
@@ -50,7 +50,7 @@ public abstract class ClientCommandHandler implements CommandHandler {
         sendResponse(response, protocol.conn);
     }
 
-    protected void sendResponse(SocketWritable request, Connection conn) {
+    protected void sendResponse(SocketWritable request, TcpIpConnection conn) {
         if (conn != null && conn.live()) {
             conn.getWriteHandler().enqueueSocketWritable(request);
         } else {

@@ -20,7 +20,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.Connection;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.BlockingQueue;

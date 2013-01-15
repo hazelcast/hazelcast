@@ -20,9 +20,10 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.CallContext;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.spi.Connection;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -32,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientEndpoint implements ConnectionListener, Client {
-    final Connection conn;
+    final TcpIpConnection conn;
     final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
     final List<IMap> listeningMaps = new ArrayList<IMap>();
@@ -48,7 +49,7 @@ public class ClientEndpoint implements ConnectionListener, Client {
 
     LoginContext loginContext = null;
 
-    ClientEndpoint(Node node, Connection conn) {
+    ClientEndpoint(Node node, TcpIpConnection conn) {
         this.node = node;
         this.conn = conn;
     }

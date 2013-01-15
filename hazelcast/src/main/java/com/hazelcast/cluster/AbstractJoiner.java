@@ -23,7 +23,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.Connection;
 import com.hazelcast.util.Clock;
 
 import java.util.Collection;
@@ -105,14 +105,12 @@ public abstract class AbstractJoiner implements Joiner {
                 return;
             }
         }
-
         if (node.getClusterService().getSize() == 1) {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
             sb.append(node.clusterService);
             logger.log(Level.INFO, sb.toString());
         }
-
     }
 
     protected void failedJoiningToMaster(boolean multicast, int tryCount) {
@@ -151,7 +149,7 @@ public abstract class AbstractJoiner implements Joiner {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (memberImpl.getAddress().equals(joinInfo.address)) {
                             logger.log(Level.FINEST, "Should not merge to " + joinInfo.address
-                                      + ", because it is already member of this cluster.");
+                                    + ", because it is already member of this cluster.");
                             return false;
                         }
                     }
@@ -159,22 +157,22 @@ public abstract class AbstractJoiner implements Joiner {
                     if (joinInfo.getMemberCount() > currentMemberCount) {
                         // I should join the other cluster
                         logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinInfo.address
-                                                 + ", because : joinInfo.getMemberCount() > currentMemberCount ["
-                                                 + (joinInfo.getMemberCount() + " > " + currentMemberCount) + "]");
+                                + ", because : joinInfo.getMemberCount() > currentMemberCount ["
+                                + (joinInfo.getMemberCount() + " > " + currentMemberCount) + "]");
                         logger.log(Level.FINEST, joinInfo.toString());
                         shouldMerge = true;
                     } else if (joinInfo.getMemberCount() == currentMemberCount) {
                         // compare the hashes
                         if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
                             logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinInfo.address
-                                                     + ", because : node.getThisAddress().hashCode() > joinInfo.address.hashCode() "
-                                                     + ", this node member count: " + currentMemberCount);
+                                    + ", because : node.getThisAddress().hashCode() > joinInfo.address.hashCode() "
+                                    + ", this node member count: " + currentMemberCount);
                             logger.log(Level.FINEST, joinInfo.toString());
                             shouldMerge = true;
                         } else {
                             logger.log(Level.FINEST, joinInfo.address + " should merge to this node "
-                                                     + ", because : node.getThisAddress().hashCode() < joinInfo.address.hashCode() "
-                                                     + ", this node member count: " + currentMemberCount);
+                                    + ", because : node.getThisAddress().hashCode() < joinInfo.address.hashCode() "
+                                    + ", this node member count: " + currentMemberCount);
                         }
                     }
                 }

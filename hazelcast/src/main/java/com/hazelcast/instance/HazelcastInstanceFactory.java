@@ -66,7 +66,7 @@ public class HazelcastInstanceFactory {
         }
         String name = config.getInstanceName();
         if (name == null || name.trim().length() == 0) {
-            name = "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
+            name = createInstanceName(config);
             return newHazelcastInstance(config, name);
         } else {
             synchronized (INIT_LOCK) {
@@ -79,10 +79,21 @@ public class HazelcastInstanceFactory {
         }
     }
 
-    private static HazelcastInstance newHazelcastInstance(Config config, String instanceName) {
+    private static String createInstanceName(Config config) {
+        return "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
+    }
+
+    static HazelcastInstance newHazelcastInstance(Config config, String instanceName) {
+        return newHazelcastInstance(config, instanceName, new DefaultNodeContext());
+    }
+
+    static HazelcastInstance newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
+        if (instanceName == null || instanceName.trim().length() == 0) {
+            instanceName = createInstanceName(config);
+        }
         HazelcastInstanceImpl hazelcastInstance = null;
         try {
-            hazelcastInstance = new HazelcastInstanceImpl(instanceName, config);
+            hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             INSTANCE_MAP.put(instanceName, hazelcastInstance);
             final Node node = hazelcastInstance.node;
             boolean firstMember = (node.getClusterService().getMembers().iterator().next().localMember());

@@ -19,8 +19,8 @@ package com.hazelcast.client;
 import com.hazelcast.instance.CallContext;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.spi.ClientProtocolService;
 
@@ -33,7 +33,7 @@ public class ClientCommandService {
 
     private final Node node;
     private final ILogger logger;
-    private final Map<Connection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
+    private final Map<TcpIpConnection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<TcpIpConnection, ClientEndpoint>();
     private ConcurrentHashMap<Command, ClientCommandHandler> services = new ConcurrentHashMap<Command, ClientCommandHandler>();
     private ExecutorService executorService;
 
@@ -55,7 +55,7 @@ public class ClientCommandService {
         executorService.execute(clientRequestHandler);
     }
 
-    public ClientEndpoint getClientEndpoint(Connection conn) {
+    public ClientEndpoint getClientEndpoint(TcpIpConnection conn) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
         if (clientEndpoint == null) {
             clientEndpoint = new ClientEndpoint(node, conn);
@@ -64,7 +64,7 @@ public class ClientCommandService {
         return clientEndpoint;
     }
 
-    private void checkAuth(Connection conn) {
+    private void checkAuth(TcpIpConnection conn) {
         logger.log(Level.SEVERE, "A Client " + conn + " must authenticate before any operation.");
         node.clientCommandService.removeClientEndpoint(conn);
         if (conn != null)
@@ -72,7 +72,7 @@ public class ClientCommandService {
         return;
     }
 
-    public void removeClientEndpoint(Connection conn) {
+    public void removeClientEndpoint(TcpIpConnection conn) {
         mapClientEndpoints.remove(conn);
     }
 

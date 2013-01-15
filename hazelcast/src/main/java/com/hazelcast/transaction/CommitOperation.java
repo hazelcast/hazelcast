@@ -19,7 +19,6 @@ package com.hazelcast.transaction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.exception.TransactionException;
 

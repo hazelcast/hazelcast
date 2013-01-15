@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.nio.serialization.Data;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -31,7 +30,7 @@ public class Protocol implements SocketWritable {
     public final Command command;
     public final String[] args;
     public final ByteBuffer[] buffers;
-    public final Connection conn;
+    public final TcpIpConnection conn;
     public final boolean noReply;
     public String flag;
     public int threadId;
@@ -40,11 +39,11 @@ public class Protocol implements SocketWritable {
     int totalSize = 0;
     int totalWritten = 0;
 
-    public Protocol(Connection connection, Command command, String[] args, ByteBuffer... buffers) {
+    public Protocol(TcpIpConnection connection, Command command, String[] args, ByteBuffer... buffers) {
         this(connection, command, null, -1, false, args, buffers);
     }
 
-    public Protocol(Connection connection, Command command, String flag, int threadId, boolean noReply, String[] args, ByteBuffer... buffers) {
+    public Protocol(TcpIpConnection connection, Command command, String flag, int threadId, boolean noReply, String[] args, ByteBuffer... buffers) {
         this.buffers = buffers;
         this.args = args;
         this.command = command;

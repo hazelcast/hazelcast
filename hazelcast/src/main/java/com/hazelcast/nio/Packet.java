@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBinaryProxy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.spi.Connection;
 
 import java.nio.ByteBuffer;
 

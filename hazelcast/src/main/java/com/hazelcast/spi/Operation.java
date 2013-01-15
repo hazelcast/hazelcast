@@ -17,7 +17,10 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;

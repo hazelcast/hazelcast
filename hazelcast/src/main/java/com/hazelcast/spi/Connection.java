@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionMonitor;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
 
-import java.nio.channels.ServerSocketChannel;
+public interface Connection {
+    Address getEndPoint();
 
-public interface AddressPicker {
+    boolean live();
 
-    void pickAddress() throws Exception;
+    boolean write(Data data, SerializationContext context, int header);
 
-    Address getBindAddress();
+    long lastReadTime();
 
-    Address getPublicAddress();
+    long lastWriteTime();
 
-    ServerSocketChannel getServerSocketChannel();
+    void close();
+
+    boolean isClient();
+
+    void setEndPoint(Address remoteEndPoint);
+
+    void setMonitor(ConnectionMonitor connectionMonitor);
 }

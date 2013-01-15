@@ -21,10 +21,10 @@ import com.hazelcast.util.Clock;
 
 import java.util.logging.Level;
 
-class ConnectionMonitor {
+public class ConnectionMonitor {
 
     final ILogger logger;
-    final ConnectionManager connectionManager;
+    final TcpIpConnectionManager connectionManager;
     final IOService ioService;
     final Address endPoint;
     final long minInterval;
@@ -32,7 +32,7 @@ class ConnectionMonitor {
     int faults = 0;
     long lastFaultTime = 0L;
 
-    public ConnectionMonitor(ConnectionManager connectionManager, Address endPoint) {
+    public ConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
         super();
         this.connectionManager = connectionManager;
         this.endPoint = endPoint;

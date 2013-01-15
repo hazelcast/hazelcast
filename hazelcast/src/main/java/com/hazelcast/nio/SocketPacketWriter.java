@@ -23,10 +23,10 @@ import java.nio.ByteBuffer;
 public class SocketPacketWriter implements SocketWriter<Packet> {
 
     private final PacketWriter packetWriter;
-    final Connection connection;
+    final TcpIpConnection connection;
     final ILogger logger;
 
-    SocketPacketWriter(Connection connection) {
+    SocketPacketWriter(TcpIpConnection connection) {
         this.connection = connection;
         final IOService ioService = connection.getConnectionManager().ioService;
         this.logger = ioService.getLogger(SocketPacketWriter.class.getName());

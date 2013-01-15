@@ -50,7 +50,7 @@ public class SocketProtocolReader implements SocketReader {
 
     final ByteBuffer endOfTheCommand = ByteBuffer.allocate(2);
 
-    private final Connection connection;
+    private final TcpIpConnection connection;
     private final IOService ioService;
 
     private String flag = null;
@@ -59,7 +59,7 @@ public class SocketProtocolReader implements SocketReader {
     Pattern p = Pattern.compile("\\s+");
     Pattern numericPattern = Pattern.compile("([0-9]*)");
 
-    public SocketProtocolReader(Connection connection) {
+    public SocketProtocolReader(TcpIpConnection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().getIOHandler();
         this.logger = ioService.getLogger(SocketProtocolReader.class.getName());
@@ -102,7 +102,7 @@ public class SocketProtocolReader implements SocketReader {
                     }
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
                         Protocol protocol = new Protocol(connection, command, flag, threadId, noreply, args, buffers);
-                        connection.setType(Connection.Type.PROTOCOL_CLIENT);
+                        connection.setType(TcpIpConnection.Type.PROTOCOL_CLIENT);
                         ioService.handleClientCommand(protocol);
                         reset();
                     }

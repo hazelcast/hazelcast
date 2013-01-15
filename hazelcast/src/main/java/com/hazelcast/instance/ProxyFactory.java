@@ -16,8 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.transaction.TransactionImpl;
-
 public interface ProxyFactory {
 
 //    void checkProxy(ProxyKey proxyKey);

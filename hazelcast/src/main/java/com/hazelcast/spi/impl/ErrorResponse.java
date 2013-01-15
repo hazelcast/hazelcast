@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;

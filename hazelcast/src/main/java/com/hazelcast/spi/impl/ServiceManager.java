@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.CustomServiceConfig;
 import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.ServiceConfig;
@@ -26,7 +27,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
-import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.queue.QueueService;

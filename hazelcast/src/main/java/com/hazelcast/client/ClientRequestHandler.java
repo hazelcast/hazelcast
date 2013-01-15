@@ -20,8 +20,8 @@ import com.hazelcast.instance.CallContext;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.util.Util;
 
 import javax.security.auth.Subject;
@@ -53,7 +53,7 @@ public class ClientRequestHandler implements Runnable {
             if (!valid) return;
             final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
                 public Void run() {
-                    Connection connection = protocol.conn;
+                    TcpIpConnection connection = protocol.conn;
                     ClientCommandHandler clientOperationHandler = node.clientCommandService.getService(protocol);
                     clientOperationHandler.handle(node, protocol);
                     node.clientCommandService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);

@@ -17,7 +17,6 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 
 import java.util.Map;
 import java.util.concurrent.ExecutionException;

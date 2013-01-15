@@ -21,8 +21,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.nio.ClassLoaderUtil;
 
-import java.util.concurrent.PriorityBlockingQueue;
-
 public class MapInfo {
 
     private String name;

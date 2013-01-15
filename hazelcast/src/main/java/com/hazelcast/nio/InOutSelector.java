@@ -39,7 +39,7 @@ public final class InOutSelector extends Thread implements Runnable {
 
     private final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
-    private final ConnectionManager connectionManager;
+    private final TcpIpConnectionManager connectionManager;
 
     private final int waitTime;
 
@@ -49,7 +49,7 @@ public final class InOutSelector extends Thread implements Runnable {
 
     final Selector selector;
 
-    public InOutSelector(ConnectionManager connectionManager, int id) {
+    public InOutSelector(TcpIpConnectionManager connectionManager, int id) {
         super(connectionManager.ioService.getThreadGroup(), connectionManager.ioService.getThreadPrefix() + id);
         this.connectionManager = connectionManager;
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
@@ -135,12 +135,12 @@ public final class InOutSelector extends Thread implements Runnable {
                     try {
                         it.remove();
                         if (sk.isValid() && sk.isReadable()) {
-                            Connection connection = (Connection) sk.attachment();
+                            TcpIpConnection connection = (TcpIpConnection) sk.attachment();
                             connection.getReadHandler().handle();
                         }
                         if (sk.isValid() && sk.isWritable()) {
                             sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
-                            Connection connection = (Connection) sk.attachment();
+                            TcpIpConnection connection = (TcpIpConnection) sk.attachment();
                             connection.getWriteHandler().handle();
                         }
                     } catch (Throwable e) {

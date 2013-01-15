@@ -25,7 +25,8 @@ import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
-import com.hazelcast.util.Clock;
+import com.hazelcast.spi.Connection;
+import com.hazelcast.spi.ConnectionManager;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -38,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-public class ConnectionManager {
+public class TcpIpConnectionManager implements ConnectionManager{
 
     protected final ILogger logger;
 
@@ -60,7 +61,7 @@ public class ConnectionManager {
 
     private final Set<ConnectionListener> setConnectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
-    private final Set<Connection> setActiveConnections = Collections.newSetFromMap(new ConcurrentHashMap<Connection, Boolean>());
+    private final Set<TcpIpConnection> setActiveConnections = Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
 
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
@@ -88,10 +89,10 @@ public class ConnectionManager {
 
     private Thread socketAcceptorThread; // accessed only in synchronized block
 
-    public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
-        this.logger = ioService.getLogger(ConnectionManager.class.getName());
+        this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
         this.SOCKET_RECEIVE_BUFFER_SIZE = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.SOCKET_SEND_BUFFER_SIZE = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.SOCKET_LINGER_SECONDS = ioService.getSocketLingerSeconds();
@@ -244,15 +245,13 @@ public class ConnectionManager {
         //make sure bind packet is the first packet sent to the end point.
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
         final Data bindData = ioService.toData(bind);
-        final Packet packet = new Packet(bindData, connection, ioService.getSerializationContext());
-        packet.setHeader(Packet.HEADER_OP, true);
-        connection.getWriteHandler().enqueueSocketWritable(packet);
+        connection.write(bindData, ioService.getSerializationContext(), Packet.HEADER_OP);
         //now you can send anything...
     }
 
-    Connection assignSocketChannel(SocketChannelWrapper channel) {
+    TcpIpConnection assignSocketChannel(SocketChannelWrapper channel) {
         InOutSelector selectorAssigned = nextSelector();
-        final Connection connection = new Connection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
+        final TcpIpConnection connection = new TcpIpConnection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
         setActiveConnections.add(connection);
         selectorAssigned.addTask(connection.getReadHandler());
         selectorAssigned.selector.wakeup();
@@ -313,7 +312,7 @@ public class ConnectionManager {
     }
 
     // for testing purposes only
-    public void attachConnection(Address address, Connection conn) {
+    public void attachConnection(Address address, TcpIpConnection conn) {
         mapConnections.put(address, conn);
     }
 
@@ -336,16 +335,6 @@ public class ConnectionManager {
         if (connection.live()) {
             connection.close();
         }
-    }
-
-    public int getTotalWriteQueueSize() {
-        int count = 0;
-        for (Connection conn : mapConnections.values()) {
-            if (conn.live()) {
-                count += conn.getWriteHandler().size();
-            }
-        }
-        return count;
     }
 
     protected void initSocket(Socket socket) throws Exception {
@@ -412,7 +401,7 @@ public class ConnectionManager {
                 logger.log(Level.FINEST, ignore.getMessage(), ignore);
             }
         }
-        for (Connection conn : setActiveConnections) {
+        for (TcpIpConnection conn : setActiveConnections) {
             try {
                 destroyConnection(conn);
             } catch (final Throwable ignore) {
@@ -445,7 +434,7 @@ public class ConnectionManager {
 
     public int getCurrentClientConnections() {
         int count = 0;
-        for (Connection conn : setActiveConnections) {
+        for (TcpIpConnection conn : setActiveConnections) {
             if (conn.live()) {
                 if (conn.isClient()) {
                     count++;
@@ -495,22 +484,6 @@ public class ConnectionManager {
         }
     }
 
-    public void appendState(StringBuffer sbState) {
-        long now = Clock.currentTimeMillis();
-        sbState.append("\nConnectionManager {");
-        for (Connection conn : mapConnections.values()) {
-            long wr = (now - conn.getWriteHandler().lastRegistration) / 1000;
-            long wh = (now - conn.getWriteHandler().lastHandle) / 1000;
-            long rr = (now - conn.getReadHandler().lastRegistration) / 1000;
-            long rh = (now - conn.getReadHandler().lastHandle) / 1000;
-            sbState.append("\n\tEndPoint: ").append(conn.getEndPoint());
-            sbState.append("  ").append(conn.live());
-            sbState.append("  ").append(conn.getWriteHandler().size());
-            sbState.append("  w:").append(wr).append("/").append(wh);
-            sbState.append("  r:").append(rr).append("/").append(rh);
-        }
-        sbState.append("\n}");
-    }
 
     @Override
     public String toString() {

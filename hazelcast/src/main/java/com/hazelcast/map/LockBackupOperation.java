@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 public class LockBackupOperation extends TTLAwareOperation implements BackupOperation {
 

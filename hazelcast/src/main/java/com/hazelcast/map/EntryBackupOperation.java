@@ -19,10 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;

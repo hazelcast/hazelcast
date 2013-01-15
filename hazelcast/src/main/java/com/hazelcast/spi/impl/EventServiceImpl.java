@@ -93,7 +93,6 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         EventServiceSegment segment = getSegment(serviceName, true);
         Registration reg = new Registration(createId(serviceName), serviceName, topic, filter,
                 nodeEngine.getThisAddress(), listener, localOnly);
-
         if (segment.addRegistration(topic, reg)) {
             if (!localOnly) {
                 final RegistrationOperation op = new RegistrationOperation(reg);
@@ -185,10 +184,8 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         } else {
             final Address subscriber = registration.getSubscriber();
             final Data data = nodeEngine.toData(new EventPacket(registration.getId(), serviceName, event));
-            final Packet packet = new Packet(data, serializationContext);
-            packet.setHeader(Packet.HEADER_EVENT, true);
+            nodeEngine.send(data, subscriber, Packet.HEADER_EVENT);
             // TODO: event publishing requires flow control mechanism!
-            nodeEngine.getClusterService().send(packet, subscriber);
         }
     }
 
@@ -209,10 +206,8 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 }
                 final Address subscriber = registration.getSubscriber();
                 final Data data = nodeEngine.toData(new EventPacket(registration.getId(), serviceName, eventData));
-                final Packet packet = new Packet(data, serializationContext);
-                packet.setHeader(Packet.HEADER_EVENT, true);
+                nodeEngine.send(data, subscriber, Packet.HEADER_EVENT);
                 // TODO: event publishing requires flow control mechanism!
-                nodeEngine.getClusterService().send(packet, subscriber);
             }
         }
     }
@@ -426,13 +421,10 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-
             Registration that = (Registration) o;
-
             if (!serviceName.equals(that.serviceName)) return false;
             if (!subscriber.equals(that.subscriber)) return false;
             if (!filter.equals(that.filter)) return false;
-
             return true;
         }
 
@@ -460,7 +452,6 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             subscriber.readData(in);
             filter = in.readObject();
         }
-
 
         @Override
         public String toString() {
@@ -512,8 +503,12 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         public boolean eval(Object arg) {
             return true;
         }
-        public void writeData(ObjectDataOutput out) throws IOException {}
-        public void readData(ObjectDataInput in) throws IOException {}
+
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        public void readData(ObjectDataInput in) throws IOException {
+        }
     }
 
     public static class RegistrationOperation extends AbstractOperation {
@@ -649,5 +644,4 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             }
         }
     }
-
 }

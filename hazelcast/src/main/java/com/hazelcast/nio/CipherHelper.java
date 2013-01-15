@@ -245,9 +245,4 @@ final class CipherHelper {
             return false;
         }
     }
-
-    public static void handleCipherException(Exception e, Connection connection) {
-        logger.log(Level.WARNING, e.getMessage(), e);
-        connection.close();
-    }
 }

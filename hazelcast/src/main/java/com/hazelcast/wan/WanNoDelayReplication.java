@@ -17,14 +17,15 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.cluster.AuthorizationOperation;
-import com.hazelcast.map.Record;
-import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.DataRecordEntry;
+import com.hazelcast.map.Record;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.spi.Connection;
+import com.hazelcast.spi.ConnectionManager;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
@@ -89,7 +90,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                     }
                 }
                 if (conn != null && conn.live()) {
-                    conn.getWriteHandler().enqueueSocketWritable(ru.toNewPacket());
+                    ((TcpIpConnection) conn).getWriteHandler().enqueueSocketWritable(ru.toNewPacket());
                 } else {
                     failureQ.addFirst(ru);
                     conn = null;

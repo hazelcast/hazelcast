@@ -18,16 +18,16 @@ package com.hazelcast.management;
 
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.Member;
-import com.hazelcast.map.Record;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.Record;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
+import com.hazelcast.spi.Connection;
 
 import java.io.IOException;
 import java.util.*;
@@ -53,7 +53,6 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
                                final Map<Address, Connection> connections,
                                final Collection<Record> lockedRecords) {
         super();
-
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
         int memberIndex = 0;
         for (Member member : members) {

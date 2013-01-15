@@ -16,10 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.transaction.TransactionImpl;
-
-import java.util.concurrent.atomic.AtomicLong;
-
 public class DefaultProxyFactory implements ProxyFactory {
 
     private final HazelcastInstanceImpl instance;

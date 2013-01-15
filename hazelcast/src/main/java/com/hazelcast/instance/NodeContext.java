@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.instance;
 
-import com.hazelcast.spi.Connection;
+import com.hazelcast.cluster.Joiner;
+import com.hazelcast.spi.ConnectionManager;
 
-public interface ConnectionListener {
-    void connectionAdded(Connection connection);
+import java.nio.channels.ServerSocketChannel;
 
-    void connectionRemoved(Connection connection);
+public interface NodeContext {
+    AddressPicker createAddressPicker(Node node);
+
+    Joiner createJoiner(Node node);
+
+    ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel);
 }

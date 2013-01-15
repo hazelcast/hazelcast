@@ -65,4 +65,7 @@ public interface NodeEngine {
 
     TransactionImpl getTransaction();
 
+    boolean send(Data data, Connection connection, int header);
+
+    boolean send(Data data, Address target, int header);
 }

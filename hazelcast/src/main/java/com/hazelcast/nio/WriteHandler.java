@@ -71,7 +71,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     volatile long lastHandle = 0;
 
-    WriteHandler(Connection connection) {
+    WriteHandler(TcpIpConnection connection) {
         super(connection, connection.getInOutSelector());
         buffer = ByteBuffer.allocate(connectionManager.SOCKET_SEND_BUFFER_SIZE);
     }

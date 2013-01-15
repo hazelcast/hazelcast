@@ -26,9 +26,9 @@ import com.hazelcast.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.SocketReader;
+import com.hazelcast.nio.TcpIpConnection;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -63,14 +63,14 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     TextCommand command = null;
     private final TextCommandService textCommandService;
     private final SocketTextWriter socketTextWriter;
-    private final Connection connection;
+    private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
     boolean connectionTypeSet = false;
     long requestIdGen;
     private final ILogger logger;
 
-    public SocketTextReader(Connection connection) {
+    public SocketTextReader(TcpIpConnection connection) {
         IOService ioService = connection.getConnectionManager().getIOHandler();
         this.textCommandService = ioService.getTextCommandService();
         this.socketTextWriter = (SocketTextWriter) connection.getWriteHandler().getSocketWriter();
@@ -141,12 +141,12 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
                 if (!restEnabled) {
                     connection.close();
                 }
-                connection.setType(Connection.Type.REST_CLIENT);
+                connection.setType(TcpIpConnection.Type.REST_CLIENT);
             } else {
                 if (!memcacheEnabled) {
                     connection.close();
                 }
-                connection.setType(Connection.Type.MEMCACHE_CLIENT);
+                connection.setType(TcpIpConnection.Type.MEMCACHE_CLIENT);
             }
             connectionTypeSet = true;
         }

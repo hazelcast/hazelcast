@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     private final Data heartbeatOperationData;
 
     private final SerializationContext serializationContext;
+//    private final List<MembershipListener> listeners = new CopyOnWriteArrayList<MembershipListener>();
 
     private boolean joinInProgress = false;
 
@@ -126,28 +127,24 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         final long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong();
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new SplitBrainHandler(node),
                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.SECONDS);
-
         final long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 heartBeater();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
-
         final long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
-
         final long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }
         }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
-
         registerClientOperationHandlers();
     }
 
@@ -242,12 +239,12 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                             }
                             Long lastConfirmation = masterConfirmationTimes.get(memberImpl);
                             if (lastConfirmation == null ||
-                                (now - lastConfirmation > maxNoMasterConfirmationMillis)) {
+                                    (now - lastConfirmation > maxNoMasterConfirmationMillis)) {
                                 if (deadAddresses == null) {
                                     deadAddresses = new ArrayList<Address>();
                                 }
                                 logger.log(Level.WARNING, "Added " + address +
-                                                          " to list of dead addresses because it has not sent a master confirmation recently");
+                                        " to list of dead addresses because it has not sent a master confirmation recently");
                                 deadAddresses.add(address);
                             }
                         } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
@@ -329,11 +326,8 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
 
     private void sendHeartbeat(Address target) {
         if (target == null) return;
-        final Packet packet = new Packet(heartbeatOperationData, serializationContext);
-        packet.setHeader(Packet.HEADER_OP, true);
-        send(packet, target);
+        node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
     }
-
 
     private void sendMasterConfirmation() {
         if (!node.joined() || !node.isActive() || isMaster()) {
@@ -593,7 +587,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
             for (MemberInfo memberJoining : setJoins) {
                 memberInfos.add(memberJoining);
             }
-
             final long time = getClusterTime();
             final MemberInfoUpdateOperation memberInfoUpdateOp = new MemberInfoUpdateOperation(memberInfos, time, true);
             // Post join operations must be lock free; means no locks at all;
@@ -602,7 +595,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
             final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
                     ? new PostJoinOperation(postJoinOps) : null;
             final FinalizeJoinOperation finalizeJoinOp = new FinalizeJoinOperation(memberInfos, postJoinOp, time);
-
             final List<Future> calls = new ArrayList<Future>(members.size());
             for (MemberInfo member : setJoins) {
                 calls.add(invokeClusterOperation(finalizeJoinOp, member.getAddress()));
@@ -641,7 +633,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
             for (MemberImpl member : getMemberList()) {
                 mapOldMembers.put(member.getAddress(), member);
             }
-
             if (mapOldMembers.size() == members.size()) {
                 boolean same = true;
                 for (MemberInfo memberInfo : members) {
@@ -656,7 +647,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                     return;
                 }
             }
-
             logger.log(Level.FINEST, "Updating Members");
             MemberImpl[] newMembers = new MemberImpl[members.size()];
             int k = 0;
@@ -770,7 +760,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                 }
                 setMembers(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
-
                 if (node.isMaster()) {
                     logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");
                     invokeMemberRemoveOperation(deadMember);
@@ -807,11 +796,11 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         final int eventType = added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED;
         final MembershipEvent membershipEvent = new MembershipEvent(member, eventType);
         final EventService eventService = nodeEngine.getEventService();
-
         final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             eventService.executeEvent(new Runnable() {
                 final MembershipServiceEvent event = new MembershipServiceEvent(member, eventType);
+
                 public void run() {
                     for (MembershipAwareService service : membershipAwareServices) {
                         if (added) {
@@ -823,7 +812,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                 }
             });
         }
-
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
         eventService.publishEvent(SERVICE_NAME, registrations, membershipEvent);
     }
@@ -852,29 +840,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     public Collection<MemberImpl> getMemberList() {
         final Map<Address, MemberImpl> map = membersRef.get();
         return map != null ? Collections.unmodifiableCollection(map.values()) : null;
-    }
-
-    public int getDataMemberCount() {
-        return dataMemberCount.get();
-    }
-
-    public final boolean send(SocketWritable packet, Address address) {
-        if (address == null) return false;
-        final Connection conn = node.connectionManager.getOrConnect(address);
-        return send(packet, conn);
-    }
-
-    public final boolean send(SocketWritable packet, Connection conn) {
-        return conn != null && conn.live() && writePacket(conn, packet);
-    }
-
-    private boolean writePacket(Connection conn, SocketWritable packet) {
-        final MemberImpl memberImpl = getMember(conn.getEndPoint());
-        if (memberImpl != null) {
-            memberImpl.didWrite();
-        }
-        conn.getWriteHandler().enqueueSocketWritable(packet);
-        return true;
     }
 
     public void reset() {
@@ -971,7 +936,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         sb.append("\n}\n");
         return sb.toString();
     }
-
 
     public Map<Command, ClientCommandHandler> getCommandMap() {
         return commandHandlers;

@@ -16,12 +16,10 @@
 
 package com.hazelcast.map;
 
-
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;

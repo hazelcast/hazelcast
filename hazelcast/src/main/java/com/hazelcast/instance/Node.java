@@ -31,13 +31,16 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.ConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -108,7 +111,6 @@ public class Node {
     public final LoggingServiceImpl loggingService;
 
     public final ClientCommandService clientCommandService;
-
     //    public final ClientServiceImpl clientService;
 
     private final SystemLogService systemLogService;
@@ -125,7 +127,7 @@ public class Node {
 
     public final ThreadGroup threadGroup;
 
-    public Node(HazelcastInstanceImpl hazelcastInstance, Config config) {
+    public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         ThreadContext.get().setCurrentInstance(hazelcastInstance);
         this.hazelcastInstance = hazelcastInstance;
         this.threadGroup = hazelcastInstance.threadGroup;
@@ -135,7 +137,7 @@ public class Node {
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         serializationService = new SerializationServiceImpl(1, null, hazelcastInstance.managedContext);
         systemLogService = new SystemLogService(this);
-        final AddressPicker addressPicker = new AddressPicker(this);
+        final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
             addressPicker.pickAddress();
         } catch (Throwable e) {
@@ -159,7 +161,7 @@ public class Node {
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeEngine = new NodeEngineImpl(this);
-        connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
+        connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
         clusterService = new ClusterService(this);
         partitionService = new PartitionService(this);
         clientCommandService = new ClientCommandService(this);
@@ -203,7 +205,7 @@ public class Node {
         this.multicastService = mcService;
         wanReplicationService = new WanReplicationService(this);
         initializeListeners(config);
-        joiner = createJoiner();
+        joiner = nodeContext.createJoiner(this);
     }
 
     private void initializeListeners(Config config) {

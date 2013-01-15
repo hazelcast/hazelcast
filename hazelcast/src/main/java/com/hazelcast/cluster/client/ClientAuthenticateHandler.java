@@ -22,8 +22,8 @@ import com.hazelcast.cluster.BindOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.security.Credentials;
@@ -62,7 +62,7 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
         return authenticated ? protocol.success() : protocol.error(null);
     }
 
-    private boolean doAuthenticate(Node node, Credentials credentials, Connection conn) {
+    private boolean doAuthenticate(Node node, Credentials credentials, TcpIpConnection conn) {
         boolean authenticated;
         if (credentials == null) {
             authenticated = false;

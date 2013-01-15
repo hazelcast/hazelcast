@@ -38,7 +38,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long lastHandle;
 
-    public ReadHandler(Connection connection) {
+    public ReadHandler(TcpIpConnection connection) {
         super(connection, connection.getInOutSelector());
         buffer = ByteBuffer.allocate(connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
     }

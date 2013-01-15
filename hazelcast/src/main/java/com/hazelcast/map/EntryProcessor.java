@@ -16,8 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.Serializable;
 import java.util.Map;
 

@@ -30,12 +30,12 @@ class SocketPacketReader implements SocketReader {
     Packet packet = null;
 
     final PacketReader packetReader;
-    final Connection connection;
+    final TcpIpConnection connection;
     final IOService ioService;
     final SocketChannelWrapper socketChannel;
     final ILogger logger;
 
-    public SocketPacketReader(SocketChannelWrapper socketChannel, Connection connection) {
+    public SocketPacketReader(SocketChannelWrapper socketChannel, TcpIpConnection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().ioService;
         this.socketChannel = socketChannel;
@@ -75,7 +75,7 @@ class SocketPacketReader implements SocketReader {
 //            ioService.handleMemberPacket(p);
 //        }
         p.setConn(connection);
-        connection.setType(Connection.Type.MEMBER);
+        connection.setType(TcpIpConnection.Type.MEMBER);
         ioService.handleMemberPacket(p);
     }
 

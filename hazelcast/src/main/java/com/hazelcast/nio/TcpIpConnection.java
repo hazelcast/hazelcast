@@ -18,13 +18,16 @@ package com.hazelcast.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.spi.Connection;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.logging.Level;
 
-public final class Connection {
+public final class TcpIpConnection implements Connection {
 
     private final SocketChannelWrapper socketChannel;
 
@@ -32,7 +35,7 @@ public final class Connection {
 
     private final WriteHandler writeHandler;
 
-    private final ConnectionManager connectionManager;
+    private final TcpIpConnectionManager connectionManager;
 
     private final InOutSelector inOutSelector;
 
@@ -47,15 +50,14 @@ public final class Connection {
     private final SystemLogService systemLogService;
 
     private final int connectionId;
-
 //    private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
 
     private ConnectionMonitor monitor;
 
-    public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannelWrapper socketChannel) {
+    public TcpIpConnection(TcpIpConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannelWrapper socketChannel) {
         this.inOutSelector = inOutSelector;
         this.connectionId = connectionId;
-        this.logger = connectionManager.ioService.getLogger(Connection.class.getName());
+        this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.systemLogService = connectionManager.ioService.getSystemLogService();
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
@@ -88,8 +90,20 @@ public final class Connection {
         return new Packet(connectionManager.getSerializationContext());
     }
 
-    public ConnectionManager getConnectionManager() {
+    public TcpIpConnectionManager getConnectionManager() {
         return connectionManager;
+    }
+
+    public void write(SocketWritable packet) {
+        writeHandler.enqueueSocketWritable(packet);
+    }
+
+    public boolean write(Data opData, SerializationContext context, int header) {
+        if (!live) return false;
+        final Packet packet = new Packet(opData, this, context);
+        packet.setHeader(header, true);
+        writeHandler.enqueueSocketWritable(packet);
+        return true;
     }
 
     public enum Type {
@@ -174,8 +188,8 @@ public final class Connection {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Connection)) return false;
-        Connection that = (Connection) o;
+        if (!(o instanceof TcpIpConnection)) return false;
+        TcpIpConnection that = (TcpIpConnection) o;
         return connectionId == that.getConnectionId();
     }
 

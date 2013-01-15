@@ -143,6 +143,19 @@ public class NodeEngineImpl implements NodeEngine {
         return ThreadContext.get().getTransaction();
     }
 
+    public boolean send(Data data, Connection connection, int header) {
+        if (connection == null || !connection.live()) return false;
+        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
+        if (memberImpl != null) {
+            memberImpl.didWrite();
+        }
+        return connection.write(data, getSerializationContext(), header);
+    }
+
+    public boolean send(Data data, Address target, int header) {
+        return send(data, node.getConnectionManager().getConnection(target), header);
+    }
+
     public ILogger getLogger(String name) {
         return node.getLogger(name);
     }
@@ -154,7 +167,7 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void handlePacket(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.handleOperation(packet);
+            operationService.handleOperation(packet.getValue(), packet.getConn());
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else {
@@ -207,9 +220,9 @@ public class NodeEngineImpl implements NodeEngine {
     /**
      * Post join operations must be lock free; means no locks at all;
      * no partition locks, no key-based locks, no service level locks!
-     *
+     * <p/>
      * Post join operations should return response, at least a null response.
-     *
+     * <p/>
      * Also making post join operation a JoinOperation will help a lot.
      */
     @PrivateApi

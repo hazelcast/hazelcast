@@ -31,6 +31,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.topic.TopicService;
@@ -66,14 +67,17 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ThreadGroup threadGroup;
 
-    HazelcastInstanceImpl(String name, Config config) throws Exception {
+    final NodeEngine nodeEngine;
+
+    HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
         this.name = name;
         this.threadGroup = new ThreadGroup(name);
         threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
         registerConfigSerializers(config);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
-        node = new Node(this, config);
+        node = new Node(this, config, nodeContext);
+        nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
         lifecycleService.fireLifecycleEvent(STARTING);
         proxyFactory = node.initializer.getProxyFactory();

@@ -27,11 +27,11 @@ import java.util.logging.Level;
 
 public class SocketAcceptor implements Runnable {
     private final ServerSocketChannel serverSocketChannel;
-    private final ConnectionManager connectionManager;
+    private final TcpIpConnectionManager connectionManager;
     private Selector selector;
     private final ILogger logger;
 
-    public SocketAcceptor(ServerSocketChannel serverSocketChannel, ConnectionManager connectionManager) {
+    public SocketAcceptor(ServerSocketChannel serverSocketChannel, TcpIpConnectionManager connectionManager) {
         this.serverSocketChannel = serverSocketChannel;
         this.connectionManager = connectionManager;
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());

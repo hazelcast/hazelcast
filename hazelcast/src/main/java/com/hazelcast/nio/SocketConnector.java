@@ -27,12 +27,12 @@ import java.util.logging.Level;
 
 public class SocketConnector implements Runnable {
 
-    private final ConnectionManager connectionManager;
+    private final TcpIpConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
     private final boolean silent;
 
-    public SocketConnector(ConnectionManager connectionManager, Address address, boolean silent) {
+    public SocketConnector(TcpIpConnectionManager connectionManager, Address address, boolean silent) {
         this.connectionManager = connectionManager;
         this.address = address;
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
@@ -115,7 +115,7 @@ public class SocketConnector implements Runnable {
             socketChannel.configureBlocking(false);
             final SocketChannelWrapper socketChannelWrapper = connectionManager
                     .wrapSocketChannel(socketChannel, true);
-            Connection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
+            TcpIpConnection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {
             closeSocket(socketChannel);

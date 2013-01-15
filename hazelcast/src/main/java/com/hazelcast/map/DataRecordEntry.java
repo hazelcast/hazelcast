@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.map.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
