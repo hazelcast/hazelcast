@@ -59,7 +59,7 @@ public class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new Config();
-        cfg.getMapConfig("default").setRecordType("OBJECT");
+        cfg.getMapConfig("default").setRecordType("DATA");
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
     }
