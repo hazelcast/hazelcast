@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,17 +25,11 @@ public interface DistributedObject {
      */
     Object getId();
 
-
     /**
      * Returns the name for this object.
      *
      */
     String getName();
-
-    /**
-     * Returns the service name for this object.
-     */
-    String getServiceName();
 
     /**
      * Destroys this object cluster-wide.

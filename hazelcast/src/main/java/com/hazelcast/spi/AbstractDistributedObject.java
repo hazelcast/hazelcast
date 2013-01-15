@@ -29,6 +29,8 @@ public abstract class AbstractDistributedObject implements DistributedObject {
         this.nodeEngine = nodeEngine;
     }
 
+    protected abstract String getServiceName();
+
     public final void destroy() {
         nodeEngine.getProxyService().destroyDistributedObject(getServiceName(), getId());
     }
