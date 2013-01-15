@@ -54,8 +54,6 @@ public interface RecordStore {
 
     ConcurrentMap<Data, Record> getRecords();
 
-    void evictAll(List<Data> keys);
-
     Set<Data> keySet();
 
     int size();

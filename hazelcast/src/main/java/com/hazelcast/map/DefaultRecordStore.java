@@ -75,12 +75,6 @@ public class DefaultRecordStore implements RecordStore {
         return records;
     }
 
-    public void evictAll(List<Data> keys) {
-        for (Data key : keys) {
-            evict(key);
-        }
-    }
-
     void clear() {
         records.clear();
         locks.clear();
@@ -143,6 +137,7 @@ public class DefaultRecordStore implements RecordStore {
                 oldValueData = toData(oldValue);
             }
         } else {
+            record.access();
             oldValueData = record.getValueData();
             records.remove(dataKey);
             removed = true;
@@ -253,6 +248,7 @@ public class DefaultRecordStore implements RecordStore {
                 }
             }
         } else {
+            record.access();
             result = record.getValueData();
         }
 //        check if record has expired or removed but waiting delay millis
@@ -270,8 +266,10 @@ public class DefaultRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, dataValue, -1);
             records.put(dataKey, record);
         }
-        else
+        else {
+            record.access();
             record.setValueData(entry.getValue());
+        }
     }
 
     public Data put(Data dataKey, Data dataValue, long ttl) {
@@ -295,6 +293,7 @@ public class DefaultRecordStore implements RecordStore {
             }
             records.put(dataKey, record);
         } else {
+            record.access();
             oldValueData = record.getValueData();
             record.setValueData(dataValue);
         }
@@ -345,6 +344,7 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Data oldValueData = null;
         if (record != null) {
+            record.access();
             oldValueData = record.getValueData();
             record.setValueData(dataValue);
         } else {
@@ -361,6 +361,7 @@ public class DefaultRecordStore implements RecordStore {
             return false;
         Object recordValue = record.getValue() == null ? toObject(record.getValueData()) : record.getValue();
         if (recordValue != null && recordValue.equals(toObject(oldValue))) {
+            record.access();
             record.setValueData(newValue);
             replaced = true;
         } else {
@@ -376,6 +377,7 @@ public class DefaultRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, dataValue, ttl);
             records.put(dataKey, record);
         } else {
+            record.access();
             record.setValueData(dataValue);
         }
 
@@ -393,6 +395,7 @@ public class DefaultRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, dataValue, ttl);
             records.put(dataKey, record);
         } else {
+            record.access();
             record.setValueData(dataValue);
         }
 
@@ -408,6 +411,7 @@ public class DefaultRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, dataValue, ttl);
             records.put(dataKey, record);
         } else {
+            record.access();
             record.setValueData(dataValue);
         }
 
@@ -439,6 +443,7 @@ public class DefaultRecordStore implements RecordStore {
                 mapStoreWrite(record);
             }
         } else {
+            record.access();
             oldValueData = record.getValueData();
         }
         return oldValueData;

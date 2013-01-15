@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -31,6 +32,13 @@ public class RecordStats implements DataSerializable {
     protected volatile long lastStoredTime = 0;
     protected volatile long expirationTime = Long.MAX_VALUE;
     protected volatile long lastUpdateTime = 0;
+    protected volatile long lastAccessTime = 0;
+
+    public RecordStats() {
+        long now = Clock.currentTimeMillis();
+        lastAccessTime = now;
+        lastUpdateTime = now;
+    }
 
     public int getHits() {
         return hits;
@@ -38,6 +46,14 @@ public class RecordStats implements DataSerializable {
 
     public void setHits(int hits) {
         this.hits = hits;
+    }
+
+    public void access() {
+        lastAccessTime = Clock.currentTimeMillis();
+    }
+
+    public Long getLastAccessTime() {
+        return lastAccessTime;
     }
 
     public long getVersion() {
@@ -96,6 +112,7 @@ public class RecordStats implements DataSerializable {
         out.writeLong(lastStoredTime);
         out.writeLong(expirationTime);
         out.writeLong(lastUpdateTime);
+        out.writeLong(lastAccessTime);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -106,6 +123,7 @@ public class RecordStats implements DataSerializable {
         lastStoredTime = in.readLong();
         expirationTime = in.readLong();
         lastUpdateTime = in.readLong();
+        lastAccessTime = in.readLong();
     }
 
 }

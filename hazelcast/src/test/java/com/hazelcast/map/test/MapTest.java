@@ -42,6 +42,7 @@ import static org.junit.Assert.*;
 public class MapTest extends BaseTest {
 
 
+
     @Test
     public void testMapPutAndGet() {
         IMap<String, String> map = getInstance().getMap("testMapPutAndGet");
@@ -566,7 +567,6 @@ public class MapTest extends BaseTest {
 
     }
 
-
     @Test
     public void testMapEntryProcessor() throws InterruptedException {
         IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
@@ -590,7 +590,6 @@ public class MapTest extends BaseTest {
             return true;
         }
     }
-
 
     @Test
     public void testGetPutAndSizeWhileStartShutdown() {
@@ -620,8 +619,6 @@ public class MapTest extends BaseTest {
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
 //        }
-
-
     }
 
 

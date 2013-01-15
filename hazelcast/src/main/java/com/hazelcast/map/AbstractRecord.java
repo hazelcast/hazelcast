@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import sun.text.normalizer.VersionInfo;
 
 import java.io.IOException;
 
@@ -38,6 +39,7 @@ public abstract class AbstractRecord implements Record, DataSerializable {
         this.id = id;
         this.keyData = keyData;
         state = new RecordState();
+        stats = new RecordStats();
     }
 
     public AbstractRecord() {
@@ -53,6 +55,15 @@ public abstract class AbstractRecord implements Record, DataSerializable {
 
     public RecordState getState() {
         return state;
+    }
+
+    public Long getLastAccessTime() {
+        return stats == null ? 0 : stats.getLastAccessTime();
+    }
+
+    public void access() {
+        if(stats != null)
+            stats.access();
     }
 
     public Record clone() {
@@ -106,5 +117,10 @@ public abstract class AbstractRecord implements Record, DataSerializable {
 
     public int hashCode() {
         return (int) (id ^ (id >>> 32));
+    }
+
+
+    public Integer getHits() {
+        return stats == null ? 0 : stats.getHits();
     }
 }
