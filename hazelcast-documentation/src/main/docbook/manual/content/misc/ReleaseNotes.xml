@@ -38,7 +38,7 @@
             <listitem>
                 <para><emphasis role="italic">New Feature:</emphasis>
                     Management Center alert system, receive alerts based on custom filters. See
-                    <link xlink:href="#NativeClientNearCache">Management Center Alert System</link>
+                    <link xlink:href="#MC_Alerts">Management Center Alerting System</link>
                     for additional details.</para>
             </listitem>
             <listitem>
