@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1459,7 +1459,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         private long doAtomicOp(ClusterOperation op, Data name, long value, Data expected) {
             long begin = currentTimeMillis();
-            setLocal(op, MapConfig.ATOMIC_LONG_MAP_NAME, name, expected, 0, 0);
+            setLocal(op, MapConfig.ATOMIC_LONG_MAP_NAME, name, expected, -1, 0);
             request.longValue = value;
             doOp();
             Data backup = (Data) getResultAsIs();
@@ -1514,7 +1514,7 @@ public class ConcurrentMapManager extends BaseManager {
 
         public Address getOwnerAddress(Data name) {
             begin = currentTimeMillis();
-            setLocal(COUNT_DOWN_LATCH_GET_OWNER, MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, null, 0, -1);
+            setLocal(COUNT_DOWN_LATCH_GET_OWNER, MapConfig.COUNT_DOWN_LATCH_MAP_NAME, name, null, -1, -1);
             doOp();
             return (Address) getResultAsObject(false);
         }

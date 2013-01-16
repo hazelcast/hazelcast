@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -36,7 +32,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.util.DistributedTimeoutException;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -48,7 +43,8 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
     final private String name;
-    final LoadingCache<K, V> nearCache;
+    final NearCache<K, V> nearCache;
+    private static String PROP_CLIENT_NEAR_CACHE_CONFIG_ENABLED = "hazelcast.client.near.cache.enabled";
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
@@ -56,8 +52,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         Config config = (Config) proxyHelper.doOp(ClusterOperation.GET_CONFIG, null, null);
         MapConfig mapConfig = config.getMapConfig(name);
         NearCacheConfig ncc = mapConfig.getNearCacheConfig();
-        nearCache = (ncc != null) ? buildGuavaCache(ncc) : null;
-        if (ncc != null) {
+
+        boolean nearCacheEnabled = "true".equalsIgnoreCase(System.getProperty(PROP_CLIENT_NEAR_CACHE_CONFIG_ENABLED, "false"));
+        nearCache = (nearCacheEnabled && ncc != null) ? new GuavaNearCacheImpl<K, V>(ncc, this) : null;
+        if (nearCache != null) {
             if (ncc.isInvalidateOnChange()) {
                 addEntryListener(new EntryListener<K, V>() {
                     public void entryAdded(EntryEvent<K, V> kvEntryEvent) {
@@ -77,23 +75,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
                 }, false);
             }
         }
-    }
-
-    private LoadingCache buildGuavaCache(NearCacheConfig nc) {
-        CacheBuilder cacheBuilder = CacheBuilder.newBuilder().maximumSize(nc.getMaxSize());
-        if (nc.getTimeToLiveSeconds() > 0)
-            cacheBuilder.expireAfterWrite(nc.getTimeToLiveSeconds(), TimeUnit.SECONDS);
-        if (nc.getMaxIdleSeconds() > 0) cacheBuilder.expireAfterAccess(nc.getMaxIdleSeconds(), TimeUnit.SECONDS);
-        return cacheBuilder.build(new CacheLoader() {
-            @Override
-            public Object load(Object o) throws Exception {
-                try {
-                    return MapClientProxy.this.get0(o);
-                } catch (Exception e) {
-                    throw new ExecutionException(e);
-                }
-            }
-        });
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
@@ -276,17 +257,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public V get(Object key) {
-        if (nearCache != null) try {
+        if (nearCache != null)
             return nearCache.get((K) key);
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            }
-        }
         return get0(key);
     }
 
-    private V get0(Object key) {
+    protected V get0(Object key) {
         check(key);
         return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K) key, null);
     }
@@ -448,7 +424,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return getName().hashCode();
     }
 
-    public Cache getNearCache(){
+    public NearCache<K, V> getNearCache() {
         return nearCache;
     }
 }

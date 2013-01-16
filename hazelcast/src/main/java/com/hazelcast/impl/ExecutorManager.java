@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.executor.ParallelExecutor;
@@ -87,7 +88,7 @@ public class ExecutorManager extends BaseManager {
                 threadPoolBeforeExecute(t, r);
             }
         };
-        esScheduled = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
+        esScheduled = new ScheduledThreadPoolExecutor(3, new ExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);
@@ -104,15 +105,6 @@ public class ExecutorManager extends BaseManager {
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
-        esScheduled.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                node.clusterService.enqueuePriorityAndReturn(new Processable() {
-                    public void process() {
-                        node.clusterService.checkPeriodics();
-                    }
-                });
-            }
-        }, 0, 1, TimeUnit.SECONDS);
     }
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {
@@ -616,7 +608,7 @@ public class ExecutorManager extends BaseManager {
             boolean done = true;
             try {
                 result = doGetResult((time == -1) ? -1 : unit.toMillis(time));
-                if (result == OBJECT_NO_RESPONSE) {
+                if (result == OBJECT_NO_RESPONSE || result == OBJECT_REDO) {
                     done = false;
                     innerFutureTask.innerSetException(new TimeoutException(), false);
                 } else if (result instanceof CancellationException) {
@@ -629,6 +621,9 @@ public class ExecutorManager extends BaseManager {
                     innerFutureTask.innerSet(result);
                 }
             } catch (Exception e) {
+                if (time > 0 && e instanceof OperationTimeoutException) {
+                    e = new TimeoutException();
+                }
                 innerFutureTask.innerSetException(e, done);
             } finally {
                 if (singleTask && done) {

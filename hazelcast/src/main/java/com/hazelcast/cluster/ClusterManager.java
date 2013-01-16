@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toData;
@@ -44,19 +45,13 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private final long MAX_NO_HEARTBEAT_MILLIS;
 
-    private final long HEARTBEAT_INTERVAL_MILLIS;
-    
     private final long MAX_NO_MASTER_CONFIRMATION_MILLIS;
-    
-    private final long MASTER_CONFIRMATION_INTERVAL_MILLIS;
 
     private final boolean ICMP_ENABLED;
 
     private final int ICMP_TTL;
 
     private final int ICMP_TIMEOUT;
-    
-    private final long MEMBER_LIST_PUBLISH_INTERVAL_MILLIS;
 
     private final Set<ScheduledAction> setScheduledActions = new LinkedHashSet<ScheduledAction>(1000);
 
@@ -68,12 +63,6 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
 
     private long firstJoinRequest = 0;
 
-    private long lastHeartbeat = 0;
-    
-    private long lastMasterConfirmation = 0;
-    
-    private long lastMemberListPublish = 0;
-
     private final Map<MemberImpl, Long> memberMasterConfirmationTimes = new HashMap<MemberImpl, Long>();
     
     public ClusterManager(final Node node) {
@@ -81,36 +70,48 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         WAIT_MILLIS_BEFORE_JOIN = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         MAX_WAIT_SECONDS_BEFORE_JOIN = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
         MAX_NO_HEARTBEAT_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
-        HEARTBEAT_INTERVAL_MILLIS = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger() * 1000L;
+        long heartbeatIntervalMillis = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger() * 1000L;
         MAX_NO_MASTER_CONFIRMATION_MILLIS = node.groupProperties.MAX_NO_MASTER_CONFIRMATION_SECONDS.getInteger() * 1000L;
-        MASTER_CONFIRMATION_INTERVAL_MILLIS = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger() * 1000L;
-        MEMBER_LIST_PUBLISH_INTERVAL_MILLIS = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger() * 1000L;
+        long masterConfirmationIntervalMillis = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger() * 1000L;
+        long memberListPublishIntervalMillis = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger() * 1000L;
         ICMP_ENABLED = node.groupProperties.ICMP_ENABLED.getBoolean();
         ICMP_TTL = node.groupProperties.ICMP_TTL.getInteger();
         ICMP_TIMEOUT = node.groupProperties.ICMP_TIMEOUT.getInteger();
-        node.clusterService.registerPeriodicRunnable(new SplitBrainHandler(node));
-        node.clusterService.registerPeriodicRunnable(new Runnable() {
-            public void run() {
-                long now = Clock.currentTimeMillis();
-                if (now - lastHeartbeat >= HEARTBEAT_INTERVAL_MILLIS) {
-                    heartBeater();
-                    lastHeartbeat = now;
-                }
-                if (now - lastMasterConfirmation >= MASTER_CONFIRMATION_INTERVAL_MILLIS) {
-                    sendMasterConfirmation();
-                    lastMasterConfirmation = now;
-                }
-                if (now - lastMemberListPublish >= MEMBER_LIST_PUBLISH_INTERVAL_MILLIS) {
-                    sendMemberListToOthers();
-                    lastMemberListPublish = now;
-                }
+
+        registerPeriodicProcessable(new Processable() {
+            public void process() {
+                heartBeater();
             }
-        });
-        node.clusterService.registerPeriodicRunnable(new Runnable() {
-            public void run() {
+        }, heartbeatIntervalMillis, heartbeatIntervalMillis);
+
+        registerPeriodicProcessable(new Processable() {
+            public void process() {
+                sendMasterConfirmation();
+            }
+        }, masterConfirmationIntervalMillis, masterConfirmationIntervalMillis);
+
+        registerPeriodicProcessable(new Processable() {
+            public void process() {
+                sendMemberListToOthers();
+            }
+        }, memberListPublishIntervalMillis, memberListPublishIntervalMillis);
+
+        registerPeriodicProcessable(new Processable() {
+            public void process() {
                 checkScheduledActions();
             }
-        });
+        }, 0, 1000);
+
+        final SplitBrainHandler splitBrainHandler = new SplitBrainHandler(node);
+        registerPeriodicProcessable(splitBrainHandler,
+                splitBrainHandler.getFirstRunDelayMillis(), splitBrainHandler.getNextRunDelayMillis());
+
+        registerPeriodicProcessable(new Processable() {
+            public void process() {
+                node.clusterService.checkIdle();
+            }
+        }, 0, 1000);
+
         node.connectionManager.addConnectionListener(this);
         registerPacketProcessor(ClusterOperation.RESPONSE, new PacketProcessor() {
             public void process(Packet packet) {
@@ -222,6 +223,16 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
                 });
     }
 
+    private void registerPeriodicProcessable(final Processable p, long delay, long period) {
+        delay = delay < 0 ? 0 : delay;
+        period = period <= 0 ? 1: period;
+        node.executorManager.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+            public void run() {
+                node.clusterService.enqueuePriorityAndReturn(p);
+            }
+        }, delay, period, TimeUnit.MILLISECONDS);
+    }
+
     public boolean shouldTryMerge() {
         return !joinInProgress && setJoins.size() == 0;
     }
@@ -244,7 +255,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         }
 
         JoinInfo checkJoin() {
-            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), 0, 0);
+            setLocal(ClusterOperation.JOIN_CHECK, "join", null, node.createJoinInfo(), -1, 0);
             doOp();
             return (JoinInfo) getResultAsObject();
         }
@@ -909,7 +920,7 @@ public final class ClusterManager extends BaseManager implements ConnectionListe
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        logger.log(Level.INFO, "Sending join request to " + toAddress);
+        logger.log(Level.FINEST, "Sending join request to " + toAddress);
         final boolean send = sendProcessableTo(node.createJoinInfo(withCredentials), toAddress);
         if (!send) {
             logger.log(Level.WARNING, "Could not send join request to " + toAddress);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class MapConfig implements DataSerializable {
 
     private MapStoreConfig mapStoreConfig = null;
 
-    private NearCacheConfig nearCacheConfig =new NearCacheConfig();
+    private NearCacheConfig nearCacheConfig;
 
     private boolean readBackupData = false;
 
@@ -523,7 +523,7 @@ public class MapConfig implements DataSerializable {
                                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
                 this.timeToLiveSeconds == other.timeToLiveSeconds &&
                 this.readBackupData == other.readBackupData &&
-//                this.clearQuick == other.clearQuick &&
+                this.clearQuick == other.clearQuick &&
                 this.valueIndexed == other.valueIndexed;
     }
 
@@ -556,7 +556,7 @@ public class MapConfig implements DataSerializable {
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
         result = prime * result + (this.readBackupData ? 1231 : 1237);
-//        result = prime * result + (this.clearQuick ? 1231 : 1237);
+        result = prime * result + (this.clearQuick ? 1231 : 1237);
         result = prime * result + (this.valueIndexed ? 1231 : 1237);
         return result;
     }
@@ -606,9 +606,12 @@ public class MapConfig implements DataSerializable {
         cacheValue = b[2];
         evictionPolicy = in.readUTF();
         mergePolicy = in.readUTF();
-//        clearQuick = in.readBoolean();
-        nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.readData(in);
+        clearQuick = in.readBoolean();
+        boolean hasNearCacheConfig = in.readBoolean();
+        if (hasNearCacheConfig) {
+            nearCacheConfig = new NearCacheConfig();
+            nearCacheConfig.readData(in);
+        }
 //        TODO: MapStoreConfig mapStoreConfig
     }
 
@@ -624,8 +627,13 @@ public class MapConfig implements DataSerializable {
         out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData, cacheValue));
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);
-//        out.writeBoolean(clearQuick);
-        nearCacheConfig.writeData(out);
+        out.writeBoolean(clearQuick);
+        if (nearCacheConfig == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            nearCacheConfig.writeData(out);
+        }
 //        TODO: MapStoreConfig mapStoreConfig
     }
 
