@@ -96,12 +96,12 @@ public class WebFilter implements Filter {
             clusterMapName = "_web_" + servletContext.getServletContextName();
         }
         Config hzConfig = hazelcastInstance.getConfig();
-        MapConfig mapConfig = new MapConfig(clusterMapName);
         String sessionTTL = getParam("session-ttl-seconds");
         if (sessionTTL != null) {
+            MapConfig mapConfig = new MapConfig(clusterMapName);
             mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
+            hzConfig.addMapConfig(mapConfig);
         }
-        hzConfig.addMapConfig(mapConfig);
         String cookieName = getParam("cookie-name");
         if (cookieName != null) {
             sessionCookieName = cookieName;
