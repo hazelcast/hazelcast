@@ -100,7 +100,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         registerHandler(Command.MTRYPUT, new MapTryPutHandler(this));
         registerHandler(Command.MSET, new MapSetHandler(this));
         registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
-
     }
 
     void registerHandler(Command command, ClientCommandHandler handler) {

@@ -20,6 +20,7 @@ package com.hazelcast.map.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -573,18 +574,19 @@ public class MapTest extends BaseTest {
         assertEquals(map.get(1), (Object) 2);
     }
 
-    static class SampleEntryProcessor implements EntryProcessor, Serializable {
+    static class SampleEntryProcessor implements EntryProcessor, EntryBackupProcessor, Serializable {
+
         public Object process(Map.Entry entry) {
             entry.setValue((Integer)entry.getValue() + 1);
             return true;
         }
 
-        public void processBackup(Map.Entry entry) {
-            entry.setValue((Integer)entry.getValue() + 1);
+        public EntryBackupProcessor getBackupProcessor() {
+            return SampleEntryProcessor.this;
         }
 
-        public boolean shouldBackup() {
-            return true;
+        public void processBackup(Map.Entry entry) {
+            entry.setValue((Integer)entry.getValue() + 1);
         }
     }
 

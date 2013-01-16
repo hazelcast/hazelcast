@@ -34,9 +34,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-//import static com.hazelcast.nio.IOUtil.readObject;
-//import static com.hazelcast.nio.IOUtil.writeObject;
-
 public final class Predicates {
 
     public static class GreaterLessPredicate extends EqualPredicate {

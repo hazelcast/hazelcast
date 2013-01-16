@@ -32,7 +32,7 @@ public class PutOperation extends BasePutOperation implements IdentifiedDataSeri
         if (prepareTransaction()) {
             return;
         }
-        dataOldValue = recordStore.put(dataKey, dataValue, ttl);
+        dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, ttl));
     }
 
     @Override

@@ -38,6 +38,8 @@ public interface RecordStore {
 
     void put(Map.Entry<Data, Data> entry);
 
+    void putEntryObject(Map.Entry<Data, Object> entry);
+
     Data replace(Data dataKey, Data value);
 
     boolean replace(Data dataKey, Data oldValue, Data newValue);
@@ -83,6 +85,8 @@ public interface RecordStore {
     Set<Map.Entry<Data, Data>> entrySet();
 
     Map.Entry<Data,Data> getMapEntry(Data dataKey);
+
+    Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
 
     void setRecordValue(Record record, Object value);
 }

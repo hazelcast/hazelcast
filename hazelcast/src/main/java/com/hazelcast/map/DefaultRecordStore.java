@@ -160,6 +160,13 @@ public class DefaultRecordStore implements RecordStore {
         return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(record.getValue()) );
     }
 
+
+    public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
+        Record record = records.get(dataKey);
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, mapService.toObject(record.getValue()) );
+    }
+
+
     public Set<Data> keySet() {
         Set<Data> keySet = new HashSet<Data>(records.size());
         for (Data data : records.keySet()) {
@@ -244,6 +251,18 @@ public class DefaultRecordStore implements RecordStore {
     public void put(Map.Entry<Data, Data> entry) {
         Data dataKey = entry.getKey();
         Data value = entry.getValue();
+        Record record = records.get(dataKey);
+        if (record == null) {
+            record = mapService.createRecord(name, dataKey, value, -1);
+            records.put(dataKey, record);
+        } else {
+            setRecordValue(record, entry.getValue());
+        }
+    }
+
+    public void putEntryObject(Map.Entry<Data, Object> entry) {
+        Data dataKey = entry.getKey();
+        Data value = mapService.toData(entry.getValue());
         Record record = records.get(dataKey);
         if (record == null) {
             record = mapService.createRecord(name, dataKey, value, -1);
