@@ -24,12 +24,38 @@ import com.hazelcast.spi.impl.StaticNodeRegistry;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class HazelcastInstanceFactoryUtil {
+public class StaticNodeFactory {
 
-    final static AtomicInteger ports = new AtomicInteger(5000);
+    private final static AtomicInteger ports = new AtomicInteger(5000);
 
-    public static HazelcastInstance[] newInstances(int count) {
-        Config config = new Config();
+    private final Address[] addresses;
+    private final StaticNodeRegistry registry;
+    int nodeIndex = 0;
+
+    public StaticNodeFactory(int count) {
+        this.addresses = createAddresses(count);
+        registry = new StaticNodeRegistry(addresses);
+    }
+
+    public HazelcastInstance newInstance(Config config) {
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex++]);
+        return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
+    }
+
+    private static Address[] createAddresses(int count) {
+        Address[] addresses = new Address[count];
+        for (int i = 0; i < count; i++) {
+            try {
+                addresses[i] = new Address("127.0.0.1", ports.incrementAndGet());
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        }
+        return addresses;
+    }
+
+    public static HazelcastInstance[] newInstances(Config config, int count) {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         Address[] addresses = new Address[count];
         for (int i = 0; i < count; i++) {
