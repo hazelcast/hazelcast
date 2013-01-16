@@ -17,15 +17,13 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionLevelOperation;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -34,77 +32,49 @@ import java.util.Map;
  */
 public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionLevelOperation {
 
-    int syncBackupCount;
-
-    int asyncBackupCount;
 
     transient Map<Data, Collection> entries;
 
     public ClearOperation() {
     }
 
-    public ClearOperation(String name, int syncBackupCount, int asyncBackupCount) {
-        super(name);
-        this.syncBackupCount = syncBackupCount;
-        this.asyncBackupCount = asyncBackupCount;
+    public ClearOperation(String name, CollectionProxyType proxyType) {
+        super(name, proxyType);
     }
 
     public void beforeRun() throws Exception {
-        if (hasListener()){
-            CollectionContainer container = getContainer();
-            if (container != null){
-                entries = container.entrySet();
-            }
+        if (hasListener()) {
+            CollectionContainer container = getOrCreateContainer();
+            entries = container.entrySet();
         }
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getContainer();
-        if (container != null){
-            container.clear();
-        }
+        CollectionContainer container = getOrCreateContainer();
+        container.clear();
         response = true;
     }
 
     public void afterRun() throws Exception {
-        if (entries != null){
-            for (Map.Entry<Data, Collection> entry: entries.entrySet()){
+        if (!entries.isEmpty()) {
+            for (Map.Entry<Data, Collection> entry : entries.entrySet()) {
                 Data key = entry.getKey();
                 Collection coll = entry.getValue();
-                for (Object obj: coll){
+                for (Object obj : coll) {
                     publishEvent(EntryEventType.REMOVED, key, obj);
                 }
             }
             entries.clear();
-            entries = null;
         }
+        entries = null;
     }
 
     public boolean shouldBackup() {
-        return true;
-    }
-
-    public int getSyncBackupCount() {
-        return syncBackupCount;
-    }
-
-    public int getAsyncBackupCount() {
-        return asyncBackupCount;
+        return Boolean.TRUE.equals(entries.isEmpty());
     }
 
     public Operation getBackupOperation() {
-        return new ClearBackupOperation(name);
+        return new ClearBackupOperation(name, proxyType);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeInt(syncBackupCount);
-        out.writeInt(asyncBackupCount);
-    }
-
-    public void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        syncBackupCount = in.readInt();
-        asyncBackupCount = in.readInt();
-    }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
+import com.hazelcast.collection.CollectionProxyType;
 
 /**
  * @ali 1/3/13
@@ -27,14 +27,12 @@ public class KeySetOperation extends MultiMapOperation {
     public KeySetOperation() {
     }
 
-    public KeySetOperation(String name) {
-        super(name);
+    public KeySetOperation(String name, CollectionProxyType proxyType) {
+        super(name, proxyType);
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getContainer();
-        if (container != null ){
-            response = new MultiMapCollectionResponse(container.keySet(), ValueCollectionType.SET, true, getNodeEngine().getSerializationService());
-        }
+        CollectionContainer container = getOrCreateContainer();
+        response = new MultiMapCollectionResponse(container.keySet());
     }
 }

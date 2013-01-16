@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.processor.Entry;
-import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,39 +25,38 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * @ali 1/14/13
+ * @ali 1/16/13
  */
-public class GetEntryProcessor extends MultiMapEntryProcessor<Data> {
+public class GetOperation extends CollectionKeyBasedOperation {
 
     int index;
 
-    public GetEntryProcessor() {
+    public GetOperation() {
     }
 
-    public GetEntryProcessor(MultiMapConfig config, int index) {
-        super(config.isBinary());
+    public GetOperation(String name, CollectionProxyType proxyType, Data dataKey, int index) {
+        super(name, proxyType, dataKey);
         this.index = index;
     }
 
-    public Data execute(Entry entry) {
-        List list = entry.getValue();
+    public void run() throws Exception {
+        List list = getCollection();
         try {
             if (list != null) {
                 Object obj = list.get(index);
-                return isBinary() ? (Data) obj : entry.getSerializationService().toData(obj);
+                response = isBinary() ? (Data) obj : toData(obj);
             }
         } catch (IndexOutOfBoundsException e) {
         }
-        return null;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+    public void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
         out.writeInt(index);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
+    public void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         index = in.readInt();
     }
 }

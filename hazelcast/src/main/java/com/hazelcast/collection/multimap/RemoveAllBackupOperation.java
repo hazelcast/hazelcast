@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,24 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.processor.BaseEntryProcessor;
-import com.hazelcast.collection.processor.Entry;
-
-import java.util.Collection;
+import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
 
 /**
- * @ali 1/9/13
+ * @ali 1/16/13
  */
-public class CountEntryProcessor extends BaseEntryProcessor<Integer> {
+public class RemoveAllBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
-    public CountEntryProcessor() {
+    public RemoveAllBackupOperation() {
     }
 
-    public Integer execute(Entry entry) {
-        Collection coll = entry.getValue();
-        return coll == null ? 0 : coll.size();
+    public RemoveAllBackupOperation(String name, CollectionProxyType proxyType, Data dataKey) {
+        super(name, proxyType, dataKey);
+    }
+
+    public void run() throws Exception {
+        removeCollection();
+        response = true;
     }
 }

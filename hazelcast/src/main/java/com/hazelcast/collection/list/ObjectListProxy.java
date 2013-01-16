@@ -17,7 +17,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionProxy;
-import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.multimap.MultiMapCollectionResponse;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
@@ -40,8 +40,8 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     final Data key;
 
-    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
-        super(COLLECTION_LIST_NAME, service, nodeEngine, proxyId,
+    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
+        super(COLLECTION_LIST_NAME, service, nodeEngine, proxyType,
                 nodeEngine.getConfig().getMultiMapConfig("list:" + name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST));
         listName = name;
         key = nodeEngine.toData(name);
@@ -74,17 +74,17 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     public Iterator<E> iterator() {
         MultiMapCollectionResponse result = getAllInternal(key);
-        return result.getObjectCollection(nodeEngine.getSerializationService()).iterator();
+        return result.getObjectCollection(nodeEngine).iterator();
     }
 
     public Object[] toArray() {
         MultiMapCollectionResponse result = getAllInternal(key);
-        return result.getObjectCollection(nodeEngine.getSerializationService()).toArray();
+        return result.getObjectCollection(nodeEngine).toArray();
     }
 
     public <T> T[] toArray(T[] a) {
         MultiMapCollectionResponse result = getAllInternal(key);
-        Collection<T> col = result.getObjectCollection(nodeEngine.getSerializationService());
+        Collection<T> col = result.getObjectCollection(nodeEngine);
         return col.toArray(a);
     }
 

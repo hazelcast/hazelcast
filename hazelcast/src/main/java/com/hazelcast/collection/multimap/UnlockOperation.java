@@ -18,27 +18,42 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.WaitKey;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 
 /**
  * @ali 1/16/13
  */
-public class ContainsOperation extends ContainsEntryOperation implements KeyBasedOperation {
+public class UnlockOperation extends CollectionBackupAwareOperation implements Notifier {
 
-    public ContainsOperation() {
+    public UnlockOperation() {
     }
 
-    public ContainsOperation(String name, CollectionProxyType proxyType, Data key, Data value) {
-        super(name, proxyType, key, value);
+    public UnlockOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId) {
+        super(name, proxyType, dataKey, threadId);
     }
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        response = container.containsEntry(isBinary(), key, value);
+        response = container.unlock(dataKey, getCaller(), threadId);
     }
 
-    public int getKeyHash() {
-        return key.getPartitionHash();
+    public Operation getBackupOperation() {
+        return new UnlockBackupOperation(name, proxyType, dataKey, threadId, getCaller());
+    }
+
+    public boolean shouldBackup() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public boolean shouldNotify() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public WaitNotifyKey getNotifiedKey() {
+        return new WaitKey(name, dataKey, "lock");
     }
 }

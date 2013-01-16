@@ -33,8 +33,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V> {
 
-    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
-        super(name, service, nodeEngine, proxyId, nodeEngine.getConfig().getMultiMapConfig(name));
+    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
+        super(name, service, nodeEngine, proxyType, nodeEngine.getConfig().getMultiMapConfig(name));
     }
 
     public boolean put(K key, V value) {
@@ -46,7 +46,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> get(K key) {
         Data dataKey = nodeEngine.toData(key);
         MultiMapCollectionResponse result = getAllInternal(dataKey);
-        return result.getObjectCollection(nodeEngine.getSerializationService());
+        return result.getObjectCollection(nodeEngine);
     }
 
     public boolean remove(Object key, Object value) {
@@ -58,7 +58,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> remove(Object key) {
         Data dataKey = nodeEngine.toData(key);
         MultiMapCollectionResponse result = removeInternal(dataKey);
-        return result.getObjectCollection(nodeEngine.getSerializationService());
+        return result.getObjectCollection(nodeEngine);
     }
 
     public Set<K> localKeySet() {
@@ -79,7 +79,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
                 continue;
             }
             MultiMapCollectionResponse response = nodeEngine.toObject(obj);
-            values.addAll(response.getObjectCollection(nodeEngine.getSerializationService()));
+            values.addAll(response.getObjectCollection(nodeEngine));
         }
         return values;
     }
@@ -164,11 +164,11 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         int count = nodeEngine.getPartitionCount();
         for (int i = 0; i < count; i++) {
             CollectionPartitionContainer partitionContainer = service.getPartitionContainer(i);
-            Map<String, CollectionContainer> multiMaps = partitionContainer.getContainerMap();
+            Map<CollectionProxyId, CollectionContainer> multiMaps = partitionContainer.getContainerMap();
             if (multiMaps.size() > 0) {
                 System.out.println("partitionId: " + i);
             }
-            for (Map.Entry<String, CollectionContainer> entry : multiMaps.entrySet()) {
+            for (Map.Entry<CollectionProxyId, CollectionContainer> entry : multiMaps.entrySet()) {
                 System.out.println("\tname: " + entry.getKey());
                 CollectionContainer container = entry.getValue();
                 Map<Data, Object> map = container.getObjects();

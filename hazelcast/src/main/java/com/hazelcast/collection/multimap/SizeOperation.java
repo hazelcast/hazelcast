@@ -17,6 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionProxyType;
 
 /**
  * @ali 1/9/13
@@ -26,14 +27,12 @@ public class SizeOperation extends MultiMapOperation {
     public SizeOperation() {
     }
 
-    public SizeOperation(String name) {
-        super(name);
+    public SizeOperation(String name, CollectionProxyType proxyType) {
+        super(name, proxyType);
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getContainer();
-        if (container != null){
-            response = container.size();
-        }
+        CollectionContainer container = getOrCreateContainer();
+        response = container.size();
     }
 }

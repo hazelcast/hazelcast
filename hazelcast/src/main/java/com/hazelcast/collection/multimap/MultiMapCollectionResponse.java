@@ -16,120 +16,73 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.config.MultiMapConfig.ValueCollectionType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
 
 /**
  * @ali 1/3/13
  */
 public class MultiMapCollectionResponse implements DataSerializable {
 
-    private Collection collection;
-
-    private ValueCollectionType collectionType;
-
-    private transient boolean binary;
-
-    private transient SerializationService serializationService;
+    private Collection<Data> collection;
 
     public MultiMapCollectionResponse() {
     }
 
-    public MultiMapCollectionResponse(Collection collection, ValueCollectionType collectionType, boolean binary, SerializationService serializationService) {
+    public MultiMapCollectionResponse(Collection<Object> collection, NodeEngine nodeEngine) {
+        if (collection == null){
+            return;
+        }
+        this.collection = new ArrayList<Data>(collection.size());
+        for (Object obj: collection){
+            this.collection.add(nodeEngine.toData(obj));
+        }
+    }
+
+    public MultiMapCollectionResponse(Collection<Data> collection) {
         this.collection = collection;
-        this.collectionType = collectionType;
-        this.binary = binary;
-        this.serializationService = serializationService;
     }
 
-    public Collection<Data> getDataCollection(SerializationService serializationService) {
-        if (collection == null){
-            return getCollection();
-        }
-        Collection coll = null;
-        boolean init = true;
-        for (Object obj : collection) {
-            if (init){
-                if (obj instanceof Data){
-                    return collection;
-                }
-                else {
-                    coll = createCollection(collection.size());
-                    init = false;
-                }
-            }
-            coll.add(serializationService.toData(obj));
-        }
-        return coll;
-    }
-
-    public Collection getCollection(){
-        if (collection == null){
-            collection = createCollection(0);
-        }
+    public Collection<Data> getCollection(){
         return collection;
     }
 
-    private Collection createCollection(int size){
-        if (collectionType == ValueCollectionType.SET) {
-            return  new HashSet(size);
-        } else if (collectionType == ValueCollectionType.LIST) {
-            return new LinkedList();
-        }
-        return null;
-    }
-
-    public Collection getObjectCollection(SerializationService serializationService) {
+    public Collection getObjectCollection(NodeEngine nodeEngine){
         if (collection == null){
-            return getCollection();
+            return null;
         }
-        Collection coll = null;
-        boolean init = true;
-        for (Object obj : collection) {
-            if (init){
-                if (obj instanceof Data){
-                    coll = createCollection(collection.size());
-                    init = false;
-                }
-                else {
-                    return collection;
-                }
-            }
-            coll.add(serializationService.toObject((Data)obj));
+        Collection coll = new ArrayList(collection.size());
+        for (Data data: collection){
+            coll.add(nodeEngine.toObject(data));
         }
         return coll;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(collectionType.toString());
         if (collection == null){
             out.writeInt(-1);
             return;
         }
         out.writeInt(collection.size());
-        for (Object obj : collection) {
-            Data data = binary ? (Data)obj : serializationService.toData(obj);
+        for (Data data : collection) {
             data.writeData(out);
         }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        collectionType = ValueCollectionType.valueOf(in.readUTF());
         int size = in.readInt();
         if (size == -1){
             return;
         }
-        collection = createCollection(size);
+        collection = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
             collection.add(IOUtil.readData(in));
         }

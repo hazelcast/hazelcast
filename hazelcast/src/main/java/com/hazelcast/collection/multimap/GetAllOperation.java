@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,30 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.nio.serialization.Data;
+
+import java.util.Collection;
 
 /**
- * @ali 1/8/13
+ * @ali 1/16/13
  */
-public class ValuesOperation extends MultiMapOperation {
+public class GetAllOperation extends CollectionKeyBasedOperation {
 
-    public ValuesOperation() {
+    public GetAllOperation() {
     }
 
-    public ValuesOperation(String name, CollectionProxyType proxyType) {
-        super(name, proxyType);
+    public GetAllOperation(String name, CollectionProxyType proxyType, Data dataKey) {
+        super(name, proxyType, dataKey);
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
-        response = new MultiMapCollectionResponse(container.values(), getNodeEngine());
+        Collection collection = getCollection();
+        if (isBinary()) {
+            response = new MultiMapCollectionResponse(collection);
+        } else {
+            response = new MultiMapCollectionResponse(collection, getNodeEngine());
+
+        }
     }
 }

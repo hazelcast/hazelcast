@@ -17,6 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.spi.BackupOperation;
 
 /**
@@ -27,15 +28,13 @@ public class ClearBackupOperation extends MultiMapOperation implements BackupOpe
     public ClearBackupOperation() {
     }
 
-    public ClearBackupOperation(String name) {
-        super(name);
+    public ClearBackupOperation(String name, CollectionProxyType proxyType) {
+        super(name, proxyType);
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getContainer();
-        if (container != null){
-            container.clear();
-        }
+        CollectionContainer container = getOrCreateContainer();
+        container.clear();
         response = true;
     }
 

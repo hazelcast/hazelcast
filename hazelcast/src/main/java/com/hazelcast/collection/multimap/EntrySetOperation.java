@@ -17,6 +17,7 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionProxyType;
 
 /**
  * @ali 1/8/13
@@ -26,14 +27,12 @@ public class EntrySetOperation extends MultiMapOperation {
     public EntrySetOperation() {
     }
 
-    public EntrySetOperation(String name) {
-        super(name);
+    public EntrySetOperation(String name, CollectionProxyType proxyType) {
+        super(name, proxyType);
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getContainer();
-        if (container != null ){
-            response = new MultiMapResponse(container.entrySet(), getNodeEngine().getSerializationService());
-        }
+        CollectionContainer container = getOrCreateContainer();
+        response = new MultiMapResponse(container.entrySet(), getNodeEngine().getSerializationService());
     }
 }

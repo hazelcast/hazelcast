@@ -71,7 +71,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        final Data data = pollInternal(timeUnit.toMillis(timeout));
+        final Object data = pollInternal(timeUnit.toMillis(timeout));
         return nodeEngine.toObject(data);
     }
 
@@ -133,7 +133,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public E peek() {
-        final Data data = peekInternal();
+        final Object data = peekInternal();
         return (E) nodeEngine.toObject(data);
     }
 

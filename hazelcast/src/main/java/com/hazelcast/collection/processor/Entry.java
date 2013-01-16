@@ -53,9 +53,6 @@ public class Entry {
         return key;
     }
 
-    public boolean removeEntry() {
-        return container.removeObject(key);
-    }
 
     public boolean canAcquireLock(){
         return container.canAcquireLock(key, threadId, caller);

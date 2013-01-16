@@ -16,15 +16,18 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionEvent;
-import com.hazelcast.collection.CollectionEventFilter;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.*;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -34,16 +37,16 @@ public abstract class MultiMapOperation extends AbstractNamedOperation implement
 
     transient Object response;
 
+    transient CollectionContainer container;
+
+    CollectionProxyType proxyType;
+
     protected MultiMapOperation() {
     }
 
-    protected MultiMapOperation(String name) {
+    protected MultiMapOperation(String name, CollectionProxyType proxyType) {
         super(name);
-    }
-
-    public CollectionContainer getContainer(){
-        CollectionService service = getService();
-        return service.getCollectionContainer(getPartitionId(), name);
+        this.proxyType = proxyType;
     }
 
     public Object getResponse() {
@@ -54,24 +57,69 @@ public abstract class MultiMapOperation extends AbstractNamedOperation implement
         return CollectionService.COLLECTION_SERVICE_NAME;
     }
 
-    public boolean hasListener(){
+    public boolean hasListener() {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
         return registrations.size() > 0;
     }
 
-    public void publishEvent(EntryEventType eventType, Data key, Object value){
+    public void publishEvent(EntryEventType eventType, Data key, Object value) {
         NodeEngine engine = getNodeEngine();
         EventService eventService = engine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.COLLECTION_SERVICE_NAME, name);
-        for (EventRegistration registration: registrations){
-            CollectionEventFilter filter = (CollectionEventFilter)registration.getFilter();
-            if (filter.getKey() != null && filter.getKey().equals(key)){
+        for (EventRegistration registration : registrations) {
+            CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
+            if (filter.getKey() != null && filter.getKey().equals(key)) {
                 Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
-                CollectionEvent event = new CollectionEvent(name,  key, dataValue, eventType, engine.getThisAddress());
+                CollectionEvent event = new CollectionEvent(name, key, dataValue, eventType, engine.getThisAddress());
                 eventService.publishEvent(CollectionService.COLLECTION_SERVICE_NAME, registration, event);
             }
         }
     }
 
+    public Object toObject(Object obj) {
+        return getNodeEngine().toObject(obj);
+    }
+
+    public Data toData(Object obj) {
+        return getNodeEngine().toData(obj);
+    }
+
+    public CollectionContainer getOrCreateContainer() {
+        if (container == null) {
+            CollectionService service = getService();
+            container = service.getOrCreateCollectionContainer(getPartitionId(), new CollectionProxyId(name, proxyType));
+        }
+        return container;
+    }
+
+    public <T> T getCollection(Data dataKey) {
+        return getOrCreateContainer().getObject(dataKey);
+    }
+
+    public <T> T removeCollection(Data dataKey) {
+        return getOrCreateContainer().removeObject(dataKey);
+    }
+
+    public boolean isBinary() {
+        return getOrCreateContainer().getConfig().isBinary();
+    }
+
+    public int getSyncBackupCount() {
+        return getOrCreateContainer().getConfig().getSyncBackupCount();
+    }
+
+    public int getAsyncBackupCount() {
+        return getOrCreateContainer().getConfig().getAsyncBackupCount();
+    }
+
+    public void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeInt(proxyType.getType());
+    }
+
+    public void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        proxyType = CollectionProxyType.getByType(in.readInt());
+    }
 }

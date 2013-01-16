@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,25 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.processor.Entry;
-import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 
 /**
- * @ali 1/2/13
+ * @ali 1/16/13
  */
-public class GetAllEntryProcessor extends MultiMapEntryProcessor<MultiMapCollectionResponse> {
+public class CountOperation extends CollectionKeyBasedOperation {
 
-    public GetAllEntryProcessor() {
+    public CountOperation() {
     }
 
-    public GetAllEntryProcessor(MultiMapConfig config) {
-        super(config.isBinary(), config.getValueCollectionType());
+    public CountOperation(String name, CollectionProxyType proxyType, Data dataKey) {
+        super(name, proxyType, dataKey);
     }
 
-    public MultiMapCollectionResponse execute(Entry entry) {
-        Collection collection = entry.getValue();
-        return new MultiMapCollectionResponse(collection, collectionType, isBinary(), entry.getSerializationService());
+    public void run() throws Exception {
+        Collection coll = getCollection();
+        response = coll == null ? 0 : coll.size();
     }
-
-
-
 }
