@@ -20,7 +20,7 @@ import com.hazelcast.core.IList;
 
 import java.util.*;
 
-import static com.hazelcast.client.PacketProxyHelper.check;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class ListClientProxy<E> extends CollectionClientProxy<E> implements IList<E> {
     public ListClientProxy(HazelcastClient hazelcastClient, String name) {

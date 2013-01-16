@@ -61,7 +61,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 latch.countDown();
                 return connection;
             }
@@ -86,7 +86,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 return null;
             }
         };
@@ -109,7 +109,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 latch.countDown();
                 return connection;
             }
@@ -139,7 +139,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 latch.countDown();
                 return connection;
             }
@@ -167,7 +167,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 return connection;
             }
         };
@@ -194,7 +194,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 return connection;
             }
         };
@@ -235,7 +235,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 return connection;
             }
         };
@@ -260,7 +260,7 @@ public class ConnectionManagerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setCredentials(credentials).addInetSocketAddress(inetSocketAddress).setConnectionTimeout(60000);
         ConnectionManager connectionManager = new ConnectionManager(client, clientConfig, lifecycleService) {
-            protected Connection getNextConnection() {
+            protected Connection createNextConnection() {
                 return connection;
             }
         };

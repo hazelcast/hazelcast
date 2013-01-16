@@ -24,9 +24,10 @@ import com.hazelcast.nio.protocol.SocketProtocolReader;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-public class ProtocolReader extends PacketHandler {
+public class ProtocolReader {
     ByteBuffer line = ByteBuffer.allocate(500);
     Pattern numericPattern = Pattern.compile("([0-9]*)");
 
@@ -103,5 +104,9 @@ public class ProtocolReader extends PacketHandler {
             c = (char) b;
         }
         return SocketTextReader.toStringAndClear(line);
+    }
+
+    public Protocol read(Connection connection, long timeout, TimeUnit unit) throws IOException{
+        return null;
     }
 }

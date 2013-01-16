@@ -33,14 +33,21 @@ public class ClientCommandService {
 
     private final Node node;
     private final ILogger logger;
-    private final Map<TcpIpConnection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<TcpIpConnection, ClientEndpoint>();
-    private ConcurrentHashMap<Command, ClientCommandHandler> services = new ConcurrentHashMap<Command, ClientCommandHandler>();
     private ExecutorService executorService;
+    private final Map<TcpIpConnection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<TcpIpConnection, ClientEndpoint>();
+    private ConcurrentHashMap<Command, ClientCommandHandler> services;
 
     public ClientCommandService(Node node) {
         this.node = node;
         logger = node.getLogger(ClientCommandService.class.getName());
         executorService = node.nodeEngine.getExecutionService().getExecutorService("client");
+        services = new ConcurrentHashMap<Command, ClientCommandHandler>();
+        services.put(Command.UNKNOWN, new ClientCommandHandler(node.nodeEngine) {
+            @Override
+            public Protocol processCall(Node node, Protocol protocol) {
+                return protocol.error(null, "unknown", "command");
+            }
+        });
     }
 
     //Always called by an io-thread.
