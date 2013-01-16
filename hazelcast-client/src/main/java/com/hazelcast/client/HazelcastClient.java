@@ -95,27 +95,27 @@ public class HazelcastClient implements HazelcastInstance {
         in = new InRunnable(this, out, calls, new ProtocolReader());
         listenerManager = new ListenerManager(this, serializationService);
 
-        try {
-            final Connection c = connectionManager.getInitConnection();
-            if (c == null) {
-                connectionManager.shutdown();
-                lifecycleService.destroy();
-                throw new IllegalStateException("Unable to connect to cluster");
-            }
-        } catch (IOException e) {
-            connectionManager.shutdown();
-            lifecycleService.destroy();
-            throw new ClusterClientException(e.getMessage(), e);
-        }
+//        try {
+//            final Connection c = connectionManager.getInitConnection();
+//            if (c == null) {
+//                connectionManager.shutdown();
+//                lifecycleService.destroy();
+//                throw new IllegalStateException("Unable to connect to cluster");
+//            }
+//        } catch (IOException e) {
+//            connectionManager.shutdown();
+//            lifecycleService.destroy();
+//            throw new ClusterClientException(e.getMessage(), e);
+//        }
         final String prefix = "hz.client." + this.id + ".";
-        new Thread(out, prefix + "OutThread").start();
-        new Thread(in, prefix + "InThread").start();
-        new Thread(listenerManager, prefix + "Listener").start();
+//        new Thread(out, prefix + "OutThread").start();
+//        new Thread(in, prefix + "InThread").start();
+//        new Thread(listenerManager, prefix + "Listener").start();
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
         if (config.isUpdateAutomatic()) {
             this.getCluster().addMembershipListener(connectionManager);
-            connectionManager.updateMembers();
+//            connectionManager.updateMembers();
         }
         lifecycleService.fireLifecycleEvent(STARTED);
         connectionManager.scheduleHeartbeatTimerTask();

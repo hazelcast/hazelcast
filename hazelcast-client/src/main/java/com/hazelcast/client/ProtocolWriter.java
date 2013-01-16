@@ -22,13 +22,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class ProtocolWriter {
-    protected static final byte[] HEADER = new byte[]{'H', 'Z', 'C'};
+    protected static final byte[] HEADER = new byte[]{'P', '0', '1'};
 
     public void write(Connection connection, Protocol command) throws IOException {
         if (connection != null) {
             final DataOutputStream dos = connection.getOutputStream();
             if (!connection.headersWritten) {
                 dos.write(HEADER);
+                dos.write('\n');
+                dos.write('\r');
                 dos.flush();
                 connection.headersWritten = true;
             }

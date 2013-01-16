@@ -80,6 +80,7 @@ public class SocketProtocolReader implements SocketReader {
             readLineIfNotRead(bb, commandLineRead, binaryCommandLine);
             if (commandLineIsRead()) {
                 String stringCommandLine = SocketTextReader.toStringAndClear(binaryCommandLine);
+                System.out.println("Command line is " + stringCommandLine);
                 parseCommandLine(stringCommandLine);
                 if (commandLineIsParsed) {
                     if (hasSizeLine()) {

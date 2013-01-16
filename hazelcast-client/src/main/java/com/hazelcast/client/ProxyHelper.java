@@ -124,7 +124,7 @@ public class ProxyHelper {
         try {
             Connection connection = connectionPool.takeConnection();
             writer.write(connection,protocol);
-            connection.release();
+            connectionPool.releaseConnection(connection);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -135,9 +135,11 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command,args, data);
         try {
             Connection connection = connectionPool.takeConnection();
+            protocol.onEnqueue();
             writer.write(connection,protocol);
+            writer.flush(connection);
             Protocol response = reader.read(connection);
-            connection.release();
+            connectionPool.releaseConnection(connection);
             return response;
         } catch (IOException e) {
             e.printStackTrace();

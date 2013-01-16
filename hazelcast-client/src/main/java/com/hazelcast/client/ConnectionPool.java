@@ -17,21 +17,27 @@
 
 package com.hazelcast.client;
 
+import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnectionPool {
     private final ConnectionManager connectionManager;
 
-    static private final int POOL_SIZE = 10;
+    static private final int POOL_SIZE = 1;
 
     BlockingQueue<Connection> pool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
 
     public ConnectionPool(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
-        for (int i = 0; i < POOL_SIZE; i++) {
-            Connection connection = connectionManager.createNextConnection();
-            pool.offer(connection);
+        while (pool.size() < POOL_SIZE) {
+            try {
+                Connection connection = connectionManager.createNextConnection();
+                connectionManager.bindConnection(connection);
+                pool.offer(connection);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
