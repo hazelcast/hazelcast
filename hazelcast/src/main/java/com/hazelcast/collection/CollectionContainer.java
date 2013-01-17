@@ -87,6 +87,13 @@ public class CollectionContainer {
         return false;
     }
 
+    public <T> T getOrCreateObject(Data dataKey) {
+        Object obj = objects.get(dataKey);
+        if (obj == null){
+            return (T) putNewObject(dataKey);
+        }
+        return (T) obj;
+    }
 
     public <T> T getObject(Data dataKey) {
         return (T) objects.get(dataKey);
@@ -110,7 +117,6 @@ public class CollectionContainer {
     }
 
     public Collection values() {
-        //TODO can we lock per key
         List valueList = new LinkedList();
         for (Object obj : objects.values()) {
             valueList.addAll((Collection) obj);
@@ -139,7 +145,7 @@ public class CollectionContainer {
         return false;
     }
 
-    public Map<Data, Collection> entrySet() {
+    public Map<Data, Collection> copyObjects() {
         Map<Data, Collection> map = new HashMap<Data, Collection>(objects.size());
         for (Map.Entry<Data, Object> entry : objects.entrySet()) {
             Data key = entry.getKey();

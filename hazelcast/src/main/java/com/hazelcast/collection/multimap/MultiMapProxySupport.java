@@ -19,6 +19,7 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.operations.*;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ThreadContext;
@@ -27,10 +28,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 
 /**
@@ -58,7 +56,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
 
     public Object createNew() {
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-            return new HashSet(10);//TODO hardcoded initial
+            return new HashSet(10);
         } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
             return new LinkedList();
         }
@@ -74,7 +72,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    protected MultiMapCollectionResponse getAllInternal(Data dataKey) {
+    protected CollectionResponse getAllInternal(Data dataKey) {
         try {
             GetAllOperation operation = new GetAllOperation(name, proxyType, dataKey);
             return invoke(operation, dataKey);
@@ -92,7 +90,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    protected MultiMapCollectionResponse removeInternal(Data dataKey) {
+    protected CollectionResponse removeInternal(Data dataKey) {
         try {
             RemoveAllOperation operation = new RemoveAllOperation(name, proxyType, dataKey, getThreadId());
             return invoke(operation, dataKey);
@@ -114,7 +112,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
                 if (result == null) {
                     continue;
                 }
-                MultiMapCollectionResponse response = (MultiMapCollectionResponse) nodeEngine.toObject(result);
+                CollectionResponse response = (CollectionResponse) nodeEngine.toObject(result);
                 keySet.addAll(response.getCollection());
             }
             return keySet;
@@ -217,10 +215,10 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    protected Data getInternal(Data dataKey, int index) {
+    protected Object getInternal(Data dataKey, int index) {
         try {
             GetOperation operation = new GetOperation(name, proxyType, dataKey, index);
-            return invoke(operation, dataKey);
+            return invokeData(operation, dataKey);
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -244,6 +242,42 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
         }
     }
 
+    protected Object setInternal(Data dataKey, int index, Data dataValue) {
+        try {
+            SetOperation operation = new SetOperation(name, proxyType, dataKey, getThreadId(), index, dataValue);
+            return invokeData(operation, dataKey);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected Object removeInternal(Data dataKey, int index) {
+        try {
+            RemoveIndexOperation operation = new RemoveIndexOperation(name, proxyType, dataKey, getThreadId(), index);
+            return invokeData(operation, dataKey);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected Integer indexOfInternal(Data dataKey, Data value, boolean last) {
+        try {
+            IndexOfOperation operation = new IndexOfOperation(name, proxyType, dataKey, value, last);
+            return invoke(operation, dataKey);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+    protected Boolean addAllInternal(Data dataKey, List<Data> dataList, int index) {
+        try {
+            AddAllOperation operation = new AddAllOperation(name, proxyType, dataKey, getThreadId(), dataList, index);
+            return invoke(operation, dataKey);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
     public Object getId() {
         return name;
     }
@@ -256,12 +290,23 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
         return CollectionService.COLLECTION_SERVICE_NAME;
     }
 
-    private <T> T invoke(MultiMapOperation operation, Data dataKey) {
+    private <T> T invoke(CollectionOperation operation, Data dataKey) {
         try {
             int partitionId = nodeEngine.getPartitionId(dataKey);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw new RuntimeException(throwable);
+        }
+    }
+
+    private Object invokeData(CollectionOperation operation, Data dataKey) {
+        try {
+            int partitionId = nodeEngine.getPartitionId(dataKey);
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
+            Future f = inv.invoke();
+            return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }

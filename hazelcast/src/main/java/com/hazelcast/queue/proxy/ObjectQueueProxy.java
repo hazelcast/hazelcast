@@ -37,7 +37,6 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        //TODO
         return null;
     }
 

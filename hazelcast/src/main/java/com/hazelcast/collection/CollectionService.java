@@ -18,14 +18,12 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 
+import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -35,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @ali 1/1/13
  */
-public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EntryListener> {
+public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener> {
 
     private NodeEngine nodeEngine;
 
@@ -120,7 +118,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         return nodeEngine;
     }
 
-    public void addEntryListener(String name, EntryListener listener, Data key, boolean includeValue, boolean local) {
+    public void addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
         ListenerKey listenerKey = new ListenerKey(name, key, listener);
         String id = eventRegistrations.putIfAbsent(listenerKey, "tempId");
         if (id != null) {
@@ -137,7 +135,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         eventRegistrations.put(listenerKey, registration.getId());
     }
 
-    public void removeEntryListener(String name, EntryListener listener, Data key) {
+    public void removeListener(String name, EventListener listener, Data key) {
         ListenerKey listenerKey = new ListenerKey(name, key, listener);
         String id = eventRegistrations.remove(listenerKey);
         if (id != null) {
@@ -146,13 +144,29 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         }
     }
 
-    public void dispatchEvent(CollectionEvent event, EntryListener listener) {
-        EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getCluster().getMember(event.getCaller()),
-                event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-        if (event.eventType.equals(EntryEventType.ADDED)) {
-            listener.entryAdded(entryEvent);
-        } else if (event.eventType.equals(EntryEventType.REMOVED)) {
-            listener.entryRemoved(entryEvent);
+    public void dispatchEvent(CollectionEvent event, EventListener listener) {
+        if (listener instanceof EntryListener) {
+            EntryListener entryListener = (EntryListener) listener;
+            EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getCluster().getMember(event.getCaller()),
+                    event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+
+
+            if (event.eventType.equals(EntryEventType.ADDED)) {
+                entryListener.entryAdded(entryEvent);
+            } else if (event.eventType.equals(EntryEventType.REMOVED)) {
+                entryListener.entryRemoved(entryEvent);
+            }
+        }
+        else if (listener instanceof ItemListener){
+            ItemListener itemListener = (ItemListener)listener;
+            ItemEvent itemEvent = new ItemEvent(event.getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
+                    nodeEngine.getCluster().getMember(event.getCaller()));
+            if (event.eventType.getType() == ItemEventType.ADDED.getType()){
+                itemListener.itemAdded(itemEvent);
+            }
+            else {
+                itemListener.itemRemoved(itemEvent);
+            }
         }
     }
 

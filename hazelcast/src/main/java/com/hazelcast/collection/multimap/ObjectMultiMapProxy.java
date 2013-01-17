@@ -17,6 +17,8 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.*;
+import com.hazelcast.collection.operations.CollectionResponse;
+import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.map.LockInfo;
@@ -45,7 +47,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
 
     public Collection<V> get(K key) {
         Data dataKey = nodeEngine.toData(key);
-        MultiMapCollectionResponse result = getAllInternal(dataKey);
+        CollectionResponse result = getAllInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
     }
 
@@ -57,7 +59,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
 
     public Collection<V> remove(Object key) {
         Data dataKey = nodeEngine.toData(key);
-        MultiMapCollectionResponse result = removeInternal(dataKey);
+        CollectionResponse result = removeInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
     }
 
@@ -78,7 +80,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
             if (obj == null) {
                 continue;
             }
-            MultiMapCollectionResponse response = nodeEngine.toObject(obj);
+            CollectionResponse response = nodeEngine.toObject(obj);
             values.addAll(response.getObjectCollection(nodeEngine));
         }
         return values;
@@ -91,7 +93,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
             if (obj == null) {
                 continue;
             }
-            MultiMapResponse response = nodeEngine.toObject(obj);
+            EntrySetResponse response = nodeEngine.toObject(obj);
             Set<Map.Entry<K, V>> entries = response.getObjectEntrySet(nodeEngine);
             entrySet.addAll(entries);
         }
@@ -121,25 +123,25 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
-        service.addEntryListener(name, listener, null, false, true);
+        service.addListener(name, listener, null, false, true);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        service.addEntryListener(name, listener, null, includeValue, false);
+        service.addListener(name, listener, null, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
-        service.removeEntryListener(name, listener, null);
+        service.removeListener(name, listener, null);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         Data dataKey = nodeEngine.toData(key);
-        service.addEntryListener(name, listener, dataKey, includeValue, false);
+        service.addListener(name, listener, dataKey, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         Data dataKey = nodeEngine.toData(key);
-        service.removeEntryListener(name, listener, dataKey);
+        service.removeListener(name, listener, dataKey);
     }
 
     public void lock(K key) {
