@@ -78,7 +78,7 @@ public final class ResponseHandlerFactory {
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
                 throw new IllegalStateException("Response already sent for call: " + callId
-                                                + " to " + conn.getEndPoint());
+                                                + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
             final Operation response;
             if (obj instanceof Operation) {

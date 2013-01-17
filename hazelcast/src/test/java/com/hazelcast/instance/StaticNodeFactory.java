@@ -38,7 +38,10 @@ public class StaticNodeFactory {
     }
 
     public HazelcastInstance newInstance(Config config) {
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        if (nodeIndex >= addresses.length) {
+            throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
+        }
+        init(config);
         NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex++]);
         return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
     }
@@ -56,15 +59,8 @@ public class StaticNodeFactory {
     }
 
     public static HazelcastInstance[] newInstances(Config config, int count) {
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        Address[] addresses = new Address[count];
-        for (int i = 0; i < count; i++) {
-            try {
-                addresses[i] = new Address("127.0.0.1", ports.incrementAndGet());
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
-        }
+        init(config);
+        Address[] addresses = createAddresses(count);
         HazelcastInstance[] instances = new HazelcastInstance[count];
         StaticNodeRegistry staticNodeRegistry = new StaticNodeRegistry(addresses);
         for (int i = 0; i < count; i++) {
@@ -72,5 +68,10 @@ public class StaticNodeFactory {
             instances[i] = HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }
         return instances;
+    }
+
+    private static void init(Config config) {
+        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
     }
 }

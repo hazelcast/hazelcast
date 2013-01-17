@@ -1,4 +1,5 @@
-com.hazelcast.spi.impl.DataSerializerInitHook
+com.hazelcast.cluster.DataSerializerClusterHook
+com.hazelcast.spi.impl.DataSerializerSpiHook
 com.hazelcast.map.DataSerializerMapHook
 com.hazelcast.queue.DataSerializerQueueHook
 com.hazelcast.collection.DataSerializerCollectionHook

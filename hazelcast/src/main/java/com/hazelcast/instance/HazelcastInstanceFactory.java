@@ -21,6 +21,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.Util;
 
 import java.util.Collection;
@@ -34,6 +35,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 
 @SuppressWarnings("SynchronizationOnStaticField")
+@PrivateApi
 public class HazelcastInstanceFactory {
 
     private static final ConcurrentMap<String, HazelcastInstance> INSTANCE_MAP = new ConcurrentHashMap<String, HazelcastInstance>(5);

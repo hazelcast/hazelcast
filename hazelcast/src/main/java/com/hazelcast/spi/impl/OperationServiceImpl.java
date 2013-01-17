@@ -20,12 +20,10 @@ import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.executor.PoolExecutorThreadFactory;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
@@ -63,7 +61,6 @@ final class OperationServiceImpl implements OperationService {
     private final FastExecutor executor;
     private final long defaultCallTimeout;
     private final Set<CallKey> executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<CallKey, Boolean>());
-    private final SerializationContext serializationContext;
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -86,7 +83,6 @@ final class OperationServiceImpl implements OperationService {
         for (int i = 0; i < partitionCount; i++) {
             partitionLocks[i] = new SpinReadWriteLock(1, TimeUnit.MILLISECONDS);
         }
-        serializationContext = node.serializationService.getSerializationContext();
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
@@ -99,8 +95,8 @@ final class OperationServiceImpl implements OperationService {
     }
 
     @PrivateApi
-    public void handleOperation(final Data data, Connection conn) {
-        executor.execute(new RemoteOperationProcessor(data, conn));
+    public void handleOperation(final Packet packet) {
+        executor.execute(new RemoteOperationProcessor(packet));
     }
 
     /**
@@ -117,7 +113,7 @@ final class OperationServiceImpl implements OperationService {
      * @param op
      */
     public void runOperation(final Operation op) {
-        final ThreadContext threadContext = ThreadContext.get();
+//        final ThreadContext threadContext = ThreadContext.get();
         SpinLock partitionLock = null;
         Lock keyLock = null;
         CallKey callKey = null;
@@ -130,7 +126,7 @@ final class OperationServiceImpl implements OperationService {
                 op.getResponseHandler().sendResponse(response);
                 return;
             }
-            threadContext.setCurrentOperation(op);
+//            threadContext.setCurrentOperation(op);
             callKey = beforeCallExecution(op);
             final int partitionId = op.getPartitionId();
             if (op instanceof PartitionAwareOperation) {
@@ -181,7 +177,7 @@ final class OperationServiceImpl implements OperationService {
             if (partitionLock != null) {
                 partitionLock.unlock();
             }
-            threadContext.setCurrentOperation(null);
+//            threadContext.setCurrentOperation(null);
         }
     }
 
@@ -199,15 +195,15 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     void runOperationUnderExistingLock(Operation op) {
-        final ThreadContext threadContext = ThreadContext.get();
-        final Object parentOperation = threadContext.getCurrentOperation();
-        threadContext.setCurrentOperation(op);
+//        final ThreadContext threadContext = ThreadContext.get();
+//        final Object parentOperation = threadContext.getCurrentOperation();
+//        threadContext.setCurrentOperation(op);
         final CallKey callKey = beforeCallExecution(op);
         try {
             doRunOperation(op);
         } finally {
             afterCallExecution(op, callKey);
-            threadContext.setCurrentOperation(parentOperation);
+//            threadContext.setCurrentOperation(parentOperation);
         }
     }
 
@@ -289,11 +285,12 @@ final class OperationServiceImpl implements OperationService {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
                             if (op.returnsResponse() && target.equals(op.getCaller())) {
+                                // TODO: fix me! what if backup migrates after response is returned?
                                 backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
-                                backupResponse = backupOp;    // TODO: fix me! what if backup migrates after response is returned?
+                                backupResponse = backupOp;
                             } else {
                                 final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                        .setReplicaIndex(replicaIndex).setTryCount(10).build().invoke();
+                                        .setReplicaIndex(replicaIndex).setTryCount(20).build().invoke();
                                 if (returnsResponse) {
                                     syncBackups.add(f);
                                 }
@@ -366,17 +363,20 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation op, boolean local) throws Exception {
-        if (!(op instanceof PartitionAwareOperation)) {
-            throw new IllegalArgumentException("Operation must be PartitionAwareOperation!");
-        }
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation,
+                                               boolean local) throws Exception {
+        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
+        return invokeOnAllPartitions(serviceName, operationFactory, local);
+    }
+
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+                                                      boolean local) throws Exception {
         final Map<Address, ArrayList<Integer>> memberPartitions = getMemberPartitions(local);
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
-        final Data operationData = nodeEngine.toData(op); // don't use op object in invocations!
         for (Map.Entry<Address, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
             final Address target = mp.getKey();
             final List<Integer> partitions = mp.getValue();
-            final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationData);
+            final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
             Invocation inv = createInvocationBuilder(serviceName, pi,
                     target).setTryCount(5).setTryPauseMillis(300).build();
             Future future = inv.invoke();
@@ -409,7 +409,7 @@ final class OperationServiceImpl implements OperationService {
         }
         for (Integer failedPartition : failedPartitions) {
             Invocation inv = createInvocationBuilder(serviceName,
-                    new OperationWrapper(operationData), failedPartition).build();
+                    operationFactory.createParallelOperation(), failedPartition).build();
             Future f = inv.invoke();
             partitionResults.put(failedPartition, f);
         }
@@ -444,6 +444,20 @@ final class OperationServiceImpl implements OperationService {
             ownedPartitions.add(i);
         }
         return memberPartitions;
+    }
+
+    @PrivateApi
+    void acquirePartitionReadLocks(List<Integer> partitions) {
+        for (Integer partition : partitions) {
+            partitionLocks[partition].readLock().lock();
+        }
+    }
+
+    @PrivateApi
+    void releasePartitionReadLocks(List<Integer> partitions) {
+        for (Integer partition : partitions) {
+            partitionLocks[partition].readLock().unlock();
+        }
     }
 
     public void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
@@ -494,7 +508,9 @@ final class OperationServiceImpl implements OperationService {
 
     public boolean send(final Operation op, final Connection connection) {
         Data opData = nodeEngine.toData(op);
-        return nodeEngine.send(opData, connection, Packet.HEADER_OP);
+        Packet packet = new Packet(opData, nodeEngine.getSerializationContext());
+        packet.setHeader(Packet.HEADER_OP, true);
+        return nodeEngine.send(packet, connection);
     }
 
     @PrivateApi
@@ -553,18 +569,17 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private class RemoteOperationProcessor implements Runnable {
-        private final Data data;
-        private final Address caller;
-        private final Connection conn;
+        private final Packet packet;
 
-        private RemoteOperationProcessor(Data data, Connection conn) {
-            this.data = data;
-            this.caller = conn.getEndPoint();
-            this.conn = conn;
+        public RemoteOperationProcessor(Packet packet) {
+            this.packet = packet;
         }
 
         public void run() {
+            final Connection conn = packet.getConn();
             try {
+                final Address caller = conn.getEndPoint();
+                final Data data = packet.getValue();
                 final Operation op = (Operation) nodeEngine.toObject(data);
                 op.setNodeEngine(nodeEngine).setCaller(caller);
                 op.setConnection(conn);
@@ -578,45 +593,6 @@ final class OperationServiceImpl implements OperationService {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 send(new ErrorResponse(node.getThisAddress(), e), conn);
             }
-        }
-
-        private void processResponse(Operation op) {
-            try {
-                op.beforeRun();
-                op.run();
-                op.afterRun();
-            } catch (Throwable e) {
-                logger.log(Level.SEVERE, "While processing response...", e);
-            }
-        }
-    }
-
-    private class EmbeddedRemoteOperationProcessor implements Runnable {
-        private final Data data;
-        private final Address caller;
-        private final Connection conn;
-
-        private EmbeddedRemoteOperationProcessor(Data data, Address caller, Connection conn) {
-            this.data = data;
-            this.caller = caller;
-            this.conn = conn;
-        }
-
-        public void run() {
-//            try {
-//                final Operation op = (Operation) nodeEngine.toObject(data);
-//                op.setNodeEngine(nodeEngine).setCaller(caller);
-//                op.setConnection(conn);
-//                if (op instanceof ResponseOperation) {
-//                    processResponse(op);
-//                } else {
-//                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-//                    runOperation(op);
-//                }
-//            } catch (Throwable e) {
-//                logger.log(Level.SEVERE, e.getMessage(), e);
-//                send(new ErrorResponse(node.getThisAddress(), e), conn);
-//            }
         }
 
         private void processResponse(Operation op) {

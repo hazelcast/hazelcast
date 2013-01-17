@@ -31,4 +31,6 @@ public interface MigrationAwareService {
 
     int getMaxBackupCount();
 
+    String getServiceName();
+
 }

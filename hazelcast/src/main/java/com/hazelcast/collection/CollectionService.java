@@ -155,5 +155,4 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             listener.entryRemoved(entryEvent);
         }
     }
-
 }

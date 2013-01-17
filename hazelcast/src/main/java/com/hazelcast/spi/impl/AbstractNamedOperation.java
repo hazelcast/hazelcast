@@ -37,10 +37,12 @@ public abstract class AbstractNamedOperation extends AbstractOperation {
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
         out.writeUTF(name);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         name = in.readUTF();
     }
 }

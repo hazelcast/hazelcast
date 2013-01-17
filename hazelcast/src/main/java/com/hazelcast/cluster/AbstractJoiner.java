@@ -68,7 +68,7 @@ public abstract class AbstractJoiner implements Joiner {
         if (!node.isMaster()) {
             boolean allConnected = false;
             int checkCount = 0;
-            long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+            final long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
             if (node.joined()) {
                 systemLogService.logJoin("Waiting for all connections");
                 while (checkCount++ < node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger() && !allConnected) {
@@ -108,7 +108,7 @@ public abstract class AbstractJoiner implements Joiner {
         if (node.getClusterService().getSize() == 1) {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
-            sb.append(node.clusterService);
+            sb.append(node.clusterService.membersString());
             logger.log(Level.INFO, sb.toString());
         }
     }

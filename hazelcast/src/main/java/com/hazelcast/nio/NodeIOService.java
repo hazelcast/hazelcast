@@ -21,7 +21,6 @@ import com.hazelcast.config.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
@@ -64,7 +63,7 @@ public class NodeIOService implements IOService {
     }
 
     public void onIOThreadStart() {
-        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
+//        ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
     }
 
     public Address getThisAddress() {
@@ -90,10 +89,6 @@ public class NodeIOService implements IOService {
 
     public SSLConfig getSSLConfig() {
         return node.getConfig().getNetworkConfig().getSSLConfig();
-    }
-
-    public void handleClientPacket(Packet p) {
-//        node.clientHandlerService.handle(p);
     }
 
     public void handleMemberPacket(final Packet packet) {
@@ -213,7 +208,7 @@ public class NodeIOService implements IOService {
 
     public void onShutdown() {
         try {
-            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
+//            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
             // wait a little
 //            Thread.sleep(100);
         } catch (Throwable ignored) {

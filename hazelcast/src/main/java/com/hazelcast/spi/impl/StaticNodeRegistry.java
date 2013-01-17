@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionMonitor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.Connection;
 import com.hazelcast.spi.ConnectionManager;
-import com.hazelcast.spi.NodeEngine;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
@@ -40,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class StaticNodeRegistry {
 
     final Address[] addresses;
-    final Map<Address, NodeEngine> nodes = new ConcurrentHashMap<Address, NodeEngine>(10);
+    final Map<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
 
     public StaticNodeRegistry(Address[] addresses) {
         this.addresses = addresses;
@@ -51,7 +48,7 @@ public class StaticNodeRegistry {
         return staticNodeContext;
     }
 
-    void register(Address address, NodeEngine nodeEngine) {
+    void register(Address address, NodeEngineImpl nodeEngine) {
         nodes.put(address, nodeEngine);
     }
 
@@ -77,7 +74,7 @@ public class StaticNodeRegistry {
 
         class StaticConnectionManager implements ConnectionManager {
             final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(10);
-            private final Node node;
+            final Node node;
             final Connection thisConnection;
 
             StaticConnectionManager(Node node) {
@@ -89,7 +86,7 @@ public class StaticNodeRegistry {
             public Connection getConnection(Address address) {
                 Connection conn = mapConnections.get(address);
                 if (conn == null) {
-                    NodeEngine nodeEngine = nodes.get(address);
+                    NodeEngineImpl nodeEngine = nodes.get(address);
                     conn = new StaticConnection(address, nodeEngine);
                     mapConnections.put(address, conn);
                 }
@@ -105,6 +102,15 @@ public class StaticNodeRegistry {
             }
 
             public void shutdown() {
+                for (final NodeEngineImpl nodeEngine : nodes.values()) {
+                    if (nodeEngine.getNode().isActive()) {
+                        nodeEngine.getExecutionService().execute("default", new Runnable() {
+                            public void run() {
+                                nodeEngine.getClusterService().removeAddress(thisAddress);
+                            }
+                        });
+                    }
+                }
             }
 
             public void start() {
@@ -137,9 +143,9 @@ public class StaticNodeRegistry {
 
             class StaticConnection implements Connection {
                 final Address endpoint;
-                private final NodeEngine nodeEngine;
+                final NodeEngineImpl nodeEngine;
 
-                public StaticConnection(Address address, NodeEngine nodeEngine) {
+                public StaticConnection(Address address, NodeEngineImpl nodeEngine) {
                     this.endpoint = address;
                     this.nodeEngine = nodeEngine;
                 }
@@ -152,13 +158,13 @@ public class StaticNodeRegistry {
                     return true;
                 }
 
-                public boolean write(Data data, SerializationContext context, int header) {
-                    if (header == Packet.HEADER_OP) {
-                        OperationServiceImpl os = (OperationServiceImpl) nodeEngine.getOperationService();
-                        os.handleOperation(data, thisConnection);
-                    } else {
+                public boolean write(Packet packet) {
+                    if (nodeEngine.getNode().isActive()) {
+                        packet.setConn(thisConnection);
+                        nodeEngine.handlePacket(packet);
+                        return true;
                     }
-                    return true;
+                    return false;
                 }
 
                 public long lastReadTime() {
@@ -208,18 +214,29 @@ public class StaticNodeRegistry {
             }
 
             public void doJoin(AtomicBoolean joined) {
-                node.setMasterAddress(addresses[0]);
+                Address master = null;
+                for (Address address : addresses) {
+                    final NodeEngineImpl nodeEngine = nodes.get(address);
+                    if (nodeEngine != null && nodeEngine.getNode().isActive()) {
+                        master = address;
+                        break;
+                    }
+                }
+                node.setMasterAddress(master);
                 if (node.getMasterAddress().equals(node.getThisAddress())) {
                     node.setJoined();
                 } else {
-                    for (int i = 0; !node.joined() && i < 10; i++) {
-                        node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
-                        System.out.println("Sending join request");
+                    for (int i = 0; !node.joined() && i < 100; i++) {
                         try {
+                            node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
                             Thread.sleep(10);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
+                    }
+                    if (!node.joined()) {
+                        throw new AssertionError("Node[" + thisAddress + "] should have been joined to "
+                                + node.getMasterAddress());
                     }
                 }
             }

@@ -18,8 +18,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.Connection;
 
 import java.io.IOException;
@@ -98,10 +96,8 @@ public final class TcpIpConnection implements Connection {
         writeHandler.enqueueSocketWritable(packet);
     }
 
-    public boolean write(Data opData, SerializationContext context, int header) {
+    public boolean write(Packet packet) {
         if (!live) return false;
-        final Packet packet = new Packet(opData, this, context);
-        packet.setHeader(header, true);
         writeHandler.enqueueSocketWritable(packet);
         return true;
     }

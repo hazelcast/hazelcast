@@ -112,6 +112,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 MigrationAwareService service = (MigrationAwareService) serviceObject;
                 final Operation op = service.prepareMigrationOperation(event);
                 if (op != null) {
+                    op.setServiceName(service.getServiceName());
                     service.beforeMigration(event);
                     tasks.add(op);
                 }
