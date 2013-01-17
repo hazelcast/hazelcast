@@ -33,14 +33,14 @@ public abstract class MapCommandHandlerWithTTL extends MapCommandHandler {
     public Protocol processCall(Node node, Protocol protocol) {
         String[] args = protocol.args;
         String name = protocol.args[0];
-        byte[] key = protocol.buffers[0].array();
-        byte[] value = protocol.buffers[1].array();
+        Data key = protocol.buffers[0];
+        Data value = protocol.buffers[1];
+        System.out.println("Value that I am putting is " + value);
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
         final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
-        // TODO: !!! FIX ME !!!
         Data oldValue = processMapOp(
-                dataMapProxy, binaryToData(key), protocol.buffers.length > 1 ? binaryToData(value) : null, ttl);
-        return protocol.success((oldValue == null) ? null : ByteBuffer.wrap(oldValue.buffer));
+                dataMapProxy, key, protocol.buffers.length > 1 ? value : null, ttl);
+        return protocol.success(oldValue);
     }
 
     protected abstract Data processMapOp(DataMapProxy dataMapProxy, Data keyData, Data valueData, long ttl);

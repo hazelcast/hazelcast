@@ -30,7 +30,6 @@ public class MapPutHandler extends MapCommandHandlerWithTTL {
 
     @Override
     protected Data processMapOp(DataMapProxy dataMapProxy, Data keyData, Data valueData, long ttl) {
-        System.out.println("I am here?");
         if (ttl <= 0) {
             Data result = dataMapProxy.put(keyData, valueData);
             return result;

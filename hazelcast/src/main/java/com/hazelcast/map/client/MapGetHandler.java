@@ -32,10 +32,11 @@ public class MapGetHandler extends MapCommandHandler {
 
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        byte[] key = protocol.buffers[0].array();
+        Data key = protocol.buffers[0];
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
         // TODO: !!! FIX ME !!!
-        Data value = dataMapProxy.get(binaryToData(key));
-        return protocol.success(value == null ? null : ByteBuffer.wrap(value.buffer));
+        Data value = dataMapProxy.get(key);
+        System.out.println("Value is " + value.buffer.length);
+        return protocol.success(value);
     }
 }

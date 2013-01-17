@@ -55,7 +55,7 @@ public class ClientRequestHandler implements Runnable {
                 public Void run() {
                     TcpIpConnection connection = protocol.conn;
                     ClientCommandHandler clientOperationHandler = node.clientCommandService.getService(protocol);
-                    clientOperationHandler.handle(node, protocol);
+                        clientOperationHandler.handle(node, protocol);
                     node.clientCommandService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);
                     return null;
                 }

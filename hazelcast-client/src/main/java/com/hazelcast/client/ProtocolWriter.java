@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.Protocol;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 

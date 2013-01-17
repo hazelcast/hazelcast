@@ -167,8 +167,8 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         Protocol protocol = proxyHelper.doCommand(Command.QENTRIES, new String[]{getName()}, null);
         List<E> list = new ArrayList<E>();
         if (protocol.hasBuffer()) {
-            for (ByteBuffer bb : protocol.buffers) {
-                list.add((E) proxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bb.array())));
+            for (Data bb : protocol.buffers) {
+                list.add((E) proxyHelper.toObject(bb));
             }
         }
         return new QueueItemIterator(list.toArray(), this);

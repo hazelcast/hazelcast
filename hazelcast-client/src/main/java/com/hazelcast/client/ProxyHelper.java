@@ -114,8 +114,7 @@ public class ProxyHelper {
 
     private Object getSingleObjectFromResponse(Protocol response) {
         if (response!=null && response.buffers != null && response.hasBuffer()) {
-            return client.getSerializationService().toObject(
-                    new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, response.buffers[0].array()));
+            return client.getSerializationService().toObject(response.buffers[0]);
         } else return null;
     }
 
@@ -150,17 +149,9 @@ public class ProxyHelper {
     }
 
     private Protocol createProtocol(Command command, String[] args, Data[] data) {
-        ByteBuffer[] buffers = new ByteBuffer[data == null ? 0 : data.length];
-        int index = 0;
-        if (data != null) {
-            for (Data d : data) {
-                if (d != null && d.buffer != null)
-                    buffers[index++] = ByteBuffer.wrap(d.buffer);
-            }
-        }
         if (args == null) args = new String[]{};
         long id = newCallId();
-        Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, buffers);
+        Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, data);
         return protocol;
     }
 
@@ -262,9 +253,8 @@ public class ProxyHelper {
         Protocol protocol = doCommand(command, args, datas);
         List<E> list = new ArrayList<E>();
         if(protocol.hasBuffer()){
-            for(ByteBuffer bb: protocol.buffers){
-                list.add((E) client.getSerializationService().toObject(
-                        new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bb.array())));
+            for(Data bb: protocol.buffers){
+                list.add((E) client.getSerializationService().toObject(bb));
             }
         }
         return list;

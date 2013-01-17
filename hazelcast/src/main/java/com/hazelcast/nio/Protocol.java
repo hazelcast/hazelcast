@@ -17,9 +17,9 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 
 public class Protocol implements SocketWritable {
@@ -29,7 +29,7 @@ public class Protocol implements SocketWritable {
     private static final String SPACE = " ";
     public final Command command;
     public final String[] args;
-    public final ByteBuffer[] buffers;
+    public final Data[] buffers;
     public final TcpIpConnection conn;
     public final boolean noReply;
     public String flag;
@@ -39,11 +39,11 @@ public class Protocol implements SocketWritable {
     int totalSize = 0;
     int totalWritten = 0;
 
-    public Protocol(TcpIpConnection connection, Command command, String[] args, ByteBuffer... buffers) {
+    public Protocol(TcpIpConnection connection, Command command, String[] args, Data... buffers) {
         this(connection, command, null, -1, false, args, buffers);
     }
 
-    public Protocol(TcpIpConnection connection, Command command, String flag, int threadId, boolean noReply, String[] args, ByteBuffer... buffers) {
+    public Protocol(TcpIpConnection connection, Command command, String flag, int threadId, boolean noReply, String[] args, Data... buffers) {
         this.buffers = buffers;
         this.args = args;
         this.command = command;
@@ -52,8 +52,6 @@ public class Protocol implements SocketWritable {
         this.flag = flag;
         this.threadId = threadId;
     }
-
-
 
     public void onEnqueue() {
         StringBuilder builder = new StringBuilder();
@@ -70,8 +68,8 @@ public class Protocol implements SocketWritable {
             builder.append(SPACE).append("#").append(buffers == null ? 0 : buffers.length);
             builder.append(NEWLINE);
             int i = buffers.length;
-            for (ByteBuffer buffer : buffers) {
-                builder.append(buffer == null ? 0 : buffer.capacity());
+            for (Data buffer : buffers) {
+                builder.append(buffer == null ? 0 : buffer.totalSize());
                 if (--i != 0) {
                     builder.append(SPACE);
                 }
@@ -81,8 +79,8 @@ public class Protocol implements SocketWritable {
         response = ByteBuffer.wrap(builder.toString().getBytes());
         totalSize = response.array().length;
         if (hasBuffer()) {
-            for (ByteBuffer buffer : buffers) {
-                totalSize += buffer.capacity();
+            for (Data buffer : buffers) {
+                totalSize += buffer.totalSize();
             }
             totalSize += 2;
         }
@@ -91,8 +89,15 @@ public class Protocol implements SocketWritable {
     public boolean writeTo(ByteBuffer destination) {
         totalWritten += IOUtil.copyToHeapBuffer(response, destination);
         if (hasBuffer()) {
-            for (ByteBuffer buffer : buffers) {
-                totalWritten += IOUtil.copyToHeapBuffer(buffer, destination);
+            for (Data buffer : buffers) {
+                ByteArrayOutputStream backing = new ByteArrayOutputStream(buffer.totalSize());
+                DataOutput foo = new DataOutputStream(backing);
+                try {
+                    buffer.writeData(foo);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap(backing.toByteArray()), destination);
             }
             totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
         }
@@ -103,11 +108,11 @@ public class Protocol implements SocketWritable {
         return false;
     }
 
-    public final boolean writeTo(DataOutputStream dos) throws IOException {
+    public final boolean writeTo(final DataOutput dos) throws IOException {
         dos.write(response.array());
         if (buffers != null && buffers.length > 0) {
-            for (ByteBuffer buffer : buffers) {
-                dos.write(buffer.array());
+            for (Data buffer : buffers) {
+                buffer.writeData(dos);
             }
             dos.write("\r\n".getBytes());
         }
@@ -115,27 +120,25 @@ public class Protocol implements SocketWritable {
     }
 
     public Protocol success(String... args) {
-        return success((ByteBuffer) null, args);
+        return success((Data) null, args);
     }
 
-
-
-    public Protocol success(ByteBuffer buffer, String... args) {
+    public Protocol success(Data buffer, String... args) {
         int size = buffer == null ? 0 : 1;
-        ByteBuffer[] buffers = new ByteBuffer[size];
+        Data[] buffers = new Data[size];
         if (size > 0) buffers[0] = buffer;
         return success(buffers, args);
     }
 
-    public Protocol success(ByteBuffer[] buffers, String... args) {
+    public Protocol success(Data[] buffers, String... args) {
         return create(Command.OK, args, buffers);
     }
 
-    public Protocol error(ByteBuffer[] buffers, String... args) {
+    public Protocol error(Data[] buffers, String... args) {
         return create(Command.ERROR, args, buffers);
     }
 
-    public Protocol create(Command command, String[] args, ByteBuffer... buffers) {
+    public Protocol create(Command command, String[] args, Data... buffers) {
         if (args == null) args = new String[]{};
         return new Protocol(this.conn, command, this.flag, this.threadId, this.noReply, args, buffers);
     }
@@ -148,6 +151,6 @@ public class Protocol implements SocketWritable {
     }
 
     public boolean hasBuffer() {
-        return buffers!=null && buffers.length > 0;
+        return buffers != null && buffers.length > 0;
     }
 }

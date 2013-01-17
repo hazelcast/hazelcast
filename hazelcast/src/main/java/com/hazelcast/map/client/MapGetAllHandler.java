@@ -21,6 +21,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -35,20 +36,20 @@ public class MapGetAllHandler extends MapCommandHandler {
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
         int size = protocol.hasBuffer() ? protocol.buffers.length : 0;
-        Set<Object> set = new HashSet<Object>();
+        Set<Data> set = new HashSet<Data>();
         for (int i = 0; i < size; i++) {
-            set.add(binaryToData(protocol.buffers[i].array()));
+            set.add(protocol.buffers[i]);
         }
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
-        ByteBuffer[] buffers = new ByteBuffer[size * 2];
+        Data[] buffers = new Data[size * 2];
         int i = 0;
-        for (Object k : set) {
-            buffers[i++] = ByteBuffer.wrap(((Data) k).buffer);
+        for (Data k : set) {
+            buffers[i++] = k;
             Data v = dataMapProxy.get(k);
             if (v == null) {
-                buffers[i++] = ByteBuffer.wrap(new byte[0]);
+                buffers[i++] = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, new byte[0]);
             } else {
-                buffers[i++] = ByteBuffer.wrap(v.buffer);
+                buffers[i++] = v;
             }
         }
         return protocol.success(buffers);

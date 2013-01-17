@@ -80,9 +80,7 @@ public class MessageListenerManager {
         List<MessageListener> list = messageListeners.get(name);
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
-                messageListener.onMessage(new DataMessage(name,
-                        new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[0].array()),
-                        serializationService));
+                messageListener.onMessage(new DataMessage(name, protocol.buffers[0], serializationService));
             }
         }
     }

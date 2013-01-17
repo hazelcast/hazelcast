@@ -54,8 +54,7 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
             credentials = new UsernamePasswordCredentials(args[0], args[1]);
         } else {
             // TODO: !!! FIX ME !!!
-            final byte[] array = protocol.buffers[0].array();
-            Data data = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, array);
+            Data data = protocol.buffers[0];
             credentials = (Credentials) node.nodeEngine.toObject(data);
         }
         boolean authenticated = doAuthenticate(node, credentials, protocol.conn);

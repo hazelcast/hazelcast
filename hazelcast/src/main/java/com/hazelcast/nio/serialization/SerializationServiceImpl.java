@@ -153,11 +153,14 @@ public final class SerializationServiceImpl implements SerializationService {
             if (serializer == null) {
                 throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
             }
+
             if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
                 serializationContext.registerClassDefinition(data.cd);
             }
             in = new ContextAwareDataInput(data, this);
+            System.out.println(typeId + "Burada " + serializer);
             Object obj = serializer.read(in);
+            System.out.println("Burada 2");
             if (managedContext != null) {
                 managedContext.initialize(obj);
             }

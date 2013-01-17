@@ -55,7 +55,7 @@ public class DefaultClientBinder implements ClientBinder {
         } else {
 //            bb = new ByteBuffer[]{ByteBuffer.wrap(IOUtil.toByteArray(credentials))};
         }
-        Protocol auth = new Protocol(null, Command.AUTH, args, bb);
+        Protocol auth = new Protocol(null, Command.AUTH, args, null);
         Protocol response = writeAndRead(connection, auth);
         logger.log(Level.FINEST, "auth response:" + response.command);
         if (!response.command.equals(Command.OK)) {

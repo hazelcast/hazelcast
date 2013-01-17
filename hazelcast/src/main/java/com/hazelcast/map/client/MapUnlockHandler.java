@@ -20,6 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.serialization.Data;
 
 public class MapUnlockHandler extends MapCommandHandler {
     public MapUnlockHandler(MapService mapService) {
@@ -29,9 +30,9 @@ public class MapUnlockHandler extends MapCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        byte[] key = protocol.buffers[0].array();
+        Data key = protocol.buffers[0];
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
-        dataMapProxy.unlock(binaryToData(key));
+        dataMapProxy.unlock(key);
         return protocol.success();
     }
 }

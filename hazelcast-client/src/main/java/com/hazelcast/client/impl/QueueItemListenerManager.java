@@ -23,7 +23,6 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
@@ -78,8 +77,7 @@ public class QueueItemListenerManager {
         if (list != null) {
             for (ItemListenerHolder listenerHolder : list) {
                 ItemListener<Object> listener = listenerHolder.listener;
-                Data item = listenerHolder.includeValue ? new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY,
-                        protocol.buffers[0].array()) : null;
+                Data item = listenerHolder.includeValue ? protocol.buffers[0] : null;
                 ItemEventType itemEventType = ItemEventType.valueOf(protocol.args[1]);
                 if (ItemEventType.ADDED.equals(itemEventType)) {
                     listener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, item, null, serializerRegistry));

@@ -171,9 +171,8 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         Protocol protocol = proxyHelper.doCommand(Command.MMKEYS, new String[]{getName()}, null);
         Set set = new HashSet();
         if (protocol.hasBuffer()) {
-            for (ByteBuffer bb : protocol.buffers) {
-                set.add(client.getSerializationService().toObject(
-                        new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bb.array())));
+            for (Data bb : protocol.buffers) {
+                set.add(client.getSerializationService().toObject(bb));
             }
         }
         return set;

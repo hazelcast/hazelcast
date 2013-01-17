@@ -20,7 +20,10 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.protocol.SocketProtocolReader;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,7 +39,7 @@ public class ProtocolReader {
         String flag = null;
         Command command;
         String[] args;
-        ByteBuffer[] buffers;
+//        ByteBuffer[] buffers;
         final DataInputStream dis = connection.getInputStream();
         String commandLine = readLine(dis);
         String[] split = SocketProtocolReader.fastSplit(commandLine, ' ');
@@ -70,7 +73,8 @@ public class ProtocolReader {
             args[i] = split[i + specialArgCount];
         }
         if (bufferCount < 0) bufferCount = 0;
-        buffers = new ByteBuffer[bufferCount];
+//        buffers = new ByteBuffer[bufferCount];
+        Data[] datas = new Data[bufferCount];
         if (bufferCount > 0) {
             if(bufferCount*11 > line.array().length)
                 line = ByteBuffer.allocate(bufferCount*11);
@@ -81,7 +85,11 @@ public class ProtocolReader {
                 int length = Integer.parseInt(size);
                 byte[] bytes = new byte[length];
                 dis.readFully(bytes);
-                buffers[i++] = ByteBuffer.wrap(bytes);
+//                buffers[i++] = ByteBuffer.wrap(bytes);
+                datas[i] = new Data();
+                ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+                datas[i].readData(new DataInputStream(bis));
+//                datas[i] = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bytes);
             }
             //reading end of the command;
             dis.readByte();
@@ -90,7 +98,9 @@ public class ProtocolReader {
         if (command.equals(Command.UNKNOWN)) {
             throw new RuntimeException("Unknown command: " + split[commandIndex]);
         }
-        Protocol protocol = new Protocol(null, command, flag, threadId, false, args, buffers);
+
+
+        Protocol protocol = new Protocol(null, command, flag, threadId, false, args, datas);
         return protocol;
     }
 

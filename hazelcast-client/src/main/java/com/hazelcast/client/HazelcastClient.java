@@ -175,7 +175,7 @@ public class HazelcastClient implements HazelcastInstance {
                     if (o instanceof String) {
                         String name = (String) o;
 //                        if (name.startsWith(Prefix.MAP)) {
-//                            proxy = new MapClientProxy<K, V>(this, name);
+                            proxy = new MapClientProxy<K, V>(this, name);
 //                        } else if (name.startsWith(Prefix.AS_LIST)) {
 //                            proxy = new ListClientProxy<E>(this, name);
 //                        } else if (name.startsWith(Prefix.SET)) {

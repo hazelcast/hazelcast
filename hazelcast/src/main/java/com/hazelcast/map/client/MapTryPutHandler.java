@@ -20,6 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
@@ -32,11 +33,11 @@ public class MapTryPutHandler extends MapCommandHandler {
     public Protocol processCall(Node node, Protocol protocol) {
         String[] args = protocol.args;
         String name = protocol.args[0];
-        byte[] key = protocol.buffers[0].array();
-        byte[] value = protocol.buffers[1].array();
+        Data key = protocol.buffers[0];
+        Data value = protocol.buffers[1];
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
         final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
-        boolean isPut = dataMapProxy.tryPut(binaryToData(key), protocol.buffers.length > 1 ? binaryToData(value) : null, ttl, TimeUnit.MILLISECONDS);
+        boolean isPut = dataMapProxy.tryPut(key, protocol.buffers.length > 1 ? value : null, ttl, TimeUnit.MILLISECONDS);
         return protocol.success(String.valueOf(isPut));
     }
 }

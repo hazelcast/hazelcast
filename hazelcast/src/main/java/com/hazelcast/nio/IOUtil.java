@@ -36,6 +36,7 @@ public final class IOUtil {
 
     public static byte[] readByteArray(ObjectDataInput in) throws IOException {
         int size = in.readInt();
+        System.out.println("Size is" + size);
         if (size == 0) {
             return null;
         } else {
