@@ -580,6 +580,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
     void addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
     /**
+     * Adds an continuous entry listener for this map. Listener will get notified
+     * for all map add/remove/update/evict events.
+     *
+     * @param listener     entry listener
+     * @param predicate predicate for filtering entries
+     *
+     */
+    void addQueryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
+
+    /**
      * Removes the specified entry listener
      * Returns silently if there is no such listener added before.
      *

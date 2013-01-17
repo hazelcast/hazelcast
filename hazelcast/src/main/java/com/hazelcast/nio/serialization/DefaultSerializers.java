@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.zip.GZIPInputStream;
@@ -52,6 +53,28 @@ public class DefaultSerializers {
             final byte[] bytes = obj.toByteArray();
             out.writeInt(bytes.length);
             out.write(bytes);
+        }
+    }
+
+    public static final class BigDecimalSerializer extends SingletonTypeSerializer<BigDecimal> {
+
+        final BigIntegerSerializer bigIntegerSerializer = new BigIntegerSerializer();
+
+        public int getTypeId() {
+            return DEFAULT_TYPE_BIG_DECIMAL;
+        }
+
+        public BigDecimal read(final ObjectDataInput in) throws IOException {
+            BigInteger bigInt = bigIntegerSerializer.read(in);
+            int scale = in.readInt();
+            return new BigDecimal(bigInt, scale);
+        }
+
+        public void write(final ObjectDataOutput out, final BigDecimal obj) throws IOException {
+            BigInteger bigInt = obj.unscaledValue();
+            int scale = obj.scale();
+            bigIntegerSerializer.write(out, bigInt);
+            out.writeInt(scale);
         }
     }
 

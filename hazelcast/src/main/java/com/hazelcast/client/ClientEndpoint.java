@@ -17,9 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
-import com.hazelcast.instance.CallContext;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.TcpIpConnection;
@@ -34,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientEndpoint implements ConnectionListener, Client {
     final TcpIpConnection conn;
-    final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
+//    final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
     final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
     final List<IMap> listeningMaps = new ArrayList<IMap>();
     final List<MultiMap> listeningMultiMaps = new ArrayList<MultiMap>();
@@ -54,15 +52,15 @@ public class ClientEndpoint implements ConnectionListener, Client {
         this.conn = conn;
     }
 
-    public CallContext getCallContext(int threadId) {
-        CallContext context = callContexts.get(threadId);
-        if (context == null) {
-            int locallyMappedThreadId = ThreadContext.createNewThreadId();
-            context = new CallContext(locallyMappedThreadId, true);
-            callContexts.put(threadId, context);
-        }
-        return context;
-    }
+//    public CallContext getCallContext(int threadId) {
+//        CallContext context = callContexts.get(threadId);
+//        if (context == null) {
+//            int locallyMappedThreadId = ThreadContext.createNewThreadId();
+//            context = new CallContext(locallyMappedThreadId, true);
+//            callContexts.put(threadId, context);
+//        }
+//        return context;
+//    }
 
     @Override
     public int hashCode() {

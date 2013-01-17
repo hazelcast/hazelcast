@@ -170,6 +170,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         addEntryListenerInternal(listener, null, includeValue);
     }
 
+    public void addQueryListener(EntryListener listener, Predicate predicate, Data key, boolean includeValue){
+        addQueryListenerInternal(listener, predicate, key, includeValue);
+    }
+
     public void removeEntryListener(final EntryListener<Data, Data> listener) {
         removeEntryListenerInternal(listener);
     }

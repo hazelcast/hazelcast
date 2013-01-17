@@ -36,8 +36,6 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
 
     transient Collection<Data> dataList;
 
-    //TODO how about waiting polls
-
     public DrainOperation() {
     }
 

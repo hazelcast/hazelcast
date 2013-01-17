@@ -39,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-public class TcpIpConnectionManager implements ConnectionManager{
+public class TcpIpConnectionManager implements ConnectionManager {
 
     protected final ILogger logger;
 
@@ -245,7 +245,9 @@ public class TcpIpConnectionManager implements ConnectionManager{
         //make sure bind packet is the first packet sent to the end point.
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
         final Data bindData = ioService.toData(bind);
-        connection.write(bindData, ioService.getSerializationContext(), Packet.HEADER_OP);
+        final Packet packet = new Packet(bindData, serializationContext);
+        packet.setHeader(Packet.HEADER_OP, true);
+        connection.write(packet);
         //now you can send anything...
     }
 

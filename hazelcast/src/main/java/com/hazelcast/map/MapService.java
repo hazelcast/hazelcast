@@ -175,10 +175,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
         Record record = null;
         MapInfo mapInfo = getMapInfo(name);
-        if(mapInfo.getMapConfig().getRecordType().equals("DATA")) {
+        if (mapInfo.getMapConfig().getRecordType().equals("DATA")) {
             record = new DataRecord(dataKey, toData(value));
-        }
-        else if(mapInfo.getMapConfig().getRecordType().equals("OBJECT"))  {
+        } else if (mapInfo.getMapConfig().getRecordType().equals("OBJECT")) {
             record = new ObjectRecord(dataKey, toObject(value));
         }
 
@@ -275,9 +274,23 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
+        Object key = toObject(dataKey);
+        Object value = toObject(dataValue);
+
         for (EventRegistration candidate : candidates) {
             EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
-            if (filter.eval(dataKey)) {
+            if (filter instanceof QueryEventFilter) {
+                Object testValue = eventType == EntryEvent.TYPE_REMOVED ? toObject(dataOldValue):  value;
+                QueryEventFilter qfilter = (QueryEventFilter) filter;
+                if (qfilter.eval(new SimpleMapEntry(key, testValue))) {
+                    if (filter.isIncludeValue()) {
+                        registrationsWithValue.add(candidate);
+                    } else {
+                        registrationsWithoutValue.add(candidate);
+                    }
+                }
+
+            } else if (filter.eval(dataKey)) {
                 if (filter.isIncludeValue()) {
                     registrationsWithValue.add(candidate);
                 } else {
@@ -288,12 +301,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
         String source = nodeEngine.getNode().address.toString();
-        EventData event = new EventData(source, caller, dataKey, dataValue,
-                dataOldValue, eventType);
+        EventData event = new EventData(source, caller, dataKey, dataValue, dataOldValue, eventType);
 
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
+
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerListener(MAP_SERVICE_NAME, mapName, eventFilter, entryListener);
@@ -306,7 +319,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Object toObject(Object data) {
-        if(data == null)
+        if (data == null)
             return null;
         if (data instanceof Data)
             return nodeEngine.toObject(data);
@@ -315,7 +328,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Data toData(Object object) {
-        if(object == null)
+        if (object == null)
             return null;
         if (object instanceof Data)
             return (Data) object;
@@ -358,10 +371,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     private class MapEvictTask implements Runnable {
         public void run() {
-            for (MapInfo mapInfo: mapInfos.values()) {
+            for (MapInfo mapInfo : mapInfos.values()) {
                 String evictionPolicy = mapInfo.getMapConfig().getEvictionPolicy();
                 MaxSizeConfig maxSizeConfig = mapInfo.getMapConfig().getMaxSizeConfig();
-                if (!evictionPolicy.equals("NONE") && maxSizeConfig.getSize() > 0){
+                if (!evictionPolicy.equals("NONE") && maxSizeConfig.getSize() > 0) {
                     boolean check = checkLimits(mapInfo);
                     if (check) {
                         evictMap(mapInfo);
@@ -443,8 +456,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 }
                 if (maxSizePolicy.equals("CLUSTER_WIDE")) {
                     return totalSize * nodeEngine.getClusterService().getMembers().size() >= maxSizeConfig.getSize();
-                }
-                else if (maxSizePolicy.equals("PER_JVM"))
+                } else if (maxSizePolicy.equals("PER_JVM"))
                     return totalSize > maxSizeConfig.getSize();
                 else
                     return false;

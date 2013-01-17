@@ -69,7 +69,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public Data poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        return pollInternal(timeUnit.toMillis(timeout));
+        return (Data)pollInternal(timeUnit.toMillis(timeout));
     }
 
     public int remainingCapacity() {
@@ -158,7 +158,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public Data peek() {
-        return peekInternal();
+        return (Data)peekInternal();
     }
 
     public <T> T[] toArray(T[] ts) {

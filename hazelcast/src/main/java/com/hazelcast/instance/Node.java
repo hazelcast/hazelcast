@@ -128,7 +128,6 @@ public class Node {
     public final ThreadGroup threadGroup;
 
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
-        ThreadContext.get().setCurrentInstance(hazelcastInstance);
         this.hazelcastInstance = hazelcastInstance;
         this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
@@ -357,7 +356,6 @@ public class Node {
         } else {
             new Thread(new Runnable() {
                 public void run() {
-                    ThreadContext.get().setCurrentInstance(hazelcastInstance);
                     doShutdown(force);
                 }
             }).start();
@@ -432,7 +430,6 @@ public class Node {
             }
             failedConnections.clear();
             systemLogService.shutdown();
-            ThreadContext.get().shutdown(hazelcastInstance);
             logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }

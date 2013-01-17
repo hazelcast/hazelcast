@@ -135,6 +135,6 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
     }
 
     public int getId() {
-        return DataSerializerInitHook.MULTI_RESPONSE;
+        return DataSerializerSpiHook.MULTI_RESPONSE;
     }
 }

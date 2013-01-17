@@ -71,6 +71,8 @@ public final class SerializationConstants {
 
     public static final int DEFAULT_TYPE_BIG_INTEGER = ID--;
 
+    public static final int DEFAULT_TYPE_BIG_DECIMAL = ID--;
+
     public static final int DEFAULT_TYPE_OBJECT = ID--;
 
     public static final int DEFAULT_TYPE_EXTERNALIZABLE = ID--;

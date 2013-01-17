@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 
@@ -33,16 +32,7 @@ public class DataSerializerCollectionHook implements DataSerializerHook {
 
     public Map<Integer, DataSerializableFactory> getFactories() {
         final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
-        factories.put(COLLECTION_OPERATION, new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new CollectionOperation();
-            }
-        });
-        factories.put(COLLECTION_BACKUP_OPERATION, new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new CollectionBackupOperation();
-            }
-        });
+
         return factories;
     }
 }

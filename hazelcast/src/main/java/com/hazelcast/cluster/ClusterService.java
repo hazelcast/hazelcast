@@ -27,10 +27,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeType;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.ExecutedBy;
@@ -87,11 +87,6 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
 
     private final AtomicInteger dataMemberCount = new AtomicInteger(); // excluding lite members
 
-    private final Data heartbeatOperationData;
-
-    private final SerializationContext serializationContext;
-//    private final List<MembershipListener> listeners = new CopyOnWriteArrayList<MembershipListener>();
-
     private boolean joinInProgress = false;
 
     private long timeToStartJoin = 0;
@@ -102,7 +97,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
 
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
-    private Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
+    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
 
     public ClusterService(final Node node) {
         this.node = node;
@@ -117,9 +112,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
-        heartbeatOperationData = nodeEngine.toData(new HeartbeatOperation());
         node.connectionManager.addConnectionListener(this);
-        serializationContext = node.serializationService.getSerializationContext();
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -130,7 +123,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         final long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                heartBeater();
+//                heartBeater();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
         final long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
@@ -326,7 +319,12 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
 
     private void sendHeartbeat(Address target) {
         if (target == null) return;
-        node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
+        try {
+            node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
+        } catch (Exception e) {
+            logger.log(Level.FINEST, "Error while sending heartbeat -> "
+                    + e.getClass().getName() + "[" + e.getMessage() + "]");
+        }
     }
 
     private void sendMasterConfirmation() {
@@ -401,7 +399,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
             if (deadMember != null) {
                 removeMember(deadMember);
                 nodeEngine.onMemberLeft(deadMember);
-                logger.log(Level.INFO, this.toString());
+                logger.log(Level.INFO, membersString());
             }
         } finally {
             lock.unlock();
@@ -609,6 +607,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                 try {
                     future.get(3, TimeUnit.SECONDS);
                 } catch (TimeoutException ignored) {
+                    logger.log(Level.FINEST, "Finalize join call timed-out: " + future);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "While waiting finalize join calls...", e);
                 }
@@ -666,7 +665,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
             joinReset();
             heartBeater();
             node.setJoined();
-            logger.log(Level.INFO, toString());
+            logger.log(Level.INFO, membersString());
         } finally {
             lock.unlock();
         }
@@ -764,7 +763,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
                     logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");
                     invokeMemberRemoveOperation(deadMember);
                 }
-                sendMembershipEventNotifications(deadMember, false); // asycn events
+                sendMembershipEventNotifications(deadMember, false); // async events
             }
         } finally {
             lock.unlock();
@@ -843,15 +842,9 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     }
 
     public void reset() {
-        destroy();
-    }
-
-    public void destroy() {
         lock.lock();
         try {
-            if (setJoins != null) {
-                setJoins.clear();
-            }
+            setJoins.clear();
             timeToStartJoin = 0;
             membersRef.set(null);
             dataMemberCount.set(0);
@@ -859,6 +852,10 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         } finally {
             lock.unlock();
         }
+    }
+
+    public void destroy() {
+        reset();
     }
 
     public Address getMasterAddress() {
@@ -922,8 +919,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         return new ClusterProxy(this);
     }
 
-    @Override
-    public String toString() {
+    public String membersString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
         final Collection<MemberImpl> members = getMemberList();
         sb.append(members != null ? members.size() : 0);
@@ -937,7 +933,18 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
         return sb.toString();
     }
 
+
+
     public Map<Command, ClientCommandHandler> getCommandMap() {
         return commandHandlers;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ClusterService");
+        sb.append("{address=").append(thisAddress);
+        sb.append('}');
+        return sb.toString();
     }
 }

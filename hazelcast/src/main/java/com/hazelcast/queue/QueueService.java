@@ -77,7 +77,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
-        // TODO: what if partition has transactions? what if not?
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {

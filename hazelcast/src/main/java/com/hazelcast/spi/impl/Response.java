@@ -107,6 +107,6 @@ public final class Response extends AbstractOperation implements ResponseOperati
     }
 
     public int getId() {
-        return DataSerializerInitHook.RESPONSE;
+        return DataSerializerSpiHook.RESPONSE;
     }
 }

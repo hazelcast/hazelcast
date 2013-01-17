@@ -56,8 +56,6 @@ public interface IOService {
 
     SSLConfig getSSLConfig();
 
-    void handleClientPacket(Packet p);
-
     void handleClientCommand(Protocol protocol);
 
     void handleMemberPacket(Packet p);

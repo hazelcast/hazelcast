@@ -76,7 +76,7 @@ class WaitNotifyService {
                             long end = System.currentTimeMillis();
                             waitTime -= (end - begin);
                             if (waitTime > 1000) {
-                                waitTime = 0;
+                                waitTime = 1000;
                             }
                         }
                         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
@@ -85,7 +85,7 @@ class WaitNotifyService {
                                     return;
                                 }
                                 if (waitingOp.isValid()) {
-                                    if (waitingOp.isExpired() || waitingOp.isCancelled()) {
+                                    if (waitingOp.needsInvalidation()) {
                                         waitingOpProcessor.invalidate(waitingOp);
                                     }
                                 }
@@ -259,21 +259,25 @@ class WaitNotifyService {
             return valid;
         }
 
+        public boolean needsInvalidation() {
+            return isExpired() || isCancelled() || isCallTimedOut();
+        }
+
         public boolean isExpired() {
             return expirationTime != -1 && Clock.currentTimeMillis() >= expirationTime;
         }
 
         public boolean isCancelled() {
-            if (error == null) {
-                final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-                if(nodeEngine.operationService.isCallTimedOut(op)) {
-                    cancel(new CallTimeoutException("Call timed out for "
-                            + op.getClass().getName()));
-                    return true;
-                }
-                return false;
+            return error != null;
+        }
+
+        public boolean isCallTimedOut() {
+            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            if(nodeEngine.operationService.isCallTimedOut(op)) {
+                cancel(new CallTimeoutException("Call timed out for " + op.getClass().getName()));
+                return true;
             }
-            return true;
+            return false;
         }
 
         public boolean shouldWait() {
@@ -295,12 +299,10 @@ class WaitNotifyService {
         @Override
         public void run() throws Exception {
             if (valid) {
-                if (isExpired()) {
-                    queue.remove(this);
-                    waitSupport.onWaitExpire();
-                } else if (isCancelled()) {
-                    queue.remove(this);
+                if (isCancelled() && queue.remove(this)) {
                     op.getResponseHandler().sendResponse(error);
+                } else if (isExpired() && queue.remove(this)) {
+                    waitSupport.onWaitExpire();
                 }
             }
         }
@@ -327,6 +329,7 @@ class WaitNotifyService {
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("WaitingOp");
+            sb.append("[").append(hashCode()).append("] ");
             sb.append("{op=").append(op);
             sb.append(", expirationTime=").append(expirationTime);
             sb.append(", valid=").append(valid);

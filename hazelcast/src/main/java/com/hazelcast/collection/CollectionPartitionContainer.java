@@ -26,7 +26,7 @@ public class CollectionPartitionContainer {
 
     CollectionService service;
 
-    private final ConcurrentMap<String, CollectionContainer> containerMap = new ConcurrentHashMap<String, CollectionContainer>(1000);
+    private final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
 
     public CollectionPartitionContainer(CollectionService service) {
         this.service = service;
@@ -36,17 +36,13 @@ public class CollectionPartitionContainer {
         CollectionContainer collectionContainer = containerMap.get(proxyId.name);
         if (collectionContainer == null){
             collectionContainer = new CollectionContainer(proxyId, service);
-            CollectionContainer current = containerMap.putIfAbsent(proxyId.name, collectionContainer);
+            CollectionContainer current = containerMap.putIfAbsent(proxyId, collectionContainer);
             collectionContainer = current == null ? collectionContainer : current;
         }
         return collectionContainer;
     }
 
-    public CollectionContainer getCollectionContainer(String name){
-        return containerMap.get(name);
-    }
-
-    public ConcurrentMap<String, CollectionContainer> getContainerMap() {
+    public ConcurrentMap<CollectionProxyId, CollectionContainer> getContainerMap() {
         return containerMap; //TODO for testing only
     }
 }

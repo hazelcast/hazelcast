@@ -27,7 +27,6 @@ import java.util.Arrays;
  */
 public class PortableTest {
 
-
     @Test
     public void test() {
         final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());

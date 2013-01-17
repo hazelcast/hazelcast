@@ -24,6 +24,7 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -321,29 +322,29 @@ public class MapTest extends BaseTest {
     @Test
     public void testEntrySet() {
         final IMap<Object, Object> map = getInstance().getMap("testEntrySet");
-        map.put(1,1);
-        map.put(2,2);
-        map.put(3,3);
-        map.put(4,4);
-        map.put(5,5);
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        map.put(4, 4);
+        map.put(5, 5);
         Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(1,1));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(2,2));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(3,3));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(4,4));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(5,5));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(1, 1));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(2, 2));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(3, 3));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(4, 4));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry(5, 5));
         assertEquals(entrySet, map.entrySet());
     }
 
     @Test
     public void testGetMapEntry() {
         final IMap<Object, Object> map = getInstance().getMap("testGetMapEntry");
-        map.put(1,1);
-        map.put(2,2);
-        map.put(3,3);
-        assertEquals(new AbstractMap.SimpleImmutableEntry(1,1), map.getMapEntry(1));
-        assertEquals(new AbstractMap.SimpleImmutableEntry(2,2), map.getMapEntry(2));
-        assertEquals(new AbstractMap.SimpleImmutableEntry(3,3), map.getMapEntry(3));
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        assertEquals(new AbstractMap.SimpleImmutableEntry(1, 1), map.getMapEntry(1));
+        assertEquals(new AbstractMap.SimpleImmutableEntry(2, 2), map.getMapEntry(2));
+        assertEquals(new AbstractMap.SimpleImmutableEntry(3, 3), map.getMapEntry(3));
     }
 
     @Test
@@ -459,6 +460,71 @@ public class MapTest extends BaseTest {
 
 
     @Test
+    public void testMapQueryListener() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapQueryListener");
+        final Object[] addedKey = new Object[1];
+        final Object[] addedValue = new Object[1];
+        final Object[] updatedKey = new Object[1];
+        final Object[] oldValue = new Object[1];
+        final Object[] newValue = new Object[1];
+        final Object[] removedKey = new Object[1];
+        final Object[] removedValue = new Object[1];
+
+        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                addedKey[0] = event.getKey();
+                addedValue[0] = event.getValue();
+            }
+
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                removedKey[0] = event.getKey();
+                removedValue[0] = event.getOldValue();
+            }
+
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                updatedKey[0] = event.getKey();
+                oldValue[0] = event.getOldValue();
+                newValue[0] = event.getValue();
+            }
+
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+        };
+
+        map.addQueryListener(listener, new StartsWithPredicate("a"), null, true);
+        map.put("key1", "abc");
+        map.put("key2", "bcd");
+        map.put("key2", "axyz");
+        map.remove("key1");
+        Thread.sleep(1000);
+
+        assertEquals(addedKey[0], "key1");
+        assertEquals(addedValue[0], "abc");
+        assertEquals(updatedKey[0], "key2");
+        assertEquals(oldValue[0], "bcd");
+        assertEquals(newValue[0], "axyz");
+        assertEquals(removedKey[0], "key1");
+        assertEquals(removedValue[0], "abc");
+    }
+
+    static class StartsWithPredicate implements Predicate<Object,Object>, Serializable{
+        String pref;
+
+        StartsWithPredicate(String pref) {
+            this.pref = pref;
+        }
+
+        public boolean apply(MapEntry<Object, Object> mapEntry) {
+            String val = (String) mapEntry.getValue();
+            if(val == null)
+                return false;
+                if (val.startsWith(pref))
+                return true;
+            return false;
+        }
+    }
+
+    @Test
     public void testMapListenersWithValueAndKeyFiltered() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapListenersWithValueAndKeyFiltered");
         final Object[] addedKey = new Object[1];
@@ -568,7 +634,7 @@ public class MapTest extends BaseTest {
     @Test
     public void testMapEntryProcessor() throws InterruptedException {
         IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
-        map.put(1,1);
+        map.put(1, 1);
         EntryProcessor entryProcessor = new SampleEntryProcessor();
         map.executeOnKey(1, entryProcessor);
         assertEquals(map.get(1), (Object) 2);
@@ -577,7 +643,7 @@ public class MapTest extends BaseTest {
     static class SampleEntryProcessor implements EntryProcessor, EntryBackupProcessor, Serializable {
 
         public Object process(Map.Entry entry) {
-            entry.setValue((Integer)entry.getValue() + 1);
+            entry.setValue((Integer) entry.getValue() + 1);
             return true;
         }
 
@@ -586,7 +652,7 @@ public class MapTest extends BaseTest {
         }
 
         public void processBackup(Map.Entry entry) {
-            entry.setValue((Integer)entry.getValue() + 1);
+            entry.setValue((Integer) entry.getValue() + 1);
         }
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.instance.CallContext;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
@@ -26,21 +25,21 @@ import com.hazelcast.spi.ClientProtocolService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
 public class ClientCommandService {
 
     private final Node node;
     private final ILogger logger;
-    private ExecutorService executorService;
     private final Map<TcpIpConnection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<TcpIpConnection, ClientEndpoint>();
     private ConcurrentHashMap<Command, ClientCommandHandler> services;
+    private Executor executor;
 
     public ClientCommandService(Node node) {
         this.node = node;
         logger = node.getLogger(ClientCommandService.class.getName());
-        executorService = node.nodeEngine.getExecutionService().getExecutorService("client");
+        executor = node.nodeEngine.getExecutionService().getExecutor("client");
         services = new ConcurrentHashMap<Command, ClientCommandHandler>();
         services.put(Command.UNKNOWN, new ClientCommandHandler(node.nodeEngine) {
             @Override
@@ -48,18 +47,21 @@ public class ClientCommandService {
                 return protocol.error(null, "unknown", "command");
             }
         });
+
+
+
     }
 
     //Always called by an io-thread.
     public void handle(final Protocol protocol) {
         ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
-        CallContext callContext = clientEndpoint.getCallContext(protocol.threadId != -1 ? protocol.threadId : clientEndpoint.hashCode());
+//        CallContext callContext = clientEndpoint.getCallContext(protocol.threadId != -1 ? protocol.threadId : clientEndpoint.hashCode());
         if (!clientEndpoint.isAuthenticated() && !Command.AUTH.equals(protocol.command)) {
             checkAuth(protocol.conn);
             return;
         }
-        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, protocol, callContext, clientEndpoint.getSubject());
-        executorService.execute(clientRequestHandler);
+        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, protocol, clientEndpoint.getSubject());
+        executor.execute(clientRequestHandler);
     }
 
     public ClientEndpoint getClientEndpoint(TcpIpConnection conn) {

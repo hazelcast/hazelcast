@@ -16,8 +16,9 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.nio.serialization.Data;
+
+import java.util.EventListener;
 
 /**
  * @ali 1/9/13
@@ -26,9 +27,9 @@ public class ListenerKey {
     
     private String name;
     private Data key;
-    private EntryListener listener;
+    private EventListener listener;
 
-    public ListenerKey(String name, Data key, EntryListener listener) {
+    public ListenerKey(String name, Data key, EventListener listener) {
         this.name = name;
         this.key = key;
         this.listener = listener;

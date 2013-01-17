@@ -19,7 +19,6 @@ package com.hazelcast.partition;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
@@ -745,7 +744,8 @@ public class PartitionService implements CoreService, ManagedService,
                         try {
                             result = (Boolean) nodeEngine.toObject(future.get(partitionMigrationTimeout, TimeUnit.SECONDS));
                         } catch (Throwable e) {
-                            logger.log(Level.WARNING, "Failed migrating from " + fromMember, e);
+                            final Level level = node.isActive() ? Level.WARNING : Level.FINEST;
+                            logger.log(level, "Failed migrating from " + fromMember, e);
                         }
                     } else {
                         // Partition is lost! Assign new owner and exit.
@@ -845,7 +845,7 @@ public class PartitionService implements CoreService, ManagedService,
         }
 
         public void run() {
-            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
+//            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
             try {
                 while (running) {
                     Runnable r = null;

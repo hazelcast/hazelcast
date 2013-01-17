@@ -83,7 +83,8 @@ public class TransactionImpl implements Transaction {
             throw new IllegalStateException("Transaction is already active");
         }
         status = TXN_STATUS_ACTIVE;
-        ThreadContext.get().getCallContext().setTransaction(this);
+//        ThreadContext.get().getCallContext().setTransaction(this);
+        ThreadContext.setTransaction(instance.getName(), this);
     }
 
     public void commit() throws IllegalStateException {
@@ -92,7 +93,7 @@ public class TransactionImpl implements Transaction {
         }
         status = TXN_STATUS_COMMITTING;
         try {
-            ThreadContext.get().setCurrentInstance(instance);
+//            ThreadContext.get().setCurrentInstance(instance);
             List<Future> futures = new ArrayList<Future>(participants.size());
             for (TxnParticipant t : participants) {
                 Operation op = new PrepareOperation(txnId);
@@ -135,6 +136,6 @@ public class TransactionImpl implements Transaction {
 
     private void finalizeTxn() {
         status = TXN_STATUS_NO_TXN;
-        ThreadContext.get().finalizeTxn();
+        ThreadContext.finalizeTransaction(instance.getName());
     }
 }
