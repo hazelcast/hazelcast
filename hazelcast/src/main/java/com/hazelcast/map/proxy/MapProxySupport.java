@@ -544,6 +544,13 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         mapService.addEventListener(listener, eventFilter, name);
     }
 
+
+    protected void addQueryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
+        setThreadContext();
+        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        mapService.addEventListener(listener, eventFilter, name);
+    }
+
     protected void removeEntryListenerInternal(final EntryListener listener, final Data key) {
         setThreadContext();
         mapService.removeEventListener(listener, name, key);

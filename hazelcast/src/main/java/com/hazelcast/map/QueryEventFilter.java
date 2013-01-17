@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +16,47 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
-import sun.misc.IOUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
 
-public class EntryEventFilter implements EventFilter,DataSerializable {
+public class QueryEventFilter extends EntryEventFilter  {
 
-    boolean includeValue = false;
-    Object key = null;
+    Predicate predicate = null;
 
-    public EntryEventFilter(boolean includeValue, Object key) {
-        this.includeValue = includeValue;
-        this.key = key;
+    public QueryEventFilter(boolean includeValue, Object key, Predicate predicate) {
+        super(includeValue, key);
+        this.predicate = predicate;
     }
 
-    public EntryEventFilter() {
+    public QueryEventFilter() {
+        super();
     }
 
-    public boolean isIncludeValue() {
-        return includeValue;
-    }
-
-    public Object getKey() {
-        return key;
+    public Object getPredicate() {
+        return predicate;
     }
 
     public boolean eval(Object arg) {
-        return key == null || key.equals(arg);
+        return predicate.apply((MapEntry)arg);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(includeValue);
-        IOUtil.writeNullableObject(out, key);
+        super.writeData(out);
+        IOUtil.writeNullableObject(out, predicate);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-        includeValue = in.readBoolean();
-        key = IOUtil.readNullableObject(in);
+        super.readData(in);
+        predicate = IOUtil.readNullableObject(in);
     }
 }
