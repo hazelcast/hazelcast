@@ -193,6 +193,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         addEntryListenerInternal(listener, nodeEngine.toData(key), includeValue);
     }
 
+    public void addQueryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        addQueryListenerInternal(listener, predicate, nodeEngine.toData(key), includeValue);
+    }
+
     public void removeEntryListener(final EntryListener<K, V> listener) {
         removeEntryListenerInternal(listener);
     }

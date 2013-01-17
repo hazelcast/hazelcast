@@ -27,7 +27,7 @@ import com.hazelcast.instance.ThreadContext;
 public class TransactionUtil {
 
     public static Transaction getTransaction(HazelcastClient client) {
-        final ThreadContext ctx = ThreadContext.get();
+//        final ThreadContext ctx = ThreadContext.get();
 //        TransactionClientProxy transactionProxy = ctx.getAttachment();
 //        if (transactionProxy == null) {
 //            transactionProxy = new TransactionClientProxy(null, client);

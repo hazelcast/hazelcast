@@ -72,11 +72,6 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         return sendResponse;
     }
 
-//    @Override
-//    public Object getResponse() {
-//        return Boolean.TRUE;
-//    }
-
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         masterTime = in.readLong();
@@ -87,6 +82,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
             memberInfo.readData(in);
             memberInfos.add(memberInfo);
         }
+        sendResponse = in.readBoolean();
     }
 
     @Override
@@ -96,6 +92,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         for (MemberInfo memberInfo : memberInfos) {
             memberInfo.writeData(out);
         }
+        out.writeBoolean(sendResponse);
     }
 
     @Override

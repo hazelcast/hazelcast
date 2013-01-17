@@ -67,7 +67,7 @@ final class ExecutionServiceImpl implements ExecutionService {
         executors.put("scheduled", new ManagedExecutorService("scheduled", 10, 1));
     }
 
-    public ExecutorService getExecutorService(String name) {
+    public ExecutorService getExecutor(String name) {
         ManagedExecutorService executor = executors.get(name);
         if (executor == null) {
             // TODO: configure using ExecutorService config!
@@ -79,27 +79,27 @@ final class ExecutionServiceImpl implements ExecutionService {
     }
 
     public void execute(String name, Runnable command) {
-        getExecutorService(name).execute(command);
+        getExecutor(name).execute(command);
     }
 
     public Future<?> submit(String name, Runnable task) {
-        return getExecutorService(name).submit(task);
+        return getExecutor(name).submit(task);
     }
 
     public <T> Future<T> submit(String name, Callable<T> task) {
-        return getExecutorService(name).submit(task);
+        return getExecutor(name).submit(task);
     }
 
-    public void schedule(final Runnable command, long delay, TimeUnit unit) {
-        scheduledExecutorService.schedule(new ScheduledRunner(command), delay, unit);
+    public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
+        return scheduledExecutorService.schedule(new ScheduledRunner(command), delay, unit);
     }
 
-    public void scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        scheduledExecutorService.scheduleAtFixedRate(new ScheduledRunner(command), initialDelay, period, unit);
+    public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return scheduledExecutorService.scheduleAtFixedRate(new ScheduledRunner(command), initialDelay, period, unit);
     }
 
-    public void scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        scheduledExecutorService.scheduleWithFixedDelay(new ScheduledRunner(command), initialDelay, period, unit);
+    public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return scheduledExecutorService.scheduleWithFixedDelay(new ScheduledRunner(command), initialDelay, period, unit);
     }
 
     @PrivateApi

@@ -16,8 +16,6 @@
 
 package com.hazelcast.jca;
 
-import com.hazelcast.instance.ThreadContext;
-
 import javax.resource.ResourceException;
 import javax.resource.spi.*;
 import javax.security.auth.Subject;
@@ -101,13 +99,13 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection,
 
     public void commit() throws ResourceException {
         log(this, "txn.commit");
-        ThreadContext.get().getTransaction().commit();
+//        ThreadContext.getTransaction().commit();
         fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_COMMITTED);
     }
 
     public void rollback() throws ResourceException {
         log(this, "txn.rollback");
-        ThreadContext.get().getTransaction().rollback();
+//        ThreadContext.get().getTransaction().rollback();
         fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_ROLLEDBACK);
     }
 

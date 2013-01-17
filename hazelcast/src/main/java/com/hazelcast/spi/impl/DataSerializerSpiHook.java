@@ -17,9 +17,9 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.EventServiceImpl.EventPacket;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
@@ -29,59 +29,65 @@ import java.util.Map;
 /**
  * @mdogan 8/24/12
  */
-public final class DataSerializerInitHook implements DataSerializerHook {
+public final class DataSerializerSpiHook implements DataSerializerHook {
 
     static final int DATA = Data.ID;
     static final int RESPONSE = 1;
     static final int MULTI_RESPONSE = 2;
     static final int PARTITION_ITERATOR = 3;
     static final int PARTITION_RESPONSE = 4;
-    static final int OPERATION_WRAPPER = 5;
+    static final int PARALLEL_OPERATION_FACTORY = 5;
+    //    static final int OPERATION_WRAPPER = 5;
     static final int EVENT_PACKET = 6;
 
     public Map<Integer, DataSerializableFactory> getFactories() {
         final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
         factories.put(DATA, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new Data();
             }
         });
         factories.put(RESPONSE, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new Response();
             }
         });
 
         factories.put(MULTI_RESPONSE, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new MultiResponse();
             }
         });
 
         factories.put(EVENT_PACKET, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new EventPacket();
             }
         });
 
         factories.put(PARTITION_ITERATOR, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new PartitionIteratingOperation();
             }
         });
 
         factories.put(PARTITION_RESPONSE, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new PartitionResponse();
             }
         });
 
-        factories.put(OPERATION_WRAPPER, new DataSerializableFactory() {
-            public DataSerializable create() {
-                return new OperationWrapper();
+        factories.put(PARALLEL_OPERATION_FACTORY, new DataSerializableFactory() {
+            public IdentifiedDataSerializable create() {
+                return new ParallelOperationFactory();
             }
         });
+//        factories.put(OPERATION_WRAPPER, new DataSerializableFactory() {
+//            public IdentifiedDataSerializable create() {
+//                return new OperationWrapper();
+//            }
+//        });
 
         return factories;
     }

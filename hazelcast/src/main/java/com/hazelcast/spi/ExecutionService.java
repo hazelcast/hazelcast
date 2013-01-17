@@ -16,10 +16,7 @@
 
 package com.hazelcast.spi;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @mdogan 12/14/12
@@ -32,11 +29,11 @@ public interface ExecutionService {
 
     <T> Future<T> submit(String name, Callable<T> task);
 
-    ExecutorService getExecutorService(String name);
+    Executor getExecutor(String name);
 
-    void schedule(Runnable command, long delay, TimeUnit unit);
+    ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
-    void scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit);
 
-    void scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
 }

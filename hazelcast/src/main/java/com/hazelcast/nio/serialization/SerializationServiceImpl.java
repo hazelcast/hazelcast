@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.ConstantSerializers.*;
 import com.hazelcast.nio.serialization.DefaultSerializers.*;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,6 +86,7 @@ public final class SerializationServiceImpl implements SerializationService {
 
         safeRegister(Date.class, new DateSerializer());
         safeRegister(BigInteger.class, new BigIntegerSerializer());
+        safeRegister(BigDecimal.class, new BigDecimalSerializer());
         safeRegister(Externalizable.class, new Externalizer());
         safeRegister(Serializable.class, new ObjectSerializer());
         safeRegister(Class.class, new ClassSerializer());

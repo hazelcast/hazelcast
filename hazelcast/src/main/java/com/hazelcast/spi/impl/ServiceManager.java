@@ -24,6 +24,7 @@ import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.Services;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
@@ -40,7 +41,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
-//import com.hazelcast.queue.QueueService;
 
 /**
  * @mdogan 9/18/12
@@ -75,6 +75,7 @@ class ServiceManager {
                 registerService(AtomicNumberService.NAME, new AtomicNumberService());
                 registerService(TopicService.NAME, new TopicService());
                 registerService(CollectionService.COLLECTION_SERVICE_NAME, new CollectionService(nodeEngine));
+                registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 // TODO: add other services
                 // ...
                 // ...

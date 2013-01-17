@@ -22,6 +22,7 @@ import com.hazelcast.spi.ConnectionManager;
 import java.nio.channels.ServerSocketChannel;
 
 public interface NodeContext {
+
     AddressPicker createAddressPicker(Node node);
 
     Joiner createJoiner(Node node);

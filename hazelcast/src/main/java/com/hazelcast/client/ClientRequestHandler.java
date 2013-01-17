@@ -16,9 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.instance.CallContext;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
@@ -30,7 +28,7 @@ import java.util.logging.Level;
 
 public class ClientRequestHandler implements Runnable {
     private final Protocol protocol;
-    private final CallContext callContext;
+//    private final CallContext callContext;
     private final Node node;
     //    private final ClientHandlerService.ClientCommandHandler clientOperationHandler;
     private volatile Thread runningThread = null;
@@ -38,9 +36,9 @@ public class ClientRequestHandler implements Runnable {
     private final ILogger logger;
     private final Subject subject;
 
-    public ClientRequestHandler(Node node, Protocol protocol, CallContext callContext, Subject subject) {
+    public ClientRequestHandler(Node node, Protocol protocol, Subject subject) {
         this.protocol = protocol;
-        this.callContext = callContext;
+//        this.callContext = callContext;
         this.node = node;
         this.logger = node.getLogger(ClientRequestHandler.class.getName());
         this.subject = subject;
@@ -48,7 +46,7 @@ public class ClientRequestHandler implements Runnable {
 
     public void run0() {
         runningThread = Thread.currentThread();
-        ThreadContext.get().setCallContext(callContext);
+//        ThreadContext.get().setCallContext(callContext);
         try {
             if (!valid) return;
             final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {

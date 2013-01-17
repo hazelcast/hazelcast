@@ -57,12 +57,7 @@ public class Packet implements SocketWritable {
     }
 
     public Packet(Data value, SerializationContext context) {
-        this(value, null, context);
-    }
-
-    public Packet(Data value, Connection conn, SerializationContext context) {
         this.value = value;
-        this.conn = conn;
         this.context = context;
     }
 
@@ -75,7 +70,7 @@ public class Packet implements SocketWritable {
         return conn;
     }
 
-    void setConn(final Connection conn) {
+    public void setConn(final Connection conn) {
         this.conn = conn;
     }
 

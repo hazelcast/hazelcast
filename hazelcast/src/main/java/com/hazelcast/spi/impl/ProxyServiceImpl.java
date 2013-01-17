@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -89,7 +90,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                     .setTryCount(10).build();
             calls.add(inv.invoke());
         }
-        destroyInternalDistributedObject(serviceName, objectId);
+        destroyLocalDistributedObject(serviceName, objectId);
         for (Future f : calls) {
             try {
                 f.get(3, TimeUnit.SECONDS);
@@ -103,7 +104,8 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         }
     }
 
-    private void destroyInternalDistributedObject(String serviceName, Object objectId) {
+    @PrivateApi
+    public void destroyLocalDistributedObject(String serviceName, Object objectId) {
         final RemoteService service = nodeEngine.serviceManager.getService(serviceName);
         if (service != null) {
             service.destroyDistributedObject(objectId);
@@ -111,7 +113,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         nodeEngine.waitNotifyService.onDistributedObjectDestroy(serviceName, objectId);
     }
 
-    public Collection<DistributedObject> getProxies(String serviceName) {
+    public Collection<DistributedObject> getDistributedObject(String serviceName) {
         Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
@@ -120,7 +122,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         return objects;
     }
 
-    public Collection<DistributedObject> getAllProxies() {
+    public Collection<DistributedObject> getAllDistributedObjects() {
         Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
         for (ProxyRegistry registry : registries.values()) {
             objects.addAll(registry.proxies.values());
@@ -176,13 +178,13 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                 if (current == null) {
                     final DistributedObjectEvent event = createEvent(objectId, CREATED);
                     publish(event);
-                    nodeEngine.getEventService().executeEvent(new Runnable() {
-                        public void run() {
-                            for (DistributedObjectListener listener : listeners) {
-                                listener.distributedObjectCreated(event);
-                            }
-                        }
-                    });
+//                    nodeEngine.getEventService().executeEvent(new Runnable() {
+//                        public void run() {
+//                            for (DistributedObjectListener listener : listeners) {
+//                                listener.distributedObjectCreated(event);
+//                            }
+//                        }
+//                    });
                 } else {
                     proxy = current;
                 }
@@ -241,7 +243,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             if (registry != null) {
                 registry.removeProxy(objectId);
             }
-            proxyService.destroyInternalDistributedObject(serviceName, objectId);
+            proxyService.destroyLocalDistributedObject(serviceName, objectId);
         }
 
         public boolean returnsResponse() {

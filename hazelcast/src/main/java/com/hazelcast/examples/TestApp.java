@@ -1185,6 +1185,19 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    private static class HazelcastInstanceAwareObject implements HazelcastInstanceAware {
+
+        HazelcastInstance hazelcastInstance;
+
+        public HazelcastInstance getHazelcastInstance() {
+            return hazelcastInstance;
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+    }
+
     protected void handleHelp(String command) {
         boolean silentBefore = silent;
         silent = false;

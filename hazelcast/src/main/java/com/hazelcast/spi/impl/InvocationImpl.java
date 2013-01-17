@@ -17,9 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -69,13 +67,14 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
         if (callTimeout > 0) {
             return callTimeout;
         }
+        final long defaultCallTimeout = nodeEngine.operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
-            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
-                return waitTimeoutMillis;
+            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 5000) {
+                return waitTimeoutMillis  + 5000;
             }
         }
-        return nodeEngine.operationService.getDefaultCallTimeout();
+        return defaultCallTimeout;
     }
 
     public void notify(Object result) {
@@ -85,6 +84,9 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     protected abstract Address getTarget();
 
     public final Future invoke() {
+        if (invokeCount > 0) {
+            throw new IllegalStateException("An invocation can not be invoked more than once!");
+        }
         try {
             checkOperationType(op);
             OperationAccessor.setCallTimeout(op, callTimeout);
@@ -109,8 +111,11 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
         op.setNodeEngine(nodeEngine).setServiceName(serviceName).setCaller(thisAddress)
                 .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         if (target == null) {
-            setResult(new WrongTargetException(thisAddress, target, partitionId,
-                    op.getClass().getName(), serviceName));
+            if (isActive()) {
+                setResult(new WrongTargetException(thisAddress, target, partitionId, op.getClass().getName(), serviceName));
+            } else {
+                setResult(new IllegalStateException("Hazelcast instance is not active!"));
+            }
         } else if (!isJoinOperation(op) && nodeEngine.getClusterService().getMember(target) == null) {
             setResult(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
         } else {
@@ -201,6 +206,15 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
             } else if (response != null) {
                 done = true;
                 if (response instanceof Throwable) {
+                    if (response instanceof RuntimeException) {
+                        throw (RuntimeException) response;
+                    }
+                    if (response instanceof Error) {
+                        throw (Error) response;
+                    }
+                    if (response instanceof ExecutionException) {
+                        throw (ExecutionException) response;
+                    }
                     throw new ExecutionException((Throwable) response);
                 } else {
                     return response;
@@ -214,20 +228,8 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                 }
                 // TODO: improve logging (see SystemLogService)
                 logger.log(Level.WARNING, "No response for " + pollTimeout + " ms. " + toString());
-                // ask if op is still being executed?
-                Boolean executing = Boolean.FALSE;
-                try {
-                    final InvocationImpl inv = new TargetInvocationImpl(nodeEngine, serviceName,
-                            new IsStillExecuting(op.getCallId()), target, 0, 0, 5000);
-                    inv.invoke();
-                    // TODO: improve logging (see SystemLogService)
-                    logger.log(Level.WARNING, "Asking if operation execution has been started: " + toString());
-                    executing = (Boolean) nodeEngine.toObject(inv.get(5000, TimeUnit.MILLISECONDS));
-                } catch (Exception ignored) {
-                    logger.log(Level.WARNING, "While asking 'is-executing': " + toString(), ignored);
-                }
-                // TODO: improve logging (see SystemLogService)
-                logger.log(Level.WARNING, "'is-executing': " + executing + " -> " + toString());
+
+                boolean executing = isOperationExecuting(target);
                 if (!executing) {
                     Object obj = responseQ.poll(); // real response might arrive before "is-executing" response.
                     if (obj != null) {
@@ -241,6 +243,24 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
         throw new TimeoutException();
     }
 
+    private boolean isOperationExecuting(Address target) {
+        // ask if op is still being executed?
+        Boolean executing = Boolean.FALSE;
+        try {
+            final InvocationImpl inv = new TargetInvocationImpl(nodeEngine, serviceName,
+                    new IsStillExecuting(op.getCallId()), target, 0, 0, 5000);
+            inv.invoke();
+            // TODO: improve logging (see SystemLogService)
+            logger.log(Level.WARNING, "Asking if operation execution has been started: " + toString());
+            executing = (Boolean) nodeEngine.toObject(inv.get(5000, TimeUnit.MILLISECONDS));
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "While asking 'is-executing': " + toString(), e);
+        }
+        // TODO: improve logging (see SystemLogService)
+        logger.log(Level.WARNING, "'is-executing': " + executing + " -> " + toString());
+        return executing;
+    }
+
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
             timeout -= diff;
@@ -250,52 +270,52 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
 
     // TODO: works only for parent-child invocations; multiple chained invocations can break the rule!
     private static void checkOperationType(Operation op) {
-        final Operation parentOp = (Operation) ThreadContext.get().getCurrentOperation();
-        boolean allowed = true;
-        if (parentOp != null) {
-            if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
-                // OK!
-            } else if (parentOp instanceof PartitionLevelOperation) {
-                if (op instanceof PartitionLevelOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            } else if (parentOp instanceof KeyBasedOperation) {
-                if (op instanceof PartitionLevelOperation) {
-                    allowed = false;
-                } else if (op instanceof KeyBasedOperation
-                        && ((KeyBasedOperation) parentOp).getKeyHash() == ((KeyBasedOperation) op).getKeyHash()
-                        && parentOp.getPartitionId() == op.getPartitionId()) {
-                    // OK!
-                } else if (op instanceof PartitionAwareOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            } else if (parentOp instanceof PartitionAwareOperation) {
-                if (op instanceof PartitionLevelOperation) {
-                    allowed = false;
-                } else if (op instanceof PartitionAwareOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            }
-        }
-        if (!allowed) {
-            throw new HazelcastException("INVOCATION IS NOT ALLOWED! ParentOp: "
-                    + parentOp + ", CurrentOp: " + op);
-        }
+//        final Operation parentOp = (Operation) ThreadContext.get().getCurrentOperation();
+//        boolean allowed = true;
+//        if (parentOp != null) {
+//            if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
+//                // OK!
+//            } else if (parentOp instanceof PartitionLevelOperation) {
+//                if (op instanceof PartitionLevelOperation
+//                        && op.getPartitionId() == parentOp.getPartitionId()) {
+//                    // OK!
+//                } else if (!(op instanceof PartitionAwareOperation)) {
+//                    // OK!
+//                } else {
+//                    allowed = false;
+//                }
+//            } else if (parentOp instanceof KeyBasedOperation) {
+//                if (op instanceof PartitionLevelOperation) {
+//                    allowed = false;
+//                } else if (op instanceof KeyBasedOperation
+//                        && ((KeyBasedOperation) parentOp).getKeyHash() == ((KeyBasedOperation) op).getKeyHash()
+//                        && parentOp.getPartitionId() == op.getPartitionId()) {
+//                    // OK!
+//                } else if (op instanceof PartitionAwareOperation
+//                        && op.getPartitionId() == parentOp.getPartitionId()) {
+//                    // OK!
+//                } else if (!(op instanceof PartitionAwareOperation)) {
+//                    // OK!
+//                } else {
+//                    allowed = false;
+//                }
+//            } else if (parentOp instanceof PartitionAwareOperation) {
+//                if (op instanceof PartitionLevelOperation) {
+//                    allowed = false;
+//                } else if (op instanceof PartitionAwareOperation
+//                        && op.getPartitionId() == parentOp.getPartitionId()) {
+//                    // OK!
+//                } else if (!(op instanceof PartitionAwareOperation)) {
+//                    // OK!
+//                } else {
+//                    allowed = false;
+//                }
+//            }
+//        }
+//        if (!allowed) {
+//            throw new HazelcastException("INVOCATION IS NOT ALLOWED! ParentOp: "
+//                    + parentOp + ", CurrentOp: " + op);
+//        }
     }
 
     public String getServiceName() {

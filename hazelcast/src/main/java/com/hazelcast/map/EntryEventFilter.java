@@ -16,11 +16,18 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.EventFilter;
+import sun.misc.IOUtils;
 
+import java.io.IOException;
 import java.io.Serializable;
 
-public class EntryEventFilter implements EventFilter,Serializable {
+public class EntryEventFilter implements EventFilter,DataSerializable {
 
     boolean includeValue = false;
     Object key = null;
@@ -28,6 +35,9 @@ public class EntryEventFilter implements EventFilter,Serializable {
     public EntryEventFilter(boolean includeValue, Object key) {
         this.includeValue = includeValue;
         this.key = key;
+    }
+
+    public EntryEventFilter() {
     }
 
     public boolean isIncludeValue() {
@@ -40,5 +50,15 @@ public class EntryEventFilter implements EventFilter,Serializable {
 
     public boolean eval(Object arg) {
         return key == null || key.equals(arg);
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(includeValue);
+        IOUtil.writeNullableObject(out, key);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        includeValue = in.readBoolean();
+        key = IOUtil.readNullableObject(in);
     }
 }
