@@ -17,11 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
+import sun.misc.IOUtils;
 
+import java.io.IOException;
 import java.io.Serializable;
 
-public class LockInfo implements Serializable {
+public class LockInfo implements DataSerializable {
     Address lockAddress = null;
     int lockThreadId = -1;
     int lockCount;
@@ -161,5 +167,21 @@ public class LockInfo implements Serializable {
                 ", lockThreadId=" + lockThreadId +
                 ", lockCount=" + lockCount +
                 '}';
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        IOUtil.writeNullableObject(out, lockAddress);
+        out.writeInt(lockThreadId);
+        out.writeInt(lockCount);
+        out.writeLong(expirationTime);
+        out.writeLong(lockAcquireTime);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        lockAddress = IOUtil.readNullableObject(in);
+        lockThreadId = in.readInt();
+        lockCount = in.readInt();
+        expirationTime = in.readLong();
+        lockAcquireTime = in.readLong();
     }
 }

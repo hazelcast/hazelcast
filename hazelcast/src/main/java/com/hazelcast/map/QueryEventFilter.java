@@ -45,7 +45,7 @@ public class QueryEventFilter extends EntryEventFilter  {
     }
 
     public boolean eval(Object arg) {
-        return predicate.apply((MapEntry)arg);
+        return (key == null || key.equals(arg)) && predicate.apply((MapEntry)arg);
     }
 
     @Override

@@ -33,7 +33,7 @@ import java.util.Random;
 public class BaseTest {
 
     protected static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
-    protected static int instanceCount = 2;
+    protected static int instanceCount = 3;
     protected Random rand = new Random(Clock.currentTimeMillis());
     protected static Config cfg = new Config();
 

@@ -28,9 +28,10 @@ public class DefaultRecordStore implements RecordStore {
     final String name;
     final PartitionInfo partitionInfo;
     final PartitionContainer partitionContainer;
+
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
-    // todo remove this.
+    // todo remove this. the do not forget to migrate if decide not to remove
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapInfo mapInfo;
 
@@ -59,6 +60,10 @@ public class DefaultRecordStore implements RecordStore {
 
     void removeLock(Data key) {
         locks.remove(key);
+    }
+
+    public ConcurrentMap<Data, LockInfo> getLocks() {
+        return locks;
     }
 
     public MapInfo getMapInfo() {
