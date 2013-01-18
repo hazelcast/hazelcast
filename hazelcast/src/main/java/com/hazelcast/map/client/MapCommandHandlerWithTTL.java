@@ -22,8 +22,6 @@ import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-import java.nio.ByteBuffer;
-
 public abstract class MapCommandHandlerWithTTL extends MapCommandHandler {
     public MapCommandHandlerWithTTL(MapService mapService) {
         super(mapService);
@@ -34,12 +32,10 @@ public abstract class MapCommandHandlerWithTTL extends MapCommandHandler {
         String[] args = protocol.args;
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
-        Data value = protocol.buffers[1];
-        System.out.println("Value that I am putting is " + value);
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+        Data value = protocol.buffers.length > 1 ? protocol.buffers[1] : null;
         final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
-        Data oldValue = processMapOp(
-                dataMapProxy, key, protocol.buffers.length > 1 ? value : null, ttl);
+        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+        Data oldValue = processMapOp(dataMapProxy, key, value, ttl);
         return protocol.success(oldValue);
     }
 

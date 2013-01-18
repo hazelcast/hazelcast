@@ -90,16 +90,32 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     private void registerClientOperationHandlers() {
         registerHandler(Command.MGET, new MapGetHandler(this));
-        registerHandler(Command.MLOCK, new MapLockHandler(this));
-        registerHandler(Command.MTRYLOCK, new MapLockHandler(this));
-        registerHandler(Command.MUNLOCK, new MapUnlockHandler(this));
-        registerHandler(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
-        registerHandler(Command.MPUT, new MapPutHandler(this));
         registerHandler(Command.MSIZE, new MapSizeHandler(this));
         registerHandler(Command.MGETALL, new MapGetAllHandler(this));
+        registerHandler(Command.MPUT, new MapPutHandler(this));
         registerHandler(Command.MTRYPUT, new MapTryPutHandler(this));
         registerHandler(Command.MSET, new MapSetHandler(this));
         registerHandler(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
+        registerHandler(Command.MLOCK, new MapLockHandler(this));
+        registerHandler(Command.MTRYLOCK, new MapLockHandler(this));
+        registerHandler(Command.MTRYREMOVE, new MapTryRemoveHandler(this));
+        registerHandler(Command.MISLOCKED, new MapIsLockedHandler(this));
+        registerHandler(Command.MUNLOCK, new MapUnlockHandler(this));
+        registerHandler(Command.MPUTALL, new MapPutAllHandler(this));
+        registerHandler(Command.MREMOVE, new MapRemoveHandler(this));
+        registerHandler(Command.MCONTAINSKEY, new MapContainsKeyHandler(this));
+        registerHandler(Command.MCONTAINSVALUE, new MapContainsValueHandler(this));
+        registerHandler(Command.MPUTIFABSENT, new MapPutIfAbsentHandler(this));
+        registerHandler(Command.MREMOVEIFSAME, new MapRemoveIfSameHandler(this));
+        registerHandler(Command.MREPLACEIFNOTNULL, new MapReplaceIfNotNullHandler(this));
+        registerHandler(Command.MREPLACEIFSAME, new MapReplaceIfSameHandler(this));
+        registerHandler(Command.MFLUSH, new MapFlushHandler(this));
+        registerHandler(Command.MEVICT, new MapEvictHandler(this));
+        registerHandler(Command.MENTRYSET, new MapEntrySetHandler(this));
+        registerHandler(Command.KEYSET, new KeySetHandler(this));
+
+
+        registerHandler(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
     }
 
     void registerHandler(Command command, ClientCommandHandler handler) {

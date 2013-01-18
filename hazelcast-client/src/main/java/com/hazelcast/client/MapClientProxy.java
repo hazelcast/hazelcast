@@ -23,20 +23,17 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.nio.serialization.SerializationConstants;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
-import java.io.Serializable;
 
-import java.nio.ByteBuffer;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
@@ -55,6 +52,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         addEntryListener(listener, null, includeValue);
     }
 
+    public void addQueryListener(EntryListener<K, V> kvEntryListener, Predicate<K, V> kvPredicate, K key, boolean includeValue) {
+        //TODO add query listener will be implemented
+    }
+
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         check(listener);
         Boolean noEntryListenerRegistered = listenerManager().noListenerRegistered(key, getName(), includeValue);
@@ -69,7 +70,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         }
         listenerManager().registerListener(getName(), key, includeValue, listener);
     }
-
 
     private void check(Object obj) {
         if (obj == null) {

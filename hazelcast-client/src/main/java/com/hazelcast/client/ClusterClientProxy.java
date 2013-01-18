@@ -70,7 +70,6 @@ public class ClusterClientProxy implements Cluster {
         Set<Member> members = new HashSet<Member>();
         for (String arg : protocol.args) {
             String[] address = arg.split(":");
-            System.out.println(arg + "::: " + address[0] + "::::" + address[1]);
             try {
                 Member member = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
                 members.add(member);

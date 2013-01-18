@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.hazelcast.map.client;
@@ -22,19 +23,24 @@ import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-import java.nio.ByteBuffer;
+import java.util.Set;
 
-public class MapGetHandler extends MapCommandHandler {
+public class KeySetHandler extends MapCommandHandler {
 
-    public MapGetHandler(MapService mapService) {
+    public KeySetHandler(MapService mapService) {
         super(mapService);
     }
 
+    @Override
     public Protocol processCall(Node node, Protocol protocol) {
-        String name = protocol.args[0];
-        Data key = protocol.buffers[0];
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
-        Data value = dataMapProxy.get(key);
-        return protocol.success(value);
+        String type = protocol.args[0];
+        String name = protocol.args[1];
+        if ("map".equals(type)) {
+            DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+            Set<Data> keys = dataMapProxy.keySet();
+            Data[] arrayKeys = keys.toArray(new Data[0]);
+            return protocol.success(arrayKeys);
+        }
+        return protocol.error(null, "");
     }
 }

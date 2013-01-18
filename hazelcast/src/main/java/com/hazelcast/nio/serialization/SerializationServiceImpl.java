@@ -160,9 +160,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 serializationContext.registerClassDefinition(data.cd);
             }
             in = new ContextAwareDataInput(data, this);
-            System.out.println(typeId + "Burada " + serializer);
             Object obj = serializer.read(in);
-            System.out.println("Burada 2");
             if (managedContext != null) {
                 managedContext.initialize(obj);
             }
