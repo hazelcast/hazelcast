@@ -161,11 +161,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
     boolean remove(Object key, Object value);
 
     /**
-     * If this map has a MapStore and write-delay-seconds is
-     * bigger than 0 (write-behind) then this method flushes
+     * If this map has a MapStore this method flushes
      * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
      */
-    void flush();
+    void flush(boolean flushAllEntries);
 
     /**
      * Returns the name of this map

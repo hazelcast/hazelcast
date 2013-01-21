@@ -93,4 +93,6 @@ public interface RecordStore {
     void setRecordValue(Record record, Object value);
 
     ConcurrentMap<Data, LockInfo> getLocks();
+
+    void flush(boolean flushAllRecords);
 }

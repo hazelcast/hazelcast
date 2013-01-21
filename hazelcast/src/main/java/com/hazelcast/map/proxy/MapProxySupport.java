@@ -490,6 +490,19 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
+    public void flushInternal(boolean flushAll) {
+        setThreadContext();
+        try {
+            MapFlushOperation mapFlushOperation = new MapFlushOperation(name, flushAll);
+            nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapFlushOperation, false);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+
+
     protected Collection<Data> valuesInternal() {
         setThreadContext();
         try {

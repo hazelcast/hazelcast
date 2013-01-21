@@ -151,6 +151,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         forceUnlockInternal(key);
     }
 
+    public void flush(boolean flushAll) {
+        flushInternal(flushAll);
+    }
+
     public Set<Data> keySet() {
         return keySetInternal();
     }

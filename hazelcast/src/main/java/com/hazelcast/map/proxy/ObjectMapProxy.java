@@ -227,7 +227,8 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         clearInternal();
     }
 
-    public void flush() {
+    public void flush(boolean flushAll) {
+        flushInternal(flushAll);
     }
 
     public Set<K> keySet() {

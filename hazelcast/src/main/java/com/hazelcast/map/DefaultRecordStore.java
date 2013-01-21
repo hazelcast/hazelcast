@@ -66,6 +66,13 @@ public class DefaultRecordStore implements RecordStore {
         return locks;
     }
 
+    public void flush(boolean flushAllRecords) {
+        for (Record record : records.values()) {
+            if (flushAllRecords || record.getState().isDirty())
+                mapStoreWrite(record, true);
+        }
+    }
+
     public MapInfo getMapInfo() {
         return mapInfo;
     }
@@ -171,12 +178,12 @@ public class DefaultRecordStore implements RecordStore {
 
     public Map.Entry<Data, Data> getMapEntryData(Data dataKey) {
         Record record = records.get(dataKey);
-        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(record.getValue()) );
+        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(record.getValue()));
     }
 
     public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
         Record record = records.get(dataKey);
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, mapService.toObject(record.getValue()) );
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, mapService.toObject(record.getValue()));
     }
 
     public Set<Data> keySet() {
@@ -421,10 +428,14 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void mapStoreWrite(Record record) {
+        mapStoreWrite(record, false);
+    }
+
+    private void mapStoreWrite(Record record, boolean flush) {
         if (mapInfo.getStore() != null) {
             long writeDelayMillis = mapInfo.getWriteDelayMillis();
-            if (writeDelayMillis <= 0) {
-                mapInfo.getStore().store(mapService.toObject(record.getKey()), record.getValue());
+            if (writeDelayMillis <= 0 || flush) {
+                mapInfo.getStore().store(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
@@ -464,5 +475,5 @@ public class DefaultRecordStore implements RecordStore {
             ((ObjectRecord) record).setValue(mapService.toObject(value));
     }
 
-  
+
 }
