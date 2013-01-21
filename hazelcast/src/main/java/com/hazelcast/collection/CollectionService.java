@@ -19,21 +19,21 @@ package com.hazelcast.collection;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.core.*;
+import com.hazelcast.map.LockInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 
-import java.util.EventListener;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * @ali 1/1/13
  */
-public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener> {
+public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
 
     private NodeEngine nodeEngine;
 
@@ -156,17 +156,102 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
                 entryListener.entryRemoved(entryEvent);
             }
-        }
-        else if (listener instanceof ItemListener){
-            ItemListener itemListener = (ItemListener)listener;
+        } else if (listener instanceof ItemListener) {
+            ItemListener itemListener = (ItemListener) listener;
             ItemEvent itemEvent = new ItemEvent(event.getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
                     nodeEngine.getCluster().getMember(event.getCaller()));
-            if (event.eventType.getType() == ItemEventType.ADDED.getType()){
+            if (event.eventType.getType() == ItemEventType.ADDED.getType()) {
                 itemListener.itemAdded(itemEvent);
-            }
-            else {
+            } else {
                 itemListener.itemRemoved(itemEvent);
             }
         }
+    }
+
+    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+
+    }
+
+    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
+            return null; // is it possible
+        }
+        int replicaIndex = event.getReplicaIndex();
+        CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
+        Map<CollectionProxyId, Map[]> map = new HashMap<CollectionProxyId, Map[]>(partitionContainer.containerMap.size());
+        for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
+            CollectionProxyId proxyId = entry.getKey();
+            CollectionContainer container = entry.getValue();
+            if (container.config.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+            map.put(proxyId, new Map[]{container.objects, container.locks});
+        }
+        if (map.isEmpty()){
+            return null;
+        }
+        return new CollectionMigrationOperation(map);
+    }
+
+    public void insertMigratedData(int partitionId, Map<CollectionProxyId, Map[]> map){
+        for (Map.Entry<CollectionProxyId, Map[]> entry: map.entrySet()){
+            CollectionProxyId proxyId = entry.getKey();
+            CollectionContainer container = getOrCreateCollectionContainer(partitionId, proxyId);
+            Map<Data, Object> objects = entry.getValue()[0];
+            for (Map.Entry<Data, Object> objectEntry: objects.entrySet()){
+                Data key = objectEntry.getKey();
+                Object object = objectEntry.getValue();
+                if (object instanceof Collection){
+                    Collection coll = (Collection)createNew(proxyId);
+                    coll.addAll((Collection)object);
+                    container.objects.put(key, coll);
+                }
+                else {
+                    container.objects.put(key, object);
+                }
+            }
+            Map<Data, LockInfo> locks = entry.getValue()[1];
+            container.locks.putAll(locks);
+        }
+    }
+
+    private void clearMigrationData(int partitionId, int copyBackReplicaIndex){
+        final CollectionPartitionContainer partitionContainer = partitionContainers[partitionId];
+        if (copyBackReplicaIndex == -1){
+            partitionContainer.containerMap.clear();
+            return;
+        }
+        for (CollectionContainer container: partitionContainer.containerMap.values()) {
+            int totalBackupCount = container.config.getTotalBackupCount();
+            if (totalBackupCount < copyBackReplicaIndex){
+                container.clear();
+            }
+        }
+    }
+
+    public void commitMigration(MigrationServiceEvent event) {
+        if (event.getMigrationType() == MigrationType.MOVE){
+            System.err.println("move");
+        }
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            if (event.getMigrationType() == MigrationType.MOVE) {
+                clearMigrationData(event.getPartitionId(), -1);
+            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
+                clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
+            }
+        }
+    }
+
+    public void rollbackMigration(MigrationServiceEvent event) {
+        clearMigrationData(event.getPartitionId(), -1);
+    }
+
+    public int getMaxBackupCount() {
+        int max = 0;
+        for (CollectionPartitionContainer partitionContainer : partitionContainers) {
+            int c = partitionContainer.getMaxBackupCount();
+            max = Math.max(max, c);
+        }
+        return max;
     }
 }

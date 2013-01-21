@@ -31,15 +31,16 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionContainer {
 
-    CollectionProxyId proxyId;
+    final CollectionProxyId proxyId;
 
-    CollectionService service;
+    final CollectionService service;
 
-    NodeEngine nodeEngine;
+    final NodeEngine nodeEngine;
 
-    MultiMapConfig config;
+    final MultiMapConfig config;
 
-    private final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
+    final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
+
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
 
     public CollectionContainer(CollectionProxyId proxyId, CollectionService service) {
@@ -77,14 +78,18 @@ public class CollectionContainer {
 
     public boolean unlock(Data dataKey, Address caller, int threadId) {
         LockInfo lock = locks.get(dataKey);
+        boolean result = false;
         if (lock == null)
-            return false;
+            return result;
         if (lock.testLock(threadId, caller)) {
             if (lock.unlock(caller, threadId)) {
-                return true;
+                result = true;
             }
         }
-        return false;
+        if (!lock.isLocked()){
+            locks.remove(dataKey);
+        }
+        return result;
     }
 
     public <T> T getOrCreateObject(Data dataKey) {
@@ -169,8 +174,13 @@ public class CollectionContainer {
         return size;
     }
 
-    public void clear() {
+    public void clearObjects() {
+        Map<Data, Object> temp = new HashMap<Data, Object>(locks.size());
+        for (Data key: locks.keySet()){
+            temp.put(key, objects.get(key));
+        }
         objects.clear();
+        objects.putAll(temp);
     }
 
     public NodeEngine getNodeEngine() {
@@ -192,4 +202,10 @@ public class CollectionContainer {
     public ConcurrentMap<Data, LockInfo> getLocks() {
         return locks;   //TODO for testing only
     }
+
+    public void clear(){
+        objects.clear();
+        locks.clear();
+    }
+
 }

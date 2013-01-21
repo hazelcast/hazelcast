@@ -30,7 +30,6 @@ import java.util.Map;
 /**
  * @ali 1/9/13
  */
-//TODO locks
 public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionLevelOperation {
 
 
@@ -52,7 +51,7 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        container.clear();
+        container.clearObjects();
         response = true;
     }
 

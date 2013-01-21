@@ -68,4 +68,13 @@ public class CollectionProxyId implements DataSerializable {
         name = in.readUTF();
         type = CollectionProxyType.getByType(in.readInt());
     }
+
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("CollectionProxyId");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", type=").append(type);
+        sb.append('}');
+        return sb.toString();
+    }
 }

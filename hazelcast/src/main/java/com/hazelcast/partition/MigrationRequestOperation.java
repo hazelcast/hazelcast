@@ -107,15 +107,12 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE, migrationInfo);
         final Collection<Operation> tasks = new LinkedList<Operation>();
-        for (Object serviceObject : nodeEngine.getServices(MigrationAwareService.class)) {
-            if (serviceObject instanceof MigrationAwareService) {
-                MigrationAwareService service = (MigrationAwareService) serviceObject;
-                final Operation op = service.prepareMigrationOperation(event);
-                if (op != null) {
-                    op.setServiceName(service.getServiceName());
-                    service.beforeMigration(event);
-                    tasks.add(op);
-                }
+        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+            final Operation op = service.prepareMigrationOperation(event);
+            if (op != null) {
+                op.setServiceName(service.getServiceName());
+                service.beforeMigration(event);
+                tasks.add(op);
             }
         }
         return tasks;
