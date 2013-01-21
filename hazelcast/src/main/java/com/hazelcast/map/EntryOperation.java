@@ -52,9 +52,9 @@ public class EntryOperation extends AbstractNamedKeyBasedOperation implements Ba
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
         NodeEngine nodeEngine = mapService.getNodeEngine();
-        entry = new AbstractMap.SimpleEntry(nodeEngine.toObject(dataKey), mapEntry.getValue());
+        entry = new AbstractMap.SimpleEntry(nodeEngine.toObject(dataKey), nodeEngine.toObject(mapEntry.getValue()));
         response = nodeEngine.toData(entryProcessor.process(entry));
-        recordStore.putEntryObject(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
     }
 
     @Override

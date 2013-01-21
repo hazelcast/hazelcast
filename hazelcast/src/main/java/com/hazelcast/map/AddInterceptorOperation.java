@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,62 +16,66 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
-public class EntryBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class AddInterceptorOperation extends AbstractOperation {
 
-    EntryBackupProcessor entryProcessor;
-
-    Map.Entry entry;
     MapService mapService;
+    String id;
+    MapInterceptor mapInterceptor;
+    String mapName;
 
-    public EntryBackupOperation(String name, Data dataKey, EntryBackupProcessor entryProcessor) {
-        super(name, dataKey);
-        this.entryProcessor = entryProcessor;
+
+    public AddInterceptorOperation(String id, MapInterceptor mapInterceptor, String mapName) {
+        this.id = id;
+        this.mapInterceptor = mapInterceptor;
+        this.mapName = mapName;
     }
 
-    public EntryBackupOperation() {
+    public AddInterceptorOperation() {
     }
 
     public void run() {
         mapService = (MapService) getService();
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
-        NodeEngine nodeEngine = mapService.getNodeEngine();
-        entry = new AbstractMap.SimpleEntry<Object,Object>(nodeEngine.toObject(dataKey), mapEntry.getValue());
-        entryProcessor.processBackup(entry);
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        mapService.getMapInfo(mapName).addInterceptor(mapInterceptor, id);
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        entryProcessor = in.readObject();
+        mapName = in.readUTF();
+        id = in.readUTF();
+        mapInterceptor = IOUtil.readNullableObject(in);
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(entryProcessor);
-    }
-
-    @Override
-    public Object getResponse() {
-        return true;
+        out.writeUTF(mapName);
+        out.writeUTF(id);
+        IOUtil.writeNullableObject(out, mapInterceptor);
     }
 
     @Override
     public String toString() {
-        return "EntryBackupOperation{}";
+        return "AddInterceptorOperation{}";
     }
 
 }

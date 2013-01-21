@@ -93,7 +93,7 @@ public class DefaultRecordStore implements RecordStore {
         return records.size();
     }
 
-    public boolean containsValue(Data dataValue) {
+    public boolean containsValue(Object dataValue) {
         for (Record record : records.values()) {
             Object value = mapService.toObject(dataValue);
             Object recordValue = mapService.toObject(record.getValue());
@@ -142,6 +142,7 @@ public class DefaultRecordStore implements RecordStore {
             }
         } else {
             accessRecord(record);
+            mapService.intercept(name, MapOperationType.REMOVE, dataKey, record.getValue(), record.getValue());
             records.remove(dataKey);
             removed = true;
         }
@@ -152,7 +153,15 @@ public class DefaultRecordStore implements RecordStore {
         return removed;
     }
 
-    public Set<Map.Entry<Data, Data>> entrySet() {
+    public Set<Map.Entry<Data, Object>> entrySetObject() {
+        Map<Data, Object> temp = new HashMap<Data, Object>(records.size());
+        for (Data key : records.keySet()) {
+            temp.put(key, mapService.toObject(records.get(key).getValue()));
+        }
+        return temp.entrySet();
+    }
+
+    public Set<Map.Entry<Data, Data>> entrySetData() {
         Map<Data, Data> temp = new HashMap<Data, Data>(records.size());
         for (Data key : records.keySet()) {
             temp.put(key, mapService.toData(records.get(key).getValue()));
@@ -160,17 +169,15 @@ public class DefaultRecordStore implements RecordStore {
         return temp.entrySet();
     }
 
-    public Map.Entry<Data, Data> getMapEntry(Data dataKey) {
+    public Map.Entry<Data, Data> getMapEntryData(Data dataKey) {
         Record record = records.get(dataKey);
         return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(record.getValue()) );
     }
-
 
     public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
         Record record = records.get(dataKey);
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, mapService.toObject(record.getValue()) );
     }
-
 
     public Set<Data> keySet() {
         Set<Data> keySet = new HashSet<Data>(records.size());
@@ -180,7 +187,15 @@ public class DefaultRecordStore implements RecordStore {
         return keySet;
     }
 
-    public Collection<Data> values() {
+    public Collection<Object> valuesObject() {
+        Collection<Object> values = new ArrayList<Object>(records.size());
+        for (Record record : records.values()) {
+            values.add(mapService.toObject(record.getValue()));
+        }
+        return values;
+    }
+
+    public Collection<Data> valuesData() {
         Collection<Data> values = new ArrayList<Data>(records.size());
         for (Record record : records.values()) {
             values.add(mapService.toData(record.getValue()));
@@ -188,15 +203,16 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
-    public Data remove(Data dataKey) {
+    public Object remove(Data dataKey) {
         Record record = records.get(dataKey);
-        Data oldValue = null;
+        Object oldValue = null;
         if (record == null) {
             if (mapInfo.getStore() != null) {
-                oldValue = mapService.toData(mapInfo.getStore().load(mapService.toObject(dataKey)));
+                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
             }
         } else {
-            oldValue = mapService.toData(record.getValue());
+            oldValue = record.getValue();
+            oldValue = mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             records.remove(dataKey);
         }
         if (oldValue != null) {
@@ -206,10 +222,13 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public boolean evict(Data dataKey) {
-        return records.remove(dataKey) != null;
+        Record record = records.get(dataKey);
+        mapService.intercept(name, MapOperationType.EVICT, dataKey, record.getValue(), record.getValue());
+        records.remove(dataKey);
+        return record != null;
     }
 
-    public boolean remove(Data dataKey, Data testValue) {
+    public boolean remove(Data dataKey, Object testValue) {
         Record record = records.get(dataKey);
         Object oldValue = null;
         boolean removed = false;
@@ -224,6 +243,7 @@ public class DefaultRecordStore implements RecordStore {
         }
 
         if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
+            mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             records.remove(dataKey);
             removed = true;
             mapStoreDelete(record);
@@ -231,7 +251,7 @@ public class DefaultRecordStore implements RecordStore {
         return removed;
     }
 
-    public Data get(Data dataKey) {
+    public Object get(Data dataKey) {
         Record record = records.get(dataKey);
         Object value = null;
         if (record == null) {
@@ -246,78 +266,75 @@ public class DefaultRecordStore implements RecordStore {
             accessRecord(record);
             value = record.getValue();
         }
+
+        value = mapService.intercept(name, MapOperationType.GET, dataKey, value, value);
+
 //        check if record has expired or removed but waiting delay millis
         if (record != null && record.getState().isExpired()) {
             return null;
         }
-        return mapService.toData(value);
+        return value;
     }
 
-    public void put(Map.Entry<Data, Data> entry) {
+    public void put(Map.Entry<Data, Object> entry) {
         Data dataKey = entry.getKey();
-        Data value = entry.getValue();
+        Object value = entry.getValue();
         Record record = records.get(dataKey);
         if (record == null) {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, -1);
             records.put(dataKey, record);
         } else {
-            setRecordValue(record, entry.getValue());
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, record.getValue());
+            setRecordValue(record, value);
         }
     }
 
-    public void putEntryObject(Map.Entry<Data, Object> entry) {
-        Data dataKey = entry.getKey();
-        Data value = mapService.toData(entry.getValue());
-        Record record = records.get(dataKey);
-        if (record == null) {
-            record = mapService.createRecord(name, dataKey, value, -1);
-            records.put(dataKey, record);
-        } else {
-            setRecordValue(record, entry.getValue());
-        }
-    }
-
-    public Data put(Data dataKey, Data value, long ttl) {
+    public Object put(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
             if (mapInfo.getStore() != null) {
                 oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
             }
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
         } else {
             oldValue = record.getValue();
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, oldValue);
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
         mapStoreWrite(record);
-        return mapService.toData(oldValue);
+        return oldValue;
     }
 
     public Set<Data> getRemovedDelayedKeys() {
         return removedDelayedKeys;
     }
 
-    public Data replace(Data dataKey, Data value) {
+    public Object replace(Data dataKey, Object value) {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record != null) {
             oldValue = record.getValue();
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, oldValue);
             setRecordValue(record, value);
         } else {
             return null;
         }
         mapStoreWrite(record);
-        return mapService.toData(oldValue);
+        return oldValue;
     }
 
-    public boolean replace(Data dataKey, Data testValue, Data newValue) {
+    public boolean replace(Data dataKey, Object testValue, Object newValue) {
         Record record = records.get(dataKey);
         if (record == null)
             return false;
         Object recordValue = mapService.toObject(record.getValue());
         if (recordValue != null && recordValue.equals(mapService.toObject(testValue))) {
+            newValue = mapService.intercept(name, MapOperationType.PUT, dataKey, newValue, recordValue);
             setRecordValue(record, newValue);
         } else {
             return false;
@@ -326,35 +343,41 @@ public class DefaultRecordStore implements RecordStore {
         return true;
     }
 
-    public void set(Data dataKey, Data value, long ttl) {
+    public void set(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
         if (record == null) {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
         } else {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, record.getValue());
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
         mapStoreWrite(record);
     }
 
-    public void putTransient(Data dataKey, Data value, long ttl) {
+    public void putTransient(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
         if (record == null) {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
         } else {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, record.getValue());
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
     }
 
-    public boolean tryPut(Data dataKey, Data value, long ttl) {
+    public boolean tryPut(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
         if (record == null) {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
         } else {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, record.getValue());
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
@@ -362,7 +385,7 @@ public class DefaultRecordStore implements RecordStore {
         return true;
     }
 
-    public Data putIfAbsent(Data dataKey, Data value, long ttl) {
+    public Object putIfAbsent(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
@@ -379,12 +402,13 @@ public class DefaultRecordStore implements RecordStore {
         }
 
         if (oldValue == null) {
+            value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateTtl(record, ttl);
             mapStoreWrite(record);
         }
-        return mapService.toData(oldValue);
+        return oldValue;
     }
 
     private void accessRecord(Record record) {

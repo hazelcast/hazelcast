@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
@@ -23,6 +24,7 @@ import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 public class GetOperation extends AbstractNamedKeyBasedOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
+    private MapService mapService;
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -32,9 +34,13 @@ public class GetOperation extends AbstractNamedKeyBasedOperation implements Iden
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
+        mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        result = recordStore.get(dataKey);
+        result = mapService.toData(recordStore.get(dataKey));
+    }
+
+    public void afterRun() {
+        mapService.interceptAfterProcess(name, MapOperationType.GET, dataKey, result, result);
     }
 
     @Override

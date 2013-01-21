@@ -35,7 +35,7 @@ public class GetMapEntryOperation extends AbstractNamedKeyBasedOperation {
     public void run() {
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        result = recordStore.getMapEntry(dataKey);
+        result = recordStore.getMapEntryData(dataKey);
     }
 
     @Override

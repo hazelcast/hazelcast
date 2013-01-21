@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
@@ -569,6 +570,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      */
     void addLocalEntryListener(EntryListener<K, V> listener);
 
+    void addInterceptor(MapInterceptor interceptor);
+
+    void removeInterceptor(MapInterceptor interceptor);
+
     /**
      * Adds an entry listener for this map. Listener will get notified
      * for all map add/remove/update/evict events.
@@ -587,7 +592,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * @param predicate predicate for filtering entries
      *
      */
-    void addQueryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Removes the specified entry listener

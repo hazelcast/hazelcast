@@ -23,6 +23,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
+import java.util.Map;
+
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
     Record record;
@@ -68,6 +70,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public void afterRun() {
+        mapService.interceptAfterProcess(name, MapOperationType.PUT, dataKey, dataValue, dataOldValue);
         int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, dataValue);
     }

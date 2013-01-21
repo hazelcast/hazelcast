@@ -52,7 +52,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         addEntryListener(listener, null, includeValue);
     }
 
-    public void addQueryListener(EntryListener<K, V> kvEntryListener, Predicate<K, V> kvPredicate, K key, boolean includeValue) {
+    public void addEntryListener(EntryListener<K, V> kvEntryListener, Predicate<K, V> kvPredicate, K key, boolean includeValue) {
         //TODO add query listener will be implemented
     }
 

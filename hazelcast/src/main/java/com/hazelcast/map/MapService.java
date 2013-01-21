@@ -286,17 +286,71 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
+    public String addInterceptor(String mapName, MapInterceptor interceptor) {
+        return getMapInfo(mapName).addInterceptor(interceptor);
+    }
+
+    public String removeInterceptor(String mapName, MapInterceptor interceptor) {
+        return getMapInfo(mapName).removeInterceptor(interceptor);
+    }
+
+    // todo replace oldValue with existingEntry
+    public Object intercept(String mapName, MapOperationType operationType, Data key, Object value, Object oldValue) {
+        List<MapInterceptor> interceptors = getMapInfo(mapName).getInterceptors();
+        Object result = value;
+        // todo needs optimization about serialization (MapEntry type should be used as input)
+        if (!interceptors.isEmpty()) {
+            value = toObject(value);
+            Map.Entry existingEntry = new AbstractMap.SimpleEntry(key, toObject(oldValue));
+            MapInterceptorContext context = new MapInterceptorContext(mapName, operationType, key, value, existingEntry);
+            for (MapInterceptor interceptor : interceptors) {
+                result = interceptor.process(context);
+                context.setNewValue(toObject(result));
+            }
+        }
+        return result;
+    }
+
+    // todo replace oldValue with existingEntry
+    public void interceptAfterProcess(String mapName, MapOperationType operationType, Data key, Object value, Object oldValue) {
+        List<MapInterceptor> interceptors = getMapInfo(mapName).getInterceptors();
+        // todo needs optimization about serialization (MapEntry type should be used as input)
+        if (!interceptors.isEmpty()) {
+            value = toObject(value);
+            Map.Entry existingEntry = new AbstractMap.SimpleEntry(key, toObject(oldValue));
+            MapInterceptorContext context = new MapInterceptorContext(mapName, operationType, key, value, existingEntry);
+            for (MapInterceptor interceptor : interceptors) {
+                interceptor.afterProcess(context);
+            }
+        }
+    }
+
     public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
-        Object key = toObject(dataKey);
-        Object value = toObject(dataValue);
+
+        if(candidates.isEmpty())
+            return;
+
+        Object key = null;
+        Object value = null;
+        Object oldValue = null;
 
         for (EventRegistration candidate : candidates) {
             EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
             if (filter instanceof QueryEventFilter) {
-                Object testValue = eventType == EntryEvent.TYPE_REMOVED ? toObject(dataOldValue):  value;
+                Object testValue;
+                if(eventType == EntryEvent.TYPE_REMOVED) {
+                    oldValue = oldValue != null ? oldValue : toObject(dataOldValue);
+                    testValue = oldValue;
+                }
+                else {
+                    value = value != null ? value : toObject(value);
+                    testValue = value;
+                }
+                key = key != null ? key : toObject(key);
+
                 QueryEventFilter qfilter = (QueryEventFilter) filter;
                 if (qfilter.eval(new SimpleMapEntry(key, testValue))) {
                     if (filter.isIncludeValue()) {

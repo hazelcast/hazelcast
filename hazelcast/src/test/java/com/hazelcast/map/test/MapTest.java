@@ -17,21 +17,11 @@
 package com.hazelcast.map.test;
 
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.impl.GroupProperties;
-import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.map.*;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.Clock;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -491,7 +481,7 @@ public class MapTest extends BaseTest {
             }
         };
 
-        map.addQueryListener(listener, new StartsWithPredicate("a"), null, true);
+        map.addEntryListener(listener, new StartsWithPredicate("a"), null, true);
         map.put("key1", "abc");
         map.put("key2", "bcd");
         map.put("key2", "axyz");
@@ -507,7 +497,7 @@ public class MapTest extends BaseTest {
         assertEquals(removedValue[0], "abc");
     }
 
-    static class StartsWithPredicate implements Predicate<Object,Object>, Serializable{
+    static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
         String pref;
 
         StartsWithPredicate(String pref) {
@@ -516,11 +506,82 @@ public class MapTest extends BaseTest {
 
         public boolean apply(MapEntry<Object, Object> mapEntry) {
             String val = (String) mapEntry.getValue();
-            if(val == null)
+            if (val == null)
                 return false;
-                if (val.startsWith(pref))
+            if (val.startsWith(pref))
                 return true;
             return false;
+        }
+    }
+
+    @Test
+    public void testMapInterceptor() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapInterceptor");
+        SimpleInterceptor interceptor = new SimpleInterceptor();
+        map.addInterceptor(interceptor);
+        map.put(1, "New York");
+        map.put(2, "Istanbul");
+        map.put(3, "Tokyo");
+        map.put(4, "London");
+        map.put(5, "Paris");
+        map.put(6, "Cairo");
+        map.put(7, "Hong Kong");
+
+        try {
+            map.remove(1);
+        } catch (Exception ignore) {
+        }
+        try {
+            map.remove(2);
+        } catch (Exception ignore) {
+        }
+
+        assertEquals(map.size(), 6);
+
+        assertEquals(map.get(1), null);
+        assertEquals(map.get(2), "ISTANBUL:");
+        assertEquals(map.get(3), "TOKYO:");
+        assertEquals(map.get(4), "LONDON:");
+        assertEquals(map.get(5), "PARIS:");
+        assertEquals(map.get(6), "CAIRO:");
+        assertEquals(map.get(7), "HONG KONG:");
+
+        map.removeInterceptor(interceptor);
+        map.put(8, "Moscow");
+
+        assertEquals(map.get(8), "Moscow");
+        assertEquals(map.get(1), null);
+        assertEquals(map.get(2), "ISTANBUL");
+        assertEquals(map.get(3), "TOKYO");
+        assertEquals(map.get(4), "LONDON");
+        assertEquals(map.get(5), "PARIS");
+        assertEquals(map.get(6), "CAIRO");
+        assertEquals(map.get(7), "HONG KONG");
+
+    }
+
+    static class SimpleInterceptor implements MapInterceptor, Serializable {
+        public Object process(MapInterceptorContext context) {
+            if (context.getOperationType().equals(MapOperationType.GET)) {
+                if (context.getNewValue() != null)
+                    return context.getNewValue() + ":";
+                else
+                    return null;
+
+            }
+
+            if (context.getOperationType().equals(MapOperationType.PUT))
+                return ((String) context.getNewValue()).toUpperCase();
+
+            if (context.getOperationType().equals(MapOperationType.REMOVE)) {
+                if (context.getExistingEntry().getValue().equals("ISTANBUL"))
+                    throw new RuntimeException("you can not remove this");
+                return context.getExistingEntry().getValue();
+            }
+            return context.getNewValue();
+        }
+
+        public void afterProcess(MapInterceptorContext context) {
         }
     }
 
