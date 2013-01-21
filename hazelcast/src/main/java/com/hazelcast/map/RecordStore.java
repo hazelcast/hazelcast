@@ -89,4 +89,6 @@ public interface RecordStore {
     Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
 
     void setRecordValue(Record record, Object value);
+
+    ConcurrentMap<Data, LockInfo> getLocks();
 }

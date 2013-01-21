@@ -24,6 +24,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
+
 public class LockInfo implements DataSerializable {
     Address lockAddress = null;
     int lockThreadId = -1;
@@ -174,6 +175,7 @@ public class LockInfo implements DataSerializable {
             out.writeBoolean(true);
             lockAddress.writeData(out);
         }
+
         out.writeInt(lockThreadId);
         out.writeInt(lockCount);
         out.writeLong(expirationTime);
