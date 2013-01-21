@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.list;
+package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.CollectionProxy;
 import com.hazelcast.collection.CollectionProxyType;
@@ -22,7 +22,7 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.IList;
+import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -30,25 +30,25 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.*;
 
 /**
- * @ali 1/14/13
+ * @ali 1/21/13
  */
-public class ObjectListProxy<E> extends MultiMapProxySupport implements CollectionProxy, IList<E> {
+public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, CollectionProxy {
 
-    public static final String COLLECTION_LIST_NAME = "hz:collection:name:list";
+    public static final String COLLECTION_SET_NAME = "hz:collection:name:set";
 
-    final String listName;
+    final String setName;
 
     final Data key;
 
-    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
-        super(COLLECTION_LIST_NAME, service, nodeEngine, proxyType,
-                nodeEngine.getConfig().getMultiMapConfig("list:" + name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST));
-        listName = name;
-        key = nodeEngine.toData(name);
+    public ObjectSetProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
+        super(COLLECTION_SET_NAME, service, nodeEngine, proxyType,
+                nodeEngine.getConfig().getMultiMapConfig("set:" + name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET));
+        this.setName = name;
+        this.key = nodeEngine.toData(name);
     }
 
     public String getName() {
-        return listName;
+        return setName;
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
@@ -57,6 +57,10 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     public void removeItemListener(ItemListener<E> listener) {
         service.removeListener(name, listener, key);
+    }
+
+    public Object getId() {
+        return name;  //TODO
     }
 
     public int size() {
@@ -114,69 +118,16 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
         return addAllInternal(key, toDataList(c), index);
     }
 
-    public boolean removeAll(Collection<?> c) {
-        return false;
+    public boolean retainAll(Collection<?> c) {
+        return compareAndRemoveInternal(key, toDataList(c), true);
     }
 
-    public boolean retainAll(Collection<?> c) {
-        return false;
+    public boolean removeAll(Collection<?> c) {
+        return compareAndRemoveInternal(key, toDataList(c), false);
     }
 
     public void clear() {
         removeInternal(key);
-    }
-
-    public E get(int index) {
-        Object data = getInternal(key, index);
-        return nodeEngine.toObject(data);
-    }
-
-    public E set(int index, E element) {
-        Data value = nodeEngine.toData(element);
-        Object data = setInternal(key, index, value);
-        return nodeEngine.toObject(data);
-    }
-
-    public void add(int index, E element) {
-        Data data = nodeEngine.toData(element);
-        putInternal(key, data, index);
-    }
-
-    public E remove(int index) {
-        Object data = removeInternal(key, index);
-        return nodeEngine.toObject(data);
-    }
-
-    public int indexOf(Object o) {
-        Data dataValue = nodeEngine.toData(o);
-        return indexOfInternal(key, dataValue, false);
-    }
-
-    public int lastIndexOf(Object o) {
-        Data dataValue = nodeEngine.toData(o);
-        return indexOfInternal(key, dataValue, true);
-    }
-
-    public ListIterator<E> listIterator() {
-        CollectionResponse result = getAllInternal(key);
-        List list = (List) result.getObjectCollection(nodeEngine);
-        return list.listIterator();
-    }
-
-    public ListIterator<E> listIterator(int index) {
-        CollectionResponse result = getAllInternal(key);
-        List list = (List) result.getObjectCollection(nodeEngine);
-        return list.listIterator(index);
-    }
-
-    public List<E> subList(int fromIndex, int toIndex) {
-        CollectionResponse result = getAllInternal(key);
-        List list = (List) result.getObjectCollection(nodeEngine);
-        return list.subList(fromIndex, toIndex);
-    }
-
-    public Object getId() {
-        return listName;//TODO
     }
 
     private List<Data> toDataList(Collection coll) {

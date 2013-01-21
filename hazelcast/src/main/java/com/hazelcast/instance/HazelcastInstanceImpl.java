@@ -25,6 +25,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
@@ -111,7 +112,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <E> ISet<E> getSet(String name) {
-        throw new UnsupportedOperationException();
+        return getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
+                new CollectionProxyId(name, CollectionProxyType.SET));
     }
 
     public <E> IList<E> getList(String name) {
@@ -125,7 +127,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ILock getLock(Object key) {
-        throw new UnsupportedOperationException();
+        return new ObjectLockProxy(nodeEngine, name, getMap(ObjectLockProxy.LOCK_MAP_NAME));
     }
 
     public ExecutorService getExecutorService(final String name) {
