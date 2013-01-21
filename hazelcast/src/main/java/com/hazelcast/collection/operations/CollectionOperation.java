@@ -93,7 +93,7 @@ public abstract class CollectionOperation extends AbstractNamedOperation impleme
         return container;
     }
 
-    public <T> T getOrCreateCollection(Data dataKey){
+    public <T> T getOrCreateCollection(Data dataKey) {
         return getOrCreateContainer().getOrCreateObject(dataKey);
     }
 

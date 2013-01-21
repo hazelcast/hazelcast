@@ -31,7 +31,7 @@ public class CollectionProxyId implements DataSerializable {
 
     CollectionProxyType type;
 
-    public CollectionProxyId(){
+    public CollectionProxyId() {
     }
 
     public CollectionProxyId(String name, CollectionProxyType type) {

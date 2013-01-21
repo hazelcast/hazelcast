@@ -19,8 +19,8 @@ package com.hazelcast.collection.list;
 import com.hazelcast.collection.CollectionProxy;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
+import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
@@ -100,7 +100,7 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     public boolean containsAll(Collection<?> c) {
         Set<Data> dataSet = new HashSet<Data>(c.size());
-        for (Object o: c){
+        for (Object o : c) {
             dataSet.add(nodeEngine.toData(o));
         }
         return containsAllInternal(key, dataSet);
@@ -159,29 +159,29 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     public ListIterator<E> listIterator() {
         CollectionResponse result = getAllInternal(key);
-        List list = (List)result.getObjectCollection(nodeEngine);
+        List list = (List) result.getObjectCollection(nodeEngine);
         return list.listIterator();
     }
 
     public ListIterator<E> listIterator(int index) {
         CollectionResponse result = getAllInternal(key);
-        List list = (List)result.getObjectCollection(nodeEngine);
+        List list = (List) result.getObjectCollection(nodeEngine);
         return list.listIterator(index);
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
         CollectionResponse result = getAllInternal(key);
-        List list = (List)result.getObjectCollection(nodeEngine);
-        return list.subList(fromIndex,toIndex);
+        List list = (List) result.getObjectCollection(nodeEngine);
+        return list.subList(fromIndex, toIndex);
     }
 
     public Object getId() {
         return name;
     }
 
-    private List<Data> toDataList(Collection coll){
+    private List<Data> toDataList(Collection coll) {
         List<Data> dataList = new ArrayList<Data>(coll.size());
-        for (Object obj: coll){
+        for (Object obj : coll) {
             dataList.add(nodeEngine.toData(obj));
         }
         return dataList;

@@ -21,7 +21,7 @@ package com.hazelcast.collection;
  */
 public enum CollectionProxyType {
 
-    MULTI_MAP(0), LIST(1), SET(2), QUEUE(3) ;
+    MULTI_MAP(0), LIST(1), SET(2), QUEUE(3);
 
     private int type;
 

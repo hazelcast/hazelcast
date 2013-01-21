@@ -72,7 +72,7 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
         super.writeInternal(out);
         out.writeInt(index);
         out.writeInt(dataList.size());
-        for (Data data: dataList){
+        for (Data data : dataList) {
             data.writeData(out);
         }
     }
@@ -82,7 +82,7 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
         index = in.readInt();
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = IOUtil.readData(in);
             dataList.add(data);
         }

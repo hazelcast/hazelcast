@@ -187,26 +187,25 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             }
             map.put(proxyId, new Map[]{container.objects, container.locks});
         }
-        if (map.isEmpty()){
+        if (map.isEmpty()) {
             return null;
         }
         return new CollectionMigrationOperation(map);
     }
 
-    public void insertMigratedData(int partitionId, Map<CollectionProxyId, Map[]> map){
-        for (Map.Entry<CollectionProxyId, Map[]> entry: map.entrySet()){
+    public void insertMigratedData(int partitionId, Map<CollectionProxyId, Map[]> map) {
+        for (Map.Entry<CollectionProxyId, Map[]> entry : map.entrySet()) {
             CollectionProxyId proxyId = entry.getKey();
             CollectionContainer container = getOrCreateCollectionContainer(partitionId, proxyId);
             Map<Data, Object> objects = entry.getValue()[0];
-            for (Map.Entry<Data, Object> objectEntry: objects.entrySet()){
+            for (Map.Entry<Data, Object> objectEntry : objects.entrySet()) {
                 Data key = objectEntry.getKey();
                 Object object = objectEntry.getValue();
-                if (object instanceof Collection){
-                    Collection coll = (Collection)createNew(proxyId);
-                    coll.addAll((Collection)object);
+                if (object instanceof Collection) {
+                    Collection coll = (Collection) createNew(proxyId);
+                    coll.addAll((Collection) object);
                     container.objects.put(key, coll);
-                }
-                else {
+                } else {
                     container.objects.put(key, object);
                 }
             }
@@ -215,22 +214,22 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         }
     }
 
-    private void clearMigrationData(int partitionId, int copyBackReplicaIndex){
+    private void clearMigrationData(int partitionId, int copyBackReplicaIndex) {
         final CollectionPartitionContainer partitionContainer = partitionContainers[partitionId];
-        if (copyBackReplicaIndex == -1){
+        if (copyBackReplicaIndex == -1) {
             partitionContainer.containerMap.clear();
             return;
         }
-        for (CollectionContainer container: partitionContainer.containerMap.values()) {
+        for (CollectionContainer container : partitionContainer.containerMap.values()) {
             int totalBackupCount = container.config.getTotalBackupCount();
-            if (totalBackupCount < copyBackReplicaIndex){
+            if (totalBackupCount < copyBackReplicaIndex) {
                 container.clear();
             }
         }
     }
 
     public void commitMigration(MigrationServiceEvent event) {
-        if (event.getMigrationType() == MigrationType.MOVE){
+        if (event.getMigrationType() == MigrationType.MOVE) {
             System.err.println("move");
         }
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {

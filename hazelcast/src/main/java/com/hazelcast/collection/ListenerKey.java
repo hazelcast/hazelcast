@@ -24,7 +24,7 @@ import java.util.EventListener;
  * @ali 1/9/13
  */
 public class ListenerKey {
-    
+
     private String name;
     private Data key;
     private EventListener listener;

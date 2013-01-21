@@ -30,7 +30,7 @@ import java.util.Collection;
 /**
  * @ali 1/16/13
  */
-public class RemoveOperation  extends CollectionBackupAwareOperation {
+public class RemoveOperation extends CollectionBackupAwareOperation {
 
     Data value;
 
@@ -44,19 +44,19 @@ public class RemoveOperation  extends CollectionBackupAwareOperation {
 
     public void run() throws Exception {
         Collection coll = getCollection();
-        if (coll == null){
+        if (coll == null) {
             response = false;
             return;
         }
         Object obj = isBinary() ? value : toObject(value);
         response = coll.remove(obj);
-        if (coll.isEmpty()){
+        if (coll.isEmpty()) {
             removeCollection();
         }
     }
 
     public void afterRun() throws Exception {
-        if (Boolean.TRUE.equals(response)){
+        if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.REMOVED, dataKey, value);
         }
     }

@@ -76,7 +76,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> values() {
         Map map = valuesInternal();
         Collection values = new LinkedList();
-        for (Object obj: map.values()){
+        for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
             }
@@ -89,7 +89,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Set<Map.Entry<K, V>> entrySet() {
         Map map = entrySetInternal();
         Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
-        for (Object obj: map.values()){
+        for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
             }
@@ -196,7 +196,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     private Set<K> toObjectSet(Set<Data> dataSet) {
         Set<K> keySet = new HashSet<K>(dataSet.size());
         for (Data dataKey : dataSet) {
-            keySet.add((K)nodeEngine.toObject(dataKey));
+            keySet.add((K) nodeEngine.toObject(dataKey));
         }
         return keySet;
     }

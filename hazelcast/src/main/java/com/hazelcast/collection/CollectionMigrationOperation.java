@@ -96,7 +96,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                 Data key = new Data();
                 key.readData(in);
                 boolean isCollection = in.readBoolean();
-                if (isCollection){
+                if (isCollection) {
                     int collSize = in.readInt();
                     Collection coll = new ArrayList(collSize);
                     for (int k = 0; k < collSize; k++) {
@@ -104,8 +104,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                         coll.add(obj);
                     }
                     objects.put(key, coll);
-                }
-                else {
+                } else {
                     objects.put(key, in.readObject());
                 }
             }

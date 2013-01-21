@@ -29,7 +29,7 @@ import java.util.Collection;
 /**
  * @ali 1/16/13
  */
-public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation{
+public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
     Data value;
 
@@ -45,7 +45,7 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
         Collection coll = getCollection();
         Object obj = isBinary() ? value : toObject(value);
         coll.remove(obj);
-        if (coll.isEmpty()){
+        if (coll.isEmpty()) {
             removeCollection();
         }
         response = true;

@@ -47,11 +47,10 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
 
     public void run() throws Exception {
         Object obj = isBinary() ? value : toObject(value);
-        if (index == -1){
+        if (index == -1) {
             Collection coll = getOrCreateCollection();
             response = coll.add(obj);
-        }
-        else {
+        } else {
             List list = getOrCreateCollection();
             list.add(index, obj);
             response = true;

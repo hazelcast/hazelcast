@@ -32,9 +32,9 @@ public class CollectionPartitionContainer {
         this.service = service;
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId){
+    public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId) {
         CollectionContainer collectionContainer = containerMap.get(proxyId);
-        if (collectionContainer == null){
+        if (collectionContainer == null) {
             collectionContainer = new CollectionContainer(proxyId, service);
             CollectionContainer current = containerMap.putIfAbsent(proxyId, collectionContainer);
             collectionContainer = current == null ? collectionContainer : current;
@@ -46,9 +46,9 @@ public class CollectionPartitionContainer {
         return containerMap; //TODO for testing only
     }
 
-    public int getMaxBackupCount(){
+    public int getMaxBackupCount() {
         int max = 0;
-        for (CollectionContainer container: containerMap.values()){
+        for (CollectionContainer container : containerMap.values()) {
             int c = container.config.getTotalBackupCount();
             max = Math.max(max, c);
         }

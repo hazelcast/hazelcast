@@ -43,15 +43,15 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
         return dataKey == null ? 0 : dataKey.getPartitionHash();
     }
 
-    public <T> T getOrCreateCollection(){
+    public <T> T getOrCreateCollection() {
         return getOrCreateCollection(dataKey);
     }
 
-    public <T> T getCollection(){
+    public <T> T getCollection() {
         return getCollection(dataKey);
     }
 
-    public <T> T removeCollection(){
+    public <T> T removeCollection() {
         return removeCollection(dataKey);
     }
 

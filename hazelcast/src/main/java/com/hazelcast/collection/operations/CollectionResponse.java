@@ -38,11 +38,11 @@ public class CollectionResponse implements DataSerializable {
     }
 
     public CollectionResponse(Collection<Object> collection, NodeEngine nodeEngine) {
-        if (collection == null){
+        if (collection == null) {
             return;
         }
         this.collection = new ArrayList<Data>(collection.size());
-        for (Object obj: collection){
+        for (Object obj : collection) {
             this.collection.add(nodeEngine.toData(obj));
         }
     }
@@ -51,23 +51,23 @@ public class CollectionResponse implements DataSerializable {
         this.collection = collection;
     }
 
-    public Collection<Data> getCollection(){
+    public Collection<Data> getCollection() {
         return collection;
     }
 
-    public Collection getObjectCollection(NodeEngine nodeEngine){
-        if (collection == null){
+    public Collection getObjectCollection(NodeEngine nodeEngine) {
+        if (collection == null) {
             return null;
         }
         Collection coll = new ArrayList(collection.size());
-        for (Data data: collection){
+        for (Data data : collection) {
             coll.add(nodeEngine.toObject(data));
         }
         return coll;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        if (collection == null){
+        if (collection == null) {
             out.writeInt(-1);
             return;
         }
@@ -79,7 +79,7 @@ public class CollectionResponse implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        if (size == -1){
+        if (size == -1) {
             return;
         }
         collection = new ArrayList<Data>(size);

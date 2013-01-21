@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * @ali 1/16/13
  */
-public class UnlockBackupOperation extends  CollectionKeyBasedOperation implements BackupOperation {
+public class UnlockBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
     int threadId;
 

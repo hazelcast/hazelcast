@@ -86,7 +86,7 @@ public class CollectionContainer {
                 result = true;
             }
         }
-        if (!lock.isLocked()){
+        if (!lock.isLocked()) {
             locks.remove(dataKey);
         }
         return result;
@@ -94,7 +94,7 @@ public class CollectionContainer {
 
     public <T> T getOrCreateObject(Data dataKey) {
         Object obj = objects.get(dataKey);
-        if (obj == null){
+        if (obj == null) {
             return (T) putNewObject(dataKey);
         }
         return (T) obj;
@@ -176,7 +176,7 @@ public class CollectionContainer {
 
     public void clearObjects() {
         Map<Data, Object> temp = new HashMap<Data, Object>(locks.size());
-        for (Data key: locks.keySet()){
+        for (Data key : locks.keySet()) {
             temp.put(key, objects.get(key));
         }
         objects.clear();
@@ -203,7 +203,7 @@ public class CollectionContainer {
         return locks;   //TODO for testing only
     }
 
-    public void clear(){
+    public void clear() {
         objects.clear();
         locks.clear();
     }
