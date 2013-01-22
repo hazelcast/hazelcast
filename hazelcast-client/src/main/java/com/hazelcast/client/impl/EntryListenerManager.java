@@ -136,13 +136,13 @@ public class EntryListenerManager {
 //    }
 //
     public void notifyListeners(Protocol protocol) {
-        Data key = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[0].array());
+        Data key = protocol.buffers[0];
         Data newValue = null;
         Data oldValue = null;
         if (protocol.buffers.length > 1) {
-            newValue = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[1].array());
+            newValue = protocol.buffers[1];
             if (protocol.buffers.length > 2) {
-                oldValue = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[2].array());
+                oldValue = protocol.buffers[2];
             }
         }
         String name = protocol.args[1];
@@ -209,7 +209,7 @@ public class EntryListenerManager {
                     includeValue |= entryListenerHolder.includeValue;
                     if (includeValue) break;
                 }
-                final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
+                final ProxyHelper proxyHelper = new ProxyHelper(name, client);
                 calls.add(createNewAddListenerCall(proxyHelper, key, includeValue));
             }
         }

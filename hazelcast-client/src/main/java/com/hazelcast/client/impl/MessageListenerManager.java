@@ -18,7 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.PacketProxyHelper;
+import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
@@ -65,7 +65,6 @@ public class MessageListenerManager {
         }
         return messageListeners.get(name).isEmpty();
     }
-
 //    public void notifyMessageListeners(Packet packet) {
 //        List<MessageListener> list = messageListeners.get(packet.getName());
 //        if (list != null) {
@@ -81,14 +80,12 @@ public class MessageListenerManager {
         List<MessageListener> list = messageListeners.get(name);
         if (list != null) {
             for (MessageListener<Object> messageListener : list) {
-                messageListener.onMessage(new DataMessage(name,
-                        new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, protocol.buffers[0].array()),
-                        serializationService));
+                messageListener.onMessage(new DataMessage(name, protocol.buffers[0], serializationService));
             }
         }
     }
 
-    public Call createNewAddListenerCall(final PacketProxyHelper proxyHelper) {
+    public Call createNewAddListenerCall(final ProxyHelper proxyHelper) {
 //        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
 //        return proxyHelper.createCall(request);
         return null;
@@ -97,7 +94,7 @@ public class MessageListenerManager {
     public Collection<Call> calls(final HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : messageListeners.keySet()) {
-            final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
+            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
             calls.add(createNewAddListenerCall(proxyHelper));
         }
         return calls;

@@ -21,6 +21,6 @@ package com.hazelcast.nio.serialization;
  */
 public interface DataSerializableFactory {
 
-    DataSerializable create();
+    IdentifiedDataSerializable create();
 
 }

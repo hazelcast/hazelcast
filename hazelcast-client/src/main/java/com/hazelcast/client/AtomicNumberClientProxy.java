@@ -21,11 +21,11 @@ import com.hazelcast.monitor.LocalAtomicNumberStats;
 
 public class AtomicNumberClientProxy implements AtomicNumber {
     private final String name;
-    private final PacketProxyHelper proxyHelper;
+    private final ProxyHelper proxyHelper;
 
     public AtomicNumberClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new PacketProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
     }
 
     public long addAndGet(long delta) {

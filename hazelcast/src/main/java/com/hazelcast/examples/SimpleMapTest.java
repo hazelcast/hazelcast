@@ -21,8 +21,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.Partition;
 
@@ -113,7 +111,7 @@ public class SimpleMapTest {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        ThreadContext.get().setCurrentInstance((HazelcastInstanceImpl) instance);
+//                        ThreadContext.get().setCurrentInstance((HazelcastInstanceImpl) instance);
                         while (true) {
                             int key = (int) (Math.random() * entryCount);
                             int operation = ((int) (Math.random() * 100));

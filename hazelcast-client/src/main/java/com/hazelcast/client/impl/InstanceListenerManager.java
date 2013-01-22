@@ -19,8 +19,8 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Call;
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.PacketProxyHelper;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.client.ProxyHelper;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -75,7 +75,7 @@ public class InstanceListenerManager {
 //        }
 //    }
 
-    public Call createNewAddListenerCall(final PacketProxyHelper proxyHelper) {
+    public Call createNewAddListenerCall(final ProxyHelper proxyHelper) {
 //        Packet request = proxyHelper.createRequestPacket(ClusterOperation.CLIENT_ADD_INSTANCE_LISTENER, null, null);
 //        return proxyHelper.createCall(request);
         return null;
@@ -85,6 +85,6 @@ public class InstanceListenerManager {
         if (distributedObjectListeners.isEmpty()) {
             return Collections.emptyList();
         }
-        return Collections.singletonList(createNewAddListenerCall(new PacketProxyHelper("", client)));
+        return Collections.singletonList(createNewAddListenerCall(new ProxyHelper("", client)));
     }
 }

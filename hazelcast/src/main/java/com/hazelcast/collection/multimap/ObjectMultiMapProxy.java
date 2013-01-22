@@ -17,6 +17,8 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.*;
+import com.hazelcast.collection.operations.CollectionResponse;
+import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.map.LockInfo;
@@ -33,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V> {
 
-    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
-        super(name, service, nodeEngine, proxyId, nodeEngine.getConfig().getMultiMapConfig(name));
+    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
+        super(name, service, nodeEngine, proxyType, nodeEngine.getConfig().getMultiMapConfig(name));
     }
 
     public boolean put(K key, V value) {
@@ -45,8 +47,8 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
 
     public Collection<V> get(K key) {
         Data dataKey = nodeEngine.toData(key);
-        MultiMapCollectionResponse result = getAllInternal(dataKey);
-        return result.getObjectCollection(nodeEngine.getSerializationService());
+        CollectionResponse result = getAllInternal(dataKey);
+        return result.getObjectCollection(nodeEngine);
     }
 
     public boolean remove(Object key, Object value) {
@@ -57,8 +59,8 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
 
     public Collection<V> remove(Object key) {
         Data dataKey = nodeEngine.toData(key);
-        MultiMapCollectionResponse result = removeInternal(dataKey);
-        return result.getObjectCollection(nodeEngine.getSerializationService());
+        CollectionResponse result = removeInternal(dataKey);
+        return result.getObjectCollection(nodeEngine);
     }
 
     public Set<K> localKeySet() {
@@ -74,12 +76,12 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> values() {
         Map map = valuesInternal();
         Collection values = new LinkedList();
-        for (Object obj: map.values()){
+        for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
             }
-            MultiMapCollectionResponse response = nodeEngine.toObject(obj);
-            values.addAll(response.getObjectCollection(nodeEngine.getSerializationService()));
+            CollectionResponse response = nodeEngine.toObject(obj);
+            values.addAll(response.getObjectCollection(nodeEngine));
         }
         return values;
     }
@@ -87,11 +89,11 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Set<Map.Entry<K, V>> entrySet() {
         Map map = entrySetInternal();
         Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
-        for (Object obj: map.values()){
+        for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
             }
-            MultiMapResponse response = nodeEngine.toObject(obj);
+            EntrySetResponse response = nodeEngine.toObject(obj);
             Set<Map.Entry<K, V>> entries = response.getObjectEntrySet(nodeEngine);
             entrySet.addAll(entries);
         }
@@ -121,25 +123,25 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
-        service.addEntryListener(name, listener, null, false, true);
+        service.addListener(name, listener, null, false, true);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        service.addEntryListener(name, listener, null, includeValue, false);
+        service.addListener(name, listener, null, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
-        service.removeEntryListener(name, listener, null);
+        service.removeListener(name, listener, null);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         Data dataKey = nodeEngine.toData(key);
-        service.addEntryListener(name, listener, dataKey, includeValue, false);
+        service.addListener(name, listener, dataKey, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         Data dataKey = nodeEngine.toData(key);
-        service.removeEntryListener(name, listener, dataKey);
+        service.removeListener(name, listener, dataKey);
     }
 
     public void lock(K key) {
@@ -164,11 +166,11 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         int count = nodeEngine.getPartitionCount();
         for (int i = 0; i < count; i++) {
             CollectionPartitionContainer partitionContainer = service.getPartitionContainer(i);
-            Map<String, CollectionContainer> multiMaps = partitionContainer.getContainerMap();
+            Map<CollectionProxyId, CollectionContainer> multiMaps = partitionContainer.getContainerMap();
             if (multiMaps.size() > 0) {
                 System.out.println("partitionId: " + i);
             }
-            for (Map.Entry<String, CollectionContainer> entry : multiMaps.entrySet()) {
+            for (Map.Entry<CollectionProxyId, CollectionContainer> entry : multiMaps.entrySet()) {
                 System.out.println("\tname: " + entry.getKey());
                 CollectionContainer container = entry.getValue();
                 Map<Data, Object> map = container.getObjects();
@@ -194,7 +196,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     private Set<K> toObjectSet(Set<Data> dataSet) {
         Set<K> keySet = new HashSet<K>(dataSet.size());
         for (Data dataKey : dataSet) {
-            keySet.add((K)nodeEngine.toObject(dataKey));
+            keySet.add((K) nodeEngine.toObject(dataKey));
         }
         return keySet;
     }

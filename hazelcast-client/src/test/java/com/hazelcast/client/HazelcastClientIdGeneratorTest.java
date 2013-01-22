@@ -42,7 +42,6 @@ public class HazelcastClientIdGeneratorTest extends HazelcastClientTestBase {
             assertNull(map.put(genId, 1));
 //            System.out.println(genId);
         }
-        System.out.println(v);
         for (int i = 0; i < count; i++) {
             long genId = clientId.newId();
             assertNull(map.put(genId, 1));

@@ -23,7 +23,7 @@
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Map Commands</title>
     MGET, MGETALL, MPUT, MTRYPUT, MSET, MPUTTRANSIENT, MPUTANDUNLOCK, MREMOVE, MREMOVEITEM,
-    MCONTAINSKEY, MCONTAINSVALUE, ADDLISTENER, EVENT, REMOVELISTENER, KEYSET, ENTRYSET, MGETENTRY, MLOCK, MISKEYLOCKED,
+    MCONTAINSKEY, MCONTAINSVALUE, ADDLISTENER, EVENT, REMOVELISTENER, KEYSET, ENTRYSET, MGETENTRY, MLOCK, MISLOCKED,
     MUNLOCK, MLOCKMAP, MUNLOCKMAP, MFORCEUNLOCK, MPUTALL, MPUTIFABSENT, MREMOVEIFSAME, MREPLACEIFNOTNULL, MREPLACEIFSAME,
     MTRYLOCKANDGET, MFLUSH, MEVICT, MADDLISTENER, MREMOVELISTENER
 
@@ -570,8 +570,8 @@
     </sect2>
 
 
-    <sect2 xml:id="MISKEYLOCKED" version="5.0" xmlns="http://docbook.org/ns/docbook">
-        <title>MISKEYLOCKED</title>
+    <sect2 xml:id="MISLOCKED" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MISLOCKED</title>
 
         <para>
             Checks the lock for the specified key.
@@ -583,7 +583,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        MISKEYLOCKED <name> #1
+        MISLOCKED <name> #1
         <size of key in bytes>
         <key in bytes>
         ]]></programlisting>

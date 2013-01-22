@@ -29,12 +29,12 @@ import java.util.Map;
 
 public class EntryBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
 
-    EntryProcessor entryProcessor;
+    EntryBackupProcessor entryProcessor;
 
     Map.Entry entry;
     MapService mapService;
 
-    public EntryBackupOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
+    public EntryBackupOperation(String name, Data dataKey, EntryBackupProcessor entryProcessor) {
         super(name, dataKey);
         this.entryProcessor = entryProcessor;
     }
@@ -45,13 +45,11 @@ public class EntryBackupOperation extends AbstractNamedKeyBasedOperation impleme
     public void run() {
         mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        Map.Entry<Data, Data> dataEntry = recordStore.getMapEntry(dataKey);
+        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
         NodeEngine nodeEngine = mapService.getNodeEngine();
-        Object key = nodeEngine.toObject(dataKey);
-        Object value = nodeEngine.toObject(dataEntry.getValue());
-        entry = new AbstractMap.SimpleEntry(key, value);
+        entry = new AbstractMap.SimpleEntry<Object,Object>(nodeEngine.toObject(dataKey), mapEntry.getValue());
         entryProcessor.processBackup(entry);
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, nodeEngine.toData(entry.getValue())));
+        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
     }
 
     @Override
@@ -73,7 +71,7 @@ public class EntryBackupOperation extends AbstractNamedKeyBasedOperation impleme
 
     @Override
     public String toString() {
-        return "EntryOperation{}";
+        return "EntryBackupOperation{}";
     }
 
 }

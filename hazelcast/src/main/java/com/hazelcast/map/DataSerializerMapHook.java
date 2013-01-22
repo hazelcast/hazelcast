@@ -16,9 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,39 +34,51 @@ public final class DataSerializerMapHook implements DataSerializerHook {
     static final int DATA_RECORD = 150;
     static final int OBJECT_RECORD = 151;
     static final int GENERIC_BACKUP = 160;
+    static final int PUT_BACKUP = 161;
+    static final int REMOVE_BACKUP = 162;
     // todo add other backup ops
 
     public Map<Integer, DataSerializableFactory> getFactories() {
         final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
         factories.put(PUT, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new PutOperation();
             }
         });
         factories.put(GET, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new GetOperation();
             }
         });
         factories.put(REMOVE, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new RemoveOperation();
             }
         });
         factories.put(DATA_RECORD, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new DataRecord();
             }
         });
         factories.put(OBJECT_RECORD, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new ObjectRecord();
             }
         });
         factories.put(GENERIC_BACKUP, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new GenericBackupOperation();
+            }
+        });
+        factories.put(PUT_BACKUP, new DataSerializableFactory() {
+            public IdentifiedDataSerializable create() {
+                return new PutBackupOperation();
+            }
+        });
+        factories.put(REMOVE_BACKUP, new DataSerializableFactory() {
+            public IdentifiedDataSerializable create() {
+                return new RemoveBackupOperation();
             }
         });
 

@@ -54,8 +54,7 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
             credentials = new UsernamePasswordCredentials(args[0], args[1]);
         } else {
             // TODO: !!! FIX ME !!!
-            final byte[] array = protocol.buffers[0].array();
-            Data data = new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, array);
+            Data data = protocol.buffers[0];
             credentials = (Credentials) node.nodeEngine.toObject(data);
         }
         boolean authenticated = doAuthenticate(node, credentials, protocol.conn);
@@ -89,8 +88,8 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
                         && nodeGroupPassword.equals(usernamePasswordCredentials.getPassword()));
             } else {
                 authenticated = false;
-                logger.log(Level.SEVERE, "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster group-name" +
-                        " and group-password should be used for authentication!\n" +
+                logger.log(Level.SEVERE, "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster " +
+                        "group-name and group-password should be used for authentication!\n" +
                         "Current credentials type is: " + credentials.getClass().getName());
             }
         }
@@ -102,11 +101,9 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
         } else {
             ClientEndpoint clientEndpoint = node.clientCommandService.getClientEndpoint(conn);
             clientEndpoint.authenticated();
-//            Bind bind = new Bind(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(), conn.getSocketChannelWrapper().socket().getPort()));
-//            bind.setConnection(conn);
-//            bind.setNode(node);
-//            node.clusterService.enqueueAndWait(bind);
-            BindOperation bind = new BindOperation(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(), conn.getSocketChannelWrapper().socket().getPort()));
+
+            BindOperation bind = new BindOperation(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(),
+                    conn.getSocketChannelWrapper().socket().getPort()));
             bind.setConnection(conn);
             bind.setNodeEngine(node.nodeEngine);
             node.nodeEngine.getOperationService().runOperation(bind);

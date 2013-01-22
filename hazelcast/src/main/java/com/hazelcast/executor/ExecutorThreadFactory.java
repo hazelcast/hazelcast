@@ -36,7 +36,6 @@ public abstract class ExecutorThreadFactory implements ThreadFactory {
     public Thread newThread(Runnable r) {
         final Thread t = new Thread(threadGroup, r, newThreadName(), 0) {
             public void run() {
-                ThreadContext.get().setCurrentInstance(hazelcastInstance);
                 try {
                     super.run();
                 } catch (OutOfMemoryError e) {

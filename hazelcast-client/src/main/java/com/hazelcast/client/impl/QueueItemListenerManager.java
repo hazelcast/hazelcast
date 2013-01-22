@@ -18,12 +18,11 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.PacketProxyHelper;
+import com.hazelcast.client.ProxyHelper;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 
 public class QueueItemListenerManager {
     final private ConcurrentHashMap<String, List<ItemListenerHolder>> queueItemListeners = new ConcurrentHashMap<String, List<ItemListenerHolder>>();
@@ -44,19 +42,18 @@ public class QueueItemListenerManager {
     public Collection<? extends Call> calls(HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : queueItemListeners.keySet()) {
-            final PacketProxyHelper proxyHelper = new PacketProxyHelper(name, client);
+            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
             calls.add(createNewAddItemListenerCall(proxyHelper, true));
         }
         return calls;
     }
 
-    public Call createNewAddItemListenerCall(PacketProxyHelper proxyHelper, boolean includeValue) {
+    public Call createNewAddItemListenerCall(ProxyHelper proxyHelper, boolean includeValue) {
 //        Packet request = proxyHelper.createRequestPacket(ClusterOperation.ADD_LISTENER, null, null);
 //        request.setLongValue(includeValue ? 1 : 0);
 //        return proxyHelper.createCall(request);
         return null;
     }
-
 //    public void notifyListeners(Packet packet) {
 //        List<ItemListenerHolder> list = queueItemListeners.get(packet.getName());
 //        if (list != null) {
@@ -80,18 +77,16 @@ public class QueueItemListenerManager {
         if (list != null) {
             for (ItemListenerHolder listenerHolder : list) {
                 ItemListener<Object> listener = listenerHolder.listener;
-                Data item = listenerHolder.includeValue? new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY,
-                        protocol.buffers[0].array()):null;
+                Data item = listenerHolder.includeValue ? protocol.buffers[0] : null;
                 ItemEventType itemEventType = ItemEventType.valueOf(protocol.args[1]);
                 if (ItemEventType.ADDED.equals(itemEventType)) {
-                    listener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, item, null,  serializerRegistry));
+                    listener.itemAdded(new DataAwareItemEvent(name, ItemEventType.ADDED, item, null, serializerRegistry));
                 } else {
                     listener.itemRemoved(new DataAwareItemEvent(name, ItemEventType.REMOVED, item, null, serializerRegistry));
                 }
             }
         }
     }
-
 
     public <E> void removeListener(String name, ItemListener<E> listener) {
         if (!queueItemListeners.containsKey(name)) {

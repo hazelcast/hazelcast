@@ -23,6 +23,7 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -35,7 +36,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.topic.TopicService;
-import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -99,15 +99,15 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getDistributedObject(MapService.MAP_SERVICE_NAME, name);
+        return getDistributedObject(MapService.MAP_SERVICE_NAME, name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getDistributedObject(QueueService.QUEUE_SERVICE_NAME, name);
+        return getDistributedObject(QueueService.QUEUE_SERVICE_NAME, name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return (ITopic<E>) getDistributedObject(TopicService.NAME, name);
+        return getDistributedObject(TopicService.NAME, name);
     }
 
     public <E> ISet<E> getSet(String name) {
@@ -115,12 +115,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList<E>) getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
+        return getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
                 new CollectionProxyId(name, CollectionProxyType.LIST));
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
+        return getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
                 new CollectionProxyId(name, CollectionProxyType.MULTI_MAP));
     }
 
@@ -133,7 +133,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Transaction getTransaction() {
-        return new TransactionImpl(this);
+        return ThreadContext.createTransaction(this);
     }
 
     public IdGenerator getIdGenerator(final String name) {
@@ -145,7 +145,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {
-        throw new UnsupportedOperationException();
+        return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
     public ISemaphore getSemaphore(final String name) {
@@ -157,7 +157,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public Collection<DistributedObject> getDistributedObjects() {
-        return node.nodeEngine.getProxyService().getAllProxies();
+        return node.nodeEngine.getProxyService().getAllDistributedObjects();
     }
 
     public Config getConfig() {
@@ -253,5 +253,16 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public ManagedContext getManagedContext() {
         return managedContext;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("HazelcastInstanceImpl");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", node=").append(node);
+        sb.append('}');
+        return sb.toString();
     }
 }

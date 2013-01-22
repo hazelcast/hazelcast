@@ -39,12 +39,20 @@ import java.util.concurrent.*;
 import static org.junit.Assert.*;
 
 public class HazelcastClientMapTest extends HazelcastClientTestBase {
+    
+    
+    @Test
+    public void justClient(){
+        HazelcastClient client = HazelcastClient.newHazelcastClient(new ClientConfig());
+        IMap map = client.getMap("justClient");
+        map.put("a", "b");
+    }
 
     @Test
     public void simple(){
         HazelcastClient hClient = getHazelcastClient();
-        final IMap<Integer, Integer> imap = hClient.getMap("simple");
-        Integer value = imap.put(1, 1);
+        final IMap imap = hClient.getMap("simple");
+        Object value = imap.put(1, 1);
         assertNull(value);
         value = imap.get(1);
         assertEquals(new Integer(1), value);

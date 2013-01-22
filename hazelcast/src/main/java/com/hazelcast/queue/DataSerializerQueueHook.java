@@ -16,9 +16,9 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,27 +38,27 @@ public final class DataSerializerQueueHook implements DataSerializerHook {
     public Map<Integer, DataSerializableFactory> getFactories() {
         final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
         factories.put(OFFER, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new OfferOperation();
             }
         });
         factories.put(OFFER_BACKUP, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new OfferBackupOperation();
             }
         });
         factories.put(POLL, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new PollOperation();
             }
         });
         factories.put(POLL_BACKUP, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new PollBackupOperation();
             }
         });
         factories.put(PEEK, new DataSerializableFactory() {
-            public DataSerializable create() {
+            public IdentifiedDataSerializable create() {
                 return new PeekOperation();
             }
         });

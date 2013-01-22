@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.transaction.TransactionImpl;
 
@@ -26,23 +25,25 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public final class ThreadContext {
 
-    private static final AtomicInteger newThreadId = new AtomicInteger();
+    private static final ConcurrentMap<Thread, ThreadContext> contexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
 
-    private static final ConcurrentMap<Thread, ThreadContext> mapContexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
-
-    public static ThreadContext get() {
+    private static ThreadContext get() {
         Thread currentThread = Thread.currentThread();
-        ThreadContext threadContext = mapContexts.get(currentThread);
+        return contexts.get(currentThread);
+    }
+
+    private static ThreadContext ensureAndGet() {
+        Thread currentThread = Thread.currentThread();
+        ThreadContext threadContext = contexts.get(currentThread);
         if (threadContext == null) {
             try {
                 threadContext = new ThreadContext(Thread.currentThread());
-                mapContexts.put(currentThread, threadContext);
-                Iterator<Entry<Thread, ThreadContext>> threads = mapContexts.entrySet().iterator();
+                contexts.put(currentThread, threadContext);
+                Iterator<Entry<Thread, ThreadContext>> threads = contexts.entrySet().iterator();
                 while (threads.hasNext()) {
                     Entry<Thread, ThreadContext> entry = threads.next();
                     if (!entry.getKey().isAlive()) {
@@ -54,24 +55,55 @@ public final class ThreadContext {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
                 throw e;
             }
-            if (mapContexts.size() > 1000) {
+            if (contexts.size() > 1000) {
                 String msg = " ThreadContext is created!! You might have too many threads. Is that normal?";
-                Logger.getLogger(ThreadContext.class.getName()).log(Level.WARNING, mapContexts.size() + msg);
+                Logger.getLogger(ThreadContext.class.getName()).log(Level.WARNING, contexts.size() + msg);
             }
         }
         return threadContext;
     }
 
-    public static int createNewThreadId() {
-        return newThreadId.incrementAndGet();
+    public static int getThreadId() {
+        return (int) Thread.currentThread().getId();  // truncate
+    }
+
+    public static TransactionImpl getTransaction(String name) {
+        ThreadContext ctx = get();
+        return ctx != null ? ctx.transactions.get(name) : null;
+    }
+
+    public static void setTransaction(String name, TransactionImpl transaction) {
+        ThreadContext ctx = ensureAndGet();
+        final TransactionImpl current = ctx.transactions.get(name);
+        if (current != null && current != transaction) {
+            throw new IllegalStateException("Current thread has already an ongoing transaction!");
+        }
+        ctx.transactions.put(name, transaction);
+    }
+
+    public static TransactionImpl createTransaction(HazelcastInstanceImpl hazelcastInstance) {
+        ThreadContext ctx = ensureAndGet();
+        TransactionImpl tx = ctx.transactions.get(hazelcastInstance.getName());
+        if (tx == null) {
+            tx = new TransactionImpl(hazelcastInstance);
+            ctx.transactions.put(hazelcastInstance.getName(), tx);
+        }
+        return tx;
+    }
+
+    public static void finalizeTransaction(String name) {
+        ThreadContext ctx = get();
+        if (ctx != null) {
+            ctx.transactions.remove(name);
+        }
     }
 
     public static void shutdownAll() {
-        mapContexts.clear();
+        contexts.clear();
     }
 
-    public static synchronized void shutdown(Thread thread) {
-        ThreadContext threadContext = mapContexts.remove(thread);
+    public static void shutdown(Thread thread) {
+        ThreadContext threadContext = contexts.remove(thread);
         if (threadContext != null) {
             threadContext.destroy();
         }
@@ -79,69 +111,12 @@ public final class ThreadContext {
 
     private final Thread thread;
 
-    private final Map<String, HazelcastInstanceThreadContext> mapHazelcastInstanceContexts
-            = new HashMap<String, HazelcastInstanceThreadContext>(2);
-
-    private HazelcastInstanceImpl currentInstance;
+    private final Map<String, TransactionImpl> transactions = new HashMap<String, TransactionImpl>(2);
 
     private Object currentOperation = null;
 
     private ThreadContext(Thread thread) {
         this.thread = thread;
-    }
-
-    public void finalizeTxn() {
-        getCallContext().finalizeTransaction();
-    }
-
-    public TransactionImpl getTransaction() {
-        return getCallContext().getTransaction();
-    }
-
-    public HazelcastInstanceImpl getCurrentInstance() {
-        return currentInstance;
-    }
-
-    public void setCurrentInstance(HazelcastInstanceImpl instance) {
-        this.currentInstance = instance;
-    }
-
-    public void reset() {
-        finalizeTxn();
-    }
-
-    public HazelcastInstanceThreadContext getHazelcastInstanceThreadContext(HazelcastInstanceImpl instance) {
-        if (instance == null) {
-            ILogger logger = Logger.getLogger(ThreadContext.class.getName());
-            logger.log(Level.SEVERE, "HazelcastInstance is null", new Throwable());
-        }
-        final String factoryKey = instance != null ? instance.getName() : "null";
-        HazelcastInstanceThreadContext hic = mapHazelcastInstanceContexts.get(factoryKey);
-        if (hic != null) return hic;
-        hic = new HazelcastInstanceThreadContext(instance);
-        mapHazelcastInstanceContexts.put(factoryKey, hic);
-        return hic;
-    }
-
-    /**
-     * Is this thread remote Java or CSharp Client thread?
-     *
-     * @return true if the thread is for Java or CSharp Client, false otherwise
-     */
-    public boolean isClient() {
-        return getCallContext().isClient();
-    }
-
-    public void setCallContext(CallContext callContext) {
-        getHazelcastInstanceThreadContext(currentInstance).setCallContext(callContext);
-    }
-
-    public CallContext getCallContext() {
-        return getHazelcastInstanceThreadContext(currentInstance).getCallContext();
-    }
-
-    public int getThreadId() {
-        return getCallContext().getThreadId();
     }
 
     public Object getCurrentOperation() {
@@ -152,32 +127,8 @@ public final class ThreadContext {
         this.currentOperation = currentOperation;
     }
 
-    public void shutdown(HazelcastInstanceImpl instance) {
-        mapHazelcastInstanceContexts.remove(instance.getName());
-        currentInstance = null;
-    }
-
     private void destroy() {
-        mapHazelcastInstanceContexts.clear();
-        currentInstance = null;
-    }
-
-    private class HazelcastInstanceThreadContext {
-        final HazelcastInstanceImpl instance;
-        volatile CallContext callContext = null;
-
-        HazelcastInstanceThreadContext(HazelcastInstanceImpl instance) {
-            this.instance = instance;
-            callContext = (new CallContext(createNewThreadId(), false));
-        }
-
-        CallContext getCallContext() {
-            return callContext;
-        }
-
-        void setCallContext(CallContext callContext) {
-            this.callContext = callContext;
-        }
+        transactions.clear();
     }
 
     @Override

@@ -26,17 +26,17 @@ import com.hazelcast.nio.protocol.Command;
 import java.net.UnknownHostException;
 import java.util.*;
 
-import static com.hazelcast.client.PacketProxyHelper.check;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class ClusterClientProxy implements Cluster {
     //    final PacketProxyHelper proxyHelper;
-    final ProtocolProxyHelper protocolProxyHelper;
+    final ProxyHelper proxyHelper;
     final private HazelcastClient client;
 
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
 //        proxyHelper = new PacketProxyHelper("", client);
-        protocolProxyHelper = new ProtocolProxyHelper("", client);
+        proxyHelper = new ProxyHelper("", client);
     }
 
     public Collection<DistributedObject> getInstances() {
@@ -66,11 +66,10 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public Set<Member> getMembers() {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.MEMBERS, (String[]) null, null);
+        Protocol protocol = proxyHelper.doCommand(Command.MEMBERS, (String[]) null, null);
         Set<Member> members = new HashSet<Member>();
         for (String arg : protocol.args) {
             String[] address = arg.split(":");
-            System.out.println(arg + "::: " + address[0] + "::::" + address[1]);
             try {
                 Member member = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
                 members.add(member);

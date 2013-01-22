@@ -18,27 +18,22 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
-import com.hazelcast.collection.processor.EntryProcessor;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.core.*;
+import com.hazelcast.map.LockInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 
 /**
  * @ali 1/1/13
  */
-public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EntryListener> {
+public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
 
     private NodeEngine nodeEngine;
 
@@ -51,10 +46,6 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         partitionContainers = new CollectionPartitionContainer[nodeEngine.getPartitionCount()];
-    }
-
-    public CollectionContainer getCollectionContainer(int partitionId, String name) {
-        return partitionContainers[partitionId].getCollectionContainer(name);
     }
 
     public CollectionContainer getOrCreateCollectionContainer(int partitionId, CollectionProxyId proxyId) {
@@ -91,9 +82,9 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         final CollectionProxyType type = collectionProxyId.type;
         switch (type) {
             case MULTI_MAP:
-                return new ObjectMultiMapProxy(name, this, nodeEngine, (CollectionProxyId)objectId);
+                return new ObjectMultiMapProxy(name, this, nodeEngine, collectionProxyId.type);
             case LIST:
-                return new ObjectListProxy(name, this, nodeEngine, (CollectionProxyId)objectId);
+                return new ObjectListProxy(name, this, nodeEngine, collectionProxyId.type);
             case SET:
                 return null;
             case QUEUE:
@@ -110,31 +101,24 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
 
     }
 
-    public Set<Data> localKeySet(String name) {
+    public Set<Data> localKeySet(CollectionProxyId proxyId) {
         Set<Data> keySet = new HashSet<Data>();
         for (CollectionPartitionContainer partitionContainer : partitionContainers) {
-            CollectionContainer container = partitionContainer.getCollectionContainer(name);
-            if (container != null) {
-                keySet.addAll(container.keySet());
-            }
+            CollectionContainer container = partitionContainer.getOrCreateCollectionContainer(proxyId);
+            keySet.addAll(container.keySet());
         }
         return keySet;
-    }
-
-    public Set<Data> localKeySet(String name, int partitionId) {
-        CollectionContainer container = partitionContainers[partitionId].getCollectionContainer(name);
-        return container != null ? container.keySet() : null;
     }
 
     public SerializationService getSerializationService() {
         return nodeEngine.getSerializationService();
     }
 
-    public NodeEngine getNodeEngine(){
+    public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
 
-    public void addEntryListener(String name, EntryListener listener, Data key, boolean includeValue, boolean local) {
+    public void addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
         ListenerKey listenerKey = new ListenerKey(name, key, listener);
         String id = eventRegistrations.putIfAbsent(listenerKey, "tempId");
         if (id != null) {
@@ -151,7 +135,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         eventRegistrations.put(listenerKey, registration.getId());
     }
 
-    public void removeEntryListener(String name, EntryListener listener, Data key) {
+    public void removeListener(String name, EventListener listener, Data key) {
         ListenerKey listenerKey = new ListenerKey(name, key, listener);
         String id = eventRegistrations.remove(listenerKey);
         if (id != null) {
@@ -160,40 +144,113 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         }
     }
 
-    public void dispatchEvent(CollectionEvent event, EntryListener listener) {
-        EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getCluster().getMember(event.getCaller()),
-                event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-        if (event.eventType.equals(EntryEventType.ADDED)){
-            listener.entryAdded(entryEvent);
-        }
-        else if (event.eventType.equals(EntryEventType.REMOVED)){
-            listener.entryRemoved(entryEvent);
+    public void dispatchEvent(CollectionEvent event, EventListener listener) {
+        if (listener instanceof EntryListener) {
+            EntryListener entryListener = (EntryListener) listener;
+            EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getCluster().getMember(event.getCaller()),
+                    event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+
+
+            if (event.eventType.equals(EntryEventType.ADDED)) {
+                entryListener.entryAdded(entryEvent);
+            } else if (event.eventType.equals(EntryEventType.REMOVED)) {
+                entryListener.entryRemoved(entryEvent);
+            }
+        } else if (listener instanceof ItemListener) {
+            ItemListener itemListener = (ItemListener) listener;
+            ItemEvent itemEvent = new ItemEvent(event.getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
+                    nodeEngine.getCluster().getMember(event.getCaller()));
+            if (event.eventType.getType() == ItemEventType.ADDED.getType()) {
+                itemListener.itemAdded(itemEvent);
+            } else {
+                itemListener.itemRemoved(itemEvent);
+            }
         }
     }
 
-    public <T> T process(String name, Data dataKey, EntryProcessor processor, CollectionProxyId proxyId) {
-        try {
-            int partitionId = nodeEngine.getPartitionId(dataKey);
-            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId, proxyId);
-            operation.setThreadId(ThreadContext.get().getThreadId());
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
-            Future f = inv.invoke();
-            return (T) nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+
+    }
+
+    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
+            return null; // is it possible
+        }
+        int replicaIndex = event.getReplicaIndex();
+        CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
+        Map<CollectionProxyId, Map[]> map = new HashMap<CollectionProxyId, Map[]>(partitionContainer.containerMap.size());
+        for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
+            CollectionProxyId proxyId = entry.getKey();
+            CollectionContainer container = entry.getValue();
+            if (container.config.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+            map.put(proxyId, new Map[]{container.objects, container.locks});
+        }
+        if (map.isEmpty()) {
+            return null;
+        }
+        return new CollectionMigrationOperation(map);
+    }
+
+    public void insertMigratedData(int partitionId, Map<CollectionProxyId, Map[]> map) {
+        for (Map.Entry<CollectionProxyId, Map[]> entry : map.entrySet()) {
+            CollectionProxyId proxyId = entry.getKey();
+            CollectionContainer container = getOrCreateCollectionContainer(partitionId, proxyId);
+            Map<Data, Object> objects = entry.getValue()[0];
+            for (Map.Entry<Data, Object> objectEntry : objects.entrySet()) {
+                Data key = objectEntry.getKey();
+                Object object = objectEntry.getValue();
+                if (object instanceof Collection) {
+                    Collection coll = (Collection) createNew(proxyId);
+                    coll.addAll((Collection) object);
+                    container.objects.put(key, coll);
+                } else {
+                    container.objects.put(key, object);
+                }
+            }
+            Map<Data, LockInfo> locks = entry.getValue()[1];
+            container.locks.putAll(locks);
         }
     }
 
-    public Data processData(String name, Data dataKey, EntryProcessor processor, CollectionProxyId proxyId) {
-        try {
-            int partitionId = nodeEngine.getPartitionId(dataKey);
-            CollectionOperation operation = new CollectionOperation(name, dataKey, processor, partitionId, proxyId);
-            operation.setThreadId(ThreadContext.get().getThreadId());
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.COLLECTION_SERVICE_NAME, operation, partitionId).build();
-            Future<Data> f = inv.invoke();
-            return f.get();
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+    private void clearMigrationData(int partitionId, int copyBackReplicaIndex) {
+        final CollectionPartitionContainer partitionContainer = partitionContainers[partitionId];
+        if (copyBackReplicaIndex == -1) {
+            partitionContainer.containerMap.clear();
+            return;
         }
+        for (CollectionContainer container : partitionContainer.containerMap.values()) {
+            int totalBackupCount = container.config.getTotalBackupCount();
+            if (totalBackupCount < copyBackReplicaIndex) {
+                container.clear();
+            }
+        }
+    }
+
+    public void commitMigration(MigrationServiceEvent event) {
+        if (event.getMigrationType() == MigrationType.MOVE) {
+            System.err.println("move");
+        }
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            if (event.getMigrationType() == MigrationType.MOVE) {
+                clearMigrationData(event.getPartitionId(), -1);
+            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
+                clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
+            }
+        }
+    }
+
+    public void rollbackMigration(MigrationServiceEvent event) {
+        clearMigrationData(event.getPartitionId(), -1);
+    }
+
+    public int getMaxBackupCount() {
+        int max = 0;
+        for (CollectionPartitionContainer partitionContainer : partitionContainers) {
+            int c = partitionContainer.getMaxBackupCount();
+            max = Math.max(max, c);
+        }
+        return max;
     }
 }

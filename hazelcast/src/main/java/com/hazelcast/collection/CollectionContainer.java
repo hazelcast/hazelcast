@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.map.LockInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -30,16 +31,23 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionContainer {
 
-    CollectionProxyId proxyId;
+    final CollectionProxyId proxyId;
 
-    CollectionService service;
+    final CollectionService service;
 
-    private final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
+    final NodeEngine nodeEngine;
+
+    final MultiMapConfig config;
+
+    final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
+
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
 
     public CollectionContainer(CollectionProxyId proxyId, CollectionService service) {
         this.proxyId = proxyId;
         this.service = service;
+        this.nodeEngine = service.getNodeEngine();
+        this.config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(proxyId.name));
     }
 
     public LockInfo getOrCreateLock(Data key) {
@@ -70,102 +78,121 @@ public class CollectionContainer {
 
     public boolean unlock(Data dataKey, Address caller, int threadId) {
         LockInfo lock = locks.get(dataKey);
+        boolean result = false;
         if (lock == null)
-            return false;
+            return result;
         if (lock.testLock(threadId, caller)) {
             if (lock.unlock(caller, threadId)) {
-                return true;
+                result = true;
             }
         }
-        return false;
+        if (!lock.isLocked()) {
+            locks.remove(dataKey);
+        }
+        return result;
     }
 
-
-    public Object getObject(Data dataKey){
-        return objects.get(dataKey);
+    public <T> T getOrCreateObject(Data dataKey) {
+        Object obj = objects.get(dataKey);
+        if (obj == null) {
+            return (T) putNewObject(dataKey);
+        }
+        return (T) obj;
     }
 
-    public boolean removeObject(Data dataKey){
-        return objects.remove(dataKey) != null;
+    public <T> T getObject(Data dataKey) {
+        return (T) objects.get(dataKey);
     }
 
-    public Object putNewObject(Data dataKey){
+    public <T> T removeObject(Data dataKey) {
+        return (T) objects.remove(dataKey);
+    }
+
+    public Object putNewObject(Data dataKey) {
         Object obj = service.createNew(proxyId);
         objects.put(dataKey, obj);
         return obj;
     }
 
-    public Set<Data> keySet(){
+    public Set<Data> keySet() {
         Set<Data> keySet = objects.keySet();
         Set<Data> keys = new HashSet<Data>(keySet.size());
         keys.addAll(keySet);
         return keys;
     }
 
-    public Collection values(){
-        //TODO can we lock per key
+    public Collection values() {
         List valueList = new LinkedList();
-        for (Object obj: objects.values()){
+        for (Object obj : objects.values()) {
             valueList.addAll((Collection) obj);
         }
         return valueList;
     }
 
-    public boolean containsKey(Data key){
+    public boolean containsKey(Data key) {
         return objects.containsKey(key);
     }
 
-    public boolean containsEntry(boolean binary, Data key, Data value){
-        Collection coll = (Collection)objects.get(key);
-        if (coll == null){
+    public boolean containsEntry(boolean binary, Data key, Data value) {
+        Collection coll = (Collection) objects.get(key);
+        if (coll == null) {
             return false;
         }
         return coll.contains(binary ? value : getNodeEngine().toObject(value));
     }
 
-    public boolean containsValue(boolean binary, Data value){
-        for (Data key: objects.keySet()){
-            if (containsEntry(binary, key, value)){
+    public boolean containsValue(boolean binary, Data value) {
+        for (Data key : objects.keySet()) {
+            if (containsEntry(binary, key, value)) {
                 return true;
             }
         }
         return false;
     }
 
-    public Map<Data, Collection> entrySet(){
+    public Map<Data, Collection> copyObjects() {
         Map<Data, Collection> map = new HashMap<Data, Collection>(objects.size());
-        for (Map.Entry<Data, Object> entry: objects.entrySet()){
+        for (Map.Entry<Data, Object> entry : objects.entrySet()) {
             Data key = entry.getKey();
-            Collection col = copyCollection((Collection)entry.getValue());
+            Collection col = copyCollection((Collection) entry.getValue());
             map.put(key, col);
         }
         return map;
     }
 
-    private Collection copyCollection(Collection coll){
+    private Collection copyCollection(Collection coll) {
         Collection copy = new ArrayList(coll.size());
         copy.addAll(coll);
         return copy;
     }
 
-    public int size(){
+    public int size() {
         int size = 0;
-        for (Object obj: objects.values()){
-            size += ((Collection)obj).size();
+        for (Object obj : objects.values()) {
+            size += ((Collection) obj).size();
         }
         return size;
     }
 
-    public void clear(){
+    public void clearObjects() {
+        Map<Data, Object> temp = new HashMap<Data, Object>(locks.size());
+        for (Data key : locks.keySet()) {
+            temp.put(key, objects.get(key));
+        }
         objects.clear();
+        objects.putAll(temp);
     }
 
-    public NodeEngine getNodeEngine(){
-        return service.getNodeEngine();
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
     public Object getProxyId() {
         return proxyId;
+    }
+
+    public MultiMapConfig getConfig() {
+        return config;
     }
 
     public ConcurrentMap<Data, Object> getObjects() {
@@ -175,4 +202,10 @@ public class CollectionContainer {
     public ConcurrentMap<Data, LockInfo> getLocks() {
         return locks;   //TODO for testing only
     }
+
+    public void clear() {
+        objects.clear();
+        locks.clear();
+    }
+
 }

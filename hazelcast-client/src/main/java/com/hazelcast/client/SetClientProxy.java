@@ -21,7 +21,7 @@ import com.hazelcast.core.ISet;
 
 import java.util.Collection;
 
-import static com.hazelcast.client.PacketProxyHelper.check;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E> {
 
@@ -29,7 +29,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
         super(client, name);
     }
 
-    public SetClientProxy(PacketProxyHelper proxyHelper, String name) {
+    public SetClientProxy(ProxyHelper proxyHelper, String name) {
         super(proxyHelper, name);
     }
 

@@ -61,11 +61,20 @@ public class CollectionProxyId implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(type.toString());
+        out.writeInt(type.getType());
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        type = CollectionProxyType.valueOf(in.readUTF());
+        type = CollectionProxyType.getByType(in.readInt());
+    }
+
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("CollectionProxyId");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", type=").append(type);
+        sb.append('}');
+        return sb.toString();
     }
 }

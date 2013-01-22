@@ -25,7 +25,8 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 public class MemberLeftException extends ExecutionException implements DataSerializable {
-    volatile Member member;
+
+    private Member member;
 
     public MemberLeftException() {
     }

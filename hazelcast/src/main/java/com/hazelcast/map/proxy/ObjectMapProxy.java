@@ -18,6 +18,7 @@ package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.ObjectFuture;
 import com.hazelcast.nio.serialization.Data;
@@ -185,12 +186,24 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public void addLocalEntryListener(final EntryListener<K, V> listener) {
     }
 
+    public void addInterceptor(MapInterceptor interceptor) {
+        addMapInterceptorInternal(interceptor);
+    }
+
+    public void removeInterceptor(MapInterceptor interceptor) {
+        removeMapInterceptorInternal(interceptor);
+    }
+
     public void addEntryListener(final EntryListener listener, final boolean includeValue) {
          addEntryListenerInternal(listener, null, includeValue);
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         addEntryListenerInternal(listener, nodeEngine.toData(key), includeValue);
+    }
+
+    public void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        addEntryListenerInternal(listener, predicate, nodeEngine.toData(key), includeValue);
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener) {
@@ -214,7 +227,8 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         clearInternal();
     }
 
-    public void flush() {
+    public void flush(boolean flushAll) {
+        flushInternal(flushAll);
     }
 
     public Set<K> keySet() {

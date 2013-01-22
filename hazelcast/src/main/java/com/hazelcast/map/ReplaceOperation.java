@@ -33,7 +33,7 @@ public class ReplaceOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        dataOldValue = recordStore.replace(dataKey, dataValue);
+        dataOldValue = mapService.toData(recordStore.replace(dataKey, dataValue));
     }
 
     @Override

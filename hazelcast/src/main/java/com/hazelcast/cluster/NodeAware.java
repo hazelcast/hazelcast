@@ -19,7 +19,6 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.Node;
 
 public interface NodeAware {
-    Node getNode();
 
     void setNode(Node node);
 }

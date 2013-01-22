@@ -22,17 +22,17 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.protocol.Command;
 
-import static com.hazelcast.client.PacketProxyHelper.check;
+import static com.hazelcast.client.ProxyHelper.check;
 
 public class TopicClientProxy<T> implements ITopic {
     private final String name;
-    private final ProtocolProxyHelper protocolProxyHelper;
+    private final ProxyHelper proxyHelper;
 
     private final Object lock = new Object();
 
     public TopicClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        protocolProxyHelper = new ProtocolProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(name, client);
     }
 
     public String getName() {
@@ -41,7 +41,7 @@ public class TopicClientProxy<T> implements ITopic {
 
     public void publish(Object message) {
         check(message);
-        protocolProxyHelper.doFireNForget(Command.TPUBLISH, new String[]{getName(), "noreply"}, protocolProxyHelper.toData(message));
+        proxyHelper.doFireNForget(Command.TPUBLISH, new String[]{getName(), "noreply"}, proxyHelper.toData(message));
     }
 
     public void addMessageListener(MessageListener messageListener) {
@@ -50,7 +50,7 @@ public class TopicClientProxy<T> implements ITopic {
             boolean shouldCall = messageListenerManager().noListenerRegistered(getName());
             messageListenerManager().registerListener(getName(), messageListener);
             if (shouldCall) {
-                protocolProxyHelper.doCommand(Command.TADDLISTENER, getName(), null);
+                proxyHelper.doCommand(Command.TADDLISTENER, getName(), null);
             }
         }
     }
@@ -60,17 +60,17 @@ public class TopicClientProxy<T> implements ITopic {
         synchronized (lock) {
             messageListenerManager().removeListener(getName(), messageListener);
             if (messageListenerManager().noListenerRegistered(getName())) {
-                protocolProxyHelper.doCommand(Command.TREMOVELISTENER, getName(), null);
+                proxyHelper.doCommand(Command.TREMOVELISTENER, getName(), null);
             }
         }
     }
 
     private MessageListenerManager messageListenerManager() {
-        return protocolProxyHelper.client.getListenerManager().getMessageListenerManager();
+        return proxyHelper.client.getListenerManager().getMessageListenerManager();
     }
 
     public void destroy() {
-        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{"topic", getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{"topic", getName()}, null);
     }
 
     public Object getId() {

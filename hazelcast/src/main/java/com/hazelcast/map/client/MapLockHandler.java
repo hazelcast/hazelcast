@@ -43,7 +43,7 @@ public class MapLockHandler extends MapCommandHandler {
         boolean locked = true;
         Data key = null;
         if (protocol.buffers != null && protocol.buffers.length > 0) {
-            key = binaryToData(protocol.buffers[0].array());
+            key = protocol.buffers[0];
         }
         DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
         if (timeout == -1) {

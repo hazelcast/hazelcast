@@ -16,15 +16,12 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -32,33 +29,58 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 
-class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
     private List<Integer> partitions;
-    private Data operationData;
+    private MultiPartitionOperationFactory operationFactory;
 
     private transient Map<Integer, Object> results;
 
-    public PartitionIteratingOperation(List<Integer> partitions, Data operationData) {
+    public PartitionIteratingOperation(List<Integer> partitions, MultiPartitionOperationFactory operationFactory) {
         this.partitions = partitions;
-        this.operationData = operationData;
+        this.operationFactory = operationFactory;
     }
 
     public PartitionIteratingOperation() {
     }
 
-    @Override
-    public void beforeRun() throws Exception {
-        results = new HashMap<Integer, Object>(partitions != null? partitions.size() : 0);
+    public final void run() throws Exception {
+        if (operationFactory.shouldRunParallel()) {
+            executeParallel();
+        } else {
+            executeSequential();
+        }
     }
 
-    public void run() {
+    private void executeSequential() throws Exception {
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final Operation op = operationFactory.createSequentialOperation();
+        op.setNodeEngine(nodeEngine)
+                .setCaller(getCaller())
+                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
+                .setService(getService());
+
+        nodeEngine.operationService.acquirePartitionReadLocks(partitions);
+        try {
+            op.beforeRun();
+            op.run();
+            op.afterRun();
+            results = (Map<Integer, Object>) op.getResponse();
+        } catch (Exception e) {
+            getLogger(nodeEngine).log(Level.SEVERE, e.getMessage(), e);
+        } finally {
+            nodeEngine.operationService.releasePartitionReadLocks(partitions);
+        }
+    }
+
+    private void executeParallel() {
         final NodeEngine nodeEngine = getNodeEngine();
+        results = new HashMap<Integer, Object>(partitions != null? partitions.size() : 0);
         try {
             Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
             for (final int partitionId : partitions) {
-                final Operation op = (Operation) nodeEngine.toObject(operationData);
                 ResponseQueue responseQueue = new ResponseQueue();
-                op.setNodeEngine(getNodeEngine())
+                final Operation op = operationFactory.createParallelOperation();
+                op.setNodeEngine(nodeEngine)
                         .setCaller(getCaller())
                         .setPartitionId(partitionId)
                         .setReplicaIndex(getReplicaIndex())
@@ -78,7 +100,7 @@ class PartitionIteratingOperation extends AbstractOperation implements Identifie
                 results.put(responseQueueEntry.getKey(), result);
             }
         } catch (Exception e) {
-            nodeEngine.getLogger(PartitionIteratingOperation.class.getName()).log(Level.SEVERE, e.getMessage(), e);
+            getLogger(nodeEngine).log(Level.SEVERE, e.getMessage(), e);
         }
     }
 
@@ -86,13 +108,17 @@ class PartitionIteratingOperation extends AbstractOperation implements Identifie
     public void afterRun() throws Exception {
     }
 
+    private ILogger getLogger(NodeEngine nodeEngine) {
+        return nodeEngine.getLogger(PartitionIteratingOperation.class.getName());
+    }
+
     @Override
-    public Object getResponse() {
+    public final Object getResponse() {
         return new PartitionResponse(results);
     }
 
     @Override
-    public boolean returnsResponse() {
+    public final boolean returnsResponse() {
         return true;
     }
 
@@ -109,7 +135,7 @@ class PartitionIteratingOperation extends AbstractOperation implements Identifie
     }
 
     // To make serialization of HashMap faster.
-    public static class PartitionResponse implements IdentifiedDataSerializable {
+    public final static class PartitionResponse implements IdentifiedDataSerializable {
 
         private Map<Integer, Object> results;
 
@@ -150,7 +176,7 @@ class PartitionIteratingOperation extends AbstractOperation implements Identifie
         }
 
         public int getId() {
-            return DataSerializerInitHook.PARTITION_RESPONSE;
+            return DataSerializerSpiHook.PARTITION_RESPONSE;
         }
     }
 
@@ -162,7 +188,7 @@ class PartitionIteratingOperation extends AbstractOperation implements Identifie
         for (int i = 0; i < pCount; i++) {
             out.writeInt(partitions.get(i));
         }
-        operationData.writeData(out);
+        out.writeObject(operationFactory);
     }
 
     @Override
@@ -173,11 +199,10 @@ class PartitionIteratingOperation extends AbstractOperation implements Identifie
         for (int i = 0; i < pCount; i++) {
             partitions.add(in.readInt());
         }
-        operationData = new Data();
-        operationData.readData(in);
+        operationFactory = in.readObject();
     }
 
     public int getId() {
-        return DataSerializerInitHook.PARTITION_ITERATOR;
+        return DataSerializerSpiHook.PARTITION_ITERATOR;
     }
 }

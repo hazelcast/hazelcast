@@ -33,11 +33,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.PacketProxyHelper.check;
-import static com.hazelcast.client.PacketProxyHelper.checkTime;
+import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.ProxyHelper.checkTime;
 
 public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
-    final protected ProtocolProxyHelper protocolProxyHelper;
+    final protected ProxyHelper proxyHelper;
     final protected String name;
 
     final Object lock = new Object();
@@ -45,7 +45,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     public QueueClientProxy(HazelcastClient client, String name) {
         super();
         this.name = name;
-        protocolProxyHelper = new ProtocolProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(name, client);
     }
 
     public String getName() {
@@ -53,7 +53,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public void destroy() {
-        protocolProxyHelper.doCommand(Command.DESTROY, new String[]{"queue", getName()});
+        proxyHelper.doCommand(Command.DESTROY, new String[]{"queue", getName()});
     }
 
     public Object getId() {
@@ -78,16 +78,16 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     public boolean offer(E e) {
         check(e);
-        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName()},
-                protocolProxyHelper.toData(e));
+        return proxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName()},
+                proxyHelper.toData(e));
     }
 
     public E poll() {
-        return (E) protocolProxyHelper.doCommandAsObject(Command.QPOLL, getName(), null);
+        return (E) proxyHelper.doCommandAsObject(Command.QPOLL, getName(), null);
     }
 
     public E peek() {
-        return (E) protocolProxyHelper.doCommandAsObject(Command.QPEEK, getName(), null);
+        return (E) proxyHelper.doCommandAsObject(Command.QPEEK, getName(), null);
     }
 
     public boolean offer(E e, long l, TimeUnit timeUnit) throws InterruptedException {
@@ -97,28 +97,28 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         if (e == null) {
             throw new NullPointerException();
         }
-        return protocolProxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName(),
-                String.valueOf(timeUnit.toMillis(l))}, protocolProxyHelper.toData(e));
+        return proxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName(),
+                String.valueOf(timeUnit.toMillis(l))}, proxyHelper.toData(e));
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
         checkTime(l, timeUnit);
         l = (l < 0) ? 0 : l;
-        return (E) protocolProxyHelper.doCommandAsObject(Command.QPOLL, new String[]{getName(),
+        return (E) proxyHelper.doCommandAsObject(Command.QPOLL, new String[]{getName(),
                 String.valueOf(timeUnit.toMillis(l))}, null);
     }
 
     public E take() throws InterruptedException {
-        return (E) protocolProxyHelper.doCommandAsObject(Command.QTAKE, getName(), null);
+        return (E) proxyHelper.doCommandAsObject(Command.QTAKE, getName(), null);
     }
 
     public void put(E e) throws InterruptedException {
         check(e);
-        protocolProxyHelper.doCommand(Command.QPUT, getName(), protocolProxyHelper.toData(e));
+        proxyHelper.doCommand(Command.QPUT, getName(), proxyHelper.toData(e));
     }
 
     public int remainingCapacity() {
-        return protocolProxyHelper.doCommandAsInt(Command.QREMCAPACITY, new String[]{getName()}, null);
+        return proxyHelper.doCommandAsInt(Command.QREMCAPACITY, new String[]{getName()}, null);
     }
 
     public int drainTo(Collection<? super E> objects) {
@@ -145,7 +145,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     @Override
     public int size() {
-        return protocolProxyHelper.doCommandAsInt(Command.QSIZE, new String[]{getName()}, null);
+        return proxyHelper.doCommandAsInt(Command.QSIZE, new String[]{getName()}, null);
     }
 
     @Override
@@ -159,16 +159,16 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     @Override
     public boolean remove(Object o) {
-        return protocolProxyHelper.doCommandAsBoolean(Command.QREMOVE, new String[]{getName()}, protocolProxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.QREMOVE, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public java.util.Iterator<E> iterator() {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.QENTRIES, new String[]{getName()}, null);
+        Protocol protocol = proxyHelper.doCommand(Command.QENTRIES, new String[]{getName()}, null);
         List<E> list = new ArrayList<E>();
         if (protocol.hasBuffer()) {
-            for (ByteBuffer bb : protocol.buffers) {
-                list.add((E) protocolProxyHelper.toObject(new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bb.array())));
+            for (Data bb : protocol.buffers) {
+                list.add((E) proxyHelper.toObject(bb));
             }
         }
         return new QueueItemIterator(list.toArray(), this);
@@ -180,7 +180,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
             boolean shouldCall = listenerManager().noListenerRegistered(getName());
             listenerManager().registerListener(getName(), listener, includeValue);
             if (shouldCall) {
-                protocolProxyHelper.doCommand(Command.QADDLISTENER, new String[]{getName(), String.valueOf(includeValue)}, null);
+                proxyHelper.doCommand(Command.QADDLISTENER, new String[]{getName(), String.valueOf(includeValue)}, null);
             }
         }
     }
@@ -189,11 +189,11 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         check(listener);
         synchronized (lock) {
             listenerManager().removeListener(getName(), listener);
-            protocolProxyHelper.doCommand(Command.QREMOVELISTENER, getName(), null);
+            proxyHelper.doCommand(Command.QREMOVELISTENER, getName(), null);
         }
     }
 
     private QueueItemListenerManager listenerManager() {
-        return protocolProxyHelper.client.getListenerManager().getQueueItemListenerManager();
+        return proxyHelper.client.getListenerManager().getQueueItemListenerManager();
     }
 }

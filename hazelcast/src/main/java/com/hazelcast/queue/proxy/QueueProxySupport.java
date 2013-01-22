@@ -63,12 +63,12 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
         invoke(operation);
     }
 
-    Data peekInternal() {
+    Object peekInternal() {
         PeekOperation operation = new PeekOperation(name);
         return invokeData(operation);
     }
 
-    Data pollInternal(long timeout) {
+    Object pollInternal(long timeout) {
         PollOperation operation = new PollOperation(name, timeout);
         return invokeData(operation);
     }
@@ -127,10 +127,10 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
         }
     }
 
-    private Data invokeData(QueueOperation operation) {
+    private Object invokeData(QueueOperation operation) {
         try {
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.QUEUE_SERVICE_NAME, operation, getPartitionId()).build();
-            Future<Data> f = inv.invoke();
+            Future f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);

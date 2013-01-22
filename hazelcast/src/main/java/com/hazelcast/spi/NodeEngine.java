@@ -64,8 +64,4 @@ public interface NodeEngine {
     <T> T toObject(Object object);
 
     TransactionImpl getTransaction();
-
-    boolean send(Data data, Connection connection, int header);
-
-    boolean send(Data data, Address target, int header);
 }

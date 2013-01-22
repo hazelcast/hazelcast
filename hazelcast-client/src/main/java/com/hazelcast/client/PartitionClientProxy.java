@@ -31,16 +31,14 @@ import java.util.Set;
 
 
 public class PartitionClientProxy implements PartitionService {
-    final private PacketProxyHelper proxyHelper;
-    final private ProtocolProxyHelper protocolProxyHelper;
+    final private ProxyHelper proxyHelper;
 
     public PartitionClientProxy(HazelcastClient client) {
-        proxyHelper = new PacketProxyHelper("", client);
-        protocolProxyHelper = new ProtocolProxyHelper("", client);
+        proxyHelper = new ProxyHelper("", client);
     }
 
     public Set<Partition> getPartitions() {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.PARTITIONS, new String[]{}, null);
+        Protocol protocol = proxyHelper.doCommand(Command.PARTITIONS, new String[]{}, null);
         Set<Partition> set = new LinkedHashSet<Partition>();
         int i=protocol.args.length;
 
@@ -75,7 +73,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public Partition getPartition(Object key) {
-        Protocol protocol = protocolProxyHelper.doCommand(Command.PARTITIONS, new String[]{}, protocolProxyHelper.toData(key));
+        Protocol protocol = proxyHelper.doCommand(Command.PARTITIONS, new String[]{}, proxyHelper.toData(key));
         return partition(Integer.valueOf(protocol.args[0]), protocol.args[1]);
     }
 

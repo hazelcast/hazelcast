@@ -17,10 +17,10 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionProxy;
-import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.multimap.MultiMapCollectionResponse;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
+import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
@@ -40,8 +40,8 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     final Data key;
 
-    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
-        super(COLLECTION_LIST_NAME, service, nodeEngine, proxyId,
+    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
+        super(COLLECTION_LIST_NAME, service, nodeEngine, proxyType,
                 nodeEngine.getConfig().getMultiMapConfig("list:" + name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST));
         listName = name;
         key = nodeEngine.toData(name);
@@ -52,11 +52,11 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-
+        service.addListener(name, listener, key, includeValue, false);
     }
 
     public void removeItemListener(ItemListener<E> listener) {
-
+        service.removeListener(name, listener, key);
     }
 
     public int size() {
@@ -73,18 +73,18 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public Iterator<E> iterator() {
-        MultiMapCollectionResponse result = getAllInternal(key);
-        return result.getObjectCollection(nodeEngine.getSerializationService()).iterator();
+        CollectionResponse result = getAllInternal(key);
+        return result.getObjectCollection(nodeEngine).iterator();
     }
 
     public Object[] toArray() {
-        MultiMapCollectionResponse result = getAllInternal(key);
-        return result.getObjectCollection(nodeEngine.getSerializationService()).toArray();
+        CollectionResponse result = getAllInternal(key);
+        return result.getObjectCollection(nodeEngine).toArray();
     }
 
     public <T> T[] toArray(T[] a) {
-        MultiMapCollectionResponse result = getAllInternal(key);
-        Collection<T> col = result.getObjectCollection(nodeEngine.getSerializationService());
+        CollectionResponse result = getAllInternal(key);
+        Collection<T> col = result.getObjectCollection(nodeEngine);
         return col.toArray(a);
     }
 
@@ -100,18 +100,18 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
 
     public boolean containsAll(Collection<?> c) {
         Set<Data> dataSet = new HashSet<Data>(c.size());
-        for (Object o: c){
+        for (Object o : c) {
             dataSet.add(nodeEngine.toData(o));
         }
         return containsAllInternal(key, dataSet);
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        return false;
+        return addAll(-1, c);
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
-        return false;
+        return addAllInternal(key, toDataList(c), index);
     }
 
     public boolean removeAll(Collection<?> c) {
@@ -123,19 +123,18 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public void clear() {
-
+        removeInternal(key);
     }
 
     public E get(int index) {
-        Data data = getInternal(key, index);
-        if (data == null) {
-            throw new IndexOutOfBoundsException();
-        }
+        Object data = getInternal(key, index);
         return nodeEngine.toObject(data);
     }
 
     public E set(int index, E element) {
-        return null;
+        Data value = nodeEngine.toData(element);
+        Object data = setInternal(key, index, value);
+        return nodeEngine.toObject(data);
     }
 
     public void add(int index, E element) {
@@ -144,30 +143,47 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public E remove(int index) {
-        return null;
+        Object data = removeInternal(key, index);
+        return nodeEngine.toObject(data);
     }
 
     public int indexOf(Object o) {
-        return 0;
+        Data dataValue = nodeEngine.toData(o);
+        return indexOfInternal(key, dataValue, false);
     }
 
     public int lastIndexOf(Object o) {
-        return 0;
+        Data dataValue = nodeEngine.toData(o);
+        return indexOfInternal(key, dataValue, true);
     }
 
     public ListIterator<E> listIterator() {
-        return null;
+        CollectionResponse result = getAllInternal(key);
+        List list = (List) result.getObjectCollection(nodeEngine);
+        return list.listIterator();
     }
 
     public ListIterator<E> listIterator(int index) {
-        return null;
+        CollectionResponse result = getAllInternal(key);
+        List list = (List) result.getObjectCollection(nodeEngine);
+        return list.listIterator(index);
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
-        return null;
+        CollectionResponse result = getAllInternal(key);
+        List list = (List) result.getObjectCollection(nodeEngine);
+        return list.subList(fromIndex, toIndex);
     }
 
     public Object getId() {
-        return null;
+        return name;
+    }
+
+    private List<Data> toDataList(Collection coll) {
+        List<Data> dataList = new ArrayList<Data>(coll.size());
+        for (Object obj : coll) {
+            dataList.add(nodeEngine.toData(obj));
+        }
+        return dataList;
     }
 }

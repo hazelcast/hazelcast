@@ -47,7 +47,6 @@ public class ClientServiceTest {
         assertEquals(map.size(), h.getClientService().getConnectedClients().size());
         for (Client client : h.getClientService().getConnectedClients()) {
             assertEquals(ClientType.Native, client.getClientType());
-            System.out.println(client.getSocketAddress());
         }
         for (HazelcastClient client : map.values()) {
             client.getLifecycleService().shutdown();

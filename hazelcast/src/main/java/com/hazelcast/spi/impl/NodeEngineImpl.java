@@ -140,20 +140,20 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public TransactionImpl getTransaction() {
-        return ThreadContext.get().getTransaction();
+        return ThreadContext.getTransaction(node.getName());
     }
 
-    public boolean send(Data data, Connection connection, int header) {
+    public boolean send(Packet packet, Connection connection) {
         if (connection == null || !connection.live()) return false;
         final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();
         }
-        return connection.write(data, getSerializationContext(), header);
+        return connection.write(packet);
     }
 
-    public boolean send(Data data, Address target, int header) {
-        return send(data, node.getConnectionManager().getConnection(target), header);
+    public boolean send(Packet packet, Address target) {
+        return send(packet, node.getConnectionManager().getConnection(target));
     }
 
     public ILogger getLogger(String name) {
@@ -167,7 +167,7 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void handlePacket(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.handleOperation(packet.getValue(), packet.getConn());
+            operationService.handleOperation(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else {

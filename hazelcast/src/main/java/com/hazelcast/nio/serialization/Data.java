@@ -19,6 +19,8 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 public class Data implements IdentifiedDataSerializable {
@@ -53,7 +55,15 @@ public class Data implements IdentifiedDataSerializable {
         }
     }
 
+    public void writeData(ObjectDataOutput out) throws IOException {
+        writeData((DataOutput)out);
+    }
+
     public void readData(ObjectDataInput in) throws IOException {
+        readData((DataInput)in);
+    }
+
+    public void readData(DataInput in) throws IOException {
         type = in.readInt();
         final int classId = in.readInt();
         if (classId != NO_CLASS_ID) {
@@ -77,7 +87,9 @@ public class Data implements IdentifiedDataSerializable {
         partitionHash = in.readInt();
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
+    //Warning!!!!!!!
+    //The following method : capacity() should be updated whenever writeData method is changes
+    public void writeData(DataOutput out) throws IOException {
         out.writeInt(type);
         if (cd != null) {
             out.writeInt(cd.getClassId());
@@ -94,6 +106,26 @@ public class Data implements IdentifiedDataSerializable {
             out.write(buffer);
         }
         out.writeInt(partitionHash);
+    }
+
+    //Caclucaltes the size of the binary after the Data is serialized.
+    public int totalSize() {
+        int total = 0;
+        total += 4; //integer
+        if(cd!=null){
+            total += 4;
+            total += 4;
+            total += 4;
+            total += cd.getBinary().length;
+        }else{
+            total += 4;
+        }
+        total +=4;
+        if(size()>0){
+            total +=buffer.length;
+        }
+        total +=4;
+        return total;
     }
 
     @Override

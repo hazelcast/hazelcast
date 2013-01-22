@@ -20,5 +20,25 @@ package com.hazelcast.collection;
  * @ali 1/2/13
  */
 public enum CollectionProxyType {
-    MULTI_MAP, LIST, SET, QUEUE
+
+    MULTI_MAP(0), LIST(1), SET(2), QUEUE(3);
+
+    private int type;
+
+    private CollectionProxyType(final int type) {
+        this.type = type;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public static CollectionProxyType getByType(final int proxyType) {
+        for (CollectionProxyType collectionProxyType : values()) {
+            if (collectionProxyType.type == proxyType) {
+                return collectionProxyType;
+            }
+        }
+        return null;
+    }
 }

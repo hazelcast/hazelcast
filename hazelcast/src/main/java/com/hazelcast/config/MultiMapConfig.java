@@ -56,12 +56,16 @@ public class MultiMapConfig implements DataSerializable {
         out.writeUTF(name);
         out.writeUTF(valueCollectionType);
         out.writeBoolean(binary);
+        out.writeInt(syncBackupCount);
+        out.writeInt(asyncBackupCount);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         valueCollectionType = in.readUTF();
         binary = in.readBoolean();
+        syncBackupCount = in.readInt();
+        asyncBackupCount = in.readInt();
     }
 
     public String getName() {
@@ -99,41 +103,51 @@ public class MultiMapConfig implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
+    public MultiMapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
     public boolean isBinary() {
         return binary;
     }
 
-    public void setBinary(boolean binary) {
+    public MultiMapConfig setBinary(boolean binary) {
         this.binary = binary;
+        return this;
     }
 
     public int getSyncBackupCount() {
         return syncBackupCount;
     }
 
-    public void setSyncBackupCount(int syncBackupCount) {
+    public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
         this.syncBackupCount = syncBackupCount;
+        return this;
     }
 
     public int getAsyncBackupCount() {
         return asyncBackupCount;
     }
 
-    public void setAsyncBackupCount(int asyncBackupCount) {
+    public MultiMapConfig setAsyncBackupCount(int asyncBackupCount) {
         this.asyncBackupCount = asyncBackupCount;
+        return this;
     }
 
-    @Override
+    public int getTotalBackupCount(){
+        return syncBackupCount + asyncBackupCount;
+    }
+
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("MultiMapConfig");
-        sb.append("{listenerConfigs=").append(listenerConfigs);
-        sb.append(", name='").append(name).append('\'');
+        sb.append("{name='").append(name).append('\'');
         sb.append(", valueCollectionType='").append(valueCollectionType).append('\'');
+        sb.append(", listenerConfigs=").append(listenerConfigs);
+        sb.append(", binary=").append(binary);
+        sb.append(", syncBackupCount=").append(syncBackupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append('}');
         return sb.toString();
     }

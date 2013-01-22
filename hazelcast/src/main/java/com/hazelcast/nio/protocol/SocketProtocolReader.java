@@ -19,7 +19,13 @@ package com.hazelcast.nio.protocol;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationConstants;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
@@ -101,7 +107,13 @@ public class SocketProtocolReader implements SocketReader {
                         }
                     }
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
-                        Protocol protocol = new Protocol(connection, command, flag, threadId, noreply, args, buffers);
+                        Data[] datas = new Data[buffers.length];
+                        for(int i=0;i<buffers.length;i++) {
+                            datas[i] = new Data();
+                            ByteArrayInputStream bis = new ByteArrayInputStream(buffers[i].array());
+                            datas[i].readData(new DataInputStream(bis));
+                        }
+                        Protocol protocol = new Protocol(connection, command, flag, threadId, noreply, args, datas);
                         connection.setType(TcpIpConnection.Type.PROTOCOL_CLIENT);
                         ioService.handleClientCommand(protocol);
                         reset();

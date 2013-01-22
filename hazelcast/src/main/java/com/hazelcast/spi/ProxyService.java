@@ -31,7 +31,7 @@ public interface ProxyService extends CoreService {
 
     void destroyDistributedObject(String serviceName, Object objectId);
 
-    Collection<DistributedObject> getProxies(String serviceName);
+    Collection<DistributedObject> getDistributedObject(String serviceName);
 
-    Collection<DistributedObject> getAllProxies();
+    Collection<DistributedObject> getAllDistributedObjects();
 }
