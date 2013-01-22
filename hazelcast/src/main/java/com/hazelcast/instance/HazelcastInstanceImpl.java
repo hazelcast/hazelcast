@@ -128,7 +128,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ILock getLock(Object key) {
-        return new ObjectLockProxy(nodeEngine, name, getMap(ObjectLockProxy.LOCK_MAP_NAME));
+        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
+        return new ObjectLockProxy(nodeEngine, key, map);
     }
 
     public IExecutorService getExecutorService(final String name) {
