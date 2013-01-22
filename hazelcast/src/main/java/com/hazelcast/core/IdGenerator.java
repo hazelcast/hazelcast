@@ -22,11 +22,11 @@ package com.hazelcast.core;
 public interface IdGenerator extends DistributedObject {
 
     /**
-     * Returns the name of this Id Generator instance.
+     * Try to initialize this IdGenerator instance with given id
      *
-     * @return name of this id generator instance
+     * @return true if initialization success
      */
-    String getName();
+    public boolean init(long id);
 
     /**
      * Generates and returns cluster-wide unique id.

@@ -312,14 +312,14 @@ public class TestFullApplicationContext {
         assertEquals("sample-tag-value", aws.getTagValue());
     }
 
-    @Test
-    public void testSemaphoreConfig() {
-        SemaphoreConfig testSemaphoreConfig = config.getSemaphoreConfig("testSemaphore");
-        assertNotNull(testSemaphoreConfig);
-        assertEquals(testSemaphoreConfig.getInitialPermits(), 0);
-        assertEquals(testSemaphoreConfig.isFactoryEnabled(), false);
-        assertNull(testSemaphoreConfig.getFactoryClassName());
-    }
+//    @Test
+//    public void testSemaphoreConfig() {
+//        SemaphoreConfig testSemaphoreConfig = config.getSemaphoreConfig("testSemaphore");
+//        assertNotNull(testSemaphoreConfig);
+//        assertEquals(testSemaphoreConfig.getInitialPermits(), 0);
+//        assertEquals(testSemaphoreConfig.isFactoryEnabled(), false);
+//        assertNull(testSemaphoreConfig.getFactoryClassName());
+//    }
 
     @Test
     public void testProperties() {
