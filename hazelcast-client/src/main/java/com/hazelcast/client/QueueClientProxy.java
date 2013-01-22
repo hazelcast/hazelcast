@@ -45,7 +45,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     public QueueClientProxy(HazelcastClient client, String name) {
         super();
         this.name = name;
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public String getName() {
@@ -194,6 +194,6 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     private QueueItemListenerManager listenerManager() {
-        return proxyHelper.client.getListenerManager().getQueueItemListenerManager();
+        return null;// proxyHelper.client.getListenerManager().getQueueItemListenerManager();
     }
 }

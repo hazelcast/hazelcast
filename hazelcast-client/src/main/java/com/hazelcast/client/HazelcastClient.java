@@ -72,6 +72,7 @@ public class HazelcastClient implements HazelcastInstance {
     private final LifecycleServiceClientImpl lifecycleService;
     private final ConnectionManager connectionManager;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
+    private final ConnectionPool connectionPool;
 
     private HazelcastClient(ClientConfig config) {
         if (config.getAddressList().size() == 0) {
@@ -90,6 +91,7 @@ public class HazelcastClient implements HazelcastInstance {
         connectionManager.setBinder(new DefaultClientBinder(this));
         out = new OutRunnable(this, calls, new ProtocolWriter());
         in = new InRunnable(this, out, calls, new ProtocolReader());
+        connectionPool = new ConnectionPool(connectionManager);
         listenerManager = new ListenerManager(this, serializationService);
 
 //        try {
@@ -129,6 +131,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public OutRunnable getOutRunnable() {
         return out;
+    }
+
+    public ConnectionPool getConnectionPool(){
+        return connectionPool;
     }
 
     ListenerManager getListenerManager() {
@@ -215,7 +221,7 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionManager;
     }
 
-    SerializationService getSerializationService() {
+    public SerializationService getSerializationService() {
         return serializationService;
     }
 

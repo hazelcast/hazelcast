@@ -85,6 +85,6 @@ public class InstanceListenerManager {
         if (distributedObjectListeners.isEmpty()) {
             return Collections.emptyList();
         }
-        return Collections.singletonList(createNewAddListenerCall(new ProxyHelper("", client)));
+        return Collections.singletonList(createNewAddListenerCall(new ProxyHelper(client.getSerializationService(), client.getConnectionPool())));
     }
 }

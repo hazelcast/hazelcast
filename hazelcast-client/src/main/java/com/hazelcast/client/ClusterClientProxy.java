@@ -36,7 +36,7 @@ public class ClusterClientProxy implements Cluster {
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
 //        proxyHelper = new PacketProxyHelper("", client);
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public Collection<DistributedObject> getInstances() {

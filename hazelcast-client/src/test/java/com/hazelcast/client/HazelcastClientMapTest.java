@@ -39,14 +39,7 @@ import java.util.concurrent.*;
 import static org.junit.Assert.*;
 
 public class HazelcastClientMapTest extends HazelcastClientTestBase {
-    
-    
-    @Test
-    public void justClient(){
-        HazelcastClient client = HazelcastClient.newHazelcastClient(new ClientConfig());
-        IMap map = client.getMap("justClient");
-        map.put("a", "b");
-    }
+
 
     @Test
     public void simple(){
@@ -74,6 +67,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         imap.put(1, null);
     }
 
+    //TODO
     @Test
     public void testIssue321() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -101,6 +95,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertNull(event2.getValue());
     }
 
+    //TODO
     @Test
     public void testIssue321_2() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -129,6 +124,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertNull(event2.getValue());
     }
 
+    //TODO
     @Test
     public void testIssue321_3() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -159,6 +155,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals("getMapName", map.getName());
     }
 
+    //TODO
     @Test
     public void testGetAsync() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -170,6 +167,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(value1, f1.get());
     }
 
+    //TODO
     @Test
     public void lockMapKey() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
@@ -190,6 +188,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    //TODO
     @Test
     public void addIndex() {
         HazelcastClient hClient = getHazelcastClient();
@@ -407,6 +406,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
     }
 
+    //TODO
     @Test
     public void getMapEntry() {
         HazelcastClient hClient = getHazelcastClient();
@@ -472,6 +472,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         }
     }
 
+    //TODO
     @Test
     public void tryLock() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
@@ -495,6 +496,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    //TODO
     /**
      * Test for issue #39
      */
@@ -526,6 +528,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 
+    //TODO
     @Test
     public void addListener() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -547,6 +550,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
     }
 
+    //TODO
     @Test
     public void addListenerForKey() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -568,6 +572,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
     }
 
+    //TODO
     @Test
     public void addListenerAndMultiPut() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -591,6 +596,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
 //        assertTrue(entryRemovedLatch.await(10, TimeUnit.MILLISECONDS));
     }
 
+    //TODO
     @Test
     public void addTwoListener1ToMapOtherToKey() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -611,6 +617,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(3, entryUpdatedLatch.getCount());
     }
 
+    //TODO
     @Test
     public void addSameListener1stToKeyThenToMap() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -630,6 +637,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(3, entryUpdatedLatch.getCount());
     }
 
+    //TODO
     @Test
     public void removeListener() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -781,7 +789,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     public void putAll() {
         HazelcastClient hClient = getHazelcastClient();
         IMap map = hClient.getMap("putAll");
-        int counter = 100;
+        int counter = 10;
         Set keys = new HashSet(counter);
         for (int i = 0; i < counter; i++) {
             keys.add(i);
@@ -852,6 +860,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         return threads;
     }
 
+    //TODO
     @Test
     public void testTwoMembersWithIndexes() {
         HazelcastClient hClient = getHazelcastClient();
@@ -861,7 +870,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         imap.addIndex("active", false);
         doFunctionalQueryTest(imap);
     }
-
+    //TODO
     @Test
     public void testGetNullMapEntry() {
         HazelcastClient hClient = getHazelcastClient();
@@ -904,7 +913,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             assertTrue(c.isActive());
         }
     }
-
+    //TODO
     @Test
     public void testSqlPredicate() {
         HazelcastInstance h = getHazelcastInstance();
@@ -914,6 +923,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             h.getMap("testSqlPredicate").put(i, new Employee("" + i, i, i % 2 == 0, i));
         }
         Set<Entry<Integer, Employee>> set = map.entrySet(new SqlPredicate("active AND age < 30"));
+        assertTrue(set.size()  > 1);
         for (Entry<Integer, Employee> entry : set) {
             System.out.println(entry.getValue());
             assertTrue(entry.getValue().age < 30);

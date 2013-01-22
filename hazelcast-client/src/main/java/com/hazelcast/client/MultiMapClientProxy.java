@@ -47,7 +47,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     public MultiMapClientProxy(HazelcastClient client, String name) {
         this.name = name;
 //        this.proxyHelper = new PacketProxyHelper(name, client);
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
         this.client = client;
     }
 

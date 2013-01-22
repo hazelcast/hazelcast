@@ -113,6 +113,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         registerHandler(Command.MEVICT, new MapEvictHandler(this));
         registerHandler(Command.MENTRYSET, new MapEntrySetHandler(this));
         registerHandler(Command.KEYSET, new KeySetHandler(this));
+        registerHandler(Command.MGETENTRY, new MapGetEntryHandler(this));
+
 
 
         registerHandler(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));

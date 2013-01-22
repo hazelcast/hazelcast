@@ -32,7 +32,7 @@ public class TopicClientProxy<T> implements ITopic {
 
     public TopicClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public String getName() {
@@ -66,7 +66,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     private MessageListenerManager messageListenerManager() {
-        return proxyHelper.client.getListenerManager().getMessageListenerManager();
+        return null;//proxyHelper.client.getListenerManager().getMessageListenerManager();
     }
 
     public void destroy() {

@@ -25,7 +25,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
 
     public AtomicNumberClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public long addAndGet(long delta) {

@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.spi.NodeEngine;
 
+import java.io.*;
 import java.util.logging.Level;
 
 public abstract class ClientCommandHandler implements CommandHandler {
@@ -56,11 +57,5 @@ public abstract class ClientCommandHandler implements CommandHandler {
         } else {
             logger.log(Level.WARNING, "unable to send response " + request);
         }
-    }
-
-
-    // TODO: !!! FIX ME !!!
-    public Data binaryToData(byte[] bytes){
-        return new Data(SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY, bytes);
     }
 }

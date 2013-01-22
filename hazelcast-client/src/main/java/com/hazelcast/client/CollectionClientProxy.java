@@ -29,7 +29,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
 
     public CollectionClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public CollectionClientProxy(ProxyHelper proxyHelper, String name) {
@@ -91,7 +91,7 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
 
 
     private ItemListenerManager itemListenerManager() {
-        return proxyHelper.client.getListenerManager().getItemListenerManager();
+        return null;//proxyHelper.client.getListenerManager().getItemListenerManager();
     }
 
     @Override

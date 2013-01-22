@@ -34,7 +34,7 @@ public class PartitionClientProxy implements PartitionService {
     final private ProxyHelper proxyHelper;
 
     public PartitionClientProxy(HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public Set<Partition> getPartitions() {
