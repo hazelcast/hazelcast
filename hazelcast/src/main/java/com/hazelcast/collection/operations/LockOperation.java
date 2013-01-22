@@ -57,13 +57,13 @@ public class LockOperation extends CollectionBackupAwareOperation implements Wai
         response = container.lock(dataKey, getCaller(), threadId, ttl);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(ttl);
         out.writeLong(timeout);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
         timeout = in.readLong();

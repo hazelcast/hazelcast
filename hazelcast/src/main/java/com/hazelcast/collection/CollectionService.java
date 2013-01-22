@@ -18,6 +18,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
+import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.*;
 import com.hazelcast.map.LockInfo;
 import com.hazelcast.nio.serialization.Data;
@@ -86,7 +87,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             case LIST:
                 return new ObjectListProxy(name, this, nodeEngine, collectionProxyId.type);
             case SET:
-                return null;
+                return new ObjectSetProxy(name, this, nodeEngine, collectionProxyId.type);
             case QUEUE:
                 return null;
         }

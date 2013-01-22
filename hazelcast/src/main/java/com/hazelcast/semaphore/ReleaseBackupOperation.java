@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.semaphore;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.nio.Address;
 
-public interface ExecutionManagerCallback {
+/**
+ * @ali 1/22/13
+ */
+public class ReleaseBackupOperation extends SemaphoreBackupOperation {
 
-    boolean cancel(boolean mayInterruptIfRunning);
+    public ReleaseBackupOperation() {
+    }
 
-    void get() throws InterruptedException, ExecutionException;
+    public ReleaseBackupOperation(String name, int permitCount, Address firstCaller) {
+        super(name, permitCount, firstCaller);
+    }
 
-    void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException;
+    public void run() throws Exception {
+        getPermit().release(permitCount, firstCaller);
+        response = true;
+    }
 }

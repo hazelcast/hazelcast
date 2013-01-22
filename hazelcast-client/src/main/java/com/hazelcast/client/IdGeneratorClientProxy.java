@@ -31,6 +31,10 @@ public class IdGeneratorClientProxy implements IdGenerator {
         return name;
     }
 
+    public boolean init(long id) {
+        return false;
+    }
+
     public long newId() {
         return 0;
 //        return (Long) proxyHelper.doOp(ClusterOperation.NEW_ID, null, null);

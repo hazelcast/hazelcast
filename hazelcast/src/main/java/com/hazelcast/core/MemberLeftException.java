@@ -20,11 +20,12 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-public class MemberLeftException extends ExecutionException implements DataSerializable {
+public class MemberLeftException extends ExecutionException implements DataSerializable, RetryableException {
 
     private Member member;
 

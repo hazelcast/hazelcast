@@ -176,7 +176,7 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public Object getId() {
-        return name;
+        return listName;//TODO
     }
 
     private List<Data> toDataList(Collection coll) {

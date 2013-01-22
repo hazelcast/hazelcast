@@ -44,7 +44,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
         response = true;
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(keySet.size());
         for (Long key : keySet) {
@@ -52,7 +52,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
         keySet = new HashSet<Long>(size);

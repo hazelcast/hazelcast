@@ -76,7 +76,7 @@ public class FastExecutor implements Executor {
     }
 
     private class BacklogDetector implements Runnable {
-        final long diff = TimeUnit.SECONDS.toMillis(1);
+        final long diff = 500;
 
         public void run() {
             final Thread thread = Thread.currentThread();

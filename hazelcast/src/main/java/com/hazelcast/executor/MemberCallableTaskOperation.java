@@ -16,10 +16,29 @@
 
 package com.hazelcast.executor;
 
-public interface DistributedRunnableAdapter<V> {
-    V getResult();
+import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.spi.InvocationAction;
 
-    Runnable getRunnable();
+import java.util.concurrent.Callable;
 
-    void setRunnable(Runnable runnable);
+/**
+ * @mdogan 1/18/13
+ */
+public class MemberCallableTaskOperation<V> extends CallableTaskOperation<V> {
+
+
+    public MemberCallableTaskOperation() {
+    }
+
+    public MemberCallableTaskOperation(String name, Callable<V> callable) {
+        super(name, callable);
+    }
+
+    @Override
+    public InvocationAction onException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException) {
+            return InvocationAction.THROW_EXCEPTION;
+        }
+        return super.onException(throwable);
+    }
 }

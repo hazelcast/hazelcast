@@ -14,38 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.spi;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Member;
 
-import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
-public interface InnerFutureTask<V> {
-    void innerSet(V value);
+/**
+ * @mdogan 1/21/13
+ */
+public interface AsyncInvocationService {
 
-    void innerSetException(Throwable throwable, boolean done);
+    Future invoke(Invocation invocation);
 
-    void innerSetMemberLeft(Member member);
-
-    void innerSetCancelled();
-
-    void innerDone();
-
-    boolean cancel(boolean mayInterruptIfRunning);
-
-    Callable<V> getCallable();
-
-    Object getKey();
-
-    Member getMember();
-
-    Set<Member> getMembers();
-
-    void setExecutionManagerCallback(ExecutionManagerCallback action);
-
-    ExecutionCallback<V> getExecutionCallback();
-
-    boolean isDone();
+    void invoke(Invocation invocation, ExecutionCallback callback);
 }

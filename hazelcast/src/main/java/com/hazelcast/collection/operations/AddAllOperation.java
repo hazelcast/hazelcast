@@ -76,7 +76,7 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
         return Boolean.TRUE.equals(response);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
         out.writeInt(dataList.size());
@@ -85,7 +85,7 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
         int size = in.readInt();

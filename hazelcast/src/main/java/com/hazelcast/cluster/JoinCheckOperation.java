@@ -67,13 +67,13 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
     }
 
     @Override
-    public void readInternal(final ObjectDataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         joinInfo = new JoinInfo();
         joinInfo.readData(in);
     }
 
     @Override
-    public void writeInternal(final ObjectDataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         joinInfo.writeData(out);
     }
 }

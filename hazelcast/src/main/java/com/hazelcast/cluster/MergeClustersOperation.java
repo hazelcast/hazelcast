@@ -54,13 +54,13 @@ public class MergeClustersOperation extends AbstractClusterOperation {
         node.hazelcastInstance.getLifecycleService().restart();
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         newTargetAddress = new Address();
         newTargetAddress.readData(in);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         newTargetAddress.writeData(out);
     }

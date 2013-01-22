@@ -94,12 +94,12 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
         getResponseHandler().sendResponse(Boolean.FALSE);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         data.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         data = IOUtil.readData(in);
     }

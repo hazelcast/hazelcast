@@ -65,7 +65,7 @@ public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
@@ -77,7 +77,7 @@ public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();

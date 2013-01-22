@@ -16,8 +16,9 @@
 
 package com.hazelcast.core;
 
-import java.util.concurrent.Future;
-
 public interface ExecutionCallback<V> {
-    void done(Future<V> future);
+
+    void onResponse(V response);
+
+    void onFailure(Throwable t);
 }

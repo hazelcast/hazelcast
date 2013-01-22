@@ -17,12 +17,11 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
-import com.hazelcast.spi.WaitNotifyKey;
 
 /**
  * @mdogan 1/15/13
  */
-public class QueueWaitNotifyKey extends AbstractWaitNotifyKey implements WaitNotifyKey {
+public class QueueWaitNotifyKey extends AbstractWaitNotifyKey {
 
     private final String type;
 

@@ -58,14 +58,14 @@ public class EntryOperation extends AbstractNamedKeyBasedOperation implements Ba
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         entryProcessor = IOUtil.readNullableObject(in);
         entryBackupProcessor = IOUtil.readNullableObject(in);
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableObject(out, entryProcessor);
         IOUtil.writeNullableObject(out, entryBackupProcessor);

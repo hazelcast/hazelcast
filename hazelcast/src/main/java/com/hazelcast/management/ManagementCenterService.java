@@ -41,8 +41,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
@@ -135,9 +133,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(newUrl);
             callable.setHazelcastInstance(instance);
             Set<Member> members = instance.getCluster().getMembers();
-            MultiTask<Void> task = new MultiTask<Void>(callable, members);
+//            MultiTask<Void> task = new MultiTask<Void>(callable, members);
             ExecutorService executorService = instance.getExecutorService(MANAGEMENT_EXECUTOR);
-            executorService.execute(task);
+//            executorService.execute(task);
         } catch (Throwable throwable) {
             logger.log(Level.WARNING, "New web server url cannot be assigned.", throwable);
             return HttpCommand.RES_500;
@@ -150,9 +148,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             Member member = membershipEvent.getMember();
             if (member != null && instance.node.isMaster() && urlChanged) {
                 ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
-                FutureTask<Void> task = new DistributedTask<Void>(callable, member);
+//                FutureTask<Void> task = new DistributedTask<Void>(callable, member);
                 ExecutorService executorService = instance.getExecutorService(MANAGEMENT_EXECUTOR);
-                executorService.execute(task);
+//                executorService.execute(task);
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Web server url cannot be send to the newly joined member", e);
@@ -523,16 +521,17 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         Set<Member> members = instance.getCluster().getMembers();
         for (Member member : members) {
             if (address.equals(((MemberImpl) member).getAddress())) {
-                DistributedTask task = new DistributedTask(callable, member);
-                return executeTaskAndGet(task);
+//                DistributedTask task = new DistributedTask(callable, member);
+//                return executeTaskAndGet(task);
             }
         }
         return null;
     }
 
     Object call(Callable callable) {
-        DistributedTask task = new DistributedTask(callable);
-        return executeTaskAndGet(task);
+//        DistributedTask task = new DistributedTask(callable);
+//        return executeTaskAndGet(task);
+        return null;
     }
 
     Collection callOnMembers(Set<Address> addresses, Callable callable) {
@@ -552,26 +551,27 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     private Collection callOnMembers0(Set<Member> members, Callable callable) {
-        MultiTask task = new MultiTask(callable, members);
-        return (Collection) executeTaskAndGet(task);
+//        MultiTask task = new MultiTask(callable, members);
+//        return (Collection) executeTaskAndGet(task);
+        return null;
     }
 
-    private Object executeTaskAndGet(final DistributedTask task) {
-        try {
-            instance.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
-            try {
-                return task.get(3, TimeUnit.SECONDS);
-            } catch (Throwable e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
-                return null;
-            }
-        } catch (Throwable e) {
-            if (running.get() && instance.node.isActive()) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-            }
-            return null;
-        }
-    }
+//    private Object executeTaskAndGet(final DistributedTask task) {
+//        try {
+//            instance.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
+//            try {
+//                return task.get(3, TimeUnit.SECONDS);
+//            } catch (Throwable e) {
+//                logger.log(Level.FINEST, e.getMessage(), e);
+//                return null;
+//            }
+//        } catch (Throwable e) {
+//            if (running.get() && instance.node.isActive()) {
+//                logger.log(Level.WARNING, e.getMessage(), e);
+//            }
+//            return null;
+//        }
+//    }
 
     private TimedMemberState getTimedMemberState() {
         if (running.get()) {

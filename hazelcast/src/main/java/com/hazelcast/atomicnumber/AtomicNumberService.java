@@ -23,7 +23,9 @@ import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -85,12 +87,19 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent migrationServiceEvent) {
-        return new AtomicNumberMigrationOperation(numbers);
+        Map<String, Long> data = new HashMap<String, Long>();
+        final int partitionId = migrationServiceEvent.getPartitionId();
+        for (String name : numbers.keySet()) {
+            if (partitionId == nodeEngine.getPartitionId(name)) {
+                data.put(name, numbers.get(name));
+            }
+        }
+        return data.isEmpty() ? null : new AtomicNumberMigrationOperation(data);
     }
 
     public void commitMigration(MigrationServiceEvent migrationServiceEvent) {
         if (migrationServiceEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            if (migrationServiceEvent.getMigrationType() == MigrationType.MOVE || migrationServiceEvent.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
+            if (migrationServiceEvent.getMigrationType() == MigrationType.MOVE) {
                 removeNumber(migrationServiceEvent.getPartitionId());
             }
         } else if (migrationServiceEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {

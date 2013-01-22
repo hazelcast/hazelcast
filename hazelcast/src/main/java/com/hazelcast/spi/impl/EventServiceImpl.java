@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -29,9 +28,9 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.ExecutorThreadFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -48,8 +47,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, EventServiceSegment> segments;
-    final ExecutorService eventExecutorService;
-    private final SerializationContext serializationContext;
+    private final ExecutorService eventExecutorService;
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -63,7 +61,6 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                     }
                 });
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
-        serializationContext = this.nodeEngine.getSerializationContext();
     }
 
     public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {

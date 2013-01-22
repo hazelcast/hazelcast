@@ -17,13 +17,11 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
-import com.sun.xml.internal.txw2.DatatypeWriter;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;

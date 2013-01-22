@@ -70,13 +70,13 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
         return dataKey != null ? dataKey.getPartitionHash() : 0;
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         dataKey.writeData(out);
         out.writeInt(threadId);
         out.writeLong(timeout);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         dataKey = new Data();
         dataKey.readData(in);
         threadId = in.readInt();

@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * Unlike Java's implementation, Hazelcast's ICountDownLatch count can be re-set
  * after a countdown has finished but not during an active count. This allows the same
  * proxy instance to be reused.
- * <p/>The Hazelcast member that successfully invokes {@link #setCount(int)} becomes
+ * <p/>The Hazelcast member that successfully invokes {@link #trySetCount(int)} becomes
  * the owner of the countdown and is responsible for staying connected to
  * the cluster until the count reaches zero.  If the owner becomes disconnected prior
  * to count reaching zero all awaiting threads will be notified.  This provides a
@@ -158,7 +158,7 @@ public interface ICountDownLatch extends DistributedObject {
      *         count is not zero
      * @throws IllegalArgumentException if {@code count} is negative
      */
-    public boolean setCount(int count);
+    public boolean trySetCount(int count);
 
     LocalCountDownLatchStats getLocalCountDownLatchStats();
 }

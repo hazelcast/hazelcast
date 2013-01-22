@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -110,7 +111,8 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         if (service != null) {
             service.destroyDistributedObject(objectId);
         }
-        nodeEngine.waitNotifyService.onDistributedObjectDestroy(serviceName, objectId);
+        nodeEngine.waitNotifyService.cancelWaitingOps(serviceName, objectId,
+                new DistributedObjectDestroyedException(serviceName, objectId));
     }
 
     public Collection<DistributedObject> getDistributedObject(String serviceName) {

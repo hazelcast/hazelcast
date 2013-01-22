@@ -84,7 +84,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject implements IC
         }
     }
 
-    public boolean setCount(int count) {
+    public boolean trySetCount(int count) {
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
                 new SetCountOperation(name, count), partitionId).build();
         try {
