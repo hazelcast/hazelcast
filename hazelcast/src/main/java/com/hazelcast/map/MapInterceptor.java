@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.map;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface ExecutionManagerCallback {
+import java.io.Serializable;
+import java.util.Map;
 
-    boolean cancel(boolean mayInterruptIfRunning);
+public interface MapInterceptor extends Serializable {
 
-    void get() throws InterruptedException, ExecutionException;
+    Object process(MapInterceptorContext interceptorContext);
+    void afterProcess(MapInterceptorContext interceptorContext);
 
-    void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException;
 }

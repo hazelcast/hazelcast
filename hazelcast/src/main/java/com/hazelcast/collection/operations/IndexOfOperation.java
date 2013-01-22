@@ -53,13 +53,13 @@ public class IndexOfOperation extends CollectionKeyBasedOperation {
         }
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(last);
         value.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         last = in.readBoolean();
         value = IOUtil.readData(in);

@@ -75,7 +75,7 @@ public final class Response extends AbstractOperation implements ResponseOperati
         return result;
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         final boolean isData = result instanceof Data;
         out.writeBoolean(isData);
         if (isData) {
@@ -86,7 +86,7 @@ public final class Response extends AbstractOperation implements ResponseOperati
         out.writeBoolean(exception);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         final boolean isData = in.readBoolean();
         if (isData) {
             Data data = new Data();

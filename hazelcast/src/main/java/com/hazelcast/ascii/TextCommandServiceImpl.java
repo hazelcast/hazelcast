@@ -124,7 +124,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                 }
             }
         }
-        node.nodeEngine.getExecutionService().execute("text", new CommandExecutor(command));
+        node.nodeEngine.getExecutionService().execute("hz:text", new CommandExecutor(command));
     }
 
     public Object get(String mapName, String key) {

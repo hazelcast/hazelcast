@@ -41,12 +41,12 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
         getContainer().drainFromBackup(maxSize);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(maxSize);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         maxSize = in.readInt();
     }

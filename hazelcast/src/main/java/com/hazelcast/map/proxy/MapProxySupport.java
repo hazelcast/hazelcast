@@ -18,10 +18,13 @@ package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.Transaction;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
@@ -157,7 +160,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-            return invocation.invoke();
+            return nodeEngine.getAsyncInvocationService().invoke(invocation);
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -441,13 +444,13 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     protected boolean tryLockInternal(final Data key, final long timeout, final TimeUnit timeunit) {
         setThreadContext();
         int partitionId = nodeEngine.getPartitionId(key);
-        TryLockOperation operation = new TryLockOperation(name, key,  getTimeInMillis(timeout, timeunit));
+        TryLockOperation operation = new TryLockOperation(name, key, getTimeInMillis(timeout, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
             Future future = invocation.invoke();
-            return (Boolean)future.get();
+            return (Boolean) future.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -487,6 +490,19 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
+    public void flushInternal(boolean flushAll) {
+        setThreadContext();
+        try {
+            MapFlushOperation mapFlushOperation = new MapFlushOperation(name, flushAll);
+            nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapFlushOperation, false);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+    }
+
+
+
     protected Collection<Data> valuesInternal() {
         setThreadContext();
         try {
@@ -512,7 +528,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
-
     protected void forceUnlockInternal(final Data key) {
         setThreadContext();
         int partitionId = nodeEngine.getPartitionId(key);
@@ -527,6 +542,43 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             throw new HazelcastException(throwable);
         }
     }
+
+    public void addMapInterceptorInternal(MapInterceptor interceptor) {
+        setThreadContext();
+        String id = mapService.addInterceptor(name, interceptor);
+        AddInterceptorOperation operation = new AddInterceptorOperation(id, interceptor, name);
+        Set<Member> members = nodeEngine.getCluster().getMembers();
+        for (Member member : members) {
+            try {
+                if (member.localMember())
+                    continue;
+                MemberImpl memberImpl = (MemberImpl) member;
+                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                invocation.invoke().get();
+            } catch (Throwable throwable) {
+                throw new HazelcastException(throwable);
+            }
+        }
+    }
+
+    public void removeMapInterceptorInternal(MapInterceptor interceptor) {
+        setThreadContext();
+        String id = mapService.removeInterceptor(name, interceptor);
+        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(interceptor, name, id);
+        Set<Member> members = nodeEngine.getCluster().getMembers();
+        for (Member member : members) {
+            try {
+                if (member.localMember())
+                    continue;
+                MemberImpl memberImpl = (MemberImpl) member;
+                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                invocation.invoke().get();
+            } catch (Throwable throwable) {
+                throw new HazelcastException(throwable);
+            }
+        }
+    }
+
 
     protected void addLocalEntryListenerInternal(final EntryListener<Data, Data> listener) {
         setThreadContext();
@@ -544,7 +596,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
 
-    protected void addQueryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
+    protected void addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
         setThreadContext();
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         mapService.addEventListener(listener, eventFilter, name);
@@ -581,8 +633,8 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             Set<Entry<Data, Data>> entrySet = new HashSet<Entry<Data, Data>>();
             for (Object result : results.values()) {
                 Set entries = ((MapEntrySet) nodeEngine.toObject(result)).getEntrySet();
-                if(entries != null)
-                entrySet.addAll(entries);
+                if (entries != null)
+                    entrySet.addAll(entries);
             }
             return entrySet;
         } catch (Throwable throwable) {

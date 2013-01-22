@@ -51,12 +51,12 @@ public class PartitionStateOperation extends AbstractOperation implements Runnab
         partitionService.processPartitionRuntimeState(partitionState);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         partitionState = new PartitionRuntimeState();
         partitionState.readData(in);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         partitionState.writeData(out);
     }
 }

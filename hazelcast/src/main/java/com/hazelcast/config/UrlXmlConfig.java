@@ -29,6 +29,9 @@ public class UrlXmlConfig extends Config {
 
     private final ILogger logger = Logger.getLogger(UrlXmlConfig.class.getName());
 
+    public UrlXmlConfig() {
+    }
+
     public UrlXmlConfig(String url) throws MalformedURLException, IOException {
         this(new URL(url));
     }

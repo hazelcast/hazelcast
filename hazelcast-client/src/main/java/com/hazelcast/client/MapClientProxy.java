@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -48,11 +49,19 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
+    public void addInterceptor(MapInterceptor interceptor) {
+
+    }
+
+    public void removeInterceptor(MapInterceptor interceptor) {
+
+    }
+
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
     }
 
-    public void addQueryListener(EntryListener<K, V> kvEntryListener, Predicate<K, V> kvPredicate, K key, boolean includeValue) {
+    public void addEntryListener(EntryListener<K, V> kvEntryListener, Predicate<K, V> kvPredicate, K key, boolean includeValue) {
         //TODO add query listener will be implemented
     }
 
@@ -308,6 +317,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         check(arg1);
         Protocol protocol = proxyHelper.doCommand(Command.MREMOVEIFSAME, new String[]{getName()}, proxyHelper.toData(arg0), proxyHelper.toData(arg1));
         return Boolean.valueOf(protocol.args[0]);
+    }
+
+    public void flush(boolean flushAllEntries) {
+
     }
 
     public V replace(K arg0, V arg1) {

@@ -28,29 +28,27 @@ public interface RecordStore {
 
     boolean tryRemove(Data dataKey);
 
-    Data remove(Data dataKey);
+    Object remove(Data dataKey);
 
-    boolean remove(Data dataKey, Data testValue);
+    boolean remove(Data dataKey, Object testValue);
 
-    Data get(Data dataKey);
+    Object get(Data dataKey);
 
-    Data put(Data dataKey, Data dataValue, long ttl);
+    Object put(Data dataKey, Object dataValue, long ttl);
 
-    void put(Map.Entry<Data, Data> entry);
+    void put(Map.Entry<Data, Object> entry);
 
-    void putEntryObject(Map.Entry<Data, Object> entry);
+    Object replace(Data dataKey, Object value);
 
-    Data replace(Data dataKey, Data value);
+    boolean replace(Data dataKey, Object oldValue, Object newValue);
 
-    boolean replace(Data dataKey, Data oldValue, Data newValue);
+    void set(Data dataKey, Object value, long ttl);
 
-    void set(Data dataKey, Data value, long ttl);
+    void putTransient(Data dataKey, Object value, long ttl);
 
-    void putTransient(Data dataKey, Data value, long ttl);
+    boolean tryPut(Data dataKey, Object value, long ttl);
 
-    boolean tryPut(Data dataKey, Data value, long ttl);
-
-    Data putIfAbsent(Data dataKey, Data value, long ttl);
+    Object putIfAbsent(Data dataKey, Object value, long ttl);
 
     ConcurrentMap<Data, Record> getRecords();
 
@@ -64,7 +62,7 @@ public interface RecordStore {
 
     boolean lock(Data key, Address caller, int threadId, long ttl);
 
-    boolean containsValue(Data testValue);
+    boolean containsValue(Object testValue);
 
     LockInfo getOrCreateLock(Data key);
 
@@ -76,19 +74,25 @@ public interface RecordStore {
 
     boolean unlock(Data key, Address caller, int threadId);
 
-    Collection<Data> values();
+    Collection<Object> valuesObject();
+
+    Collection<Data> valuesData();
 
     MapInfo getMapInfo();
 
     Set<Data> getRemovedDelayedKeys();
 
-    Set<Map.Entry<Data, Data>> entrySet();
+    Set<Map.Entry<Data, Object>> entrySetObject();
 
-    Map.Entry<Data,Data> getMapEntry(Data dataKey);
+    Set<Map.Entry<Data, Data>> entrySetData();
+
+    Map.Entry<Data,Data> getMapEntryData(Data dataKey);
 
     Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
 
     void setRecordValue(Record record, Object value);
 
     ConcurrentMap<Data, LockInfo> getLocks();
+
+    void flush(boolean flushAllRecords);
 }

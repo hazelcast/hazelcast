@@ -37,6 +37,7 @@ import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class NodeEngineImpl implements NodeEngine {
@@ -50,6 +51,7 @@ public class NodeEngineImpl implements NodeEngine {
     final OperationServiceImpl operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
+    final AsyncInvocationServiceImpl asyncInvocationService;
     final WaitNotifyService waitNotifyService;
 
     public NodeEngineImpl(Node node) {
@@ -61,6 +63,7 @@ public class NodeEngineImpl implements NodeEngine {
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
+        asyncInvocationService = new AsyncInvocationServiceImpl(this);
         waitNotifyService = new WaitNotifyService(this, new WaitingOpProcessorImpl());
     }
 
@@ -128,6 +131,10 @@ public class NodeEngineImpl implements NodeEngine {
         return proxyService;
     }
 
+    public AsyncInvocationService getAsyncInvocationService() {
+        return asyncInvocationService;
+    }
+
     public Data toData(final Object object) {
         return node.serializationService.toData(object);
     }
@@ -153,7 +160,43 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public boolean send(Packet packet, Address target) {
-        return send(packet, node.getConnectionManager().getConnection(target));
+        return send(packet, target, null);
+    }
+
+    private boolean send(Packet packet, Address target, FutureSend futureSend) {
+        final ConnectionManager connectionManager = node.getConnectionManager();
+        final Connection connection = connectionManager.getConnection(target);
+        if (connection != null) {
+            return send(packet, connection);
+        } else {
+            if (futureSend == null) {
+                futureSend = new FutureSend(packet, target);
+            }
+            final int retries = futureSend.retries;
+            if (retries < 5) {
+                connectionManager.getOrConnect(target);
+                // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
+                executionService.schedule(futureSend, (retries + 1) * 100, TimeUnit.MILLISECONDS);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private class FutureSend implements Runnable {
+        private final Packet packet;
+        private final Address target;
+        private volatile int retries = 0;
+
+        private FutureSend(Packet packet, Address target) {
+            this.packet = packet;
+            this.target = target;
+        }
+
+        public void run() {
+            retries++;
+            send(packet, target, this);
+        }
     }
 
     public ILogger getLogger(String name) {
@@ -202,13 +245,13 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void onMemberLeft(MemberImpl member) {
-        onMemberDisconnect(member.getAddress());
+        operationService.onMemberLeft(member);
+        waitNotifyService.onMemberLeft(member.getAddress());
         eventService.onMemberLeft(member);
     }
 
     @PrivateApi
     public void onMemberDisconnect(Address disconnectedAddress) {
-        waitNotifyService.onMemberDisconnect(disconnectedAddress);
         operationService.onMemberDisconnect(disconnectedAddress);
     }
 
@@ -258,6 +301,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
+        asyncInvocationService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
     }

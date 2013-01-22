@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.executor.ExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -24,7 +23,6 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
 
@@ -37,7 +35,6 @@ import java.util.logging.Level;
 class WaitNotifyService {
     private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
-    private final ExecutorService expirationExecutor;
     private final Future expirationTask;
     private final WaitingOpProcessor waitingOpProcessor;
     private final NodeEngine nodeEngine;
@@ -49,15 +46,7 @@ class WaitNotifyService {
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(WaitNotifyService.class.getName());
 
-        expirationExecutor = Executors.newSingleThreadExecutor(
-                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getConfig().getClassLoader()) {
-                    protected String newThreadName() {
-                        return node.getThreadNamePrefix("wait-notify");
-                    }
-                });
-
-        expirationTask = expirationExecutor.submit(new Runnable() {
+        expirationTask = nodeEngine.getExecutionService().submit("hz:system", new Runnable() {
             public void run() {
                 while (true) {
                     if (Thread.interrupted()) {
@@ -146,7 +135,7 @@ class WaitNotifyService {
     }
 
     // invalidated waiting ops will removed from queue eventually by notifiers.
-    public void onMemberDisconnect(Address leftMember) {
+    public void onMemberLeft(Address leftMember) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
                 if (Thread.interrupted()) {
@@ -190,7 +179,7 @@ class WaitNotifyService {
         }
     }
 
-    public void onDistributedObjectDestroy(String serviceName, Object objectId) {
+    public void cancelWaitingOps(String serviceName, Object objectId, Throwable cause) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
                 if (Thread.interrupted()) {
@@ -200,7 +189,7 @@ class WaitNotifyService {
                     WaitNotifyKey wnk = waitingOp.waitSupport.getWaitKey();
                     if (serviceName.equals(wnk.getServiceName())
                             && objectId.equals(wnk.getDistributedObjectId())) {
-                        waitingOp.cancel(new DistributedObjectDestroyedException(serviceName, objectId));
+                        waitingOp.cancel(cause);
                     }
                 }
             }
@@ -217,7 +206,6 @@ class WaitNotifyService {
     void shutdown() {
         logger.log(Level.FINEST, "Stopping tasks...");
         expirationTask.cancel(true);
-        expirationExecutor.shutdown();
     }
 
     static class KeyBasedWaitingOp extends WaitingOp implements KeyBasedOperation {

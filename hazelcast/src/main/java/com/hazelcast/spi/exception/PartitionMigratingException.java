@@ -18,7 +18,7 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
 
-public class PartitionMigratingException extends RetryableException {
+public class PartitionMigratingException extends RetryableHazelcastException {
 
     public PartitionMigratingException(Address thisAddress, int partitionId,
                                        String operationName, String serviceName) {

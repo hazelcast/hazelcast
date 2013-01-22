@@ -100,7 +100,7 @@ public interface IOService {
 
     int getConnectionMonitorMaxFaults();
 
-    void disconnectExistingCalls(Address deadEndpoint);
+    void onDisconnect(Address endpoint);
 
     boolean isClient();
 

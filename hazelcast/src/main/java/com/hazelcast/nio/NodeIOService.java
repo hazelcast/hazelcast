@@ -117,7 +117,7 @@ public class NodeIOService implements IOService {
     }
 
     public void removeEndpoint(final Address endPoint) {
-        nodeEngine.getExecutionService().execute("io", new Runnable() {
+        nodeEngine.getExecutionService().execute("hz:io", new Runnable() {
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
@@ -125,7 +125,7 @@ public class NodeIOService implements IOService {
     }
 
     public String getThreadPrefix() {
-        return node.getThreadPoolNamePrefix("IO");
+        return node.getThreadPoolNamePrefix("hz:io");
     }
 
     public ThreadGroup getThreadGroup() {
@@ -184,11 +184,11 @@ public class NodeIOService implements IOService {
         return node.groupProperties.IO_THREAD_COUNT.getInteger();
     }
 
-    public void disconnectExistingCalls(final Address deadEndpoint) {
-        if (deadEndpoint != null) {
-            nodeEngine.getExecutionService().execute("io", new Runnable() {
+    public void onDisconnect(final Address endpoint) {
+        if (endpoint != null) {
+            nodeEngine.getExecutionService().execute("hz:io", new Runnable() {
                 public void run() {
-                    nodeEngine.onMemberDisconnect(deadEndpoint);
+                    nodeEngine.onMemberDisconnect(endpoint);
                 }
             });
         }
@@ -216,7 +216,7 @@ public class NodeIOService implements IOService {
     }
 
     public void executeAsync(final Runnable runnable) {
-        nodeEngine.getExecutionService().execute("io", runnable);
+        nodeEngine.getExecutionService().execute("hz:io", runnable);
     }
 
     public Data toData(Object obj) {

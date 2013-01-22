@@ -57,14 +57,14 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation i
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(count);
         IOUtil.writeNullableObject(out, owner);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         count = in.readInt();
         owner = IOUtil.readNullableObject(in);

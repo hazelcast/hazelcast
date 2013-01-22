@@ -92,7 +92,7 @@ public class FinalizeMigrationOperation extends AbstractOperation
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         success = in.readBoolean();
         copyBackReplicaIndex = in.readInt();
@@ -101,7 +101,7 @@ public class FinalizeMigrationOperation extends AbstractOperation
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(success);
         out.writeInt(copyBackReplicaIndex);

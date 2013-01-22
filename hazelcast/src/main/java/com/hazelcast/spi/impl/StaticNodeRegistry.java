@@ -101,6 +101,10 @@ public class StaticNodeRegistry {
                 return getConnection(address);
             }
 
+            public void connectAndSend(Address address, Packet packet) {
+                getConnection(address).write(packet);
+            }
+
             public void shutdown() {
                 for (final NodeEngineImpl nodeEngine : nodes.values()) {
                     if (nodeEngine.getNode().isActive()) {

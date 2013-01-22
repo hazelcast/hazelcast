@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.util;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
 

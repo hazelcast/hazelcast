@@ -36,7 +36,7 @@ public class MapEntrySetOperation extends AbstractNamedOperation implements Part
     public void run() {
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        entrySet = recordStore.entrySet();
+        entrySet = recordStore.entrySetData();
     }
 
     @Override

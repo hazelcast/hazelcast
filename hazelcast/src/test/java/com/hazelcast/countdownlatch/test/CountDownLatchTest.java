@@ -48,7 +48,7 @@ public class CountDownLatchTest {
         final int k = 5;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
-        latch.setCount(k - 1);
+        latch.trySetCount(k - 1);
         Assert.assertEquals(k - 1, latch.getCount());
 
         new Thread() {
@@ -80,7 +80,7 @@ public class CountDownLatchTest {
         final int k = 3;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
-        latch.setCount(k - 1);
+        latch.trySetCount(k - 1);
 
         try {
             long t = System.currentTimeMillis();
@@ -99,7 +99,7 @@ public class CountDownLatchTest {
         HazelcastInstance hz1 = factory.newInstance(new Config());
         HazelcastInstance hz2 = factory.newInstance(new Config());
         final ICountDownLatch latch = hz1.getCountDownLatch("test");
-        latch.setCount(2);
+        latch.trySetCount(2);
 
         new Thread() {
             public void run() {
@@ -130,7 +130,7 @@ public class CountDownLatchTest {
         HazelcastInstance hz2 = factory.newInstance(new Config());
 
         final ICountDownLatch latch1 = hz1.getCountDownLatch("test");
-        latch1.setCount(10);
+        latch1.trySetCount(10);
         Thread.sleep(100);
 
         final ICountDownLatch latch2 = hz2.getCountDownLatch("test");

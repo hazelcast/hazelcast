@@ -25,6 +25,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.Services;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.countdownlatch.CountDownLatchService;
+import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
@@ -52,7 +53,7 @@ class ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10);
+    private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10, .75f, 1);
 
     ServiceManager(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -78,6 +79,7 @@ class ServiceManager {
                 registerService(CollectionService.COLLECTION_SERVICE_NAME, new CollectionService(nodeEngine));
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 registerService(SemaphoreService.SEMAPHORE_SERVICE_NAME, new SemaphoreService(nodeEngine));
+                registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
                 // TODO: add other services
                 // ...
                 // ...

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-interface Callback {
+interface Callback<T> {
 
-    void notify(Object result);
+    void notify(T object);
 }

@@ -71,7 +71,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         return new CompareAndRemoveBackupOperation(name, dataMap.keySet());
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(retain);
         out.writeInt(dataList.size());
@@ -80,7 +80,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         retain = in.readBoolean();
         int size = in.readInt();

@@ -31,12 +31,12 @@ public final class ThreadContext {
 
     private static final ConcurrentMap<Thread, ThreadContext> contexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
 
-    private static ThreadContext get() {
+    public static ThreadContext get() {
         Thread currentThread = Thread.currentThread();
         return contexts.get(currentThread);
     }
 
-    private static ThreadContext ensureAndGet() {
+    public static ThreadContext getOrCreate() {
         Thread currentThread = Thread.currentThread();
         ThreadContext threadContext = contexts.get(currentThread);
         if (threadContext == null) {
@@ -73,7 +73,7 @@ public final class ThreadContext {
     }
 
     public static void setTransaction(String name, TransactionImpl transaction) {
-        ThreadContext ctx = ensureAndGet();
+        ThreadContext ctx = getOrCreate();
         final TransactionImpl current = ctx.transactions.get(name);
         if (current != null && current != transaction) {
             throw new IllegalStateException("Current thread has already an ongoing transaction!");
@@ -81,8 +81,8 @@ public final class ThreadContext {
         ctx.transactions.put(name, transaction);
     }
 
-    public static TransactionImpl createTransaction(HazelcastInstanceImpl hazelcastInstance) {
-        ThreadContext ctx = ensureAndGet();
+    public static TransactionImpl createOrGetTransaction(HazelcastInstanceImpl hazelcastInstance) {
+        ThreadContext ctx = getOrCreate();
         TransactionImpl tx = ctx.transactions.get(hazelcastInstance.getName());
         if (tx == null) {
             tx = new TransactionImpl(hazelcastInstance);

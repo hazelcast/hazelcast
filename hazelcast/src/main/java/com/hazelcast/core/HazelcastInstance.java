@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Hazelcast instance. Each Hazelcast instance is a member.
@@ -138,7 +137,7 @@ public interface HazelcastInstance {
      * @param name name of the executor service
      * @return executor service for the given name
      */
-    ExecutorService getExecutorService(String name);
+    IExecutorService getExecutorService(String name);
 
     /**
      * Returns the transaction instance associated with the current thread,

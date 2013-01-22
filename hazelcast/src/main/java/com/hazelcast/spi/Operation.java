@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -184,6 +185,11 @@ public abstract class Operation implements DataSerializable {
     // Accessed using OperationAccessor
     final void setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
+    }
+
+    public InvocationAction onException(Throwable throwable) {
+        return (throwable instanceof RetryableException)
+                ? InvocationAction.RETRY_INVOCATION : InvocationAction.THROW_EXCEPTION;
     }
 
     public final void writeData(ObjectDataOutput out) throws IOException {

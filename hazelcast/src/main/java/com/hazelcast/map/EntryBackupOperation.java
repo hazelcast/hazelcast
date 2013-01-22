@@ -49,17 +49,17 @@ public class EntryBackupOperation extends AbstractNamedKeyBasedOperation impleme
         NodeEngine nodeEngine = mapService.getNodeEngine();
         entry = new AbstractMap.SimpleEntry<Object,Object>(nodeEngine.toObject(dataKey), mapEntry.getValue());
         entryProcessor.processBackup(entry);
-        recordStore.putEntryObject(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         entryProcessor = in.readObject();
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(entryProcessor);
     }
