@@ -57,12 +57,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
-    public void addInterceptor(MapInterceptor interceptor) {
-    }
-
-    public void removeInterceptor(MapInterceptor interceptor) {
-    }
-
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
     }
@@ -325,9 +319,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return Boolean.valueOf(protocol.args[0]);
     }
 
-    public void flush(boolean flushAllEntries) {
-    }
-
     public V replace(K arg0, V arg1) {
         check(arg0);
         check(arg1);
@@ -510,10 +501,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addIndex(String attribute, boolean ordered) {
         proxyHelper.doCommand(Command.MADDINDEX, new String[]{getName(), attribute, String.valueOf(ordered)}, null);
-    }
-
-    public void addIndex(Expression<?> expression, boolean ordered) {
-        proxyHelper.doCommand(Command.MADDINDEX, new String[]{getName(), String.valueOf(ordered)}, proxyHelper.toData(expression));
     }
 
     public String getName() {

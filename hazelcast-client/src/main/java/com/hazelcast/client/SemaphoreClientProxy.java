@@ -171,6 +171,10 @@ public class SemaphoreClientProxy implements ISemaphore {
         return name;
     }
 
+    public boolean init(int permits) {
+        return false;
+    }
+
     private Future doAcquireAsync(final int permits, final boolean attach) {
 //        Packet request = proxyHelper.prepareRequest(SEMAPHORE_TRY_ACQUIRE, attach, permits, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 //        Call remoteCall = proxyHelper.createCall(request);

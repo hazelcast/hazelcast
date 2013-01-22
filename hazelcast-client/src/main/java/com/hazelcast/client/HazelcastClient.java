@@ -233,11 +233,11 @@ public class HazelcastClient implements HazelcastInstance {
         return clusterClientProxy;
     }
 
-    public ExecutorService getExecutorService() {
-        return getExecutorService("default");
-    }
+//    public IExecutorService getExecutorService() {
+//        return getExecutorService("default");
+//    }
 
-    public ExecutorService getExecutorService(String name) {
+    public IExecutorService getExecutorService(String name) {
         if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
 //        name = Prefix.EXECUTOR_SERVICE + name;
         ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
@@ -248,7 +248,8 @@ public class HazelcastClient implements HazelcastInstance {
                 executorServiceProxy = old;
             }
         }
-        return executorServiceProxy;
+        return null;
+//        return executorServiceProxy;
     }
 
     public IdGenerator getIdGenerator(String name) {
