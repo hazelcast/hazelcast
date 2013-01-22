@@ -45,12 +45,12 @@ public class OfferBackupOperation extends QueueOperation implements BackupOperat
         response = true;
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         data.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         data = IOUtil.readData(in);
     }

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.spi;
 
-public interface DistributedRunnableAdapter<V> {
-    V getResult();
+/**
+ * @mdogan 1/18/13
+ */
+public enum InvocationAction {
 
-    Runnable getRunnable();
-
-    void setRunnable(Runnable runnable);
+    RETRY_INVOCATION, CONTINUE_WAIT, THROW_EXCEPTION
 }

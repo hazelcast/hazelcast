@@ -18,7 +18,7 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
 
-public class WrongTargetException extends RetryableException {
+public class WrongTargetException extends RetryableHazelcastException {
     public WrongTargetException(Address thisAddress, Address target) {
         this(thisAddress, target, -1, null);
     }

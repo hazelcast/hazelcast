@@ -48,7 +48,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
     }
 
     @Override
-    public void readInternal(final ObjectDataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         localAddress = new Address();
         localAddress.readData(in);
         boolean hasTarget = in.readBoolean();
@@ -60,7 +60,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
     }
 
     @Override
-    public void writeInternal(final ObjectDataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         localAddress.writeData(out);
         boolean hasTarget = targetAddress != null;
         out.writeBoolean(hasTarget);

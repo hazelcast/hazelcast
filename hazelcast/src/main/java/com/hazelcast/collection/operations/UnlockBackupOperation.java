@@ -49,13 +49,13 @@ public class UnlockBackupOperation extends  CollectionKeyBasedOperation implemen
         response = container.unlock(dataKey, firstCaller, threadId);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(threadId);
         firstCaller.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         threadId = in.readInt();
         firstCaller = new Address();

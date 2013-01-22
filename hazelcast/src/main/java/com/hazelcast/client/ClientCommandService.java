@@ -39,7 +39,7 @@ public class ClientCommandService {
     public ClientCommandService(Node node) {
         this.node = node;
         logger = node.getLogger(ClientCommandService.class.getName());
-        executor = node.nodeEngine.getExecutionService().getExecutor("client");
+        executor = node.nodeEngine.getExecutionService().getExecutor("hz:client");
         services = new ConcurrentHashMap<Command, ClientCommandHandler>();
         services.put(Command.UNKNOWN, new ClientCommandHandler(node.nodeEngine) {
             @Override

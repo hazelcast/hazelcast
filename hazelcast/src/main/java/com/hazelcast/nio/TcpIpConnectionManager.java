@@ -308,16 +308,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return monitor;
     }
 
-    // for testing purposes only
-    public Connection detachAndGetConnection(Address address) {
-        return mapConnections.remove(address);
-    }
-
-    // for testing purposes only
-    public void attachConnection(Address address, TcpIpConnection conn) {
-        mapConnections.put(address, conn);
-    }
-
     public void destroyConnection(Connection connection) {
         if (connection == null)
             return;

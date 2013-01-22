@@ -18,8 +18,9 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.executor.PoolExecutorThreadFactory;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -33,10 +34,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.FastExecutor;
-import com.hazelcast.util.SpinLock;
-import com.hazelcast.util.SpinReadWriteLock;
+import com.hazelcast.util.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -113,7 +111,7 @@ final class OperationServiceImpl implements OperationService {
      * @param op
      */
     public void runOperation(final Operation op) {
-//        final ThreadContext threadContext = ThreadContext.get();
+        final ThreadContext threadContext = ThreadContext.getOrCreate();
         SpinLock partitionLock = null;
         Lock keyLock = null;
         CallKey callKey = null;
@@ -126,7 +124,7 @@ final class OperationServiceImpl implements OperationService {
                 op.getResponseHandler().sendResponse(response);
                 return;
             }
-//            threadContext.setCurrentOperation(op);
+            threadContext.setCurrentOperation(op);
             callKey = beforeCallExecution(op);
             final int partitionId = op.getPartitionId();
             if (op instanceof PartitionAwareOperation) {
@@ -177,7 +175,7 @@ final class OperationServiceImpl implements OperationService {
             if (partitionLock != null) {
                 partitionLock.unlock();
             }
-//            threadContext.setCurrentOperation(null);
+            threadContext.setCurrentOperation(null);
         }
     }
 
@@ -195,15 +193,15 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     void runOperationUnderExistingLock(Operation op) {
-//        final ThreadContext threadContext = ThreadContext.get();
-//        final Object parentOperation = threadContext.getCurrentOperation();
-//        threadContext.setCurrentOperation(op);
+        final ThreadContext threadContext = ThreadContext.getOrCreate();
+        final Object parentOperation = threadContext.getCurrentOperation();
+        threadContext.setCurrentOperation(op);
         final CallKey callKey = beforeCallExecution(op);
         try {
             doRunOperation(op);
         } finally {
             afterCallExecution(op, callKey);
-//            threadContext.setCurrentOperation(parentOperation);
+            threadContext.setCurrentOperation(parentOperation);
         }
     }
 
@@ -547,6 +545,12 @@ final class OperationServiceImpl implements OperationService {
     void onMemberDisconnect(Address disconnectedAddress) {
         for (Call call : mapCalls.values()) {
             call.onDisconnect(disconnectedAddress);
+        }
+    }
+
+    void onMemberLeft(MemberImpl member) {
+        for (Call call : mapCalls.values()) {
+            call.onMemberLeft(member);
         }
     }
 

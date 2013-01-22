@@ -41,6 +41,8 @@ public interface NodeEngine {
 
     ProxyService getProxyService();
 
+    AsyncInvocationService getAsyncInvocationService();
+
     Address getThisAddress();
 
     int getPartitionId(Data key);

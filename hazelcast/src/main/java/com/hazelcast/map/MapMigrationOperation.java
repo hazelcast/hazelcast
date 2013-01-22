@@ -82,7 +82,7 @@ public class MapMigrationOperation extends AbstractOperation {
         return MapService.MAP_SERVICE_NAME;
     }
 
-    public void readInternal(final ObjectDataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         diff = in.readBoolean();
         int size = in.readInt();
         data = new HashMap<String, Map<Data, Record>>(size);
@@ -100,7 +100,7 @@ public class MapMigrationOperation extends AbstractOperation {
         }
     }
 
-    public void writeInternal(final ObjectDataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         out.writeBoolean(diff);
         out.writeInt(data.size());
         for (Entry<String, Map<Data, Record>> mapEntry : data.entrySet()) {

@@ -41,7 +41,7 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
         }
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeInt(dataSet.size());
         for (Data data: dataSet){
@@ -49,7 +49,7 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readData(in);
         int size = in.readInt();
         dataSet = new HashSet<Data>(size);

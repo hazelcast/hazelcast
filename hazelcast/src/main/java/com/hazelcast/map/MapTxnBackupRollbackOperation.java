@@ -44,13 +44,13 @@ public class MapTxnBackupRollbackOperation extends AbstractOperation {
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeUTF(txnId);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readData(in);
         txnId = in.readUTF();
     }

@@ -55,7 +55,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         this.groupName = groupName;
         this.password = password;
         addressQueue.addAll(Arrays.asList(targets));
-        node.nodeEngine.getExecutionService().execute("wan", this);
+        node.nodeEngine.getExecutionService().execute("hz:wan", this);
     }
 
     public void recordUpdated(Record record) {

@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
 import java.util.*;
@@ -76,7 +76,7 @@ public class QueueContainer implements DataSerializable {
                 store.store(item.getItemId(), data);
             } catch (Exception e) {
                 idGen--;
-                throw new RetryableException(e);
+                throw new RetryableHazelcastException(e);
             }
         }
         if (!store.isEnabled() || store.getMemoryLimit() > itemQueue.size()) {
@@ -110,7 +110,7 @@ public class QueueContainer implements DataSerializable {
             try {
                 store.deleteAll(keySet);
             } catch (Exception e) {
-                throw new RetryableException(e);
+                throw new RetryableHazelcastException(e);
             }
         }
         itemQueue.clear();
@@ -129,7 +129,7 @@ public class QueueContainer implements DataSerializable {
             try {
                 store.delete(item.getItemId());
             } catch (Exception e) {
-                throw new RetryableException(e);
+                throw new RetryableHazelcastException(e);
             }
         }
         itemQueue.poll();
@@ -153,7 +153,7 @@ public class QueueContainer implements DataSerializable {
                     try {
                         store.delete(item.getItemId());
                     } catch (Exception e) {
-                        throw new RetryableException(e);
+                        throw new RetryableHazelcastException(e);
                     }
                 }
                 iter.remove();
@@ -183,7 +183,7 @@ public class QueueContainer implements DataSerializable {
             try {
                 load(item);
             } catch (Exception e) {
-                throw new RetryableException(e);
+                throw new RetryableHazelcastException(e);
             }
         }
         return item;
@@ -210,7 +210,7 @@ public class QueueContainer implements DataSerializable {
                 try {
                     load(item);
                 } catch (Exception e) {
-                    throw new RetryableException(e);
+                    throw new RetryableHazelcastException(e);
                 }
             }
             dataList.add(item.getData());
@@ -230,7 +230,7 @@ public class QueueContainer implements DataSerializable {
                 try {
                     load(item);
                 } catch (Exception e) {
-                    throw new RetryableException(e);
+                    throw new RetryableHazelcastException(e);
                 }
             }
             map.put(item.getItemId(), item.getData());
@@ -239,7 +239,7 @@ public class QueueContainer implements DataSerializable {
             try {
                 store.deleteAll(map.keySet());
             } catch (Exception e) {
-                throw new RetryableException(e);
+                throw new RetryableHazelcastException(e);
             }
         }
         for (int i = 0; i < maxSize; i++) {
@@ -276,7 +276,7 @@ public class QueueContainer implements DataSerializable {
                     itemQueue.poll();
                     idGen--;
                 }
-                throw new RetryableException(e);
+                throw new RetryableHazelcastException(e);
             }
         }
     }
@@ -297,7 +297,7 @@ public class QueueContainer implements DataSerializable {
                 try {
                     load(item);
                 } catch (Exception e) {
-                    throw new RetryableException(e);
+                    throw new RetryableHazelcastException(e);
                 }
             }
             boolean contains = dataList.contains(item.getData());
@@ -310,7 +310,7 @@ public class QueueContainer implements DataSerializable {
                 try {
                     store.deleteAll(map.keySet());
                 } catch (Exception e) {
-                    throw new RetryableException(e);
+                    throw new RetryableHazelcastException(e);
                 }
             }
             Iterator<QueueItem> iter = itemQueue.iterator();

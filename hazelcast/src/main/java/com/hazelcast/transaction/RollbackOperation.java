@@ -47,12 +47,12 @@ public class RollbackOperation extends AbstractOperation {
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(txnId);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         txnId = in.readUTF();
     }
 }

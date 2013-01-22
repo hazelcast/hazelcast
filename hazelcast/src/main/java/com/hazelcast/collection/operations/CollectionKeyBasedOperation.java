@@ -55,12 +55,12 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
         return removeCollection(dataKey);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         dataKey.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         dataKey = new Data();
         dataKey.readData(in);
