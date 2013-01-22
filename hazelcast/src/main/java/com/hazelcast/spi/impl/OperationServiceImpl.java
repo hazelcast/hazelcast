@@ -361,24 +361,41 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation,
-                                               boolean local) throws Exception {
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation) throws Exception {
         final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
-        return invokeOnAllPartitions(serviceName, operationFactory, local);
+        return invokeOnAllPartitions(serviceName, operationFactory);
     }
 
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
-                                                      boolean local) throws Exception {
-        final Map<Address, ArrayList<Integer>> memberPartitions = getMemberPartitions(local);
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
+            throws Exception {
+        final Map<Address, List<Integer>> memberPartitions = getMemberPartitionsMap();
+        return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
+    }
+
+    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, Operation operation,
+                                                         Address target) throws Exception {
+        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
+        return invokeOnTargetPartitions(serviceName, operationFactory, target);
+    }
+
+    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+                                                         Address target) throws Exception {
+        final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(1);
+        memberPartitions.put(target, getMemberPartitions(target));
+        return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
+    }
+
+    private Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+                                                    Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
-        for (Map.Entry<Address, ArrayList<Integer>> mp : memberPartitions.entrySet()) {
-            final Address target = mp.getKey();
+        for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
+            final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
             final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
             Invocation inv = createInvocationBuilder(serviceName, pi,
-                    target).setTryCount(5).setTryPauseMillis(300).build();
+                    address).setTryCount(5).setTryPauseMillis(300).build();
             Future future = inv.invoke();
-            responses.put(target, future);
+            responses.put(address, future);
         }
         final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionCount());
         for (Map.Entry<Address, Future> response : responses.entrySet()) {
@@ -419,22 +436,12 @@ final class OperationServiceImpl implements OperationService {
         return partitionResults;
     }
 
-    private Map<Address, ArrayList<Integer>> getMemberPartitions(boolean local) {
+    private Map<Address, List<Integer>> getMemberPartitionsMap() {
         final int members = node.getClusterService().getSize();
-        Map<Address, ArrayList<Integer>> memberPartitions = new HashMap<Address, ArrayList<Integer>>(members);
+        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
         for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
-            Address owner = node.partitionService.getPartitionOwner(i);
-            // TODO: infinite while is not good. convert it to wait 1 minute
-            while (owner == null) { // partition assignment is not completed yet
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {
-                }
-                owner = node.partitionService.getPartitionOwner(i);
-            }
-            if (local && !node.address.equals(owner))
-                continue;
-            ArrayList<Integer> ownedPartitions = memberPartitions.get(owner);
+            Address owner = getPartitionOwner(i);
+            List<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
                 ownedPartitions = new ArrayList<Integer>();
                 memberPartitions.put(owner, ownedPartitions);
@@ -442,6 +449,30 @@ final class OperationServiceImpl implements OperationService {
             ownedPartitions.add(i);
         }
         return memberPartitions;
+    }
+
+    private List<Integer> getMemberPartitions(Address target) {
+        List<Integer> ownedPartitions = new LinkedList<Integer>();
+        for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
+            Address owner = getPartitionOwner(i);
+            if (target.equals(owner)) {
+                ownedPartitions.add(i);
+            }
+        }
+        return ownedPartitions;
+    }
+
+    private Address getPartitionOwner(int partitionId) {
+        Address owner = node.partitionService.getPartitionOwner(partitionId);
+        // TODO: infinite while is not good. convert it to wait 1 minute
+        while (owner == null) { // partition assignment is not completed yet
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException ignored) {
+            }
+            owner = node.partitionService.getPartitionOwner(partitionId);
+        }
+        return owner;
     }
 
     @PrivateApi
