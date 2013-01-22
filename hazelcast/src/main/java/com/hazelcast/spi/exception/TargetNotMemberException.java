@@ -18,7 +18,7 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
 
-public class TargetNotMemberException extends RetryableException {
+public class TargetNotMemberException extends RetryableHazelcastException {
     public TargetNotMemberException(Address target) {
         this(target, -1, null);
     }

@@ -42,12 +42,12 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         deadAddress = new Address();
         deadAddress.readData(in);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         deadAddress.writeData(out);
     }
 }

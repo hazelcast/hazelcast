@@ -57,13 +57,13 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
         groupPassword = in.readUTF();
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(groupName);
         out.writeUTF(groupPassword);
     }

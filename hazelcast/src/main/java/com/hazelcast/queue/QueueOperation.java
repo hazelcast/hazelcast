@@ -22,7 +22,7 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.KeyBasedOperation;
-import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.Collection;
@@ -49,7 +49,7 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
             try {
                 container = queueService.getContainer(name, this instanceof BackupOperation);
             } catch (Exception e) {
-                throw new RetryableException(e);
+                throw new RetryableHazelcastException(e);
             }
         }
         return container;

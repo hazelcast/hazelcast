@@ -49,11 +49,11 @@ public class PrepareOperation extends AbstractOperation {
         return response;
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(txnId);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         txnId = in.readUTF();
     }
 }

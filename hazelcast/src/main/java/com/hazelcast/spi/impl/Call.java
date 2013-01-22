@@ -16,17 +16,17 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.exception.RetryableException;
-
-import java.io.IOException;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 final class Call {
 
     private final Address target;
-    private final Callback callback;
+    private final InvocationImpl callback;
 
-    public Call(Address target, Callback callback) {
+    public Call(Address target, InvocationImpl callback) {
         this.target = target;
         this.callback = callback;
     }
@@ -35,9 +35,15 @@ final class Call {
         callback.notify(response);
     }
 
-    public void onDisconnect(Address dead) {
-        if (dead.equals(target)) {
-            callback.notify(new RetryableException(new IOException("Target[" + dead + "] disconnected.")));
+    public void onDisconnect(Address disconnectedAddress) {
+        if (disconnectedAddress.equals(target)) {
+            callback.notify(new TargetDisconnectedException(disconnectedAddress));
+        }
+    }
+
+    public void onMemberLeft(MemberImpl leftMember) {
+        if (leftMember.getAddress().equals(target)) {
+            callback.notify(new MemberLeftException(leftMember));
         }
     }
 

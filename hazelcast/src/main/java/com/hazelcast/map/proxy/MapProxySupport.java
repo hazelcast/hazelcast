@@ -160,7 +160,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
                     .build();
-            return invocation.invoke();
+            return nodeEngine.getAsyncInvocationService().invoke(invocation);
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }

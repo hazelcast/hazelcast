@@ -17,8 +17,8 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.RuntimeInterruptedException;
-import com.hazelcast.executor.ExecutorThreadFactory;
-import com.hazelcast.executor.PoolExecutorThreadFactory;
+import com.hazelcast.util.ExecutorThreadFactory;
+import com.hazelcast.util.PoolExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -32,7 +32,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 12/14/12
  */
-final class ExecutionServiceImpl implements ExecutionService {
+public final class ExecutionServiceImpl implements ExecutionService {
 
     private static final int DEFAULT_THREAD_SIZE = 8;
 
@@ -58,13 +58,18 @@ final class ExecutionServiceImpl implements ExecutionService {
         scheduledExecutorService = Executors.newScheduledThreadPool(2,
                 new PoolExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
-                        node.getThreadPoolNamePrefix("scheduled"), classLoader));
+                        node.getThreadPoolNamePrefix("hz:scheduled"), classLoader));
 
         // default executors
         // TODO: configure using ExecutorService config!
-        executors.put("system", new ManagedExecutorService("system", 20, 1));
-        executors.put("client", new ManagedExecutorService("client", 40, 1));
-        executors.put("scheduled", new ManagedExecutorService("scheduled", 10, 1));
+        register("hz:system", 30);
+        register("hz:client", 40);
+        register("hz:scheduled", 10);
+        register("hz:async-service", 20);
+    }
+
+    private void register(String name, int maxThreadSize) {
+        executors.put(name, new ManagedExecutorService(name, maxThreadSize, 1));
     }
 
     public ExecutorService getExecutor(String name) {
@@ -118,6 +123,11 @@ final class ExecutionServiceImpl implements ExecutionService {
         executors.clear();
     }
 
+    @PrivateApi
+    public void destroyExecutor(String name) {
+        executors.remove(name);
+    }
+
     private class ScheduledRunner implements Runnable {
         private final Runnable runnable;
 
@@ -126,7 +136,7 @@ final class ExecutionServiceImpl implements ExecutionService {
         }
 
         public void run() {
-            execute("scheduled", runnable);
+            execute("hz:scheduled", runnable);
         }
     }
 

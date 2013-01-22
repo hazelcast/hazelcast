@@ -16,15 +16,10 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.DistributedTask;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiTask;
-import com.hazelcast.executor.InnerFutureTask;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.*;
-
-import static com.hazelcast.client.ProxyHelper.check;
 
 public class ExecutorServiceClientProxy implements ExecutorService {
 
@@ -55,25 +50,26 @@ public class ExecutorServiceClientProxy implements ExecutorService {
     }
 
     public <T> Future<T> submit(Callable<T> callable) {
-        return submit(new DistributedTask(callable));
+//        return submit(new DistributedTask(callable));
+        return null;
     }
 
-    private <T> Future<T> submit(DistributedTask dt) {
-        ClientDistributedTask cdt = null;
-        InnerFutureTask inner = (InnerFutureTask) dt.getInner();
-        check(inner.getCallable());
-        if (dt instanceof MultiTask) {
-            if (inner.getMembers() == null) {
-                Set<Member> set = new HashSet<Member>();
-                set.add(inner.getMember());
-                cdt = new ClientDistributedTask(inner.getCallable(), null, set, null);
-            }
-        }
-        if (cdt == null) {
-            cdt = new ClientDistributedTask(inner.getCallable(), inner.getMember(), inner.getMembers(), inner.getKey());
-        }
-        return submit(dt, cdt);
-    }
+//    private <T> Future<T> submit(DistributedTask dt) {
+//        ClientDistributedTask cdt = null;
+//        InnerFutureTask inner = (InnerFutureTask) dt.getInner();
+//        check(inner.getCallable());
+//        if (dt instanceof MultiTask) {
+//            if (inner.getMembers() == null) {
+//                Set<Member> set = new HashSet<Member>();
+//                set.add(inner.getMember());
+//                cdt = new ClientDistributedTask(inner.getCallable(), null, set, null);
+//            }
+//        }
+//        if (cdt == null) {
+//            cdt = new ClientDistributedTask(inner.getCallable(), inner.getMember(), inner.getMembers(), inner.getKey());
+//        }
+//        return submit(dt, cdt);
+//    }
 //    private <T> void check(Object o) {
 //        if (o == null) {
 //            throw new NullPointerException("Object cannot be null.");
@@ -83,7 +79,7 @@ public class ExecutorServiceClientProxy implements ExecutorService {
 //        }
 //    }
 
-    private Future submit(final DistributedTask dt, final ClientDistributedTask cdt) {
+//    private Future submit(final DistributedTask dt, final ClientDistributedTask cdt) {
 //        final Packet request = proxyHelper.prepareRequest(ClusterOperation.EXECUTE, cdt, null);
 //        final InnerFutureTask inner = (InnerFutureTask) dt.getInner();
 //        request.setCallId(PacketProxyHelper.newCallId());
@@ -132,7 +128,7 @@ public class ExecutorServiceClientProxy implements ExecutorService {
 //                    handle(e);
 //                }
 //            }
-
+//
 //    }
 //            private void handle(Object response) {
 //                Object result = response;
@@ -167,15 +163,16 @@ public class ExecutorServiceClientProxy implements ExecutorService {
 //            }
 //        });
 //        proxyHelper.sendCall(call);
-        return dt;
-    }
+//        return dt;
+//    }
 
     public <T> Future<T> submit(Runnable runnable, T t) {
-        if (runnable instanceof DistributedTask) {
-            return submit((DistributedTask) runnable);
-        } else {
-            return submit(DistributedTask.callable(runnable, t));
-        }
+//        if (runnable instanceof DistributedTask) {
+//            return submit((DistributedTask) runnable);
+//        } else {
+//            return submit(DistributedTask.callable(runnable, t));
+//        }
+        return null;
     }
 
     public Future<?> submit(Runnable runnable) {

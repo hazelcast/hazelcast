@@ -88,7 +88,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                         .setService(getService());
                 responses.put(partitionId, responseQueue);
 
-                nodeEngine.getExecutionService().execute("system", new Runnable() {
+                nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
                     public void run() {
                         nodeEngine.getOperationService().runOperation(op);
                     }
@@ -181,7 +181,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         int pCount = partitions.size();
         out.writeInt(pCount);
@@ -192,7 +192,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int pCount = in.readInt();
         partitions = new ArrayList<Integer>(pCount);

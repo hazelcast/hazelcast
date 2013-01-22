@@ -24,6 +24,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.countdownlatch.CountDownLatchService;
+import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -38,7 +39,6 @@ import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.topic.TopicService;
 
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
@@ -128,12 +128,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         throw new UnsupportedOperationException();
     }
 
-    public ExecutorService getExecutorService(final String name) {
-        throw new UnsupportedOperationException();
+    public IExecutorService getExecutorService(final String name) {
+        return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
     public Transaction getTransaction() {
-        return ThreadContext.createTransaction(this);
+        return ThreadContext.createOrGetTransaction(this);
     }
 
     public IdGenerator getIdGenerator(final String name) {
@@ -141,7 +141,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public AtomicNumber getAtomicNumber(final String name) {
-        return (AtomicNumber) getDistributedObject(AtomicNumberService.NAME, name);
+        return getDistributedObject(AtomicNumberService.NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {

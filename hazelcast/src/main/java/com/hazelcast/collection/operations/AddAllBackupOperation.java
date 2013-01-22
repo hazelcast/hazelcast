@@ -68,7 +68,7 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
         }
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
         out.writeInt(dataList.size());
@@ -77,7 +77,7 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
         int size = in.readInt();

@@ -80,13 +80,13 @@ public class PutOperation extends CollectionBackupAwareOperation {
         getResponseHandler().sendResponse(false);
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
         value.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
         value = IOUtil.readData(in);

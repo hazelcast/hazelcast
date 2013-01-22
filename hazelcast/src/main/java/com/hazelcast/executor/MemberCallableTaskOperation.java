@@ -16,14 +16,29 @@
 
 package com.hazelcast.executor;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.spi.InvocationAction;
 
-public interface ExecutionManagerCallback {
+import java.util.concurrent.Callable;
 
-    boolean cancel(boolean mayInterruptIfRunning);
+/**
+ * @mdogan 1/18/13
+ */
+public class MemberCallableTaskOperation<V> extends CallableTaskOperation<V> {
 
-    void get() throws InterruptedException, ExecutionException;
 
-    void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException;
+    public MemberCallableTaskOperation() {
+    }
+
+    public MemberCallableTaskOperation(String name, Callable<V> callable) {
+        super(name, callable);
+    }
+
+    @Override
+    public InvocationAction onException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException) {
+            return InvocationAction.THROW_EXCEPTION;
+        }
+        return super.onException(throwable);
+    }
 }

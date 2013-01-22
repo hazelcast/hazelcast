@@ -61,13 +61,13 @@ public class PublishOperation extends AbstractNamedOperation implements KeyBased
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         message.writeData(out);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         message = new Data();
         message.readData(in);
