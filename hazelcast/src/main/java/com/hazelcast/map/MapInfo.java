@@ -21,11 +21,18 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.nio.ClassLoaderUtil;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 public class MapInfo {
 
     private String name;
     private MapConfig mapConfig;
     private MapStore store;
+    private List<MapInterceptor> interceptors;
+    private Map<String,MapInterceptor> interceptorMap;
+    private Map<MapInterceptor,String> interceptorIdMap;
 
     public MapInfo(String name, MapConfig mapConfig) {
         this.name = name;
@@ -38,6 +45,40 @@ public class MapInfo {
                 e.printStackTrace();
             }
         }
+        interceptors = Collections.synchronizedList(new ArrayList<MapInterceptor>());
+        interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
+        interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
+    }
+
+    public String addInterceptor(MapInterceptor interceptor) {
+        String id = "interceptor" + UUID.randomUUID();
+        interceptorMap.put(id, interceptor);
+        interceptorIdMap.put(interceptor, id);
+        interceptors.add(interceptor);
+        return id;
+    }
+
+    public void addInterceptor(MapInterceptor interceptor, String id) {
+        interceptorMap.put(id, interceptor);
+        interceptorIdMap.put(interceptor, id);
+        interceptors.add(interceptor);
+    }
+
+    public List<MapInterceptor> getInterceptors() {
+        return interceptors;
+    }
+
+    public String removeInterceptor(MapInterceptor interceptor) {
+        String id = interceptorIdMap.remove(interceptor);
+        interceptorMap.remove(id);
+        interceptors.remove(interceptor);
+        return id;
+    }
+
+    public void removeInterceptor(String id) {
+        MapInterceptor interceptor = interceptorMap.remove(id);
+        interceptorIdMap.remove(interceptor);
+        interceptors.remove(interceptor);
     }
 
     public String getName() {

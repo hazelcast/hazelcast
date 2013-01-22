@@ -68,21 +68,21 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
         }
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
         out.writeInt(dataList.size());
-        for (Data data: dataList){
+        for (Data data : dataList) {
             data.writeData(out);
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = IOUtil.readData(in);
             dataList.add(data);
         }

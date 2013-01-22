@@ -16,40 +16,43 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.map.Record;
+import com.hazelcast.nio.serialization.Data;
 
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
-public class MultiResultSet extends AbstractSet<MapEntry> {
-    private final List<Collection<IndexEntry>> resultSets = new ArrayList<Collection<IndexEntry>>();
-    private final Set<Long> indexValues = new HashSet<Long>();
-    private final ConcurrentMap<Long, Long> recordValues;
+public class MultiResultSet extends AbstractSet<QueryableEntry> {
+    private final List<ConcurrentMap<Data, QueryableEntry>> resultSets = new ArrayList<ConcurrentMap<Data, QueryableEntry>>();
 
-    MultiResultSet(ConcurrentMap<Long, Long> recordValues) {
-        this.recordValues = recordValues;
+    public MultiResultSet() {
     }
 
-    public void addResultSet(Long indexValue, Collection<IndexEntry> resultSet) {
+    public void addResultSet(ConcurrentMap<Data, QueryableEntry> resultSet) {
         resultSets.add(resultSet);
-        indexValues.add(indexValue);
     }
 
     @Override
-    public Iterator<MapEntry> iterator() {
+    public boolean contains(Object o) {
+        QueryableEntry entry = (QueryableEntry) o;
+        for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
+            if (resultSet.containsKey(entry.getKeyData())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Iterator<QueryableEntry> iterator() {
         return new It();
     }
 
-    @Override
-    public boolean contains(Object mapEntry) {
-        Long indexValue = recordValues.get(((Record) mapEntry).getId());
-        return indexValue != null && indexValues.contains(indexValue);
-    }
-
-    class It implements Iterator<MapEntry> {
+    class It implements Iterator<QueryableEntry> {
         int currentIndex = 0;
-        Iterator<IndexEntry> currentIterator;
+        Iterator<QueryableEntry> currentIterator;
 
         public boolean hasNext() {
             if (resultSets.size() == 0) return false;
@@ -57,7 +60,7 @@ public class MultiResultSet extends AbstractSet<MapEntry> {
                 return true;
             }
             while (currentIndex < resultSets.size()) {
-                currentIterator = resultSets.get(currentIndex++).iterator();
+                currentIterator = resultSets.get(currentIndex++).values().iterator();
                 if (currentIterator.hasNext()) {
                     return true;
                 }
@@ -65,7 +68,7 @@ public class MultiResultSet extends AbstractSet<MapEntry> {
             return false;
         }
 
-        public MapEntry next() {
+        public QueryableEntry next() {
             if (resultSets.size() == 0) return null;
             return currentIterator.next();
         }
@@ -76,14 +79,14 @@ public class MultiResultSet extends AbstractSet<MapEntry> {
     }
 
     @Override
-    public boolean add(MapEntry obj) {
+    public boolean add(QueryableEntry obj) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public int size() {
         int size = 0;
-        for (Collection<IndexEntry> resultSet : resultSets) {
+        for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
             size += resultSet.size();
         }
         return size;

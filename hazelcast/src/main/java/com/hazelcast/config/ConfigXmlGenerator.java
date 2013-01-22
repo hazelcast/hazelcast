@@ -305,12 +305,13 @@ public class ConfigXmlGenerator {
             xml.append("</topic>");
         }
         final Collection<SemaphoreConfig> semaphoreCfgs = config.getSemaphoreConfigs();
+        //TODO
         for (SemaphoreConfig sc : semaphoreCfgs) {
             xml.append("<semaphore name=\"").append(sc.getName()).append("\">");
             xml.append("<initial-permits>").append(sc.getInitialPermits()).append("</initial-permits>");
-            xml.append("<semaphore-factory enabled=\"").append(sc.isFactoryEnabled()).append("\">");
-            xml.append("<class-name>").append(sc.getFactoryClassName()).append("</class-name>");
-            xml.append("</semaphore-factory>");
+//            xml.append("<semaphore-factory enabled=\"").append(sc.isFactoryEnabled()).append("\">");
+//            xml.append("<class-name>").append(sc.getFactoryClassName()).append("</class-name>");
+//            xml.append("</semaphore-factory>");
             xml.append("</semaphore>");
         }
         final Collection<MergePolicyConfig> merges = config.getMergePolicyConfigs().values();

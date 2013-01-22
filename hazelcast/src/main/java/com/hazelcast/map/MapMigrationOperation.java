@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,6 +27,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @mdogan 7/24/12
@@ -33,7 +36,9 @@ import java.util.Map.Entry;
 public class MapMigrationOperation extends AbstractOperation {
 
     private Map<String, Map<Data, Record>> data;
+    private Map<String, Map<Data, LockInfo>> locks;
     private boolean diff;
+
 
     public MapMigrationOperation() {
     }
@@ -42,6 +47,8 @@ public class MapMigrationOperation extends AbstractOperation {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         this.diff = diff;
         data = new HashMap<String, Map<Data, Record>>(container.maps.size());
+        locks = new HashMap<String, Map<Data, LockInfo>>(container.maps.size());
+
         for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
             final MapConfig mapConfig = entry.getValue().getMapInfo().getMapConfig();
@@ -49,12 +56,18 @@ public class MapMigrationOperation extends AbstractOperation {
                 continue;
             }
 
-            DefaultRecordStore recordStore = entry.getValue();
-            Map<Data, Record> map = new HashMap<Data, Record>(recordStore.records.size());
-            for (Entry<Data, Record> recordEntry : recordStore.records.entrySet()) {
+            RecordStore recordStore = entry.getValue();
+            Map<Data, Record> map = new HashMap<Data, Record>(recordStore.getRecords().size());
+            for (Entry<Data, Record> recordEntry : recordStore.getRecords().entrySet()) {
                 map.put(recordEntry.getKey(), recordEntry.getValue());
             }
             data.put(name, map);
+
+            Map<Data, LockInfo> lockmap = new HashMap<Data, LockInfo>(recordStore.getRecords().size());
+            for (Entry<Data, LockInfo> lockEntry : recordStore.getLocks().entrySet()) {
+                lockmap.put(lockEntry.getKey(), lockEntry.getValue());
+            }
+            locks.put(name, lockmap);
         }
 
     }
@@ -82,7 +95,7 @@ public class MapMigrationOperation extends AbstractOperation {
         return MapService.MAP_SERVICE_NAME;
     }
 
-    public void readInternal(final ObjectDataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         diff = in.readBoolean();
         int size = in.readInt();
         data = new HashMap<String, Map<Data, Record>>(size);
@@ -98,9 +111,24 @@ public class MapMigrationOperation extends AbstractOperation {
             }
             data.put(name, map);
         }
+
+        int lsize = in.readInt();
+        locks = new HashMap<String, Map<Data, LockInfo>>(lsize);
+        for (int i = 0; i < lsize; i++) {
+            String name = in.readUTF();
+            int mapSize = in.readInt();
+            Map<Data, LockInfo> map = new HashMap<Data, LockInfo>(lsize);
+            for (int j = 0; j < mapSize; j++) {
+                Data key = new Data();
+                key.readData(in);
+                LockInfo lockInfo = in.readObject();
+                map.put(key, lockInfo);
+            }
+            locks.put(name, map);
+        }
     }
 
-    public void writeInternal(final ObjectDataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         out.writeBoolean(diff);
         out.writeInt(data.size());
         for (Entry<String, Map<Data, Record>> mapEntry : data.entrySet()) {
@@ -112,5 +140,16 @@ public class MapMigrationOperation extends AbstractOperation {
                 out.writeObject(entry.getValue());
             }
         }
+        out.writeInt(locks.size());
+        for (Entry<String, Map<Data, LockInfo>> mapEntry : locks.entrySet()) {
+            out.writeUTF(mapEntry.getKey());
+            Map<Data, LockInfo> map = mapEntry.getValue();
+            out.writeInt(map.size());
+            for (Entry<Data, LockInfo> entry : map.entrySet()) {
+                entry.getKey().writeData(out);
+                IOUtil.writeNullableObject(out, entry.getValue());
+            }
+        }
+
     }
 }

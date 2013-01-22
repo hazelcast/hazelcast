@@ -16,21 +16,20 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.PredicateType;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
 
 public interface IndexStore {
-    void getSubRecordsBetween(MultiResultSet results, Long from, Long to);
+    void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
 
-    void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue);
+    void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue);
 
-    void newRecordIndex(Long newValue, IndexEntry record);
+    Set<QueryableEntry> getRecords(Comparable value);
 
-    void removeRecordIndex(Long oldValue, Long recordId);
+    void getRecords(MultiResultSet results, Set<Comparable> values);
 
-    Set<MapEntry> getRecords(Long value);
+    void removeIndex(Comparable oldValue, Data key);
 
-    void getRecords(MultiResultSet results, Set<Long> values);
+    void newIndex(Comparable newValue, QueryableEntry entry);
 }

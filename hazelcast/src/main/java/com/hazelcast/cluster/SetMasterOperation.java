@@ -67,12 +67,12 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
         return masterAddress;
     }
 
-    public void readInternal(final ObjectDataInput in) throws IOException {
+    protected void readInternal(final ObjectDataInput in) throws IOException {
         masterAddress = new Address();
         masterAddress.readData(in);
     }
 
-    public void writeInternal(final ObjectDataOutput out) throws IOException {
+    protected void writeInternal(final ObjectDataOutput out) throws IOException {
         masterAddress.writeData(out);
     }
 

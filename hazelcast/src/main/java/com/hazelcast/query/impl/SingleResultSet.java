@@ -16,32 +16,31 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.map.Record;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.AbstractSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
 
-public class SingleResultSet extends AbstractSet<MapEntry> {
-    private final ConcurrentMap<Long, ? extends MapEntry> records;
+public class SingleResultSet extends AbstractSet<QueryableEntry> {
+    private final ConcurrentMap<Data, QueryableEntry> records;
 
-    public SingleResultSet(ConcurrentMap<Long, ? extends MapEntry> records) {
+    public SingleResultSet(ConcurrentMap<Data, QueryableEntry> records) {
         this.records = records;
     }
 
     @Override
     public boolean contains(Object mapEntry) {
-        return records != null && records.containsKey(((Record) mapEntry).getId());
+        return records != null && records.containsKey(((QueryableEntry) mapEntry).getKeyData());
     }
 
     @Override
-    public Iterator<MapEntry> iterator() {
+    public Iterator<QueryableEntry> iterator() {
         if (records == null) {
-            return new HashSet<MapEntry>().iterator();
+            return new HashSet<QueryableEntry>().iterator();
         } else {
-            return (Iterator<MapEntry>) records.values().iterator();
+            return records.values().iterator();
         }
     }
 

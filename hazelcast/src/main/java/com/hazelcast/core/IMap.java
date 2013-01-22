@@ -17,8 +17,8 @@
 package com.hazelcast.core;
 
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.util.Collection;
@@ -160,11 +160,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
     boolean remove(Object key, Object value);
 
     /**
-     * If this map has a MapStore and write-delay-seconds is
-     * bigger than 0 (write-behind) then this method flushes
+     * If this map has a MapStore this method flushes
      * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
      */
-    void flush();
+    void flush(boolean flushAllEntries);
 
     /**
      * Returns the name of this map
@@ -519,12 +518,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
     /**
      * Releases the lock for the specified key. It never blocks and
      * returns immediately.
-     *
+     * <p/>
      * <p>If the current thread is the holder of this lock then the hold
      * count is decremented.  If the hold count is now zero then the lock
      * is released.  If the current thread is not the holder of this
      * lock then {@link IllegalMonitorStateException} is thrown.
-     *
+     * <p/>
      * <p/>
      * <p><b>Warning:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
@@ -569,6 +568,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      */
     void addLocalEntryListener(EntryListener<K, V> listener);
 
+    void addInterceptor(MapInterceptor interceptor);
+
+    void removeInterceptor(MapInterceptor interceptor);
+
     /**
      * Adds an entry listener for this map. Listener will get notified
      * for all map add/remove/update/evict events.
@@ -583,11 +586,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * Adds an continuous entry listener for this map. Listener will get notified
      * for all map add/remove/update/evict events.
      *
-     * @param listener     entry listener
+     * @param listener  entry listener
      * @param predicate predicate for filtering entries
-     *
      */
-    void addQueryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Removes the specified entry listener
@@ -810,15 +812,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      *                  <tt>false</tt> otherwise.
      */
     void addIndex(String attribute, boolean ordered);
-
-    /**
-     * Adds an index to this map based on the provided expression.
-     *
-     * @param expression expression for the index.
-     * @param ordered    <tt>true</tt> if index should be ordered,
-     *                   <tt>false</tt> otherwise.
-     */
-    void addIndex(Expression<?> expression, boolean ordered);
 
     /**
      * Returns LocalMapStats for this map.

@@ -17,7 +17,6 @@
 package com.hazelcast.spring.context;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.executor.DistributedRunnableAdapter;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -39,14 +38,14 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
 
     public Object initialize(Object obj) {
         if (obj != null) {
-            if (obj instanceof DistributedRunnableAdapter) {
-                DistributedRunnableAdapter adapter = (DistributedRunnableAdapter) obj;
-                Object runnable = adapter.getRunnable();
-                runnable = initializeIfSpringAwareIsPresent(runnable);
-                adapter.setRunnable((Runnable) runnable);
-            } else {
+//            if (obj instanceof RunnableAdapter) {
+//                RunnableAdapter adapter = (RunnableAdapter) obj;
+//                Object runnable = adapter.getRunnable();
+//                runnable = initializeIfSpringAwareIsPresent(runnable);
+//                adapter.setRunnable((Runnable) runnable);
+//            } else {
                 obj = initializeIfSpringAwareIsPresent(obj);
-            }
+//            }
         }
         return obj;
     }

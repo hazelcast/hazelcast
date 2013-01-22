@@ -31,6 +31,7 @@ public class MapBackupTest extends BaseTest {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
+        Thread.sleep(1000);
 
         getInstance(1).getLifecycleService().shutdown();
         Thread.sleep(2000);

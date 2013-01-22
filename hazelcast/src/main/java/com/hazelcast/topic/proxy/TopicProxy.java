@@ -30,7 +30,6 @@ import com.hazelcast.topic.TopicService;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 /**
  * User: sancar
@@ -42,7 +41,7 @@ public class TopicProxy<E> extends AbstractDistributedObject implements ITopic<E
     private final String name;
     private final EventService eventService;
     private final ILogger logger = Logger.getLogger(TopicProxy.class.getName());
-    private final ConcurrentMap<String, String> registeredIds = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<MessageListener, String> registeredIds = new ConcurrentHashMap<MessageListener, String>();
 
     public TopicProxy(String name, NodeEngine nodeEngine) {
         super(nodeEngine);
@@ -61,17 +60,16 @@ public class TopicProxy<E> extends AbstractDistributedObject implements ITopic<E
 
     public void addMessageListener(MessageListener<E> listener) {
         EventRegistration eventRegistration = eventService.registerListener(TopicService.NAME, name, listener);
-
-        if (registeredIds.putIfAbsent(name, eventRegistration.getId()) != null)
-            logger.log(Level.FINEST, "Topic:" + getName() + " is already registered as message listener");
+        String currentId = registeredIds.put(listener, eventRegistration.getId());
+        if (currentId != null) {
+            eventService.deregisterListener(TopicService.NAME, name, currentId);
+        }
     }
 
     public void removeMessageListener(MessageListener<E> listener) {
-        if (registeredIds.get(name) == null)
-            logger.log(Level.FINEST, "There is no registered topic with the name " + getName() + " ");
-        else {
-            eventService.deregisterListener(TopicService.NAME, name, registeredIds.get(name));
-            registeredIds.remove(name);
+        String id = registeredIds.remove(listener);
+        if (id != null) {
+            eventService.deregisterListener(TopicService.NAME, name, id);
         }
     }
 

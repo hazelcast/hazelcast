@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl;
 
-import java.io.Serializable;
+public class QueryException extends RuntimeException {
+    public QueryException(Throwable cause) {
+        super(cause);
+    }
 
-public interface Expression<T> extends Serializable {
-    T getValue(Object obj);
+    public QueryException(String message) {
+        super(message);
+    }
+
+    public QueryException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

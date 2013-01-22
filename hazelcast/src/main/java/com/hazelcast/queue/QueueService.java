@@ -97,14 +97,14 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     public void commitMigration(MigrationServiceEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
             if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK){
-                cleanMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
+                clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
             }
         }
     }
 
     public void rollbackMigration(MigrationServiceEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            cleanMigrationData(event.getPartitionId(), -1);
+            clearMigrationData(event.getPartitionId(), -1);
         }
     }
 
@@ -117,7 +117,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         return max;
     }
 
-    private void cleanMigrationData(int partitionId, int copyBack) {
+    private void clearMigrationData(int partitionId, int copyBack) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
             QueueContainer container = iterator.next().getValue();

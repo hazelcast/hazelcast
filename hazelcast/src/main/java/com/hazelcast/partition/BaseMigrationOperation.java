@@ -67,11 +67,11 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return getNodeEngine().getLogger(getClass().getName());
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         migrationInfo.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
     }

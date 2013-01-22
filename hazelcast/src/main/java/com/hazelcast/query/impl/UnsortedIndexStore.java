@@ -16,70 +16,86 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.PredicateType;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class UnsortedIndexStore implements IndexStore {
-    private final ConcurrentMap<Long, ConcurrentMap<Long, IndexEntry>> mapRecords = new ConcurrentHashMap<Long, ConcurrentMap<Long, IndexEntry>>(100, 0.75f, 1);
+    private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
 
-    public void getSubRecordsBetween(MultiResultSet results, Long from, Long to) {
-        Set<Long> values = mapRecords.keySet();
-        for (Long value : values) {
-            if (value >= from && value <= to) {
-                ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
+    public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
+        int trend = from.compareTo(to);
+        if (trend == 0) {
+            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(from);
+            if (records != null) {
+                results.addResultSet(records);
+            }
+            return;
+        }
+        if (trend == -1) {
+            Comparable oldFrom = from;
+            from = to;
+            to = oldFrom;
+        }
+        Set<Comparable> values = mapRecords.keySet();
+        for (Comparable value : values) {
+            if (value.compareTo(from) <= 0 && value.compareTo(to) >= 0) {
+                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
                 if (records != null) {
-                    results.addResultSet(value, records.values());
+                    results.addResultSet(records);
                 }
             }
         }
     }
 
-    public void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue) {
-        Set<Long> values = mapRecords.keySet();
-        for (Long value : values) {
+    public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
+        Set<Comparable> values = mapRecords.keySet();
+        for (Comparable value : values) {
             boolean valid = false;
-            switch (predicateType) {
+            int result = value.compareTo(searchedValue);
+            switch (comparisonType) {
                 case LESSER:
-                    valid = value < searchedValue;
+                    valid = result < 0;
                     break;
                 case LESSER_EQUAL:
-                    valid = value <= searchedValue;
+                    valid = result <= 0;
                     break;
                 case GREATER:
-                    valid = value > searchedValue;
+                    valid = result > 0;
                     break;
                 case GREATER_EQUAL:
-                    valid = value >= searchedValue;
+                    valid = result >= 0;
                     break;
                 case NOT_EQUAL:
-                    valid = value.longValue() != searchedValue.longValue();
+                    valid = result != 0;
                     break;
             }
             if (valid) {
-                ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
+                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
                 if (records != null) {
-                    results.addResultSet(value, records.values());
+                    results.addResultSet(records);
                 }
             }
         }
     }
 
-    public void newRecordIndex(Long newValue, IndexEntry record) {
-        Long recordId = record.getId();
-        ConcurrentMap<Long, IndexEntry> records = mapRecords.get(newValue);
+    public void newIndex(Comparable newValue, QueryableEntry record) {
+        Data key = record.getKeyData();
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
         if (records == null) {
-            records = new ConcurrentHashMap<Long, IndexEntry>(1, 0.75f, 1);
-            mapRecords.put(newValue, records);
+            records = new ConcurrentHashMap<Data, QueryableEntry>();
+            ConcurrentMap<Data, QueryableEntry> existing = mapRecords.putIfAbsent(newValue, records);
+            if (existing != null) {
+                records = existing;
+            }
         }
-        records.put(recordId, record);
+        records.put(key, record);
     }
 
-    public void removeRecordIndex(Long oldValue, Long recordId) {
-        ConcurrentMap<Long, IndexEntry> records = mapRecords.get(oldValue);
+    public void removeIndex(Comparable oldValue, Data recordId) {
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
         if (records != null) {
             records.remove(recordId);
             if (records.size() == 0) {
@@ -88,15 +104,15 @@ public class UnsortedIndexStore implements IndexStore {
         }
     }
 
-    public Set<MapEntry> getRecords(Long value) {
+    public Set<QueryableEntry> getRecords(Comparable value) {
         return new SingleResultSet(mapRecords.get(value));
     }
 
-    public void getRecords(MultiResultSet results, Set<Long> values) {
-        for (Long value : values) {
-            ConcurrentMap<Long, IndexEntry> records = mapRecords.get(value);
+    public void getRecords(MultiResultSet results, Set<Comparable> values) {
+        for (Comparable value : values) {
+            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
             if (records != null) {
-                results.addResultSet(value, records.values());
+                results.addResultSet(records);
             }
         }
     }

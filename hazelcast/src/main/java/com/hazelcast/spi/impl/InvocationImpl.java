@@ -17,7 +17,9 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
@@ -34,8 +37,9 @@ import java.io.IOException;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
-abstract class InvocationImpl implements Future, Invocation, Callback {
-    private static final Object NULL_RESPONSE = new Object();
+abstract class InvocationImpl implements Future, Invocation {
+    static final Object NULL_RESPONSE = new Object();
+    static final Object TIMEOUT_RESPONSE = new Object();
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     private final long callTimeout;
@@ -49,6 +53,8 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
     protected final ILogger logger;
     private volatile int invokeCount = 0;
     private volatile boolean done = false;
+
+    private Callback<InvocationImpl> callback;  // TODO: do we need volatile?
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout) {
@@ -79,6 +85,10 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
 
     public void notify(Object result) {
         setResult(result);
+        final Callback<InvocationImpl> callbackLocal = callback;
+        if (callbackLocal != null) {
+            callbackLocal.notify(this);
+        }
     }
 
     protected abstract Address getTarget();
@@ -130,7 +140,7 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                 OperationAccessor.setCallId(op, callId);
                 boolean sent = operationService.send(op, target);
                 if (!sent) {
-                    setResult(new RetryableException(new IOException("Packet not sent!")));
+                    setResult(new RetryableIOException("Packet not sent!"));
                 }
             }
         }
@@ -149,19 +159,26 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
 
     public Object get() throws InterruptedException, ExecutionException {
         try {
-            return doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            final Object response = doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            return resolveResponse(response);
         } catch (TimeoutException e) {
             nodeEngine.getLogger(getClass().getName()).log(Level.FINEST, e.getMessage(), e);
             return null;
+        } finally {
+            done = true;
         }
     }
 
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return doGet(timeout, unit);
+        try {
+            final Object response = doGet(timeout, unit);
+            return resolveResponse(response);
+        } finally {
+            done = true;
+        }
     }
 
-    // TODO: rethink about interruption and timeouts
-    private Object doGet(long time, TimeUnit unit) throws ExecutionException, TimeoutException, InterruptedException {
+    final Object doGet(long time, TimeUnit unit) {
         long timeout = unit.toMillis(time);
         if (timeout < 0) timeout = 0;
 
@@ -181,44 +198,34 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                 logger.log(Level.FINEST, Thread.currentThread().getName()  + " is interrupted while waiting " +
                         "response for operation " + op);
                 if (!isActive()) {
-                    throw e;
+                    return e;
                 }
                 continue;
             }
             pollCount++;
 
-            if (response instanceof RetryableException) {
+            if (response instanceof Throwable) {
+                final InvocationAction action = op.onException((Throwable) response);
                 final int localInvokeCount = invokeCount;
-                if (localInvokeCount < tryCount && timeout > 0) {
-                    Thread.sleep(tryPauseMillis);
+                if (action == InvocationAction.RETRY_INVOCATION && localInvokeCount < tryCount && timeout > 0) {
+                    try {
+                        Thread.sleep(tryPauseMillis);
+                    } catch (InterruptedException e) {
+                        return e;
+                    }
                     timeout = decrementTimeout(timeout, tryPauseMillis);
                     // TODO: improve logging (see SystemLogService)
                     if (localInvokeCount > 5 && localInvokeCount % 10 == 0) {
                         logger.log(Level.WARNING, "Still invoking: " + toString());
                     }
                     doInvoke();
-                } else {
-                    done = true;
-                    throw new ExecutionException((Throwable) response);
-                }
-            } else if (response == NULL_RESPONSE) {
-                return null;
-            } else if (response != null) {
-                done = true;
-                if (response instanceof Throwable) {
-                    if (response instanceof RuntimeException) {
-                        throw (RuntimeException) response;
-                    }
-                    if (response instanceof Error) {
-                        throw (Error) response;
-                    }
-                    if (response instanceof ExecutionException) {
-                        throw (ExecutionException) response;
-                    }
-                    throw new ExecutionException((Throwable) response);
+                } else if (action == InvocationAction.CONTINUE_WAIT) {
+                    // continue;
                 } else {
                     return response;
                 }
+            } else if (response != null) {
+                return response;
             } else if (/* response == null && */ longPolling) {
                 // no response!
                 final Address target = getTarget();
@@ -235,12 +242,12 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
                     if (obj != null) {
                         return obj;
                     }
-                    throw new OperationTimeoutException("No response for " + (pollTimeout * pollCount)
+                    return new OperationTimeoutException("No response for " + (pollTimeout * pollCount)
                             + " ms. Aborting invocation! " + toString());
                 }
             }
         }
-        throw new TimeoutException();
+        return TIMEOUT_RESPONSE;
     }
 
     private boolean isOperationExecuting(Address target) {
@@ -261,6 +268,34 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
         return executing;
     }
 
+    static Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
+        if (response instanceof Throwable) {
+            if (response instanceof RuntimeException) {
+                throw (RuntimeException) response;
+            }
+            if (response instanceof ExecutionException) {
+                throw (ExecutionException) response;
+            }
+            if (response instanceof TimeoutException) {
+                throw (TimeoutException) response;
+            }
+            if (response instanceof Error) {
+                throw (Error) response;
+            }
+            if (response instanceof InterruptedException) {
+                throw (InterruptedException) response;
+            }
+            throw new ExecutionException((Throwable) response);
+        }
+        if (response == NULL_RESPONSE) {
+            return null;
+        }
+        if (response == TIMEOUT_RESPONSE) {
+            throw new TimeoutException();
+        }
+        return response;
+    }
+
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
             timeout -= diff;
@@ -270,52 +305,52 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
 
     // TODO: works only for parent-child invocations; multiple chained invocations can break the rule!
     private static void checkOperationType(Operation op) {
-//        final Operation parentOp = (Operation) ThreadContext.get().getCurrentOperation();
-//        boolean allowed = true;
-//        if (parentOp != null) {
-//            if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
-//                // OK!
-//            } else if (parentOp instanceof PartitionLevelOperation) {
-//                if (op instanceof PartitionLevelOperation
-//                        && op.getPartitionId() == parentOp.getPartitionId()) {
-//                    // OK!
-//                } else if (!(op instanceof PartitionAwareOperation)) {
-//                    // OK!
-//                } else {
-//                    allowed = false;
-//                }
-//            } else if (parentOp instanceof KeyBasedOperation) {
-//                if (op instanceof PartitionLevelOperation) {
-//                    allowed = false;
-//                } else if (op instanceof KeyBasedOperation
-//                        && ((KeyBasedOperation) parentOp).getKeyHash() == ((KeyBasedOperation) op).getKeyHash()
-//                        && parentOp.getPartitionId() == op.getPartitionId()) {
-//                    // OK!
-//                } else if (op instanceof PartitionAwareOperation
-//                        && op.getPartitionId() == parentOp.getPartitionId()) {
-//                    // OK!
-//                } else if (!(op instanceof PartitionAwareOperation)) {
-//                    // OK!
-//                } else {
-//                    allowed = false;
-//                }
-//            } else if (parentOp instanceof PartitionAwareOperation) {
-//                if (op instanceof PartitionLevelOperation) {
-//                    allowed = false;
-//                } else if (op instanceof PartitionAwareOperation
-//                        && op.getPartitionId() == parentOp.getPartitionId()) {
-//                    // OK!
-//                } else if (!(op instanceof PartitionAwareOperation)) {
-//                    // OK!
-//                } else {
-//                    allowed = false;
-//                }
-//            }
-//        }
-//        if (!allowed) {
-//            throw new HazelcastException("INVOCATION IS NOT ALLOWED! ParentOp: "
-//                    + parentOp + ", CurrentOp: " + op);
-//        }
+        final Operation parentOp = (Operation) ThreadContext.getOrCreate().getCurrentOperation();
+        boolean allowed = true;
+        if (parentOp != null) {
+            if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
+                // OK!
+            } else if (parentOp instanceof PartitionLevelOperation) {
+                if (op instanceof PartitionLevelOperation
+                        && op.getPartitionId() == parentOp.getPartitionId()) {
+                    // OK!
+                } else if (!(op instanceof PartitionAwareOperation)) {
+                    // OK!
+                } else {
+                    allowed = false;
+                }
+            } else if (parentOp instanceof KeyBasedOperation) {
+                if (op instanceof PartitionLevelOperation) {
+                    allowed = false;
+                } else if (op instanceof KeyBasedOperation
+                        && ((KeyBasedOperation) parentOp).getKeyHash() == ((KeyBasedOperation) op).getKeyHash()
+                        && parentOp.getPartitionId() == op.getPartitionId()) {
+                    // OK!
+                } else if (op instanceof PartitionAwareOperation
+                        && op.getPartitionId() == parentOp.getPartitionId()) {
+                    // OK!
+                } else if (!(op instanceof PartitionAwareOperation)) {
+                    // OK!
+                } else {
+                    allowed = false;
+                }
+            } else if (parentOp instanceof PartitionAwareOperation) {
+                if (op instanceof PartitionLevelOperation) {
+                    allowed = false;
+                } else if (op instanceof PartitionAwareOperation
+                        && op.getPartitionId() == parentOp.getPartitionId()) {
+                    // OK!
+                } else if (!(op instanceof PartitionAwareOperation)) {
+                    // OK!
+                } else {
+                    allowed = false;
+                }
+            }
+        }
+        if (!allowed) {
+            throw new HazelcastException("INVOCATION IS NOT ALLOWED! ParentOp: "
+                    + parentOp + ", CurrentOp: " + op);
+        }
     }
 
     public String getServiceName() {
@@ -348,6 +383,10 @@ abstract class InvocationImpl implements Future, Invocation, Callback {
 
     public boolean isDone() {
         return done;
+    }
+
+    void setCallback(Callback<InvocationImpl> callback) {
+        this.callback = callback;
     }
 
     @Override

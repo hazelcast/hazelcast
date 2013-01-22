@@ -33,11 +33,16 @@ public interface OperationService {
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
 
-    Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation,
-                                               boolean local) throws Exception;
 
-    Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
-                                               boolean local) throws Exception;
+    Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation) throws Exception;
+
+    Map<Integer, Object> invokeOnTargetPartitions(String serviceName, Operation operation, Address target) throws Exception;
+
+    Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
+            throws Exception;
+
+    Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+                                                  Address target) throws Exception;
 
     boolean send(Operation op, int partitionId, int replicaIndex);
 

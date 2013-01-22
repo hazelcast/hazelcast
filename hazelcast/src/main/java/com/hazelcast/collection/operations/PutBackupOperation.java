@@ -47,24 +47,23 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
 
     public void run() throws Exception {
         Object obj = isBinary() ? value : toObject(value);
-        if (index == -1){
+        if (index == -1) {
             Collection coll = getOrCreateCollection();
             response = coll.add(obj);
-        }
-        else {
+        } else {
             List list = getOrCreateCollection();
             list.add(index, obj);
             response = true;
         }
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
         value.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
         value = IOUtil.readData(in);

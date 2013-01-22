@@ -23,7 +23,6 @@ import com.hazelcast.spi.BackupOperation;
 /**
  * @ali 1/9/13
  */
-//TODO locks
 public class ClearBackupOperation extends CollectionOperation implements BackupOperation {
 
     public ClearBackupOperation() {
@@ -35,7 +34,7 @@ public class ClearBackupOperation extends CollectionOperation implements BackupO
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        container.clear();
+        container.clearObjects();
         response = true;
     }
 

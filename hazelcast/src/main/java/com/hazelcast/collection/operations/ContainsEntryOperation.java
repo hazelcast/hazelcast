@@ -54,13 +54,13 @@ public class ContainsEntryOperation extends CollectionOperation {
         }
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);

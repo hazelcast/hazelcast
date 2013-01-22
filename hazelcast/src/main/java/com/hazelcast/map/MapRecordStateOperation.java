@@ -58,9 +58,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
                 MapStore store = recordStore.getMapInfo().getStore();
                 if (store != null) {
                     Object value = record.getValue();
-                    if (value == null)
-                        value = mapService.toObject(record.getValue());
-                    store.store(mapService.toObject(dataKey), value);
+                    store.store(mapService.toObject(dataKey), mapService.toObject(value));
                 }
                 record.getState().resetStoreTime();
             }

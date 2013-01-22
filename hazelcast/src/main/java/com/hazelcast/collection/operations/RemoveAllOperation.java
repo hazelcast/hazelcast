@@ -39,17 +39,16 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
 
     public void run() throws Exception {
         coll = removeCollection();
-        if (isBinary()){
+        if (isBinary()) {
             response = new CollectionResponse(coll);
-        }
-        else {
+        } else {
             response = new CollectionResponse(coll, getNodeEngine());
         }
     }
 
     public void afterRun() throws Exception {
-        if (response != null){
-            for (Object obj: coll){
+        if (response != null) {
+            for (Object obj : coll) {
                 publishEvent(EntryEventType.REMOVED, dataKey, obj);
             }
         }

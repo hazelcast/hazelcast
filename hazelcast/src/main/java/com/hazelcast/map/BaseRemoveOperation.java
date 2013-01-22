@@ -86,6 +86,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public void afterRun() {
+        mapService.interceptAfterProcess(name, MapOperationType.REMOVE, dataKey, dataValue, dataOldValue);
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, null);
     }

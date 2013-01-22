@@ -135,6 +135,10 @@ public class MultiMapConfig implements DataSerializable {
         return this;
     }
 
+    public int getTotalBackupCount(){
+        return syncBackupCount + asyncBackupCount;
+    }
+
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("MultiMapConfig");

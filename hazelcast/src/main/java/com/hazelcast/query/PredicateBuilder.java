@@ -17,51 +17,17 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Predicates;
-import com.hazelcast.query.impl.QueryContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-public class PredicateBuilder implements Predicate, IndexAwarePredicate {
-    Expression exp = null;
+public class PredicateBuilder implements Predicate {
+    public String attribute = null;
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
     public boolean apply(MapEntry mapEntry) {
         return lsPredicates.get(0).apply(mapEntry);
-    }
-
-    public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
-        boolean strong = true;
-        Predicate predicate = lsPredicates.get(0);
-        if (predicate instanceof IndexAwarePredicate) {
-            IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-            if (!p.collectIndexAwarePredicates(lsIndexPredicates, mapIndexes)) {
-                strong = false;
-            }
-        } else {
-            strong = false;
-        }
-        return strong;
-    }
-
-    public boolean isIndexed(QueryContext queryContext) {
-        return false;
-    }
-
-    public Set<MapEntry> filter(QueryContext queryContext) {
-        return null;
-    }
-
-    public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
-        Predicate predicate = lsPredicates.get(0);
-        if (predicate instanceof IndexAwarePredicate) {
-            IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-            p.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
-        }
     }
 
     public EntryObject getEntryObject() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.semaphore;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.nio.Address;
 
-public interface IndexEntry extends MapEntry {
-    long getId();
+/**
+ * @ali 1/22/13
+ */
+public class ReleaseBackupOperation extends SemaphoreBackupOperation {
 
-    boolean isActive();
+    public ReleaseBackupOperation() {
+    }
 
-    byte[] getIndexTypes();
+    public ReleaseBackupOperation(String name, int permitCount, Address firstCaller) {
+        super(name, permitCount, firstCaller);
+    }
+
+    public void run() throws Exception {
+        getPermit().release(permitCount, firstCaller);
+        response = true;
+    }
 }

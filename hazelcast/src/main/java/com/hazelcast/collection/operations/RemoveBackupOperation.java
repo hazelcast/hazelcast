@@ -29,7 +29,7 @@ import java.util.Collection;
 /**
  * @ali 1/16/13
  */
-public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation{
+public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
     Data value;
 
@@ -45,18 +45,18 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
         Collection coll = getCollection();
         Object obj = isBinary() ? value : toObject(value);
         coll.remove(obj);
-        if (coll.isEmpty()){
+        if (coll.isEmpty()) {
             removeCollection();
         }
         response = true;
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         value.writeData(out);
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         value = IOUtil.readData(in);
     }

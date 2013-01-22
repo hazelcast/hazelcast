@@ -26,14 +26,13 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        Collection coll  = getCollection();
-        if (coll != null){
-            if (isBinary()){
+        Collection coll = getCollection();
+        if (coll != null) {
+            if (isBinary()) {
                 response = coll.containsAll(dataSet);
-            }
-            else {
+            } else {
                 Set set = new HashSet(dataSet.size());
-                for (Data data: dataSet){
+                for (Data data : dataSet) {
                     set.add(toObject(data));
                 }
                 response = coll.containsAll(set);
@@ -41,19 +40,19 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
         }
     }
 
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeInt(dataSet.size());
-        for (Data data: dataSet){
+        for (Data data : dataSet) {
             data.writeData(out);
         }
     }
 
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readData(in);
         int size = in.readInt();
         dataSet = new HashSet<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
             dataSet.add(data);

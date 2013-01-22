@@ -225,7 +225,7 @@ public final class TcpIpConnection implements Connection {
         logger.log(Level.INFO, message);
         systemLogService.logConnection(message);
         connectionManager.destroyConnection(this);
-        connectionManager.ioService.disconnectExistingCalls(endPoint);
+        connectionManager.ioService.onDisconnect(endPoint);
         if (t != null && monitor != null) {
             monitor.onError(t);
         }

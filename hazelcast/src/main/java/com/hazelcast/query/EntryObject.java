@@ -25,63 +25,62 @@ public class EntryObject {
         this.qb = qb;
     }
 
-    public EntryObject get(String property) {
-        qb.exp = Predicates.get(property);
+    public EntryObject get(String attribute) {
+        qb.attribute = attribute;
         return this;
     }
 
-    public PredicateBuilder is(String property) {
-        return addPredicate(Predicates.equal(Predicates.get(property), true));
+    public PredicateBuilder is(String attribute) {
+        return addPredicate(Predicates.equal(attribute, true));
     }
 
-    public PredicateBuilder isNot(String property) {
-        return addPredicate(Predicates.notEqual(Predicates.get(property), true));
+    public PredicateBuilder isNot(String attribute) {
+        return addPredicate(Predicates.notEqual(attribute, true));
     }
 
     public EntryObject key() {
-        Expression expression = new EntryKeyObject();
-        qb.exp = expression;
+        qb.attribute = "__key";
         return this;
     }
 
-    public PredicateBuilder equal(Object value) {
-        return addPredicate(Predicates.equal(qb.exp, value));
+    public PredicateBuilder equal(Comparable value) {
+        return addPredicate(Predicates.equal(qb.attribute, value));
     }
 
-    public PredicateBuilder notEqual(Object value) {
-        return addPredicate(Predicates.notEqual(qb.exp, value));
+    public PredicateBuilder notEqual(Comparable value) {
+        return addPredicate(Predicates.notEqual(qb.attribute, value));
     }
 
     public PredicateBuilder isNull() {
-        return addPredicate(Predicates.equal(qb.exp, null));
+        return addPredicate(Predicates.equal(qb.attribute, null));
     }
 
     public PredicateBuilder isNotNull() {
-        return addPredicate(Predicates.notEqual(qb.exp, null));
+        return addPredicate(Predicates.notEqual(qb.attribute, null));
     }
 
     public PredicateBuilder greaterThan(Comparable value) {
-        return addPredicate(Predicates.greaterThan(qb.exp, value));
+        return addPredicate(Predicates.greaterThan(qb.attribute, value));
     }
 
     public PredicateBuilder greaterEqual(Comparable value) {
-        return addPredicate(Predicates.greaterEqual(qb.exp, value));
+        return addPredicate(Predicates.greaterEqual(qb.attribute, value));
     }
 
     public PredicateBuilder lessThan(Comparable value) {
-        return addPredicate(Predicates.lessThan(qb.exp, value));
+        return addPredicate(Predicates.lessThan(qb.attribute, value));
     }
 
     public PredicateBuilder lessEqual(Comparable value) {
-        return addPredicate(Predicates.lessEqual(qb.exp, value));
+        return addPredicate(Predicates.lessEqual(qb.attribute, value));
     }
 
     public PredicateBuilder between(Comparable from, Comparable to) {
-        return addPredicate(Predicates.between(qb.exp, from, to));
+        return addPredicate(Predicates.between(qb.attribute, from, to));
     }
 
     public PredicateBuilder in(Comparable... values) {
-        return addPredicate(Predicates.in(qb.exp, values));
+        return addPredicate(Predicates.in(qb.attribute, values));
     }
 
     private PredicateBuilder addPredicate(Predicate predicate) {

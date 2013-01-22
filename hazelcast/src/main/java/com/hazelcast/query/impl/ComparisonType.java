@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
-
-import java.io.Serializable;
-
-public class EntryKeyObject<T> implements Expression<T>, Serializable {
-    public T getValue(Object obj) {
-        MapEntry entry = (MapEntry) obj;
-        return (T) entry.getKey();
-    }
+/**
+ * @mdogan 9/5/12
+ */
+public enum ComparisonType {
+    NOT_EQUAL,
+    LESSER,
+    GREATER,
+    LESSER_EQUAL,
+    GREATER_EQUAL
 }

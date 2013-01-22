@@ -294,7 +294,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     private void ping(final MemberImpl memberImpl) {
         memberImpl.didPing();
         if (!icmpEnabled) return;
-        nodeEngine.getExecutionService().execute("system", new Runnable() {
+        nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
             public void run() {
                 try {
                     final Address address = memberImpl.getAddress();

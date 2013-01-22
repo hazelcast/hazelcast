@@ -72,7 +72,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
         return getCount() > 0;
     }
 
-    public boolean setCount(int count) {
+    public boolean trySetCount(int count) {
         return false;
 //        return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_SET_COUNT, null, count);
     }

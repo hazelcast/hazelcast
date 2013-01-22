@@ -59,13 +59,13 @@ public class ReplaceIfSameOperation extends BasePutOperation {
 
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, testValue);
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         testValue = IOUtil.readNullableData(in);
     }

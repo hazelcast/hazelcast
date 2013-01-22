@@ -26,15 +26,15 @@ public class CollectionPartitionContainer {
 
     CollectionService service;
 
-    private final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
+    final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
 
     public CollectionPartitionContainer(CollectionService service) {
         this.service = service;
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId){
-        CollectionContainer collectionContainer = containerMap.get(proxyId.name);
-        if (collectionContainer == null){
+    public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId) {
+        CollectionContainer collectionContainer = containerMap.get(proxyId);
+        if (collectionContainer == null) {
             collectionContainer = new CollectionContainer(proxyId, service);
             CollectionContainer current = containerMap.putIfAbsent(proxyId, collectionContainer);
             collectionContainer = current == null ? collectionContainer : current;
@@ -44,5 +44,14 @@ public class CollectionPartitionContainer {
 
     public ConcurrentMap<CollectionProxyId, CollectionContainer> getContainerMap() {
         return containerMap; //TODO for testing only
+    }
+
+    public int getMaxBackupCount() {
+        int max = 0;
+        for (CollectionContainer container : containerMap.values()) {
+            int c = container.config.getTotalBackupCount();
+            max = Math.max(max, c);
+        }
+        return max;
     }
 }
