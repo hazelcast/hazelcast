@@ -25,7 +25,6 @@ import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
@@ -308,7 +307,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             ContainsValueOperation containsValueOperation = new ContainsValueOperation(name, dataValue);
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(MAP_SERVICE_NAME, containsValueOperation);
-
             for (Object result : results.values()) {
                 Boolean contains = (Boolean) nodeEngine.toObject(result);
                 if (contains)
@@ -624,11 +622,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public void addIndex(final String attribute, final boolean ordered) {
-
-    }
-
-    public void addIndex(final Expression<?> expression, final boolean ordered) {
-
     }
 
     public LocalMapStats getLocalMapStats() {

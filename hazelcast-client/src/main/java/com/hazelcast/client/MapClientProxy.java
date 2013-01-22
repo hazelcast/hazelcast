@@ -27,7 +27,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
@@ -45,16 +44,23 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         this.proxyHelper = new ProxyHelper("", client);
     }
 
+    public void flush(boolean flushAllEntries) {
+    }
+
+    public void addInterceptor(MapInterceptor interceptor) {
+    }
+
+    public void removeInterceptor(MapInterceptor interceptor) {
+    }
+
     public void addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
-
     }
 
     public void removeInterceptor(MapInterceptor interceptor) {
-
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
@@ -252,7 +258,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public boolean isLocked(K key) {
         check(key);
-        Protocol protocol = proxyHelper.doCommand(Command.MISKEYLOCKED, new String[]{getName()}, proxyHelper.toData(key));
+        Protocol protocol = proxyHelper.doCommand(Command.MISLOCKED, new String[]{getName()}, proxyHelper.toData(key));
         return Boolean.valueOf(protocol.args[0]);
     }
 
@@ -320,7 +326,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void flush(boolean flushAllEntries) {
-
     }
 
     public V replace(K arg0, V arg1) {

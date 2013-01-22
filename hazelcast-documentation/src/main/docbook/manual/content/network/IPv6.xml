@@ -17,22 +17,28 @@
   -->
 
 <sect2 xml:id="IPv6" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xi="http://www.w3.org/2001/XInclude"
        xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>IPv6 Support</title>
     <para>
-    Hazelcast supports IPv6 addresses seamlessly. [<emphasis>IPv6 support has been switched off by default.
-        <link xlink:href="#IPv6-Note">See note below</link></emphasis>]
+        Hazelcast supports IPv6 addresses seamlessly. [
+        <emphasis>IPv6 support has been switched off by default.
+            <link xlink:href="#IPv6-Note">See note below</link>
+        </emphasis>
+        ]
         All you need is to define IPv6 addresses or interfaces in
-    <link xlink:href="#NetworkConfig">network configuration</link>. Only limitation at the moment is you can not define
-    wildcard IPv6 addresses in <link xlink:href="#ConfigTcpIp">TCP-IP</link> join configuration.
-    <link xlink:href="#ConfigSpecifyInterfaces">Interfaces</link> section does not have this limitation, you can
-    configure wildcard IPv6 interfaces same as IPv4 interfaces.
+        <link xlink:href="#NetworkConfig">network configuration</link>. Only limitation at the moment is you can not
+        define
+        wildcard IPv6 addresses in
+        <link xlink:href="#ConfigTcpIp">TCP-IP</link>
+        join configuration.
+        <link xlink:href="#ConfigSpecifyInterfaces">Interfaces</link>
+        section does not have this limitation, you can
+        configure wildcard IPv6 interfaces same as IPv4 interfaces.
 
-    <programlisting language="xml"><![CDATA[<hazelcast>
+        <programlisting language="xml"><![CDATA[<hazelcast>
     ...
     <network>
         <port auto-increment="true">5701</port>
@@ -57,28 +63,36 @@
         ...
     </network>
 ]]></programlisting>
-</para>
+    </para>
 
     <para>
         JVM has two system properties for setting the preferred protocol stack —IPv4 or IPv6— as well as the preferred
         address family types —inet4 or inet6. On a dual stack machine IPv6 stack is preferred by default, this can be
-        changed through <code>java.net.preferIPv4Stack=&lt;true|false&gt;</code> system property. And when querying name
+        changed through
+        <code>java.net.preferIPv4Stack=&lt;true|false&gt;</code>
+        system property. And when querying name
         services JVM prefers IPv4 addressed over IPv6 addresses and will return an IPv4 address if possible. This can be
-        changed through <code>java.net.preferIPv6Addresses=&lt;true|false&gt;</code> system property.
+        changed through
+        <code>java.net.preferIPv6Addresses=&lt;true|false&gt;</code>
+        system property.
     </para>
     <para>
-    Also see additional <link xlink:href="http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/index.html#details">
+        Also see additional<link
+            xlink:href="http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/query.html#details">
         details on IPv6 support in Java
     </link>.
     </para>
 
     <para xml:id="IPv6-Note">
-    <emphasis role="bold">Note:</emphasis>
+        <emphasis role="bold">Note:</emphasis>
     </para>
     <para>
-        IPv6 support has been switched off by default, since some platforms have issues in use of IPv6 stack. And some other
+        IPv6 support has been switched off by default, since some platforms have issues in use of IPv6 stack. And some
+        other
         platforms such as Amazon AWS have no support at all. To enable IPv6 support, just set configuration property
-        <code>hazelcast.prefer.ipv4.stack</code> to false.
-        See <link xlink:href="#ConfigurationProperties">Configuration Properties.</link>
+        <code>hazelcast.prefer.ipv4.stack</code>
+        to false.
+        See
+        <link xlink:href="#ConfigurationProperties">Configuration Properties.</link>
     </para>
 </sect2>

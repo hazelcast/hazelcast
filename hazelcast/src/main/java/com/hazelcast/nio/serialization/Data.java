@@ -56,11 +56,11 @@ public class Data implements IdentifiedDataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        writeData((DataOutput)out);
+        writeData((DataOutput) out);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        readData((DataInput)in);
+        readData((DataInput) in);
     }
 
     public void readData(DataInput in) throws IOException {
@@ -112,19 +112,19 @@ public class Data implements IdentifiedDataSerializable {
     public int totalSize() {
         int total = 0;
         total += 4; //integer
-        if(cd!=null){
+        if (cd != null) {
             total += 4;
             total += 4;
             total += 4;
             total += cd.getBinary().length;
-        }else{
+        } else {
             total += 4;
         }
-        total +=4;
-        if(size()>0){
-            total +=buffer.length;
+        total += 4;
+        if (size() > 0) {
+            total += buffer.length;
         }
-        total +=4;
+        total += 4;
         return total;
     }
 
@@ -187,6 +187,10 @@ public class Data implements IdentifiedDataSerializable {
 
     public int getId() {
         return ID;
+    }
+
+    public boolean isPortable() {
+        return SerializationConstants.CONSTANT_TYPE_PORTABLE == type;
     }
 
     @Override

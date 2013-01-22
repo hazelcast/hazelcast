@@ -16,12 +16,16 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
+public class QueryException extends RuntimeException {
+    public QueryException(Throwable cause) {
+        super(cause);
+    }
 
-public interface IndexEntry extends MapEntry {
-    long getId();
+    public QueryException(String message) {
+        super(message);
+    }
 
-    boolean isActive();
-
-    byte[] getIndexTypes();
+    public QueryException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

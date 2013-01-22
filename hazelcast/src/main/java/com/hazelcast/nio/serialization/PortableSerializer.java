@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-class PortableSerializer implements TypeSerializer<Portable> {
+public class PortableSerializer implements TypeSerializer<Portable> {
 
     private final SerializationContext context;
 
@@ -80,7 +80,6 @@ class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public void destroy() {
-
     }
 
     private class ClassDefinitionWriter implements PortableWriter {
@@ -201,7 +200,5 @@ class PortableSerializer implements TypeSerializer<Portable> {
             cd.add(nestedCd);
         }
     }
-
-
 }
 

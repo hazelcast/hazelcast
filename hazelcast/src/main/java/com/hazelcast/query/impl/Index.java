@@ -16,268 +16,96 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.Expression;
-import com.hazelcast.query.PredicateType;
-import com.hazelcast.query.impl.Predicates.GetExpressionImpl;
+import com.hazelcast.nio.serialization.Data;
 
-import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class Index {
-    // recordId -- indexValue
-    private final ConcurrentMap<Long, Long> recordValues = new ConcurrentHashMap<Long, Long>(100, 0.75f, 1);
-    // indexValue -- Map<recordId, IndexEntry>
+    // recordKey -- indexValue
+    private final ConcurrentMap<Data, Comparable> recordValues = new ConcurrentHashMap<Data, Comparable>(1000);
+    // indexValue -- Map<recordKey, IndexEntry>
     private final IndexStore indexStore;
-    private final Expression expression;
-    private final boolean ordered;
-    private final int attributeIndex;
-    private volatile byte returnType = -1;
-    volatile boolean strong = false;
-    volatile boolean checkedStrength = false;
+    private final String attribute;
 
-    private static final int TYPE_STRING = 101;
-    private static final int TYPE_INT = 102;
-    private static final int TYPE_LONG = 103;
-    private static final int TYPE_BOOLEAN = 104;
-    private static final int TYPE_DOUBLE = 105;
-    private static final int TYPE_FLOAT = 106;
-    private static final int TYPE_BYTE = 107;
-    private static final int TYPE_CHAR = 108;
-    private static final int TYPE_DATE = 109;
-    private static final int TYPE_UNKNOWN = Byte.MAX_VALUE;
+    public static final NullObject NULL = new NullObject();
+    private volatile TypeConverters.TypeConverter attributeTypeConverter;
 
-    Index(Expression expression, boolean ordered, int attributeIndex) {
-        this.expression = expression;
-        this.ordered = ordered;
-        this.attributeIndex = attributeIndex;
-        if (ordered) {
-            indexStore = new SortedIndexStore();
+    public Index(String attribute, boolean ordered) {
+        this.attribute = attribute;
+        indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
+    }
+
+    public void removeIndex(QueryableEntry e) {
+        Data key = e.getKeyData();
+        Comparable oldValue = recordValues.remove(key);
+        indexStore.removeIndex(oldValue, key);
+    }
+
+    public void saveIndex(QueryableEntry e) throws QueryException {
+        Data key = e.getKeyData();
+        Comparable oldValue = recordValues.remove(key);
+        Comparable newValue = e.getAttribute(attribute);
+        if (newValue == null) {
+            newValue = NULL;
+        }
+        if (newValue.equals(oldValue)) return;
+        recordValues.put(key, newValue);
+        if (oldValue == null) {
+            // new
+            indexStore.newIndex(newValue, e);
         } else {
-            indexStore = new UnsortedIndexStore();
+            // update
+            indexStore.removeIndex(oldValue, key);
+            indexStore.newIndex(newValue, e);
+        }
+        if (attributeTypeConverter == null) {
+            attributeTypeConverter = e.getAttributeTypeConverter(attribute);
         }
     }
 
-    public void index(Long newValue, IndexEntry record) {
-        if (expression != null && returnType == -1) {
-            returnType = record.getIndexTypes()[attributeIndex];
-        }
-        final Long recordId = record.getId();
-        Long oldValue = recordValues.get(recordId);
-        if (record.isActive()) {
-            // add or update
-            if (oldValue == null) {
-                // record is new
-                newRecordIndex(newValue, record);
-            } else if (!oldValue.equals(newValue)) {
-                // record is updated
-                removeRecordIndex(oldValue, recordId);
-                newRecordIndex(newValue, record);
+    public Set<QueryableEntry> getRecords(Comparable[] values) {
+        if (values.length == 1) {
+            return indexStore.getRecords(convert(values[0]));
+        } else {
+            Set<Comparable> convertedValues = new HashSet(values.length);
+            for (Comparable value : values) {
+                convertedValues.add(convert(value));
             }
-        } else {
-            // remove the index
-            if (oldValue != null) {
-                removeRecordIndex(oldValue, recordId);
-            }
-            recordValues.remove(recordId);
-        }
-    }
-
-    public Long extractLongValue(Object value) {
-        Object extractedValue = expression.getValue(value);
-        setIndexType(extractedValue);
-        if (extractedValue == null) {
-            return Long.MIN_VALUE;
-        } else {
-            returnType = getIndexType(extractedValue.getClass());
-            if (!checkedStrength) {
-                if (extractedValue instanceof Boolean || extractedValue instanceof Number) {
-                    strong = true;
-                }
-                checkedStrength = true;
-            }
-            return getLongValueByType(extractedValue);
-        }
-    }
-
-    private void newRecordIndex(Long newValue, IndexEntry record) {
-        Long recordId = record.getId();
-        indexStore.newRecordIndex(newValue, record);
-        recordValues.put(recordId, newValue);
-    }
-
-    private void removeRecordIndex(Long oldValue, Long recordId) {
-        recordValues.remove(recordId);
-        indexStore.removeRecordIndex(oldValue, recordId);
-    }
-
-    public void appendState(StringBuffer sbState) {
-        sbState.append("\nexp:" + expression + ", recordValues:" + recordValues.size() + ", " + indexStore);
-    }
-
-    public Set<MapEntry> getRecords(Set<Long> uniqueValues) {
-        if (uniqueValues.size() == 1) {
-            return indexStore.getRecords(uniqueValues.iterator().next());
-        } else {
-            MultiResultSet results = new MultiResultSet(recordValues);
-            indexStore.getRecords(results, uniqueValues);
+            MultiResultSet results = new MultiResultSet();
+            indexStore.getRecords(results, convertedValues);
             return results;
         }
     }
 
-    public Set<MapEntry> getRecords(Long value) {
-        return indexStore.getRecords(value);
+    public Set<QueryableEntry> getRecords(Comparable value) {
+        return indexStore.getRecords(convert(value));
     }
 
-    public Set<MapEntry> getSubRecordsBetween(Long from, Long to) {
-        MultiResultSet results = new MultiResultSet(recordValues);
-        indexStore.getSubRecordsBetween(results, from, to);
+    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
+        MultiResultSet results = new MultiResultSet();
+        indexStore.getSubRecordsBetween(results, convert(from), convert(to));
         return results;
     }
 
-    public Set<MapEntry> getSubRecords(PredicateType predicateType, Long searchedValue) {
-        MultiResultSet results = new MultiResultSet(recordValues);
-        indexStore.getSubRecords(results, predicateType, searchedValue);
+    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
+        MultiResultSet results = new MultiResultSet();
+        indexStore.getSubRecords(results, comparisonType, searchedValue);
         return results;
     }
 
-    void setIndexType(Object extractedValue) {
-        if (returnType == -1) {
-            if (expression instanceof GetExpressionImpl) {
-                GetExpressionImpl ex = (GetExpressionImpl) expression;
-                returnType = getIndexType(ex.getter.getReturnType());
-            } else {
-                if (extractedValue == null) throw new RuntimeException("Indexed value cannot be null!");
-                returnType = getIndexType(extractedValue.getClass());
-            }
+    public Comparable convert(Comparable value) {
+        if (attributeTypeConverter == null) return value;
+        return attributeTypeConverter.convert(value);
+    }
+
+    final static class NullObject implements Comparable {
+
+        public int compareTo(Object o) {
+            if (o == this || o instanceof NullObject) return 0;
+            return -1;
         }
-    }
-
-    public byte getIndexType() {
-        return returnType;
-    }
-
-    public static byte getIndexType(Class klass) {
-        if (klass == String.class) {
-            return TYPE_STRING;
-        } else if (klass == int.class || klass == Integer.class) {
-            return TYPE_INT;
-        } else if (klass == long.class || klass == Long.class) {
-            return TYPE_LONG;
-        } else if (klass == boolean.class || klass == Boolean.class) {
-            return TYPE_BOOLEAN;
-        } else if (klass == double.class || klass == Double.class) {
-            return TYPE_DOUBLE;
-        } else if (klass == float.class || klass == Float.class) {
-            return TYPE_FLOAT;
-        } else if (klass == byte.class || klass == Byte.class) {
-            return TYPE_BYTE;
-        } else if (klass == char.class || klass == Character.class) {
-            return TYPE_CHAR;
-        } else if (Date.class.isAssignableFrom(klass)) { // util.Date, sql.Timestamp, sql.Date
-            return TYPE_DATE;
-        } else if (klass.isEnum()) {
-            return TYPE_STRING;
-        } else {
-            return TYPE_UNKNOWN;
-        }
-    }
-
-    private static long getLongValueByType(Object value) {
-        if (value == null) return Long.MIN_VALUE;
-        if (value instanceof Double) {
-            return Double.doubleToLongBits((Double) value);
-        } else if (value instanceof Float) {
-            return Float.floatToIntBits((Float) value);
-        } else if (value instanceof Number) {
-            return ((Number) value).longValue();
-        } else if (value instanceof Boolean) {
-            return (Boolean.TRUE.equals(value)) ? 1 : -1;
-        } else if (value instanceof String) {
-            return getLongValueForString((String) value);
-        } else if (value.getClass().isEnum()) {
-            return getLongValueForString(value.toString());
-        } else if (value instanceof Date) {
-            return ((Date) value).getTime();
-        } else {
-            return value.hashCode();
-        }
-    }
-
-    long getLongValue(Object value) {
-        if (value == null) return Long.MIN_VALUE;
-        int valueType = getIndexType(value.getClass());
-        if (valueType != returnType) {
-            if (value instanceof String) {
-                String str = (String) value;
-                if (returnType == TYPE_INT) {
-                    value = Integer.valueOf(str);
-                } else if (returnType == TYPE_LONG) {
-                    value = Long.valueOf(str);
-                } else if (returnType == TYPE_BOOLEAN) {
-                    value = Boolean.valueOf(str);
-                } else if (returnType == TYPE_DOUBLE) {
-                    value = Double.valueOf(str);
-                } else if (returnType == TYPE_FLOAT) {
-                    value = Float.valueOf(str);
-                } else if (returnType == TYPE_BYTE) {
-                    value = Byte.valueOf(str);
-                } else if (returnType == TYPE_CHAR) {
-                    value = str.hashCode();
-                } else if (returnType == TYPE_DATE) {
-                    value = DateHelper.tryParse(str);
-                }
-            }
-        }
-        return getLongValueByType(value);
-    }
-
-    /**
-     * @see String#compareTo(String)
-     */
-    private static long getLongValueForString(String s) {
-        final int maxCharsToIndex = 5;  // just index first 5 chars
-        final char[] chars = s.toCharArray();
-        long result = 0L;
-        for (int i = 0; i < Math.min(maxCharsToIndex, chars.length); i++) {
-            result += Math.pow(127, (maxCharsToIndex - i)) * chars[i];
-        }
-        return result;
-    }
-
-    public int getAttributeIndex() {
-        return attributeIndex;
-    }
-
-    public boolean isStrong() {
-        return strong;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Index index = (Index) o;
-        return expression.equals(index.expression);
-    }
-
-    @Override
-    public int hashCode() {
-        return expression.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        final StringBuffer sb = new StringBuffer();
-        sb.append("Index{");
-        sb.append("recordValues=").append(recordValues.size());
-        sb.append(", ").append(indexStore);
-        sb.append(", ordered=").append(ordered);
-        sb.append(", strong=").append(strong);
-        sb.append(", expression=").append(expression);
-        sb.append('}');
-        return sb.toString();
     }
 }

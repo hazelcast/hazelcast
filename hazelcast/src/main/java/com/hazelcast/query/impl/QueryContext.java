@@ -16,42 +16,22 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
-import java.util.Map;
-
 public class QueryContext {
+    final IndexService indexService;
     final Predicate predicate;
-    final MapIndexService mapIndexService;
-    final String mapName;
-    final Map<Expression, Index> mapIndexes;
-    boolean strong = false;
 
-    public QueryContext(String mapName, Predicate predicate, MapIndexService mapIndexService) {
-        this.mapName = mapName;
+    public QueryContext(IndexService indexService, Predicate predicate) {
+        this.indexService = indexService;
         this.predicate = predicate;
-        this.mapIndexService = mapIndexService;
-        this.mapIndexes = mapIndexService.getIndexes();
     }
 
-    public boolean isStrong() {
-        return strong;
-    }
-
-    public void setStrong(boolean strong) {
-        this.strong = strong;
+    public IndexService getIndexService() {
+        return indexService;
     }
 
     public Predicate getPredicate() {
         return predicate;
-    }
-
-    public Map<Expression, Index> getMapIndexes() {
-        return mapIndexes;
-    }
-
-    public MapIndexService getMapIndexService() {
-        return mapIndexService;
     }
 }
