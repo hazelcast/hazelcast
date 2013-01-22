@@ -57,12 +57,17 @@ class ExecutionCallbackAdapterFactory {
                 logger.log(Level.WARNING, "Replacing current callback value[" + current.value
                         + " with value[" + response + "].");
             }
+            try {
+                multiExecutionCallback.onResponse(member, response);
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+            }
             if (members.size() == responses.size() && done.compareAndSet(false, true)) {
                 Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
                 for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
                     realResponses.put(entry.getKey(), entry.getValue().value);
                 }
-                multiExecutionCallback.done(realResponses);
+                multiExecutionCallback.onComplete(realResponses);
             }
         } else {
             throw new IllegalArgumentException(member + " is not known by this callback!");

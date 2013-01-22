@@ -20,5 +20,7 @@ import java.util.Map;
 
 public interface MultiExecutionCallback {
 
-    void done(Map<Member, Object> values);
+    void onResponse(Member member, Object value);
+
+    void onComplete(Map<Member, Object> values);
 }

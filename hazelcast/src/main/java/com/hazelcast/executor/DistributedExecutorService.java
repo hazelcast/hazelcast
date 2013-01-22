@@ -27,7 +27,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 1/18/13
  */
-public class DistributedExecutorService implements ManagedService, RemoteService, MembershipAwareService {
+public class DistributedExecutorService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -54,14 +54,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 }
             }
         });
-    }
-
-    public void memberAdded(MembershipServiceEvent event) {
-
-    }
-
-    public void memberRemoved(MembershipServiceEvent event) {
-
     }
 
     public String getServiceName() {
