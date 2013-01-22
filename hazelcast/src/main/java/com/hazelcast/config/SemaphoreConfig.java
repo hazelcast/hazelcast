@@ -15,7 +15,6 @@
  */
 package com.hazelcast.config;
 
-import com.hazelcast.core.SemaphoreFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -24,85 +23,45 @@ import java.io.IOException;
 
 public class SemaphoreConfig implements DataSerializable {
 
+    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+
     private String name;
     private int initialPermits;
-    private boolean factoryEnabled;
-    private String factoryClassName;
-    private SemaphoreFactory factoryImplementation;
+    private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
+
 
     public SemaphoreConfig() {
     }
 
-    public SemaphoreConfig(String name) {
-        this.name = name;
-    }
-
-    public SemaphoreConfig(String name, int initialPermits) {
-        this.name = name;
-        this.initialPermits = initialPermits;
-    }
-
-    public SemaphoreConfig(String name, SemaphoreConfig sc) {
-        this.name = name;
-        this.factoryClassName = sc.factoryClassName;
-        this.initialPermits = sc.initialPermits;
+    public SemaphoreConfig(SemaphoreConfig config) {
+        this.name = config.getName();
+        this.initialPermits = config.getInitialPermits();
+        this.syncBackupCount = config.getSyncBackupCount();
+        this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         initialPermits = in.readInt();
-        boolean hasFactory = in.readBoolean();
-        if (hasFactory) {
-            factoryClassName = in.readUTF();
-        }
+        syncBackupCount = in.readInt();
+        asyncBackupCount = in.readInt();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(initialPermits);
-        boolean hasFactory = (factoryClassName != null);
-        out.writeBoolean(hasFactory);
-        if (hasFactory) {
-            out.writeUTF(factoryClassName);
-        }
+        out.writeInt(syncBackupCount);
+        out.writeInt(asyncBackupCount);
     }
 
     public String getName() {
         return name;
     }
 
-    /**
-     * @param name the name to set
-     */
     SemaphoreConfig setName(String name) {
         this.name = name;
-        return this;
-    }
-
-    public String getFactoryClassName() {
-        return factoryClassName;
-    }
-
-    public SemaphoreConfig setFactoryClassName(String factoryClassName) {
-        this.factoryClassName = factoryClassName;
-        return this;
-    }
-
-    public boolean isFactoryEnabled() {
-        return factoryEnabled;
-    }
-
-    public SemaphoreConfig setFactoryEnabled(boolean factoryEnabled) {
-        this.factoryEnabled = factoryEnabled;
-        return this;
-    }
-
-    public SemaphoreFactory getFactoryImplementation() {
-        return factoryImplementation;
-    }
-
-    public SemaphoreConfig setFactoryImplementation(SemaphoreFactory factoryImplementation) {
-        this.factoryImplementation = factoryImplementation;
         return this;
     }
 
@@ -115,11 +74,25 @@ public class SemaphoreConfig implements DataSerializable {
         return this;
     }
 
-    @Override
-    public String toString() {
-        return "SemaphoreConfig [name=" + this.name
-                + ", factoryEnabled=" + Boolean.valueOf(factoryEnabled)
-                + ", factoryClassName=" + this.factoryClassName
-                + ", factoryImplementation=" + this.factoryImplementation + "]";
+    public int getSyncBackupCount() {
+        return syncBackupCount;
+    }
+
+    public SemaphoreConfig setSyncBackupCount(int syncBackupCount) {
+        this.syncBackupCount = syncBackupCount;
+        return this;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = asyncBackupCount;
+        return this;
+    }
+
+    public int getTotalBackupCount(){
+        return asyncBackupCount + syncBackupCount;
     }
 }

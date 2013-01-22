@@ -90,4 +90,10 @@ public class QueueItem implements DataSerializable {
         itemId = in.readLong();
         data = IOUtil.readNullableData(in);
     }
+
+    public int hashCode() {
+        int result = (int) (itemId ^ (itemId >>> 32));
+        result = 31 * result + (data != null ? data.hashCode() : 0);
+        return result;
+    }
 }

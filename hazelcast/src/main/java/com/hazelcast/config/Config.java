@@ -314,8 +314,8 @@ public class Config implements DataSerializable {
 
     /**
      * @return the port
-     * @deprecated instead use getNetworkConfig().getPort()
      * @see NetworkConfig#getPort()
+     * @deprecated instead use getNetworkConfig().getPort()
      */
     @Deprecated
     public int getPort() {
@@ -324,8 +324,8 @@ public class Config implements DataSerializable {
 
     /**
      * @param port the port to set
-     * @deprecated instead use getNetworkConfig().setPort(int)
      * @see NetworkConfig#setPort(int)
+     * @deprecated instead use getNetworkConfig().setPort(int)
      */
     @Deprecated
     public Config setPort(int port) {
@@ -335,8 +335,8 @@ public class Config implements DataSerializable {
 
     /**
      * @return the portAutoIncrement
-     * @deprecated instead use getNetworkConfig().isPortAutoIncrement()
      * @see NetworkConfig#isPortAutoIncrement()
+     * @deprecated instead use getNetworkConfig().isPortAutoIncrement()
      */
     @Deprecated
     public boolean isPortAutoIncrement() {
@@ -345,8 +345,8 @@ public class Config implements DataSerializable {
 
     /**
      * @param portAutoIncrement the portAutoIncrement to set
-     * @deprecated instead use getNetworkConfig().setPortAutoIncrement(boolean)
      * @see NetworkConfig#setPortAutoIncrement(boolean)
+     * @deprecated instead use getNetworkConfig().setPortAutoIncrement(boolean)
      */
     @Deprecated
     public Config setPortAutoIncrement(boolean portAutoIncrement) {
@@ -417,9 +417,9 @@ public class Config implements DataSerializable {
         ExecutorConfig defaultConfig = executorConfigs.get("default");
         if (defaultConfig != null) {
             ec = new ExecutorConfig(name,
-                defaultConfig.getCorePoolSize(),
-                defaultConfig.getMaxPoolSize(),
-                defaultConfig.getKeepAliveSeconds());
+                    defaultConfig.getCorePoolSize(),
+                    defaultConfig.getMaxPoolSize(),
+                    defaultConfig.getKeepAliveSeconds());
         }
         if (ec == null) {
             ec = new ExecutorConfig(name);
@@ -559,13 +559,13 @@ public class Config implements DataSerializable {
         }
 
         SemaphoreConfig defaultConfig = semaphoreConfigs.get("default");
-        if (defaultConfig != null) {
-           sc = new SemaphoreConfig(name, defaultConfig);
+        if (defaultConfig == null) {
+            defaultConfig = new SemaphoreConfig();
+            defaultConfig.setName("default");
+            addSemaphoreConfig(defaultConfig);
         }
-        if (sc == null) {
-            sc = new SemaphoreConfig(name);
-            semaphoreConfigs.put(name, sc);
-        }
+        sc = new SemaphoreConfig(defaultConfig);
+        addSemaphoreConfig(sc);
         return sc;
     }
 

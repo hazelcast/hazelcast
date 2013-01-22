@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,39 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.semaphore;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
 /**
- * @mdogan 1/15/13
+ * @ali 1/22/13
  */
-public class QueueWaitNotifyKey extends AbstractWaitNotifyKey {
+public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 
     private final String type;
 
-    public QueueWaitNotifyKey(Object id, String type) {
-        super(QueueService.QUEUE_SERVICE_NAME, id);
+    protected SemaphoreWaitNotifyKey(Object id, String type) {
+        super(SemaphoreService.SEMAPHORE_SERVICE_NAME, id);
         this.type = type;
     }
 
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SemaphoreWaitNotifyKey)) return false;
         if (!super.equals(o)) return false;
 
-        QueueWaitNotifyKey that = (QueueWaitNotifyKey) o;
+        SemaphoreWaitNotifyKey that = (SemaphoreWaitNotifyKey) o;
 
-        if (!type.equals(that.type)) return false;
+        if (type != null ? !type.equals(that.type) : that.type != null) return false;
 
         return true;
     }
 
-    @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + type.hashCode();
+        result = 31 * result + (type != null ? type.hashCode() : 0);
         return result;
     }
 }

@@ -33,6 +33,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.semaphore.SemaphoreService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
@@ -151,7 +152,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ISemaphore getSemaphore(final String name) {
-        throw new UnsupportedOperationException();
+        return getDistributedObject(SemaphoreService.SEMAPHORE_SERVICE_NAME, name);
     }
 
     public Cluster getCluster() {

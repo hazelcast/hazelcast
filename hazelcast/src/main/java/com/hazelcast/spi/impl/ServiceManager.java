@@ -31,6 +31,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.semaphore.SemaphoreService;
 import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
@@ -76,6 +77,7 @@ class ServiceManager {
                 registerService(TopicService.NAME, new TopicService());
                 registerService(CollectionService.COLLECTION_SERVICE_NAME, new CollectionService(nodeEngine));
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
+                registerService(SemaphoreService.SEMAPHORE_SERVICE_NAME, new SemaphoreService(nodeEngine));
                 // TODO: add other services
                 // ...
                 // ...
