@@ -30,7 +30,7 @@ public class LockClientProxy implements ILock {
     final ProxyHelper proxyHelper;
     final Object lockObject;
 
-    public LockClientProxy(Object object, HazelcastClient client) {
+    public LockClientProxy(HazelcastClient client, Object object) {
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
         lockObject = object;
         check(lockObject);

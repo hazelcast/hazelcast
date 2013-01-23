@@ -200,7 +200,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public Map<Command, ClientCommandHandler> getCommandMap() {
-        return null;
+        return commandHandlers;
     }
 
     public NodeEngine getNodeEngine() {
