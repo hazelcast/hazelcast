@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 
@@ -29,7 +31,7 @@ public class SemaphoreClientProxy implements ISemaphore {
 
     public SemaphoreClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(getName(), hazelcastClient);
+        proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public void acquire() throws InterruptedException {
@@ -169,6 +171,10 @@ public class SemaphoreClientProxy implements ISemaphore {
 
     public String getName() {
         return name;
+    }
+
+    public boolean init(int permits) {
+        return false;
     }
 
     private Future doAcquireAsync(final int permits, final boolean attach) {

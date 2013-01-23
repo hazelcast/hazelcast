@@ -16,8 +16,8 @@
 
 package com.hazelcast.hibernate.instance;
 
-import com.hazelcast.client.ClientConfig;
-import com.hazelcast.client.ClientConfigBuilder;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConfigBuilder;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;

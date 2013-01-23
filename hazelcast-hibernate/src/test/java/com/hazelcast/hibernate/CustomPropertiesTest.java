@@ -16,7 +16,7 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;

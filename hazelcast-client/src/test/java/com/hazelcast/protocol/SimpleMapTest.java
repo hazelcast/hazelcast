@@ -16,19 +16,12 @@
 
 package com.hazelcast.protocol;
 
-import com.hazelcast.client.ClientConfig;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.IMap;
-
 import java.io.*;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
 
 public class SimpleMapTest extends ProtocolTest{
 

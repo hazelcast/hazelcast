@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
@@ -29,8 +30,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -67,40 +66,40 @@ public class ConnectionManager implements MembershipListener {
         }
     }
 
-    void scheduleHeartbeatTimerTask() {
-        final int TIMEOUT = config.getConnectionTimeout();
-        heartbeatTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                long diff = Clock.currentTimeMillis() - client.getInRunnable().lastReceived;
-                try {
-                    if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
-                        logger.log(Level.FINEST,
-                                   "Being idle for some time, Doing a getMembers() call to ping the server!");
-                        final CountDownLatch latch = new CountDownLatch(1);
-                        new Thread(new Runnable() {
-                            public void run() {
-                                Set<Member> members = client.getCluster().getMembers();
-                                if (members != null && members.size() >= 1) {
-                                    latch.countDown();
-                                }
-                            }
-                        }).start();
-                        if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
-                            logger.log(Level.WARNING, "Server didn't respond to client's ping call within 10 seconds!");
-                        }
-                    } else if (diff >= TIMEOUT) {
-                        logger.log(Level.WARNING, "Server didn't respond to client's requests for " + TIMEOUT / 1000 +
-                                                  " seconds. Assuming it is dead, closing the connection!");
-                        currentConnection.close();
-                    }
-                } catch (InterruptedException e) {
-                    return;
-                } catch (IOException ignored) {
-                }
-            }
-        }, TIMEOUT, TIMEOUT / 10);
-    }
+//    void scheduleHeartbeatTimerTask() {
+//        final int TIMEOUT = config.getConnectionTimeout();
+//        heartbeatTimer.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                long diff = Clock.currentTimeMillis() - client.getInRunnable().lastReceived;
+//                try {
+//                    if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
+//                        logger.log(Level.FINEST,
+//                                   "Being idle for some time, Doing a getMembers() call to ping the server!");
+//                        final CountDownLatch latch = new CountDownLatch(1);
+//                        new Thread(new Runnable() {
+//                            public void run() {
+//                                Set<Member> members = client.getCluster().getMembers();
+//                                if (members != null && members.size() >= 1) {
+//                                    latch.countDown();
+//                                }
+//                            }
+//                        }).start();
+//                        if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
+//                            logger.log(Level.WARNING, "Server didn't respond to client's ping call within 10 seconds!");
+//                        }
+//                    } else if (diff >= TIMEOUT) {
+//                        logger.log(Level.WARNING, "Server didn't respond to client's requests for " + TIMEOUT / 1000 +
+//                                                  " seconds. Assuming it is dead, closing the connection!");
+//                        currentConnection.close();
+//                    }
+//                } catch (InterruptedException e) {
+//                    return;
+//                } catch (IOException ignored) {
+//                }
+//            }
+//        }, TIMEOUT, TIMEOUT / 10);
+//    }
 
     public Connection getInitConnection() throws IOException {
         if (currentConnection == null) {

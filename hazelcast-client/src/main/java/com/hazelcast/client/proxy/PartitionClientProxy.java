@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -34,7 +36,7 @@ public class PartitionClientProxy implements PartitionService {
     final private ProxyHelper proxyHelper;
 
     public PartitionClientProxy(HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public Set<Partition> getPartitions() {

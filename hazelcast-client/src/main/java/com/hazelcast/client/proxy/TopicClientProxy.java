@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.MessageListenerManager;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.protocol.Command;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class TopicClientProxy<T> implements ITopic {
     private final String name;
@@ -32,7 +34,7 @@ public class TopicClientProxy<T> implements ITopic {
 
     public TopicClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public String getName() {
@@ -66,7 +68,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     private MessageListenerManager messageListenerManager() {
-        return proxyHelper.client.getListenerManager().getMessageListenerManager();
+        return null;//proxyHelper.client.getListenerManager().getMessageListenerManager();
     }
 
     public void destroy() {

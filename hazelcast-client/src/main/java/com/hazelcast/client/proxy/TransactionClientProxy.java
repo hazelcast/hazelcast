@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.nio.protocol.Command;
 
@@ -23,7 +25,7 @@ public class TransactionClientProxy implements Transaction {
     final ProxyHelper proxyHelper;
 
     public TransactionClientProxy(String name, HazelcastClient client) {
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public void begin() throws IllegalStateException {

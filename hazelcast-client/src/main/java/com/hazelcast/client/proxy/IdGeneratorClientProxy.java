@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.IdGenerator;
 
 public class IdGeneratorClientProxy implements IdGenerator {
@@ -24,7 +26,7 @@ public class IdGeneratorClientProxy implements IdGenerator {
 
     public IdGeneratorClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public String getName() {

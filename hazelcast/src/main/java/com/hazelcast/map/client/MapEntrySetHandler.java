@@ -22,6 +22,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 
 import java.util.Map;
 import java.util.Set;
@@ -34,8 +35,18 @@ public class MapEntrySetHandler extends MapCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
-        Set<Map.Entry<Data, Data>> entries = dataMapProxy.entrySet();
+        Predicate predicate = null;
+        if(protocol.buffers.length > 0){
+            predicate = (Predicate) node.serializationService.toObject(protocol.buffers[0]);
+        }
+        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        Set<Map.Entry<Data, Data>> entries;
+        System.out.println("Predicate is " + predicate);
+        if(predicate == null)
+            entries= dataMapProxy.entrySet();
+        else
+            entries = dataMapProxy.entrySet(predicate);
+        System.out.println(entries);
         Data[] arrayEntries = new Data[entries.size() * 2];
         int i = 0;
         for (Map.Entry<Data, Data> entry : entries) {

@@ -18,11 +18,9 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
@@ -94,7 +92,7 @@ public class MessageListenerManager {
     public Collection<Call> calls(final HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : messageListeners.keySet()) {
-            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            final ProxyHelper proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
             calls.add(createNewAddListenerCall(proxyHelper));
         }
         return calls;

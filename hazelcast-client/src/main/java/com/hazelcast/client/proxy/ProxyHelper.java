@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.Connection;
+import com.hazelcast.client.ConnectionPool;
+import com.hazelcast.client.ProtocolReader;
+import com.hazelcast.client.ProtocolWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationConstants;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
@@ -38,15 +41,15 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ProxyHelper {
 
     private final static AtomicLong callIdGen = new AtomicLong(0);
-    protected final HazelcastClient client;
-    final ILogger logger = com.hazelcast.logging.Logger.getLogger(this.getClass().getName());
-    ProtocolWriter writer = new ProtocolWriter();
-    ProtocolReader reader = new ProtocolReader();
-    ConnectionPool connectionPool;
+    private final ILogger logger = com.hazelcast.logging.Logger.getLogger(this.getClass().getName());
+    private final ProtocolWriter writer = new ProtocolWriter();
+    private final ProtocolReader reader = new ProtocolReader();
+    private final ConnectionPool cp;
+    private final SerializationService ss;
 
-    public ProxyHelper(String a, HazelcastClient client) {
-        this.client = client;
-        connectionPool = new ConnectionPool(client.getConnectionManager());
+    public ProxyHelper(SerializationService ss, ConnectionPool cp) {
+        this.cp = cp;
+        this.ss = ss;
     }
 
     public int getCurrentThreadId() {
@@ -84,9 +87,9 @@ public class ProxyHelper {
         if (obj == null) {
             throw new NullPointerException("Object cannot be null.");
         }
-//        if (!(obj instanceof Serializable)) {
-//            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
-//        }
+        if (!(obj instanceof Serializable)) {
+            throw new IllegalArgumentException(obj.getClass().getName() + " is not Serializable.");
+        }
     }
 
     public static void checkTime(long time, TimeUnit timeunit) {
@@ -105,25 +108,25 @@ public class ProxyHelper {
     }
 
     public Data toData(Object obj) {
-        return client.getSerializationService().toData(obj);
+        return ss.toData(obj);
     }
 
     public Object toObject(Data data) {
-        return client.getSerializationService().toObject(data);
+        return ss.toObject(data);
     }
 
     private Object getSingleObjectFromResponse(Protocol response) {
         if (response!=null && response.buffers != null && response.hasBuffer()) {
-            return client.getSerializationService().toObject(response.buffers[0]);
+            return ss.toObject(response.buffers[0]);
         } else return null;
     }
 
     public void doFireNForget(Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command,args, data);
         try {
-            Connection connection = connectionPool.takeConnection();
-            writer.write(connection,protocol);
-            connectionPool.releaseConnection(connection);
+            Connection connection = cp.takeConnection();
+            writer.write(connection, protocol);
+            cp.releaseConnection(connection);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -133,12 +136,12 @@ public class ProxyHelper {
     public Protocol doCommand(Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command,args, data);
         try {
-            Connection connection = connectionPool.takeConnection();
+            Connection connection = cp.takeConnection();
             protocol.onEnqueue();
-            writer.write(connection,protocol);
+            writer.write(connection, protocol);
             writer.flush(connection);
             Protocol response = reader.read(connection);
-            connectionPool.releaseConnection(connection);
+            cp.releaseConnection(connection);
             return response;
         } catch (IOException e) {
             e.printStackTrace();
@@ -147,6 +150,8 @@ public class ProxyHelper {
             throw new RuntimeException(e);
         }
     }
+
+
 
     private Protocol createProtocol(Command command, String[] args, Data[] data) {
         if (args == null) args = new String[]{};
@@ -158,7 +163,7 @@ public class ProxyHelper {
     <V> Future<V> doAsync(final Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command, args, data);
         try {
-            final Connection connection = connectionPool.takeConnection();
+            final Connection connection = cp.takeConnection();
             writer.write(connection, protocol);
             return new Future<V>() {
                 public boolean cancel(boolean mayInterruptIfRunning) {
@@ -254,7 +259,7 @@ public class ProxyHelper {
         List<E> list = new ArrayList<E>();
         if(protocol.hasBuffer()){
             for(Data bb: protocol.buffers){
-                list.add((E) client.getSerializationService().toObject(bb));
+                list.add((E) ss.toObject(bb));
             }
         }
         return list;

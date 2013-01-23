@@ -16,7 +16,9 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ListenerManager;
+import com.hazelcast.client.proxy.*;
 import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -30,7 +32,6 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.RemoteService;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -53,25 +54,20 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 public class HazelcastClient implements HazelcastInstance {
 
     private final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-
     private final static AtomicInteger clientIdCounter = new AtomicInteger();
-
     private final static List<HazelcastClient> lsClients = new CopyOnWriteArrayList<HazelcastClient>();
-
     private final int id;
     private final ClientConfig config;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    private final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
     private final ListenerManager listenerManager;
-    private final OutRunnable out;
-    private final InRunnable in;
-    private final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
+    private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
     private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     private final ClusterClientProxy clusterClientProxy;
     private final PartitionClientProxy partitionClientProxy;
     private final LifecycleServiceClientImpl lifecycleService;
     private final ConnectionManager connectionManager;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
+    private final ConnectionPool connectionPool;
 
     private HazelcastClient(ClientConfig config) {
         if (config.getAddressList().size() == 0) {
@@ -85,13 +81,10 @@ public class HazelcastClient implements HazelcastInstance {
         this.id = clientIdCounter.incrementAndGet();
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
-        //empty check
         connectionManager = new ConnectionManager(this, config, lifecycleService);
-        connectionManager.setBinder(new DefaultClientBinder(this));
-        out = new OutRunnable(this, calls, new ProtocolWriter());
-        in = new InRunnable(this, out, calls, new ProtocolReader());
+        connectionManager.setBinder(new DefaultClientBinder());
+        connectionPool = new ConnectionPool(connectionManager);
         listenerManager = new ListenerManager(this, serializationService);
-
 //        try {
 //            final Connection c = connectionManager.getInitConnection();
 //            if (c == null) {
@@ -104,18 +97,14 @@ public class HazelcastClient implements HazelcastInstance {
 //            lifecycleService.destroy();
 //            throw new ClusterClientException(e.getMessage(), e);
 //        }
-        final String prefix = "hz.client." + this.id + ".";
-//        new Thread(out, prefix + "OutThread").start();
-//        new Thread(in, prefix + "InThread").start();
-//        new Thread(listenerManager, prefix + "Listener").start();
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
         if (config.isUpdateAutomatic()) {
             this.getCluster().addMembershipListener(connectionManager);
-//            connectionManager.updateMembers();
+            connectionManager.updateMembers();
         }
         lifecycleService.fireLifecycleEvent(STARTED);
-        connectionManager.scheduleHeartbeatTimerTask();
+//        connectionManager.scheduleHeartbeatTimerTask();
         lsClients.add(HazelcastClient.this);
     }
 
@@ -123,15 +112,11 @@ public class HazelcastClient implements HazelcastInstance {
         return config.getGroupConfig();
     }
 
-    public InRunnable getInRunnable() {
-        return in;
+    public ConnectionPool getConnectionPool() {
+        return connectionPool;
     }
 
-    public OutRunnable getOutRunnable() {
-        return out;
-    }
-
-    ListenerManager getListenerManager() {
+    public ListenerManager getListenerManager() {
         return listenerManager;
     }
 
@@ -163,48 +148,38 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Map");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new MapClientProxy<Object, V>(this, name));
+        }
+        return (IMap<K, V>) proxy;
     }
 
-    public <K, V, E> Object getClientProxy(Object o) {
-        Object proxy = mapProxies.get(o);
-        if (proxy == null) {
+    private <V> DistributedObject putAndReturnProxy(Object key, Map<Object, DistributedObject> innerProxyMap, DistributedObject newProxy) {
+        DistributedObject proxy;
+        synchronized (innerProxyMap) {
+            proxy = innerProxyMap.get(key);
+            if (proxy == null) {
+                proxy = newProxy;
+                innerProxyMap.put(key, proxy);
+            }
+        }
+        return proxy;
+    }
+
+    private Map<Object, DistributedObject> getProxiesMap(String type) {
+        Map<Object, DistributedObject> innerProxyMap = mapProxies.get(type);
+        if (innerProxyMap == null) {
             synchronized (mapProxies) {
-                proxy = mapProxies.get(o);
-                if (proxy == null) {
-                    if (o instanceof String) {
-                        String name = (String) o;
-//                        if (name.startsWith(Prefix.MAP)) {
-                            proxy = new MapClientProxy<K, V>(this, name);
-//                        } else if (name.startsWith(Prefix.AS_LIST)) {
-//                            proxy = new ListClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.SET)) {
-//                            proxy = new SetClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.QUEUE)) {
-//                            proxy = new QueueClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.TOPIC)) {
-//                            proxy = new TopicClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
-//                            proxy = new AtomicNumberClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
-//                            proxy = new CountDownLatchClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.IDGEN)) {
-//                            proxy = new IdGeneratorClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.MULTIMAP)) {
-//                            proxy = new MultiMapClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.SEMAPHORE)) {
-//                            proxy = new SemaphoreClientProxy(this, name);
-//                        } else {
-//                            proxy = new LockClientProxy(o, this);
-//                        }
-                    } else {
-                        proxy = new LockClientProxy(o, this);
-                    }
-                    mapProxies.put(o, proxy);
+                innerProxyMap = mapProxies.get(type);
+                if (innerProxyMap == null) {
+                    innerProxyMap = new ConcurrentHashMap<Object, DistributedObject>(10);
+                    mapProxies.put(type, innerProxyMap);
                 }
             }
         }
-        return mapProxies.get(o);
+        return innerProxyMap;
     }
 
     public com.hazelcast.core.Transaction getTransaction() {
@@ -215,7 +190,7 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionManager;
     }
 
-    SerializationService getSerializationService() {
+    public SerializationService getSerializationService() {
         return serializationService;
     }
 
@@ -227,11 +202,7 @@ public class HazelcastClient implements HazelcastInstance {
         return clusterClientProxy;
     }
 
-    public ExecutorService getExecutorService() {
-        return getExecutorService("default");
-    }
-
-    public ExecutorService getExecutorService(String name) {
+    public IExecutorService getExecutorService(String name) {
         if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
 //        name = Prefix.EXECUTOR_SERVICE + name;
         ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
@@ -242,23 +213,44 @@ public class HazelcastClient implements HazelcastInstance {
                 executorServiceProxy = old;
             }
         }
-        return executorServiceProxy;
+        return null;
+//        return executorServiceProxy;
     }
 
     public IdGenerator getIdGenerator(String name) {
-        return (IdGenerator) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IdGenerator");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new IdGeneratorClientProxy(this, name));
+        }
+        return (IdGenerator) proxy;
     }
 
     public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("AtomicNumber");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new AtomicNumberClientProxy(this, name));
+        }
+        return (AtomicNumber) proxy;
     }
 
     public ICountDownLatch getCountDownLatch(String name) {
-        return (ICountDownLatch) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("CountDownLatch");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new CountDownLatchClientProxy(this, name));
+        }
+        return (ICountDownLatch) proxy;
     }
 
     public ISemaphore getSemaphore(String name) {
-        return (ISemaphore) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Semaphore");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new SemaphoreClientProxy(this, name));
+        }
+        return (ISemaphore) proxy;
     }
 
     public Collection<DistributedObject> getDistributedObjects() {
@@ -266,15 +258,30 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList<E>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("List");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new ListClientProxy(this, name));
+        }
+        return (IList<E>) proxy;
     }
 
     public ILock getLock(Object obj) {
-        return new LockClientProxy(obj, this);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Lock");
+        DistributedObject proxy = innerProxyMap.get(obj);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(obj, innerProxyMap, new LockClientProxy(this, obj));
+        }
+        return (ILock) proxy;
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("MultiMap");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new MultiMapClientProxy(this, name));
+        }
+        return (MultiMap<K,V>) proxy;
     }
 
     public String getName() {
@@ -282,15 +289,30 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Queue");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new QueueClientProxy(this, name));
+        }
+        return (IQueue<E>) proxy;
     }
 
     public <E> ISet<E> getSet(String name) {
-        return (ISet<E>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Set");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new SetClientProxy(this, name));
+        }
+        return (ISet<E>) proxy;
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return (ITopic) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Topic");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new TopicClientProxy(this, name));
+        }
+        return (ITopic<E>) proxy;
     }
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
@@ -319,8 +341,8 @@ public class HazelcastClient implements HazelcastInstance {
         if (active.compareAndSet(true, false)) {
             logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
             connectionManager.shutdown();
-            out.shutdown();
-            in.shutdown();
+//            out.shutdown();
+//            in.shutdown();
             listenerManager.shutdown();
             lsClients.remove(this);
             serializationService.destroy();

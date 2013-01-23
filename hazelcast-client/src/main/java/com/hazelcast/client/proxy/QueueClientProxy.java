@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.QueueItemListenerManager;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.client.util.QueueItemIterator;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
@@ -24,17 +26,15 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.nio.serialization.SerializationConstants;
 
-import java.nio.ByteBuffer;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.ProxyHelper.check;
-import static com.hazelcast.client.ProxyHelper.checkTime;
+import static com.hazelcast.client.proxy.ProxyHelper.check;
+import static com.hazelcast.client.proxy.ProxyHelper.checkTime;
 
 public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected ProxyHelper proxyHelper;
@@ -45,7 +45,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     public QueueClientProxy(HazelcastClient client, String name) {
         super();
         this.name = name;
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public String getName() {
@@ -194,6 +194,6 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     private QueueItemListenerManager listenerManager() {
-        return proxyHelper.client.getListenerManager().getQueueItemListenerManager();
+        return null;// proxyHelper.client.getListenerManager().getQueueItemListenerManager();
     }
 }

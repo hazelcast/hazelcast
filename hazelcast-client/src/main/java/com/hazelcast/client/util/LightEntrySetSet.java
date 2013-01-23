@@ -16,8 +16,7 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.MapClientProxy;
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.client.proxy.MapClientProxy;
 
 import java.util.AbstractCollection;
 import java.util.Collection;

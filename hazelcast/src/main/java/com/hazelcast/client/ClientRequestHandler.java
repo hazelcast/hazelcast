@@ -28,7 +28,7 @@ import java.util.logging.Level;
 
 public class ClientRequestHandler implements Runnable {
     private final Protocol protocol;
-//    private final CallContext callContext;
+    //    private final CallContext callContext;
     private final Node node;
     //    private final ClientHandlerService.ClientCommandHandler clientOperationHandler;
     private volatile Thread runningThread = null;
@@ -53,8 +53,7 @@ public class ClientRequestHandler implements Runnable {
                 public Void run() {
                     TcpIpConnection connection = protocol.conn;
                     ClientCommandHandler clientOperationHandler = node.clientCommandService.getService(protocol);
-                    System.out.println(protocol.command + "clientOperationHandler = " + clientOperationHandler);
-                        clientOperationHandler.handle(node, protocol);
+                    clientOperationHandler.handle(node, protocol);
                     node.clientCommandService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);
                     return null;
                 }

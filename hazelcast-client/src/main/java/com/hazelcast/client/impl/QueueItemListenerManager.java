@@ -18,7 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Protocol;
@@ -42,7 +42,7 @@ public class QueueItemListenerManager {
     public Collection<? extends Call> calls(HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : queueItemListeners.keySet()) {
-            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            final ProxyHelper proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
             calls.add(createNewAddItemListenerCall(proxyHelper, true));
         }
         return calls;

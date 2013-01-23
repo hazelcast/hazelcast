@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryListener;
@@ -41,7 +42,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper("", client);
+        this.proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public void flush(boolean flushAllEntries) {
@@ -55,12 +56,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
-    }
-
-    public void addInterceptor(MapInterceptor interceptor) {
-    }
-
-    public void removeInterceptor(MapInterceptor interceptor) {
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
@@ -124,7 +119,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     private EntryListenerManager listenerManager() {
-        return proxyHelper.client.getListenerManager().getEntryListenerManager();
+        return null;//proxyHelper.client.getListenerManager().getEntryListenerManager();
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
@@ -325,9 +320,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return Boolean.valueOf(protocol.args[0]);
     }
 
-    public void flush(boolean flushAllEntries) {
-    }
-
     public V replace(K arg0, V arg1) {
         check(arg0);
         check(arg1);
@@ -338,9 +330,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         check(arg0);
         check(arg1);
         check(arg2);
-        Keys keys = new Keys();
-        keys.getKeys().add(proxyHelper.toData(arg1));
-        keys.getKeys().add(proxyHelper.toData(arg2));
         Protocol protocol = proxyHelper.doCommand(Command.MREPLACEIFSAME, new String[]{getName()}, proxyHelper.toData(arg0), proxyHelper.toData(arg1), proxyHelper.toData(arg2));
         return Boolean.valueOf(protocol.args[0]);
     }
@@ -383,12 +372,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         Protocol protocol = proxyHelper.doCommand(Command.MGETALL, new String[]{getName()}, dataList.toArray(new Data[]{}));
         if (protocol.hasBuffer()) {
             int i = 0;
-            System.out.println("Get all and buffer length is " + protocol.buffers.length);
             while (i < protocol.buffers.length) {
-                K key = (K) proxyHelper.toObject(protocol.buffers[i]);
-                i++;
-                V value = (V) proxyHelper.toObject(protocol.buffers[i]);
-                i++;
+                K key = (K) proxyHelper.toObject(protocol.buffers[i++]);
+                V value = (V) proxyHelper.toObject(protocol.buffers[i++]);
                 if (value != null) {
                     map.put(key, value);
                 }
@@ -513,10 +499,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addIndex(String attribute, boolean ordered) {
         proxyHelper.doCommand(Command.MADDINDEX, new String[]{getName(), attribute, String.valueOf(ordered)}, null);
-    }
-
-    public void addIndex(Expression<?> expression, boolean ordered) {
-        proxyHelper.doCommand(Command.MADDINDEX, new String[]{getName(), String.valueOf(ordered)}, proxyHelper.toData(expression));
     }
 
     public String getName() {

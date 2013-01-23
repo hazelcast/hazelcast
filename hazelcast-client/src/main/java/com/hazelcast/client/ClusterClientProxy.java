@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.InstanceListenerManager;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -26,7 +27,7 @@ import com.hazelcast.nio.protocol.Command;
 import java.net.UnknownHostException;
 import java.util.*;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class ClusterClientProxy implements Cluster {
     //    final PacketProxyHelper proxyHelper;
@@ -36,7 +37,7 @@ public class ClusterClientProxy implements Cluster {
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
 //        proxyHelper = new PacketProxyHelper("", client);
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public Collection<DistributedObject> getInstances() {

@@ -17,10 +17,10 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
-import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.client.ProxyHelper;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -85,6 +85,6 @@ public class InstanceListenerManager {
         if (distributedObjectListeners.isEmpty()) {
             return Collections.emptyList();
         }
-        return Collections.singletonList(createNewAddListenerCall(new ProxyHelper("", client)));
+        return Collections.singletonList(createNewAddListenerCall(new ProxyHelper(client.getSerializationService(), client.getConnectionPool())));
     }
 }

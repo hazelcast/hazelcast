@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.NoMemberAvailableException;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
 
@@ -30,7 +33,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
 
     public CountDownLatchClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public void await() throws MemberLeftException, InterruptedException {

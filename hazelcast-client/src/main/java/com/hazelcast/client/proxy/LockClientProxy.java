@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ILock;
 import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.Protocol;
@@ -24,14 +26,14 @@ import com.hazelcast.nio.protocol.Command;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class LockClientProxy implements ILock {
     final ProxyHelper proxyHelper;
     final Object lockObject;
 
-    public LockClientProxy(Object object, HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+    public LockClientProxy(HazelcastClient client, Object object) {
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
         lockObject = object;
         check(lockObject);
     }

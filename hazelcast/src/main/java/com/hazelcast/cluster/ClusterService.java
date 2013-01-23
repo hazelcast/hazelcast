@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.client.ClientAuthenticateHandler;
+import com.hazelcast.cluster.client.DestroyHandler;
 import com.hazelcast.cluster.client.GetMembersHandler;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
@@ -144,6 +145,7 @@ public final class ClusterService implements CoreService, ConnectionListener, Ma
     private void registerClientOperationHandlers() {
         registerHandler(Command.AUTH, new ClientAuthenticateHandler(nodeEngine));
         registerHandler(Command.MEMBERS, new GetMembersHandler(nodeEngine));
+        registerHandler(Command.DESTROY, new DestroyHandler(nodeEngine));
     }
 
     void registerHandler(Command command, ClientCommandHandler handler) {

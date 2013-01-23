@@ -214,7 +214,7 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         assertEquals(0, map.size());
     }
 
-    @Test(timeout = 2000)
+    @Test(timeout = 5000)
     public void testQueueAddFromServerGetFromClient() {
         HazelcastInstance h = getHazelcastInstance();
         HazelcastInstance client = getHazelcastClient();

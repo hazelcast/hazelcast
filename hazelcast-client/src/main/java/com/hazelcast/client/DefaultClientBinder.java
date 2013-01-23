@@ -29,12 +29,9 @@ import java.util.logging.Level;
 
 public class DefaultClientBinder implements ClientBinder {
 
-    private HazelcastClient client;
     private final ILogger logger = Logger.getLogger(getClass().getName());
-
-    public DefaultClientBinder(HazelcastClient client) {
-        this.client = client;
-    }
+    ProtocolReader reader = new ProtocolReader();
+    ProtocolWriter writer = new ProtocolWriter();
 
     public void bind(Connection connection, Credentials credentials) throws IOException {
         logger.log(Level.FINEST, connection + " -> "
@@ -43,7 +40,9 @@ public class DefaultClientBinder implements ClientBinder {
     }
 
     void write(Connection connection, Protocol command) throws IOException {
-        client.getOutRunnable().write(connection, command);
+        command.onEnqueue();
+        writer.write(connection, command);
+        writer.flush(connection);
     }
 
     void authProtocol(Connection connection, Credentials credentials) throws IOException {
@@ -65,6 +64,6 @@ public class DefaultClientBinder implements ClientBinder {
 
     Protocol writeAndRead(Connection connection, Protocol command) throws IOException {
         write(connection, command);
-        return client.getInRunnable().reader.read(connection);
+        return reader.read(connection);
     }
 }
