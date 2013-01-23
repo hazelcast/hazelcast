@@ -227,6 +227,14 @@ public final class SerializationServiceImpl implements SerializationService {
         return new ContextAwareDataOutput(size, this);
     }
 
+    public ObjectDataOutputStream createObjectDataOutputStream(OutputStream out) {
+        return new ObjectDataOutputStream(out, this);
+    }
+
+    public ObjectDataInputStream createObjectDataInputStream(InputStream in) {
+        return new ObjectDataInputStream(in, this);
+    }
+
     public PortableSerializer getPortableSerializer() {
         return portableSerializer;
     }

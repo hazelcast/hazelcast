@@ -151,7 +151,7 @@ public class Packet implements SocketWritable {
             if (destination.remaining() < 4) {
                 return false;
             }
-            final int size = value.size();
+            final int size = value.bufferSize();
             destination.putInt(size);
             setStatus(stSize);
             if (size <= 0) {

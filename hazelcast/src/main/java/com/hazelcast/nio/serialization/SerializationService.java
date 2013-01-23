@@ -19,6 +19,9 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+
 /**
  * @mdogan 1/3/13
  */
@@ -35,6 +38,10 @@ public interface SerializationService {
     ObjectDataInput createObjectDataInput(byte[] data);
 
     ObjectDataOutput createObjectDataOutput(int size);
+
+    ObjectDataOutputStream createObjectDataOutputStream(OutputStream out);
+
+    ObjectDataInputStream createObjectDataInputStream(InputStream in);
 
     void register(TypeSerializer serializer, Class type);
 
