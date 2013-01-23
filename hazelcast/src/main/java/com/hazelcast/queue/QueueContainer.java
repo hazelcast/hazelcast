@@ -125,6 +125,9 @@ public class QueueContainer implements DataSerializable {
 
     public Data poll() {
         QueueItem item = peek();
+        if (item == null){
+            return null;
+        }
         if (store.isEnabled()){
             try {
                 store.delete(item.getItemId());
