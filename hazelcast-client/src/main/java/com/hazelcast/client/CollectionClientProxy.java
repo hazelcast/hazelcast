@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.ItemListenerManager;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ItemListener;
 
 import java.util.AbstractCollection;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.QueueClientProxy;
+import com.hazelcast.client.proxy.QueueClientProxy;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

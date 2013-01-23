@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 

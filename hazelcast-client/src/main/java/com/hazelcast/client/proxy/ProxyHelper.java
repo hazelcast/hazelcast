@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.Connection;
+import com.hazelcast.client.ConnectionPool;
+import com.hazelcast.client.ProtocolReader;
+import com.hazelcast.client.ProtocolWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;

@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.CollectionClientProxy;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ISet;
 //import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E> {
 

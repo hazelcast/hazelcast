@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.examples;
 
-import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.examples.TestApp;

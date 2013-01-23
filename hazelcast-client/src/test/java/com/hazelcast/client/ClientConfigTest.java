@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConfigBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

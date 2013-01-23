@@ -16,8 +16,8 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.client.ClientConfig;
-import com.hazelcast.client.ClientConfigBuilder;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientConfigBuilder;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;

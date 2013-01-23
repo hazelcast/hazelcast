@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.CollectionClientProxy;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.IList;
 
 import java.util.*;
 
-import static com.hazelcast.client.ProxyHelper.check;
+import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class ListClientProxy<E> extends CollectionClientProxy<E> implements IList<E> {
     public ListClientProxy(HazelcastClient hazelcastClient, String name) {

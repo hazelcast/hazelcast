@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;

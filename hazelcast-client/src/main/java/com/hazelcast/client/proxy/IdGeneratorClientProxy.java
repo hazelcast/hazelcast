@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.IdGenerator;
 
 public class IdGeneratorClientProxy implements IdGenerator {

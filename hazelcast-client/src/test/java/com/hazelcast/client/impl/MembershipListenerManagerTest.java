@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.MembershipEvent;
