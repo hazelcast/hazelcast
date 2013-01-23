@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
+
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.ProxyHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;

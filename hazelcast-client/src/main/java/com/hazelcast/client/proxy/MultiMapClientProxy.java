@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.EntryListenerManager;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
@@ -26,17 +28,15 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.nio.serialization.SerializationConstants;
 
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.ProxyHelper.check;
-import static com.hazelcast.client.ProxyHelper.checkTime;
+import static com.hazelcast.client.proxy.ProxyHelper.check;
+import static com.hazelcast.client.proxy.ProxyHelper.checkTime;
 
 public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     private final String name;

@@ -112,7 +112,7 @@ Members [2] {
                     <programlisting language="java"><![CDATA[
 package com.hazelcast.test;
 
-import com.hazelcast.client.ClientConfig;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;

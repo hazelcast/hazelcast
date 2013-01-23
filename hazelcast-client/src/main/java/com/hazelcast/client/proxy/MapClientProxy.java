@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryListener;
@@ -329,9 +330,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         check(arg0);
         check(arg1);
         check(arg2);
-        Keys keys = new Keys();
-        keys.getKeys().add(proxyHelper.toData(arg1));
-        keys.getKeys().add(proxyHelper.toData(arg2));
         Protocol protocol = proxyHelper.doCommand(Command.MREPLACEIFSAME, new String[]{getName()}, proxyHelper.toData(arg0), proxyHelper.toData(arg1), proxyHelper.toData(arg2));
         return Boolean.valueOf(protocol.args[0]);
     }

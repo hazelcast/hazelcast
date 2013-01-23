@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.MultiMapClientProxy;
+import com.hazelcast.client.proxy.MultiMapClientProxy;
 
 import java.util.AbstractCollection;
 import java.util.Iterator;

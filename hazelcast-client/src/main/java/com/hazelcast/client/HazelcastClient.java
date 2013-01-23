@@ -16,7 +16,9 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ListenerManager;
+import com.hazelcast.client.proxy.*;
 import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -52,18 +54,12 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 public class HazelcastClient implements HazelcastInstance {
 
     private final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-
     private final static AtomicInteger clientIdCounter = new AtomicInteger();
-
     private final static List<HazelcastClient> lsClients = new CopyOnWriteArrayList<HazelcastClient>();
-
     private final int id;
     private final ClientConfig config;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    private final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
     private final ListenerManager listenerManager;
-    private final OutRunnable out;
-    private final InRunnable in;
     private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
     private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     private final ClusterClientProxy clusterClientProxy;
@@ -85,11 +81,8 @@ public class HazelcastClient implements HazelcastInstance {
         this.id = clientIdCounter.incrementAndGet();
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
-        //empty check
         connectionManager = new ConnectionManager(this, config, lifecycleService);
-        connectionManager.setBinder(new DefaultClientBinder(this));
-        out = new OutRunnable(this, calls, new ProtocolWriter());
-        in = new InRunnable(this, out, calls, new ProtocolReader());
+        connectionManager.setBinder(new DefaultClientBinder());
         connectionPool = new ConnectionPool(connectionManager);
         listenerManager = new ListenerManager(this, serializationService);
 //        try {
@@ -108,10 +101,10 @@ public class HazelcastClient implements HazelcastInstance {
         partitionClientProxy = new PartitionClientProxy(this);
         if (config.isUpdateAutomatic()) {
             this.getCluster().addMembershipListener(connectionManager);
-//            connectionManager.updateMembers();
+            connectionManager.updateMembers();
         }
         lifecycleService.fireLifecycleEvent(STARTED);
-        connectionManager.scheduleHeartbeatTimerTask();
+//        connectionManager.scheduleHeartbeatTimerTask();
         lsClients.add(HazelcastClient.this);
     }
 
@@ -119,19 +112,11 @@ public class HazelcastClient implements HazelcastInstance {
         return config.getGroupConfig();
     }
 
-    public InRunnable getInRunnable() {
-        return in;
-    }
-
-    public OutRunnable getOutRunnable() {
-        return out;
-    }
-
     public ConnectionPool getConnectionPool() {
         return connectionPool;
     }
 
-    ListenerManager getListenerManager() {
+    public ListenerManager getListenerManager() {
         return listenerManager;
     }
 
@@ -216,9 +201,6 @@ public class HazelcastClient implements HazelcastInstance {
     public Cluster getCluster() {
         return clusterClientProxy;
     }
-//    public IExecutorService getExecutorService() {
-//        return getExecutorService("default");
-//    }
 
     public IExecutorService getExecutorService(String name) {
         if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
@@ -359,8 +341,8 @@ public class HazelcastClient implements HazelcastInstance {
         if (active.compareAndSet(true, false)) {
             logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
             connectionManager.shutdown();
-            out.shutdown();
-            in.shutdown();
+//            out.shutdown();
+//            in.shutdown();
             listenerManager.shutdown();
             lsClients.remove(this);
             serializationService.destroy();

@@ -18,7 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.Call;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.ProxyHelper;
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Protocol;

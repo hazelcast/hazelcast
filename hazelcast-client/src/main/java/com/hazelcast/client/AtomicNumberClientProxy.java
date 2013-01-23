@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
 

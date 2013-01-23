@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.config;
 
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.logging.ILogger;
