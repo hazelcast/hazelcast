@@ -17,8 +17,8 @@
 package com.hazelcast.idgen;
 
 import com.hazelcast.core.AtomicNumber;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,11 +28,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class IdGeneratorProxy implements IdGenerator {
 
-    public static final String ATOMIC_NUMBER_NAME = "hz:atomic:idGenerator:";
+    private static final String ATOMIC_NUMBER_NAME = "hz:atomic:idGenerator:";
 
     private static final int BLOCK_SIZE = 1000;
 
-    final NodeEngine nodeEngine;
+    final HazelcastInstance ins;
 
     final String name;
 
@@ -44,10 +44,10 @@ public class IdGeneratorProxy implements IdGenerator {
 
     private final Object syncObject = new Object();
 
-    public IdGeneratorProxy(NodeEngine nodeEngine, String name, AtomicNumber atomicNumber) {
-        this.nodeEngine = nodeEngine;
+    public IdGeneratorProxy(HazelcastInstance ins, String name) {
+        this.ins = ins;
         this.name = name;
-        this.atomicNumber = atomicNumber;
+        this.atomicNumber = ins.getAtomicNumber(IdGeneratorProxy.ATOMIC_NUMBER_NAME+name);
         residue = new AtomicInteger(BLOCK_SIZE);
         local = new AtomicLong(-1);
     }
@@ -56,10 +56,15 @@ public class IdGeneratorProxy implements IdGenerator {
         if (id <= 0) {
             return false;
         }
-        long step = (id / BLOCK_SIZE) + 1;
+        long step = (id / BLOCK_SIZE);
 
         synchronized (syncObject) {
-            return atomicNumber.compareAndSet(0, step);
+            boolean init = atomicNumber.compareAndSet(0, step+1);
+            if (init){
+                local.set(step);
+                residue.set((int)(id % BLOCK_SIZE)+1);
+            }
+            return init;
         }
 
     }
@@ -89,6 +94,8 @@ public class IdGeneratorProxy implements IdGenerator {
     }
 
     public void destroy() {
-
+        atomicNumber.destroy();
+        residue = null;
+        local = null;
     }
 }

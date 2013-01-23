@@ -142,7 +142,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(final String name) {
-        return new IdGeneratorProxy(nodeEngine, name, getAtomicNumber(IdGeneratorProxy.ATOMIC_NUMBER_NAME+name));
+        return new IdGeneratorProxy(this, name);
     }
 
     public AtomicNumber getAtomicNumber(final String name) {
