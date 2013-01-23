@@ -334,7 +334,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
 
         public void run() {
-            Data data = packet.getValue();
+            Data data = packet.getData();
             EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
             Object eventObject = eventPacket.event;
             if (eventObject instanceof Data) {

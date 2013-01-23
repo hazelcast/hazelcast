@@ -35,9 +35,10 @@ public class Protocol implements SocketWritable {
     public String flag;
     public int threadId;
 
-    ByteBuffer response = null;
-    int totalSize = 0;
-    int totalWritten = 0;
+    private final BufferWriterIterator writerIterator = new BufferWriterIterator();
+    private ByteBuffer response = null;
+    private int totalSize = 0;
+    private int totalWritten = 0;
 
     public Protocol(TcpIpConnection connection, Command command, String[] args, Data... buffers) {
         this(connection, command, null, -1, false, args, buffers);
@@ -79,30 +80,29 @@ public class Protocol implements SocketWritable {
         response = ByteBuffer.wrap(builder.toString().getBytes());
         totalSize = response.array().length;
         if (hasBuffer()) {
-            for (Data buffer : buffers) {
-                totalSize += buffer.totalSize();
-            }
+            // don't take buffer sizes' into account!
+            // we'll use Data's own writer mechanism to detect
+            // if buffers are completely written to destination.
+
+//            for (Data buffer : buffers) {
+//                totalSize += buffer.totalSize();
+//            }
             totalSize += 2;
         }
     }
 
-    // TODO: IDK if this method is used anywhere!
     public boolean writeTo(ByteBuffer destination) {
-//        DataOutput dataOut = new DataOutputStream(IOUtil.newOutputStream(destination));
-//        totalWritten += IOUtil.copyToHeapBuffer(response, destination);
-//        if (hasBuffer()) {
-//            for (Data buffer : buffers) {
-//                try {
-//                    buffer.writeData(dataOut);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//                totalWritten += buffer.totalSize();
-//            }
-//            totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
-//        }
-//        return totalWritten >= totalSize;
-        return false;
+        totalWritten += IOUtil.copyToHeapBuffer(response, destination);
+        if (hasBuffer()) {
+            while (writerIterator.hasNext()) {
+                DataWriter dw = writerIterator.next();
+                if (!dw.writeTo(destination)) { // check if buffer is written completely
+                    return false;
+                }
+            }
+            totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
+        }
+        return totalWritten >= totalSize;
     }
 
     public boolean readFrom(ByteBuffer source) {
@@ -153,5 +153,27 @@ public class Protocol implements SocketWritable {
 
     public boolean hasBuffer() {
         return buffers != null && buffers.length > 0;
+    }
+
+    private class BufferWriterIterator {
+        int index = -1;
+        DataWriter current = null;
+
+        boolean hasNext() {
+            return hasBuffer() &&
+                    (hasCurrent() || buffers.length > index);
+        }
+
+        boolean hasCurrent() {
+            return current != null && !current.done();
+        }
+
+        DataWriter next() {
+            if (hasCurrent()) {
+                return current;
+            }
+            current = new DataWriter(buffers[index++]);
+            return current;
+        }
     }
 }

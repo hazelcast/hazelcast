@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.DataWriter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
@@ -26,6 +27,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -34,7 +36,38 @@ import java.util.Arrays;
 public class ObjectDataTest {
 
     @Test
-    public void test() throws IOException {
+    public void testDataWriter() throws IOException {
+        SerializationService ss = new SerializationServiceImpl(1, null);
+        final Person person = new Person(111, 123L, 89.56d, "test-person",
+                new Address("street", 987));
+
+        final Data data1 = ss.toData(person);
+
+        ObjectDataOutput out = ss.createObjectDataOutput(1024);
+        data1.writeData(out);
+        byte[] bytes1 = out.toByteArray();
+
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        DataWriter dataWriter = new DataWriter(data1, ss.getSerializationContext());
+        dataWriter.writeTo(buffer);
+
+        Assert.assertEquals(bytes1.length, buffer.position());
+        byte[] bytes2 = new byte[buffer.position()];
+        buffer.flip();
+        buffer.get(bytes2);
+        Assert.assertEquals(bytes1.length, bytes2.length);
+        Assert.assertTrue(Arrays.equals(bytes1, bytes2));
+
+        buffer.flip();
+        dataWriter.reset();
+        dataWriter.readFrom(buffer);
+        Data data2 = dataWriter.getData();
+
+        Assert.assertEquals(data1, data2);
+    }
+
+    @Test
+    public void testDataStreams() throws IOException {
         SerializationService ss = new SerializationServiceImpl(1, null);
 
         final Person person = new Person(111, 123L, 89.56d, "test-person",

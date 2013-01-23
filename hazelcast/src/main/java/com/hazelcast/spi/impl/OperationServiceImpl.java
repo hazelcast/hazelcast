@@ -614,7 +614,7 @@ final class OperationServiceImpl implements OperationService {
             final Connection conn = packet.getConn();
             try {
                 final Address caller = conn.getEndPoint();
-                final Data data = packet.getValue();
+                final Data data = packet.getData();
                 final Operation op = (Operation) nodeEngine.toObject(data);
                 op.setNodeEngine(nodeEngine).setCaller(caller);
                 op.setConnection(conn);
