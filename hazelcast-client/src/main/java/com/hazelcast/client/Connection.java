@@ -19,6 +19,9 @@ package com.hazelcast.client;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.ObjectDataInputStream;
+import com.hazelcast.nio.serialization.ObjectDataOutputStream;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -32,12 +35,11 @@ import java.net.UnknownHostException;
  */
 public class Connection {
 
-    private static final int BUFFER_SIZE = 16 << 10; // 32k
     private final Socket socket;
     private final InetSocketAddress address;
     private final int id;
-    private final DataOutputStream dos;
-    private final DataInputStream dis;
+    private final ObjectDataOutputStream dos;
+    private final ObjectDataInputStream dis;
     boolean headersWritten = false;
     boolean headerRead = false;
 
@@ -49,11 +51,11 @@ public class Connection {
      * @throws UnknownHostException
      * @throws IOException
      */
-    public Connection(String host, int port, int id) {
-        this(new InetSocketAddress(host, port), id);
+    public Connection(String host, int port, int id, SerializationService serializationService) {
+        this(new InetSocketAddress(host, port), id, serializationService);
     }
 
-    public Connection(InetSocketAddress address, int id) {
+    public Connection(InetSocketAddress address, int id, SerializationService serializationService) {
         this.id = id;
         this.address = address;
         try {
@@ -72,10 +74,8 @@ public class Connection {
             }
 
             this.socket = socket;
-            this.dos = new DataOutputStream(new BufferedOutputStream(this.socket.getOutputStream(), BUFFER_SIZE));
-//            this.dos = new DataOutputStream(socket.getOutputStream());
-            this.dis = new DataInputStream(new BufferedInputStream(this.socket.getInputStream(), BUFFER_SIZE));
-//            this.dis = new DataInputStream(socket.getInputStream());
+            this.dos =  serializationService.createObjectDataOutputStream(socket.getOutputStream());
+            this.dis = serializationService.createObjectDataInputStream(socket.getInputStream());
         } catch (Exception e) {
             throw new ClusterClientException(e);
         }
@@ -105,11 +105,11 @@ public class Connection {
                socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
     }
 
-    public DataOutputStream getOutputStream() {
+    public ObjectDataOutputStream getOutputStream() {
         return dos;
     }
 
-    public DataInputStream getInputStream() {
+    public ObjectDataInputStream getInputStream() {
         return dis;
     }
 

@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -225,6 +226,10 @@ public class NodeIOService implements IOService {
 
     public Object toObject(Data data) {
         return nodeEngine.toObject(data);
+    }
+
+    public SerializationService getSerializationService() {
+        return node.getSerializationService();
     }
 
     public SerializationContext getSerializationContext() {

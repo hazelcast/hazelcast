@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Collection;
 
@@ -113,6 +114,8 @@ public interface IOService {
     Data toData(Object obj);
 
     Object toObject(Data data);
+
+    SerializationService getSerializationService();
 
     SerializationContext getSerializationContext();
 }

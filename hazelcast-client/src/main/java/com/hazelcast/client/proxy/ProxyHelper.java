@@ -42,14 +42,16 @@ public class ProxyHelper {
 
     private final static AtomicLong callIdGen = new AtomicLong(0);
     private final ILogger logger = com.hazelcast.logging.Logger.getLogger(this.getClass().getName());
-    private final ProtocolWriter writer = new ProtocolWriter();
-    private final ProtocolReader reader = new ProtocolReader();
+    private final ProtocolWriter writer;
+    private final ProtocolReader reader;
     private final ConnectionPool cp;
     private final SerializationService ss;
 
     public ProxyHelper(SerializationService ss, ConnectionPool cp) {
         this.cp = cp;
         this.ss = ss;
+        this.writer = new ProtocolWriter(ss);
+        this.reader = new ProtocolReader(ss);
     }
 
     public int getCurrentThreadId() {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-public class TypeConverters {
+class TypeConverters {
     public static final TypeConverter DOUBLE_CONVERTER = new DoubleConverter();
     public static final TypeConverter LONG_CONVERTER = new LongConverter();
     public static final TypeConverter INTEGER_CONVERTER = new IntegerConverter();
@@ -24,12 +24,14 @@ public class TypeConverters {
     public static final TypeConverter SHORT_CONVERTER = new ShortConverter();
     public static final TypeConverter FLOAT_CONVERTER = new FloatConverter();
     public static final TypeConverter STRING_CONVERTER = new StringConverter();
+    public static final TypeConverter CHAR_CONVERTER = new CharConverter();
+    public static final TypeConverter BYTE_CONVERTER = new ByteConverter();
 
     public interface TypeConverter {
         Comparable convert(Comparable value);
     }
 
-    private static class DoubleConverter implements TypeConverter {
+    static class DoubleConverter implements TypeConverter {
 
         public Comparable convert(Comparable value) {
             if (value instanceof Double) return value;
@@ -41,7 +43,7 @@ public class TypeConverters {
         }
     }
 
-    private static class LongConverter implements TypeConverter {
+    static class LongConverter implements TypeConverter {
 
         public Comparable convert(Comparable value) {
             if (value instanceof Long) return value;
@@ -53,7 +55,7 @@ public class TypeConverters {
         }
     }
 
-    private static class IntegerConverter implements TypeConverter {
+    static class IntegerConverter implements TypeConverter {
 
         public Comparable convert(Comparable value) {
             if (value instanceof Integer) return value;
@@ -65,16 +67,16 @@ public class TypeConverters {
         }
     }
 
-    private static class StringConverter implements TypeConverter {
+    static class StringConverter implements TypeConverter {
 
         public Comparable convert(Comparable value) {
             if (value instanceof String) return value;
-            if (value == null) return Index.NULL;
+            if (value == null) return IndexImpl.NULL;
             return value.toString();
         }
     }
 
-    private static class FloatConverter implements TypeConverter {
+    static class FloatConverter implements TypeConverter {
 
         public Comparable convert(Comparable value) {
             if (value instanceof Float) return value;
@@ -86,7 +88,7 @@ public class TypeConverters {
         }
     }
 
-    private static class ShortConverter implements TypeConverter {
+    static class ShortConverter implements TypeConverter {
 
         public Comparable convert(Comparable value) {
             if (value instanceof Short) return value;
@@ -98,7 +100,7 @@ public class TypeConverters {
         }
     }
 
-    private static class BooleanConverter implements TypeConverter {
+    static class BooleanConverter implements TypeConverter {
 
         public Comparable convert(Comparable value) {
             if (value instanceof Boolean) return value;
@@ -107,6 +109,31 @@ public class TypeConverters {
             }
             Number number = (Number) value;
             return number.intValue() == 1 ? true : false;
+        }
+    }
+
+    static class ByteConverter implements TypeConverter {
+
+        public Comparable convert(Comparable value) {
+            if (value instanceof Byte) return value;
+            if (value instanceof String) {
+                return Byte.parseByte((String) value);
+            }
+            Number number = (Number) value;
+            return number.byteValue();
+        }
+    }
+
+    static class CharConverter implements TypeConverter {
+
+        public Comparable convert(Comparable value) {
+            if (value.getClass() == char.class) return value;
+            if (value instanceof Character) return value;
+            if (value instanceof String) {
+                return ((String) value).charAt(0);
+            }
+            Number number = (Number) value;
+            return number.intValue();
         }
     }
 }

@@ -86,28 +86,30 @@ public class Protocol implements SocketWritable {
         }
     }
 
+    // TODO: IDK if this method is used anywhere!
     public boolean writeTo(ByteBuffer destination) {
-        DataOutput dataOut = new DataOutputStream(IOUtil.newOutputStream(destination));
-        totalWritten += IOUtil.copyToHeapBuffer(response, destination);
-        if (hasBuffer()) {
-            for (Data buffer : buffers) {
-                try {
-                    buffer.writeData(dataOut);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                totalWritten += buffer.totalSize();
-            }
-            totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
-        }
-        return totalWritten >= totalSize;
+//        DataOutput dataOut = new DataOutputStream(IOUtil.newOutputStream(destination));
+//        totalWritten += IOUtil.copyToHeapBuffer(response, destination);
+//        if (hasBuffer()) {
+//            for (Data buffer : buffers) {
+//                try {
+//                    buffer.writeData(dataOut);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//                totalWritten += buffer.totalSize();
+//            }
+//            totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
+//        }
+//        return totalWritten >= totalSize;
+        return false;
     }
 
     public boolean readFrom(ByteBuffer source) {
         return false;
     }
 
-    public final boolean writeTo(final DataOutput dos) throws IOException {
+    public final boolean writeTo(final ObjectDataOutput dos) throws IOException {
         dos.write(response.array());
         if (buffers != null && buffers.length > 0) {
             for (Data buffer : buffers) {
