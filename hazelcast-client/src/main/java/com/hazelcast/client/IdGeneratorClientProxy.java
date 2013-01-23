@@ -24,11 +24,15 @@ public class IdGeneratorClientProxy implements IdGenerator {
 
     public IdGeneratorClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(name, hazelcastClient);
+        proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public String getName() {
         return name;
+    }
+
+    public boolean init(long id) {
+        return false;
     }
 
     public long newId() {

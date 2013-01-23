@@ -35,7 +35,7 @@ public class MapReplaceIfSameHandler extends MapCommandHandler {
         Data key = protocol.buffers[0];
         Data oldValue = protocol.buffers[1];
         Data newValue = protocol.buffers[2];
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
         boolean result = dataMapProxy.replace(key, oldValue, newValue);
         return protocol.success(String.valueOf(result));
     }

@@ -87,17 +87,16 @@ public class Protocol implements SocketWritable {
     }
 
     public boolean writeTo(ByteBuffer destination) {
+        DataOutput dataOut = new DataOutputStream(IOUtil.newOutputStream(destination));
         totalWritten += IOUtil.copyToHeapBuffer(response, destination);
         if (hasBuffer()) {
             for (Data buffer : buffers) {
-                ByteArrayOutputStream backing = new ByteArrayOutputStream(buffer.totalSize());
-                DataOutput foo = new DataOutputStream(backing);
                 try {
-                    buffer.writeData(foo);
+                    buffer.writeData(dataOut);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap(backing.toByteArray()), destination);
+                totalWritten += buffer.totalSize();
             }
             totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
         }

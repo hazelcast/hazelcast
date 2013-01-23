@@ -59,11 +59,11 @@ public interface ISemaphore extends DistributedObject {
     public String getName();
 
     /**
-     * Try to initialize this ISemaphore instance whit given permit count
+     * Try to initialize this ISemaphore instance with given permit count
      *
      * @return true if initialization success
      */
-    public Boolean init(int permits);
+    public boolean init(int permits);
 
     /**
      * <p>Acquires a permit, if one is available and returns immediately,

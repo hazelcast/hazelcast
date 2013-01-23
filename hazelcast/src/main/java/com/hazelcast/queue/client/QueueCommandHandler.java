@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.hazelcast.query;
+package com.hazelcast.queue.client;
 
-import java.io.Serializable;
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.queue.QueueService;
 
-public interface Expression<T> extends Serializable {
-    T getValue(Object obj);
+public abstract class QueueCommandHandler extends ClientCommandHandler {
+    final QueueService qService;
+
+    public QueueCommandHandler(QueueService queueService) {
+        super(queueService.getNodeEngine());
+        this.qService = queueService;
+    }
 }
+

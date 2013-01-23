@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
 
@@ -52,7 +51,7 @@ class DefaultPortableWriter implements PortableWriter {
 
     public void writeUTF(String fieldName, String str) throws IOException {
         setPosition(fieldName);
-        IOUtil.writeNullableString(out, str);
+        out.writeUTF(str);
     }
 
     public void writeBoolean(String fieldName, boolean value) throws IOException {

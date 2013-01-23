@@ -27,7 +27,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Expression;
 import com.hazelcast.query.Predicate;
 
 import java.io.Serializable;
@@ -42,19 +41,20 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper("", client);
+        this.proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+    }
+
+    public void flush(boolean flushAllEntries) {
+    }
+
+    public void addInterceptor(MapInterceptor interceptor) {
+    }
+
+    public void removeInterceptor(MapInterceptor interceptor) {
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
-    }
-
-    public void addInterceptor(MapInterceptor interceptor) {
-
-    }
-
-    public void removeInterceptor(MapInterceptor interceptor) {
-
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
@@ -118,7 +118,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     private EntryListenerManager listenerManager() {
-        return proxyHelper.client.getListenerManager().getEntryListenerManager();
+        return null;//proxyHelper.client.getListenerManager().getEntryListenerManager();
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
@@ -252,7 +252,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public boolean isLocked(K key) {
         check(key);
-        Protocol protocol = proxyHelper.doCommand(Command.MISKEYLOCKED, new String[]{getName()}, proxyHelper.toData(key));
+        Protocol protocol = proxyHelper.doCommand(Command.MISLOCKED, new String[]{getName()}, proxyHelper.toData(key));
         return Boolean.valueOf(protocol.args[0]);
     }
 
@@ -319,10 +319,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return Boolean.valueOf(protocol.args[0]);
     }
 
-    public void flush(boolean flushAllEntries) {
-
-    }
-
     public V replace(K arg0, V arg1) {
         check(arg0);
         check(arg1);
@@ -378,12 +374,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         Protocol protocol = proxyHelper.doCommand(Command.MGETALL, new String[]{getName()}, dataList.toArray(new Data[]{}));
         if (protocol.hasBuffer()) {
             int i = 0;
-            System.out.println("Get all and buffer length is " + protocol.buffers.length);
             while (i < protocol.buffers.length) {
-                K key = (K) proxyHelper.toObject(protocol.buffers[i]);
-                i++;
-                V value = (V) proxyHelper.toObject(protocol.buffers[i]);
-                i++;
+                K key = (K) proxyHelper.toObject(protocol.buffers[i++]);
+                V value = (V) proxyHelper.toObject(protocol.buffers[i++]);
                 if (value != null) {
                     map.put(key, value);
                 }
@@ -508,10 +501,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addIndex(String attribute, boolean ordered) {
         proxyHelper.doCommand(Command.MADDINDEX, new String[]{getName(), attribute, String.valueOf(ordered)}, null);
-    }
-
-    public void addIndex(Expression<?> expression, boolean ordered) {
-        proxyHelper.doCommand(Command.MADDINDEX, new String[]{getName(), String.valueOf(ordered)}, proxyHelper.toData(expression));
     }
 
     public String getName() {

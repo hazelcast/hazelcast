@@ -30,7 +30,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
 
     public CountDownLatchClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(name, hazelcastClient);
+        this.proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public void await() throws MemberLeftException, InterruptedException {

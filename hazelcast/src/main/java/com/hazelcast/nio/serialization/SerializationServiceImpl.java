@@ -37,7 +37,6 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-
 public final class SerializationServiceImpl implements SerializationService {
 
     private static final int OUTPUT_STREAM_BUFFER_SIZE = 32 * 1024;
@@ -64,7 +63,6 @@ public final class SerializationServiceImpl implements SerializationService {
     public SerializationServiceImpl(int version, PortableFactory portableFactory, ManagedContext managedContext) {
         this.managedContext = managedContext;
         serializationContext = new SerializationContextImpl(portableFactory, version);
-
         registerDefault(DataSerializable.class, dataSerializer = new DataSerializer());
         registerDefault(Portable.class, portableSerializer = new PortableSerializer(serializationContext));
         registerDefault(Byte.class, new ByteSerializer());
@@ -83,7 +81,6 @@ public final class SerializationServiceImpl implements SerializationService {
         registerDefault(float[].class, new FloatArraySerializer());
         registerDefault(double[].class, new DoubleArraySerializer());
         registerDefault(String.class, new StringSerializer());
-
         safeRegister(Date.class, new DateSerializer());
         safeRegister(BigInteger.class, new BigIntegerSerializer());
         safeRegister(BigDecimal.class, new BigDecimalSerializer());
@@ -155,7 +152,6 @@ public final class SerializationServiceImpl implements SerializationService {
             if (serializer == null) {
                 throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
             }
-
             if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
                 serializationContext.registerClassDefinition(data.cd);
             }
@@ -231,6 +227,10 @@ public final class SerializationServiceImpl implements SerializationService {
         return new ContextAwareDataOutput(size, this);
     }
 
+    public PortableSerializer getPortableSerializer() {
+        return portableSerializer;
+    }
+
     public void register(final TypeSerializer serializer, final Class type) {
         if (type == null) {
             throw new IllegalArgumentException("Class type information is required!");
@@ -258,7 +258,6 @@ public final class SerializationServiceImpl implements SerializationService {
                 return serializer;
             }
         }
-
         TypeSerializer serializer = typeMap.get(type);
         if (serializer == null) {
             // look for super classes

@@ -23,7 +23,7 @@ public class TransactionClientProxy implements Transaction {
     final ProxyHelper proxyHelper;
 
     public TransactionClientProxy(String name, HazelcastClient client) {
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public void begin() throws IllegalStateException {

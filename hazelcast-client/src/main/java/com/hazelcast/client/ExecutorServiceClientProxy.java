@@ -27,7 +27,7 @@ public class ExecutorServiceClientProxy implements ExecutorService {
     final ExecutorService callBackExecutors = Executors.newFixedThreadPool(5);
 
     public ExecutorServiceClientProxy(HazelcastClient client, String name) {
-        proxyHelper = new ProxyHelper(name, client);
+        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public void shutdown() {

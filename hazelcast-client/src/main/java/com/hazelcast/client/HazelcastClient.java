@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.RemoteService;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -65,13 +64,14 @@ public class HazelcastClient implements HazelcastInstance {
     private final ListenerManager listenerManager;
     private final OutRunnable out;
     private final InRunnable in;
-    private final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
+    private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
     private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     private final ClusterClientProxy clusterClientProxy;
     private final PartitionClientProxy partitionClientProxy;
     private final LifecycleServiceClientImpl lifecycleService;
     private final ConnectionManager connectionManager;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
+    private final ConnectionPool connectionPool;
 
     private HazelcastClient(ClientConfig config) {
         if (config.getAddressList().size() == 0) {
@@ -90,8 +90,8 @@ public class HazelcastClient implements HazelcastInstance {
         connectionManager.setBinder(new DefaultClientBinder(this));
         out = new OutRunnable(this, calls, new ProtocolWriter());
         in = new InRunnable(this, out, calls, new ProtocolReader());
+        connectionPool = new ConnectionPool(connectionManager);
         listenerManager = new ListenerManager(this, serializationService);
-
 //        try {
 //            final Connection c = connectionManager.getInitConnection();
 //            if (c == null) {
@@ -104,10 +104,6 @@ public class HazelcastClient implements HazelcastInstance {
 //            lifecycleService.destroy();
 //            throw new ClusterClientException(e.getMessage(), e);
 //        }
-        final String prefix = "hz.client." + this.id + ".";
-//        new Thread(out, prefix + "OutThread").start();
-//        new Thread(in, prefix + "InThread").start();
-//        new Thread(listenerManager, prefix + "Listener").start();
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
         if (config.isUpdateAutomatic()) {
@@ -129,6 +125,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public OutRunnable getOutRunnable() {
         return out;
+    }
+
+    public ConnectionPool getConnectionPool() {
+        return connectionPool;
     }
 
     ListenerManager getListenerManager() {
@@ -163,48 +163,38 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Map");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new MapClientProxy<Object, V>(this, name));
+        }
+        return (IMap<K, V>) proxy;
     }
 
-    public <K, V, E> Object getClientProxy(Object o) {
-        Object proxy = mapProxies.get(o);
-        if (proxy == null) {
+    private <V> DistributedObject putAndReturnProxy(Object key, Map<Object, DistributedObject> innerProxyMap, DistributedObject newProxy) {
+        DistributedObject proxy;
+        synchronized (innerProxyMap) {
+            proxy = innerProxyMap.get(key);
+            if (proxy == null) {
+                proxy = newProxy;
+                innerProxyMap.put(key, proxy);
+            }
+        }
+        return proxy;
+    }
+
+    private Map<Object, DistributedObject> getProxiesMap(String type) {
+        Map<Object, DistributedObject> innerProxyMap = mapProxies.get(type);
+        if (innerProxyMap == null) {
             synchronized (mapProxies) {
-                proxy = mapProxies.get(o);
-                if (proxy == null) {
-                    if (o instanceof String) {
-                        String name = (String) o;
-//                        if (name.startsWith(Prefix.MAP)) {
-                            proxy = new MapClientProxy<K, V>(this, name);
-//                        } else if (name.startsWith(Prefix.AS_LIST)) {
-//                            proxy = new ListClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.SET)) {
-//                            proxy = new SetClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.QUEUE)) {
-//                            proxy = new QueueClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.TOPIC)) {
-//                            proxy = new TopicClientProxy<E>(this, name);
-//                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
-//                            proxy = new AtomicNumberClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
-//                            proxy = new CountDownLatchClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.IDGEN)) {
-//                            proxy = new IdGeneratorClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.MULTIMAP)) {
-//                            proxy = new MultiMapClientProxy(this, name);
-//                        } else if (name.startsWith(Prefix.SEMAPHORE)) {
-//                            proxy = new SemaphoreClientProxy(this, name);
-//                        } else {
-//                            proxy = new LockClientProxy(o, this);
-//                        }
-                    } else {
-                        proxy = new LockClientProxy(o, this);
-                    }
-                    mapProxies.put(o, proxy);
+                innerProxyMap = mapProxies.get(type);
+                if (innerProxyMap == null) {
+                    innerProxyMap = new ConcurrentHashMap<Object, DistributedObject>(10);
+                    mapProxies.put(type, innerProxyMap);
                 }
             }
         }
-        return mapProxies.get(o);
+        return innerProxyMap;
     }
 
     public com.hazelcast.core.Transaction getTransaction() {
@@ -215,7 +205,7 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionManager;
     }
 
-    SerializationService getSerializationService() {
+    public SerializationService getSerializationService() {
         return serializationService;
     }
 
@@ -226,12 +216,11 @@ public class HazelcastClient implements HazelcastInstance {
     public Cluster getCluster() {
         return clusterClientProxy;
     }
+//    public IExecutorService getExecutorService() {
+//        return getExecutorService("default");
+//    }
 
-    public ExecutorService getExecutorService() {
-        return getExecutorService("default");
-    }
-
-    public ExecutorService getExecutorService(String name) {
+    public IExecutorService getExecutorService(String name) {
         if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
 //        name = Prefix.EXECUTOR_SERVICE + name;
         ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
@@ -242,23 +231,44 @@ public class HazelcastClient implements HazelcastInstance {
                 executorServiceProxy = old;
             }
         }
-        return executorServiceProxy;
+        return null;
+//        return executorServiceProxy;
     }
 
     public IdGenerator getIdGenerator(String name) {
-        return (IdGenerator) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IdGenerator");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new IdGeneratorClientProxy(this, name));
+        }
+        return (IdGenerator) proxy;
     }
 
     public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("AtomicNumber");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new AtomicNumberClientProxy(this, name));
+        }
+        return (AtomicNumber) proxy;
     }
 
     public ICountDownLatch getCountDownLatch(String name) {
-        return (ICountDownLatch) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("CountDownLatch");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new CountDownLatchClientProxy(this, name));
+        }
+        return (ICountDownLatch) proxy;
     }
 
     public ISemaphore getSemaphore(String name) {
-        return (ISemaphore) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Semaphore");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new SemaphoreClientProxy(this, name));
+        }
+        return (ISemaphore) proxy;
     }
 
     public Collection<DistributedObject> getDistributedObjects() {
@@ -266,15 +276,30 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IList<E> getList(String name) {
-        return (IList<E>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("List");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new ListClientProxy(this, name));
+        }
+        return (IList<E>) proxy;
     }
 
     public ILock getLock(Object obj) {
-        return new LockClientProxy(obj, this);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Lock");
+        DistributedObject proxy = innerProxyMap.get(obj);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(obj, innerProxyMap, new LockClientProxy(this, obj));
+        }
+        return (ILock) proxy;
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("MultiMap");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new MultiMapClientProxy(this, name));
+        }
+        return (MultiMap<K,V>) proxy;
     }
 
     public String getName() {
@@ -282,15 +307,30 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Queue");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new QueueClientProxy(this, name));
+        }
+        return (IQueue<E>) proxy;
     }
 
     public <E> ISet<E> getSet(String name) {
-        return (ISet<E>) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Set");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new SetClientProxy(this, name));
+        }
+        return (ISet<E>) proxy;
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return (ITopic) getClientProxy(name);
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Topic");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new TopicClientProxy(this, name));
+        }
+        return (ITopic<E>) proxy;
     }
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {

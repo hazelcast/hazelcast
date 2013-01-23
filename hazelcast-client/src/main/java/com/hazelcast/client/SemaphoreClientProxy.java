@@ -29,7 +29,7 @@ public class SemaphoreClientProxy implements ISemaphore {
 
     public SemaphoreClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(getName(), hazelcastClient);
+        proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
 
     public void acquire() throws InterruptedException {
@@ -169,6 +169,10 @@ public class SemaphoreClientProxy implements ISemaphore {
 
     public String getName() {
         return name;
+    }
+
+    public boolean init(int permits) {
+        return false;
     }
 
     private Future doAcquireAsync(final int permits, final boolean attach) {

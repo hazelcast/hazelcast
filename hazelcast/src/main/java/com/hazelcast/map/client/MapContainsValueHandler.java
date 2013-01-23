@@ -33,7 +33,7 @@ public class MapContainsValueHandler extends MapCommandHandler{
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
         Data value = protocol.buffers[0];
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
         return protocol.success(String.valueOf(dataMapProxy.containsValue(value)));
     }
 }

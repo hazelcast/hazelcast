@@ -42,7 +42,7 @@ public class QueueItemListenerManager {
     public Collection<? extends Call> calls(HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : queueItemListeners.keySet()) {
-            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            final ProxyHelper proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
             calls.add(createNewAddItemListenerCall(proxyHelper, true));
         }
         return calls;

@@ -36,7 +36,7 @@ public class KeySetHandler extends MapCommandHandler {
         String type = protocol.args[0];
         String name = protocol.args[1];
         if ("map".equals(type)) {
-            DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+            DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
             Set<Data> keys = dataMapProxy.keySet();
             Data[] arrayKeys = keys.toArray(new Data[0]);
             return protocol.success(arrayKeys);

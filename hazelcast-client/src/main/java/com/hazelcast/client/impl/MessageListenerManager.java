@@ -94,7 +94,7 @@ public class MessageListenerManager {
     public Collection<Call> calls(final HazelcastClient client) {
         final List<Call> calls = new ArrayList<Call>();
         for (final String name : messageListeners.keySet()) {
-            final ProxyHelper proxyHelper = new ProxyHelper(name, client);
+            final ProxyHelper proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
             calls.add(createNewAddListenerCall(proxyHelper));
         }
         return calls;

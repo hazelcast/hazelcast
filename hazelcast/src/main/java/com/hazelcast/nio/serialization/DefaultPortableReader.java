@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
 
@@ -51,7 +50,7 @@ public class DefaultPortableReader implements PortableReader {
     public String readUTF(String fieldName) throws IOException {
         int pos = getPosition(fieldName);
         in.position(pos);
-        return IOUtil.readNullableString(in);
+        return in.readUTF();
     }
 
     public boolean readBoolean(String fieldName) throws IOException {

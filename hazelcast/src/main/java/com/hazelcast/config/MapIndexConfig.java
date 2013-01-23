@@ -16,13 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.query.Expression;
-
 public class MapIndexConfig {
 
     private String attribute;
-
-    private Expression expression;
 
     private boolean ordered = false;
 
@@ -33,12 +29,6 @@ public class MapIndexConfig {
     public MapIndexConfig(String attribute, boolean ordered) {
         super();
         this.attribute = attribute;
-        this.ordered = ordered;
-    }
-
-    public MapIndexConfig(Expression expression, boolean ordered) {
-        super();
-        this.expression = expression;
         this.ordered = ordered;
     }
 
@@ -56,13 +46,5 @@ public class MapIndexConfig {
 
     public void setOrdered(boolean ordered) {
         this.ordered = ordered;
-    }
-
-    public Expression getExpression() {
-        return expression;
-    }
-
-    public void setExpression(Expression expression) {
-        this.expression = expression;
     }
 }
