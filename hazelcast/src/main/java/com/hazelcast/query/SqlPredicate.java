@@ -19,15 +19,14 @@ package com.hazelcast.query;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Predicates;
+import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.util.*;
 
-import static com.hazelcast.query.impl.Predicates.*;
+import static com.hazelcast.query.Predicates.*;
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
     private transient Predicate predicate;
@@ -202,7 +201,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         if (value != null) {
             return value;
         } else if (key instanceof String && ("null".equalsIgnoreCase((String) key))) {
-            return Index.NULL;
+            return IndexImpl.NULL;
         } else {
             return key;
         }

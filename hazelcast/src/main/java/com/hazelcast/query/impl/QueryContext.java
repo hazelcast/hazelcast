@@ -16,22 +16,14 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.query.Predicate;
-
 public class QueryContext {
-    final IndexService indexService;
-    final Predicate predicate;
+    private final IndexService indexService;
 
-    public QueryContext(IndexService indexService, Predicate predicate) {
+    public QueryContext(IndexService indexService) {
         this.indexService = indexService;
-        this.predicate = predicate;
     }
 
-    public IndexService getIndexService() {
-        return indexService;
-    }
-
-    public Predicate getPredicate() {
-        return predicate;
+    public Index getIndex(String attributeName) {
+        return (indexService == null) ? null : indexService.getIndex(attributeName);
     }
 }

@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.IndexAwarePredicate;
-import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.*;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -477,7 +476,7 @@ public final class Predicates {
         public boolean apply(MapEntry mapEntry) {
             Comparable entryValue = readAttribute(mapEntry);
             if (entryValue == null) {
-                return value == null || value == Index.NULL;
+                return value == null || value == IndexImpl.NULL;
             }
             value = convert(mapEntry, value);
             return value.equals(entryValue);
@@ -502,7 +501,7 @@ public final class Predicates {
     public static abstract class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected String attribute;
-        private TypeConverters.TypeConverter typeConverter = null;
+        private AttributeType attributeType = null;
 
         protected AbstractPredicate() {
         }
@@ -513,12 +512,12 @@ public final class Predicates {
 
         protected Comparable convert(MapEntry mapEntry, Comparable comparable) {
             if (comparable == null) return null;
-            if (typeConverter == null) {
+            if (attributeType == null) {
                 QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
-                typeConverter = queryableEntry.getAttributeTypeConverter(attribute);
+                attributeType = queryableEntry.getAttributeType(attribute);
             }
-            if (typeConverter != null) {
-                return typeConverter.convert(comparable);
+            if (attributeType != null) {
+                return attributeType.getConverter().convert(comparable);
             }
             return comparable;
         }
@@ -528,9 +527,7 @@ public final class Predicates {
         }
 
         protected Index getIndex(QueryContext queryContext) {
-            IndexService is = queryContext.getIndexService();
-            if (is == null) return null;
-            return is.getIndex(attribute);
+            return queryContext.getIndex(attribute);
         }
 
         protected Comparable readAttribute(MapEntry entry) {
@@ -550,9 +547,9 @@ public final class Predicates {
     private static Comparable readAttribute(MapEntry entry, String attribute) {
         QueryableEntry queryableEntry = (QueryableEntry) entry;
         Comparable value = queryableEntry.getAttribute(attribute);
-        if (value == null) return Index.NULL;
-        TypeConverters.TypeConverter typeConverter = queryableEntry.getAttributeTypeConverter(attribute);
-        return typeConverter.convert(value);
+        if (value == null) return IndexImpl.NULL;
+        AttributeType attributeType = queryableEntry.getAttributeType(attribute);
+        return attributeType.getConverter().convert(value);
     }
 
     public static Predicate and(Predicate x, Predicate y) {

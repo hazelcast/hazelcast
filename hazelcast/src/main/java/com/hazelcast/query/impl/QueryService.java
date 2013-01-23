@@ -21,42 +21,13 @@ import com.hazelcast.query.Predicate;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 
-public class IndexService {
-    final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
-    final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
+public class QueryService {
 
-    public Index addIndex(String attribute, boolean ordered) {
-        Index index = new IndexImpl(attribute, ordered);
-        mapIndexes.put(attribute, index);
-        Object[] indexObjects = mapIndexes.values().toArray();
-        Index[] newIndexes = new Index[indexObjects.length];
-        for (int i = 0; i < indexObjects.length; i++) {
-            newIndexes[i] = (Index) indexObjects[i];
-        }
-        indexes.set(newIndexes);
-        return index;
-    }
-
-    public void index(QueryableEntry queryableEntry, boolean removed) throws QueryException {
-        for (Index index : indexes.get()) {
-            if (removed) {
-                index.removeIndex(queryableEntry);
-            } else {
-                index.saveIndex(queryableEntry);
-            }
-        }
-    }
-
-    Index getIndex(String attribute) {
-        return mapIndexes.get(attribute);
-    }
+    final IndexService indexService = new IndexService();
 
     public Set<QueryableEntry> query(Predicate predicate, Set<QueryableEntry> allEntries) {
-        QueryContext queryContext = new QueryContext(this);
+        QueryContext queryContext = new QueryContext(indexService);
         Set<QueryableEntry> result = null;
         if (predicate instanceof IndexAwarePredicate) {
             IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
