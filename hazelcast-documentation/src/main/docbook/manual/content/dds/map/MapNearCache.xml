@@ -87,7 +87,7 @@
                 NONE (no extra eviction, <time-to-live-seconds> may still apply),
                 LRU  (Least Recently Used),
                 LFU  (Least Frequently Used).
-                NONE is the default.
+                LRU is the default.
                 Regardless of the eviction policy used, <time-to-live-seconds> will still apply.
             -->
             <eviction-policy>LRU</eviction-policy>
