@@ -25,6 +25,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.idgen.IdGeneratorProxy;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
@@ -140,7 +141,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(final String name) {
-        throw new UnsupportedOperationException();
+        return new IdGeneratorProxy(nodeEngine, name, getAtomicNumber(IdGeneratorProxy.ATOMIC_NUMBER_NAME+name));
     }
 
     public AtomicNumber getAtomicNumber(final String name) {

@@ -75,6 +75,10 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
         return addAndGet(1);
     }
 
+    public long getAndIncrement() {
+        return getAndAdd(1);
+    }
+
     public long get() {
         return addAndGet(0);
     }
