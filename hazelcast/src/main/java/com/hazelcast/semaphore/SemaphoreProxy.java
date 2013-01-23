@@ -37,7 +37,7 @@ public class SemaphoreProxy implements ISemaphore {
 
     final SemaphoreService service;
 
-    int partitionId;
+    final int partitionId;
 
     public SemaphoreProxy(String name, SemaphoreService service, NodeEngine nodeEngine) {
         this.name = name;

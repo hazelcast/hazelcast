@@ -17,11 +17,9 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -46,10 +44,10 @@ import java.util.concurrent.ConcurrentMap;
 public class QueueService implements ManagedService, MigrationAwareService, MembershipAwareService,
         RemoteService, EventPublishingService<QueueEvent, ItemListener>, ClientProtocolService {
 
-    private NodeEngine nodeEngine;
 
     public static final String QUEUE_SERVICE_NAME = "hz:impl:queueService";
 
+    private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
@@ -76,7 +74,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
-        this.nodeEngine = nodeEngine;
         registerClientOperationHandlers();
     }
 

@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionPartitionContainer {
 
-    CollectionService service;
+    final CollectionService service;
 
     final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
 

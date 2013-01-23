@@ -43,8 +43,6 @@ public class QueueContainer implements DataSerializable {
 
     private QueueConfig config;
 
-    private SerializationService serializationService;
-
     private long idGen = 0;
 
     private QueueStoreWrapper store ;
@@ -54,7 +52,6 @@ public class QueueContainer implements DataSerializable {
 
     public QueueContainer(int partitionId, QueueConfig config, SerializationService serializationService, boolean fromBackup) throws Exception {
         this.partitionId = partitionId;
-        this.serializationService = serializationService;
         store = new QueueStoreWrapper(serializationService);
         setConfig(config);
         if (!fromBackup && store.isEnabled()) {
@@ -393,10 +390,6 @@ public class QueueContainer implements DataSerializable {
 
     public Data getDataFromMap(long itemId) {
         return dataMap.remove(itemId);
-    }
-
-    public void setSerializationService(SerializationService serializationService) {
-        this.serializationService = serializationService;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

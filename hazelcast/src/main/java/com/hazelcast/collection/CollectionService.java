@@ -36,9 +36,9 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
 
-    private NodeEngine nodeEngine;
-
     public static final String COLLECTION_SERVICE_NAME = "hz:impl:collectionService";
+
+    private final NodeEngine nodeEngine;
 
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
@@ -58,7 +58,6 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
-        this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new CollectionPartitionContainer(this);
