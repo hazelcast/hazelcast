@@ -16,12 +16,16 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.map.client.MapGetHandler;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
+import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.spi.*;
@@ -39,7 +43,8 @@ import java.util.concurrent.ConcurrentMap;
  * Date: 11/14/12
  * Time: 12:21 AM
  */
-public class QueueService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService, EventPublishingService<QueueEvent, ItemListener> {
+public class QueueService implements ManagedService, MigrationAwareService, MembershipAwareService,
+        RemoteService, EventPublishingService<QueueEvent, ItemListener>, ClientProtocolService {
 
     private NodeEngine nodeEngine;
 
@@ -47,6 +52,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
 
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
+    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -71,6 +77,19 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
 
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
+        registerClientOperationHandlers();
+    }
+
+    private void registerClientOperationHandlers() {
+        commandHandlers.put(Command.QOFFER, new QueueOfferHandler(this));
+        commandHandlers.put(Command.QPUT, new QueueOfferHandler(this));
+        commandHandlers.put(Command.QPOLL, new QueuePollHandler(this));
+        commandHandlers.put(Command.QTAKE, new QueueOfferHandler(this));
+        commandHandlers.put(Command.QSIZE, new QueueSizeHandler(this));
+        commandHandlers.put(Command.QPEEK, new QueuePollHandler(this));
+        commandHandlers.put(Command.QREMOVE, new QueueRemoveHandler(this));
+        commandHandlers.put(Command.QREMCAPACITY, new QueueCapacityHandler(this));
+        commandHandlers.put(Command.QENTRIES, new QueueEntriesHandler(this));
     }
 
     public void destroy() {
@@ -148,11 +167,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         return QUEUE_SERVICE_NAME;
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
+    public ObjectQueueProxy createDistributedObject(Object objectId) {
         return new ObjectQueueProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public DistributedObject createDistributedObjectForClient(Object objectId) {
+    public DataQueueProxy createDistributedObjectForClient(Object objectId) {
         return new DataQueueProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
@@ -180,4 +199,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         }
     }
 
+    public Map<Command, ClientCommandHandler> getCommandMap() {
+        return null;
+    }
+
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
 }

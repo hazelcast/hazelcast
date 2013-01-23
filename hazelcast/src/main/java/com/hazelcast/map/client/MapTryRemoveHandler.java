@@ -37,7 +37,7 @@ public class MapTryRemoveHandler extends MapCommandHandler{
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
         final long ttl = Long.valueOf(args[1]);
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
         try {
             Data value = dataMapProxy.tryRemove(key, ttl, TimeUnit.MILLISECONDS);
             return protocol.success(value);

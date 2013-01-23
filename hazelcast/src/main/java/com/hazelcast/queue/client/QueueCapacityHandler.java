@@ -15,25 +15,22 @@
  *
  */
 
-package com.hazelcast.map.client;
+package com.hazelcast.queue.client;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.QueueService;
+import com.hazelcast.queue.proxy.DataQueueProxy;
 
-public class MapRemoveHandler extends MapCommandHandler {
-    public MapRemoveHandler(MapService mapService) {
-        super(mapService);
+public class QueueCapacityHandler extends QueueCommandHandler {
+    public QueueCapacityHandler(QueueService queueService) {
+        super(queueService);
     }
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        Data key = protocol.buffers[0];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
-        Data value = dataMapProxy.remove(key);
-        return protocol.success(value);
+        DataQueueProxy queue = qService.createDistributedObjectForClient(name);
+        return protocol.success(String.valueOf(queue.remainingCapacity()));
     }
 }

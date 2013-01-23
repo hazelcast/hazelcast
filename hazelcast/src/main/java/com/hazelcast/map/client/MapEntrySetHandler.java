@@ -39,7 +39,7 @@ public class MapEntrySetHandler extends MapCommandHandler {
         if(protocol.buffers.length > 0){
             predicate = (Predicate) node.serializationService.toObject(protocol.buffers[0]);
         }
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
         Set<Map.Entry<Data, Data>> entries;
         System.out.println("Predicate is " + predicate);
         if(predicate == null)

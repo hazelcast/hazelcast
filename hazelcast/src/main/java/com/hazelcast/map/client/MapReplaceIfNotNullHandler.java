@@ -34,7 +34,7 @@ public class MapReplaceIfNotNullHandler extends MapCommandHandler {
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
         Data value = protocol.buffers[1];
-        DataMapProxy dataMapProxy = (DataMapProxy) mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
         Data oldValue = dataMapProxy.replace(key, value);
         return protocol.success(oldValue);
     }

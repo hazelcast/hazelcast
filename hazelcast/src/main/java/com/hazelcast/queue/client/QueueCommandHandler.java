@@ -15,23 +15,17 @@
  *
  */
 
-package com.hazelcast.map.client;
+package com.hazelcast.queue.client;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.proxy.DataMapProxy;
-import com.hazelcast.nio.Protocol;
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.queue.QueueService;
 
-public class MapFlushHandler extends MapCommandHandler {
-    public MapFlushHandler(MapService mapService) {
-        super(mapService);
-    }
+public abstract class QueueCommandHandler extends ClientCommandHandler {
+    final QueueService qService;
 
-    @Override
-    public Protocol processCall(Node node, Protocol protocol) {
-        String name = protocol.args[0];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
-        dataMapProxy.flush();
-        return protocol.success();
+    public QueueCommandHandler(QueueService queueService) {
+        super(queueService.getNodeEngine());
+        this.qService = queueService;
     }
 }
+
