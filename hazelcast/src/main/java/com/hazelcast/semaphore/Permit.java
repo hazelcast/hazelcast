@@ -70,12 +70,13 @@ public class Permit implements DataSerializable{
         }
     }
 
-    public void memberRemoved(Address caller){
+    public boolean memberRemoved(Address caller){
         Integer attached = attachMap.remove(caller);
         if (attached != null){
             available += attached;
+            return true;
         }
-
+        return false;
     }
 
     public boolean init(int permitCount){
@@ -172,6 +173,12 @@ public class Permit implements DataSerializable{
         sb.append("{available=").append(available);
         sb.append(", partitionId=").append(partitionId);
         sb.append('}');
+        sb.append("\n");
+        for (Map.Entry<Address, Integer> entry: attachMap.entrySet()){
+            sb.append("{caller=").append(entry.getKey());
+            sb.append(", attached=").append(entry.getValue());
+            sb.append("} ");
+        }
         return sb.toString();
     }
 }

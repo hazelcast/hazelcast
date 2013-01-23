@@ -21,7 +21,9 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,7 +39,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     public static final String SEMAPHORE_SERVICE_NAME = "hz:impl:semaphoreService";
 
-    public final ConcurrentMap<String, Permit> permitMap = new ConcurrentHashMap<String, Permit>();
+    private final ConcurrentMap<String, Permit> permitMap = new ConcurrentHashMap<String, Permit>();
 
     final NodeEngine nodeEngine;
 
@@ -69,9 +71,17 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     public void memberRemoved(MembershipServiceEvent event) {
         System.out.println("removed: " + event);
+
         Address caller = event.getMember().getAddress();
-        for (Permit permit: permitMap.values()){
-            permit.memberRemoved(caller);
+        for (String name: permitMap.keySet()){
+            int partitionId = nodeEngine.getPartitionId(name);
+            PartitionInfo info = nodeEngine.getPartitionInfo(partitionId);
+            if (nodeEngine.getThisAddress().equals(info.getOwner())){
+                Operation op = new DeadMemberOperation(name, caller).setPartitionId(partitionId)
+                        .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
+                        .setService(this).setNodeEngine(nodeEngine).setServiceName(SEMAPHORE_SERVICE_NAME);
+                nodeEngine.getOperationService().runOperation(op);
+            }
         }
     }
 
@@ -108,7 +118,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         if (migrationData.isEmpty()){
             return null;
         }
-        return new SemaphoreMigrationOperation();
+        return new SemaphoreMigrationOperation(migrationData);
     }
 
     public void insertMigrationData(Map<String, Permit> migrationData){
@@ -146,5 +156,9 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
             max = Math.max(max,  config.getTotalBackupCount());
         }
         return max;
+    }
+
+    public ConcurrentMap<String, Permit> getPermitMap() {
+        return permitMap; //TODO testing only
     }
 }

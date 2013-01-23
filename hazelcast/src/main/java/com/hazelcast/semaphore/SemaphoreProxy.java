@@ -142,7 +142,7 @@ public class SemaphoreProxy implements ISemaphore {
     }
 
     public LocalSemaphoreStats getLocalSemaphoreStats() {
-        for (Map.Entry<String, Permit> entry : service.permitMap.entrySet()) {
+        for (Map.Entry<String, Permit> entry : service.getPermitMap().entrySet()) {
             System.out.println("name: " + entry.getKey());
             System.out.println("permit: " + entry.getValue());
             System.out.println("-------------------------------");
