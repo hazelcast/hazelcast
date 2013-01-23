@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.nio.serialization;
+
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
+import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+
+/**
+ * @mdogan 1/23/13
+ */
+public class ObjectDataTest {
+
+    @Test
+    public void test() throws IOException {
+        SerializationService ss = new SerializationServiceImpl(1, null);
+
+        final Person person = new Person(111, 123L, 89.56d, "test-person",
+                new Address("street", 987));
+
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ObjectDataOutput out = ss.createObjectDataOutputStream(bout);
+        out.writeObject(person);
+        byte[] data1 = bout.toByteArray();
+
+        ObjectDataOutput out2 = ss.createObjectDataOutput(1024);
+        out2.writeObject(person);
+        byte[] data2 = out2.toByteArray();
+
+        Assert.assertEquals(data1.length, data2.length);
+        Assert.assertTrue(Arrays.equals(data1, data2));
+
+        final ByteArrayInputStream bin = new ByteArrayInputStream(data2);
+        final ObjectDataInput in = ss.createObjectDataInputStream(bin);
+        final Person person1 = in.readObject();
+
+        final ObjectDataInput in2 = ss.createObjectDataInput(data1);
+        final Person person2 = in2.readObject();
+
+        Assert.assertEquals(person, person1);
+        Assert.assertEquals(person, person2);
+
+    }
+}

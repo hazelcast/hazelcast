@@ -35,6 +35,8 @@ import java.net.UnknownHostException;
  */
 public class Connection {
 
+    private static final int BUFFER_SIZE = 16 << 10; // 32k
+
     private final Socket socket;
     private final InetSocketAddress address;
     private final int id;
@@ -74,8 +76,10 @@ public class Connection {
             }
 
             this.socket = socket;
-            this.dos =  serializationService.createObjectDataOutputStream(socket.getOutputStream());
-            this.dis = serializationService.createObjectDataInputStream(socket.getInputStream());
+            this.dos =  serializationService.createObjectDataOutputStream(
+                    new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
+            this.dis = serializationService.createObjectDataInputStream(
+                    new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
         } catch (Exception e) {
             throw new ClusterClientException(e);
         }

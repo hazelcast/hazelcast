@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.UTFUtil;
 
 import java.io.*;
 
@@ -25,18 +26,12 @@ import java.io.*;
  */
 public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable, SerializationContextAware {
 
-    private static final int BUFFER_SIZE = 16 << 10; // 32k
-
     private final SerializationService serializationService;
     private final DataInputStream dataInput;
 
     public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
         this.serializationService = serializationService;
-        if (in instanceof BufferedInputStream) {
-            this.dataInput = new DataInputStream(in);
-        } else {
-            this.dataInput = new DataInputStream(new BufferedInputStream(in, BUFFER_SIZE));
-        }
+        this.dataInput = new DataInputStream(in);
     }
 
     public int read() throws IOException {
@@ -119,7 +114,8 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public String readUTF() throws IOException {
-        return dataInput.readUTF();
+//        return dataInput.readUTF();
+        return UTFUtil.readUTF(this);
     }
 
     public void close() throws IOException {

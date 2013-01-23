@@ -60,7 +60,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public void destroy() {
-
+        numbers.clear();
     }
 
     public Config getConfig() {
@@ -80,7 +80,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public void destroyDistributedObject(Object objectId) {
-
+        numbers.remove(String.valueOf(objectId));
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {

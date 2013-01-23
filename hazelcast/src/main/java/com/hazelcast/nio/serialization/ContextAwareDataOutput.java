@@ -17,10 +17,10 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.UTFUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UTFDataFormatException;
 import java.nio.BufferOverflowException;
 
 /**
@@ -29,8 +29,6 @@ import java.nio.BufferOverflowException;
 class ContextAwareDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
 
     private static final int DEFAULT_SIZE = 1024 * 4;
-
-    static final int STRING_CHUNK_SIZE = 16 * 1024;
 
     private final byte longBuffer[] = new byte[8];
 
@@ -198,18 +196,7 @@ class ContextAwareDataOutput extends OutputStream implements BufferObjectDataOut
     }
 
     public void writeUTF(final String str) throws IOException {
-        boolean isNull = str == null;
-        writeBoolean(isNull);
-        if (isNull) return;
-
-        int length = str.length();
-        writeInt(length);
-        int chunkSize = length / STRING_CHUNK_SIZE + 1;
-        for (int i = 0; i < chunkSize; i++) {
-            int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-            int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-            writeShortUTF(str.substring(beginIndex, endIndex));
-        }
+        UTFUtil.writeUTF(this, str);
     }
 
     private void writeUnsafe(int b) {
@@ -286,51 +273,6 @@ class ContextAwareDataOutput extends OutputStream implements BufferObjectDataOut
     public void close() {
         reset();
         buffer = null;
-    }
-
-    private void writeShortUTF(final String str) throws IOException {
-        final int stringLen = str.length();
-        int utfLength = 0;
-        int c, count = 0;
-            /* use charAt instead of copying String to char array */
-        for (int i = 0; i < stringLen; i++) {
-            c = str.charAt(i);
-            if ((c >= 0x0001) && (c <= 0x007F)) {
-                utfLength++;
-            } else if (c > 0x07FF) {
-                utfLength += 3;
-            } else {
-                utfLength += 2;
-            }
-        }
-        if (utfLength > 65535) {
-            throw new UTFDataFormatException("encoded string too long:"
-                    + utfLength + " bytes");
-        }
-        final byte[] byteArray = new byte[utfLength + 2];
-        byteArray[count++] = (byte) ((utfLength >>> 8) & 0xFF);
-        byteArray[count++] = (byte) ((utfLength) & 0xFF);
-        int i;
-        for (i = 0; i < stringLen; i++) {
-            c = str.charAt(i);
-            if (!((c >= 0x0001) && (c <= 0x007F)))
-                break;
-            byteArray[count++] = (byte) c;
-        }
-        for (; i < stringLen; i++) {
-            c = str.charAt(i);
-            if ((c >= 0x0001) && (c <= 0x007F)) {
-                byteArray[count++] = (byte) c;
-            } else if (c > 0x07FF) {
-                byteArray[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                byteArray[count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
-                byteArray[count++] = (byte) (0x80 | ((c) & 0x3F));
-            } else {
-                byteArray[count++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
-                byteArray[count++] = (byte) (0x80 | ((c) & 0x3F));
-            }
-        }
-        write(byteArray, 0, utfLength + 2);
     }
 
     public SerializationContext getSerializationContext() {
