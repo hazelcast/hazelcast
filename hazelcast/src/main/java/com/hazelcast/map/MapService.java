@@ -18,9 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
@@ -51,22 +49,20 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
         ClientProtocolService {
 
-    public final static String MAP_SERVICE_NAME = MapServiceConfig.SERVICE_NAME;
+    public final static String SERVICE_NAME = "hz:impl:mapService";
 
     private final ILogger logger;
-    private final AtomicLong counter = new AtomicLong(new Random().nextLong());
-    private final PartitionContainer[] partitionContainers;
     private final NodeEngineImpl nodeEngine;
+    private final PartitionContainer[] partitionContainers;
+    private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-    private final ConcurrentMap<ListenerKey, String> eventRegistrations;
+    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
-
-    public MapService(final NodeEngine nodeEngine) {
+    public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
-        this.logger = nodeEngine.getLogger(MapService.class.getName());
+        logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
-        eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -134,9 +130,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
-            return null;
-        }
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
         return new MapMigrationOperation(container, event.getPartitionId(), event.getReplicaIndex(), false);
     }
@@ -186,10 +179,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
         Record record = null;
         MapInfo mapInfo = getMapInfo(name);
-        if (mapInfo.getMapConfig().getRecordType().equals("DATA")) {
+        final MapConfig.RecordType recordType = mapInfo.getMapConfig().getRecordType();
+        if (recordType == MapConfig.RecordType.DATA) {
             record = new DataRecord(dataKey, toData(value));
-        } else if (mapInfo.getMapConfig().getRecordType().equals("OBJECT")) {
+        } else if (recordType == MapConfig.RecordType.OBJECT) {
             record = new ObjectRecord(dataKey, toObject(value));
+        } else {
+            throw new IllegalArgumentException("Should not happen!");
         }
 
         if (ttl <= 0 && mapInfo.getMapConfig().getTimeToLiveSeconds() > 0) {
@@ -213,7 +209,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         TransactionLog txnLog = pc.getTransactionLog(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
+            nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -225,7 +221,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
+            nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception ignored) {
             //commit can never fail
@@ -237,7 +233,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
-            nodeEngine.getOperationService().takeBackups(MAP_SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
+            nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
             throw new TransactionException(e);
@@ -249,7 +245,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public String getServiceName() {
-        return MAP_SERVICE_NAME;
+        return SERVICE_NAME;
     }
 
     public ObjectMapProxy createDistributedObject(Object objectId) {
@@ -262,6 +258,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void destroyDistributedObject(Object objectId) {
         logger.log(Level.WARNING, "Destroying object: " + objectId);
+        final String name = String.valueOf(objectId);
+        mapInfos.remove(name);
+        final PartitionContainer[] containers = partitionContainers;
+        for (PartitionContainer container : containers) {
+            if (container != null) {
+                container.destroyMap(name);
+            }
+        }
+        nodeEngine.getEventService().deregisterListeners(SERVICE_NAME, name);
     }
 
     public void memberAdded(final MembershipServiceEvent membershipEvent) {
@@ -275,6 +280,17 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void destroy() {
+        final PartitionContainer[] containers = partitionContainers;
+        for (int i = 0; i < containers.length; i++) {
+            PartitionContainer container = containers[i];
+            if (container != null) {
+                container.destroy();
+            }
+            containers[i] = null;
+        }
+        mapInfos.clear();
+        commandHandlers.clear();
+        eventRegistrations.clear();
     }
 
     public Map<Command, ClientCommandHandler> getCommandMap() {
@@ -321,7 +337,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
-        Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(MAP_SERVICE_NAME, mapName);
+        Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
 
@@ -368,19 +384,19 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         String source = nodeEngine.getNode().address.toString();
         EventData event = new EventData(source, caller, dataKey, dataValue, dataOldValue, eventType);
 
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithValue, event);
-        nodeEngine.getEventService().publishEvent(MAP_SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event);
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
 
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
-        EventRegistration registration = nodeEngine.getEventService().registerListener(MAP_SERVICE_NAME, mapName, eventFilter, entryListener);
+        EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
         eventRegistrations.put(new ListenerKey(entryListener, ((EntryEventFilter) eventFilter).getKey()), registration.getId());
     }
 
     public void removeEventListener(EntryListener entryListener, String mapName, Object key) {
         String registrationId = eventRegistrations.get(new ListenerKey(entryListener, key));
-        nodeEngine.getEventService().deregisterListener(MAP_SERVICE_NAME, mapName, registrationId);
+        nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     public Object toObject(Object data) {

@@ -117,6 +117,13 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
+    public void deregisterListeners(String serviceName, String topic) {
+        final EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment != null) {
+            segment.removeRegistrations(topic);
+        }
+    }
+
     private void deregisterSubscriber(String serviceName, String topic, String id) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
@@ -305,6 +312,15 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 }
             }
             return registration;
+        }
+
+        void removeRegistrations(String topic) {
+            final Collection<Registration> all = registrations.remove(topic);
+            if (all != null) {
+                for (Registration reg : all) {
+                    registrationIdMap.remove(reg.getId());
+                }
+            }
         }
 
         void clear() {

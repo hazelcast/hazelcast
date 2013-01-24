@@ -48,7 +48,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
 
         try {
             AddAndGetOperation operation = new AddAndGetOperation(name, delta);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
@@ -59,7 +59,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     public boolean compareAndSet(long expect, long update) {
         try {
             CompareAndSetOperation operation = new CompareAndSetOperation(name, expect, update);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Boolean) f.get();
         } catch (Throwable throwable) {
@@ -86,7 +86,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     public long getAndAdd(long delta) {
         try {
             GetAndAddOperation operation = new GetAndAddOperation(name, delta);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
@@ -97,7 +97,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     public long getAndSet(long newValue) {
         try {
             GetAndSetOperation operation = new GetAndSetOperation(name, newValue);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
@@ -108,7 +108,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     public void set(long newValue) {
         try {
             SetOperation operation = new SetOperation(name, newValue);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
             inv.invoke();
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
@@ -138,6 +138,6 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     }
 
     public String getServiceName() {
-        return AtomicNumberService.NAME;
+        return AtomicNumberService.SERVICE_NAME;
     }
 }

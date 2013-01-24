@@ -16,23 +16,23 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.map.MapService;
+import com.hazelcast.semaphore.SemaphoreService;
 
 /**
- * @mdogan 9/18/12
+ * @mdogan 1/24/13
  */
-public final class MapServiceConfig extends DefaultServiceConfig {
+public class SemaphoreServiceConfig extends DefaultServiceConfig {
 
-    public MapServiceConfig() {
+    public SemaphoreServiceConfig() {
     }
 
     @Override
     public String getName() {
-        return MapService.SERVICE_NAME;
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override
     public String getClassName() {
-        return MapService.class.getName();
+        return SemaphoreService.class.getName();
     }
 }

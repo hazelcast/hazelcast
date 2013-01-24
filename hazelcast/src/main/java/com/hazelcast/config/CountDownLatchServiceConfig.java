@@ -16,23 +16,23 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.map.MapService;
+import com.hazelcast.countdownlatch.CountDownLatchService;
 
 /**
- * @mdogan 9/18/12
+ * @mdogan 1/24/13
  */
-public final class MapServiceConfig extends DefaultServiceConfig {
+public class CountDownLatchServiceConfig extends DefaultServiceConfig {
 
-    public MapServiceConfig() {
+    public CountDownLatchServiceConfig() {
     }
 
     @Override
     public String getName() {
-        return MapService.SERVICE_NAME;
+        return CountDownLatchService.SERVICE_NAME;
     }
 
     @Override
     public String getClassName() {
-        return MapService.class.getName();
+        return CountDownLatchService.class.getName();
     }
 }

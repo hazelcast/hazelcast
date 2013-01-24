@@ -30,7 +30,6 @@ public class PartitionContainer {
     final ConcurrentMap<String, DefaultRecordStore> maps = new ConcurrentHashMap<String, DefaultRecordStore>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
 
-
     public PartitionContainer(final MapService mapService, final PartitionInfo partitionInfo) {
         this.mapService = mapService;
         this.partitionInfo = partitionInfo;
@@ -99,12 +98,25 @@ public class PartitionContainer {
         }
     }
 
-
     public int getMaxBackupCount() {
         int max = 1;
         for (DefaultRecordStore mapPartition : maps.values()) {
+            // TODO: get max map backup count!
 //        777    max = Math.max(max, mapPartition.get);
         }
         return max;
+    }
+
+    void destroyMap(String name) {
+        DefaultRecordStore recordStore = maps.remove(name);
+        recordStore.clear();
+    }
+
+    void destroy() {
+        for (DefaultRecordStore store : maps.values()) {
+            store.clear();
+        }
+        maps.clear();
+        transactions.clear();
     }
 }

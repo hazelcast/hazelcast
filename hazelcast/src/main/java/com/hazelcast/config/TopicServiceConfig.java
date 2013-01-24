@@ -16,23 +16,23 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.map.MapService;
+import com.hazelcast.topic.TopicService;
 
 /**
- * @mdogan 9/18/12
+ * @mdogan 1/24/13
  */
-public final class MapServiceConfig extends DefaultServiceConfig {
+public class TopicServiceConfig extends DefaultServiceConfig {
 
-    public MapServiceConfig() {
+    public TopicServiceConfig() {
     }
 
     @Override
     public String getName() {
-        return MapService.SERVICE_NAME;
+        return TopicService.SERVICE_NAME;
     }
 
     @Override
     public String getClassName() {
-        return MapService.class.getName();
+        return TopicService.class.getName();
     }
 }

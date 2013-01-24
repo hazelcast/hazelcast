@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 1/10/13
  */
-public class CountDownLatchService implements ManagedService, RemoteService, MembershipAwareService, MigrationAwareService {
+public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService {
 
     public final static String SERVICE_NAME = "hz:impl:countDownLatchService";
 
@@ -80,12 +80,6 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mem
     public boolean shouldWait(String name) {
         final CountDownLatchInfo latch = latches.get(name);
         return latch != null && latch.getCount() > 0;
-    }
-
-    public void memberAdded(MembershipServiceEvent event) {
-    }
-
-    public void memberRemoved(MembershipServiceEvent event) {
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {

@@ -16,23 +16,31 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.map.MapService;
-
 /**
- * @mdogan 9/18/12
+ * @mdogan 1/24/13
  */
-public final class MapServiceConfig extends DefaultServiceConfig {
+abstract class DefaultServiceConfig extends ServiceConfig {
 
-    public MapServiceConfig() {
+    @Override
+    public final ServiceConfig setName(String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public String getName() {
-        return MapService.SERVICE_NAME;
+    public final ServiceConfig setClassName(String className) {
+        throw new UnsupportedOperationException();
+    }
+
+    public final Object getServiceImpl() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public String getClassName() {
-        return MapService.class.getName();
+    public final ServiceConfig setServiceImpl(Object serviceImpl) {
+        throw new UnsupportedOperationException();
+    }
+
+    public final boolean isDefaultService() {
+        return true;
     }
 }

@@ -212,8 +212,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleListeners(node);
             } else if ("partition-group".equals(nodeName)) {
                 handlePartitionGroup(node);
-            } else if ("serializers".equals(nodeName)) {
-                handleSerializers(node);
+            } else if ("serialization".equals(nodeName)) {
+                handleSerialization(node);
             } else if ("security".equals(nodeName)) {
                 handleSecurity(node);
             } else if ("license-key".equals(nodeName)) {
@@ -227,26 +227,44 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleServices(final Node node) {
         final Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
         final boolean enableDefaults = attDefaults == null || checkTrue(getTextContent(attDefaults));
-        Services services = config.getServicesConfig();
-        services.setEnableDefaults(enableDefaults);
+        ServicesConfig servicesConfig = config.getServicesConfigConfig();
+        servicesConfig.setEnableDefaults(enableDefaults);
 
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
             if ("service".equals(nodeName)) {
-                CustomServiceConfig serviceConfig = new CustomServiceConfig();
-                NamedNodeMap attrs = child.getAttributes();
-                Node attName = attrs.getNamedItem("name");
-                String name = attName != null ? getTextContent(attName) : "";
-                Node attClassName = attrs.getNamedItem("class-name");
-                String className = attClassName != null ? getTextContent(attClassName) : "";
-                Node attEnabled = attrs.getNamedItem("enabled");
-                boolean enabled = attEnabled != null && checkTrue(getTextContent(attEnabled));
-                serviceConfig.setEnabled(enabled).setName(name).setClassName(className);
-                services.addServiceConfig(serviceConfig);
+                ServiceConfig serviceConfig = new ServiceConfig();
+                String enabledValue = getAttribute(child, "enabled");
+                boolean enabled = checkTrue(enabledValue);
+                serviceConfig.setEnabled(enabled);
+
+                for (org.w3c.dom.Node n : new IterableNodeList(child.getChildNodes())) {
+                    final String value = cleanNodeName(child.getNodeName());
+                    if ("name".equals(value)) {
+                        String name = getTextContent(n);
+                        serviceConfig.setName(name);
+                    } else if ("class-name".equals(value)) {
+                        String className = getTextContent(n);
+                        serviceConfig.setClassName(className);
+                    } else if ("properties".equals(value)) {
+                        handleProperties(n, serviceConfig.getProperties());
+                    }
+                }
+                servicesConfig.addServiceConfig(serviceConfig);
             } else if ("map-service".equals(nodeName)) {
-                Node attEnabled = child.getAttributes().getNamedItem("enabled");
-                boolean enabled = attEnabled != null && checkTrue(getTextContent(attEnabled));
-                services.addServiceConfig(new MapServiceConfig().setEnabled(enabled));
+                servicesConfig.addServiceConfig(new MapServiceConfig().setEnabled(true));
+            } else if ("queue-service".equals(nodeName)) {
+                servicesConfig.addServiceConfig(new QueueServiceConfig().setEnabled(true));
+            } else if ("topic-service".equals(nodeName)) {
+                servicesConfig.addServiceConfig(new TopicServiceConfig().setEnabled(true));
+            } else if ("collection-service".equals(nodeName)) {
+                servicesConfig.addServiceConfig(new CollectionServiceConfig().setEnabled(true));
+            } else if ("atomicnumber-service".equals(nodeName)) {
+                servicesConfig.addServiceConfig(new AtomicNumberServiceConfig().setEnabled(true));
+            } else if ("semaphore-service".equals(nodeName)) {
+                servicesConfig.addServiceConfig(new SemaphoreServiceConfig().setEnabled(true));
+            } else if ("countdownlatch-service".equals(nodeName)) {
+                servicesConfig.addServiceConfig(new CountDownLatchServiceConfig().setEnabled(true));
             }
         }
     }
@@ -351,6 +369,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private void handleProperties(final org.w3c.dom.Node node, Properties properties) {
+        if (properties == null) return;
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
                 continue;
@@ -600,13 +619,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
-            if ("queue-max-size".equals(nodeName)) {
-                qConfig.setMaxSize(getIntegerValue("queue-max-size", value,
-                        QueueConfig.DEFAULT_MAX_SIZE));
-            } else if ("queue-sync-backup-count".equals(nodeName)) {
-                qConfig.setSyncBackupCount(getIntegerValue("queue-sync-backup-count", value, QueueConfig.DEFAULT_SYNC_BACKUP_COUNT));
-            } else if ("queue-async-backup-count".equals(nodeName)) {
-                qConfig.setAsyncBackupCount(getIntegerValue("queue-async-backup-count", value, QueueConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+            if ("max-size".equals(nodeName)) {
+                qConfig.setMaxSize(getIntegerValue("max-size", value, QueueConfig.DEFAULT_MAX_SIZE));
+            } else if ("backup-count".equals(nodeName)) {
+                qConfig.setSyncBackupCount(getIntegerValue("backup-count", value, QueueConfig.DEFAULT_SYNC_BACKUP_COUNT));
+            } else if ("async-backup-count".equals(nodeName)) {
+                qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, QueueConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             } else if ("item-listeners".equals(nodeName)) {
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("item-listener".equals(cleanNodeName(listenerNode))) {
@@ -663,7 +681,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("record-type".equals(nodeName)) {
-                mapConfig.setRecordType(value);
+                mapConfig.setRecordType(MapConfig.RecordType.valueOf(value));
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
@@ -908,20 +926,34 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.getPartitionGroupConfig().addMemberGroupConfig(memberGroupConfig);
     }
 
+    private void handleSerialization(final Node node) {
+        SerializationConfig serializationConfig = config.getSerializationConfig();
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String name = cleanNodeName(child);
+            if ("portable-version".equals(name)) {
+               String value = getTextContent(child);
+                serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
+            } else if ("portable-factory-class".equals(name)) {
+                String value = getTextContent(child);
+                serializationConfig.setPortableFactoryClass(value);
+            } else if ("serializers".equals(name)) {
+                handleSerializers(child);
+            }
+        }
+    }
+
     private void handleSerializers(final Node node) {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
-            if ("serializer".equals(cleanNodeName(child))) {
-                SerializerConfig serializerConfig = new SerializerConfig();
-                serializerConfig.setClassName(getValue(node));
+            if ("type-serializer".equals(cleanNodeName(child))) {
+                TypeSerializerConfig typeSerializerConfig = new TypeSerializerConfig();
+                typeSerializerConfig.setClassName(getValue(node));
 
                 final NamedNodeMap atts = node.getAttributes();
                 final Node globalNode = atts.getNamedItem("global");
-                serializerConfig.setGlobal(checkTrue(getValue(globalNode)));
+                typeSerializerConfig.setGlobal(checkTrue(getValue(globalNode)));
                 final Node typeNode = atts.getNamedItem("type-class");
                 final String typeClassName = getValue(typeNode);
-                serializerConfig.setTypeClassName(typeClassName);
-
-                config.addSerializerConfig(serializerConfig);
+                typeSerializerConfig.setTypeClassName(typeClassName);
             }
         }
     }
@@ -929,7 +961,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleManagementCenterConfig(final Node node) {
         NamedNodeMap attrs = node.getAttributes();
         final Node enabledNode = attrs.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getValue(enabledNode)) : false;
+        final boolean enabled = enabledNode != null && checkTrue(getValue(enabledNode));
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
                 getValue(intervalNode), 3) : 3;
@@ -941,7 +973,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getValue(enabledNode)) : false;
+        final boolean enabled = enabledNode != null && checkTrue(getValue(enabledNode));
         config.getSecurityConfig().setEnabled(enabled);
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());

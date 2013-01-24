@@ -16,15 +16,23 @@
 
 package com.hazelcast.config;
 
+import java.util.Properties;
+
 /**
  * @mdogan 9/18/12
  */
 
-public abstract class ServiceConfig {
+public class ServiceConfig {
 
     protected boolean enabled;
 
     protected String name;
+
+    protected String className;
+
+    protected Object serviceImpl;
+
+    protected Properties properties = new Properties();
 
     public ServiceConfig() {
     }
@@ -40,5 +48,41 @@ public abstract class ServiceConfig {
 
     public String getName() {
         return name;
+    }
+
+    public ServiceConfig setName(final String name) {
+        this.name = name;
+        return this;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public ServiceConfig setClassName(final String className) {
+        this.className = className;
+        return this;
+    }
+
+    public Object getServiceImpl() {
+        return serviceImpl;
+    }
+
+    public ServiceConfig setServiceImpl(final Object serviceImpl) {
+        this.serviceImpl = serviceImpl;
+        return this;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public ServiceConfig setProperties(final Properties properties) {
+        this.properties = properties;
+        return this;
+    }
+
+    public boolean isDefaultService() {
+        return false;
     }
 }
