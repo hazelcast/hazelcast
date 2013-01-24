@@ -626,7 +626,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         try {
             AddIndexOperation mapKeySetOperation = new AddIndexOperation(name, attribute, ordered);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MAP_SERVICE_NAME, mapKeySetOperation);
+                    .invokeOnAllPartitions(SERVICE_NAME, mapKeySetOperation);
             for (Object o : results.values()) {
                 System.out.println(o);
             }

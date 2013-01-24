@@ -25,8 +25,8 @@ import com.hazelcast.util.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.Date;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -47,9 +47,9 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("state == " + TestUtil.State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", nullNameValue)));
-        assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("createDate >= '" + new Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("state == NULL").apply(createEntry("1", nullNameValue)));
         assertFalse(new SqlPredicate("name = 'null'").apply(createEntry("1", nullNameValue)));
         assertTrue(new SqlPredicate("name = null").apply(createEntry("1", nullNameValue)));
