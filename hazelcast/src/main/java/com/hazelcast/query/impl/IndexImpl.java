@@ -16,8 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +24,6 @@ import java.util.concurrent.ConcurrentMap;
 public class IndexImpl implements Index {
     // recordKey -- indexValue
     private final ConcurrentMap<Object, Comparable> recordValues = new ConcurrentHashMap<Object, Comparable>(1000);
-    // indexValue -- Map<recordKey, IndexEntry>
     private final IndexStore indexStore;
     private final String attribute;
 
@@ -38,14 +35,14 @@ public class IndexImpl implements Index {
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 
-    public void removeIndex(QueryableEntry e) {
+    public void removeEntryIndex(QueryableEntry e) {
         Object key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
         indexStore.removeIndex(oldValue, key);
     }
 
-    public void saveIndex(QueryableEntry e) throws QueryException {
-        Data key = e.getKeyData();
+    public void saveEntryIndex(QueryableEntry e) throws QueryException {
+        Object key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
         Comparable newValue = e.getAttribute(attribute);
         if (newValue == null) {

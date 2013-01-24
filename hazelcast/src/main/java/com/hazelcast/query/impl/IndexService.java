@@ -29,8 +29,14 @@ public class IndexService {
     final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
 
-    public Index addIndex(String attribute, boolean ordered) {
-        Index index = new IndexImpl(attribute, ordered);
+    public synchronized Index destroyIndex(String attribute) {
+        return mapIndexes.remove(attribute);
+    }
+
+    public synchronized Index addOrGetIndex(String attribute, boolean ordered) {
+        Index index = mapIndexes.get(attribute);
+        if (index != null) return index;
+        index = new IndexImpl(attribute, ordered);
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();
         Index[] newIndexes = new Index[indexObjects.length];
@@ -41,13 +47,15 @@ public class IndexService {
         return index;
     }
 
-    public void index(QueryableEntry queryableEntry, boolean removed) throws QueryException {
+    public void removeEntryIndex(QueryableEntry queryableEntry) throws QueryException {
         for (Index index : indexes.get()) {
-            if (removed) {
-                index.removeIndex(queryableEntry);
-            } else {
-                index.saveIndex(queryableEntry);
-            }
+            index.removeEntryIndex(queryableEntry);
+        }
+    }
+
+    public void saveEntryIndex(QueryableEntry queryableEntry) throws QueryException {
+        for (Index index : indexes.get()) {
+            index.saveEntryIndex(queryableEntry);
         }
     }
 

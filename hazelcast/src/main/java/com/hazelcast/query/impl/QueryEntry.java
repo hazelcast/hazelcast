@@ -106,7 +106,6 @@ public class QueryEntry implements QueryableEntry {
                 klass = reflectionHelper.createGetter(this, attributeName).getReturnType();
             }
         }
-        System.out.println(attributeName + " attribute " + klass);
         return ReflectionHelper.getAttributeType(klass);
     }
 
