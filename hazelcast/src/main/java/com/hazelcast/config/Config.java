@@ -75,7 +75,7 @@ public class Config implements DataSerializable {
 
     private Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
-    private Services servicesConfig = new Services();
+    private ServicesConfig servicesConfigConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
 
@@ -85,7 +85,7 @@ public class Config implements DataSerializable {
 
     private ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig();
 
-    private Collection<SerializerConfig> serializerConfigs;
+    private SerializationConfig serializationConfig = new SerializationConfig();
 
     private ManagedContext managedContext;
 
@@ -655,20 +655,12 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    public Collection<SerializerConfig> getSerializerConfigs() {
-        if (serializerConfigs == null) {
-            serializerConfigs = new LinkedList<SerializerConfig>();
-        }
-        return serializerConfigs;
+    public SerializationConfig getSerializationConfig() {
+        return serializationConfig;
     }
 
-    public Config addSerializerConfig(SerializerConfig serializerConfig) {
-        getSerializerConfigs().add(serializerConfig);
-        return this;
-    }
-
-    public Config setSerializerConfigs(Collection<SerializerConfig> serializerConfigs) {
-        this.serializerConfigs = serializerConfigs;
+    public Config setSerializationConfig(SerializationConfig serializationConfig) {
+        this.serializationConfig = serializationConfig;
         return this;
     }
 
@@ -939,12 +931,12 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    public Services getServicesConfig() {
-        return servicesConfig;
+    public ServicesConfig getServicesConfigConfig() {
+        return servicesConfigConfig;
     }
 
-    public Config setServicesConfig(final Services servicesConfig) {
-        this.servicesConfig = servicesConfig;
+    public Config setServicesConfigConfig(final ServicesConfig servicesConfigConfig) {
+        this.servicesConfigConfig = servicesConfigConfig;
         return this;
     }
 

@@ -41,7 +41,7 @@ public class TotalOrderedTopicProxy extends TopicProxy{
     public void publish(Object message) {
         try {
             PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(TopicService.NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(TopicService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             f.get();
         } catch (Throwable throwable) {

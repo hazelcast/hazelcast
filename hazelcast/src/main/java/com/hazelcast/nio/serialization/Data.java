@@ -19,11 +19,9 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-public class Data implements IdentifiedDataSerializable {
+public final class Data implements IdentifiedDataSerializable {
 
     public static final int ID = 0;
     public static final int NO_CLASS_ID = -1;
@@ -41,10 +39,6 @@ public class Data implements IdentifiedDataSerializable {
         this.buffer = bytes;
     }
 
-    public int size() {
-        return (buffer == null) ? 0 : buffer.length;
-    }
-
     public void postConstruct(SerializationContext context) {
         if (cd != null && cd instanceof ClassDefinitionBinaryProxy) {
             try {
@@ -55,15 +49,12 @@ public class Data implements IdentifiedDataSerializable {
         }
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        writeData((DataOutput) out);
-    }
-
+    /**
+     * WARNING:
+     *
+     * Should be in sync with {@link com.hazelcast.nio.DataWriter#readFrom(java.nio.ByteBuffer)}
+     */
     public void readData(ObjectDataInput in) throws IOException {
-        readData((DataInput) in);
-    }
-
-    public void readData(DataInput in) throws IOException {
         type = in.readInt();
         final int classId = in.readInt();
         if (classId != NO_CLASS_ID) {
@@ -87,9 +78,14 @@ public class Data implements IdentifiedDataSerializable {
         partitionHash = in.readInt();
     }
 
-    //Warning!!!!!!!
-    //The following method : capacity() should be updated whenever writeData method is changes
-    public void writeData(DataOutput out) throws IOException {
+    /**
+     * WARNING:
+     *
+     * Should be in sync with {@link com.hazelcast.nio.DataWriter#writeTo(java.nio.ByteBuffer)}
+     *
+     * {@link #totalSize()} should be updated whenever writeData method is changed.
+     */
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(type);
         if (cd != null) {
             out.writeInt(cd.getClassId());
@@ -100,31 +96,41 @@ public class Data implements IdentifiedDataSerializable {
         } else {
             out.writeInt(NO_CLASS_ID);
         }
-        int size = size();
+        int size = bufferSize();
         out.writeInt(size);
         if (size > 0) {
             out.write(buffer);
         }
-        out.writeInt(partitionHash);
+        out.writeInt(getPartitionHash());
     }
 
-    //Caclucaltes the size of the binary after the Data is serialized.
+    public int bufferSize() {
+        return (buffer == null) ? 0 : buffer.length;
+    }
+
+    /**
+     * Calculates the size of the binary after the Data is serialized.
+     *
+     * WARNING:
+     *
+     * Should be in sync with {@link #writeData(com.hazelcast.nio.ObjectDataOutput)}
+     */
     public int totalSize() {
         int total = 0;
-        total += 4; //integer
+        total += 4; // type
         if (cd != null) {
-            total += 4;
-            total += 4;
-            total += 4;
-            total += cd.getBinary().length;
+            total += 4; // cd-classId
+            total += 4; // cd-version
+            total += 4; // cd-binary-length
+            total += cd.getBinary().length; // cd-binary
         } else {
-            total += 4;
+            total += 4; // no-classId
         }
-        total += 4;
-        if (size() > 0) {
-            total += buffer.length;
+        total += 4; // buffer-size
+        if (bufferSize() > 0) {
+            total += buffer.length; // buffer
         }
-        total += 4;
+        total += 4; // partition-hash
         return total;
     }
 
@@ -161,7 +167,7 @@ public class Data implements IdentifiedDataSerializable {
         if (this == obj)
             return true;
         Data data = (Data) obj;
-        return type == data.type && size() == data.size()
+        return type == data.type && bufferSize() == data.bufferSize()
                 && equals(buffer, data.buffer);
     }
 
@@ -198,6 +204,6 @@ public class Data implements IdentifiedDataSerializable {
         return "Data{" +
                 "type=" + type + ", " +
                 "partitionHash=" + partitionHash +
-                "} size= " + size();
+                "} size= " + bufferSize();
     }
 }

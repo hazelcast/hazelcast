@@ -134,7 +134,13 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
-        serializationService = new SerializationServiceImpl(1, null, hazelcastInstance.managedContext);
+        SerializationServiceImpl ss = null;
+        try {
+            ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
+        } catch (Exception e) {
+            Util.throwUncheckedException(e);
+        }
+        serializationService = ss;
         systemLogService = new SystemLogService(this);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {

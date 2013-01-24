@@ -62,6 +62,10 @@ public class AtomicNumberClientProxy implements AtomicNumber {
         return addAndGet(1L);
     }
 
+    public long getAndIncrement() {
+        return getAndAdd(1L);
+    }
+
     public void set(long newValue) {
         getAndSet(newValue);
     }

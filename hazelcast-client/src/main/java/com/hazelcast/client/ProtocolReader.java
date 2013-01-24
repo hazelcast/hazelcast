@@ -21,24 +21,31 @@ import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.protocol.SocketProtocolReader;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.ObjectDataInputStream;
+import com.hazelcast.nio.serialization.SerializationService;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
+import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 public class ProtocolReader {
-    ByteBuffer line = ByteBuffer.allocate(500);
-    Pattern numericPattern = Pattern.compile("([0-9]*)");
+    private final Pattern numericPattern = Pattern.compile("([0-9]*)");
+    private final SerializationService serializationService;
+
+    private ByteBuffer line = ByteBuffer.allocate(500);
+
+    public ProtocolReader(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
 
     public Protocol read(Connection connection) throws IOException {
         int threadId = -1;
         String flag = null;
         Command command;
         String[] args;
-        final DataInputStream dis = connection.getInputStream();
+        final ObjectDataInputStream dis = connection.getInputStream();
         String commandLine = readLine(dis);
         String[] split = SocketProtocolReader.fastSplit(commandLine, ' ');
         if (split.length == 0) {
@@ -84,8 +91,7 @@ public class ProtocolReader {
                 byte[] bytes = new byte[length];
                 dis.readFully(bytes);
                 datas[i] = new Data();
-                ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-                datas[i].readData(new DataInputStream(bis));
+                datas[i].readData(serializationService.createObjectDataInput(bytes));
                 i++;
             }
             dis.readByte();
@@ -98,7 +104,7 @@ public class ProtocolReader {
         return protocol;
     }
 
-    private String readLine(DataInputStream dis) throws IOException {
+    private String readLine(DataInput dis) throws IOException {
         byte b = dis.readByte();
         char c = (char) b;
         while (c != '\n') {

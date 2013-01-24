@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService {
 
-    public static final String SEMAPHORE_SERVICE_NAME = "hz:impl:semaphoreService";
+    public static final String SERVICE_NAME = "hz:impl:semaphoreService";
 
     private final ConcurrentMap<String, Permit> permitMap = new ConcurrentHashMap<String, Permit>();
 
@@ -60,10 +60,10 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
-        //this.nodeEngine = nodeEngine;
     }
 
     public void destroy() {
+        permitMap.clear();
     }
 
     public void memberAdded(MembershipServiceEvent event) {
@@ -79,14 +79,14 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
             if (nodeEngine.getThisAddress().equals(info.getOwner())){
                 Operation op = new DeadMemberOperation(name, caller).setPartitionId(partitionId)
                         .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
-                        .setService(this).setNodeEngine(nodeEngine).setServiceName(SEMAPHORE_SERVICE_NAME);
+                        .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().runOperation(op);
             }
         }
     }
 
     public String getServiceName() {
-        return SEMAPHORE_SERVICE_NAME;
+        return SERVICE_NAME;
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
@@ -98,15 +98,13 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     public void destroyDistributedObject(Object objectId) {
+        permitMap.remove(String.valueOf(objectId));
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
-            return null; // is it possible
-        }
         Map<String, Permit> migrationData = new HashMap<String, Permit>();
         for (Map.Entry<String, Permit> entry: permitMap.entrySet()){
             String name = entry.getKey();

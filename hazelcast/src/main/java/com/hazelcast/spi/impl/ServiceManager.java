@@ -19,10 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.config.CustomServiceConfig;
-import com.hazelcast.config.MapServiceConfig;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.config.Services;
+import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.executor.DistributedExecutorService;
@@ -36,9 +34,11 @@ import com.hazelcast.semaphore.SemaphoreService;
 import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -68,47 +68,59 @@ class ServiceManager {
         registerService(PartitionService.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.NAME, nodeEngine.getProxyService());
 
-        final Services servicesConfig = node.getConfig().getServicesConfig();
-        if (servicesConfig != null) {
-            if (servicesConfig.isEnableDefaults()) {
+        final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfigConfig();
+        if (servicesConfigConfig != null) {
+            if (servicesConfigConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
-                registerService(MapService.MAP_SERVICE_NAME, new MapService(nodeEngine));
-                registerService(QueueService.QUEUE_SERVICE_NAME, new QueueService(nodeEngine));
-                registerService(AtomicNumberService.NAME, new AtomicNumberService());
-                registerService(TopicService.NAME, new TopicService());
-                registerService(CollectionService.COLLECTION_SERVICE_NAME, new CollectionService(nodeEngine));
-                registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
-                registerService(SemaphoreService.SEMAPHORE_SERVICE_NAME, new SemaphoreService(nodeEngine));
+                registerService(MapService.SERVICE_NAME, new MapService(nodeEngine));
+                registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
+                registerService(TopicService.SERVICE_NAME, new TopicService());
+                registerService(CollectionService.SERVICE_NAME, new CollectionService(nodeEngine));
                 registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
-                // TODO: add other services
-                // ...
-                // ...
+                registerService(AtomicNumberService.SERVICE_NAME, new AtomicNumberService());
+                registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
+                registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
             }
-            final Collection<ServiceConfig> serviceConfigs = servicesConfig.getServiceConfigs();
+
+            final Collection<ServiceConfig> serviceConfigs = servicesConfigConfig.getServiceConfigs();
             for (ServiceConfig serviceConfig : serviceConfigs) {
+                Object service = null;
                 if (serviceConfig.isEnabled()) {
-                    Object service = null;
-                    if (serviceConfig instanceof CustomServiceConfig) {
-                        final CustomServiceConfig customServiceConfig = (CustomServiceConfig) serviceConfig;
-                        service = customServiceConfig.getServiceImpl();
-                        if (service == null) {
-                            try {
-                                service = ClassLoaderUtil.newInstance(customServiceConfig.getClassName());
-                            } catch (Throwable e) {
-                                logger.log(Level.SEVERE, e.getMessage(), e);
-                            }
+                    if (serviceConfig.isDefaultService()) {
+                        if (servicesConfigConfig.isEnableDefaults()) {
+                            // already registered...
+                            continue;
                         }
-                    } else if (serviceConfig instanceof MapServiceConfig) {
-                        if (!services.containsKey(MapServiceConfig.SERVICE_NAME)) {
-                            service = new MapService(nodeEngine);
+                        service = createServiceObject(serviceConfig.getClassName());
+                    }
+                    else {
+                        service = serviceConfig.getServiceImpl();
+                        if (service == null) {
+                            service = createServiceObject(serviceConfig.getClassName());
                         }
                     }
                     if (service != null) {
-                        registerService(serviceConfig.getName(), service);
+                        registerService(serviceConfig.getName(), service, serviceConfig.getProperties());
                     }
                 }
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object createServiceObject(String className) {
+        try {
+            Class serviceClass = ClassLoaderUtil.loadClass(className);
+            try {
+                Constructor constructor = serviceClass.getConstructor(NodeEngine.class);
+                return constructor.newInstance(nodeEngine);
+            } catch (NoSuchMethodException ignored) {
+            }
+            return ClassLoaderUtil.newInstance(serviceClass);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+        return null;
     }
 
     synchronized void shutdown() {
@@ -132,6 +144,10 @@ class ServiceManager {
     }
 
     private synchronized void registerService(String serviceName, Object service) {
+        registerService(serviceName, service, new Properties());
+    }
+
+    private synchronized void registerService(String serviceName, Object service, Properties props) {
         logger.log(Level.FINEST, "Registering service: '" + serviceName + "'");
         Object oldService = services.putIfAbsent(serviceName, service);
         if (oldService != null) {
@@ -149,7 +165,7 @@ class ServiceManager {
         if (service instanceof ManagedService) {
             try {
                 logger.log(Level.FINEST, "Initializing service -> " + serviceName + ": " + service);
-                ((ManagedService) service).init(nodeEngine, new Properties());
+                ((ManagedService) service).init(nodeEngine, props);
             } catch (Throwable t) {
                 logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
             }

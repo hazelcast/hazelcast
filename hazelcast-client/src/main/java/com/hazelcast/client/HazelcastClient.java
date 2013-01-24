@@ -82,7 +82,7 @@ public class HazelcastClient implements HazelcastInstance {
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
         connectionManager = new ConnectionManager(this, config, lifecycleService);
-        connectionManager.setBinder(new DefaultClientBinder());
+        connectionManager.setBinder(new DefaultClientBinder(serializationService));
         connectionPool = new ConnectionPool(connectionManager);
         listenerManager = new ListenerManager(this, serializationService);
 //        try {

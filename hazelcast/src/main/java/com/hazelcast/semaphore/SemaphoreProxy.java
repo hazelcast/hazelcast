@@ -160,7 +160,7 @@ public class SemaphoreProxy implements ISemaphore {
 
     private <T> T invoke(SemaphoreOperation operation) {
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SemaphoreService.SEMAPHORE_SERVICE_NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SemaphoreService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {

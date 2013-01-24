@@ -26,7 +26,7 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
     private final String type;
 
     protected SemaphoreWaitNotifyKey(Object id, String type) {
-        super(SemaphoreService.SEMAPHORE_SERVICE_NAME, id);
+        super(SemaphoreService.SERVICE_NAME, id);
         this.type = type;
     }
 

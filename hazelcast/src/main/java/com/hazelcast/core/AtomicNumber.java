@@ -87,6 +87,13 @@ public interface AtomicNumber extends DistributedObject {
     public long incrementAndGet();
 
     /**
+     * Atomically increments the current value by one.
+     *
+     * @return the old value
+     */
+    public long getAndIncrement();
+
+    /**
      * Atomically sets the given value.
      *
      * @param newValue the new value

@@ -33,6 +33,8 @@ public interface EventService {
 
     void deregisterListener(String serviceName, String topic, String id);
 
+    void deregisterListeners(String serviceName, String topic);
+
     Collection<EventRegistration> getRegistrations(String serviceName, String topic);
 
     EventRegistration[] getRegistrationsAsArray(String serviceName, String topic);

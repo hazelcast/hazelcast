@@ -52,7 +52,7 @@ public class AtomicNumberMigrationOperation extends AbstractOperation {
     }
 
     public String getServiceName() {
-        return AtomicNumberService.NAME;
+        return AtomicNumberService.SERVICE_NAME;
     }
 
 

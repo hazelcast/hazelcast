@@ -30,7 +30,7 @@ public class WaitKey extends AbstractWaitNotifyKey implements WaitNotifyKey {
     final String value;
 
     public WaitKey(String name, Data key, String value) {
-        super(CollectionService.COLLECTION_SERVICE_NAME, name);
+        super(CollectionService.SERVICE_NAME, name);
         this.key = key;
         this.value = value;
     }

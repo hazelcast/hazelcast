@@ -33,7 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K, V> {
 
@@ -289,7 +289,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
-        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
+        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();
         Object returnObj;
