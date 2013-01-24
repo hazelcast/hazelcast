@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class IndexImpl implements Index {
     // recordKey -- indexValue
-    private final ConcurrentMap<Data, Comparable> recordValues = new ConcurrentHashMap<Data, Comparable>(1000);
+    private final ConcurrentMap<Object, Comparable> recordValues = new ConcurrentHashMap<Object, Comparable>(1000);
     // indexValue -- Map<recordKey, IndexEntry>
     private final IndexStore indexStore;
     private final String attribute;
@@ -39,7 +39,7 @@ public class IndexImpl implements Index {
     }
 
     public void removeIndex(QueryableEntry e) {
-        Data key = e.getKeyData();
+        Object key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
         indexStore.removeIndex(oldValue, key);
     }

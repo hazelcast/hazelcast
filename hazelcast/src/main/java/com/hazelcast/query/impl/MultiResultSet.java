@@ -16,8 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,19 +23,19 @@ import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
 public class MultiResultSet extends AbstractSet<QueryableEntry> {
-    private final List<ConcurrentMap<Data, QueryableEntry>> resultSets = new ArrayList<ConcurrentMap<Data, QueryableEntry>>();
+    private final List<ConcurrentMap<Object, QueryableEntry>> resultSets = new ArrayList<ConcurrentMap<Object, QueryableEntry>>();
 
     public MultiResultSet() {
     }
 
-    public void addResultSet(ConcurrentMap<Data, QueryableEntry> resultSet) {
+    public void addResultSet(ConcurrentMap<Object, QueryableEntry> resultSet) {
         resultSets.add(resultSet);
     }
 
     @Override
     public boolean contains(Object o) {
         QueryableEntry entry = (QueryableEntry) o;
-        for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
+        for (ConcurrentMap<Object, QueryableEntry> resultSet : resultSets) {
             if (resultSet.containsKey(entry.getKeyData())) {
                 return true;
             }
@@ -86,7 +84,7 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
     @Override
     public int size() {
         int size = 0;
-        for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
+        for (ConcurrentMap<Object, QueryableEntry> resultSet : resultSets) {
             size += resultSet.size();
         }
         return size;

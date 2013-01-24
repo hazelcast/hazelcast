@@ -26,4 +26,6 @@ public interface QueryableEntry extends MapEntry {
     AttributeType getAttributeType(String attributeName);
 
     Data getKeyData();
+
+    Object getIndexKey();
 }

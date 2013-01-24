@@ -26,9 +26,26 @@ class TypeConverters {
     public static final TypeConverter STRING_CONVERTER = new StringConverter();
     public static final TypeConverter CHAR_CONVERTER = new CharConverter();
     public static final TypeConverter BYTE_CONVERTER = new ByteConverter();
+    public static final TypeConverter ENUM_CONVERTER = new EnumConverter();
 
     public interface TypeConverter {
         Comparable convert(Comparable value);
+    }
+
+    static class EnumConverter implements TypeConverter {
+        public Comparable convert(Comparable value) {
+            String valueString = value.toString();
+            try {
+                if (valueString.contains(".")) {
+                    // there is a dot  in the value specifier, keep part after last dot
+                    return valueString.substring(1 + valueString.lastIndexOf("."));
+                }
+            } catch (IllegalArgumentException iae) {
+                // illegal enum value specification
+                throw new IllegalArgumentException("Illegal enum value specification: " + iae.getMessage());
+            }
+            return valueString;
+        }
     }
 
     static class DoubleConverter implements TypeConverter {

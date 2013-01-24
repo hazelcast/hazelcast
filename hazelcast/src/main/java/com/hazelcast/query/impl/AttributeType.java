@@ -27,7 +27,8 @@ public enum AttributeType {
     STRING(FieldDefinition.TYPE_UTF, TypeConverters.STRING_CONVERTER),
     FLOAT(FieldDefinition.TYPE_FLOAT, TypeConverters.FLOAT_CONVERTER),
     CHAR(FieldDefinition.TYPE_CHAR, TypeConverters.CHAR_CONVERTER),
-    INTEGER(FieldDefinition.TYPE_INT, TypeConverters.INTEGER_CONVERTER);
+    INTEGER(FieldDefinition.TYPE_INT, TypeConverters.INTEGER_CONVERTER),
+    ENUM(20, TypeConverters.ENUM_CONVERTER);
 
     private static final AttributeType[] types = new AttributeType[50];
 

@@ -532,7 +532,8 @@ public final class Predicates {
 
         protected Comparable readAttribute(MapEntry entry) {
             QueryableEntry queryableEntry = (QueryableEntry) entry;
-            return convert(entry, queryableEntry.getAttribute(attribute));
+            Comparable attValue = queryableEntry.getAttribute(attribute);
+            return convert(entry, attValue);
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
