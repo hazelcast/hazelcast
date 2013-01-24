@@ -17,24 +17,62 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.Member;
+
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnectionPool {
     private final ConnectionManager connectionManager;
 
     static private final int POOL_SIZE = 1;
+    Set<InetSocketAddress> addresses = new HashSet();
+//    Map<InetSocketAddress, BlockingQueue<Connection>> mPool;
+    BlockingQueue<Connection> allConnectionsQ = new LinkedBlockingQueue<Connection>(POOL_SIZE);
 
-    BlockingQueue<Connection> pool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
-
-    public ConnectionPool(ConnectionManager connectionManager) {
+    public ConnectionPool(HazelcastClient client, ClientConfig config, ConnectionManager connectionManager) {
+        this.addresses.addAll(config.getAddressList());
+        for (InetSocketAddress address : addresses) {
+            try {
+                Connection initialConnection = new Connection(address, 0);
+                connectionManager.bindConnection(initialConnection);
+                allConnectionsQ.offer(initialConnection);
+                System.out.println("Client " + client);
+                Set<Member> members = client.getCluster().getMembers();
+//                mPool = new ConcurrentHashMap<InetSocketAddress, BlockingQueue<Connection>>(members.size());
+                for (Member member : members) {
+                    InetSocketAddress isa = member.getInetSocketAddress();
+                    addresses.add(isa);
+//                    BlockingQueue<Connection> pool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
+//                    mPool.put(isa, pool);
+                    if (address.equals(isa))
+//                        pool.offer(initialConnection);
+                    allConnectionsQ.offer(initialConnection);
+                    while (pool.size() < POOL_SIZE) {
+                        Connection connection = new Connection(isa, 0);
+                        connectionManager.bindConnection(connection);
+                        pool.offer(connection);
+                        allConnectionsQ.offer(connection);
+                    }
+                }
+                break;
+            } catch (IOException e) {
+                continue;
+            }
+        }
         this.connectionManager = connectionManager;
-        while (pool.size() < POOL_SIZE) {
+        while (allConnectionsQ.size() < POOL_SIZE) {
             try {
                 Connection connection = connectionManager.createNextConnection();
                 connectionManager.bindConnection(connection);
-                pool.offer(connection);
+                allConnectionsQ.offer(connection);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -42,10 +80,10 @@ public class ConnectionPool {
     }
 
     public Connection takeConnection() throws InterruptedException {
-        return pool.take();
+        return allConnectionsQ.take();
     }
 
     public void releaseConnection(Connection connection) {
-        pool.offer(connection);
+        allConnectionsQ.offer(connection);
     }
 }

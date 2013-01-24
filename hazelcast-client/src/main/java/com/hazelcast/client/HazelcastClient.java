@@ -81,9 +81,13 @@ public class HazelcastClient implements HazelcastInstance {
         this.id = clientIdCounter.incrementAndGet();
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
+
+
+        clusterClientProxy = new ClusterClientProxy(this);
+        partitionClientProxy = new PartitionClientProxy(this);
         connectionManager = new ConnectionManager(this, config, lifecycleService);
         connectionManager.setBinder(new DefaultClientBinder());
-        connectionPool = new ConnectionPool(connectionManager);
+        connectionPool = new ConnectionPool(this, config, connectionManager);
         listenerManager = new ListenerManager(this, serializationService);
 //        try {
 //            final Connection c = connectionManager.getInitConnection();
@@ -97,8 +101,6 @@ public class HazelcastClient implements HazelcastInstance {
 //            lifecycleService.destroy();
 //            throw new ClusterClientException(e.getMessage(), e);
 //        }
-        clusterClientProxy = new ClusterClientProxy(this);
-        partitionClientProxy = new PartitionClientProxy(this);
         if (config.isUpdateAutomatic()) {
             this.getCluster().addMembershipListener(connectionManager);
             connectionManager.updateMembers();
