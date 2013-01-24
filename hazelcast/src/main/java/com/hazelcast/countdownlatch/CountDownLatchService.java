@@ -112,7 +112,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
         final Collection<CountDownLatchInfo> data = new LinkedList<CountDownLatchInfo>();
         for (Map.Entry<String, CountDownLatchInfo> latchEntry : latches.entrySet()) {
-            if (nodeEngine.getPartitionId(latchEntry.getKey()) == event.getPartitionId()) {
+            if (nodeEngine.getPartitionService().getPartitionId(latchEntry.getKey()) == event.getPartitionId()) {
                 data.add(latchEntry.getValue());
             }
         }
@@ -135,7 +135,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     private void clearPartition(int partitionId) {
         final Iterator<String> iter = latches.keySet().iterator();
         while (iter.hasNext()) {
-            if (nodeEngine.getPartitionId(iter.next()) == partitionId) {
+            if (nodeEngine.getPartitionService().getPartitionId(iter.next()) == partitionId) {
                 iter.remove();
             }
         }

@@ -90,7 +90,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         Map<String, Long> data = new HashMap<String, Long>();
         final int partitionId = migrationServiceEvent.getPartitionId();
         for (String name : numbers.keySet()) {
-            if (partitionId == nodeEngine.getPartitionId(name)) {
+            if (partitionId == nodeEngine.getPartitionService().getPartitionId(name)) {
                 data.put(name, numbers.get(name));
             }
         }
@@ -119,7 +119,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         final Iterator<String> iter = numbers.keySet().iterator();
         while (iter.hasNext()) {
             String name = iter.next();
-            if (nodeEngine.getPartitionId(name) == partitionId) {
+            if (nodeEngine.getPartitionService().getPartitionId(name) == partitionId) {
                 iter.remove();
             }
         }

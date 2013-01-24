@@ -180,7 +180,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.log(Level.FINEST, "Claiming myself as master node!");
                                     Invocation inv = node.nodeEngine.getOperationService().createInvocationBuilder(
-                                            ClusterService.SERVICE_NAME, new MasterClaim(), address)
+                                            ClusterServiceImpl.SERVICE_NAME, new MasterClaim(), address)
                                             .setTryCount(1).build();
                                     responses.add(inv.invoke());
                                 }

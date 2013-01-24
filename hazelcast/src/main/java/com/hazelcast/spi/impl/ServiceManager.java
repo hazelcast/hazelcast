@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.atomicnumber.AtomicNumberService;
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
@@ -28,7 +28,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.semaphore.SemaphoreService;
 import com.hazelcast.spi.ClientProtocolService;
@@ -64,8 +64,8 @@ class ServiceManager {
         final Node node = nodeEngine.getNode();
         // register core services
         logger.log(Level.FINEST, "Registering core services...");
-        registerService(ClusterService.SERVICE_NAME, node.getClusterService());
-        registerService(PartitionService.SERVICE_NAME, node.getPartitionService());
+        registerService(ClusterServiceImpl.SERVICE_NAME, node.getClusterService());
+        registerService(PartitionServiceImpl.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.NAME, nodeEngine.getProxyService());
 
         final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfigConfig();

@@ -40,7 +40,7 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
     }
 
     public void run() {
-        ClusterService clusterService = getService();
+        ClusterServiceImpl clusterService = getService();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Node node = nodeEngine.getNode();
         ILogger logger = nodeEngine.getLogger(SetMasterOperation.class.getName());

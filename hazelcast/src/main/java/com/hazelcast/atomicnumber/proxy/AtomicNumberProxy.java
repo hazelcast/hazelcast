@@ -37,7 +37,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
         super(nodeEngine);
         this.name = name;
         this.atomicNumberService = atomicNumberService;
-        this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
     }
 
     public String getName() {

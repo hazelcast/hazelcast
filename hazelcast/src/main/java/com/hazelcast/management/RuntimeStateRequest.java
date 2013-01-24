@@ -16,7 +16,7 @@
 
 package com.hazelcast.management;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -24,6 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.PartitionServiceImpl;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -51,8 +52,8 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
     }
 
     private ClusterRuntimeState createState(final HazelcastInstanceImpl factory) {
-        final ClusterService cluster = factory.node.getClusterService();
-        final com.hazelcast.partition.PartitionService pm = factory.node.partitionService;
+        final ClusterServiceImpl cluster = factory.node.getClusterService();
+        final PartitionServiceImpl pm = factory.node.partitionService;
         final Collection<Record> lockedRecords = collectLockState(factory);
         return new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), null,
                                   factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);

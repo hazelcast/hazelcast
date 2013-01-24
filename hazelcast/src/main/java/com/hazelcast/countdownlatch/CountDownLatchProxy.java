@@ -39,7 +39,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject implements IC
     public CountDownLatchProxy(String name, NodeEngine nodeEngine) {
         super(nodeEngine);
         this.name = name;
-        partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
+        partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
     }
 
     public String getName() {

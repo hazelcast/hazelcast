@@ -54,7 +54,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         if (from == null) {
             getLogger().log(Level.FINEST, "From address is null => " + toString());
         }
-        final PartitionService partitionService = getService();
+        final PartitionServiceImpl partitionService = getService();
         try {
             Member target = partitionService.getMember(to);
             if (target == null) {
@@ -77,7 +77,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                     }
                     final byte[] data = IOUtil.compress(out.toByteArray());
                     final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, data, tasks.size());
-                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
+                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
                             migrationOperation, to)
                             .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                     Future future = inv.invoke();

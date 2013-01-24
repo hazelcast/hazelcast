@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -122,7 +122,7 @@ public class LoggingServiceImpl implements LoggingService {
         DefaultLogger(String name) {
             this.name = name;
             this.logger = loggerFactory.getLogger(name);
-            addToLoggingService = (name.equals(ClusterService.class.getName()));
+            addToLoggingService = (name.equals(ClusterServiceImpl.class.getName()));
         }
 
         public void log(Level level, String message) {

@@ -52,7 +52,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data getInternal(Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -66,7 +66,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Future<Data> getAsyncInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -79,7 +79,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutOperation operation = new PutOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
@@ -94,7 +94,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         TryPutOperation operation = new TryPutOperation(name, key, value, txnId, getTimeInMillis(timeout, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
@@ -109,7 +109,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data putIfAbsentInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
@@ -124,7 +124,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutTransientOperation operation = new PutTransientOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
@@ -139,7 +139,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Future<Data> putAsyncInternal(final Data key, final Data value) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         PutOperation operation = new PutOperation(name, key, value, txnId, -1);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -153,7 +153,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue, txnId);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -168,7 +168,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data replaceInternal(final Data key, final Data value) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         ReplaceOperation operation = new ReplaceOperation(name, key, value, txnId);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -183,7 +183,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         SetOperation setOperation = new SetOperation(name, key, value, txnId, ttl);
         setOperation.setThreadId(ThreadContext.getThreadId());
@@ -198,7 +198,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean evictInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         EvictOperation operation = new EvictOperation(name, key, txnId);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -213,7 +213,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data removeInternal(Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         RemoveOperation operation = new RemoveOperation(name, key, txnId);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -228,7 +228,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value, txnId);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -243,7 +243,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         TryRemoveOperation operation = new TryRemoveOperation(name, key, txnId, getTimeInMillis(timeout, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
@@ -258,7 +258,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Future<Data> removeAsyncInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = prepareTransaction(partitionId);
         RemoveOperation operation = new RemoveOperation(name, key, txnId);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -272,7 +272,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean containsKeyInternal(Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
         containsKeyOperation.setServiceName(SERVICE_NAME);
         containsKeyOperation.setThreadId(ThreadContext.getThreadId());
@@ -366,7 +366,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected void lockInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         LockOperation operation = new LockOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -380,7 +380,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected void unlockInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         UnlockOperation operation = new UnlockOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -394,7 +394,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean isLockedInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         IsLockedOperation operation = new IsLockedOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -408,7 +408,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean tryLockInternal(final Data key, final long timeout, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         TryLockOperation operation = new TryLockOperation(name, key, getTimeInMillis(timeout, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -487,7 +487,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected void forceUnlockInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ForceUnlockOperation operation = new ForceUnlockOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -503,13 +503,13 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     public void addMapInterceptorInternal(MapInterceptor interceptor) {
         String id = mapService.addInterceptor(name, interceptor);
         AddInterceptorOperation operation = new AddInterceptorOperation(id, interceptor, name);
-        Set<Member> members = nodeEngine.getCluster().getMembers();
-        for (Member member : members) {
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
             try {
                 if (member.localMember())
                     continue;
-                MemberImpl memberImpl = (MemberImpl) member;
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                Invocation invocation = nodeEngine.getOperationService()
+                        .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
                 invocation.invoke().get();
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
@@ -520,7 +520,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     public void removeMapInterceptorInternal(MapInterceptor interceptor) {
         String id = mapService.removeInterceptor(name, interceptor);
         RemoveInterceptorOperation operation = new RemoveInterceptorOperation(interceptor, name, id);
-        Set<Member> members = nodeEngine.getCluster().getMembers();
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {
                 if (member.localMember())
@@ -556,7 +556,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Map.Entry<Data, Data> getMapEntryInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetMapEntryOperation getMapEntryOperation = new GetMapEntryOperation(name, key);
         getMapEntryOperation.setServiceName(SERVICE_NAME);
         getMapEntryOperation.setThreadId(ThreadContext.getThreadId());
@@ -589,7 +589,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public Data executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
-        int partitionId = nodeEngine.getPartitionId(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         EntryOperation operation = new EntryOperation(name, key, entryProcessor);
         operation.setThreadId(ThreadContext.getThreadId());
         try {

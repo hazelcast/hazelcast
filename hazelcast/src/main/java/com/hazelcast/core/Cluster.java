@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.Address;
-
 import java.util.Set;
 
 /**
@@ -48,8 +46,6 @@ public interface Cluster {
      * @return current members of the cluster
      */
     Set<Member> getMembers();
-
-    Member getMember(Address address);
 
     /**
      * Returns this Hazelcast instance member

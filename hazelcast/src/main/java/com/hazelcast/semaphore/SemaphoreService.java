@@ -51,7 +51,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         Permit permit = permitMap.get(name);
         if (permit == null){
             SemaphoreConfig config = nodeEngine.getConfig().getSemaphoreConfig(name);
-            int partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
             permit = new Permit(partitionId, new SemaphoreConfig(config));
             Permit current = permitMap.putIfAbsent(name, permit);
             permit = current == null ? permit : current;
@@ -74,8 +74,8 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
         Address caller = event.getMember().getAddress();
         for (String name: permitMap.keySet()){
-            int partitionId = nodeEngine.getPartitionId(name);
-            PartitionInfo info = nodeEngine.getPartitionInfo(partitionId);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+            PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             if (nodeEngine.getThisAddress().equals(info.getOwner())){
                 Operation op = new DeadMemberOperation(name, caller).setPartitionId(partitionId)
                         .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())

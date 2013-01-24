@@ -146,7 +146,7 @@ final class OperationServiceImpl implements OperationService {
                         throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                                 op.getClass().getName(), op.getServiceName());
                     }
-                    PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
+                    PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
                     final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     final boolean validatesTarget = op.validatesTarget();
                     if (validatesTarget && !node.getThisAddress().equals(owner)) {
@@ -273,7 +273,7 @@ final class OperationServiceImpl implements OperationService {
         if ((syncBackupCount + asyncBackupCount > 0) && (backupOp = backupAwareOp.getBackupOperation()) != null) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
-            final PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
+            final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             if (syncBackupCount > 0) {
                 syncBackups = new ArrayList<Future>(syncBackupCount);
                 for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
@@ -397,7 +397,7 @@ final class OperationServiceImpl implements OperationService {
             Future future = inv.invoke();
             responses.put(address, future);
         }
-        final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionCount());
+        final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionService().getPartitionCount());
         for (Map.Entry<Address, Future> response : responses.entrySet()) {
             try {
                 PartitionResponse result = (PartitionResponse) nodeEngine.toObject(response.getValue().get());
@@ -439,7 +439,7 @@ final class OperationServiceImpl implements OperationService {
     private Map<Address, List<Integer>> getMemberPartitionsMap() {
         final int members = node.getClusterService().getSize();
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
-        for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             Address owner = getPartitionOwner(i);
             List<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
@@ -453,7 +453,7 @@ final class OperationServiceImpl implements OperationService {
 
     private List<Integer> getMemberPartitions(Address target) {
         List<Integer> ownedPartitions = new LinkedList<Integer>();
-        for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             Address owner = getPartitionOwner(i);
             if (target.equals(owner)) {
                 ownedPartitions.add(i);
@@ -495,7 +495,7 @@ final class OperationServiceImpl implements OperationService {
         backupCount = Math.min(node.getClusterService().getSize() - 1, backupCount);
         if (backupCount > 0) {
             List<Future> backupOps = new ArrayList<Future>(backupCount);
-            PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
+            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             for (int i = 0; i < backupCount; i++) {
                 int replicaIndex = i + 1;
                 Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
@@ -516,7 +516,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
-        Address target = nodeEngine.getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
+        Address target = nodeEngine.getPartitionService().getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
             logger.log(Level.WARNING, "No target available for partition: "
                     + partitionId + " and replica: " + replicaIndex);

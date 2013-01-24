@@ -56,7 +56,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             // Post join operations must be lock free; means no locks at all;
             // no partition locks, no key-based locks, no service level locks!
 
-            final ClusterService clusterService = getService();
+            final ClusterServiceImpl clusterService = getService();
             final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
             final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
             Collection<Future> calls = null;
@@ -66,7 +66,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                 calls = new ArrayList<Future>(members.size());
                 for (MemberImpl member : members) {
                     if (!member.localMember()) {
-                        Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterService.SERVICE_NAME,
+                        Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                                 localPJOp, member.getAddress())
                                 .setTryCount(10).setTryPauseMillis(100).build().invoke();
                         calls.add(f);

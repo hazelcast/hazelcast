@@ -44,12 +44,12 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
 
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        int partitionCount = nodeEngine.getPartitionCount();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         partitionContainers = new CollectionPartitionContainer[partitionCount];
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
-        int partitionCount = nodeEngine.getPartitionCount();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new CollectionPartitionContainer(this);
         }
@@ -148,7 +148,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     public void dispatchEvent(CollectionEvent event, EventListener listener) {
         if (listener instanceof EntryListener) {
             EntryListener entryListener = (EntryListener) listener;
-            EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getCluster().getMember(event.getCaller()),
+            EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
                     event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
 
 
@@ -160,7 +160,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         } else if (listener instanceof ItemListener) {
             ItemListener itemListener = (ItemListener) listener;
             ItemEvent itemEvent = new ItemEvent(event.getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
-                    nodeEngine.getCluster().getMember(event.getCaller()));
+                    nodeEngine.getClusterService().getMember(event.getCaller()));
             if (event.eventType.getType() == ItemEventType.ADDED.getType()) {
                 itemListener.itemAdded(itemEvent);
             } else {
@@ -174,7 +174,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionService().getPartitionCount()) {
             return null; // is it possible
         }
         int replicaIndex = event.getReplicaIndex();

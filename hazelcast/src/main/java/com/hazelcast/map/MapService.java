@@ -22,7 +22,6 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -35,7 +34,6 @@ import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.*;
@@ -52,7 +50,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public final static String SERVICE_NAME = "hz:impl:mapService";
 
     private final ILogger logger;
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
@@ -60,15 +58,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     public MapService(NodeEngine nodeEngine) {
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(MapService.class.getName());
-        partitionContainers = new PartitionContainer[nodeEngine.getPartitionCount()];
+        partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
-        int partitionCount = nodeEngine.getPartitionCount();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            PartitionInfo partition = nodeEngine.getPartitionInfo(i);
+            PartitionInfo partition = nodeEngine.getPartitionService().getPartitionInfo(i);
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 10, 1, TimeUnit.SECONDS);
@@ -381,7 +379,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
-        String source = nodeEngine.getNode().address.toString();
+        String source = nodeEngine.getThisAddress().toString();
         EventData event = new EventData(source, caller, dataKey, dataValue, dataOldValue, eventType);
 
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event);
@@ -446,7 +444,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void scheduleOperation(String mapName, Data key, long executeTime) {
         MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
-        final MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation, nodeEngine.getPartitionId(key));
+        final MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation,
+                nodeEngine.getPartitionService().getPartitionId(key));
         nodeEngine.getExecutionService().schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
 
@@ -465,11 +464,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
 
         private void evictMap(MapInfo mapInfo) {
-            Node node = nodeEngine.getNode();
             List recordList = new ArrayList();
-            for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
-                Address owner = node.partitionService.getPartitionOwner(i);
-                if (node.address.equals(owner)) {
+            for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                if (nodeEngine.getThisAddress().equals(owner)) {
                     String mapName = mapInfo.getName();
                     PartitionContainer pc = partitionContainers[i];
                     RecordStore recordStore = pc.getRecordStore(mapName);
@@ -509,7 +507,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
             for (Data key : keySet) {
                 EvictOperation evictOperation = new EvictOperation(mapInfo.getName(), key, null);
-                evictOperation.setPartitionId(nodeEngine.getPartitionId(key));
+                evictOperation.setPartitionId(nodeEngine.getPartitionService().getPartitionId(key));
                 evictOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 evictOperation.setService(MapService.this);
                 nodeEngine.getOperationService().runOperation(evictOperation);
@@ -522,10 +520,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             String maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
             if (maxSizePolicy.equals("CLUSTER_WIDE") || maxSizePolicy.equals("PER_JVM") || maxSizePolicy.equals("PER_PARTITION")) {
                 int totalSize = 0;
-                Node node = nodeEngine.getNode();
-                for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
-                    Address owner = node.partitionService.getPartitionOwner(i);
-                    if (node.address.equals(owner)) {
+                for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                    Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                    if (nodeEngine.getThisAddress().equals(owner)) {
                         int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();
                         if (maxSizePolicy.equals("PER_PARTITION")) {
                             if (size > maxSizeConfig.getSize())
@@ -536,7 +533,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     }
                 }
                 if (maxSizePolicy.equals("CLUSTER_WIDE")) {
-                    return totalSize * nodeEngine.getClusterService().getMembers().size() >= maxSizeConfig.getSize();
+                    return totalSize * nodeEngine.getClusterService().getSize() >= maxSizeConfig.getSize();
                 } else if (maxSizePolicy.equals("PER_JVM"))
                     return totalSize > maxSizeConfig.getSize();
                 else

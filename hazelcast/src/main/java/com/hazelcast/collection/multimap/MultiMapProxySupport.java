@@ -301,7 +301,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
 
     private <T> T invoke(CollectionOperation operation, Data dataKey) {
         try {
-            int partitionId = nodeEngine.getPartitionId(dataKey);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
@@ -312,7 +312,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
 
     private Object invokeData(CollectionOperation operation, Data dataKey) {
         try {
-            int partitionId = nodeEngine.getPartitionId(dataKey);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return nodeEngine.toObject(f.get());

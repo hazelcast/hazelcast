@@ -43,7 +43,7 @@ public class SemaphoreProxy implements ISemaphore {
         this.name = name;
         this.service = service;
         this.nodeEngine = nodeEngine;
-        this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
     }
 
     public String getName() {
