@@ -14,26 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
-
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
-
-import java.util.HashMap;
-import java.util.Map;
+package com.hazelcast.spi;
 
 /**
- * @ali 1/7/13
+ * @mdogan 1/25/13
  */
-//TODO register
-public class DataSerializerCollectionHook implements DataSerializerHook {
+public interface MultiPartitionAwareOperation {
 
-    static final int COLLECTION_OPERATION = 400;
-    static final int COLLECTION_BACKUP_OPERATION = 401;
+    int[] getPartitionIds();
 
-    public Map<Integer, DataSerializableFactory> getFactories() {
-        final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
-
-        return factories;
-    }
 }

@@ -163,6 +163,10 @@ final class OperationServiceImpl implements OperationService {
                         keyLock.lock();
                     }
                 }
+            } else if (op instanceof MultiPartitionAwareOperation) {
+                final int[] partitionIds = ((MultiPartitionAwareOperation) op).getPartitionIds();
+                partitionLock = new MultiPartitionLock(partitionIds);
+                partitionLock.lock();
             }
             doRunOperation(op);
         } catch (Throwable e) {
@@ -424,7 +428,7 @@ final class OperationServiceImpl implements OperationService {
         }
         for (Integer failedPartition : failedPartitions) {
             Invocation inv = createInvocationBuilder(serviceName,
-                    operationFactory.createParallelOperation(), failedPartition).build();
+                    operationFactory.createOperation(), failedPartition).build();
             Future f = inv.invoke();
             partitionResults.put(failedPartition, f);
         }
@@ -434,20 +438,6 @@ final class OperationServiceImpl implements OperationService {
             partitionResults.put(failedPartition, result);
         }
         return partitionResults;
-    }
-
-    @PrivateApi
-    void acquirePartitionReadLocks(List<Integer> partitions) {
-        for (Integer partition : partitions) {
-            partitionLocks[partition].readLock().lock();
-        }
-    }
-
-    @PrivateApi
-    void releasePartitionReadLocks(List<Integer> partitions) {
-        for (Integer partition : partitions) {
-            partitionLocks[partition].readLock().unlock();
-        }
     }
 
     public void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
@@ -561,6 +551,31 @@ final class OperationServiceImpl implements OperationService {
 
         public void run() {
             runOperation(op);
+        }
+    }
+
+    private class MultiPartitionLock implements SpinLock {
+
+        final int[] partitions;
+
+        private MultiPartitionLock(int[] partitions) {
+            this.partitions = partitions;
+        }
+
+        public void lock() {
+            for (int partition : partitions) {
+                partitionLocks[partition].readLock().lock();
+            }
+        }
+
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void unlock() {
+            for (int partition : partitions) {
+                partitionLocks[partition].readLock().unlock();
+            }
         }
     }
 

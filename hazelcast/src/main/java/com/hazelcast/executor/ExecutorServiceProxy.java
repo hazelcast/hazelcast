@@ -24,7 +24,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -168,7 +167,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
-        submitToMembers(task, ((NodeEngineImpl) nodeEngine).getClusterService().getMembers(), callback);
+        submitToMembers(task, nodeEngine.getClusterService().getMembers(), callback);
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {

@@ -35,9 +35,9 @@ import java.util.Collection;
  */
 public abstract class CollectionOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
-    transient Object response;
+    private transient CollectionContainer container;
 
-    transient CollectionContainer container;
+    transient Object response;
 
     CollectionProxyType proxyType;
 
@@ -91,18 +91,6 @@ public abstract class CollectionOperation extends AbstractNamedOperation impleme
             container = service.getOrCreateCollectionContainer(getPartitionId(), new CollectionProxyId(name, proxyType));
         }
         return container;
-    }
-
-    public <T> T getOrCreateCollection(Data dataKey) {
-        return getOrCreateContainer().getOrCreateObject(dataKey);
-    }
-
-    public <T> T getCollection(Data dataKey) {
-        return getOrCreateContainer().getObject(dataKey);
-    }
-
-    public <T> T removeCollection(Data dataKey) {
-        return getOrCreateContainer().removeObject(dataKey);
     }
 
     public boolean isBinary() {

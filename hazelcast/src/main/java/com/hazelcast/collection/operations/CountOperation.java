@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -34,7 +35,7 @@ public class CountOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        Collection coll = getCollection();
+        Collection<CollectionRecord> coll = getCollection();
         response = coll == null ? 0 : coll.size();
     }
 }

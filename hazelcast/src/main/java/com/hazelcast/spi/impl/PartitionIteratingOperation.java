@@ -44,42 +44,13 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     public final void run() throws Exception {
-        if (operationFactory.shouldRunParallel()) {
-            executeParallel();
-        } else {
-            executeSequential();
-        }
-    }
-
-    private void executeSequential() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final Operation op = operationFactory.createSequentialOperation();
-        op.setNodeEngine(nodeEngine)
-                .setCaller(getCaller())
-                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
-                .setService(getService());
-
-        nodeEngine.operationService.acquirePartitionReadLocks(partitions);
-        try {
-            op.beforeRun();
-            op.run();
-            op.afterRun();
-            results = (Map<Integer, Object>) op.getResponse();
-        } catch (Exception e) {
-            getLogger(nodeEngine).log(Level.SEVERE, e.getMessage(), e);
-        } finally {
-            nodeEngine.operationService.releasePartitionReadLocks(partitions);
-        }
-    }
-
-    private void executeParallel() {
         final NodeEngine nodeEngine = getNodeEngine();
         results = new HashMap<Integer, Object>(partitions != null? partitions.size() : 0);
         try {
             Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
             for (final int partitionId : partitions) {
                 ResponseQueue responseQueue = new ResponseQueue();
-                final Operation op = operationFactory.createParallelOperation();
+                final Operation op = operationFactory.createOperation();
                 op.setNodeEngine(nodeEngine)
                         .setCaller(getCaller())
                         .setPartitionId(partitionId)

@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -40,11 +41,10 @@ public class GetOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        List list = getCollection();
+        List<CollectionRecord> list = (List<CollectionRecord>) getCollection();
         try {
-            Object obj = list.get(index);
-            response = isBinary() ? (Data) obj : toData(obj);
-
+            CollectionRecord record = list.get(index);
+            response = isBinary() ? (Data) record.getObject() : toData(record.getObject());
         } catch (IndexOutOfBoundsException e) {
             response = e;
         }

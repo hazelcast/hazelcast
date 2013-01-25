@@ -23,7 +23,7 @@ public enum CollectionProxyType {
 
     MULTI_MAP(0), LIST(1), SET(2), QUEUE(3);
 
-    private int type;
+    private final int type;
 
     private CollectionProxyType(final int type) {
         this.type = type;

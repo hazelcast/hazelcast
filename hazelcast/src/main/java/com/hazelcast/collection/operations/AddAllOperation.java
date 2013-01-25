@@ -16,7 +16,9 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -47,21 +49,19 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        Collection coll = getOrCreateCollection();
-        List objectList = dataList;
-        if (!isBinary()) {
-            objectList = new ArrayList(dataList.size());
-            for (Data data : dataList) {
-                objectList.add(toObject(data));
-            }
+        CollectionContainer container = getOrCreateContainer();
+        Collection<CollectionRecord> coll = getOrCreateCollection();
+        Collection<CollectionRecord> recordList = new ArrayList<CollectionRecord>(dataList.size());
+        for (Data data : dataList) {
+            recordList.add(new CollectionRecord(container.nextId(), isBinary() ? data : toObject(data)));
         }
 
         if (index == -1) {
-            response = coll.addAll(objectList);
+            response = coll.addAll(recordList);
         } else {
             List list = (List) coll;
             try {
-                response = list.addAll(index, objectList);
+                response = list.addAll(index, recordList);
             } catch (IndexOutOfBoundsException e) {
                 response = e;
             }

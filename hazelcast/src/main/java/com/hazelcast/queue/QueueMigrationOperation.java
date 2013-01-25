@@ -50,7 +50,6 @@ public class QueueMigrationOperation extends AbstractOperation {
             QueueContainer container = entry.getValue();
             QueueConfig conf = getNodeEngine().getConfig().getQueueConfig(name);
             container.setConfig(conf);
-            container.setSerializationService(getNodeEngine().getSerializationService());
             service.addContainer(name, container);
         }
     }

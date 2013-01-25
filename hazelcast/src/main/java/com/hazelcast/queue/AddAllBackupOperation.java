@@ -48,7 +48,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataList.size());
-        for (Data data: dataList){
+        for (Data data : dataList) {
             IOUtil.writeNullableData(out, data);
         }
     }
@@ -57,7 +57,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
         super.readInternal(in);
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             dataList.add(IOUtil.readNullableData(in));
         }
     }

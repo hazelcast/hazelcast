@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -28,7 +29,7 @@ import java.util.Collection;
  */
 public class RemoveAllOperation extends CollectionBackupAwareOperation {
 
-    transient Collection coll;
+    transient Collection<CollectionRecord> coll;
 
     public RemoveAllOperation() {
     }
@@ -39,17 +40,13 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
 
     public void run() throws Exception {
         coll = removeCollection();
-        if (isBinary()) {
-            response = new CollectionResponse(coll);
-        } else {
-            response = new CollectionResponse(coll, getNodeEngine());
-        }
+        response = new CollectionResponse(coll, getNodeEngine());
     }
 
     public void afterRun() throws Exception {
         if (response != null) {
-            for (Object obj : coll) {
-                publishEvent(EntryEventType.REMOVED, dataKey, obj);
+            for (CollectionRecord record : coll) {
+                publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
             }
         }
     }

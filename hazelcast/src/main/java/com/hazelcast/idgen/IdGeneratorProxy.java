@@ -30,7 +30,7 @@ public class IdGeneratorProxy implements IdGenerator {
 
     private static final String ATOMIC_NUMBER_NAME = "hz:atomic:idGenerator:";
 
-    private static final int BLOCK_SIZE = 1000;
+    private static final int BLOCK_SIZE = 10000;
 
     final HazelcastInstance ins;
 

@@ -35,22 +35,22 @@ public class QueueItem implements DataSerializable {
 
     private final transient QueueContainer container;
 
-    QueueItem(QueueContainer container){
+    QueueItem(QueueContainer container) {
         this.container = container;
     }
 
-    QueueItem(QueueContainer container, long itemId){
+    QueueItem(QueueContainer container, long itemId) {
         this(container);
         this.itemId = itemId;
     }
 
-    public QueueItem(QueueContainer container, long itemId, Data data){
+    public QueueItem(QueueContainer container, long itemId, Data data) {
         this(container, itemId);
         this.data = data;
     }
 
     public Data getData() {
-        if (data == null){
+        if (data == null) {
             data = container.getDataFromMap(itemId);
         }
         return data;
@@ -65,18 +65,16 @@ public class QueueItem implements DataSerializable {
     }
 
     public boolean equals(Object obj) {
-        if (obj instanceof QueueItem){
-            QueueItem other = (QueueItem)obj;
-            if (itemId == -1 || other.getItemId() == -1){
+        if (obj instanceof QueueItem) {
+            QueueItem other = (QueueItem) obj;
+            if (itemId == -1 || other.getItemId() == -1) {
                 return getData() != null && data.equals(other.getData());
             }
             return itemId == other.getItemId();
-        }
-        else if (obj instanceof Data){
+        } else if (obj instanceof Data) {
             return getData() != null && data.equals(obj);
-        }
-        else if (obj instanceof Long){
-            return itemId == (Long)obj;
+        } else if (obj instanceof Long) {
+            return itemId == (Long) obj;
         }
         return false;
     }

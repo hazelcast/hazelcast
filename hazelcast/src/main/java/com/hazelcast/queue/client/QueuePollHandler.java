@@ -39,10 +39,10 @@ public class QueuePollHandler extends QueueCommandHandler {
         try {
             if (Command.QTAKE.equals(protocol.command)) {
                 result = queue.take();
-            } else if(Command.QPEEK.equals(protocol.command)){
+            } else if (Command.QPEEK.equals(protocol.command)) {
                 result = queue.peek();
             } else {
-                long timeout = protocol.args.length>1? Long.valueOf(protocol.args[1]):0;
+                long timeout = protocol.args.length > 1 ? Long.valueOf(protocol.args[1]) : 0;
                 if (timeout == 0) {
                     result = queue.poll();
                 } else {
