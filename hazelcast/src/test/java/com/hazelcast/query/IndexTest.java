@@ -16,28 +16,34 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static junit.framework.Assert.assertEquals;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class IndexTest extends TestUtil {
 
     @Test
     public void testBasics() {
-//        testIt(true);
-//        testIt(false);
+        testIt(true);
+        testIt(false);
     }
-//    private void testIt(boolean ordered) {
-//        Index index = new Index(null, ordered, 0);
-//        assertEquals(0, index.getRecords(0L).size());
-//        assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());
-//        Record record5 = newRecord(5L);
-//        assertEquals(5L, (Object) record5.getId());
+
+    private void testIt(boolean ordered) {
+        IndexImpl index = new IndexImpl(null, ordered);
+        assertEquals(0, index.getRecords(0L).size());
+        assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());
+        QueryableEntry record5 = new QueryEntry(null, 5L, 5L, "1");
+        index.saveEntryIndex(record5);
+        assertEquals(1, index.getRecordValues().size());
 //        index.index(55L, record5);
-//        assertEquals(1, index.getRecordValues().size());
 //        assertEquals(new Long(55L), index.getRecordValues().get(5L));
-//        ConcurrentMap<Long, Record> records = index.getMapRecords().get(55L);
+//        ConcurrentMap<Comparable, QueryableEntry> records = index.getMapRecords().get(55L);
 //        assertNotNull(records);
 //        assertEquals(record5, records.get(5L));
 //        Record record6 = newRecord(6L);
@@ -74,19 +80,18 @@ public class IndexTest extends TestUtil {
 //        assertEquals(3, index.getSubRecordsBetween(55L, 555L).size());
 //        assertEquals(3, index.getSubRecordsBetween(66L, 555L).size());
 //        assertEquals(2, index.getSubRecordsBetween(555L, 555L).size());
-//        assertEquals(0, index.getSubRecords(PredicateType.LESSER, 66L).size());
-//        assertEquals(1, index.getSubRecords(PredicateType.LESSER_EQUAL, 66L).size());
-//        assertEquals(1, index.getSubRecords(PredicateType.LESSER_EQUAL, 67L).size());
-//        assertEquals(2, index.getSubRecords(PredicateType.GREATER, 66L).size());
-//        assertEquals(3, index.getSubRecords(PredicateType.GREATER_EQUAL, 66L).size());
-//        assertEquals(3, index.getSubRecords(PredicateType.GREATER_EQUAL, 61L).size());
-//        assertEquals(3, index.getSubRecords(PredicateType.NOT_EQUAL, 61L).size());
-//        assertEquals(2, index.getSubRecords(PredicateType.NOT_EQUAL, 66L).size());
-//        assertEquals(1, index.getSubRecords(PredicateType.NOT_EQUAL, 555L).size());
+//        assertEquals(0, index.getSubRecords(ComparisonType.LESSER, 66L).size());
+//        assertEquals(1, index.getSubRecords(ComparisonType.LESSER_EQUAL, 66L).size());
+//        assertEquals(1, index.getSubRecords(ComparisonType.LESSER_EQUAL, 67L).size());
+//        assertEquals(2, index.getSubRecords(ComparisonType.GREATER, 66L).size());
+//        assertEquals(3, index.getSubRecords(ComparisonType.GREATER_EQUAL, 66L).size());
+//        assertEquals(3, index.getSubRecords(ComparisonType.GREATER_EQUAL, 61L).size());
+//        assertEquals(3, index.getSubRecords(ComparisonType.NOT_EQUAL, 61L).size());
+//        assertEquals(2, index.getSubRecords(ComparisonType.NOT_EQUAL, 66L).size());
+//        assertEquals(1, index.getSubRecords(ComparisonType.NOT_EQUAL, 555L).size());
 //        assertEquals(3, index.getRecords(new HashSet<Long>(Arrays.asList(66L, 555L, 34234L))).size());
 //        assertEquals(2, index.getRecords(new HashSet<Long>(Arrays.asList(555L, 34234L))).size());
-//        record5.setActive(false);
-//        index.index(-1L, record5);
+//        index.removeEntryIndex(record5);
 //        assertEquals(2, index.getRecordValues().size());
 //        assertEquals(2, index.getMapRecords().size());
 //        assertEquals(new Long(555L), index.getRecordValues().get(50L));
@@ -105,8 +110,7 @@ public class IndexTest extends TestUtil {
 //        assertEquals(1, index.getSubRecords(PredicateType.GREATER, 66L).size());
 //        assertEquals(2, index.getSubRecords(PredicateType.GREATER_EQUAL, 66L).size());
 //        assertEquals(2, index.getSubRecords(PredicateType.GREATER_EQUAL, 61L).size());
-//        record50.setActive(false);
-//        index.index(-1L, record50);
+//        index.removeEntryIndex(record50);
 //        assertEquals(1, index.getRecordValues().size());
 //        assertEquals(1, index.getMapRecords().size());
 //        assertEquals(null, index.getRecordValues().get(50L));
@@ -116,8 +120,7 @@ public class IndexTest extends TestUtil {
 //        assertEquals(1, index.getSubRecordsBetween(55L, 555L).size());
 //        assertEquals(1, index.getSubRecordsBetween(66L, 555L).size());
 //        assertEquals(0, index.getSubRecordsBetween(555L, 555L).size());
-//        record6.setActive(false);
-//        index.index(-1L, record6);
+//        index.removeEntryIndex(record6);
 //        assertEquals(0, index.getRecordValues().size());
 //        assertEquals(0, index.getMapRecords().size());
 //        assertEquals(null, index.getRecordValues().get(6L));
@@ -126,5 +129,5 @@ public class IndexTest extends TestUtil {
 //        assertEquals(0, index.getSubRecordsBetween(55L, 555L).size());
 //        assertEquals(0, index.getSubRecordsBetween(66L, 555L).size());
 //        assertEquals(0, index.getSubRecordsBetween(555L, 555L).size());
-//    }
+    }
 }

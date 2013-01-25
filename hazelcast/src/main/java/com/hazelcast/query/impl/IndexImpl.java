@@ -98,6 +98,10 @@ public class IndexImpl implements Index {
         return attributeType.getConverter().convert(value);
     }
 
+    public ConcurrentMap<Object, Comparable> getRecordValues() {
+        return recordValues;
+    }
+
     final static class NullObject implements Comparable {
 
         public int compareTo(Object o) {
