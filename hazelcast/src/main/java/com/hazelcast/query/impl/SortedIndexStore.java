@@ -83,7 +83,11 @@ public class SortedIndexStore implements IndexStore {
             mapRecords.put(newValue, records);
             sortedSet.add(newValue);
         }
-        records.put(record.getKeyData(), record);
+        records.put(record.getIndexKey(), record);
+    }
+
+    public ConcurrentMap<Object, QueryableEntry> getRecordMap(Comparable indexValue) {
+        return mapRecords.get(indexValue);
     }
 
     public void removeIndex(Comparable oldValue, Object indexKey) {

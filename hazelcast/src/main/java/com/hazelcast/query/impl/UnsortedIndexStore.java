@@ -92,6 +92,10 @@ public class UnsortedIndexStore implements IndexStore {
         records.put(indexKey, record);
     }
 
+    public ConcurrentMap<Object, QueryableEntry> getRecordMap(Comparable indexValue) {
+        return mapRecords.get(indexValue);
+    }
+
     public void removeIndex(Comparable oldValue, Object indexKey) {
         ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(oldValue);
         if (records != null) {
