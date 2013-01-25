@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -570,6 +570,33 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public int getPartitionCount() {
         return partitionCount;
+    }
+
+    public Map<Address, List<Integer>> getMemberPartitionsMap() {
+        final int members = node.getClusterService().getSize();
+        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
+        for (int i = 0; i < getPartitionCount(); i++) {
+            Address owner = getPartitionOwner(i);
+            List<Integer> ownedPartitions = memberPartitions.get(owner);
+            if (ownedPartitions == null) {
+                ownedPartitions = new ArrayList<Integer>();
+                memberPartitions.put(owner, ownedPartitions);
+            }
+            ownedPartitions.add(i);
+        }
+        return memberPartitions;
+    }
+
+
+    public List<Integer> getMemberPartitions(Address target) {
+        List<Integer> ownedPartitions = new LinkedList<Integer>();
+        for (int i = 0; i < getPartitionCount(); i++) {
+            Address owner = getPartitionOwner(i);
+            if (target.equals(owner)) {
+                ownedPartitions.add(i);
+            }
+        }
+        return ownedPartitions;
     }
 
     public static class AssignPartitions extends AbstractOperation {

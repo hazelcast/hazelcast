@@ -49,7 +49,7 @@ public class MapMigrationOperation extends AbstractOperation {
 
         for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
-            final MapConfig mapConfig = entry.getValue().getMapInfo().getMapConfig();
+            final MapConfig mapConfig = entry.getValue().getMapContainer().getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }

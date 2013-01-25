@@ -18,7 +18,9 @@ package com.hazelcast.query.impl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class ReflectionHelper {
@@ -40,6 +42,12 @@ public class ReflectionHelper {
             return AttributeType.BYTE;
         } else if (klass == char.class || klass == Character.class) {
             return AttributeType.CHAR;
+        } else if (klass == Timestamp.class) {
+            return AttributeType.SQL_TIMESTAMP;
+        } else if (klass == java.sql.Date.class) {
+            return AttributeType.SQL_DATE;
+        } else if (klass == Date.class) {
+            return AttributeType.DATE;
         } else if (klass.isEnum()) {
             return AttributeType.ENUM;
         }

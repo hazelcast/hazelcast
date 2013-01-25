@@ -31,7 +31,7 @@ public class TargetInvocationImpl extends InvocationImpl {
     }
 
     @Override
-    protected Address getTarget() {
+    public Address getTarget() {
         return target;
     }
 }
