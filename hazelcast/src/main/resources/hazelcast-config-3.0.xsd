@@ -478,13 +478,13 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="keep-alive-seconds" default="60">
-        <xs:simpleType>
-            <xs:restriction base="xs:int">
-                <xs:minInclusive value="0"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
+    <!--<xs:element name="keep-alive-seconds" default="60">-->
+        <!--<xs:simpleType>-->
+            <!--<xs:restriction base="xs:int">-->
+                <!--<xs:minInclusive value="0"/>-->
+            <!--</xs:restriction>-->
+        <!--</xs:simpleType>-->
+    <!--</xs:element>-->
     <xs:element name="join">
         <xs:complexType>
             <xs:sequence>
@@ -595,9 +595,9 @@
     <xs:element name="executor-service">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="core-pool-size"/>
+                <!--<xs:element ref="core-pool-size"/>-->
                 <xs:element ref="max-pool-size"/>
-                <xs:element ref="keep-alive-seconds"/>
+                <!--<xs:element ref="keep-alive-seconds"/>-->
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
                 <xs:simpleType>
@@ -639,13 +639,13 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="core-pool-size" default="16">
-        <xs:simpleType>
-            <xs:restriction base="xs:short">
-                <xs:minInclusive value="0"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
+    <!--<xs:element name="core-pool-size" default="16">-->
+        <!--<xs:simpleType>-->
+            <!--<xs:restriction base="xs:short">-->
+                <!--<xs:minInclusive value="0"/>-->
+            <!--</xs:restriction>-->
+        <!--</xs:simpleType>-->
+    <!--</xs:element>-->
     <xs:element name="backup-count" default="1">
         <xs:annotation>
             <xs:documentation>

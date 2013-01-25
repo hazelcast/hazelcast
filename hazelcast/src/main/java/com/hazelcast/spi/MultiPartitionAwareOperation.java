@@ -16,13 +16,11 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
- * @mdogan 1/17/13
+ * @mdogan 1/25/13
  */
-public interface MultiPartitionOperationFactory extends DataSerializable {
+public interface MultiPartitionAwareOperation {
 
-    Operation createOperation();
+    int[] getPartitionIds();
 
 }

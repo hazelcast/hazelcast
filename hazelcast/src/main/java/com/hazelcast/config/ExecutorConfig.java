@@ -24,17 +24,17 @@ import java.io.IOException;
 
 public class ExecutorConfig implements DataSerializable {
 
-    public final static int DEFAULT_CORE_POOL_SIZE = 40;
-    public final static int DEFAULT_MAX_POOL_SIZE = 40;
-    public final static int DEFAULT_KEEP_ALIVE_SECONDS = 300;
+//    public final static int DEFAULT_CORE_POOL_SIZE = 40;
+    public final static int DEFAULT_MAX_POOL_SIZE = 8;
+//    public final static int DEFAULT_KEEP_ALIVE_SECONDS = 300;
 
     private String name = "default";
 
-    private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
+//    private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
 
     private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
 
-    private int keepAliveSeconds = DEFAULT_KEEP_ALIVE_SECONDS;
+//    private int keepAliveSeconds = DEFAULT_KEEP_ALIVE_SECONDS;
 
     public ExecutorConfig() {
     }
@@ -43,11 +43,17 @@ public class ExecutorConfig implements DataSerializable {
         this.name = name;
     }
 
-    public ExecutorConfig(String name, int corePoolSize, int maxPoolSize, int keepAliveSeconds) {
+//    public ExecutorConfig(String name, int corePoolSize, int maxPoolSize, int keepAliveSeconds) {
+//        this.name = name;
+//        this.corePoolSize = corePoolSize;
+//        this.maxPoolSize = maxPoolSize;
+//        this.keepAliveSeconds = keepAliveSeconds;
+//    }
+
+
+    public ExecutorConfig(String name, int maxPoolSize) {
         this.name = name;
-        this.corePoolSize = corePoolSize;
         this.maxPoolSize = maxPoolSize;
-        this.keepAliveSeconds = keepAliveSeconds;
     }
 
     public String getName() {
@@ -59,23 +65,23 @@ public class ExecutorConfig implements DataSerializable {
         return this;
     }
 
-    /**
-     * @return the corePoolSize
-     */
-    public int getCorePoolSize() {
-        return corePoolSize;
-    }
-
-    /**
-     * @param corePoolSize the corePoolSize to set
-     */
-    public ExecutorConfig setCorePoolSize(final int corePoolSize) {
-        if (corePoolSize <= 0) {
-            throw new IllegalArgumentException("corePoolSize must be positive");
-        }
-        this.corePoolSize = corePoolSize;
-        return this;
-    }
+//    /**
+//     * @return the corePoolSize
+//     */
+//    public int getCorePoolSize() {
+//        return corePoolSize;
+//    }
+//
+//    /**
+//     * @param corePoolSize the corePoolSize to set
+//     */
+//    public ExecutorConfig setCorePoolSize(final int corePoolSize) {
+//        if (corePoolSize <= 0) {
+//            throw new IllegalArgumentException("corePoolSize must be positive");
+//        }
+//        this.corePoolSize = corePoolSize;
+//        return this;
+//    }
 
     /**
      * @return the maxPoolSize
@@ -95,36 +101,36 @@ public class ExecutorConfig implements DataSerializable {
         return this;
     }
 
-    /**
-     * @return the keepAliveSeconds
-     */
-    public int getKeepAliveSeconds() {
-        return keepAliveSeconds;
-    }
-
-    /**
-     * @param keepAliveSeconds the keepAliveSeconds to set
-     */
-    public ExecutorConfig setKeepAliveSeconds(final int keepAliveSeconds) {
-        if (keepAliveSeconds <= 0) {
-            throw new IllegalArgumentException("keepAlice seconds must be positive");
-        }
-        this.keepAliveSeconds = keepAliveSeconds;
-        return this;
-    }
+//    /**
+//     * @return the keepAliveSeconds
+//     */
+//    public int getKeepAliveSeconds() {
+//        return keepAliveSeconds;
+//    }
+//
+//    /**
+//     * @param keepAliveSeconds the keepAliveSeconds to set
+//     */
+//    public ExecutorConfig setKeepAliveSeconds(final int keepAliveSeconds) {
+//        if (keepAliveSeconds <= 0) {
+//            throw new IllegalArgumentException("keepAlice seconds must be positive");
+//        }
+//        this.keepAliveSeconds = keepAliveSeconds;
+//        return this;
+//    }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeInt(corePoolSize);
+//        out.writeInt(corePoolSize);
         out.writeInt(maxPoolSize);
-        out.writeInt(keepAliveSeconds);
+//        out.writeInt(keepAliveSeconds);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        corePoolSize = in.readInt();
+//        corePoolSize = in.readInt();
         maxPoolSize = in.readInt();
-        keepAliveSeconds = in.readInt();
+//        keepAliveSeconds = in.readInt();
     }
 
     @Override
@@ -132,9 +138,9 @@ public class ExecutorConfig implements DataSerializable {
         final StringBuilder sb = new StringBuilder();
         sb.append("ExecutorConfig");
         sb.append("{name='").append(name).append('\'');
-        sb.append(", corePoolSize=").append(corePoolSize);
+//        sb.append(", corePoolSize=").append(corePoolSize);
         sb.append(", maxPoolSize=").append(maxPoolSize);
-        sb.append(", keepAliveSeconds=").append(keepAliveSeconds);
+//        sb.append(", keepAliveSeconds=").append(keepAliveSeconds);
         sb.append('}');
         return sb.toString();
     }
