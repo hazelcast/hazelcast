@@ -109,7 +109,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapInfo(name).getAsyncBackupCount();
+        return mapService.getMapContainer(name).getAsyncBackupCount();
     }
 
     public boolean shouldBackup() {
@@ -117,7 +117,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapInfo(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
     @Override

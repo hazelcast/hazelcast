@@ -85,11 +85,11 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapInfo(name).getAsyncBackupCount();
+        return mapService.getMapContainer(name).getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapInfo(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
     public boolean shouldBackup() {
@@ -100,7 +100,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         mapService.interceptAfterProcess(name, MapOperationType.EVICT, dataKey, dataValue, dataValue);
         int eventType = EntryEvent.TYPE_EVICTED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, null, dataValue);
-        if (mapService.getMapInfo(name).getMapConfig().getNearCacheConfig() != null)
+        if (mapService.getMapContainer(name).getMapConfig().getNearCacheConfig() != null)
             mapService.invalidateAllNearCaches(name, dataKey);
     }
 

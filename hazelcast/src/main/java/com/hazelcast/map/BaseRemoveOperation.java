@@ -74,11 +74,11 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapInfo(name).getAsyncBackupCount();
+        return mapService.getMapContainer(name).getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapInfo(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
     public boolean shouldBackup() {
@@ -89,7 +89,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapService.interceptAfterProcess(name, MapOperationType.REMOVE, dataKey, dataValue, dataOldValue);
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, null);
-        if (mapService.getMapInfo(name).getMapConfig().getNearCacheConfig() != null)
+        if (mapService.getMapContainer(name).getMapConfig().getNearCacheConfig() != null)
             mapService.invalidateAllNearCaches(name, dataKey);
     }
 

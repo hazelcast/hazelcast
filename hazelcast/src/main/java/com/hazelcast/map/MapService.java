@@ -56,7 +56,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
-    private final ConcurrentMap<String, MapContainer> mapInfos = new ConcurrentHashMap<String, MapContainer>();
+    private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
@@ -77,9 +77,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         registerClientOperationHandlers();
     }
 
-    public MapContainer getMapInfo(String mapName) {
+    public MapContainer getMapContainer(String mapName) {
         MapContainer mapContainer = new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName));
-        MapContainer temp = mapInfos.putIfAbsent(mapName, mapContainer);
+        MapContainer temp = mapContainers.putIfAbsent(mapName, mapContainer);
         return temp == null ? mapContainer : temp;
     }
 
@@ -141,7 +141,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
                 final PartitionContainer container = partitionContainers[event.getPartitionId()];
                 for (DefaultRecordStore mapPartition : container.maps.values()) {
-                    final MapConfig mapConfig = getMapInfo(mapPartition.name).getMapConfig();
+                    final MapConfig mapConfig = getMapContainer(mapPartition.name).getMapConfig();
                     if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
                         mapPartition.clear();
                     }
@@ -177,7 +177,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
         Record record = null;
-        MapContainer mapContainer = getMapInfo(name);
+        MapContainer mapContainer = getMapContainer(name);
         final MapConfig.RecordType recordType = mapContainer.getMapConfig().getRecordType();
         if (recordType == MapConfig.RecordType.DATA) {
             record = new DataRecord(dataKey, toData(value));
@@ -296,7 +296,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void destroyDistributedObject(Object objectId) {
         logger.log(Level.WARNING, "Destroying object: " + objectId);
         final String name = String.valueOf(objectId);
-        mapInfos.remove(name);
+        mapContainers.remove(name);
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
             if (container != null) {
@@ -325,7 +325,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
             containers[i] = null;
         }
-        mapInfos.clear();
+        mapContainers.clear();
         commandHandlers.clear();
         eventRegistrations.clear();
     }
@@ -335,16 +335,16 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public String addInterceptor(String mapName, MapInterceptor interceptor) {
-        return getMapInfo(mapName).addInterceptor(interceptor);
+        return getMapContainer(mapName).addInterceptor(interceptor);
     }
 
     public String removeInterceptor(String mapName, MapInterceptor interceptor) {
-        return getMapInfo(mapName).removeInterceptor(interceptor);
+        return getMapContainer(mapName).removeInterceptor(interceptor);
     }
 
     // todo replace oldValue with existingEntry
     public Object intercept(String mapName, MapOperationType operationType, Data key, Object value, Object oldValue) {
-        List<MapInterceptor> interceptors = getMapInfo(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         Object result = value;
         // todo needs optimization about serialization (MapEntry type should be used as input)
         if (!interceptors.isEmpty()) {
@@ -361,7 +361,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     // todo replace oldValue with existingEntry
     public void interceptAfterProcess(String mapName, MapOperationType operationType, Data key, Object value, Object oldValue) {
-        List<MapInterceptor> interceptors = getMapInfo(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         // todo needs optimization about serialization (MapEntry type should be used as input)
         if (!interceptors.isEmpty()) {
             value = toObject(value);
@@ -490,7 +490,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     private class MapEvictTask implements Runnable {
         public void run() {
-            for (MapContainer mapContainer : mapInfos.values()) {
+            for (MapContainer mapContainer : mapContainers.values()) {
                 String evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
                 MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
                 if (!evictionPolicy.equals("NONE") && maxSizeConfig.getSize() > 0) {

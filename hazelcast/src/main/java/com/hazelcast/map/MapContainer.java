@@ -35,6 +35,7 @@ public class MapContainer {
     private final Map<String, MapInterceptor> interceptorMap;
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
+    boolean nearCacheEnabled = false;
 
     public MapContainer(String name, MapConfig mapConfig) {
         this.name = name;
@@ -56,6 +57,7 @@ public class MapContainer {
         interceptors = Collections.synchronizedList(new ArrayList<MapInterceptor>());
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
+        nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
     }
 
     public IndexService getIndexService() {
@@ -95,6 +97,10 @@ public class MapContainer {
 
     public String getName() {
         return name;
+    }
+
+    public boolean isNearCacheEnabled() {
+        return nearCacheEnabled;
     }
 
     public int getBackupCount() {

@@ -46,7 +46,7 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
     @Override
     public void run() throws Exception {
         MapService mapService = getService();
-        MapContainer mapContainer = mapService.getMapInfo(name);
+        MapContainer mapContainer = mapService.getMapContainer(name);
         RecordStore rs = mapService.getPartitionContainer(getPartitionId()).getRecordStore(name);
         ConcurrentMap<Data, Record> records = rs.getRecords();
         IndexService indexService = mapContainer.getIndexService();

@@ -42,7 +42,7 @@ public class DefaultRecordStore implements RecordStore {
         this.partitionInfo = partitionContainer.partitionInfo;
         this.partitionContainer = partitionContainer;
         mapService = partitionContainer.getMapService();
-        this.mapContainer = mapService.getMapInfo(name);
+        this.mapContainer = mapService.getMapContainer(name);
     }
 
     public LockInfo getOrCreateLock(Data key) {

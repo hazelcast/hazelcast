@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
@@ -37,7 +36,6 @@ import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -56,11 +54,13 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data getInternal(Data key) {
-        if(nodeEngine.getConfig().getMapConfig(name).getNearCacheConfig() != null ) {
+        boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
+        if (nearCacheEnabled) {
             Data cachedData = mapService.getFromNearCache(name, key);
-            if(cachedData != null)
+            if (cachedData != null)
                 return cachedData;
         }
+
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -69,7 +69,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
                     .build();
             Future invoke = invocation.invoke();
             Data value = (Data) invoke.get();
-            if(nodeEngine.getConfig().getMapConfig(name).getNearCacheConfig() != null && !invocation.getTarget().equals(nodeEngine.getThisAddress())) {
+            if (nearCacheEnabled) {
                 mapService.putNearCache(name, key, value);
             }
             return value;
@@ -620,7 +620,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Set<QueryableEntry> valuesInternal(final Predicate predicate) {
-        IndexService indexService = mapService.getMapInfo(name).getIndexService();
+        IndexService indexService = mapService.getMapContainer(name).getIndexService();
         return indexService.query(predicate, mapService.getQueryableEntrySet(name));
     }
 
