@@ -44,7 +44,7 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
     }
 
     public QueueContainer getContainer() {
-        if (container == null){
+        if (container == null) {
             QueueService queueService = getService();
             try {
                 container = queueService.getContainer(name, this instanceof BackupOperation);
@@ -68,17 +68,17 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
         return name.hashCode();
     }
 
-    public boolean hasListener(){
+    public boolean hasListener() {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
         return registrations.size() > 0;
     }
 
-    public void publishEvent(ItemEventType eventType, Data data){
+    public void publishEvent(ItemEventType eventType, Data data) {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
-        for (EventRegistration registration: registrations){
-            QueueEventFilter filter = (QueueEventFilter)registration.getFilter();
+        for (EventRegistration registration : registrations) {
+            QueueEventFilter filter = (QueueEventFilter) registration.getFilter();
             QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType, getNodeEngine().getThisAddress());
             eventService.publishEvent(getServiceName(), registration, event);
         }

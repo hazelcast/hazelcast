@@ -49,13 +49,13 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         Collection<CollectionRecord> coll = getOrCreateCollection();
         idSet = new HashSet<Long>();
-        for (Data data: dataList){
+        for (Data data : dataList) {
             Object obj = isBinary() ? data : toObject(data);
             Iterator<CollectionRecord> iter = coll.iterator();
-            while (iter.hasNext()){
+            while (iter.hasNext()) {
                 CollectionRecord record = iter.next();
                 boolean equals = obj.equals(record.getObject());
-                if ((equals && !retain) || (!equals && retain)){
+                if ((equals && !retain) || (!equals && retain)) {
                     idSet.add(record.getRecordId());
                     iter.remove();
                 }

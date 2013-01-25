@@ -95,7 +95,7 @@ public class CollectionContainer {
         return result;
     }
 
-    public long nextId(){
+    public long nextId() {
         return idGen.getAndIncrement();
     }
 
@@ -109,7 +109,7 @@ public class CollectionContainer {
     }
 
     public Collection<CollectionRecord> getCollection(Data dataKey) {
-        return  collections.get(dataKey);
+        return collections.get(dataKey);
     }
 
     public Collection<CollectionRecord> removeCollection(Data dataKey) {
@@ -207,11 +207,11 @@ public class CollectionContainer {
         locks.clear();
     }
 
-    private CollectionRecord createRecord(boolean binary, Data data){
+    private CollectionRecord createRecord(boolean binary, Data data) {
         return new CollectionRecord(binary ? data : nodeEngine.toObject(data));
     }
 
-    private CollectionRecord createRecord(boolean binary, Data data, long recordId){
+    private CollectionRecord createRecord(boolean binary, Data data, long recordId) {
         return new CollectionRecord(recordId, binary ? data : nodeEngine.toObject(data));
     }
 

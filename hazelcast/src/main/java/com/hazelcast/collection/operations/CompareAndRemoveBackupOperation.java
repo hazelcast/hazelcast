@@ -48,9 +48,9 @@ public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation
     public void run() throws Exception {
         Collection<CollectionRecord> coll = getOrCreateCollection();
         Iterator<CollectionRecord> iter = coll.iterator();
-        while (iter.hasNext()){
+        while (iter.hasNext()) {
             CollectionRecord record = iter.next();
-            if (idSet.contains(record.getRecordId())){
+            if (idSet.contains(record.getRecordId())) {
                 iter.remove();
             }
         }

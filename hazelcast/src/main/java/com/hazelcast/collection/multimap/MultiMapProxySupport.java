@@ -278,7 +278,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    protected Boolean compareAndRemoveInternal(Data dataKey, List<Data> dataList, boolean retain){
+    protected Boolean compareAndRemoveInternal(Data dataKey, List<Data> dataList, boolean retain) {
         try {
             CompareAndRemoveOperation operation = new CompareAndRemoveOperation(name, proxyType, dataKey, getThreadId(), dataList, retain);
             return invoke(operation, dataKey);

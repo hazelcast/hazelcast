@@ -61,7 +61,7 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
             CollectionContainer container = getOrCreateContainer();
             for (Map.Entry<Data, Collection<CollectionRecord>> entry : objects.entrySet()) {
                 Data key = entry.getKey();
-                if(container.isLocked(key)){
+                if (container.isLocked(key)) {
                     continue;//key is locked so not removed
                 }
                 Collection<CollectionRecord> coll = entry.getValue();

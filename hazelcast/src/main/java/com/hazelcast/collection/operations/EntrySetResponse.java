@@ -42,7 +42,7 @@ public class EntrySetResponse implements DataSerializable {
         for (Map.Entry<Data, Collection<CollectionRecord>> entry : map.entrySet()) {
             Collection<CollectionRecord> records = entry.getValue();
             Collection<Data> coll = new ArrayList<Data>(records.size());
-            for (CollectionRecord record: records){
+            for (CollectionRecord record : records) {
                 coll.add(nodeEngine.toData(record.getObject()));
             }
             this.map.put(entry.getKey(), coll);

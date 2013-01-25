@@ -48,7 +48,7 @@ public class CollectionRecord {
         if (!(o instanceof CollectionRecord)) return false;
 
         CollectionRecord that = (CollectionRecord) o;
-        if (recordId != -1 && that.recordId != -1){
+        if (recordId != -1 && that.recordId != -1) {
             if (recordId != that.recordId) return false;
         }
         if (!object.equals(that.object)) return false;

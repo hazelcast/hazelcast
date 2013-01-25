@@ -50,11 +50,10 @@ public class OfferOperation extends QueueTimedOperation implements WaitSupport, 
 
     public void run() {
         QueueContainer container = getContainer();
-        if (container.checkBound()){
+        if (container.checkBound()) {
             item = container.offer(data);
             response = true;
-        }
-        else {
+        } else {
             response = false;
         }
     }

@@ -53,7 +53,7 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
             response = coll.add(record);
         } else {
             try {
-                ((List<CollectionRecord>)coll).add(index,record);
+                ((List<CollectionRecord>) coll).add(index, record);
                 response = true;
             } catch (IndexOutOfBoundsException e) {
                 response = e;

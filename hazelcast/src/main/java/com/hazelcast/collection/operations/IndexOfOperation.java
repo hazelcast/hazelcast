@@ -45,7 +45,7 @@ public class IndexOfOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        List<CollectionRecord> list = (List<CollectionRecord>)getCollection();
+        List<CollectionRecord> list = (List<CollectionRecord>) getCollection();
         if (list != null) {
             CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
             response = last ? list.lastIndexOf(record) : list.indexOf(record);
