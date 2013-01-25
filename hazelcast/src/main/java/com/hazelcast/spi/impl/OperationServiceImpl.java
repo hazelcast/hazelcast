@@ -376,6 +376,25 @@ final class OperationServiceImpl implements OperationService {
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, Operation operation,
+                                                   List<Integer> partitions) throws Exception {
+        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
+        return invokeOnPartitions(serviceName, operationFactory, partitions);
+    }
+
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+                                                   List<Integer> partitions) throws Exception {
+        final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
+        for (int partition : partitions) {
+            Address owner = nodeEngine.getPartitionService().getPartitionOwner(partition);
+            if(!memberPartitions.containsKey(owner)){
+                memberPartitions.put(owner, new ArrayList<Integer>());
+            }
+            memberPartitions.get(owner).add(partition);
+        }
+        return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
+    }
+
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, Operation operation,
                                                          Address target) throws Exception {
         final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);

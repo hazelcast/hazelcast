@@ -35,6 +35,9 @@ import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
@@ -44,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
@@ -60,11 +64,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
+    private final AtomicReference<List<Integer>> ownedPartitions;
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
+        ownedPartitions = new AtomicReference<List<Integer>>(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -124,8 +130,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return counter.incrementAndGet();
     }
 
+    public AtomicReference<List<Integer>> getOwnedPartitions() {
+        return ownedPartitions;
+    }
+
     public void beforeMigration(MigrationServiceEvent event) {
         // TODO: what if partition has transactions?
+        ownedPartitions.set(null);
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
@@ -148,6 +159,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 }
             }
         }
+        ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
     }
 
     public void rollbackMigration(MigrationServiceEvent event) {
@@ -155,6 +167,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionData(event.getPartitionId());
         }
+        ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
     }
 
     public int getMaxBackupCount() {
@@ -255,7 +268,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nearCache.invalidate(key);
     }
 
-    public void invalidateAllNearCaches(String mapName, Data key){
+    public void invalidateAllNearCaches(String mapName, Data key) {
         InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
@@ -378,7 +391,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
 
-        if(candidates.isEmpty())
+        if (candidates.isEmpty())
             return;
 
         Object key = null;
@@ -389,11 +402,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
             if (filter instanceof QueryEventFilter) {
                 Object testValue;
-                if(eventType == EntryEvent.TYPE_REMOVED) {
+                if (eventType == EntryEvent.TYPE_REMOVED) {
                     oldValue = oldValue != null ? oldValue : toObject(dataOldValue);
                     testValue = oldValue;
-                }
-                else {
+                } else {
                     value = value != null ? value : toObject(value);
                     testValue = value;
                 }
@@ -605,5 +617,20 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
         return new QueryableEntrySet((SerializationServiceImpl) nodeEngine.getSerializationService(), mlist);
     }
+
+    public Set<QueryableEntry> queryOnPartition(String mapName, Predicate predicate, int partitionId) {
+        Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+        PartitionContainer container = getPartitionContainer(partitionId);
+        RecordStore recordStore = container.getRecordStore(mapName);
+        ConcurrentMap<Data, Record> records = recordStore.getRecords();
+        for (Record record : records.values()) {
+            QueryEntry queryEntry = new QueryEntry((SerializationServiceImpl) nodeEngine.getSerializationService(), record.getKey(), record.getKey(), record.getValue());
+            if (predicate.apply(queryEntry)) {
+                result.add(queryEntry);
+            }
+        }
+        return result;
+    }
+
 
 }

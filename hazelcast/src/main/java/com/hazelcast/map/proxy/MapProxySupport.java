@@ -620,8 +620,58 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Set<QueryableEntry> valuesInternal(final Predicate predicate) {
-        IndexService indexService = mapService.getMapContainer(name).getIndexService();
-        return indexService.query(predicate, mapService.getQueryableEntrySet(name));
+        QueryOperation operation = new QueryOperation(name, predicate);
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        Set<Integer> plist = new HashSet<Integer>(partitionCount);
+        Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+        try {
+            List<Future> flist = new ArrayList<Future>();
+            for (MemberImpl member : members) {
+                if (member.localMember())
+                    continue;
+                Invocation invocation = nodeEngine.getOperationService()
+                        .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
+                Future future = invocation.invoke();
+                flist.add(future);
+            }
+            for (Future future : flist) {
+                QueryResult queryResult = (QueryResult) future.get();
+                if (queryResult != null) {
+                    plist.addAll(queryResult.getPartitionIds());
+                    result.addAll(queryResult.getResult());
+                }
+            }
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
+
+        if (plist.size() == partitionCount) {
+            return result;
+        }
+
+        List<Integer> missingList = new ArrayList<Integer>();
+        for (int i = 0; i < partitionCount; i++) {
+            if (!plist.contains(i)) {
+                missingList.add(i);
+            }
+        }
+
+        for (Integer pid : missingList) {
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+            queryPartitionOperation.setPartitionId(pid);
+            try {
+                Map<Integer, Object> results = nodeEngine.getOperationService()
+                        .invokeOnAllPartitions(SERVICE_NAME, queryPartitionOperation);
+                for (Object res : results.values()) {
+                    QueryResult queryResult = (QueryResult) nodeEngine.toObject(res);
+                    result.addAll(queryResult.getResult());
+                }
+            } catch (Throwable throwable) {
+                throw new HazelcastException(throwable);
+            }
+        }
+        return result;
     }
 
     protected Set<Data> localKeySetInternal(final Predicate predicate) {
