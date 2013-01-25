@@ -20,7 +20,6 @@ package com.hazelcast.cluster.client;
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -35,7 +34,7 @@ public class DestroyHandler extends ClientCommandHandler {
         String type = args[0];
         String name = args[1];
         if("map".equals(type)){
-            ((MapService) node.nodeEngine.getService(MapService.MAP_SERVICE_NAME)).createDistributedObjectForClient(name).destroy();
+            ((MapService) node.nodeEngine.getService(MapService.SERVICE_NAME)).createDistributedObjectForClient(name).destroy();
         }
         return protocol.success();
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.UTFUtil;
 
 import java.io.*;
 
@@ -25,18 +26,12 @@ import java.io.*;
  */
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable, SerializationContextAware {
 
-    private static final int BUFFER_SIZE = 16 << 10; // 32k
-
     private final SerializationService serializationService;
     private final DataOutputStream dataOut;
 
     public ObjectDataOutputStream(OutputStream outputStream, SerializationService serializationService) {
         this.serializationService = serializationService;
-        if (outputStream instanceof BufferedOutputStream) {
-            this.dataOut = new DataOutputStream(outputStream);
-        } else {
-            this.dataOut = new DataOutputStream(new BufferedOutputStream(outputStream, BUFFER_SIZE));
-        }
+        this.dataOut = new DataOutputStream(outputStream);
     }
 
     public void write(int b) throws IOException {
@@ -88,7 +83,8 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     public void writeUTF(String str) throws IOException {
-        dataOut.writeUTF(str);
+//        dataOut.writeUTF(str);
+        UTFUtil.writeUTF(this, str);
     }
 
     public void write(byte[] b) throws IOException {

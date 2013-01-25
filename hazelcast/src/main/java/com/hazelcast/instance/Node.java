@@ -37,7 +37,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.ConnectionManager;
@@ -84,9 +84,9 @@ public class Node {
 
     public final NodeEngineImpl nodeEngine;
 
-    public final PartitionService partitionService;
+    public final PartitionServiceImpl partitionService;
 
-    public final ClusterService clusterService;
+    public final ClusterServiceImpl clusterService;
 
     public final MulticastService multicastService;
 
@@ -134,7 +134,13 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.liteMember = config.isLiteMember();
         this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
-        serializationService = new SerializationServiceImpl(1, null, hazelcastInstance.managedContext);
+        SerializationServiceImpl ss = null;
+        try {
+            ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
+        } catch (Exception e) {
+            Util.throwUncheckedException(e);
+        }
+        serializationService = ss;
         systemLogService = new SystemLogService(this);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
@@ -161,8 +167,8 @@ public class Node {
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeEngine = new NodeEngineImpl(this);
         connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-        clusterService = new ClusterService(this);
-        partitionService = new PartitionService(this);
+        clusterService = new ClusterServiceImpl(this);
+        partitionService = new PartitionServiceImpl(this);
         clientCommandService = new ClientCommandService(this);
         textCommandService = new TextCommandServiceImpl(this);
         clusterService.addMember(localMember);
@@ -251,11 +257,11 @@ public class Node {
         return serializationService;
     }
 
-    public ClusterService getClusterService() {
+    public ClusterServiceImpl getClusterService() {
         return clusterService;
     }
 
-    public PartitionService getPartitionService() {
+    public PartitionServiceImpl getPartitionService() {
         return partitionService;
     }
 

@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -30,7 +29,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionImpl;
@@ -44,7 +43,6 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
     private final ILogger logger;
-    private final int partitionCount;
 
     final ProxyServiceImpl proxyService;
     final ServiceManager serviceManager;
@@ -57,7 +55,6 @@ public class NodeEngineImpl implements NodeEngine {
     public NodeEngineImpl(Node node) {
         this.node = node;
         logger = node.getLogger(NodeEngine.class.getName());
-        partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         proxyService = new ProxyServiceImpl(this);
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
@@ -73,34 +70,8 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
     }
 
-    public Cluster getCluster() {
-        return getClusterService().getClusterProxy();
-    }
-
     public Address getThisAddress() {
         return node.getThisAddress();
-    }
-
-    public final int getPartitionId(Data key) {
-        return node.partitionService.getPartitionId(key);
-    }
-
-    public final int getPartitionId(Object obj) {
-        return getPartitionId(toData(obj));
-    }
-
-    public PartitionInfo getPartitionInfo(int partitionId) {
-        PartitionInfo p = node.partitionService.getPartition(partitionId);
-        if (p.getOwner() == null) {
-            // probably ownerships are not set yet.
-            // force it.
-            node.partitionService.getPartitionOwner(partitionId);
-        }
-        return p;
-    }
-
-    public int getPartitionCount() {
-        return partitionCount;
     }
 
     public Config getConfig() {
@@ -125,6 +96,14 @@ public class NodeEngineImpl implements NodeEngine {
 
     public ExecutionService getExecutionService() {
         return executionService;
+    }
+
+    public PartitionService getPartitionService() {
+        return node.getPartitionService();
+    }
+
+    public ClusterService getClusterService() {
+        return node.getClusterService();
     }
 
     public ProxyService getProxyService() {
@@ -236,11 +215,6 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public Node getNode() {
         return node;
-    }
-
-    @PrivateApi
-    public ClusterService getClusterService() {
-        return node.getClusterService();
     }
 
     @PrivateApi

@@ -46,7 +46,7 @@ public class PublishOperation extends AbstractNamedOperation implements KeyBased
     public void run() throws Exception {
 
         TopicEvent topicEvent = new TopicEvent(name, message);
-        getNodeEngine().getEventService().publishEvent(TopicService.NAME, getNodeEngine().getEventService().getRegistrations(TopicService.NAME, name), topicEvent);
+        getNodeEngine().getEventService().publishEvent(TopicService.SERVICE_NAME, getNodeEngine().getEventService().getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
 
     }
 
@@ -56,7 +56,7 @@ public class PublishOperation extends AbstractNamedOperation implements KeyBased
     }
 
     public int getKeyHash() {
-        String key = TopicService.NAME + getName();
+        String key = TopicService.SERVICE_NAME + getName();
         return key.hashCode();
     }
 

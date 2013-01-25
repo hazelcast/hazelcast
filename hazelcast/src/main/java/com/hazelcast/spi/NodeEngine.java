@@ -16,14 +16,14 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.transaction.TransactionImpl;
 
 /**
@@ -35,6 +35,10 @@ public interface NodeEngine {
 
     ExecutionService getExecutionService();
 
+    ClusterService getClusterService();
+
+    PartitionService getPartitionService();
+
     EventService getEventService();
 
     SerializationService getSerializationService();
@@ -45,19 +49,9 @@ public interface NodeEngine {
 
     Address getThisAddress();
 
-    int getPartitionId(Data key);
-
-    int getPartitionId(Object obj);
-
-    int getPartitionCount();
-
-    PartitionInfo getPartitionInfo(int partitionId);
-
     Config getConfig();
 
     GroupProperties getGroupProperties();
-
-    Cluster getCluster();
 
     ILogger getLogger(String name);
 

@@ -55,7 +55,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
         Record record = recordStore.getRecords().get(dataKey);
         if (record != null) {
             if (record.getState().isDirty()) {
-                MapStore store = recordStore.getMapInfo().getStore();
+                MapStore store = recordStore.getMapContainer().getStore();
                 if (store != null) {
                     Object value = record.getValue();
                     store.store(mapService.toObject(dataKey), mapService.toObject(value));
@@ -70,7 +70,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
                 evicted = true;
             }
         } else if (recordStore.getRemovedDelayedKeys().contains(dataKey)) {
-            MapStore store = recordStore.getMapInfo().getStore();
+            MapStore store = recordStore.getMapContainer().getStore();
             if (store != null) {
                 store.delete(nodeEngine.getSerializationService().toObject(dataKey));
             }

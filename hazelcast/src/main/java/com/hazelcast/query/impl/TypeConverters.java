@@ -16,6 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import java.sql.Timestamp;
+import java.util.Date;
+
 class TypeConverters {
     public static final TypeConverter DOUBLE_CONVERTER = new DoubleConverter();
     public static final TypeConverter LONG_CONVERTER = new LongConverter();
@@ -26,9 +29,65 @@ class TypeConverters {
     public static final TypeConverter STRING_CONVERTER = new StringConverter();
     public static final TypeConverter CHAR_CONVERTER = new CharConverter();
     public static final TypeConverter BYTE_CONVERTER = new ByteConverter();
+    public static final TypeConverter ENUM_CONVERTER = new EnumConverter();
+    public static final TypeConverter SQL_DATE_CONVERTER = new SqlDateConverter();
+    public static final TypeConverter SQL_TIMESTAMP_CONVERTER = new SqlTimestampConverter();
+    public static final TypeConverter DATE_CONVERTER = new DateConverter();
 
     public interface TypeConverter {
         Comparable convert(Comparable value);
+    }
+
+    static class EnumConverter implements TypeConverter {
+        public Comparable convert(Comparable value) {
+            String valueString = value.toString();
+            try {
+                if (valueString.contains(".")) {
+                    // there is a dot  in the value specifier, keep part after last dot
+                    return valueString.substring(1 + valueString.lastIndexOf("."));
+                }
+            } catch (IllegalArgumentException iae) {
+                // illegal enum value specification
+                throw new IllegalArgumentException("Illegal enum value specification: " + iae.getMessage());
+            }
+            return valueString;
+        }
+    }
+
+    static class SqlDateConverter implements TypeConverter {
+
+        public Comparable convert(Comparable value) {
+            if (value instanceof java.sql.Date) return value;
+            if (value instanceof String) {
+                return DateHelper.parseSqlDate((String) value);
+            }
+            Number number = (Number) value;
+            return new java.sql.Date(number.longValue());
+        }
+    }
+
+    static class SqlTimestampConverter implements TypeConverter {
+
+        public Comparable convert(Comparable value) {
+            if (value instanceof Timestamp) return value;
+            if (value instanceof String) {
+                return DateHelper.parseTimeStamp((String) value);
+            }
+            Number number = (Number) value;
+            return new Timestamp(number.longValue());
+        }
+    }
+
+    static class DateConverter implements TypeConverter {
+
+        public Comparable convert(Comparable value) {
+            if (value instanceof Date) return value;
+            if (value instanceof String) {
+                return DateHelper.parseDate((String) value);
+            }
+            Number number = (Number) value;
+            return new Date(number.longValue());
+        }
     }
 
     static class DoubleConverter implements TypeConverter {

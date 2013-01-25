@@ -104,12 +104,17 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size-per-jvm>0</max-size-per-jvm>
+        <max-size>0</max-size>
         <!--
-            Name of the map configuration that will be used for the backing distributed
-            map for this queue.
+            Number of backups. If 1 is set as the backup-count for example,
+            then all entries of the map will be copied to another JVM for
+            fail-safety. 0 means no backup.
         -->
-        <backing-map-ref>default</backing-map-ref>
+        <backup-count>1</backup-count>
+        <!--
+            Number of async backups. 0 means no backup.
+        -->
+        <async-backup-count>0</async-backup-count>
     </queue>
     <map name="default">
         <!--
@@ -185,12 +190,10 @@
         -->
         <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
     </map>
+
     <!-- Add your own semaphore configurations here:
         <semaphore name="default">
             <initial-permits>10</initial-permits>
-            <semaphore-factory enabled="true">
-                <class-name>com.acme.MySemaphoreFactory</class-name>
-            </semaphore-factory>
         </semaphore>
     -->
 
@@ -201,5 +204,11 @@
         	</map-merge-policy>
     	</merge-policies>
     -->
+
+    <serialization>
+        <portable-version>0</portable-version>
+    </serialization>
+
+    <services enable-defaults="true" />
 
 </hazelcast>

@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class Data implements IdentifiedDataSerializable {
+public final class Data implements IdentifiedDataSerializable {
 
     public static final int ID = 0;
     public static final int NO_CLASS_ID = -1;
@@ -49,6 +49,11 @@ public class Data implements IdentifiedDataSerializable {
         }
     }
 
+    /**
+     * WARNING:
+     *
+     * Should be in sync with {@link com.hazelcast.nio.DataWriter#readFrom(java.nio.ByteBuffer)}
+     */
     public void readData(ObjectDataInput in) throws IOException {
         type = in.readInt();
         final int classId = in.readInt();
@@ -73,8 +78,13 @@ public class Data implements IdentifiedDataSerializable {
         partitionHash = in.readInt();
     }
 
-    // Warning!!!!!!!
-    // The following method : totalSize() should be updated whenever writeData method is changed
+    /**
+     * WARNING:
+     *
+     * Should be in sync with {@link com.hazelcast.nio.DataWriter#writeTo(java.nio.ByteBuffer)}
+     *
+     * {@link #totalSize()} should be updated whenever writeData method is changed.
+     */
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(type);
         if (cd != null) {
@@ -91,14 +101,20 @@ public class Data implements IdentifiedDataSerializable {
         if (size > 0) {
             out.write(buffer);
         }
-        out.writeInt(partitionHash);
+        out.writeInt(getPartitionHash());
     }
 
     public int bufferSize() {
         return (buffer == null) ? 0 : buffer.length;
     }
 
-    //Calculates the size of the binary after the Data is serialized.
+    /**
+     * Calculates the size of the binary after the Data is serialized.
+     *
+     * WARNING:
+     *
+     * Should be in sync with {@link #writeData(com.hazelcast.nio.ObjectDataOutput)}
+     */
     public int totalSize() {
         int total = 0;
         total += 4; // type

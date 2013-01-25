@@ -24,7 +24,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -85,11 +84,11 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        return submitToPartitionOwner(task, random.nextInt(nodeEngine.getPartitionCount()));
+        return submitToPartitionOwner(task, random.nextInt(nodeEngine.getPartitionService().getPartitionCount()));
     }
 
     public <T> Future<T> submitToKeyOwner(Callable<T> task, Object key) {
-        return submitToPartitionOwner(task, nodeEngine.getPartitionId(key));
+        return submitToPartitionOwner(task, nodeEngine.getPartitionService().getPartitionId(key));
     }
 
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
@@ -108,7 +107,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
-        return submitToMembers(task, ((NodeEngineImpl) nodeEngine).getClusterService().getMembers());
+        return submitToMembers(task, nodeEngine.getClusterService().getMembers());
     }
 
     public void submit(Runnable task, ExecutionCallback callback) {
@@ -144,11 +143,11 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> void submit(Callable<T> task, ExecutionCallback<T> callback) {
-        submitToPartitionOwner(task, callback, random.nextInt(nodeEngine.getPartitionCount()));
+        submitToPartitionOwner(task, callback, random.nextInt(nodeEngine.getPartitionService().getPartitionCount()));
     }
 
     public <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback) {
-        submitToPartitionOwner(task, callback, nodeEngine.getPartitionId(key));
+        submitToPartitionOwner(task, callback, nodeEngine.getPartitionService().getPartitionId(key));
     }
 
     public <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback) {
@@ -168,7 +167,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
-        submitToMembers(task, ((NodeEngineImpl) nodeEngine).getClusterService().getMembers(), callback);
+        submitToMembers(task, nodeEngine.getClusterService().getMembers(), callback);
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {

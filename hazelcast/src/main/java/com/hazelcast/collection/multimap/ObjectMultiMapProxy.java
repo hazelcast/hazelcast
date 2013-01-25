@@ -163,7 +163,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public LocalMapStats getLocalMultiMapStats() {
-        int count = nodeEngine.getPartitionCount();
+        int count = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < count; i++) {
             CollectionPartitionContainer partitionContainer = service.getPartitionContainer(i);
             Map<CollectionProxyId, CollectionContainer> multiMaps = partitionContainer.getContainerMap();

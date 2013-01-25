@@ -17,11 +17,10 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryException;
+import com.hazelcast.query.impl.ReflectionHelper;
 import com.hazelcast.util.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,10 +28,16 @@ import org.junit.runner.RunWith;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class PredicatesTest {
+    public PredicatesTest() {
+        super();
+    }
+
     @Test
     public void testEqual() {
         TestUtil.Employee value = new TestUtil.Employee("abc-123-xvz", 34, true, 10D);
@@ -42,10 +47,10 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("state == " + TestUtil.State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", nullNameValue)));
-        assertTrue(new SqlPredicate("state == NULL").apply(createEntry("1", nullNameValue)));
-        assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("createDate >= '" + new Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("state == NULL").apply(createEntry("1", nullNameValue)));
         assertFalse(new SqlPredicate("name = 'null'").apply(createEntry("1", nullNameValue)));
         assertTrue(new SqlPredicate("name = null").apply(createEntry("1", nullNameValue)));
         assertTrue(new SqlPredicate("name = NULL").apply(createEntry("1", nullNameValue)));
@@ -73,55 +78,72 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("name LIKE 'abc-%'")
                 .apply(createEntry("1", new QueryTest.Employee("abc-123", 34, true, 10D))));
         assertTrue(Predicates.equal(null, "value").apply(new DummyEntry("value")));
-        assertFalse(Predicates.equal(null, "value").apply(new DummyEntry("value1")));
-//        assertFalse(Predicates.equal(new DummyExpression("value"), "value1").apply(null));
-//        assertTrue(Predicates.equal(new DummyExpression(true), Boolean.TRUE).apply(null));
-//        assertTrue(Predicates.equal(new DummyExpression(Boolean.TRUE), true).apply(null));
-//        assertFalse(Predicates.equal(new DummyExpression(Boolean.FALSE), true).apply(null));
-//        assertFalse(Predicates.equal(new DummyExpression(15.23), 15.22).apply(null));
-//        assertFalse(Predicates.equal(new DummyExpression(15.23), 15.22).apply(null));
-//        assertTrue(Predicates.equal(new DummyExpression(15.22), 15.22).apply(null));
-//        assertFalse(Predicates.equal(new DummyExpression(15), 16).apply(null));
-//        assertTrue(Predicates.greaterThan(new DummyExpression(6), 5).apply(null));
-//        assertFalse(Predicates.greaterThan(new DummyExpression(4), 5).apply(null));
-//        assertFalse(Predicates.greaterThan(new DummyExpression(5), 5).apply(null));
-//        assertTrue(Predicates.greaterThan(new DummyExpression("xa"), "aa").apply(null));
-//        assertFalse(Predicates.greaterThan(new DummyExpression("cz"), "da").apply(null));
-//        assertTrue(Predicates.greaterEqual(new DummyExpression(5), 5).apply(null));
-//        assertTrue(Predicates.lessThan(new DummyExpression(6), 7).apply(null));
-//        assertFalse(Predicates.lessThan(new DummyExpression(4), 3).apply(null));
-//        assertFalse(Predicates.lessThan(new DummyExpression(4), 4).apply(null));
-//        assertTrue(Predicates.lessThan(new DummyExpression("bz"), "tc").apply(null));
-//        assertFalse(Predicates.lessThan(new DummyExpression("h0"), "gx").apply(null));
-//        assertTrue(Predicates.lessEqual(new DummyExpression(4), 4).apply(null));
-//        assertTrue(Predicates.between(new DummyExpression(5), 4, 6).apply(null));
-//        assertTrue(Predicates.between(new DummyExpression(5), 5, 6).apply(null));
-//        assertTrue(Predicates.between(new DummyExpression("prs"), "abc", "xyz").apply(null));
-//        assertFalse(Predicates.between(new DummyExpression("efgh"), "klmn", "xyz").apply(null));
-//        assertFalse(Predicates.between(new DummyExpression(5), 6, 7).apply(null));
-//        assertTrue(Predicates.in(new DummyExpression(5), 4, 7, 8, 5).apply(null));
-//        assertTrue(Predicates.in(new DummyExpression(5), 5, 7, 8).apply(null));
-//        assertFalse(Predicates.in(new DummyExpression(5), 6, 7, 8).apply(null));
-//        assertFalse(Predicates.in(new DummyExpression(9), 6, 7, 8).apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "Ja%").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J_v_").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "_av_").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "_a__").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%v_").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java"), "J%_").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "java").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "j%").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_a").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_ava").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_a_a").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_av__").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java"), "J_Va").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java World").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java%ld").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "%World").apply(null));
-//        assertTrue(Predicates.like(new DummyExpression<String>("Java World"), "Java_World").apply(null));
-//        assertFalse(Predicates.like(new DummyExpression<String>("Java World"), "JavaWorld").apply(null));
+        assertFalse(Predicates.equal(null, "value1").apply(new DummyEntry("value")));
+        assertTrue(Predicates.equal(null, TRUE).apply(new DummyEntry(true)));
+        assertTrue(Predicates.equal(null, true).apply(new DummyEntry(TRUE)));
+        assertFalse(Predicates.equal(null, true).apply(new DummyEntry(FALSE)));
+        assertFalse(Predicates.equal(null, 15.22).apply(new DummyEntry(15.23)));
+        assertTrue(Predicates.equal(null, 15.22).apply(new DummyEntry(15.22)));
+        assertFalse(Predicates.equal(null, 16).apply(new DummyEntry(15)));
+        assertTrue(Predicates.greaterThan(null, 5).apply(new DummyEntry(6)));
+        assertFalse(Predicates.greaterThan(null, 5).apply(new DummyEntry(4)));
+        assertFalse(Predicates.greaterThan(null, 5).apply(new DummyEntry(5)));
+        assertTrue(Predicates.greaterThan(null, "aa").apply(new DummyEntry("xa")));
+        assertFalse(Predicates.greaterThan(null, "da").apply(new DummyEntry("cz")));
+        assertTrue(Predicates.greaterEqual(null, 5).apply(new DummyEntry(5)));
+        assertTrue(Predicates.lessThan(null, 7).apply(new DummyEntry(6)));
+        assertFalse(Predicates.lessThan(null, 3).apply(new DummyEntry(4)));
+        assertFalse(Predicates.lessThan(null, 4).apply(new DummyEntry(4)));
+        assertTrue(Predicates.lessThan(null, "tc").apply(new DummyEntry("bz")));
+        assertFalse(Predicates.lessThan(null, "gx").apply(new DummyEntry("h0")));
+        assertTrue(Predicates.lessEqual(null, 4).apply(new DummyEntry(4)));
+        assertTrue(Predicates.between(null, 4, 6).apply(new DummyEntry(5)));
+        assertTrue(Predicates.between(null, 5, 6).apply(new DummyEntry(5)));
+        assertTrue(Predicates.between(null, "abc", "xyz").apply(new DummyEntry("prs")));
+        assertFalse(Predicates.between(null, "klmn", "xyz").apply(new DummyEntry("efgh")));
+        assertFalse(Predicates.between(null, 6, 7).apply(new DummyEntry(5)));
+        assertTrue(Predicates.in(null, 4, 7, 8, 5).apply(new DummyEntry(5)));
+        assertTrue(Predicates.in(null, 5, 7, 8).apply(new DummyEntry(5)));
+        assertFalse(Predicates.in(null, 6, 7, 8).apply(new DummyEntry(5)));
+        assertFalse(Predicates.in(null, 6, 7, 8).apply(new DummyEntry(9)));
+        assertTrue(Predicates.like(null, "J%").apply(new DummyEntry("Java")));
+        assertTrue(Predicates.like(null, "Ja%").apply(new DummyEntry("Java")));
+        assertTrue(Predicates.like(null, "J_v_").apply(new DummyEntry("Java")));
+        assertTrue(Predicates.like(null, "_av_").apply(new DummyEntry("Java")));
+        assertTrue(Predicates.like(null, "_a__").apply(new DummyEntry("Java")));
+        assertTrue(Predicates.like(null, "J%v_").apply(new DummyEntry("Java")));
+        assertTrue(Predicates.like(null, "J%_").apply(new DummyEntry("Java")));
+        assertFalse(Predicates.like(null, "java").apply(new DummyEntry("Java")));
+        assertFalse(Predicates.like(null, "j%").apply(new DummyEntry("Java")));
+        assertFalse(Predicates.like(null, "J_a").apply(new DummyEntry("Java")));
+        assertFalse(Predicates.like(null, "J_ava").apply(new DummyEntry("Java")));
+        assertFalse(Predicates.like(null, "J_a_a").apply(new DummyEntry("Java")));
+        assertFalse(Predicates.like(null, "J_av__").apply(new DummyEntry("Java")));
+        assertFalse(Predicates.like(null, "J_Va").apply(new DummyEntry("Java")));
+        assertTrue(Predicates.like(null, "Java World").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.like(null, "Java%ld").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.like(null, "%World").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.like(null, "Java_World").apply(new DummyEntry("Java World")));
+        assertFalse(Predicates.like(null, "JavaWorld").apply(new DummyEntry("Java World")));
+    }
+
+    void assertThis(boolean expected, String function, Comparable value, Object... args) {
+        try {
+            Class[] types = new Class[args.length];
+            types[0] = String.class;
+            for (int i = 1; i < types.length; i++) {
+                types[i] = Comparable.class;
+            }
+            Predicate predicate = (Predicate) Predicates.class.getMethod(function, types).invoke(null, args);
+            boolean result = predicate.apply(new DummyEntry(value));
+            if (expected) {
+                assertTrue(result);
+            } else {
+                assertFalse(result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -187,107 +209,22 @@ public class PredicatesTest {
 
     class DummyEntry extends QueryEntry {
 
-        Comparable value;
-
-        DummyEntry(Comparable value) {
-            super(null, null, null);
-            this.value = value;
-        }
-
-        DummyEntry(SerializationServiceImpl serializationService, Data key, Object value) {
-            super(serializationService, key, value);
-        }
-
-        @Override
-        public Object getValue() {
-            return super.getValue();
-        }
-
-        @Override
-        public Object getKey() {
-            return super.getKey();
+        DummyEntry(Comparable attribute) {
+            super(null, "1", "1", attribute);
         }
 
         @Override
         public Comparable getAttribute(String attributeName) throws QueryException {
-            return value;
+            return (Comparable) getValue();
         }
 
         @Override
         public AttributeType getAttributeType(String attributeName) {
-            return AttributeType.INTEGER;
-        }
-
-        @Override
-        public Data getKeyData() {
-            return super.getKeyData();
-        }
-
-        @Override
-        public long getCreationTime() {
-            return super.getCreationTime();
-        }
-
-        @Override
-        public long getLastAccessTime() {
-            return super.getLastAccessTime();
-        }
-
-        @Override
-        public Object setValue(Object value) {
-            return super.setValue(value);
+            return ReflectionHelper.getAttributeType(getValue().getClass());
         }
     }
 
     static MapEntry createEntry(final Object key, final Object value) {
-        return new MapEntry() {
-            public long getCost() {
-                return 0;
-            }
-
-            public long getCreationTime() {
-                return 0;
-            }
-
-            public long getExpirationTime() {
-                return 0;
-            }
-
-            public int getHits() {
-                return 0;
-            }
-
-            public long getLastAccessTime() {
-                return 0;
-            }
-
-            public long getLastStoredTime() {
-                return 0;
-            }
-
-            public long getLastUpdateTime() {
-                return 0;
-            }
-
-            public long getVersion() {
-                return 0;
-            }
-
-            public boolean isValid() {
-                return true;
-            }
-
-            public Object getKey() {
-                return key;
-            }
-
-            public Object getValue() {
-                return value;
-            }
-
-            public Object setValue(Object value) {
-                return value;
-            }
-        };
+        return new QueryEntry(null, key, key, value);
     }
 }

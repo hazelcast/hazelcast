@@ -19,9 +19,9 @@ package com.hazelcast.query.impl;
 import java.util.Set;
 
 public interface Index {
-    void removeIndex(QueryableEntry e);
+    void removeEntryIndex(QueryableEntry e);
 
-    void saveIndex(QueryableEntry e) throws QueryException;
+    void saveEntryIndex(QueryableEntry e) throws QueryException;
 
     Set<QueryableEntry> getRecords(Comparable[] values);
 

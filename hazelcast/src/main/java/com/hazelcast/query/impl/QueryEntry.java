@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.io.IOException;
 public class QueryEntry implements QueryableEntry {
     private static PortableExtractor extractor = new PortableExtractor();
     private final SerializationServiceImpl serializationService;
+    Object indexKey;
     Data key;
     Object keyObject;
     Object valueObject;
@@ -32,14 +33,22 @@ public class QueryEntry implements QueryableEntry {
 
     PortableReader reader = null;
 
-    public QueryEntry(SerializationServiceImpl serializationService, Data key, Object value) {
+    public QueryEntry(SerializationServiceImpl serializationService, Object key, Object indexKey, Object value) {
+        if (indexKey == null) throw new IllegalArgumentException("index key cannot be null");
         if (key == null) throw new IllegalArgumentException("key cannot be null");
         if (value == null) throw new IllegalArgumentException("value cannot be null");
-        if (serializationService == null) throw new IllegalArgumentException("serializationService cannot be null");
-        this.key = key;
+        this.indexKey = indexKey;
+        if (key instanceof Data) {
+            this.key = (Data) key;
+        } else {
+            keyObject = key;
+        }
         this.serializationService = serializationService;
-        if (value instanceof Data) valueData = (Data) value;
-        else valueObject = value;
+        if (value instanceof Data) {
+            valueData = (Data) value;
+        } else {
+            valueObject = value;
+        }
     }
 
     public Object getValue() {
@@ -63,6 +72,18 @@ public class QueryEntry implements QueryableEntry {
         return extractViaReflection(attributeName);
     }
 
+    Comparable extractViaReflection(String attributeName) {
+        try {
+            Object v = getValue();
+            if ("__key".equals(attributeName)) return (Comparable) getKey();
+            else if ("this".equals(attributeName)) return (Comparable) v;
+            ReflectionHelper reflectionHelper = new ReflectionHelper();
+            return (Comparable) reflectionHelper.createGetter(this, attributeName).getValue(v);
+        } catch (Exception e) {
+            throw new QueryException(e);
+        }
+    }
+
     public AttributeType getAttributeType(String attributeName) {
         if (valueData != null && valueData.isPortable()) {
             FieldDefinition fd = valueData.cd.get(attributeName);
@@ -73,11 +94,47 @@ public class QueryEntry implements QueryableEntry {
     }
 
     private AttributeType getAttributeTypeViaReflection(String attributeName) {
-        return null;
+        Class klass = null;
+        if ("__key".equals(attributeName)) {
+            klass = getKey().getClass();
+        } else {
+            Object value = getValue();
+            if ("this".equals(attributeName)) {
+                klass = value.getClass();
+            } else {
+                ReflectionHelper reflectionHelper = new ReflectionHelper();
+                klass = reflectionHelper.createGetter(this, attributeName).getReturnType();
+            }
+        }
+        return ReflectionHelper.getAttributeType(klass);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        QueryEntry that = (QueryEntry) o;
+        if (!indexKey.equals(that.indexKey)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return indexKey.hashCode();
     }
 
     public Data getKeyData() {
         return key;
+    }
+
+    public Data getValueData() {
+        if (valueData != null) return valueData;
+        valueData = serializationService.toData(valueObject);
+        return valueData;
+    }
+
+    public Object getIndexKey() {
+        return indexKey;
     }
 
     public long getCreationTime() {
@@ -90,11 +147,6 @@ public class QueryEntry implements QueryableEntry {
 
     public Object setValue(Object value) {
         throw new UnsupportedOperationException();
-    }
-
-    Comparable extractViaReflection(String attributeName) {
-        Object v = getValue();
-        return null;
     }
 
     PortableReader getOrCreatePortableReader() {

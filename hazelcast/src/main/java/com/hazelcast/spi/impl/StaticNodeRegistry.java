@@ -16,9 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.AbstractJoiner;
-import com.hazelcast.cluster.Joiner;
-import com.hazelcast.cluster.SplitBrainHandler;
+import com.hazelcast.cluster.*;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
@@ -110,7 +108,8 @@ public class StaticNodeRegistry {
                     if (nodeEngine.getNode().isActive()) {
                         nodeEngine.getExecutionService().execute("default", new Runnable() {
                             public void run() {
-                                nodeEngine.getClusterService().removeAddress(thisAddress);
+                                final ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+                                clusterService.removeAddress(thisAddress);
                             }
                         });
                     }

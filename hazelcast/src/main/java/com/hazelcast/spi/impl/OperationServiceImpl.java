@@ -146,7 +146,7 @@ final class OperationServiceImpl implements OperationService {
                         throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                                 op.getClass().getName(), op.getServiceName());
                     }
-                    PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
+                    PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
                     final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     final boolean validatesTarget = op.validatesTarget();
                     if (validatesTarget && !node.getThisAddress().equals(owner)) {
@@ -163,6 +163,10 @@ final class OperationServiceImpl implements OperationService {
                         keyLock.lock();
                     }
                 }
+            } else if (op instanceof MultiPartitionAwareOperation) {
+                final int[] partitionIds = ((MultiPartitionAwareOperation) op).getPartitionIds();
+                partitionLock = new MultiPartitionLock(partitionIds);
+                partitionLock.lock();
             }
             doRunOperation(op);
         } catch (Throwable e) {
@@ -273,7 +277,7 @@ final class OperationServiceImpl implements OperationService {
         if ((syncBackupCount + asyncBackupCount > 0) && (backupOp = backupAwareOp.getBackupOperation()) != null) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
-            final PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
+            final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             if (syncBackupCount > 0) {
                 syncBackups = new ArrayList<Future>(syncBackupCount);
                 for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
@@ -368,7 +372,7 @@ final class OperationServiceImpl implements OperationService {
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
             throws Exception {
-        final Map<Address, List<Integer>> memberPartitions = getMemberPartitionsMap();
+        final Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
@@ -381,7 +385,7 @@ final class OperationServiceImpl implements OperationService {
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
                                                          Address target) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(1);
-        memberPartitions.put(target, getMemberPartitions(target));
+        memberPartitions.put(target, nodeEngine.getPartitionService().getMemberPartitions(target));
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
@@ -397,7 +401,7 @@ final class OperationServiceImpl implements OperationService {
             Future future = inv.invoke();
             responses.put(address, future);
         }
-        final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionCount());
+        final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionService().getPartitionCount());
         for (Map.Entry<Address, Future> response : responses.entrySet()) {
             try {
                 PartitionResponse result = (PartitionResponse) nodeEngine.toObject(response.getValue().get());
@@ -424,7 +428,7 @@ final class OperationServiceImpl implements OperationService {
         }
         for (Integer failedPartition : failedPartitions) {
             Invocation inv = createInvocationBuilder(serviceName,
-                    operationFactory.createParallelOperation(), failedPartition).build();
+                    operationFactory.createOperation(), failedPartition).build();
             Future f = inv.invoke();
             partitionResults.put(failedPartition, f);
         }
@@ -436,66 +440,13 @@ final class OperationServiceImpl implements OperationService {
         return partitionResults;
     }
 
-    private Map<Address, List<Integer>> getMemberPartitionsMap() {
-        final int members = node.getClusterService().getSize();
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
-        for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
-            List<Integer> ownedPartitions = memberPartitions.get(owner);
-            if (ownedPartitions == null) {
-                ownedPartitions = new ArrayList<Integer>();
-                memberPartitions.put(owner, ownedPartitions);
-            }
-            ownedPartitions.add(i);
-        }
-        return memberPartitions;
-    }
-
-    private List<Integer> getMemberPartitions(Address target) {
-        List<Integer> ownedPartitions = new LinkedList<Integer>();
-        for (int i = 0; i < nodeEngine.getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
-            if (target.equals(owner)) {
-                ownedPartitions.add(i);
-            }
-        }
-        return ownedPartitions;
-    }
-
-    private Address getPartitionOwner(int partitionId) {
-        Address owner = node.partitionService.getPartitionOwner(partitionId);
-        // TODO: infinite while is not good. convert it to wait 1 minute
-        while (owner == null) { // partition assignment is not completed yet
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException ignored) {
-            }
-            owner = node.partitionService.getPartitionOwner(partitionId);
-        }
-        return owner;
-    }
-
-    @PrivateApi
-    void acquirePartitionReadLocks(List<Integer> partitions) {
-        for (Integer partition : partitions) {
-            partitionLocks[partition].readLock().lock();
-        }
-    }
-
-    @PrivateApi
-    void releasePartitionReadLocks(List<Integer> partitions) {
-        for (Integer partition : partitions) {
-            partitionLocks[partition].readLock().unlock();
-        }
-    }
-
     public void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException {
         op.setServiceName(serviceName);
         backupCount = Math.min(node.getClusterService().getSize() - 1, backupCount);
         if (backupCount > 0) {
             List<Future> backupOps = new ArrayList<Future>(backupCount);
-            PartitionInfo partitionInfo = nodeEngine.getPartitionInfo(partitionId);
+            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             for (int i = 0; i < backupCount; i++) {
                 int replicaIndex = i + 1;
                 Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
@@ -516,7 +467,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
-        Address target = nodeEngine.getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
+        Address target = nodeEngine.getPartitionService().getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
             logger.log(Level.WARNING, "No target available for partition: "
                     + partitionId + " and replica: " + replicaIndex);
@@ -603,6 +554,31 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
+    private class MultiPartitionLock implements SpinLock {
+
+        final int[] partitions;
+
+        private MultiPartitionLock(int[] partitions) {
+            this.partitions = partitions;
+        }
+
+        public void lock() {
+            for (int partition : partitions) {
+                partitionLocks[partition].readLock().lock();
+            }
+        }
+
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void unlock() {
+            for (int partition : partitions) {
+                partitionLocks[partition].readLock().unlock();
+            }
+        }
+    }
+
     private class RemoteOperationProcessor implements Runnable {
         private final Packet packet;
 
@@ -614,7 +590,7 @@ final class OperationServiceImpl implements OperationService {
             final Connection conn = packet.getConn();
             try {
                 final Address caller = conn.getEndPoint();
-                final Data data = packet.getValue();
+                final Data data = packet.getData();
                 final Operation op = (Operation) nodeEngine.toObject(data);
                 op.setNodeEngine(nodeEngine).setCaller(caller);
                 op.setConnection(conn);

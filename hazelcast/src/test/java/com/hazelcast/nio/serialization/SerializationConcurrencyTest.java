@@ -104,7 +104,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    private static class Address implements DataSerializable {
+    static class Address implements DataSerializable {
 
         private String street;
 
@@ -149,7 +149,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    private static class Person implements DataSerializable {
+    static class Person implements DataSerializable {
 
         private int age;
 
@@ -218,7 +218,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    private static class PortableAddress implements Portable {
+    static class PortableAddress implements Portable {
 
         private String street ;
 
@@ -267,7 +267,7 @@ public class SerializationConcurrencyTest {
         }
     }
 
-    private static class PortablePerson implements Portable {
+    static class PortablePerson implements Portable {
 
         private int age;
 

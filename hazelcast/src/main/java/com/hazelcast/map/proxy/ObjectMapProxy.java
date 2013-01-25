@@ -23,6 +23,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.ObjectFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -33,7 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K, V> {
 
@@ -227,10 +228,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         clearInternal();
     }
 
-    public void flush(boolean flushAll) {
-        flushInternal(flushAll);
-    }
-
     public Set<K> keySet() {
         Set<Data> dataSet = keySetInternal();
         HashSet<K> keySet = new HashSet<K>();
@@ -260,15 +257,30 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet(final Predicate predicate) {
-        return null;
+        Set<QueryableEntry> entries = valuesInternal(predicate);
+        Set<K> result = new HashSet<K>();
+        for (QueryableEntry entry : entries) {
+            result.add((K) entry.getKey());
+        }
+        return result;
     }
 
     public Set<Entry<K, V>> entrySet(final Predicate predicate) {
-        return null;
+        Set<QueryableEntry> entries = valuesInternal(predicate);
+        Set<Entry<K, V>> result = new HashSet<Entry<K, V>>();
+        for (QueryableEntry entry : entries) {
+            result.add(new AbstractMap.SimpleEntry<K,V>((K)entry.getKey(), (V)entry.getValue()));
+        }
+        return result;
     }
 
     public Collection<V> values(final Predicate predicate) {
-        return null;
+        Set<QueryableEntry> entries = valuesInternal(predicate);
+        Set<V> result = new HashSet<V>();
+        for (QueryableEntry entry : entries) {
+            result.add((V) entry.getValue());
+        }
+        return result;
     }
 
     public Set<K> localKeySet() {
@@ -289,7 +301,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
-        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId).build();
+        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();
         Object returnObj;

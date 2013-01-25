@@ -36,7 +36,8 @@
                 <xs:element ref="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="merge-policies" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="listeners" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="serialization" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="services" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="security" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
@@ -81,9 +82,9 @@
     <xs:element name="queue">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="queue-max-size"/>
-                <xs:element ref="queue-sync-backup-count"/>
-                <xs:element ref="queue-async-backup-count"/>
+                <xs:element ref="max-size" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="backup-count" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="async-backup-count" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="item-listeners" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
@@ -430,58 +431,16 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="queue-max-size">
-        <xs:annotation>
-            <xs:documentation>
-                Maximum size of the queue. When a JVM's local queue size reaches the maximum,
-                all put/offer operations will get blocked until the queue size of the JVM goes down below the maximum.
-                Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:short"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="queue-sync-backup-count">
-        <xs:annotation>
-            <xs:documentation>
-                Sync Backup Count
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:short"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="queue-async-backup-count">
-        <xs:annotation>
-            <xs:documentation>
-                Async Backup Count
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:short"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="backing-map-ref">
-        <xs:annotation>
-            <xs:documentation>
-                Name of the backing distributed map configuration.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
     <xs:element name="max-size" default="0">
         <xs:annotation>
             <xs:documentation>
-                Maximum size of the map. When max size is reached, map is evicted based on the policy defined.
+                Maximum size.
                 Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
             <xs:simpleContent>
-                <xs:extension base="xs:string">
+                <xs:extension base="xs:integer">
                     <xs:attribute name="policy" use="optional" default="cluster_wide_map_size"/>
                 </xs:extension>
             </xs:simpleContent>
@@ -519,13 +478,13 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="keep-alive-seconds" default="60">
-        <xs:simpleType>
-            <xs:restriction base="xs:int">
-                <xs:minInclusive value="0"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
+    <!--<xs:element name="keep-alive-seconds" default="60">-->
+        <!--<xs:simpleType>-->
+            <!--<xs:restriction base="xs:int">-->
+                <!--<xs:minInclusive value="0"/>-->
+            <!--</xs:restriction>-->
+        <!--</xs:simpleType>-->
+    <!--</xs:element>-->
     <xs:element name="join">
         <xs:complexType>
             <xs:sequence>
@@ -591,24 +550,14 @@
             <xs:enumeration value="hazelcast.max.no.heartbeat.seconds"/>
             <xs:enumeration value="hazelcast.initial.wait.seconds"/>
             <xs:enumeration value="hazelcast.restart.on.max.idle"/>
-            <xs:enumeration value="hazelcast.map.partition.count"/>
-            <xs:enumeration value="hazelcast.map.remove.delay.seconds"/>
-            <xs:enumeration value="hazelcast.map.cleanup.delay.seconds"/>
-            <xs:enumeration value="hazelcast.executor.query.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.event.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.migration.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.client.thread.count"/>
-            <xs:enumeration value="hazelcast.executor.store.thread.count"/>
             <xs:enumeration value="hazelcast.log.state"/>
             <xs:enumeration value="hazelcast.jmx"/>
             <xs:enumeration value="hazelcast.jmx.detailed"/>
             <xs:enumeration value="hazelcast.mancenter.enabled"/>
             <xs:enumeration value="hazelcast.memcache.enabled"/>
             <xs:enumeration value="hazelcast.rest.enabled"/>
-            <xs:enumeration value="hazelcast.map.load.chunk.size"/>
             <xs:enumeration value="hazelcast.in.thread.priority"/>
             <xs:enumeration value="hazelcast.out.thread.priority"/>
-            <xs:enumeration value="hazelcast.service.thread.priority"/>
             <xs:enumeration value="hazelcast.socket.receive.buffer.size"/>
             <xs:enumeration value="hazelcast.socket.send.buffer.size"/>
             <xs:enumeration value="hazelcast.socket.keep.alive"/>
@@ -616,17 +565,8 @@
             <xs:enumeration value="hazelcast.heartbeat.interval.seconds"/>
             <xs:enumeration value="hazelcast.icmp.enabled"/>
             <xs:enumeration value="hazelcast.initial.min.cluster.size"/>
-            <xs:enumeration value="hazelcast.mc.atomicnumber.excludes"/>
-            <xs:enumeration value="hazelcast.mc.countdownlatch.excludes"/>
-            <xs:enumeration value="hazelcast.mc.map.excludes"/>
-            <xs:enumeration value="hazelcast.mc.queue.excludes"/>
-            <xs:enumeration value="hazelcast.mc.semaphore.excludes"/>
-            <xs:enumeration value="hazelcast.mc.topic.excludes"/>
             <xs:enumeration value="hazelcast.version.check.enabled"/>
-            <xs:enumeration value="hazelcast.map.max.backup.count"/>
-            <xs:enumeration value="hazelcast.topic.flow.control.enabled"/>
             <xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
-            <xs:enumeration value="hazelcast.mc.max.visible.instance.count"/>
             <xs:enumeration value="hazelcast.logging.type"/>
         </xs:restriction>
     </xs:simpleType>
@@ -655,9 +595,9 @@
     <xs:element name="executor-service">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="core-pool-size"/>
+                <!--<xs:element ref="core-pool-size"/>-->
                 <xs:element ref="max-pool-size"/>
-                <xs:element ref="keep-alive-seconds"/>
+                <!--<xs:element ref="keep-alive-seconds"/>-->
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
                 <xs:simpleType>
@@ -699,13 +639,13 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="core-pool-size" default="16">
-        <xs:simpleType>
-            <xs:restriction base="xs:short">
-                <xs:minInclusive value="0"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
+    <!--<xs:element name="core-pool-size" default="16">-->
+        <!--<xs:simpleType>-->
+            <!--<xs:restriction base="xs:short">-->
+                <!--<xs:minInclusive value="0"/>-->
+            <!--</xs:restriction>-->
+        <!--</xs:simpleType>-->
+    <!--</xs:element>-->
     <xs:element name="backup-count" default="1">
         <xs:annotation>
             <xs:documentation>
@@ -887,6 +827,14 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="record-type" default="DATA">
+        <xs:simpleType>
+            <xs:restriction base="non-space-string">
+                <xs:enumeration value="DATA"/>
+                <xs:enumeration value="OBJECT"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
     <xs:element name="value-collection-type">
         <xs:simpleType>
             <xs:restriction base="non-space-string">
@@ -1010,14 +958,25 @@
     </xs:element>
     <xs:element name="cache-value" type="xs:boolean" />
     <xs:element name="read-backup-data" type="xs:boolean" />
-    <xs:element name="serializers">
+    <xs:element name="serialization">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="serializer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="portable-version" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="portable-factory-class" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-    <xs:element name="serializer">
+    <xs:element name="portable-version" type="xs:integer" />
+    <xs:element name="portable-factory-class" type="xs:string" />
+    <xs:element name="serializers">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="type-serializer" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="type-serializer">
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:string">
@@ -1027,6 +986,39 @@
             </xs:simpleContent>
         </xs:complexType>
     </xs:element>
+    <xs:element name="services">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="map-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="queue-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="topic-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="collection-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="atomicnumber-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="countdownlatch-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="semaphore-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="service" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="enable-defaults" type="xs:boolean" default="true" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="service">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="name" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="class-name" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" type="xs:boolean" default="true" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="map-service" />
+    <xs:element name="queue-service" />
+    <xs:element name="topic-service" />
+    <xs:element name="collection-service" />
+    <xs:element name="atomicnumber-service" />
+    <xs:element name="countdownlatch-service" />
+    <xs:element name="semaphore-service" />
+
     <xs:element name="security">
         <xs:complexType>
             <xs:sequence>
@@ -1097,11 +1089,11 @@
                 <xs:element ref="id-generator-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="executor-service-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="transaction-permission" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="listener-permisson" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="listener-permission" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-    <xs:complexType name="base-permisson">
+    <xs:complexType name="base-permission">
         <xs:sequence>
             <xs:element ref="endpoints" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
@@ -1113,9 +1105,9 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="instance-permisson">
+    <xs:complexType name="instance-permission">
         <xs:complexContent>
-            <xs:extension base="base-permisson">
+            <xs:extension base="base-permission">
                 <xs:sequence>
                     <xs:element ref="actions" minOccurs="1" maxOccurs="1"/>
                 </xs:sequence>
@@ -1129,10 +1121,10 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:element name="listener-permisson">
+    <xs:element name="listener-permission">
         <xs:complexType>
             <xs:complexContent>
-                <xs:extension base="base-permisson">
+                <xs:extension base="base-permission">
                     <xs:attribute name="name" use="required">
                         <xs:simpleType>
                             <xs:restriction base="xs:string">
@@ -1203,18 +1195,18 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="map-permission" type="instance-permisson"/>
-    <xs:element name="queue-permission" type="instance-permisson"/>
-    <xs:element name="multimap-permission" type="instance-permisson"/>
-    <xs:element name="topic-permission" type="instance-permisson"/>
-    <xs:element name="list-permission" type="instance-permisson"/>
-    <xs:element name="set-permission" type="instance-permisson"/>
-    <xs:element name="lock-permission" type="instance-permisson"/>
-    <xs:element name="atomic-number-permission" type="instance-permisson"/>
-    <xs:element name="countdown-latch-permission" type="instance-permisson"/>
-    <xs:element name="semaphore-permission" type="instance-permisson"/>
-    <xs:element name="id-generator-permission" type="instance-permisson"/>
-    <xs:element name="executor-service-permission" type="instance-permisson"/>
-    <xs:element name="transaction-permission" type="base-permisson"/>
-    <xs:element name="all-permissions" type="base-permisson"/>
+    <xs:element name="map-permission" type="instance-permission"/>
+    <xs:element name="queue-permission" type="instance-permission"/>
+    <xs:element name="multimap-permission" type="instance-permission"/>
+    <xs:element name="topic-permission" type="instance-permission"/>
+    <xs:element name="list-permission" type="instance-permission"/>
+    <xs:element name="set-permission" type="instance-permission"/>
+    <xs:element name="lock-permission" type="instance-permission"/>
+    <xs:element name="atomic-number-permission" type="instance-permission"/>
+    <xs:element name="countdown-latch-permission" type="instance-permission"/>
+    <xs:element name="semaphore-permission" type="instance-permission"/>
+    <xs:element name="id-generator-permission" type="instance-permission"/>
+    <xs:element name="executor-service-permission" type="instance-permission"/>
+    <xs:element name="transaction-permission" type="base-permission"/>
+    <xs:element name="all-permissions" type="base-permission"/>
 </xs:schema>

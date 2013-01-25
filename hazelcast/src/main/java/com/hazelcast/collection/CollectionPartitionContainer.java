@@ -54,4 +54,19 @@ public class CollectionPartitionContainer {
         }
         return max;
     }
+
+    void destroyCollection(CollectionProxyId collectionProxyId) {
+        final CollectionContainer container = containerMap.remove(collectionProxyId);
+        if (container != null) {
+            container.clear();
+        }
+    }
+
+    void destroy() {
+        for (CollectionContainer container : containerMap.values()) {
+            container.clear();
+        }
+        containerMap.clear();
+    }
+
 }

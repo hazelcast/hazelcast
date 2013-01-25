@@ -16,13 +16,14 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.RuntimeInterruptedException;
-import com.hazelcast.util.ExecutorThreadFactory;
-import com.hazelcast.util.PoolExecutorThreadFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.ExecutorThreadFactory;
+import com.hazelcast.util.PoolExecutorThreadFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +35,7 @@ import java.util.logging.Level;
  */
 public final class ExecutionServiceImpl implements ExecutionService {
 
-    private static final int DEFAULT_THREAD_SIZE = 8;
+    private static final int DEFAULT_THREAD_SIZE = ExecutorConfig.DEFAULT_MAX_POOL_SIZE;
 
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
@@ -61,11 +62,15 @@ public final class ExecutionServiceImpl implements ExecutionService {
                         node.getThreadPoolNamePrefix("hz:scheduled"), classLoader));
 
         // default executors
-        // TODO: configure using ExecutorService config!
         register("hz:system", 30);
         register("hz:client", 40);
         register("hz:scheduled", 10);
         register("hz:async-service", 20);
+
+        final Collection<ExecutorConfig> executorConfigs = nodeEngine.getConfig().getExecutorConfigs();
+        for (ExecutorConfig executorConfig : executorConfigs) {
+            register(executorConfig.getName(), executorConfig.getMaxPoolSize());
+        }
     }
 
     private void register(String name, int maxThreadSize) {

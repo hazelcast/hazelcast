@@ -403,6 +403,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         return null;
     }
 
+    public void cleanUpNearCache() {
+    }
+
     public Set<K> keySet() {
         return keySet(null);
     }

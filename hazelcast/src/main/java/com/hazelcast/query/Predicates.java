@@ -330,6 +330,21 @@ public final class Predicates {
             }
             return true;
         }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append("(");
+            int size = predicates.length;
+            for (int i = 0; i < size; i++) {
+                if (i > 0) {
+                    sb.append(" AND ");
+                }
+                sb.append(predicates[i]);
+            }
+            sb.append(")");
+            return sb.toString();
+        }
     }
 
     public static class OrPredicate implements IndexAwarePredicate {
@@ -373,6 +388,21 @@ public final class Predicates {
                 if (predicate.apply(mapEntry)) return true;
             }
             return false;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuffer sb = new StringBuffer();
+            sb.append("(");
+            int size = predicates.length;
+            for (int i = 0; i < size; i++) {
+                if (i > 0) {
+                    sb.append(" OR ");
+                }
+                sb.append(predicates[i]);
+            }
+            sb.append(")");
+            return sb.toString();
         }
     }
 
@@ -532,7 +562,8 @@ public final class Predicates {
 
         protected Comparable readAttribute(MapEntry entry) {
             QueryableEntry queryableEntry = (QueryableEntry) entry;
-            return convert(entry, queryableEntry.getAttribute(attribute));
+            Comparable attValue = queryableEntry.getAttribute(attribute);
+            return convert(entry, attValue);
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {

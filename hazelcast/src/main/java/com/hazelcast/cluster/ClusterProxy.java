@@ -19,7 +19,6 @@ package com.hazelcast.cluster;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.nio.Address;
 
 import java.util.Set;
 
@@ -28,9 +27,9 @@ import java.util.Set;
  */
 public class ClusterProxy implements Cluster {
 
-    private final ClusterService clusterService;
+    private final ClusterServiceImpl clusterService;
 
-    public ClusterProxy(final ClusterService clusterService) {this.clusterService = clusterService;}
+    public ClusterProxy(final ClusterServiceImpl clusterService) {this.clusterService = clusterService;}
 
     public Member getLocalMember() {
         return clusterService.getLocalMember();
@@ -38,10 +37,6 @@ public class ClusterProxy implements Cluster {
 
     public Set<Member> getMembers() {
         return clusterService.getMembers();
-    }
-
-    public Member getMember(Address address) {
-        return clusterService.getMember(address);
     }
 
     public long getClusterTime() {

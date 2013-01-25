@@ -24,25 +24,25 @@ import java.util.Map;
 /**
  * @mdogan 9/18/12
  */
-public class Services {
+public class ServicesConfig {
 
     private boolean enableDefaults = true;
 
     private final Map<String, ServiceConfig> services = new HashMap<String, ServiceConfig>();
 
-    public Services() {
+    public ServicesConfig() {
     }
 
     public boolean isEnableDefaults() {
         return enableDefaults;
     }
 
-    public Services setEnableDefaults(final boolean enableDefaults) {
+    public ServicesConfig setEnableDefaults(final boolean enableDefaults) {
         this.enableDefaults = enableDefaults;
         return this;
     }
 
-    public Services clear() {
+    public ServicesConfig clear() {
         services.clear();
         return this;
     }
@@ -51,7 +51,7 @@ public class Services {
         return Collections.unmodifiableCollection(services.values());
     }
 
-    public Services setServiceConfigs(Collection<ServiceConfig> services) {
+    public ServicesConfig setServiceConfigs(Collection<ServiceConfig> services) {
         clear();
         for (ServiceConfig service : services) {
             addServiceConfig(service);
@@ -59,7 +59,7 @@ public class Services {
         return this;
     }
 
-    public Services addServiceConfig(ServiceConfig service) {
+    public ServicesConfig addServiceConfig(ServiceConfig service) {
         services.put(service.getName(), service);
         return this;
     }

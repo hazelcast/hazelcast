@@ -91,7 +91,7 @@ abstract class InvocationImpl implements Future, Invocation {
         }
     }
 
-    protected abstract Address getTarget();
+    public abstract Address getTarget();
 
     public final Future invoke() {
         if (invokeCount > 0) {
@@ -362,7 +362,7 @@ abstract class InvocationImpl implements Future, Invocation {
     }
 
     public PartitionInfo getPartitionInfo() {
-        return nodeEngine.getPartitionInfo(partitionId);
+        return nodeEngine.getPartitionService().getPartitionInfo(partitionId);
     }
 
     public int getReplicaIndex() {

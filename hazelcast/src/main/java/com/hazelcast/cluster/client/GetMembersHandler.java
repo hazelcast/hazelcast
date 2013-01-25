@@ -32,7 +32,7 @@ public class GetMembersHandler extends ClientCommandHandler {
     }
 
     public Protocol processCall(Node node, Protocol protocol) {
-        Collection<Member> collection = node.nodeEngine.getCluster().getMembers();
+        Collection<Member> collection = node.nodeEngine.getClusterService().getMembers();
         String[] args = new String[collection.size()];
         int i = 0;
         for (Member member : collection) {

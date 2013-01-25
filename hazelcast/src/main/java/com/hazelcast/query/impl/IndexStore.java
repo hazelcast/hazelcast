@@ -16,8 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.Set;
 
 public interface IndexStore {
@@ -29,7 +27,7 @@ public interface IndexStore {
 
     void getRecords(MultiResultSet results, Set<Comparable> values);
 
-    void removeIndex(Comparable oldValue, Data key);
+    void removeIndex(Comparable oldValue, Object indexKey);
 
     void newIndex(Comparable newValue, QueryableEntry entry);
 }

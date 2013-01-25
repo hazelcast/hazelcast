@@ -36,7 +36,7 @@ import java.util.Properties;
  */
 public class TopicService implements ManagedService, RemoteService, EventPublishingService {
 
-    public static final String NAME = "hz:impl:topicService";
+    public static final String SERVICE_NAME = "hz:impl:topicService";
 
     private NodeEngine nodeEngine;
 
@@ -49,7 +49,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public String getServiceName() {
-        return NAME;
+        return SERVICE_NAME;
     }
 
     public DistributedObject createDistributedObject(Object objectId) {

@@ -27,7 +27,11 @@ public enum AttributeType {
     STRING(FieldDefinition.TYPE_UTF, TypeConverters.STRING_CONVERTER),
     FLOAT(FieldDefinition.TYPE_FLOAT, TypeConverters.FLOAT_CONVERTER),
     CHAR(FieldDefinition.TYPE_CHAR, TypeConverters.CHAR_CONVERTER),
-    INTEGER(FieldDefinition.TYPE_INT, TypeConverters.INTEGER_CONVERTER);
+    INTEGER(FieldDefinition.TYPE_INT, TypeConverters.INTEGER_CONVERTER),
+    SQL_TIMESTAMP(18, TypeConverters.SQL_TIMESTAMP_CONVERTER),
+    SQL_DATE(18, TypeConverters.SQL_DATE_CONVERTER),
+    DATE(19, TypeConverters.DATE_CONVERTER),
+    ENUM(20, TypeConverters.ENUM_CONVERTER);
 
     private static final AttributeType[] types = new AttributeType[50];
 
