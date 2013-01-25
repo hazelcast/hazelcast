@@ -44,7 +44,7 @@
     </para>
 
 
-    <programlisting language="xml"><![CDATA[<![CDATA[<![CDATA[
+    <programlisting language="xml"><![CDATA[
 <hazelcast>
     <wan-replication name="my-wan-cluster">
         <target-cluster group-name="tokyo" group-password="tokyo-pass">
@@ -70,7 +70,7 @@
 </network>
 ...
 </hazelcast>
-]]>]]>]]></programlisting>
+]]></programlisting>
 
 
     <para>

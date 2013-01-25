@@ -64,7 +64,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
 
-    Collection createNew(CollectionProxyId proxyId) {
+    <V> Collection<V> createNew(CollectionProxyId proxyId) {
         CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(SERVICE_NAME, proxyId);
         return proxy.createNew();
     }
