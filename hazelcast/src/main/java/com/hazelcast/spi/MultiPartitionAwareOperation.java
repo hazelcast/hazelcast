@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.spi;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.nio.serialization.Data;
+/**
+ * @mdogan 1/25/13
+ */
+public interface MultiPartitionAwareOperation {
 
-public interface QueryableEntry extends MapEntry {
+    int[] getPartitionIds();
 
-    Comparable getAttribute(String attributeName) throws QueryException;
-
-    AttributeType getAttributeType(String attributeName);
-
-    Data getKeyData();
-
-    Data getValueData();
-
-    Object getIndexKey();
 }

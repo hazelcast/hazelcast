@@ -53,25 +53,18 @@ public class CollectionMigrationOperation extends AbstractOperation {
             CollectionProxyId proxyId = entry.getKey();
             proxyId.writeData(out);
 
-            Map<Data, Object> objects = entry.getValue()[0];
-            out.writeInt(objects.size());
-            for (Map.Entry<Data, Object> objectEntry : objects.entrySet()) {
-                Data key = objectEntry.getKey();
+            Map<Data, Collection<CollectionRecord>> collections = entry.getValue()[0];
+            out.writeInt(collections.size());
+            for (Map.Entry<Data, Collection<CollectionRecord>> collectionEntry : collections.entrySet()) {
+                Data key = collectionEntry.getKey();
                 key.writeData(out);
-                Object object = objectEntry.getValue();
-                if (object instanceof Collection) {
-                    out.writeBoolean(true);
-                    Collection coll = (Collection) object;
-                    out.writeInt(coll.size());
-                    for (Object obj : coll) {
-                        out.writeObject(obj);
-                    }
-                } else {
-                    out.writeBoolean(false);
-                    out.writeObject(object);
+                Collection<CollectionRecord> coll = collectionEntry.getValue();
+                out.writeInt(coll.size());
+                for (CollectionRecord record : coll) {
+                    out.writeLong(record.getRecordId());
+                    out.writeObject(record.getObject());
                 }
             }
-
 
             Map<Data, LockInfo> locks = entry.getValue()[1];
             out.writeInt(locks.size());
@@ -90,23 +83,20 @@ public class CollectionMigrationOperation extends AbstractOperation {
         for (int i = 0; i < mapSize; i++) {
             CollectionProxyId proxyId = new CollectionProxyId();
             proxyId.readData(in);
-            int objectSize = in.readInt();
-            Map<Data, Object> objects = new HashMap<Data, Object>();
-            for (int j = 0; j < objectSize; j++) {
+            int collectionSize = in.readInt();
+            Map<Data, Collection<CollectionRecord>> collections = new HashMap<Data, Collection<CollectionRecord>>();
+            for (int j = 0; j < collectionSize; j++) {
                 Data key = new Data();
                 key.readData(in);
-                boolean isCollection = in.readBoolean();
-                if (isCollection) {
-                    int collSize = in.readInt();
-                    Collection coll = new ArrayList(collSize);
-                    for (int k = 0; k < collSize; k++) {
-                        Object obj = in.readObject();
-                        coll.add(obj);
-                    }
-                    objects.put(key, coll);
-                } else {
-                    objects.put(key, in.readObject());
+                int collSize = in.readInt();
+                Collection<CollectionRecord> coll = new ArrayList(collSize);
+                for (int k = 0; k < collSize; k++) {
+                    long recordId = in.readLong();
+                    Object obj = in.readObject();
+                    coll.add(new CollectionRecord(recordId, obj));
                 }
+                collections.put(key, coll);
+
             }
             int lockSize = in.readInt();
             Map<Data, LockInfo> locks = new HashMap<Data, LockInfo>(lockSize);
@@ -117,7 +107,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                 lockInfo.readData(in);
                 locks.put(key, lockInfo);
             }
-            map.put(proxyId, new Map[]{objects, locks});
+            map.put(proxyId, new Map[]{collections, locks});
         }
     }
 

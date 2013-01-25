@@ -24,10 +24,10 @@ package com.hazelcast.queue;
  */
 public class SizeOperation extends QueueOperation {
 
-    public SizeOperation(){
+    public SizeOperation() {
     }
 
-    public SizeOperation(String name){
+    public SizeOperation(String name) {
         super(name);
     }
 

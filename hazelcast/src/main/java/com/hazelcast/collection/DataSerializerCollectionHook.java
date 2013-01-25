@@ -25,6 +25,7 @@ import java.util.Map;
 /**
  * @ali 1/7/13
  */
+//TODO register
 public class DataSerializerCollectionHook implements DataSerializerHook {
 
     static final int COLLECTION_OPERATION = 400;

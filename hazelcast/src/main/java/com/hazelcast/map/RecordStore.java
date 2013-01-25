@@ -78,7 +78,7 @@ public interface RecordStore {
 
     Collection<Data> valuesData();
 
-    MapInfo getMapInfo();
+    MapContainer getMapContainer();
 
     Set<Data> getRemovedDelayedKeys();
 

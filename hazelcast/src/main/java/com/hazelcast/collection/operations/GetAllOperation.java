@@ -35,11 +35,6 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
 
     public void run() throws Exception {
         Collection collection = getCollection();
-        if (isBinary()) {
-            response = new CollectionResponse(collection);
-        } else {
-            response = new CollectionResponse(collection, getNodeEngine());
-
-        }
+        response = new CollectionResponse(collection, getNodeEngine());
     }
 }

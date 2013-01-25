@@ -55,10 +55,6 @@ public class QueueService implements ManagedService, MigrationAwareService,
         this.nodeEngine = nodeEngine;
     }
 
-    public void init(NodeEngine nodeEngine, Properties properties) {
-        registerClientOperationHandlers();
-    }
-
     public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
@@ -74,6 +70,10 @@ public class QueueService implements ManagedService, MigrationAwareService,
 
     public void addContainer(String name, QueueContainer container) {
         containerMap.put(name, container);
+    }
+
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        registerClientOperationHandlers();
     }
 
     private void registerClientOperationHandlers() {
@@ -104,8 +104,8 @@ public class QueueService implements ManagedService, MigrationAwareService,
     }
 
     public void commitMigration(MigrationServiceEvent event) {
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
-            if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK){
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
                 clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
             }
         }
@@ -121,7 +121,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         int max = 0;
         for (QueueContainer container : containerMap.values()) {
             int c = container.getConfig().getTotalBackupCount();
-            max = Math.max(max,  c);
+            max = Math.max(max, c);
         }
         return max;
     }
@@ -130,7 +130,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
             QueueContainer container = iterator.next().getValue();
-            if (container.getPartitionId() == partitionId && (copyBack ==-1 || container.getConfig().getTotalBackupCount() < copyBack)) {
+            if (container.getPartitionId() == partitionId && (copyBack == -1 || container.getConfig().getTotalBackupCount() < copyBack)) {
                 iterator.remove();
             }
         }
@@ -139,10 +139,9 @@ public class QueueService implements ManagedService, MigrationAwareService,
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
         ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, nodeEngine.toObject(event.data),
                 nodeEngine.getClusterService().getMember(event.caller));
-        if (event.eventType.equals(ItemEventType.ADDED)){
+        if (event.eventType.equals(ItemEventType.ADDED)) {
             listener.itemAdded(itemEvent);
-        }
-        else {
+        } else {
             listener.itemRemoved(itemEvent);
         }
     }
@@ -165,10 +164,10 @@ public class QueueService implements ManagedService, MigrationAwareService,
         nodeEngine.getEventService().deregisterListeners(SERVICE_NAME, name);
     }
 
-    public void addItemListener(String name, ItemListener listener, boolean includeValue){
+    public void addItemListener(String name, ItemListener listener, boolean includeValue) {
         ListenerKey listenerKey = new ListenerKey(listener, name);
         String id = eventRegistrations.putIfAbsent(listenerKey, "tempId");
-        if (id != null){
+        if (id != null) {
             return;
         }
         EventService eventService = nodeEngine.getEventService();
@@ -176,10 +175,10 @@ public class QueueService implements ManagedService, MigrationAwareService,
         eventRegistrations.put(listenerKey, registration.getId());
     }
 
-    public void removeItemListener(String name, ItemListener listener){
+    public void removeItemListener(String name, ItemListener listener) {
         ListenerKey listenerKey = new ListenerKey(listener, name);
         String id = eventRegistrations.remove(listenerKey);
-        if (id != null){
+        if (id != null) {
             EventService eventService = nodeEngine.getEventService();
             eventService.deregisterListener(SERVICE_NAME, name, id);
         }

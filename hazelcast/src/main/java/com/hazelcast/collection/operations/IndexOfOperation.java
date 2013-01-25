@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,10 +45,10 @@ public class IndexOfOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        List list = getCollection();
+        List<CollectionRecord> list = (List<CollectionRecord>) getCollection();
         if (list != null) {
-            Object obj = isBinary() ? value : toObject(value);
-            response = last ? list.lastIndexOf(obj) : list.indexOf(obj);
+            CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
+            response = last ? list.lastIndexOf(record) : list.indexOf(record);
         } else {
             response = -1;
         }

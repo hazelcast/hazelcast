@@ -158,7 +158,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
         List<Data> list = listInternal();
         int size = list.size();
         if (ts.length < size) {
-            ts = (T[])java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
+            ts = (T[]) java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
         }
         for (int i = 0; i < size; i++) {
             ts[i] = nodeEngine.toObject(list.get(i));

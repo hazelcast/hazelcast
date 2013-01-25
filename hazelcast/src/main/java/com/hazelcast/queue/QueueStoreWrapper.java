@@ -160,7 +160,7 @@ public class QueueStoreWrapper {
 
     private int parseInt(String name, int defaultValue) {
         String val = storeConfig.getProperty(name);
-        if (val == null){
+        if (val == null) {
             return defaultValue;
         }
         try {

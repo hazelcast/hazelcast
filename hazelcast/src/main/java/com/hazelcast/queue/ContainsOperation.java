@@ -35,7 +35,7 @@ public class ContainsOperation extends QueueOperation {
     public ContainsOperation() {
     }
 
-    public ContainsOperation(String name, Collection<Data> dataList){
+    public ContainsOperation(String name, Collection<Data> dataList) {
         super(name);
         this.dataList = dataList;
     }
@@ -47,7 +47,7 @@ public class ContainsOperation extends QueueOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataList.size());
-        for (Data data: dataList){
+        for (Data data : dataList) {
             data.writeData(out);
         }
     }
@@ -56,7 +56,7 @@ public class ContainsOperation extends QueueOperation {
         super.readInternal(in);
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             dataList.add(IOUtil.readData(in));
         }
     }

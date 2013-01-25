@@ -1,6 +1,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,18 +27,15 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        Collection coll = getCollection();
+        Collection<CollectionRecord> coll = getCollection();
         if (coll != null) {
-            if (isBinary()) {
-                response = coll.containsAll(dataSet);
-            } else {
-                Set set = new HashSet(dataSet.size());
-                for (Data data : dataSet) {
-                    set.add(toObject(data));
-                }
-                response = coll.containsAll(set);
+            Collection<CollectionRecord> recordSet = new HashSet<CollectionRecord>(dataSet.size());
+            for (Data data : dataSet) {
+                recordSet.add(new CollectionRecord(isBinary() ? data : toObject(data)));
             }
+            response = coll.containsAll(recordSet);
         }
+        response = false;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

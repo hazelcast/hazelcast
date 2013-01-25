@@ -21,7 +21,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 /**
  * @ali 12/11/12
  */
-public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation{
+public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation {
 
     protected QueueBackupAwareOperation() {
     }
@@ -37,7 +37,6 @@ public abstract class QueueBackupAwareOperation extends QueueOperation implement
     public int getAsyncBackupCount() {
         return getContainer().getConfig().getAsyncBackupCount();
     }
-
 
 
 }

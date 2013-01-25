@@ -182,9 +182,9 @@ public class ConfigXmlGenerator {
         final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs();
         for (ExecutorConfig ex : exCfgs) {
             xml.append("<executor-service name=\"").append(ex.getName()).append("\">");
-            xml.append("<core-pool-size>").append(ex.getCorePoolSize()).append("</core-pool-size>");
+//            xml.append("<core-pool-size>").append(ex.getCorePoolSize()).append("</core-pool-size>");
             xml.append("<max-pool-size>").append(ex.getMaxPoolSize()).append("</max-pool-size>");
-            xml.append("<keep-alive-seconds>").append(ex.getKeepAliveSeconds()).append("</keep-alive-seconds>");
+//            xml.append("<keep-alive-seconds>").append(ex.getKeepAliveSeconds()).append("</keep-alive-seconds>");
             xml.append("</executor-service>");
         }
         final Collection<QueueConfig> qCfgs = config.getQConfigs().values();

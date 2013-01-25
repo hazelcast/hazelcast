@@ -19,56 +19,53 @@ package com.hazelcast.map;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 
-public class AddInterceptorOperation extends AbstractOperation {
+public class InvalidateNearCacheOperation extends AbstractOperation {
 
     MapService mapService;
-    String id;
-    MapInterceptor mapInterceptor;
+    Data key;
     String mapName;
 
 
-    public AddInterceptorOperation(String id, MapInterceptor mapInterceptor, String mapName) {
-        this.id = id;
-        this.mapInterceptor = mapInterceptor;
+    public InvalidateNearCacheOperation(String mapName, Data key) {
+        this.key = key;
         this.mapName = mapName;
     }
 
-    public AddInterceptorOperation() {
+    public InvalidateNearCacheOperation() {
     }
 
     public void run() {
-        mapService = getService();
-        mapService.getMapContainer(mapName).addInterceptor(mapInterceptor, id);
+        mapService = (MapService) getService();
+        mapService.invalidateNearCache(mapName, key);
     }
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapName = in.readUTF();
-        id = in.readUTF();
-        mapInterceptor = IOUtil.readNullableObject(in);
+        key = in.readObject();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(mapName);
-        out.writeUTF(id);
-        IOUtil.writeNullableObject(out, mapInterceptor);
+        out.writeObject(key);
     }
 
     @Override
     public String toString() {
-        return "AddInterceptorOperation{}";
+        return "InvalidateNearCacheOperation{}";
     }
 
 }

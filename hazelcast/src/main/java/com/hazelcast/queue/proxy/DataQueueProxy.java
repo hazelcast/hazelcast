@@ -69,7 +69,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public Data poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        return (Data)pollInternal(timeUnit.toMillis(timeout));
+        return (Data) pollInternal(timeUnit.toMillis(timeout));
     }
 
     public int remainingCapacity() {
@@ -77,12 +77,12 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public boolean remove(Object o) {
-        return removeInternal((Data)o);
+        return removeInternal((Data) o);
     }
 
     public boolean contains(Object o) {
         List<Data> dataSet = new ArrayList<Data>(1);
-        dataSet.add((Data)o);
+        dataSet.add((Data) o);
         return containsInternal(dataSet);
     }
 
@@ -113,15 +113,15 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public boolean containsAll(Collection<?> objects) {
-        return containsInternal((Collection<Data>)objects);
+        return containsInternal((Collection<Data>) objects);
     }
 
     public boolean addAll(Collection<? extends Data> datas) {
-        return addAllInternal((Collection<Data>)datas);
+        return addAllInternal((Collection<Data>) datas);
     }
 
     public boolean removeAll(Collection<?> objects) {
-        return compareAndRemove((Collection<Data>)objects, false);
+        return compareAndRemove((Collection<Data>) objects, false);
     }
 
     public void addItemListener(ItemListener<Data> listener, boolean includeValue) {
@@ -158,7 +158,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public Data peek() {
-        return (Data)peekInternal();
+        return (Data) peekInternal();
     }
 
     public <T> T[] toArray(T[] ts) {
@@ -167,6 +167,6 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public boolean retainAll(Collection<?> objects) {
-        return compareAndRemove((Collection<Data>)objects, true);
+        return compareAndRemove((Collection<Data>) objects, true);
     }
 }

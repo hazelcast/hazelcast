@@ -25,6 +25,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @ali 1/2/13
@@ -39,9 +40,11 @@ public class CollectionContainer {
 
     final MultiMapConfig config;
 
-    final ConcurrentMap<Data, Object> objects = new ConcurrentHashMap<Data, Object>(1000);
+    final ConcurrentMap<Data, Collection<CollectionRecord>> collections = new ConcurrentHashMap<Data, Collection<CollectionRecord>>(1000);
 
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
+
+    final AtomicLong idGen = new AtomicLong();
 
     public CollectionContainer(CollectionProxyId proxyId, CollectionService service) {
         this.proxyId = proxyId;
@@ -92,57 +95,57 @@ public class CollectionContainer {
         return result;
     }
 
-    public <T> T getOrCreateObject(Data dataKey) {
-        Object obj = objects.get(dataKey);
-        if (obj == null) {
-            return (T) putNewObject(dataKey);
+    public long nextId() {
+        return idGen.getAndIncrement();
+    }
+
+    public Collection<CollectionRecord> getOrCreateCollection(Data dataKey) {
+        Collection<CollectionRecord> coll = collections.get(dataKey);
+        if (coll == null) {
+            coll = service.createNew(proxyId);
+            collections.put(dataKey, coll);
         }
-        return (T) obj;
+        return coll;
     }
 
-    public <T> T getObject(Data dataKey) {
-        return (T) objects.get(dataKey);
+    public Collection<CollectionRecord> getCollection(Data dataKey) {
+        return collections.get(dataKey);
     }
 
-    public <T> T removeObject(Data dataKey) {
-        return (T) objects.remove(dataKey);
-    }
-
-    public Object putNewObject(Data dataKey) {
-        Object obj = service.createNew(proxyId);
-        objects.put(dataKey, obj);
-        return obj;
+    public Collection<CollectionRecord> removeCollection(Data dataKey) {
+        return collections.remove(dataKey);
     }
 
     public Set<Data> keySet() {
-        Set<Data> keySet = objects.keySet();
+        Set<Data> keySet = collections.keySet();
         Set<Data> keys = new HashSet<Data>(keySet.size());
         keys.addAll(keySet);
         return keys;
     }
 
-    public Collection values() {
-        List valueList = new LinkedList();
-        for (Object obj : objects.values()) {
-            valueList.addAll((Collection) obj);
+    public Collection<CollectionRecord> values() {
+        Collection<CollectionRecord> valueCollection = new LinkedList<CollectionRecord>();
+        for (Collection<CollectionRecord> coll : collections.values()) {
+            valueCollection.addAll(coll);
         }
-        return valueList;
+        return valueCollection;
     }
 
     public boolean containsKey(Data key) {
-        return objects.containsKey(key);
+        return collections.containsKey(key);
     }
 
     public boolean containsEntry(boolean binary, Data key, Data value) {
-        Collection coll = (Collection) objects.get(key);
+        Collection<CollectionRecord> coll = collections.get(key);
         if (coll == null) {
             return false;
         }
-        return coll.contains(binary ? value : getNodeEngine().toObject(value));
+        CollectionRecord record = createRecord(binary, value);
+        return coll.contains(record);
     }
 
     public boolean containsValue(boolean binary, Data value) {
-        for (Data key : objects.keySet()) {
+        for (Data key : collections.keySet()) {
             if (containsEntry(binary, key, value)) {
                 return true;
             }
@@ -150,53 +153,49 @@ public class CollectionContainer {
         return false;
     }
 
-    public Map<Data, Collection> copyObjects() {
-        Map<Data, Collection> map = new HashMap<Data, Collection>(objects.size());
-        for (Map.Entry<Data, Object> entry : objects.entrySet()) {
+    public Map<Data, Collection<CollectionRecord>> copyCollections() {
+        Map<Data, Collection<CollectionRecord>> map = new HashMap<Data, Collection<CollectionRecord>>(collections.size());
+        for (Map.Entry<Data, Collection<CollectionRecord>> entry : collections.entrySet()) {
             Data key = entry.getKey();
-            Collection col = copyCollection((Collection) entry.getValue());
+            Collection<CollectionRecord> col = copyCollection(entry.getValue());
             map.put(key, col);
         }
         return map;
     }
 
-    private Collection copyCollection(Collection coll) {
-        Collection copy = new ArrayList(coll.size());
+    private Collection<CollectionRecord> copyCollection(Collection<CollectionRecord> coll) {
+        Collection<CollectionRecord> copy = new ArrayList<CollectionRecord>(coll.size());
         copy.addAll(coll);
         return copy;
     }
 
     public int size() {
         int size = 0;
-        for (Object obj : objects.values()) {
-            size += ((Collection) obj).size();
+        for (Collection<CollectionRecord> coll : collections.values()) {
+            size += coll.size();
         }
         return size;
     }
 
-    public void clearObjects() {
-        Map<Data, Object> temp = new HashMap<Data, Object>(locks.size());
+    public void clearCollections() {
+        Map<Data, Collection<CollectionRecord>> temp = new HashMap<Data, Collection<CollectionRecord>>(locks.size());
         for (Data key : locks.keySet()) {
-            temp.put(key, objects.get(key));
+            temp.put(key, collections.get(key));
         }
-        objects.clear();
-        objects.putAll(temp);
+        collections.clear();
+        collections.putAll(temp);
     }
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
 
-    public Object getProxyId() {
-        return proxyId;
-    }
-
     public MultiMapConfig getConfig() {
         return config;
     }
 
-    public ConcurrentMap<Data, Object> getObjects() {
-        return objects; //TODO for testing only
+    public ConcurrentMap<Data, Collection<CollectionRecord>> getCollections() {
+        return collections; //TODO for testing only
     }
 
     public ConcurrentMap<Data, LockInfo> getLocks() {
@@ -204,8 +203,16 @@ public class CollectionContainer {
     }
 
     public void clear() {
-        objects.clear();
+        collections.clear();
         locks.clear();
+    }
+
+    private CollectionRecord createRecord(boolean binary, Data data) {
+        return new CollectionRecord(binary ? data : nodeEngine.toObject(data));
+    }
+
+    private CollectionRecord createRecord(boolean binary, Data data, long recordId) {
+        return new CollectionRecord(recordId, binary ? data : nodeEngine.toObject(data));
     }
 
 }

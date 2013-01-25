@@ -23,8 +23,8 @@ import com.hazelcast.core.ItemListener;
  */
 public class ListenerKey {
 
-    private ItemListener listener;
-    private String name;
+    private final ItemListener listener;
+    private final String name;
 
     public ListenerKey(ItemListener listener, String name) {
         this.listener = listener;

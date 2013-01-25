@@ -23,10 +23,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
  */
 public interface MultiPartitionOperationFactory extends DataSerializable {
 
-    boolean shouldRunParallel();
-
-    Operation createSequentialOperation();
-
-    Operation createParallelOperation();
+    Operation createOperation();
 
 }

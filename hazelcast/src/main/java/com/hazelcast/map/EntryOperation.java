@@ -24,7 +24,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
-import sun.misc.IOUtils;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -90,11 +89,11 @@ public class EntryOperation extends AbstractNamedKeyBasedOperation implements Ba
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapInfo(name).getAsyncBackupCount();
+        return mapService.getMapContainer(name).getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapInfo(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
 }

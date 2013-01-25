@@ -41,7 +41,7 @@ public class RemoveInterceptorOperation extends AbstractOperation {
 
     public void run() {
         mapService = (MapService) getService();
-        mapService.getMapInfo(mapName).removeInterceptor(id);
+        mapService.getMapContainer(mapName).removeInterceptor(id);
     }
 
     @Override

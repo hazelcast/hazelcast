@@ -43,7 +43,7 @@ public class QueueIterator<E> implements Iterator<E> {
 
     public E next() {
         Data data = iter.next();
-        if (binary){
+        if (binary) {
             return (E) data;
         }
         return (E) serializationService.toObject(data);

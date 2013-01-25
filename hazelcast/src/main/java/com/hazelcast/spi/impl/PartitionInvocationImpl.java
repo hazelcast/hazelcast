@@ -26,7 +26,7 @@ public class PartitionInvocationImpl extends InvocationImpl {
         super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout);
     }
 
-    protected Address getTarget() {
+    public Address getTarget() {
         return getPartitionInfo().getReplicaAddress(replicaIndex);
     }
 }
