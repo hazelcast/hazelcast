@@ -16,12 +16,12 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
@@ -32,25 +32,29 @@ import java.util.*;
  */
 public class EntrySetResponse implements DataSerializable {
 
-    private Map<Data, Collection> map;
-
-    private transient SerializationService serializationService;
+    private Map<Data, Collection<Data>> map;
 
     public EntrySetResponse() {
     }
 
-    public EntrySetResponse(Map<Data, Collection> map, SerializationService serializationService) {
-        this.map = map;
-        this.serializationService = serializationService;
+    public EntrySetResponse(Map<Data, Collection<CollectionRecord>> map, NodeEngine nodeEngine) {
+        this.map = new HashMap<Data, Collection<Data>>(map.size());
+        for (Map.Entry<Data, Collection<CollectionRecord>> entry : map.entrySet()) {
+            Collection<CollectionRecord> records = entry.getValue();
+            Collection<Data> coll = new ArrayList<Data>(records.size());
+            for (CollectionRecord record: records){
+                coll.add(nodeEngine.toData(record.getObject()));
+            }
+            this.map.put(entry.getKey(), coll);
+        }
     }
 
     public Set<Map.Entry<Data, Data>> getDataEntrySet(NodeEngine nodeEngine) {
         Set<Map.Entry<Data, Data>> entrySet = new HashSet<Map.Entry<Data, Data>>();
-        for (Map.Entry<Data, Collection> entry : map.entrySet()) {
+        for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
             Data key = entry.getKey();
-            Collection coll = entry.getValue();
-            for (Object obj : coll) {
-                Data data = nodeEngine.toData(obj);
+            Collection<Data> coll = entry.getValue();
+            for (Data data : coll) {
                 entrySet.add(new AbstractMap.SimpleEntry<Data, Data>(key, data));
             }
         }
@@ -59,11 +63,11 @@ public class EntrySetResponse implements DataSerializable {
 
     public <K, V> Set<Map.Entry<K, V>> getObjectEntrySet(NodeEngine nodeEngine) {
         Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
-        for (Map.Entry<Data, Collection> entry : map.entrySet()) {
+        for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
             K key = nodeEngine.toObject(entry.getKey());
-            Collection coll = entry.getValue();
-            for (Object obj : coll) {
-                V val = nodeEngine.toObject(obj);
+            Collection<Data> coll = entry.getValue();
+            for (Data data : coll) {
+                V val = nodeEngine.toObject(data);
                 entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, val));
             }
         }
@@ -72,12 +76,11 @@ public class EntrySetResponse implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
-        for (Map.Entry<Data, Collection> entry : map.entrySet()) {
+        for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
             entry.getKey().writeData(out);
-            Collection coll = entry.getValue();
+            Collection<Data> coll = entry.getValue();
             out.writeInt(coll.size());
-            for (Object obj : coll) {
-                Data data = serializationService.toData(obj);
+            for (Data data : coll) {
                 data.writeData(out);
             }
         }
@@ -85,7 +88,7 @@ public class EntrySetResponse implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        map = new HashMap<Data, Collection>(size);
+        map = new HashMap<Data, Collection<Data>>(size);
         for (int i = 0; i < size; i++) {
             Data key = IOUtil.readData(in);
             int collSize = in.readInt();

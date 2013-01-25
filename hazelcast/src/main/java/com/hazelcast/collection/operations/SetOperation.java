@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -46,16 +47,13 @@ public class SetOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        Object obj = isBinary() ? value : toObject(value);
-        List list = getCollection();
-        if (list != null) {
-            try {
-                response = list.set(index, obj);
-                shouldBackup = true;
-
-            } catch (IndexOutOfBoundsException e) {
-                response = e;
-            }
+        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
+        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollection();
+        try {
+            response = list.set(index, record);
+            shouldBackup = true;
+        } catch (IndexOutOfBoundsException e) {
+            response = e;
         }
     }
 

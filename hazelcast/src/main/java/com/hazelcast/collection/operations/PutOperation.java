@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -47,14 +48,13 @@ public class PutOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        Object obj = isBinary() ? value : toObject(value);
+        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
+        Collection<CollectionRecord> coll = getOrCreateCollection();
         if (index == -1) {
-            Collection coll = getOrCreateCollection();
-            response = coll.add(obj);
+            response = coll.add(record);
         } else {
-            List list = getOrCreateCollection();
             try {
-                list.add(index, obj);
+                ((List<CollectionRecord>)coll).add(index,record);
                 response = true;
             } catch (IndexOutOfBoundsException e) {
                 response = e;

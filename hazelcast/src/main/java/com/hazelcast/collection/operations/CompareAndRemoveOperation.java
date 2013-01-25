@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,9 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * @ali 1/21/13
@@ -34,6 +33,7 @@ import java.util.List;
 public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
 
     List<Data> dataList;
+    transient Set<Long> idSet;
 
     boolean retain;
 
@@ -47,21 +47,21 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        Collection coll = getOrCreateCollection();
-        List list = dataList;
-        if (!isBinary()){
-            list = new ArrayList(dataList.size());
-            for (Data data: dataList){
-                list.add(toObject(data));
+        Collection<CollectionRecord> coll = getOrCreateCollection();
+        idSet = new HashSet<Long>();
+        for (Data data: dataList){
+            Object obj = isBinary() ? data : toObject(data);
+            Iterator<CollectionRecord> iter = coll.iterator();
+            while (iter.hasNext()){
+                CollectionRecord record = iter.next();
+                boolean equals = obj.equals(record.getObject());
+                if ((equals && !retain) || (!equals && retain)){
+                    idSet.add(record.getRecordId());
+                    iter.remove();
+                }
             }
         }
-
-        if (retain){
-            response = coll.retainAll(list);
-        }
-        else {
-            response = coll.removeAll(list);
-        }
+        response = !idSet.isEmpty();
     }
 
     public boolean shouldBackup() {
@@ -69,7 +69,7 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new CompareAndRemoveBackupOperation(name, proxyType, dataKey, dataList, retain);
+        return new CompareAndRemoveBackupOperation(name, proxyType, dataKey, idSet);
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {

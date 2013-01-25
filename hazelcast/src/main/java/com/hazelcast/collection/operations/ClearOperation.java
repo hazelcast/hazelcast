@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -33,7 +34,7 @@ import java.util.Map;
 public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionLevelOperation {
 
 
-    transient Map<Data, Collection> objects;
+    transient Map<Data, Collection<CollectionRecord>> objects;
 
     public ClearOperation() {
     }
@@ -45,23 +46,27 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
     public void beforeRun() throws Exception {
         if (hasListener()) {
             CollectionContainer container = getOrCreateContainer();
-            objects = container.copyObjects();
+            objects = container.copyCollections();
         }
     }
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        container.clearObjects();
+        container.clearCollections();
         response = true;
     }
 
     public void afterRun() throws Exception {
         if (!objects.isEmpty()) {
-            for (Map.Entry<Data, Collection> entry : objects.entrySet()) {
+            CollectionContainer container = getOrCreateContainer();
+            for (Map.Entry<Data, Collection<CollectionRecord>> entry : objects.entrySet()) {
                 Data key = entry.getKey();
-                Collection coll = entry.getValue();
-                for (Object obj : coll) {
-                    publishEvent(EntryEventType.REMOVED, key, obj);
+                if(container.isLocked(key)){
+                    continue;//key is locked so not removed
+                }
+                Collection<CollectionRecord> coll = entry.getValue();
+                for (CollectionRecord record : coll) {
+                    publishEvent(EntryEventType.REMOVED, key, record.getObject());
                 }
             }
             objects.clear();

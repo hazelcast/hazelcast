@@ -17,12 +17,14 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.KeyBasedOperation;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @ali 1/16/13
@@ -43,16 +45,16 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
         return dataKey == null ? 0 : dataKey.getPartitionHash();
     }
 
-    public <T> T getOrCreateCollection() {
-        return getOrCreateCollection(dataKey);
+    public Collection<CollectionRecord> getOrCreateCollection() {
+        return getOrCreateContainer().getOrCreateCollection(dataKey);
     }
 
-    public <T> T getCollection() {
-        return getCollection(dataKey);
+    public Collection<CollectionRecord> getCollection() {
+        return getOrCreateContainer().getCollection(dataKey);
     }
 
-    public <T> T removeCollection() {
-        return removeCollection(dataKey);
+    public Collection<CollectionRecord> removeCollection() {
+        return getOrCreateContainer().removeCollection(dataKey);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

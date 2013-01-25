@@ -67,7 +67,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     public void destroy() {
     }
 
-    Object createNew(CollectionProxyId proxyId) {
+    Collection createNew(CollectionProxyId proxyId) {
         CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(COLLECTION_SERVICE_NAME, proxyId);
         return proxy.createNew();
     }
@@ -185,7 +185,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             if (container.config.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(proxyId, new Map[]{container.objects, container.locks});
+            map.put(proxyId, new Map[]{container.collections, container.locks});
         }
         if (map.isEmpty()) {
             return null;
@@ -197,18 +197,8 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         for (Map.Entry<CollectionProxyId, Map[]> entry : map.entrySet()) {
             CollectionProxyId proxyId = entry.getKey();
             CollectionContainer container = getOrCreateCollectionContainer(partitionId, proxyId);
-            Map<Data, Object> objects = entry.getValue()[0];
-            for (Map.Entry<Data, Object> objectEntry : objects.entrySet()) {
-                Data key = objectEntry.getKey();
-                Object object = objectEntry.getValue();
-                if (object instanceof Collection) {
-                    Collection coll = (Collection) createNew(proxyId);
-                    coll.addAll((Collection) object);
-                    container.objects.put(key, coll);
-                } else {
-                    container.objects.put(key, object);
-                }
-            }
+            Map<Data, Collection<CollectionRecord>> collections = entry.getValue()[0];
+            container.collections.putAll(collections);
             Map<Data, LockInfo> locks = entry.getValue()[1];
             container.locks.putAll(locks);
         }

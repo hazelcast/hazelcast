@@ -173,12 +173,12 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
             for (Map.Entry<CollectionProxyId, CollectionContainer> entry : multiMaps.entrySet()) {
                 System.out.println("\tname: " + entry.getKey());
                 CollectionContainer container = entry.getValue();
-                Map<Data, Object> map = container.getObjects();
-                for (Map.Entry<Data, Object> en : map.entrySet()) {
+                Map<Data, Collection<CollectionRecord>> map = container.getCollections();
+                for (Map.Entry<Data, Collection<CollectionRecord>> en : map.entrySet()) {
                     System.out.println("\t\tkey: " + nodeEngine.toObject(en.getKey()));
-                    Collection col = (Collection) en.getValue();
-                    for (Object o : col) {
-                        System.out.println("\t\t\tval: " + nodeEngine.toObject(o));
+                    Collection<CollectionRecord> col = en.getValue();
+                    for (CollectionRecord o : col) {
+                        System.out.println("\t\t\tval: " + nodeEngine.toObject(o.getObject()) + ", id: " + o.getRecordId());
                     }
                 }
                 ConcurrentMap<Data, LockInfo> locks = container.getLocks();

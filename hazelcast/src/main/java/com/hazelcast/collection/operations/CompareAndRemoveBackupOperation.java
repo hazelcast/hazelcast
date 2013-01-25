@@ -17,72 +17,60 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * @ali 1/21/13
  */
 public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
-    List<Data> dataList;
+    Set<Long> idSet;
 
-    boolean retain;
 
     public CompareAndRemoveBackupOperation() {
     }
 
-    public CompareAndRemoveBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, List<Data> dataList, boolean retain) {
+    public CompareAndRemoveBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, Set<Long> idSet) {
         super(name, proxyType, dataKey);
-        this.dataList = dataList;
-        this.retain = retain;
+        this.idSet = idSet;
     }
 
     public void run() throws Exception {
-        Collection coll = getOrCreateCollection();
-        List list = dataList;
-        if (!isBinary()){
-            list = new ArrayList(dataList.size());
-            for (Data data: dataList){
-                list.add(toObject(data));
+        Collection<CollectionRecord> coll = getOrCreateCollection();
+        Iterator<CollectionRecord> iter = coll.iterator();
+        while (iter.hasNext()){
+            CollectionRecord record = iter.next();
+            if (idSet.contains(record.getRecordId())){
+                iter.remove();
             }
         }
-
-        if (retain){
-            coll.retainAll(list);
-        }
-        else {
-            coll.removeAll(list);
-        }
-
         response = true;
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(retain);
-        out.writeInt(dataList.size());
-        for (Data data : dataList) {
-            data.writeData(out);
+        out.writeInt(idSet.size());
+        for (Long id : idSet) {
+            out.writeLong(id);
         }
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        retain = in.readBoolean();
         int size = in.readInt();
-        dataList = new ArrayList<Data>(size);
+        idSet = new HashSet<Long>(size);
         for (int i = 0; i < size; i++) {
-            Data data = IOUtil.readData(in);
-            dataList.add(data);
+            idSet.add(in.readLong());
         }
     }
 }

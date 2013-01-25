@@ -34,7 +34,7 @@ public class ClearBackupOperation extends CollectionOperation implements BackupO
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        container.clearObjects();
+        container.clearCollections();
         response = true;
     }
 
