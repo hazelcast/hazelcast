@@ -17,7 +17,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.query.impl.Predicates;
 
 import java.util.ArrayList;
 import java.util.List;

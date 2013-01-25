@@ -17,6 +17,7 @@
 package com.hazelcast.map.test;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
@@ -108,7 +109,7 @@ public class SimpleLocalMapTest {
 
         StaticNodeFactory factory = new StaticNodeFactory(instanceCount);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setRecordType("DATA");
+        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.DATA);
         for (int i = 0; i < instanceCount; i++) {
             SimpleLocalMapTest test = new SimpleLocalMapTest(factory.newInstance(cfg), threadCount, entryCount, valueSize,
                     getPercentage, putPercentage, load);

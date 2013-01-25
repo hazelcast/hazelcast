@@ -16,18 +16,23 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.MapService;
+
 /**
  * @mdogan 9/18/12
  */
-public class MapServiceConfig extends ServiceConfig {
-
-    public final static String SERVICE_NAME = "hz:impl:mapService";
+public final class MapServiceConfig extends DefaultServiceConfig {
 
     public MapServiceConfig() {
     }
 
     @Override
     public String getName() {
-        return SERVICE_NAME;
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getClassName() {
+        return MapService.class.getName();
     }
 }

@@ -33,21 +33,18 @@ public class ObjectLockProxy implements ILock {
 
     final NodeEngine nodeEngine;
 
-    final String name;
+    final Object key;
 
-    final IMap lockMap;
+    final IMap<Object, Object> lockMap;
 
-    final Object lockObject;
-
-    public ObjectLockProxy(NodeEngine nodeEngine, String name, IMap lockMap) {
+    public ObjectLockProxy(NodeEngine nodeEngine, Object key, IMap<Object, Object> lockMap) {
         this.nodeEngine = nodeEngine;
-        this.name = name;
+        this.key = key;
         this.lockMap = lockMap;
-        this.lockObject = new Object();
     }
 
     public Object getLockObject() {
-        return lockObject;
+        return key;
     }
 
     public LocalLockStats getLocalLockStats() {
@@ -55,27 +52,26 @@ public class ObjectLockProxy implements ILock {
     }
 
     public boolean isLocked() {
-        return lockMap.isLocked(name);
+        return lockMap.isLocked(key);
     }
 
     public void forceUnlock() {
-        lockMap.forceUnlock(name);
+        lockMap.forceUnlock(key);
     }
 
     public Object getId() {
-        return name;//TODO
+        return key;
     }
 
     public String getName() {
-        return name;
+        return String.valueOf(key);
     }
 
     public void destroy() {
-
     }
 
     public void lock() {
-        lockMap.lock(name);
+        lockMap.lock(key);
     }
 
     public void lockInterruptibly() throws InterruptedException {
@@ -83,15 +79,15 @@ public class ObjectLockProxy implements ILock {
     }
 
     public boolean tryLock() {
-        return lockMap.tryLock(name);
+        return lockMap.tryLock(key);
     }
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        return lockMap.tryLock(name, time, unit);
+        return lockMap.tryLock(key, time, unit);
     }
 
     public void unlock() {
-        lockMap.unlock(name);
+        lockMap.unlock(key);
     }
 
     public Condition newCondition() {

@@ -23,7 +23,7 @@ public class MapWaitKey extends AbstractWaitNotifyKey {
     private String operation;
 
     public MapWaitKey(String mapName, Object key, String operation) {
-        super(MapService.MAP_SERVICE_NAME, mapName);
+        super(MapService.SERVICE_NAME, mapName);
         this.key = key;
         this.operation = operation;
     }

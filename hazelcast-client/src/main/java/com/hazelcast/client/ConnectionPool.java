@@ -41,7 +41,7 @@ public class ConnectionPool {
         this.addresses.addAll(config.getAddressList());
         for (InetSocketAddress address : addresses) {
             try {
-                Connection initialConnection = new Connection(address, 0);
+                Connection initialConnection = new Connection(address, 0, null);
                 connectionManager.bindConnection(initialConnection);
                 allConnectionsQ.offer(initialConnection);
                 System.out.println("Client " + client);
@@ -55,12 +55,12 @@ public class ConnectionPool {
                     if (address.equals(isa))
 //                        pool.offer(initialConnection);
                     allConnectionsQ.offer(initialConnection);
-                    while (pool.size() < POOL_SIZE) {
-                        Connection connection = new Connection(isa, 0);
-                        connectionManager.bindConnection(connection);
-                        pool.offer(connection);
-                        allConnectionsQ.offer(connection);
-                    }
+//                    while (allConnectionsQ.size() < POOL_SIZE) {
+//                        Connection connection = new Connection(isa, 0);
+//                        connectionManager.bindConnection(connection);
+//                        pool.offer(connection);
+//                        allConnectionsQ.offer(connection);
+//                    }
                 }
                 break;
             } catch (IOException e) {

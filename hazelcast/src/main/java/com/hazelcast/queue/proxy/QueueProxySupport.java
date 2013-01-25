@@ -43,7 +43,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
         super(nodeEngine);
         this.name = name;
         this.queueService = queueService;
-        this.partitionId = nodeEngine.getPartitionId(nodeEngine.toData(name));
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
         this.config = nodeEngine.getConfig().getQueueConfig(name);
     }
 
@@ -119,7 +119,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
 
     private <T> T invoke(QueueOperation operation) {
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.QUEUE_SERVICE_NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
@@ -129,7 +129,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
 
     private Object invokeData(QueueOperation operation) {
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.QUEUE_SERVICE_NAME, operation, getPartitionId()).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
@@ -138,7 +138,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
     }
 
     public final String getServiceName() {
-        return QueueService.QUEUE_SERVICE_NAME;
+        return QueueService.SERVICE_NAME;
     }
 
     public final Object getId() {

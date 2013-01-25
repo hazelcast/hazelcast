@@ -53,14 +53,14 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     public void run() {
         if (isValid()) {
-            final ClusterService clusterService = getService();
+            final ClusterServiceImpl clusterService = getService();
             clusterService.setMasterTime(masterTime);
             clusterService.updateMembers(memberInfos);
         }
     }
 
     protected boolean isValid() {
-        final ClusterService clusterService = getService();
+        final ClusterServiceImpl clusterService = getService();
         final Connection conn = getConnection();
         final Address masterAddress = conn != null ? conn.getEndPoint() : null;
         return conn == null ||  // which means this is a local call.

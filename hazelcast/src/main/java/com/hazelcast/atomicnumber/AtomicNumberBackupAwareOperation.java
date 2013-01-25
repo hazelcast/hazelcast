@@ -45,7 +45,7 @@ public abstract class AtomicNumberBackupAwareOperation extends AtomicNumberBaseO
     }
 
     public int getKeyHash() {
-        String key = AtomicNumberService.NAME + getName();
+        String key = AtomicNumberService.SERVICE_NAME + getName();
         return key.hashCode();
     }
 }

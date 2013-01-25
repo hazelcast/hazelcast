@@ -65,7 +65,7 @@ public class FinalizeMigrationOperation extends AbstractOperation
                         "Error while finalizing migration -> " + event, e);
             }
         }
-        PartitionService partitionService = getService();
+        PartitionServiceImpl partitionService = getService();
         MigrationInfo migrationInfo = partitionService.removeActiveMigration(getPartitionId());
 
         if (success) {

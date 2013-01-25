@@ -55,21 +55,21 @@ public class TopicProxy<E> extends AbstractDistributedObject implements ITopic<E
 
     public void publish(E message) {
         TopicEvent topicEvent = new TopicEvent(name, nodeEngine.toData(message));
-        eventService.publishEvent(TopicService.NAME, eventService.getRegistrations(TopicService.NAME, name), topicEvent);
+        eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
     }
 
     public void addMessageListener(MessageListener<E> listener) {
-        EventRegistration eventRegistration = eventService.registerListener(TopicService.NAME, name, listener);
+        EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
         String currentId = registeredIds.put(listener, eventRegistration.getId());
         if (currentId != null) {
-            eventService.deregisterListener(TopicService.NAME, name, currentId);
+            eventService.deregisterListener(TopicService.SERVICE_NAME, name, currentId);
         }
     }
 
     public void removeMessageListener(MessageListener<E> listener) {
         String id = registeredIds.remove(listener);
         if (id != null) {
-            eventService.deregisterListener(TopicService.NAME, name, id);
+            eventService.deregisterListener(TopicService.SERVICE_NAME, name, id);
         }
     }
 
@@ -82,7 +82,7 @@ public class TopicProxy<E> extends AbstractDistributedObject implements ITopic<E
     }
 
     public String getServiceName() {
-        return TopicService.NAME;
+        return TopicService.SERVICE_NAME;
     }
 }
 

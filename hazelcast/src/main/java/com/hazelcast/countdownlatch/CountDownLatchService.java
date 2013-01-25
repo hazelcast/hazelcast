@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 1/10/13
  */
-public class CountDownLatchService implements ManagedService, RemoteService, MembershipAwareService, MigrationAwareService {
+public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService {
 
     public final static String SERVICE_NAME = "hz:impl:countDownLatchService";
 
@@ -82,12 +82,6 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mem
         return latch != null && latch.getCount() > 0;
     }
 
-    public void memberAdded(MembershipServiceEvent event) {
-    }
-
-    public void memberRemoved(MembershipServiceEvent event) {
-    }
-
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
     }
@@ -118,7 +112,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mem
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
         final Collection<CountDownLatchInfo> data = new LinkedList<CountDownLatchInfo>();
         for (Map.Entry<String, CountDownLatchInfo> latchEntry : latches.entrySet()) {
-            if (nodeEngine.getPartitionId(latchEntry.getKey()) == event.getPartitionId()) {
+            if (nodeEngine.getPartitionService().getPartitionId(latchEntry.getKey()) == event.getPartitionId()) {
                 data.add(latchEntry.getValue());
             }
         }
@@ -141,7 +135,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mem
     private void clearPartition(int partitionId) {
         final Iterator<String> iter = latches.keySet().iterator();
         while (iter.hasNext()) {
-            if (nodeEngine.getPartitionId(iter.next()) == partitionId) {
+            if (nodeEngine.getPartitionService().getPartitionId(iter.next()) == partitionId) {
                 iter.remove();
             }
         }

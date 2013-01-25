@@ -22,7 +22,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.map.MapService.MAP_SERVICE_NAME;
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class MapRecordTask implements Runnable {
 
@@ -39,7 +39,7 @@ public class MapRecordTask implements Runnable {
 
     public void run() {
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MAP_SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             Future invoke = invocation.invoke();
             invoke.get();

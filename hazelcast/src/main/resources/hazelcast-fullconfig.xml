@@ -186,13 +186,10 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size-per-jvm>0</max-size-per-jvm>
+        <max-size>0</max-size>
 
-        <!--
-            Name of the map configuration that will be used for the backing distributed
-            map for this queue.
-        -->
-        <backing-map-ref>default</backing-map-ref>
+        <backup-count>0</backup-count>
+        <async-backup-count>0</async-backup-count>
 
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
@@ -338,11 +335,33 @@
         <listener>com.hazelcast.examples.MigrationListener</listener>
     </listeners>
 
-    <serializers>
-        <serializer global="true">com.hazelcast.examples.GlobalSerializerFactory</serializer>
-        <serializer global="false" type-class="com.hazelcast.examples.DummyType">
-            com.hazelcast.examples.SerializerFactory</serializer>
-    </serializers>
+    <serialization>
+        <portable-version>0</portable-version>
+        <portable-factory-class>com.hazelcast.examples.PortableFactory</portable-factory-class>
+        <serializers>
+            <type-serializer global="true">com.hazelcast.examples.GlobalSerializerFactory</type-serializer>
+            <type-serializer global="false" type-class="com.hazelcast.examples.DummyType">
+                com.hazelcast.examples.SerializerFactory</type-serializer>
+        </serializers>
+    </serialization>
+
+    <services enable-defaults="false">
+        <map-service />
+        <queue-service />
+        <topic-service />
+        <collection-service />
+        <atomicnumber-service />
+        <countdownlatch-service />
+        <semaphore-service />
+        <service enabled="true">
+            <name>custom-service</name>
+            <class-name>com.hazelcast.examples.MyService</class-name>
+            <properties>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
+            </properties>
+        </service>
+    </services>
 
     <security enabled="false">
         <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
@@ -411,7 +430,7 @@
                 </actions>
             </queue-permission>
             <transaction-permission/>
-            <listener-permisson name="instance"/>
+            <listener-permission name="instance"/>
         </client-permissions>
     </security>
 

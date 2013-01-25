@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.TypeSerializer;
 
-public class SerializerConfig {
+public class TypeSerializerConfig {
 
     private String className;
 
@@ -30,7 +30,7 @@ public class SerializerConfig {
 
     boolean global = false;
 
-    public SerializerConfig() {
+    public TypeSerializerConfig() {
         super();
     }
 
@@ -38,7 +38,7 @@ public class SerializerConfig {
         return className;
     }
 
-    public SerializerConfig setClassName(final String className) {
+    public TypeSerializerConfig setClassName(final String className) {
         this.className = className;
         return this;
     }
@@ -47,7 +47,7 @@ public class SerializerConfig {
         return global;
     }
 
-    public SerializerConfig setGlobal(final boolean global) {
+    public TypeSerializerConfig setGlobal(final boolean global) {
         this.global = global;
         return this;
     }
@@ -56,7 +56,7 @@ public class SerializerConfig {
         return implementation;
     }
 
-    public SerializerConfig setImplementation(final TypeSerializer implementation) {
+    public TypeSerializerConfig setImplementation(final TypeSerializer implementation) {
         this.implementation = implementation;
         return this;
     }
@@ -65,7 +65,7 @@ public class SerializerConfig {
         return typeClass;
     }
 
-    public SerializerConfig setTypeClass(final Class typeClass) {
+    public TypeSerializerConfig setTypeClass(final Class typeClass) {
         this.typeClass = typeClass;
         return this;
     }
@@ -74,7 +74,7 @@ public class SerializerConfig {
         return typeClassName;
     }
 
-    public SerializerConfig setTypeClassName(final String typeClassName) {
+    public TypeSerializerConfig setTypeClassName(final String typeClassName) {
         this.typeClassName = typeClassName;
         return this;
     }

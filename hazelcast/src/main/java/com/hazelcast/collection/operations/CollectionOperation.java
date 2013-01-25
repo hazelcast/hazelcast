@@ -54,7 +54,7 @@ public abstract class CollectionOperation extends AbstractNamedOperation impleme
     }
 
     public String getServiceName() {
-        return CollectionService.COLLECTION_SERVICE_NAME;
+        return CollectionService.SERVICE_NAME;
     }
 
     public boolean hasListener() {
@@ -66,13 +66,13 @@ public abstract class CollectionOperation extends AbstractNamedOperation impleme
     public void publishEvent(EntryEventType eventType, Data key, Object value) {
         NodeEngine engine = getNodeEngine();
         EventService eventService = engine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.COLLECTION_SERVICE_NAME, name);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.SERVICE_NAME, name);
         for (EventRegistration registration : registrations) {
             CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
             if (filter.getKey() != null && filter.getKey().equals(key)) {
                 Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
                 CollectionEvent event = new CollectionEvent(name, key, dataValue, eventType, engine.getThisAddress());
-                eventService.publishEvent(CollectionService.COLLECTION_SERVICE_NAME, registration, event);
+                eventService.publishEvent(CollectionService.SERVICE_NAME, registration, event);
             }
         }
     }

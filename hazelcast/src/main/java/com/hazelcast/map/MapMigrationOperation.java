@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @mdogan 7/24/12
@@ -92,7 +90,7 @@ public class MapMigrationOperation extends AbstractOperation {
     }
 
     public String getServiceName() {
-        return MapService.MAP_SERVICE_NAME;
+        return MapService.SERVICE_NAME;
     }
 
     protected void readInternal(final ObjectDataInput in) throws IOException {

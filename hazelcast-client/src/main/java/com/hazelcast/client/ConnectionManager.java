@@ -283,7 +283,7 @@ public class ConnectionManager implements MembershipListener {
 
     protected Connection createNextConnection() {
         InetSocketAddress address = clusterMembers.get(0);
-        return new Connection(address, connectionIdGenerator.incrementAndGet());
+        return new Connection(address, connectionIdGenerator.incrementAndGet(), client.getSerializationService());
     }
 
     public void memberAdded(MembershipEvent membershipEvent) {

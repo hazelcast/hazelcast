@@ -16,9 +16,12 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.TypeSerializerConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,6 +58,38 @@ public final class SerializationServiceImpl implements SerializationService {
     private final PortableSerializer portableSerializer;
     private final ManagedContext managedContext;
     private final SerializationContext serializationContext;
+
+    public SerializationServiceImpl(SerializationConfig config, ManagedContext managedContext) throws Exception {
+        this(config.getPortableVersion(), createPortableFactory(config), managedContext);
+
+        final Collection<TypeSerializerConfig> typeSerializers = config.getTypeSerializers();
+        for (TypeSerializerConfig typeSerializerConfig : typeSerializers) {
+            TypeSerializer serializer = typeSerializerConfig.getImplementation();
+            if (serializer == null) {
+                serializer = (TypeSerializer) ClassLoaderUtil.newInstance(typeSerializerConfig.getClassName());
+            }
+            if (typeSerializerConfig.isGlobal()) {
+                registerFallback(serializer);
+            } else {
+                Class typeClass = typeSerializerConfig.getTypeClass();
+                if (typeClass == null) {
+                    typeClass = ClassLoaderUtil.loadClass(typeSerializerConfig.getTypeClassName());
+                }
+                register(serializer, typeClass);
+            }
+        }
+    }
+
+    private static PortableFactory createPortableFactory(SerializationConfig config) throws Exception {
+        final PortableFactory portableFactory = config.getPortableFactory();
+        if (portableFactory == null) {
+            if (config.getPortableFactoryClass() == null) {
+                return null;
+            }
+            return ClassLoaderUtil.newInstance(config.getPortableFactoryClass());
+        }
+        return portableFactory;
+    }
 
     public SerializationServiceImpl(int version, PortableFactory portableFactory) {
         this(version, portableFactory, null);
@@ -225,6 +260,14 @@ public final class SerializationServiceImpl implements SerializationService {
 
     public ObjectDataOutput createObjectDataOutput(int size) {
         return new ContextAwareDataOutput(size, this);
+    }
+
+    public ObjectDataOutputStream createObjectDataOutputStream(OutputStream out) {
+        return new ObjectDataOutputStream(out, this);
+    }
+
+    public ObjectDataInputStream createObjectDataInputStream(InputStream in) {
+        return new ObjectDataInputStream(in, this);
     }
 
     public PortableSerializer getPortableSerializer() {

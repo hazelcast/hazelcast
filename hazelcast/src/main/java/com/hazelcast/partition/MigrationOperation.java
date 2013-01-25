@@ -91,7 +91,7 @@ public class MigrationOperation extends BaseMigrationOperation {
     private boolean runMigrationTasks() {
         boolean error = false;
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final PartitionService partitionService = getService();
+        final PartitionServiceImpl partitionService = getService();
         partitionService.addActiveMigration(migrationInfo);
 
         for (Operation op : tasks) {

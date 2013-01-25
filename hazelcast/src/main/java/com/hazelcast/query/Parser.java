@@ -47,7 +47,6 @@ class Parser {
     }
 
     public List<String> toPrefix(String in) {
-//        System.out.println(in);
         int indexIn = in.indexOf(" in ");
         if (indexIn == -1) {
             indexIn = in.indexOf(" IN ");

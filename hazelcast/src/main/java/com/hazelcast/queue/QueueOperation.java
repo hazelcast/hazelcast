@@ -60,7 +60,7 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
     }
 
     public String getServiceName() {
-        return QueueService.QUEUE_SERVICE_NAME;
+        return QueueService.SERVICE_NAME;
     }
 
 

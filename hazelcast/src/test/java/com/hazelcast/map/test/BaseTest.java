@@ -17,6 +17,7 @@
 package com.hazelcast.map.test;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.util.Clock;
@@ -94,7 +95,7 @@ public class BaseTest {
     protected static void startInstances() {
         Hazelcast.shutdownAll();
         instances.clear();
-        cfg.getMapConfig("default").setRecordType("OBJECT");
+        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         for (int i = 0; i < instanceCount; i++) {
             instances.add(Hazelcast.newHazelcastInstance(cfg));
         }

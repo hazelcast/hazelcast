@@ -46,12 +46,12 @@ public final class ClassLoaderUtil {
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitives);
     }
 
-    public static Object newInstance(final String className) throws Exception {
-        return newInstance(loadClass(className));
+    public static <T> T newInstance(final String className) throws Exception {
+        return (T) newInstance(loadClass(className));
     }
 
-    public static Object newInstance(final Class klass) throws Exception {
-        final Constructor<?> constructor = klass.getDeclaredConstructor();
+    public static <T> T newInstance(final Class<T> klass) throws Exception {
+        final Constructor<T> constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }

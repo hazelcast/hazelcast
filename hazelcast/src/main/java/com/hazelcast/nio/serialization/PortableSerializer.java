@@ -36,6 +36,9 @@ public class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
+        if (!(out instanceof BufferObjectDataOutput)) {
+            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
+        }
         ClassDefinitionImpl cd = getClassDefinition(p);
         DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);
@@ -54,6 +57,9 @@ public class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public Portable read(ObjectDataInput in) throws IOException {
+        if (!(in instanceof BufferObjectDataInput)) {
+            throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
+        }
         final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
         final int dataClassId = ctxIn.getDataClassId();
         final int dataVersion = ctxIn.getDataVersion();

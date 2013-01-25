@@ -17,17 +17,20 @@
 package com.hazelcast.client;
 
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.serialization.ObjectDataOutputStream;
+import com.hazelcast.nio.serialization.SerializationService;
 
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class ProtocolWriter {
     protected static final byte[] HEADER = new byte[]{'P', '0', '1'};
 
+    public ProtocolWriter(SerializationService serializationService) {
+    }
+
     public void write(Connection connection, Protocol command) throws IOException {
         if (connection != null) {
-            final DataOutputStream dos = connection.getOutputStream();
+            final ObjectDataOutputStream dos = connection.getOutputStream();
             if (!connection.headersWritten) {
                 dos.write(HEADER);
                 dos.write('\n');
@@ -41,7 +44,7 @@ public class ProtocolWriter {
 
     public void flush(Connection connection) throws IOException {
         if (connection != null) {
-            DataOutputStream dos = connection.getOutputStream();
+            ObjectDataOutputStream dos = connection.getOutputStream();
             dos.flush();
         }
     }

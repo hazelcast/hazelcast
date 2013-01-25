@@ -36,17 +36,23 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
 
-    private NodeEngine nodeEngine;
+    public static final String SERVICE_NAME = "hz:impl:collectionService";
 
-    public static final String COLLECTION_SERVICE_NAME = "hz:impl:collectionService";
-
-    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-
+    private final NodeEngine nodeEngine;
     private final CollectionPartitionContainer[] partitionContainers;
+    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        partitionContainers = new CollectionPartitionContainer[nodeEngine.getPartitionCount()];
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        partitionContainers = new CollectionPartitionContainer[partitionCount];
+    }
+
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            partitionContainers[i] = new CollectionPartitionContainer(this);
+        }
     }
 
     public CollectionContainer getOrCreateCollectionContainer(int partitionId, CollectionProxyId proxyId) {
@@ -57,24 +63,13 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         return partitionContainers[partitionId];
     }
 
-    public void init(NodeEngine nodeEngine, Properties properties) {
-        this.nodeEngine = nodeEngine;
-        int partitionCount = nodeEngine.getPartitionCount();
-        for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new CollectionPartitionContainer(this);
-        }
-    }
-
-    public void destroy() {
-    }
-
     Object createNew(CollectionProxyId proxyId) {
-        CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(COLLECTION_SERVICE_NAME, proxyId);
+        CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(SERVICE_NAME, proxyId);
         return proxy.createNew();
     }
 
     public String getServiceName() {
-        return COLLECTION_SERVICE_NAME;
+        return SERVICE_NAME;
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
@@ -99,7 +94,12 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     public void destroyDistributedObject(Object objectId) {
-
+        CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
+        for (CollectionPartitionContainer container : partitionContainers) {
+            if (container != null) {
+                container.destroyCollection(collectionProxyId);
+            }
+        }
     }
 
     public Set<Data> localKeySet(CollectionProxyId proxyId) {
@@ -128,9 +128,9 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = null;
         if (local) {
-            registration = eventService.registerLocalListener(COLLECTION_SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
+            registration = eventService.registerLocalListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
         } else {
-            registration = eventService.registerListener(COLLECTION_SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
+            registration = eventService.registerListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
         }
 
         eventRegistrations.put(listenerKey, registration.getId());
@@ -141,14 +141,14 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         String id = eventRegistrations.remove(listenerKey);
         if (id != null) {
             EventService eventService = nodeEngine.getEventService();
-            eventService.deregisterListener(COLLECTION_SERVICE_NAME, name, id);
+            eventService.deregisterListener(SERVICE_NAME, name, id);
         }
     }
 
     public void dispatchEvent(CollectionEvent event, EventListener listener) {
         if (listener instanceof EntryListener) {
             EntryListener entryListener = (EntryListener) listener;
-            EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getCluster().getMember(event.getCaller()),
+            EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
                     event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
 
 
@@ -160,7 +160,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
         } else if (listener instanceof ItemListener) {
             ItemListener itemListener = (ItemListener) listener;
             ItemEvent itemEvent = new ItemEvent(event.getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
-                    nodeEngine.getCluster().getMember(event.getCaller()));
+                    nodeEngine.getClusterService().getMember(event.getCaller()));
             if (event.eventType.getType() == ItemEventType.ADDED.getType()) {
                 itemListener.itemAdded(itemEvent);
             } else {
@@ -174,7 +174,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
+        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionService().getPartitionCount()) {
             return null; // is it possible
         }
         int replicaIndex = event.getReplicaIndex();
@@ -253,5 +253,16 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             max = Math.max(max, c);
         }
         return max;
+    }
+
+    public void destroy() {
+        for (int i = 0; i < partitionContainers.length; i++) {
+            CollectionPartitionContainer container = partitionContainers[i];
+            if (container != null) {
+                container.destroy();
+            }
+            partitionContainers[i] = null;
+        }
+        eventRegistrations.clear();
     }
 }

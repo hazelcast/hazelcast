@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 // author: sancar - 21.12.2012
 public class AtomicNumberService implements ManagedService, RemoteService, MigrationAwareService {
 
-    public static final String NAME = "hz:impl:atomicNumberService";
+    public static final String SERVICE_NAME = "hz:impl:atomicNumberService";
 
     private NodeEngine nodeEngine;
 
@@ -60,7 +60,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public void destroy() {
-
+        numbers.clear();
     }
 
     public Config getConfig() {
@@ -68,7 +68,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public String getServiceName() {
-        return NAME;
+        return SERVICE_NAME;
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
@@ -80,7 +80,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public void destroyDistributedObject(Object objectId) {
-
+        numbers.remove(String.valueOf(objectId));
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
@@ -90,7 +90,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         Map<String, Long> data = new HashMap<String, Long>();
         final int partitionId = migrationServiceEvent.getPartitionId();
         for (String name : numbers.keySet()) {
-            if (partitionId == nodeEngine.getPartitionId(name)) {
+            if (partitionId == nodeEngine.getPartitionService().getPartitionId(name)) {
                 data.put(name, numbers.get(name));
             }
         }
@@ -119,7 +119,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         final Iterator<String> iter = numbers.keySet().iterator();
         while (iter.hasNext()) {
             String name = iter.next();
-            if (nodeEngine.getPartitionId(name) == partitionId) {
+            if (nodeEngine.getPartitionService().getPartitionId(name) == partitionId) {
                 iter.remove();
             }
         }

@@ -362,7 +362,7 @@ abstract class InvocationImpl implements Future, Invocation {
     }
 
     public PartitionInfo getPartitionInfo() {
-        return nodeEngine.getPartitionInfo(partitionId);
+        return nodeEngine.getPartitionService().getPartitionInfo(partitionId);
     }
 
     public int getReplicaIndex() {

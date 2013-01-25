@@ -17,11 +17,9 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.map.client.MapGetHandler;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -43,13 +41,12 @@ import java.util.concurrent.ConcurrentMap;
  * Date: 11/14/12
  * Time: 12:21 AM
  */
-public class QueueService implements ManagedService, MigrationAwareService, MembershipAwareService,
+public class QueueService implements ManagedService, MigrationAwareService,
         RemoteService, EventPublishingService<QueueEvent, ItemListener>, ClientProtocolService {
 
-    private NodeEngine nodeEngine;
+    public static final String SERVICE_NAME = "hz:impl:queueService";
 
-    public static final String QUEUE_SERVICE_NAME = "hz:impl:queueService";
-
+    private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
@@ -58,10 +55,14 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         this.nodeEngine = nodeEngine;
     }
 
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        registerClientOperationHandlers();
+    }
+
     public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(nodeEngine.getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
+            container = new QueueContainer(nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
                     nodeEngine.getSerializationService(), fromBackup);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
@@ -73,11 +74,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
 
     public void addContainer(String name, QueueContainer container) {
         containerMap.put(name, container);
-    }
-
-    public void init(NodeEngine nodeEngine, Properties properties) {
-        this.nodeEngine = nodeEngine;
-        registerClientOperationHandlers();
     }
 
     private void registerClientOperationHandlers() {
@@ -92,16 +88,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         commandHandlers.put(Command.QENTRIES, new QueueEntriesHandler(this));
     }
 
-    public void destroy() {
-    }
-
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionCount()) {
-            return null; // is it possible
-        }
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
@@ -146,15 +136,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         }
     }
 
-    public void memberAdded(MembershipServiceEvent membershipEvent) {
-    }
-
-    public void memberRemoved(MembershipServiceEvent membershipEvent) {
-    }
-
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
         ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, nodeEngine.toObject(event.data),
-                nodeEngine.getCluster().getMember(event.caller));
+                nodeEngine.getClusterService().getMember(event.caller));
         if (event.eventType.equals(ItemEventType.ADDED)){
             listener.itemAdded(itemEvent);
         }
@@ -164,7 +148,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public String getServiceName() {
-        return QUEUE_SERVICE_NAME;
+        return SERVICE_NAME;
     }
 
     public ObjectQueueProxy createDistributedObject(Object objectId) {
@@ -176,7 +160,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
     }
 
     public void destroyDistributedObject(Object objectId) {
-
+        final String name = String.valueOf(objectId);
+        containerMap.remove(name);
+        nodeEngine.getEventService().deregisterListeners(SERVICE_NAME, name);
     }
 
     public void addItemListener(String name, ItemListener listener, boolean includeValue){
@@ -186,7 +172,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
             return;
         }
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService.registerListener(QueueService.QUEUE_SERVICE_NAME, name, new QueueEventFilter(includeValue), listener);
+        EventRegistration registration = eventService.registerListener(QueueService.SERVICE_NAME, name, new QueueEventFilter(includeValue), listener);
         eventRegistrations.put(listenerKey, registration.getId());
     }
 
@@ -195,7 +181,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
         String id = eventRegistrations.remove(listenerKey);
         if (id != null){
             EventService eventService = nodeEngine.getEventService();
-            eventService.deregisterListener(QUEUE_SERVICE_NAME, name, id);
+            eventService.deregisterListener(SERVICE_NAME, name, id);
         }
     }
 
@@ -205,5 +191,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Memb
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    public void destroy() {
+        containerMap.clear();
+        eventRegistrations.clear();
+        commandHandlers.clear();
     }
 }

@@ -21,17 +21,16 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.idgen.IdGeneratorProxy;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.semaphore.SemaphoreService;
@@ -76,7 +75,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         this.threadGroup = new ThreadGroup(name);
         threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
-        registerConfigSerializers(config);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
         node = new Node(this, config, nodeContext);
         nodeEngine = node.nodeEngine;
@@ -101,34 +99,35 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
-        return getDistributedObject(MapService.MAP_SERVICE_NAME, name);
+        return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
-        return getDistributedObject(QueueService.QUEUE_SERVICE_NAME, name);
+        return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
-        return getDistributedObject(TopicService.NAME, name);
+        return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
     public <E> ISet<E> getSet(String name) {
-        return getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
+        return getDistributedObject(CollectionService.SERVICE_NAME,
                 new CollectionProxyId(name, CollectionProxyType.SET));
     }
 
     public <E> IList<E> getList(String name) {
-        return getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
+        return getDistributedObject(CollectionService.SERVICE_NAME,
                 new CollectionProxyId(name, CollectionProxyType.LIST));
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return getDistributedObject(CollectionService.COLLECTION_SERVICE_NAME,
+        return getDistributedObject(CollectionService.SERVICE_NAME,
                 new CollectionProxyId(name, CollectionProxyType.MULTI_MAP));
     }
 
     public ILock getLock(Object key) {
-        return new ObjectLockProxy(nodeEngine, name, getMap(ObjectLockProxy.LOCK_MAP_NAME));
+        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
+        return new ObjectLockProxy(nodeEngine, key, map);
     }
 
     public IExecutorService getExecutorService(final String name) {
@@ -140,11 +139,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(final String name) {
-        throw new UnsupportedOperationException();
+        return new IdGeneratorProxy(this, name);
     }
 
     public AtomicNumber getAtomicNumber(final String name) {
-        return getDistributedObject(AtomicNumberService.NAME, name);
+        return getDistributedObject(AtomicNumberService.SERVICE_NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {
@@ -152,7 +151,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ISemaphore getSemaphore(final String name) {
-        return getDistributedObject(SemaphoreService.SEMAPHORE_SERVICE_NAME, name);
+        return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
 
     public Cluster getCluster() {
@@ -215,27 +214,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         final ProxyServiceImpl proxyService = (ProxyServiceImpl) node.nodeEngine.getProxyService();
         proxyService.removeProxyListener(distributedObjectListener);
-    }
-
-    private void registerConfigSerializers(Config config) throws Exception {
-        final Collection<SerializerConfig> serializerConfigs = config.getSerializerConfigs();
-        if (serializerConfigs != null) {
-            for (SerializerConfig serializerConfig : serializerConfigs) {
-                TypeSerializer serializer = serializerConfig.getImplementation();
-                if (serializer == null) {
-                    serializer = (TypeSerializer) ClassLoaderUtil.newInstance(serializerConfig.getClassName());
-                }
-                if (serializerConfig.isGlobal()) {
-                    registerFallbackSerializer(serializer);
-                } else {
-                    Class typeClass = serializerConfig.getTypeClass();
-                    if (typeClass == null) {
-                        typeClass = ClassLoaderUtil.loadClass(serializerConfig.getTypeClassName());
-                    }
-                    registerSerializer(serializer, typeClass);
-                }
-            }
-        }
     }
 
     void shutdown() {

@@ -20,25 +20,26 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.query.impl.IndexService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MapInfo {
 
-    private String name;
-    private MapConfig mapConfig;
+    private final String name;
+    private final MapConfig mapConfig;
     private MapStore store;
-    private List<MapInterceptor> interceptors;
-    private Map<String,MapInterceptor> interceptorMap;
-    private Map<MapInterceptor,String> interceptorIdMap;
+    private final List<MapInterceptor> interceptors;
+    private final Map<String, MapInterceptor> interceptorMap;
+    private final Map<MapInterceptor, String> interceptorIdMap;
+    private final IndexService indexService = new IndexService();
 
     public MapInfo(String name, MapConfig mapConfig) {
         this.name = name;
         this.mapConfig = mapConfig;
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        if(mapStoreConfig != null && mapStoreConfig.getClassName() != null) {
+        if (mapStoreConfig != null && mapStoreConfig.getClassName() != null) {
             try {
                 store = (MapStore) ClassLoaderUtil.newInstance(mapStoreConfig.getClassName());
             } catch (Exception e) {
@@ -48,6 +49,10 @@ public class MapInfo {
         interceptors = Collections.synchronizedList(new ArrayList<MapInterceptor>());
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
+    }
+
+    public IndexService getIndexService() {
+        return indexService;
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
@@ -104,7 +109,4 @@ public class MapInfo {
     public MapStore getStore() {
         return store;
     }
-
-
-
 }

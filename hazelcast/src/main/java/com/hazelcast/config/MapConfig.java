@@ -41,7 +41,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "NONE";
-    public final static String DEFAULT_RECORD_TYPE = "DATA";
+    public final static RecordType DEFAULT_RECORD_TYPE = RecordType.DATA;
     public final static String DEFAULT_MERGE_POLICY = AddNewEntryMergePolicy.NAME;
 
     private String name = null;
@@ -72,7 +72,7 @@ public class MapConfig implements DataSerializable {
 
     private String mergePolicy = DEFAULT_MERGE_POLICY;
 
-    private String recordType = DEFAULT_RECORD_TYPE;
+    private RecordType recordType = DEFAULT_RECORD_TYPE;
 
     private WanReplicationRef wanReplicationRef;
 
@@ -81,6 +81,10 @@ public class MapConfig implements DataSerializable {
     private List<MapIndexConfig> mapIndexConfigs;
 
     private StorageType storageType = null;
+
+    public enum RecordType {
+        DATA, OBJECT, CACHED
+    }
 
     public enum StorageType {
         HEAP, OFFHEAP
@@ -128,7 +132,7 @@ public class MapConfig implements DataSerializable {
     /**
      * @return data type that will be used for storing records.
      */
-    public String getRecordType() {
+    public RecordType getRecordType() {
         return recordType;
     }
 
@@ -141,7 +145,7 @@ public class MapConfig implements DataSerializable {
      *
      * @param recordType the record type to set
      */
-    public MapConfig setRecordType(String recordType) {
+    public MapConfig setRecordType(RecordType recordType) {
         this.recordType = recordType;
         return this;
     }
@@ -570,7 +574,7 @@ public class MapConfig implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        recordType = in.readUTF();
+        recordType = RecordType.valueOf(in.readUTF());
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         evictionPercentage = in.readInt();
@@ -589,7 +593,7 @@ public class MapConfig implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(recordType);
+        out.writeUTF(recordType.toString());
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(evictionPercentage);

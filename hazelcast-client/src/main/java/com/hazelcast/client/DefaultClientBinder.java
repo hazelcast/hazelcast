@@ -20,6 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -30,8 +31,15 @@ import java.util.logging.Level;
 public class DefaultClientBinder implements ClientBinder {
 
     private final ILogger logger = Logger.getLogger(getClass().getName());
-    ProtocolReader reader = new ProtocolReader();
-    ProtocolWriter writer = new ProtocolWriter();
+    private final SerializationServiceImpl serializationService;
+    private final ProtocolReader reader;
+    private final ProtocolWriter writer;
+
+    public DefaultClientBinder(SerializationServiceImpl serializationService) {
+        this.serializationService = serializationService;
+        this.reader = new ProtocolReader(serializationService);
+        this.writer = new ProtocolWriter(serializationService);
+    }
 
     public void bind(Connection connection, Credentials credentials) throws IOException {
         logger.log(Level.FINEST, connection + " -> "

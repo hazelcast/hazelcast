@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionPartitionContainer {
 
-    CollectionService service;
+    final CollectionService service;
 
     final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
 
@@ -54,4 +54,19 @@ public class CollectionPartitionContainer {
         }
         return max;
     }
+
+    void destroyCollection(CollectionProxyId collectionProxyId) {
+        final CollectionContainer container = containerMap.remove(collectionProxyId);
+        if (container != null) {
+            container.clear();
+        }
+    }
+
+    void destroy() {
+        for (CollectionContainer container : containerMap.values()) {
+            container.clear();
+        }
+        containerMap.clear();
+    }
+
 }

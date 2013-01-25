@@ -41,7 +41,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
     }
 
     public void run() {
-        final ClusterService service = getService();
+        final ClusterServiceImpl service = getService();
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
         boolean ok = false;
