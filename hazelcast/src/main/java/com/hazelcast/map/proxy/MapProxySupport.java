@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.proxy;
 
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
@@ -26,6 +27,8 @@ import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.Invocation;
@@ -34,6 +37,7 @@ import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -52,6 +56,11 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data getInternal(Data key) {
+        if(nodeEngine.getConfig().getMapConfig(name).getNearCacheConfig() != null ) {
+            Data cachedData = mapService.getFromNearCache(name, key);
+            if(cachedData != null)
+                return cachedData;
+        }
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -59,7 +68,11 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             Future invoke = invocation.invoke();
-            return (Data) invoke.get();
+            Data value = (Data) invoke.get();
+            if(nodeEngine.getConfig().getMapConfig(name).getNearCacheConfig() != null && !invocation.getTarget().equals(nodeEngine.getThisAddress())) {
+                mapService.putNearCache(name, key, value);
+            }
+            return value;
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -191,7 +204,8 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, setOperation, partitionId)
                     .build();
-            invocation.invoke();
+            Future future = invocation.invoke();
+            future.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -453,7 +467,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    public void flushInternal(boolean flushAll) {
+    public void flush(boolean flushAll) {
         try {
             MapFlushOperation mapFlushOperation = new MapFlushOperation(name, flushAll);
             nodeEngine.getOperationService()
@@ -602,19 +616,12 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    public void flush() {
+    public void cleanUpNearCache() {
     }
 
-    protected Set<Data> keySetInternal(final Predicate predicate) {
-        return null;
-    }
-
-    protected Set<Entry<Data, Data>> entrySetInternal(final Predicate predicate) {
-        return null;
-    }
-
-    protected Collection<Data> valuesInternal(final Predicate predicate) {
-        return null;
+    protected Set<QueryableEntry> valuesInternal(final Predicate predicate) {
+        IndexService indexService = mapService.getMapInfo(name).getIndexService();
+        return indexService.query(predicate, mapService.getQueryableEntrySet(name));
     }
 
     protected Set<Data> localKeySetInternal(final Predicate predicate) {

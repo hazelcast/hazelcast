@@ -22,11 +22,10 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -151,10 +150,6 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         forceUnlockInternal(key);
     }
 
-    public void flush(boolean flushAll) {
-        flushInternal(flushAll);
-    }
-
     public Set<Data> keySet() {
         return keySetInternal();
     }
@@ -183,7 +178,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         addEntryListenerInternal(listener, null, includeValue);
     }
 
-    public void addEntryListener(EntryListener listener, Predicate predicate, Data key, boolean includeValue){
+    public void addEntryListener(EntryListener listener, Predicate predicate, Data key, boolean includeValue) {
         addEntryListenerInternal(listener, predicate, key, includeValue);
     }
 
@@ -208,15 +203,30 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Set<Data> keySet(final Predicate predicate) {
-        return keySetInternal(predicate);
+        Set<QueryableEntry> entries = valuesInternal(predicate);
+        Set<Data> result = new HashSet<Data>();
+        for (QueryableEntry entry : entries) {
+            result.add(entry.getKeyData());
+        }
+        return result;
     }
 
     public Set<Entry<Data, Data>> entrySet(final Predicate predicate) {
-        return entrySetInternal(predicate);
+        Set<QueryableEntry> entries = valuesInternal(predicate);
+        Set<Entry<Data, Data>> result = new HashSet<Entry<Data, Data>>();
+        for (QueryableEntry entry : entries) {
+            result.add(new AbstractMap.SimpleEntry<Data,Data>(entry.getKeyData(), entry.getValueData()));
+        }
+        return result;
     }
 
     public Collection<Data> values(final Predicate predicate) {
-        return valuesInternal(predicate);
+        Set<QueryableEntry> entries = valuesInternal(predicate);
+        Set<Data> result = new HashSet<Data>();
+        for (QueryableEntry entry : entries) {
+            result.add(entry.getValueData());
+        }
+        return result;
     }
 
     public Set<Data> localKeySet() {
@@ -230,4 +240,5 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     public Data executeOnKey(Data key, EntryProcessor entryProcessor) {
         return executeOnKeyInternal(key, entryProcessor);
     }
+
 }

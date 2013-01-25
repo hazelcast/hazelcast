@@ -100,6 +100,8 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         mapService.interceptAfterProcess(name, MapOperationType.EVICT, dataKey, dataValue, dataValue);
         int eventType = EntryEvent.TYPE_EVICTED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, null, dataValue);
+        if (mapService.getMapInfo(name).getMapConfig().getNearCacheConfig() != null)
+            mapService.invalidateAllNearCaches(name, dataKey);
     }
 
     @Override

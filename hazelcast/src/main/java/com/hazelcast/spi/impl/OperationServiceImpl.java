@@ -368,7 +368,7 @@ final class OperationServiceImpl implements OperationService {
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
             throws Exception {
-        final Map<Address, List<Integer>> memberPartitions = getMemberPartitionsMap();
+        final Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
@@ -381,7 +381,7 @@ final class OperationServiceImpl implements OperationService {
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
                                                          Address target) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(1);
-        memberPartitions.put(target, getMemberPartitions(target));
+        memberPartitions.put(target, nodeEngine.getPartitionService().getMemberPartitions(target));
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
@@ -434,45 +434,6 @@ final class OperationServiceImpl implements OperationService {
             partitionResults.put(failedPartition, result);
         }
         return partitionResults;
-    }
-
-    private Map<Address, List<Integer>> getMemberPartitionsMap() {
-        final int members = node.getClusterService().getSize();
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
-            List<Integer> ownedPartitions = memberPartitions.get(owner);
-            if (ownedPartitions == null) {
-                ownedPartitions = new ArrayList<Integer>();
-                memberPartitions.put(owner, ownedPartitions);
-            }
-            ownedPartitions.add(i);
-        }
-        return memberPartitions;
-    }
-
-    private List<Integer> getMemberPartitions(Address target) {
-        List<Integer> ownedPartitions = new LinkedList<Integer>();
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
-            if (target.equals(owner)) {
-                ownedPartitions.add(i);
-            }
-        }
-        return ownedPartitions;
-    }
-
-    private Address getPartitionOwner(int partitionId) {
-        Address owner = node.partitionService.getPartitionOwner(partitionId);
-        // TODO: infinite while is not good. convert it to wait 1 minute
-        while (owner == null) { // partition assignment is not completed yet
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException ignored) {
-            }
-            owner = node.partitionService.getPartitionOwner(partitionId);
-        }
-        return owner;
     }
 
     @PrivateApi

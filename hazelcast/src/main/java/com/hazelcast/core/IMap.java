@@ -828,4 +828,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
     LocalMapStats getLocalMapStats();
 
     Object executeOnKey(K key, EntryProcessor entryProcessor);
+
+    void cleanUpNearCache();
 }

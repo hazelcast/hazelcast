@@ -31,9 +31,9 @@ public class DefaultRecordStore implements RecordStore {
 
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
-    // todo remove this. the do not forget to migrate if decide not to remove
+    // todo remove this. do not forget to migrate if decide not to remove
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
-    final MapInfo mapInfo;
+    final MapContainer mapContainer;
 
     final MapService mapService;
 
@@ -42,7 +42,7 @@ public class DefaultRecordStore implements RecordStore {
         this.partitionInfo = partitionContainer.partitionInfo;
         this.partitionContainer = partitionContainer;
         mapService = partitionContainer.getMapService();
-        this.mapInfo = mapService.getMapInfo(name);
+        this.mapContainer = mapService.getMapInfo(name);
     }
 
     public LockInfo getOrCreateLock(Data key) {
@@ -73,8 +73,8 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    public MapInfo getMapInfo() {
-        return mapInfo;
+    public MapContainer getMapContainer() {
+        return mapContainer;
     }
 
     public boolean canRun(LockAwareOperation op) {
@@ -117,6 +117,7 @@ public class DefaultRecordStore implements RecordStore {
         return lock.isLocked();
     }
 
+    // todo remove lock info here
     public boolean unlock(Data dataKey, Address caller, int threadId) {
         LockInfo lock = getLock(dataKey);
         if (lock == null)
@@ -144,7 +145,7 @@ public class DefaultRecordStore implements RecordStore {
         boolean evicted = false;
         if (record == null) {
             // already removed from map by eviction but still need to delete it
-            if (mapInfo.getStore() != null && mapInfo.getStore().load(mapService.toObject(dataKey)) != null) {
+            if (mapContainer.getStore() != null && mapContainer.getStore().load(mapService.toObject(dataKey)) != null) {
                 evicted = true;
             }
         } else {
@@ -154,7 +155,7 @@ public class DefaultRecordStore implements RecordStore {
             removed = true;
         }
 
-        if ((removed || evicted) && mapInfo.getStore() != null) {
+        if ((removed || evicted) && mapContainer.getStore() != null) {
             mapStoreDelete(record);
         }
         return removed;
@@ -214,8 +215,8 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
-            if (mapInfo.getStore() != null) {
-                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
+            if (mapContainer.getStore() != null) {
+                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
         } else {
             oldValue = record.getValue();
@@ -240,8 +241,8 @@ public class DefaultRecordStore implements RecordStore {
         Object oldValue = null;
         boolean removed = false;
         if (record == null) {
-            if (mapInfo.getStore() != null) {
-                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
+            if (mapContainer.getStore() != null) {
+                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
             if (oldValue == null)
                 return false;
@@ -258,12 +259,13 @@ public class DefaultRecordStore implements RecordStore {
         return removed;
     }
 
+    // todo get tries to load from db even if it returned null just second ago. try to put a record with null with eviction
     public Object get(Data dataKey) {
         Record record = records.get(dataKey);
         Object value = null;
         if (record == null) {
-            if (mapInfo.getStore() != null) {
-                value = mapInfo.getStore().load(mapService.toObject(dataKey));
+            if (mapContainer.getStore() != null) {
+                value = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (value != null) {
                     record = mapService.createRecord(name, dataKey, value, -1);
                     records.put(dataKey, record);
@@ -301,8 +303,8 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
-            if (mapInfo.getStore() != null) {
-                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
+            if (mapContainer.getStore() != null) {
+                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
@@ -396,8 +398,8 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
-            if (mapInfo.getStore() != null) {
-                oldValue = mapInfo.getStore().load(mapService.toObject(dataKey));
+            if (mapContainer.getStore() != null) {
+                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
                     record = mapService.createRecord(name, dataKey, oldValue, -1);
                     records.put(dataKey, record);
@@ -420,7 +422,7 @@ public class DefaultRecordStore implements RecordStore {
 
     private void accessRecord(Record record) {
         record.access();
-        int maxIdleSeconds = mapInfo.getMapConfig().getMaxIdleSeconds();
+        int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
             record.getState().updateIdleExpireTime(maxIdleSeconds);
             mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds);
@@ -432,10 +434,10 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void mapStoreWrite(Record record, boolean flush) {
-        if (mapInfo.getStore() != null) {
-            long writeDelayMillis = mapInfo.getWriteDelayMillis();
+        if (mapContainer.getStore() != null) {
+            long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis <= 0 || flush) {
-                mapInfo.getStore().store(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
+                mapContainer.getStore().store(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
@@ -446,10 +448,10 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void mapStoreDelete(Record record) {
-        if (mapInfo.getStore() != null) {
-            long writeDelayMillis = mapInfo.getWriteDelayMillis();
+        if (mapContainer.getStore() != null) {
+            long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
-                mapInfo.getStore().delete(mapService.toObject(record.getKey()));
+                mapContainer.getStore().delete(mapService.toObject(record.getKey()));
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);

@@ -24,8 +24,9 @@ import com.hazelcast.query.impl.IndexService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class MapInfo {
+public class MapContainer {
 
     private final String name;
     private final MapConfig mapConfig;
@@ -35,16 +36,22 @@ public class MapInfo {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
 
-    public MapInfo(String name, MapConfig mapConfig) {
+    public MapContainer(String name, MapConfig mapConfig) {
         this.name = name;
         this.mapConfig = mapConfig;
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         if (mapStoreConfig != null && mapStoreConfig.getClassName() != null) {
+            MapStore tmp;
             try {
-                store = (MapStore) ClassLoaderUtil.newInstance(mapStoreConfig.getClassName());
+                tmp = (MapStore) ClassLoaderUtil.newInstance(mapStoreConfig.getClassName());
             } catch (Exception e) {
+                tmp = null;
                 e.printStackTrace();
             }
+            store = tmp;
+        }
+        else {
+            store = null;
         }
         interceptors = Collections.synchronizedList(new ArrayList<MapInterceptor>());
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
@@ -109,4 +116,7 @@ public class MapInfo {
     public MapStore getStore() {
         return store;
     }
+
+
+
 }
