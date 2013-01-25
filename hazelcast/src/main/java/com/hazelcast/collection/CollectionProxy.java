@@ -26,6 +26,6 @@ import java.util.Collection;
  */
 public interface CollectionProxy extends DistributedObject {
 
-    public Collection createNew();
+    <V> Collection<V> createNew();
 
 }

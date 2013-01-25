@@ -38,9 +38,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.partition.MigrationEndpoint.SOURCE;
-
 public class PartitionServiceImpl implements PartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
     public static final String SERVICE_NAME = "hz:core:partitionService";
@@ -153,18 +150,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         lock.lock();
         try {
             if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
-                // since partition threads can not invoke operations...
-                final Future f = nodeEngine.getExecutionService().submit("hz:system", new Runnable() {
-                    public void run() {
-                        try {
-                            Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
-                                    node.getMasterAddress()).setTryCount(1).build().invoke();
-                            f.get(750, TimeUnit.MILLISECONDS);
-                        } catch (Exception e) {
-                            logger.log(Level.FINEST, e.getMessage(), e);
-                        }
-                    }
-                });
+                Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
+                        node.getMasterAddress()).setTryCount(1).build().invoke();
                 f.get(1, TimeUnit.SECONDS);
             }
         } catch (Exception e) {
@@ -428,7 +415,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             final PartitionInfo migratingPartition = getPartition(partitionId);
                             final Address address = migratingPartition.getReplicaAddress(replicaIndex);
                             final boolean success = migrationInfo.getToAddress().equals(address);
-                            final MigrationEndpoint endpoint = source ? SOURCE : DESTINATION;
+                            final MigrationEndpoint endpoint = source ? MigrationEndpoint.SOURCE : MigrationEndpoint.DESTINATION;
                             final FinalizeMigrationOperation op = new FinalizeMigrationOperation(endpoint,
                                     migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex(), success);
                             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)

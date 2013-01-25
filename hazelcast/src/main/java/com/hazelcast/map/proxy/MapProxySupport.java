@@ -54,7 +54,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data getInternal(Data key) {
-        boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
+        final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
         if (nearCacheEnabled) {
             Data cachedData = mapService.getFromNearCache(name, key);
             if (cachedData != null)

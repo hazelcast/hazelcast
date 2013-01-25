@@ -54,11 +54,11 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
 
     }
 
-    public Collection createNew() {
+    public <V> Collection<V> createNew() {
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-            return new HashSet(10);
+            return new HashSet<V>(10);
         } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
-            return new LinkedList();
+            return new LinkedList<V>();
         }
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
