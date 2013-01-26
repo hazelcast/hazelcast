@@ -58,7 +58,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         String configFile = System.getProperty("hazelcast.config");
         try {
             if (configFile != null) {
-                configurationFile = new File(configFile);
+                if(configFile.startsWith("classpath:")){
+                    String s = configFile.substring("classpath:".length());
+                    URL url =  Config.class.getClassLoader().getResource(s);
+                    configurationFile = new File(url.toURI());
+                }else{
+                    configurationFile = new File(configFile);
+                }
+
                 logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
