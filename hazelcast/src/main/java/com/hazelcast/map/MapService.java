@@ -60,13 +60,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
-<<<<<<< HEAD
-    private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
-=======
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
-    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
->>>>>>> 116201ced8233fb25f3579319c364005c77190fb
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final AtomicReference<List<Integer>> ownedPartitions;
 
@@ -312,16 +307,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
             containers[i] = null;
         }
-<<<<<<< HEAD
-        mapInfos.clear();
-=======
         mapContainers.clear();
-        commandHandlers.clear();
->>>>>>> 116201ced8233fb25f3579319c364005c77190fb
         eventRegistrations.clear();
     }
 
-    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.MGET, new MapGetHandler(this));
         commandHandlers.put(Command.MSIZE, new MapSizeHandler(this));

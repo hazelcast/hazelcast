@@ -54,12 +54,9 @@ public class QueueService implements ManagedService, MigrationAwareService,
         this.nodeEngine = nodeEngine;
     }
 
-<<<<<<< HEAD
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
-=======
->>>>>>> 116201ced8233fb25f3579319c364005c77190fb
     public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
@@ -77,25 +74,6 @@ public class QueueService implements ManagedService, MigrationAwareService,
         containerMap.put(name, container);
     }
 
-<<<<<<< HEAD
-=======
-    public void init(NodeEngine nodeEngine, Properties properties) {
-        registerClientOperationHandlers();
-    }
-
-    private void registerClientOperationHandlers() {
-        commandHandlers.put(Command.QOFFER, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QPUT, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QPOLL, new QueuePollHandler(this));
-        commandHandlers.put(Command.QTAKE, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QSIZE, new QueueSizeHandler(this));
-        commandHandlers.put(Command.QPEEK, new QueuePollHandler(this));
-        commandHandlers.put(Command.QREMOVE, new QueueRemoveHandler(this));
-        commandHandlers.put(Command.QREMCAPACITY, new QueueCapacityHandler(this));
-        commandHandlers.put(Command.QENTRIES, new QueueEntriesHandler(this));
-    }
-
->>>>>>> 116201ced8233fb25f3579319c364005c77190fb
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
     }
 
@@ -192,7 +170,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         }
     }
 
-    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.QOFFER, new QueueOfferHandler(this));
         commandHandlers.put(Command.QPUT, new QueueOfferHandler(this));

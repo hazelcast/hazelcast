@@ -920,7 +920,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return sb.toString();
     }
 
-    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.AUTH, new ClientAuthenticateHandler());
         commandHandlers.put(Command.MEMBERS, new GetMembersHandler());

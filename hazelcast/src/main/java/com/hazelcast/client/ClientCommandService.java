@@ -84,7 +84,7 @@ public class ClientCommandService {
     }
 
     public void register(ClientProtocolService service) {
-        Map<Command, ClientCommandHandler> commandMap = service.getCommandsAsaMap();
+        Map<Command, ClientCommandHandler> commandMap = service.getCommandsAsMap();
         services.putAll(commandMap);
     }
 
