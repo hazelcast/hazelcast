@@ -18,11 +18,19 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.core.*;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.MigrationEvent;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.Partition;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashSet;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -30,60 +38,118 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnectionPool {
-    private final ConnectionManager connectionManager;
-
     static private final int POOL_SIZE = 1;
-    Set<InetSocketAddress> addresses = new HashSet();
-//    Map<InetSocketAddress, BlockingQueue<Connection>> mPool;
-    BlockingQueue<Connection> allConnectionsQ = new LinkedBlockingQueue<Connection>(POOL_SIZE);
+    private Map<Address, BlockingQueue<Connection>> mPool;
+    //    private Connection initialConnection;
+    private BlockingQueue<Connection> singlePool = new LinkedBlockingQueue<Connection>(1);
+    private final ConnectionManager connectionManager;
+    private final SerializationService serializationService;
+    private volatile Map<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
+    private volatile int partitionCount;
 
-    public ConnectionPool(HazelcastClient client, ClientConfig config, ConnectionManager connectionManager) {
-        this.addresses.addAll(config.getAddressList());
-        for (InetSocketAddress address : addresses) {
+    public ConnectionPool(ClientConfig config, final ConnectionManager connectionManager, final SerializationService serializationService) {
+        this.connectionManager = connectionManager;
+        this.serializationService = serializationService;
+        initialConnection(config);
+    }
+
+    public void init(Cluster cluster, PartitionService partitionService) {
+        addMembershipListener(cluster);
+        addPartitionListener(partitionService);
+        partitionCount = partitionTable.size();
+        Set<Member> members = cluster.getMembers();
+        mPool = new ConcurrentHashMap<Address, BlockingQueue<Connection>>(members.size());
+        for (Member _member : members) {
+            createPoolForTheMember((MemberImpl) _member);
+        }
+    }
+
+    private void addPartitionListener(final PartitionService partitionService) {
+        createPartitionTable(partitionService);
+        partitionService.addMigrationListener(new MigrationListener() {
+            public void migrationStarted(MigrationEvent migrationEvent) {
+            }
+
+            public void migrationCompleted(MigrationEvent migrationEvent) {
+                createPartitionTable(partitionService);
+            }
+
+            public void migrationFailed(MigrationEvent migrationEvent) {
+            }
+        });
+    }
+
+    private void createPartitionTable(PartitionService partitionService) {
+        Set<Partition> partitions = partitionService.getPartitions();
+        for (Partition p : partitions) {
+            if(p.getOwner()!=null)
+                partitionTable.put(p.getPartitionId(), p.getOwner());
+        }
+    }
+
+    private void addMembershipListener(final Cluster cluster) {
+        cluster.addMembershipListener(new MembershipListener() {
+            public void memberAdded(MembershipEvent membershipEvent) {
+                createPoolForTheMember((MemberImpl) membershipEvent.getMember());
+            }
+
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                mPool.remove(member.getAddress());
+            }
+        });
+    }
+
+    private void initialConnection(ClientConfig config) {
+        Connection initialConnection = null;
+        for (InetSocketAddress isa : config.getAddressList()) {
             try {
-                Connection initialConnection = new Connection(address, 0, null);
-                connectionManager.bindConnection(initialConnection);
-                allConnectionsQ.offer(initialConnection);
-                System.out.println("Client " + client);
-                Set<Member> members = client.getCluster().getMembers();
-//                mPool = new ConcurrentHashMap<InetSocketAddress, BlockingQueue<Connection>>(members.size());
-                for (Member member : members) {
-                    InetSocketAddress isa = member.getInetSocketAddress();
-                    addresses.add(isa);
-//                    BlockingQueue<Connection> pool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
-//                    mPool.put(isa, pool);
-                    if (address.equals(isa))
-//                        pool.offer(initialConnection);
-                    allConnectionsQ.offer(initialConnection);
-//                    while (allConnectionsQ.size() < POOL_SIZE) {
-//                        Connection connection = new Connection(isa, 0);
-//                        connectionManager.bindConnection(connection);
-//                        pool.offer(connection);
-//                        allConnectionsQ.offer(connection);
-//                    }
-                }
+                initialConnection = new Connection(isa, 0, this.serializationService);
+                this.connectionManager.bindConnection(initialConnection);
+                System.out.println("Initial Connection is" + initialConnection);
+                singlePool.offer(initialConnection);
                 break;
             } catch (IOException e) {
                 continue;
             }
         }
-        this.connectionManager = connectionManager;
-        while (allConnectionsQ.size() < POOL_SIZE) {
-            try {
-                Connection connection = connectionManager.createNextConnection();
+        if (initialConnection == null) {
+            throw new RuntimeException("Couldn't connect to any address in the config");
+        }
+    }
+
+    private void createPoolForTheMember(MemberImpl member) {
+        try {
+            Address address = member.getAddress();
+            BlockingQueue<Connection> pool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
+            mPool.put(address, pool);
+            while (pool.size() < POOL_SIZE) {
+                Connection connection = new Connection(address.getInetSocketAddress(), 0, serializationService);
                 connectionManager.bindConnection(connection);
-                allConnectionsQ.offer(connection);
-            } catch (IOException e) {
-                e.printStackTrace();
+                pool.offer(connection);
             }
+        } catch (IOException e) {
         }
     }
 
     public Connection takeConnection() throws InterruptedException {
-        return allConnectionsQ.take();
+        return singlePool.take();
+    }
+
+    public Connection takeConnection(Data key) throws InterruptedException, UnknownHostException {
+        int id = key.getPartitionHash() % partitionCount;
+        Member member = partitionTable.get(id);
+        if (member == null) {
+            return singlePool.take();
+        }
+        return mPool.get(member.getInetSocketAddress()).take();
     }
 
     public void releaseConnection(Connection connection) {
-        allConnectionsQ.offer(connection);
+        singlePool.offer(connection);
+    }
+    
+    public void releaseConnection(Connection connection, Data key) {
+        mPool.get(connection.getAddress()).offer(connection);
     }
 }

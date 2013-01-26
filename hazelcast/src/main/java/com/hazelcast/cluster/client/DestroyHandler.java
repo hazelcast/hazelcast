@@ -24,9 +24,6 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class DestroyHandler extends ClientCommandHandler {
-    public DestroyHandler(NodeEngineImpl nodeEngine) {
-        super(nodeEngine);
-    }
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {

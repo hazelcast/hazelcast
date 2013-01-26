@@ -42,11 +42,11 @@ public class PartitionClientProxy implements PartitionService {
     public Set<Partition> getPartitions() {
         Protocol protocol = proxyHelper.doCommand(Command.PARTITIONS, new String[]{}, null);
         Set<Partition> set = new LinkedHashSet<Partition>();
-        int i=protocol.args.length;
+        int i = 0;
 
-        while(i>0){
-            final int partitionId = Integer.valueOf(protocol.args[i]);
-            String owner = protocol.args[++i];
+        while(i<protocol.args.length-1){
+            final int partitionId = Integer.valueOf(protocol.args[i++]);
+            String owner = protocol.args[i++];
             Partition partition = partition(partitionId, owner);
             set.add(partition);
         }
@@ -80,7 +80,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {
-        throw new UnsupportedOperationException();
+//        throw new UnsupportedOperationException();
     }
 
     public void removeMigrationListener(MigrationListener migrationListener) {

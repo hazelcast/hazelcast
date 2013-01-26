@@ -83,13 +83,15 @@ public class HazelcastClient implements HazelcastInstance {
         lifecycleService.fireLifecycleEvent(STARTING);
 
 
-        clusterClientProxy = new ClusterClientProxy(this);
-        partitionClientProxy = new PartitionClientProxy(this);
         connectionManager = new ConnectionManager(this, config, lifecycleService);
         connectionManager.setBinder(new DefaultClientBinder(serializationService));
-        connectionPool = new ConnectionPool(this, config, connectionManager);
-
+        connectionPool = new ConnectionPool(config, connectionManager, serializationService);
+        partitionClientProxy = new PartitionClientProxy(this);
+        clusterClientProxy = new ClusterClientProxy(this);
         listenerManager = new ListenerManager(this, serializationService);
+
+        connectionPool.init(getCluster(), getPartitionService());
+
 //        try {
 //            final Connection c = connectionManager.getInitConnection();
 //            if (c == null) {

@@ -31,11 +31,11 @@ import java.util.logging.Level;
 
 public abstract class ClientCommandHandler implements CommandHandler {
 
-    private final ILogger logger;
+//    private final ILogger logger;
 
-    protected ClientCommandHandler(NodeEngine node) {
-        this.logger = node.getLogger(this.getClass().getName());
-    }
+//    protected ClientCommandHandler(NodeEngine node) {
+//        this.logger = node.getLogger(this.getClass().getName());
+//    }
 
     public abstract Protocol processCall(Node node, Protocol protocol) ;
 
@@ -44,17 +44,19 @@ public abstract class ClientCommandHandler implements CommandHandler {
         try {
             response = processCall(node, protocol);
         } catch (RuntimeException e) {
+            ILogger logger = node.getLogger(this.getClass().getName());
             logger.log(Level.WARNING,
                     "exception during handling " + protocol.command + ": " + e.getMessage(), e);
             response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getMessage()});
         }
-        sendResponse(response, protocol.conn);
+        sendResponse(node, response, protocol.conn);
     }
 
-    protected void sendResponse(SocketWritable request, TcpIpConnection conn) {
+    protected void sendResponse(Node node, SocketWritable request, TcpIpConnection conn) {
         if (conn != null && conn.live()) {
             conn.getWriteHandler().enqueueSocketWritable(request);
         } else {
+            ILogger logger = node.getLogger(this.getClass().getName());
             logger.log(Level.WARNING, "unable to send response " + request);
         }
     }

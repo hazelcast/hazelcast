@@ -50,7 +50,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener>, ClientProtocolService {
 
@@ -98,8 +97,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
-    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-
     public ClusterServiceImpl(final Node node) {
         this.node = node;
         nodeEngine = node.nodeEngine;
@@ -139,17 +136,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 sendMemberListToOthers();
             }
         }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
-        registerClientOperationHandlers();
-    }
-
-    private void registerClientOperationHandlers() {
-        registerHandler(Command.AUTH, new ClientAuthenticateHandler(nodeEngine));
-        registerHandler(Command.MEMBERS, new GetMembersHandler(nodeEngine));
-        registerHandler(Command.DESTROY, new DestroyHandler(nodeEngine));
-    }
-
-    void registerHandler(Command command, ClientCommandHandler handler) {
-        commandHandlers.put(command, handler);
     }
 
     public boolean isJoinInProgress() {
@@ -422,13 +408,13 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     newMaster = iter.next();
                 } else {
                     logger.log(Level.SEVERE, "Old master " + oldMasterAddress
-                                             + " is dead but the first of member list is a different member " +
-                                             member + "!");
+                            + " is dead but the first of member list is a different member " +
+                            member + "!");
                     newMaster = member;
                 }
             } else {
                 logger.log(Level.WARNING, "Old master is dead and this node is not master " +
-                                          "but member list contains only " + size + " members! -> " + members);
+                        "but member list contains only " + size + " members! -> " + members);
             }
             if (newMaster != null) {
                 node.setMasterAddress(newMaster.getAddress());
@@ -447,7 +433,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         try {
             final long now = Clock.currentTimeMillis();
             String msg = "Handling join from " + joinRequest.address + ", inProgress: " + joinInProgress
-                         + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
+                    + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
             logger.log(Level.FINEST, msg);
             boolean validJoinRequest;
             try {
@@ -462,7 +448,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     if (joinRequest.getUuid().equals(member.getUuid())) {
                         String message = "Ignoring join request, member already exists.. => " + joinRequest;
                         logger.log(Level.FINEST, message);
-
                         // send members update back to node trying to join again...
                         invokeClusterOperation(new FinalizeJoinOperation(createMemberInfos(getMemberList()), getClusterTime()),
                                 member.getAddress());
@@ -474,7 +459,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     // So drop old member and process join request if this node becomes master.
                     if (node.isMaster() || member.getAddress().equals(node.getMasterAddress())) {
                         logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
-                                                  + " Removing old member and processing join request...");
+                                + " Removing old member and processing join request...");
                         // If existing connection of endpoint is different from current connection
                         // destroy it, otherwise keep it.
 //                    final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
@@ -935,9 +920,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return sb.toString();
     }
 
-
-
-    public Map<Command, ClientCommandHandler> getCommandMap() {
+    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
+        commandHandlers.put(Command.AUTH, new ClientAuthenticateHandler());
+        commandHandlers.put(Command.MEMBERS, new GetMembersHandler());
+        commandHandlers.put(Command.DESTROY, new DestroyHandler());
         return commandHandlers;
     }
 

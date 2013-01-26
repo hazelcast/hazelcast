@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -34,7 +35,8 @@ public class ProtocolReader {
     private final Pattern numericPattern = Pattern.compile("([0-9]*)");
     private final SerializationService serializationService;
 
-    private ByteBuffer line = ByteBuffer.allocate(500);
+    private static final int INITIAL_BUFFER_CAPACITY = 1024;
+    private ByteBuffer line = ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY);
 
     public ProtocolReader(SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -109,11 +111,20 @@ public class ProtocolReader {
         char c = (char) b;
         while (c != '\n') {
             if (c != '\r')
-                line.put(b);
+                try{
+                    line.put(b);
+                }catch (BufferOverflowException boe){
+                    ByteBuffer _line = ByteBuffer.allocate(line.capacity()*2);
+                    _line.put(line.array());
+                    _line.put(b);
+                    line = _line;
+                }
             b = dis.readByte();
             c = (char) b;
         }
-        return SocketTextReader.toStringAndClear(line);
+        String result = SocketTextReader.toStringAndClear(line);
+        if(line.capacity() > INITIAL_BUFFER_CAPACITY*10) line = ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY);
+        return result;
     }
 
     public Protocol read(Connection connection, long timeout, TimeUnit unit) throws IOException {

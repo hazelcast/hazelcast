@@ -126,6 +126,7 @@ public class ProxyHelper {
     public void doFireNForget(Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command,args, data);
         try {
+            protocol.onEnqueue();
             Connection connection = cp.takeConnection();
             writer.write(connection, protocol);
             cp.releaseConnection(connection);
@@ -138,13 +139,17 @@ public class ProxyHelper {
     public Protocol doCommand(Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command,args, data);
         try {
-            Connection connection = cp.takeConnection();
             protocol.onEnqueue();
+            Connection connection = cp.takeConnection();
             writer.write(connection, protocol);
             writer.flush(connection);
             Protocol response = reader.read(connection);
             cp.releaseConnection(connection);
+            if(Command.OK.equals(response.command))
             return response;
+            else {
+                throw new RuntimeException(response.args[0]);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);

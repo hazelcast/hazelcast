@@ -54,7 +54,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final PartitionContainer[] partitionContainers;
     private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final ConcurrentMap<String, MapInfo> mapInfos = new ConcurrentHashMap<String, MapInfo>();
-    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     public MapService(NodeEngine nodeEngine) {
@@ -70,7 +69,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 10, 1, TimeUnit.SECONDS);
-        registerClientOperationHandlers();
     }
 
     public MapInfo getMapInfo(String mapName) {
@@ -80,35 +78,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             mapInfos.put(mapName, mapInfo);
         }
         return mapInfo;
-    }
-
-    private void registerClientOperationHandlers() {
-        commandHandlers.put(Command.MGET, new MapGetHandler(this));
-        commandHandlers.put(Command.MSIZE, new MapSizeHandler(this));
-        commandHandlers.put(Command.MGETALL, new MapGetAllHandler(this));
-        commandHandlers.put(Command.MPUT, new MapPutHandler(this));
-        commandHandlers.put(Command.MTRYPUT, new MapTryPutHandler(this));
-        commandHandlers.put(Command.MSET, new MapSetHandler(this));
-        commandHandlers.put(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
-        commandHandlers.put(Command.MLOCK, new MapLockHandler(this));
-        commandHandlers.put(Command.MTRYLOCK, new MapLockHandler(this));
-        commandHandlers.put(Command.MTRYREMOVE, new MapTryRemoveHandler(this));
-        commandHandlers.put(Command.MISLOCKED, new MapIsLockedHandler(this));
-        commandHandlers.put(Command.MUNLOCK, new MapUnlockHandler(this));
-        commandHandlers.put(Command.MPUTALL, new MapPutAllHandler(this));
-        commandHandlers.put(Command.MREMOVE, new MapRemoveHandler(this));
-        commandHandlers.put(Command.MCONTAINSKEY, new MapContainsKeyHandler(this));
-        commandHandlers.put(Command.MCONTAINSVALUE, new MapContainsValueHandler(this));
-        commandHandlers.put(Command.MPUTIFABSENT, new MapPutIfAbsentHandler(this));
-        commandHandlers.put(Command.MREMOVEIFSAME, new MapRemoveIfSameHandler(this));
-        commandHandlers.put(Command.MREPLACEIFNOTNULL, new MapReplaceIfNotNullHandler(this));
-        commandHandlers.put(Command.MREPLACEIFSAME, new MapReplaceIfSameHandler(this));
-        commandHandlers.put(Command.MFLUSH, new MapFlushHandler(this));
-        commandHandlers.put(Command.MEVICT, new MapEvictHandler(this));
-        commandHandlers.put(Command.MENTRYSET, new MapEntrySetHandler(this));
-        commandHandlers.put(Command.KEYSET, new KeySetHandler(this));
-        commandHandlers.put(Command.MGETENTRY, new MapGetEntryHandler(this));
-        commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -287,11 +256,38 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             containers[i] = null;
         }
         mapInfos.clear();
-        commandHandlers.clear();
         eventRegistrations.clear();
     }
 
-    public Map<Command, ClientCommandHandler> getCommandMap() {
+    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
+        commandHandlers.put(Command.MGET, new MapGetHandler(this));
+        commandHandlers.put(Command.MSIZE, new MapSizeHandler(this));
+        commandHandlers.put(Command.MGETALL, new MapGetAllHandler(this));
+        commandHandlers.put(Command.MPUT, new MapPutHandler(this));
+        commandHandlers.put(Command.MTRYPUT, new MapTryPutHandler(this));
+        commandHandlers.put(Command.MSET, new MapSetHandler(this));
+        commandHandlers.put(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
+        commandHandlers.put(Command.MLOCK, new MapLockHandler(this));
+        commandHandlers.put(Command.MTRYLOCK, new MapLockHandler(this));
+        commandHandlers.put(Command.MTRYREMOVE, new MapTryRemoveHandler(this));
+        commandHandlers.put(Command.MISLOCKED, new MapIsLockedHandler(this));
+        commandHandlers.put(Command.MUNLOCK, new MapUnlockHandler(this));
+        commandHandlers.put(Command.MPUTALL, new MapPutAllHandler(this));
+        commandHandlers.put(Command.MREMOVE, new MapRemoveHandler(this));
+        commandHandlers.put(Command.MCONTAINSKEY, new MapContainsKeyHandler(this));
+        commandHandlers.put(Command.MCONTAINSVALUE, new MapContainsValueHandler(this));
+        commandHandlers.put(Command.MPUTIFABSENT, new MapPutIfAbsentHandler(this));
+        commandHandlers.put(Command.MREMOVEIFSAME, new MapRemoveIfSameHandler(this));
+        commandHandlers.put(Command.MREPLACEIFNOTNULL, new MapReplaceIfNotNullHandler(this));
+        commandHandlers.put(Command.MREPLACEIFSAME, new MapReplaceIfSameHandler(this));
+        commandHandlers.put(Command.MFLUSH, new MapFlushHandler(this));
+        commandHandlers.put(Command.MEVICT, new MapEvictHandler(this));
+        commandHandlers.put(Command.MENTRYSET, new MapEntrySetHandler(this));
+        commandHandlers.put(Command.KEYSET, new KeySetHandler(this));
+        commandHandlers.put(Command.MGETENTRY, new MapGetEntryHandler(this));
+        commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
+
         return commandHandlers;
     }
 

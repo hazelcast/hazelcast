@@ -49,14 +49,12 @@ public class QueueService implements ManagedService, MigrationAwareService,
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-    private final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
-        registerClientOperationHandlers();
     }
 
     public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
@@ -74,18 +72,6 @@ public class QueueService implements ManagedService, MigrationAwareService,
 
     public void addContainer(String name, QueueContainer container) {
         containerMap.put(name, container);
-    }
-
-    private void registerClientOperationHandlers() {
-        commandHandlers.put(Command.QOFFER, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QPUT, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QPOLL, new QueuePollHandler(this));
-        commandHandlers.put(Command.QTAKE, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QSIZE, new QueueSizeHandler(this));
-        commandHandlers.put(Command.QPEEK, new QueuePollHandler(this));
-        commandHandlers.put(Command.QREMOVE, new QueueRemoveHandler(this));
-        commandHandlers.put(Command.QREMCAPACITY, new QueueCapacityHandler(this));
-        commandHandlers.put(Command.QENTRIES, new QueueEntriesHandler(this));
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
@@ -185,7 +171,17 @@ public class QueueService implements ManagedService, MigrationAwareService,
         }
     }
 
-    public Map<Command, ClientCommandHandler> getCommandMap() {
+    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+        final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
+        commandHandlers.put(Command.QOFFER, new QueueOfferHandler(this));
+        commandHandlers.put(Command.QPUT, new QueueOfferHandler(this));
+        commandHandlers.put(Command.QPOLL, new QueuePollHandler(this));
+        commandHandlers.put(Command.QTAKE, new QueueOfferHandler(this));
+        commandHandlers.put(Command.QSIZE, new QueueSizeHandler(this));
+        commandHandlers.put(Command.QPEEK, new QueuePollHandler(this));
+        commandHandlers.put(Command.QREMOVE, new QueueRemoveHandler(this));
+        commandHandlers.put(Command.QREMCAPACITY, new QueueCapacityHandler(this));
+        commandHandlers.put(Command.QENTRIES, new QueueEntriesHandler(this));
         return commandHandlers;
     }
 
@@ -196,6 +192,5 @@ public class QueueService implements ManagedService, MigrationAwareService,
     public void destroy() {
         containerMap.clear();
         eventRegistrations.clear();
-        commandHandlers.clear();
     }
 }

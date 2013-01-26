@@ -35,21 +35,19 @@ public class ClientCommandService {
     private final Map<TcpIpConnection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<TcpIpConnection, ClientEndpoint>();
     private ConcurrentHashMap<Command, ClientCommandHandler> services;
     private Executor executor;
+    private final ClientCommandHandler unknownCommandHandler;
 
     public ClientCommandService(Node node) {
         this.node = node;
         logger = node.getLogger(ClientCommandService.class.getName());
         executor = node.nodeEngine.getExecutionService().getExecutor("hz:client");
         services = new ConcurrentHashMap<Command, ClientCommandHandler>();
-        services.put(Command.UNKNOWN, new ClientCommandHandler(node.nodeEngine) {
+        unknownCommandHandler = new ClientCommandHandler() {
             @Override
             public Protocol processCall(Node node, Protocol protocol) {
-                return protocol.error(null, "unknown", "command");
+                return protocol.error(null, "unknown_command");
             }
-        });
-
-
-
+        };
     }
 
     //Always called by an io-thread.
@@ -86,11 +84,12 @@ public class ClientCommandService {
     }
 
     public void register(ClientProtocolService service) {
-        Map<Command, ClientCommandHandler> commandMap = service.getCommandMap();
+        Map<Command, ClientCommandHandler> commandMap = service.getCommandsAsaMap();
         services.putAll(commandMap);
     }
 
     public ClientCommandHandler getService(Protocol protocol) {
-        return services.get(protocol.command);
+        ClientCommandHandler handler = services.get(protocol.command);
+        return (handler == null) ? unknownCommandHandler : handler;
     }
 }

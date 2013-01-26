@@ -25,10 +25,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationConstants;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.NodeEngine;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -38,8 +36,7 @@ import java.util.logging.Level;
 public class ClientAuthenticateHandler extends ClientCommandHandler {
     ILogger logger;
 
-    public ClientAuthenticateHandler(NodeEngine node) {
-        super(node);
+    public ClientAuthenticateHandler() {
     }
 
     @Override
@@ -58,7 +55,7 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
             credentials = (Credentials) node.nodeEngine.toObject(data);
         }
         boolean authenticated = doAuthenticate(node, credentials, protocol.conn);
-        return authenticated ? protocol.success() : protocol.error(null);
+        return authenticated ? protocol.success() : protocol.error(null, "not_authenticated");
     }
 
     private boolean doAuthenticate(Node node, Credentials credentials, TcpIpConnection conn) {
@@ -101,7 +98,6 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
         } else {
             ClientEndpoint clientEndpoint = node.clientCommandService.getClientEndpoint(conn);
             clientEndpoint.authenticated();
-
             BindOperation bind = new BindOperation(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(),
                     conn.getSocketChannelWrapper().socket().getPort()));
             bind.setConnection(conn);

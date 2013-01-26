@@ -58,8 +58,8 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public void addMembershipListener(MembershipListener listener) {
-        check(listener);
-        client.getListenerManager().getMembershipListenerManager().registerListener(listener);
+//        check(listener);
+//        client.getListenerManager().getMembershipListenerManager().registerListener(listener);
     }
 
     public void removeMembershipListener(MembershipListener listener) {

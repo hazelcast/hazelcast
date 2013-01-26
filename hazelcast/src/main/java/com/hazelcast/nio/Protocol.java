@@ -135,8 +135,8 @@ public class Protocol implements SocketWritable {
         return create(Command.OK, args, buffers);
     }
 
-    public Protocol error(Data[] buffers, String... args) {
-        return create(Command.ERROR, args, buffers);
+    public Protocol error(Data[] buffers, String error) {
+        return create(Command.ERROR, new String[]{error}, buffers);
     }
 
     public Protocol create(Command command, String[] args, Data... buffers) {

@@ -16,13 +16,16 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.client.PartitionsHandler;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.ExecutedBy;
 import com.hazelcast.spi.annotation.ThreadType;
@@ -42,7 +45,7 @@ import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.partition.MigrationEndpoint.SOURCE;
 
 public class PartitionServiceImpl implements PartitionService, ManagedService,
-        EventPublishingService<MigrationEvent, MigrationListener> {
+        EventPublishingService<MigrationEvent, MigrationListener> , ClientProtocolService{
     public static final String SERVICE_NAME = "hz:core:partitionService";
 
     private static final long REPARTITIONING_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(300); // 5 MINUTES
@@ -67,6 +70,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private final AtomicBoolean migrationActive = new AtomicBoolean(true);
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final SystemLogService systemLogService;
+
 //    private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
 
     // updates will be done under lock, but reads will be multithreaded.
@@ -571,6 +575,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     public int getPartitionCount() {
         return partitionCount;
     }
+
+    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
+        commandHandlers.put(Command.PARTITIONS, new PartitionsHandler(this));
+        return commandHandlers;
+    }
+
+
 
     public static class AssignPartitions extends AbstractOperation {
         public void run() {

@@ -24,7 +24,6 @@ public abstract class QueueCommandHandler extends ClientCommandHandler {
     final QueueService qService;
 
     public QueueCommandHandler(QueueService queueService) {
-        super(queueService.getNodeEngine());
         this.qService = queueService;
     }
 }

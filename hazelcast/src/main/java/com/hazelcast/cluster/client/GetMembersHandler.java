@@ -27,10 +27,6 @@ import java.util.Collection;
 
 public class GetMembersHandler extends ClientCommandHandler {
 
-    public GetMembersHandler(NodeEngine nodeService) {
-        super(nodeService);
-    }
-
     public Protocol processCall(Node node, Protocol protocol) {
         Collection<Member> collection = node.nodeEngine.getClusterService().getMembers();
         String[] args = new String[collection.size()];
