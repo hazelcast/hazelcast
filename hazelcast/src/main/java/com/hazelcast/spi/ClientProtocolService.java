@@ -22,5 +22,5 @@ import com.hazelcast.nio.protocol.Command;
 import java.util.Map;
 
 public interface ClientProtocolService {
-    Map<Command, ClientCommandHandler> getCommandsAsaMap();
+    Map<Command, ClientCommandHandler> getCommandsAsMap();
 }

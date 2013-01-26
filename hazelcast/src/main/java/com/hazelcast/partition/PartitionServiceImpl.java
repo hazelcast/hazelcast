@@ -42,7 +42,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 public class PartitionServiceImpl implements PartitionService, ManagedService,
-        EventPublishingService<MigrationEvent, MigrationListener> , ClientProtocolService{
+        EventPublishingService<MigrationEvent, MigrationListener> , ClientProtocolService {
+
     public static final String SERVICE_NAME = "hz:core:partitionService";
 
     private static final long REPARTITIONING_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(300); // 5 MINUTES
@@ -563,15 +564,12 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return partitionCount;
     }
 
-<<<<<<< HEAD
-    public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.PARTITIONS, new PartitionsHandler(this));
         return commandHandlers;
     }
 
-
-=======
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
         final int members = node.getClusterService().getSize();
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
@@ -598,7 +596,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
         return ownedPartitions;
     }
->>>>>>> 116201ced8233fb25f3579319c364005c77190fb
 
     public static class AssignPartitions extends AbstractOperation {
         public void run() {
