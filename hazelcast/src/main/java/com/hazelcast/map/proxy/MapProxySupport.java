@@ -26,6 +26,8 @@ import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.Invocation;
@@ -52,6 +54,13 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data getInternal(Data key) {
+        final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
+        if (nearCacheEnabled) {
+            Data cachedData = mapService.getFromNearCache(name, key);
+            if (cachedData != null)
+                return cachedData;
+        }
+
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -59,7 +68,11 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             Future invoke = invocation.invoke();
-            return (Data) invoke.get();
+            Data value = (Data) invoke.get();
+            if (nearCacheEnabled) {
+                mapService.putNearCache(name, key, value);
+            }
+            return value;
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -191,7 +204,8 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, setOperation, partitionId)
                     .build();
-            invocation.invoke();
+            Future future = invocation.invoke();
+            future.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -453,7 +467,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    public void flushInternal(boolean flushAll) {
+    public void flush(boolean flushAll) {
         try {
             MapFlushOperation mapFlushOperation = new MapFlushOperation(name, flushAll);
             nodeEngine.getOperationService()
@@ -602,19 +616,62 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    public void flush() {
+    public void cleanUpNearCache() {
     }
 
-    protected Set<Data> keySetInternal(final Predicate predicate) {
-        return null;
-    }
+    protected Set<QueryableEntry> valuesInternal(final Predicate predicate) {
+        QueryOperation operation = new QueryOperation(name, predicate);
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        Set<Integer> plist = new HashSet<Integer>(partitionCount);
+        Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+        try {
+            List<Future> flist = new ArrayList<Future>();
+            for (MemberImpl member : members) {
+                if (member.localMember())
+                    continue;
+                Invocation invocation = nodeEngine.getOperationService()
+                        .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
+                Future future = invocation.invoke();
+                flist.add(future);
+            }
+            for (Future future : flist) {
+                QueryResult queryResult = (QueryResult) future.get();
+                if (queryResult != null) {
+                    plist.addAll(queryResult.getPartitionIds());
+                    result.addAll(queryResult.getResult());
+                }
+            }
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
+        }
 
-    protected Set<Entry<Data, Data>> entrySetInternal(final Predicate predicate) {
-        return null;
-    }
+        if (plist.size() == partitionCount) {
+            return result;
+        }
 
-    protected Collection<Data> valuesInternal(final Predicate predicate) {
-        return null;
+        List<Integer> missingList = new ArrayList<Integer>();
+        for (int i = 0; i < partitionCount; i++) {
+            if (!plist.contains(i)) {
+                missingList.add(i);
+            }
+        }
+
+        for (Integer pid : missingList) {
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+            queryPartitionOperation.setPartitionId(pid);
+            try {
+                Map<Integer, Object> results = nodeEngine.getOperationService()
+                        .invokeOnAllPartitions(SERVICE_NAME, queryPartitionOperation);
+                for (Object res : results.values()) {
+                    QueryResult queryResult = (QueryResult) nodeEngine.toObject(res);
+                    result.addAll(queryResult.getResult());
+                }
+            } catch (Throwable throwable) {
+                throw new HazelcastException(throwable);
+            }
+        }
+        return result;
     }
 
     protected Set<Data> localKeySetInternal(final Predicate predicate) {

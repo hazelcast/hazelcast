@@ -36,7 +36,7 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
     public boolean contains(Object o) {
         QueryableEntry entry = (QueryableEntry) o;
         for (ConcurrentMap<Object, QueryableEntry> resultSet : resultSets) {
-            if (resultSet.containsKey(entry.getKeyData())) {
+            if (resultSet.containsKey(entry.getIndexKey())) {
                 return true;
             }
         }

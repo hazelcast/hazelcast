@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
-
-import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.partition.MigrationEndpoint.SOURCE;
 
 public class PartitionServiceImpl implements PartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> , ClientProtocolService{
@@ -157,18 +154,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         lock.lock();
         try {
             if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
-                // since partition threads can not invoke operations...
-                final Future f = nodeEngine.getExecutionService().submit("hz:system", new Runnable() {
-                    public void run() {
-                        try {
-                            Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
-                                    node.getMasterAddress()).setTryCount(1).build().invoke();
-                            f.get(750, TimeUnit.MILLISECONDS);
-                        } catch (Exception e) {
-                            logger.log(Level.FINEST, e.getMessage(), e);
-                        }
-                    }
-                });
+                Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
+                        node.getMasterAddress()).setTryCount(1).build().invoke();
                 f.get(1, TimeUnit.SECONDS);
             }
         } catch (Exception e) {
@@ -432,7 +419,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             final PartitionInfo migratingPartition = getPartition(partitionId);
                             final Address address = migratingPartition.getReplicaAddress(replicaIndex);
                             final boolean success = migrationInfo.getToAddress().equals(address);
-                            final MigrationEndpoint endpoint = source ? SOURCE : DESTINATION;
+                            final MigrationEndpoint endpoint = source ? MigrationEndpoint.SOURCE : MigrationEndpoint.DESTINATION;
                             final FinalizeMigrationOperation op = new FinalizeMigrationOperation(endpoint,
                                     migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex(), success);
                             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
@@ -576,6 +563,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return partitionCount;
     }
 
+<<<<<<< HEAD
     public Map<Command, ClientCommandHandler> getCommandsAsaMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.PARTITIONS, new PartitionsHandler(this));
@@ -583,6 +571,34 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
 
+=======
+    public Map<Address, List<Integer>> getMemberPartitionsMap() {
+        final int members = node.getClusterService().getSize();
+        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
+        for (int i = 0; i < getPartitionCount(); i++) {
+            Address owner = getPartitionOwner(i);
+            List<Integer> ownedPartitions = memberPartitions.get(owner);
+            if (ownedPartitions == null) {
+                ownedPartitions = new ArrayList<Integer>();
+                memberPartitions.put(owner, ownedPartitions);
+            }
+            ownedPartitions.add(i);
+        }
+        return memberPartitions;
+    }
+
+
+    public List<Integer> getMemberPartitions(Address target) {
+        List<Integer> ownedPartitions = new LinkedList<Integer>();
+        for (int i = 0; i < getPartitionCount(); i++) {
+            Address owner = getPartitionOwner(i);
+            if (target.equals(owner)) {
+                ownedPartitions.add(i);
+            }
+        }
+        return ownedPartitions;
+    }
+>>>>>>> 116201ced8233fb25f3579319c364005c77190fb
 
     public static class AssignPartitions extends AbstractOperation {
         public void run() {

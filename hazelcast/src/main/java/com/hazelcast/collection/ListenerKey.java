@@ -25,9 +25,9 @@ import java.util.EventListener;
  */
 public class ListenerKey {
 
-    private String name;
-    private Data key;
-    private EventListener listener;
+    private final String name;
+    private final Data key;
+    private final EventListener listener;
 
     public ListenerKey(String name, Data key, EventListener listener) {
         this.name = name;

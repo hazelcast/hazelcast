@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,13 +43,16 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
     }
 
     public void run() throws Exception {
-        Collection coll = getCollection();
-        Object obj = isBinary() ? value : toObject(value);
-        coll.remove(obj);
+        Collection<CollectionRecord> coll = getCollection();
+        if (coll == null) {
+            response = false;
+            return;
+        }
+        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
+        response = coll.remove(record);
         if (coll.isEmpty()) {
             removeCollection();
         }
-        response = true;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

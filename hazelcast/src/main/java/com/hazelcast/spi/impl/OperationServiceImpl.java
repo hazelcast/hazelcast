@@ -163,6 +163,10 @@ final class OperationServiceImpl implements OperationService {
                         keyLock.lock();
                     }
                 }
+            } else if (op instanceof MultiPartitionAwareOperation) {
+                final int[] partitionIds = ((MultiPartitionAwareOperation) op).getPartitionIds();
+                partitionLock = new MultiPartitionLock(partitionIds);
+                partitionLock.lock();
             }
             doRunOperation(op);
         } catch (Throwable e) {
@@ -368,7 +372,26 @@ final class OperationServiceImpl implements OperationService {
 
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
             throws Exception {
-        final Map<Address, List<Integer>> memberPartitions = getMemberPartitionsMap();
+        final Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
+        return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
+    }
+
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, Operation operation,
+                                                   List<Integer> partitions) throws Exception {
+        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
+        return invokeOnPartitions(serviceName, operationFactory, partitions);
+    }
+
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+                                                   List<Integer> partitions) throws Exception {
+        final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
+        for (int partition : partitions) {
+            Address owner = nodeEngine.getPartitionService().getPartitionOwner(partition);
+            if(!memberPartitions.containsKey(owner)){
+                memberPartitions.put(owner, new ArrayList<Integer>());
+            }
+            memberPartitions.get(owner).add(partition);
+        }
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
@@ -381,7 +404,7 @@ final class OperationServiceImpl implements OperationService {
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
                                                          Address target) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(1);
-        memberPartitions.put(target, getMemberPartitions(target));
+        memberPartitions.put(target, nodeEngine.getPartitionService().getMemberPartitions(target));
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
@@ -424,7 +447,7 @@ final class OperationServiceImpl implements OperationService {
         }
         for (Integer failedPartition : failedPartitions) {
             Invocation inv = createInvocationBuilder(serviceName,
-                    operationFactory.createParallelOperation(), failedPartition).build();
+                    operationFactory.createOperation(), failedPartition).build();
             Future f = inv.invoke();
             partitionResults.put(failedPartition, f);
         }
@@ -434,59 +457,6 @@ final class OperationServiceImpl implements OperationService {
             partitionResults.put(failedPartition, result);
         }
         return partitionResults;
-    }
-
-    private Map<Address, List<Integer>> getMemberPartitionsMap() {
-        final int members = node.getClusterService().getSize();
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
-            List<Integer> ownedPartitions = memberPartitions.get(owner);
-            if (ownedPartitions == null) {
-                ownedPartitions = new ArrayList<Integer>();
-                memberPartitions.put(owner, ownedPartitions);
-            }
-            ownedPartitions.add(i);
-        }
-        return memberPartitions;
-    }
-
-    private List<Integer> getMemberPartitions(Address target) {
-        List<Integer> ownedPartitions = new LinkedList<Integer>();
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
-            if (target.equals(owner)) {
-                ownedPartitions.add(i);
-            }
-        }
-        return ownedPartitions;
-    }
-
-    private Address getPartitionOwner(int partitionId) {
-        Address owner = node.partitionService.getPartitionOwner(partitionId);
-        // TODO: infinite while is not good. convert it to wait 1 minute
-        while (owner == null) { // partition assignment is not completed yet
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException ignored) {
-            }
-            owner = node.partitionService.getPartitionOwner(partitionId);
-        }
-        return owner;
-    }
-
-    @PrivateApi
-    void acquirePartitionReadLocks(List<Integer> partitions) {
-        for (Integer partition : partitions) {
-            partitionLocks[partition].readLock().lock();
-        }
-    }
-
-    @PrivateApi
-    void releasePartitionReadLocks(List<Integer> partitions) {
-        for (Integer partition : partitions) {
-            partitionLocks[partition].readLock().unlock();
-        }
     }
 
     public void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
@@ -600,6 +570,31 @@ final class OperationServiceImpl implements OperationService {
 
         public void run() {
             runOperation(op);
+        }
+    }
+
+    private class MultiPartitionLock implements SpinLock {
+
+        final int[] partitions;
+
+        private MultiPartitionLock(int[] partitions) {
+            this.partitions = partitions;
+        }
+
+        public void lock() {
+            for (int partition : partitions) {
+                partitionLocks[partition].readLock().lock();
+            }
+        }
+
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void unlock() {
+            for (int partition : partitions) {
+                partitionLocks[partition].readLock().unlock();
+            }
         }
     }
 

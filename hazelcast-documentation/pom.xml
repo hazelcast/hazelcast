@@ -55,11 +55,11 @@
 
                         <configuration>
                             <!-- per execution configuration -->
-                            <includes>query.xml</includes>
+                            <includes>index.xml</includes>
                             <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
                             <targetDirectory>${project.build.directory}/docbook/pdf</targetDirectory>
                             <postProcess>
-                                <move file="${project.build.directory}/docbook/pdf/query.pdf" failonerror="false"
+                                <move file="${project.build.directory}/docbook/pdf/index.pdf" failonerror="false"
                                       tofile="${project.build.directory}/docbook/pdf/hazelcast-documentation.pdf"/>
                             </postProcess>
                         </configuration>
@@ -73,7 +73,7 @@
 
                         <configuration>
                             <!-- per execution configuration -->
-                            <includes>query.xml</includes>
+                            <includes>index.xml</includes>
                             <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
                             <targetDirectory>${project.build.directory}/docbook/single_html</targetDirectory>
                             <postProcess>
@@ -99,7 +99,7 @@
 
                         <configuration>
                             <!-- per execution configuration -->
-                            <includes>query.xml</includes>
+                            <includes>index.xml</includes>
                             <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
                             <targetDirectory>${project.build.directory}/docbook</targetDirectory>
                             <chunkedOutput>true</chunkedOutput>
@@ -133,8 +133,7 @@
                     <foCustomization>${basedir}/src/main/docbook/manual/stylesheet/docbook-fo.xsl</foCustomization>
                     <!-- for html outputs -->
                     <htmlStylesheet>./docbook.css</htmlStylesheet>
-                    <htmlCustomization>${basedir}/src/main/docbook/manual/stylesheet/docbook-html.xsl
-                    </htmlCustomization>
+                    <htmlCustomization>${basedir}/src/main/docbook/manual/stylesheet/docbook-html.xsl</htmlCustomization>
                 </configuration>
             </plugin>
         </plugins>

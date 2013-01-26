@@ -49,15 +49,7 @@ public final class ParallelOperationFactory implements MultiPartitionOperationFa
         this.operationData = operationData;
     }
 
-    public boolean shouldRunParallel() {
-        return true;
-    }
-
-    public Operation createSequentialOperation() {
-        throw new UnsupportedOperationException();
-    }
-
-    public Operation createParallelOperation() {
+    public Operation createOperation() {
         return nodeEngine.toObject(operationData);
     }
 

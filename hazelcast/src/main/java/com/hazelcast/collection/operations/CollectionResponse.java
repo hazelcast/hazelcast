@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,18 +38,21 @@ public class CollectionResponse implements DataSerializable {
     public CollectionResponse() {
     }
 
-    public CollectionResponse(Collection<Object> collection, NodeEngine nodeEngine) {
+    public CollectionResponse(Collection<Data> collection) {
+        if (collection == null) {
+            return;
+        }
+        this.collection = collection;
+    }
+
+    public CollectionResponse(Collection<CollectionRecord> collection, NodeEngine nodeEngine) {
         if (collection == null) {
             return;
         }
         this.collection = new ArrayList<Data>(collection.size());
-        for (Object obj : collection) {
-            this.collection.add(nodeEngine.toData(obj));
+        for (CollectionRecord record : collection) {
+            this.collection.add(nodeEngine.toData(record.getObject()));
         }
-    }
-
-    public CollectionResponse(Collection<Data> collection) {
-        this.collection = collection;
     }
 
     public Collection<Data> getCollection() {

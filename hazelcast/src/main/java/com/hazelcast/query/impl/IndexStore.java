@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 public interface IndexStore {
     void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
@@ -30,4 +31,6 @@ public interface IndexStore {
     void removeIndex(Comparable oldValue, Object indexKey);
 
     void newIndex(Comparable newValue, QueryableEntry entry);
+
+    ConcurrentMap<Object, QueryableEntry> getRecordMap(Comparable indexValue);
 }

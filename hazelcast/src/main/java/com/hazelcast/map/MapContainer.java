@@ -25,7 +25,7 @@ import com.hazelcast.query.impl.IndexService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MapInfo {
+public class MapContainer {
 
     private final String name;
     private final MapConfig mapConfig;
@@ -34,21 +34,29 @@ public class MapInfo {
     private final Map<String, MapInterceptor> interceptorMap;
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
+    private final boolean nearCacheEnabled;
 
-    public MapInfo(String name, MapConfig mapConfig) {
+    public MapContainer(String name, MapConfig mapConfig) {
         this.name = name;
         this.mapConfig = mapConfig;
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         if (mapStoreConfig != null && mapStoreConfig.getClassName() != null) {
+            MapStore tmp;
             try {
-                store = (MapStore) ClassLoaderUtil.newInstance(mapStoreConfig.getClassName());
+                tmp = (MapStore) ClassLoaderUtil.newInstance(mapStoreConfig.getClassName());
             } catch (Exception e) {
+                tmp = null;
                 e.printStackTrace();
             }
+            store = tmp;
+        }
+        else {
+            store = null;
         }
         interceptors = Collections.synchronizedList(new ArrayList<MapInterceptor>());
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
+        nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
     }
 
     public IndexService getIndexService() {
@@ -90,6 +98,10 @@ public class MapInfo {
         return name;
     }
 
+    public boolean isNearCacheEnabled() {
+        return nearCacheEnabled;
+    }
+
     public int getBackupCount() {
         return mapConfig.getBackupCount();
     }
@@ -109,4 +121,7 @@ public class MapInfo {
     public MapStore getStore() {
         return store;
     }
+
+
+
 }

@@ -60,11 +60,11 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapInfo(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapInfo(name).getAsyncBackupCount();
+        return mapService.getMapContainer(name).getAsyncBackupCount();
     }
 
     public Operation getBackupOperation() {

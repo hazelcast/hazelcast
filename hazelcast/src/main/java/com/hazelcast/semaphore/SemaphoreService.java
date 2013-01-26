@@ -41,7 +41,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     private final ConcurrentMap<String, Permit> permitMap = new ConcurrentHashMap<String, Permit>();
 
-    final NodeEngine nodeEngine;
+    private final NodeEngine nodeEngine;
 
     public SemaphoreService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;

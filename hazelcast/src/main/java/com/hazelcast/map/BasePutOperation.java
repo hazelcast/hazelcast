@@ -23,8 +23,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
-import java.util.Map;
-
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
     Record record;
@@ -73,6 +71,8 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         mapService.interceptAfterProcess(name, MapOperationType.PUT, dataKey, dataValue, dataOldValue);
         int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, dataValue);
+        if (mapService.getMapContainer(name).getMapConfig().getNearCacheConfig() != null && mapService.getMapContainer(name).getMapConfig().getNearCacheConfig().isInvalidateOnChange())
+            mapService.invalidateAllNearCaches(name, dataKey);
     }
 
 
@@ -81,11 +81,11 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapInfo(name).getAsyncBackupCount();
+        return mapService.getMapContainer(name).getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapInfo(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
     @Override

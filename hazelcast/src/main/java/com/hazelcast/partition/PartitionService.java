@@ -20,6 +20,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * @mdogan 1/24/13
  */
@@ -37,4 +40,7 @@ public interface PartitionService extends CoreService {
 
     int getPartitionCount();
 
+    List<Integer> getMemberPartitions(Address target);
+
+    Map<Address, List<Integer>> getMemberPartitionsMap();
 }

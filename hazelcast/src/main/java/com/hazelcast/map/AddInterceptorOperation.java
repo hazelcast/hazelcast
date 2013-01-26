@@ -19,16 +19,9 @@ package com.hazelcast.map;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.Map;
 
 public class AddInterceptorOperation extends AbstractOperation {
 
@@ -48,8 +41,8 @@ public class AddInterceptorOperation extends AbstractOperation {
     }
 
     public void run() {
-        mapService = (MapService) getService();
-        mapService.getMapInfo(mapName).addInterceptor(mapInterceptor, id);
+        mapService = getService();
+        mapService.getMapContainer(mapName).addInterceptor(mapInterceptor, id);
     }
 
     @Override

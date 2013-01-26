@@ -42,7 +42,7 @@ public class QueueOfferHandler extends QueueCommandHandler {
                 queue.put(item);
                 result = true;
             } else {
-                long timeout = protocol.args.length > 1? Long.valueOf(protocol.args[1]):0;
+                long timeout = protocol.args.length > 1 ? Long.valueOf(protocol.args[1]) : 0;
                 if (timeout == 0) {
                     result = queue.offer(item);
                 } else {

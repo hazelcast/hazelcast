@@ -54,11 +54,11 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
 
     }
 
-    public Object createNew() {
+    public <V> Collection<V> createNew() {
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-            return new HashSet(10);
+            return new HashSet<V>(10);
         } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
-            return new LinkedList();
+            return new LinkedList<V>();
         }
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
@@ -278,7 +278,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    protected Boolean compareAndRemoveInternal(Data dataKey, List<Data> dataList, boolean retain){
+    protected Boolean compareAndRemoveInternal(Data dataKey, List<Data> dataList, boolean retain) {
         try {
             CompareAndRemoveOperation operation = new CompareAndRemoveOperation(name, proxyType, dataKey, getThreadId(), dataList, retain);
             return invoke(operation, dataKey);

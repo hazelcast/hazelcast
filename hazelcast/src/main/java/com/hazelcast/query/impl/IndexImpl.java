@@ -41,6 +41,10 @@ public class IndexImpl implements Index {
         indexStore.removeIndex(oldValue, key);
     }
 
+    ConcurrentMap<Object, QueryableEntry> getRecordMap(Comparable indexValue) {
+        return indexStore.getRecordMap(indexValue);
+    }
+
     public void saveEntryIndex(QueryableEntry e) throws QueryException {
         Object key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
@@ -89,13 +93,17 @@ public class IndexImpl implements Index {
 
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         MultiResultSet results = new MultiResultSet();
-        indexStore.getSubRecords(results, comparisonType, searchedValue);
+        indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
         return results;
     }
 
     public Comparable convert(Comparable value) {
         if (attributeType == null) return value;
         return attributeType.getConverter().convert(value);
+    }
+
+    public ConcurrentMap<Object, Comparable> getRecordValues() {
+        return recordValues;
     }
 
     final static class NullObject implements Comparable {

@@ -19,6 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 public class GetOperation extends AbstractNamedKeyBasedOperation implements IdentifiedDataSerializable {

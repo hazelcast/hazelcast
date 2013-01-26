@@ -25,7 +25,7 @@ import java.util.concurrent.Future;
  */
 public interface AsyncInvocationService {
 
-    Future invoke(Invocation invocation);
+    <V> Future<V> invoke(Invocation invocation);
 
-    void invoke(Invocation invocation, ExecutionCallback callback);
+    <V> void invoke(Invocation invocation, ExecutionCallback<V> callback);
 }
