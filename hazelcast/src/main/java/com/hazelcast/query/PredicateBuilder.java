@@ -17,11 +17,14 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-public class PredicateBuilder implements Predicate {
+public class PredicateBuilder implements IndexAwarePredicate {
     public String attribute = null;
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
@@ -67,5 +70,21 @@ public class PredicateBuilder implements Predicate {
         sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));
         sb.append("\n}");
         return sb.toString();
+    }
+
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        Predicate p = lsPredicates.get(0);
+        if (p instanceof IndexAwarePredicate) {
+            return ((IndexAwarePredicate) p).filter(queryContext);
+        }
+        return null;
+    }
+
+    public boolean isIndexed(QueryContext queryContext) {
+        Predicate p = lsPredicates.get(0);
+        if (p instanceof IndexAwarePredicate) {
+            return ((IndexAwarePredicate) p).isIndexed(queryContext);
+        }
+        return false;
     }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.TestUtil;
@@ -29,35 +31,35 @@ import static junit.framework.Assert.assertEquals;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapIndexServiceTest extends TestUtil {
-    //    @Test
-//    public void testAndWithSingleEntry() throws Exception {
-//        IndexService mapIndexService = new IndexService();
-//        mapIndexService.addIndex("name", false, 0);
-//        mapIndexService.addIndex("age", true, 1);
-//        mapIndexService.addIndex("salary", true, 2);
-//        for (int i = 0; i < 20000; i++) {
-//            Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-//            mapIndexService.index(employee);
-//        }
-//        int count = 1000;
-//        Set<String> ages = new HashSet<String>(count);
-//        for (int i = 0; i < count; i++) {
-//            ages.add(String.valueOf(i));
-//        }
-//        final EntryObject entryObject = new PredicateBuilder().getEntryObject();
-//        final PredicateBuilder predicate = entryObject.get("name").equal("140Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
-//        long total = Runtime.getRuntime().totalMemory();
-//        long free = Runtime.getRuntime().freeMemory();
-//        System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
-//        for (int i = 0; i < 10000; i++) {
-//            long start = Clock.currentTimeMillis();
-//            QueryContext queryContext = new QueryContext(mapIndexService, predicate);
-//            Set<MapEntry> results = QueryService.query(queryContext);
-////            System.out.println("result size " + results.size() + " took " + (Clock.currentTimeMillis() - start));
-//            assertEquals(1, results.size());
-//        }
-//    }
-//
+
+    @Test
+    public void testAndWithSingleEntry() throws Exception {
+        IndexService mapIndexService = new IndexService();
+        mapIndexService.addOrGetIndex("name", false);
+        mapIndexService.addOrGetIndex("age", true);
+        mapIndexService.addOrGetIndex("salary", true);
+        for (int i = 0; i < 20000; i++) {
+            Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
+            mapIndexService.saveEntryIndex(new QueryEntry(null, i, i, employee));
+        }
+        int count = 1000;
+        Set<String> ages = new HashSet<String>(count);
+        for (int i = 0; i < count; i++) {
+            ages.add(String.valueOf(i));
+        }
+        final EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        final PredicateBuilder predicate = entryObject.get("name").equal("140Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
+        long total = Runtime.getRuntime().totalMemory();
+        long free = Runtime.getRuntime().freeMemory();
+        System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
+        long start = Clock.currentTimeMillis();
+        for (int i = 0; i < 10000; i++) {
+            Set<QueryableEntry> results = mapIndexService.query(predicate, null);
+            assertEquals(1, results.size());
+        }
+        System.out.println("Took " + (Clock.currentTimeMillis() - start));
+    }
+
     @Test
     public void testIndex() throws Exception {
         IndexService indexService = new IndexService();
