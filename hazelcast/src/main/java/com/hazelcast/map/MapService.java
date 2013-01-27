@@ -167,6 +167,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             record = new DataRecord(dataKey, toData(value));
         } else if (recordType == MapConfig.RecordType.OBJECT) {
             record = new ObjectRecord(dataKey, toObject(value));
+        } else if (recordType == MapConfig.RecordType.CACHED) {
+            record = new CachedDataRecord(dataKey, toData(value));
         } else {
             throw new IllegalArgumentException("Should not happen!");
         }

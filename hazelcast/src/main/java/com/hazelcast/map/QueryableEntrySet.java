@@ -50,7 +50,7 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
 
         Iterator<Record> innerIterator;
         Iterator<ConcurrentMap<Data, Record>> iter = null;
-        QueryableEntry currentEntry = null;
+        Record currentEntry = null;
 
         RecordIterator() {
             iter = recordMapList.iterator();
@@ -63,8 +63,7 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
                 return false;
             }
             if (innerIterator.hasNext()) {
-                Record record = innerIterator.next();
-                currentEntry = new QueryEntry(serializationService, record.getKey(), record.getKey(), record.getValue());
+                currentEntry = innerIterator.next();
                 return true;
             } else if (iter.hasNext()) {
                 innerIterator = iter.next().values().iterator();
@@ -74,7 +73,23 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
         }
 
         public QueryableEntry next() {
-            return currentEntry;
+            if (currentEntry == null) return null;
+            final Record record = currentEntry;
+            Object key = record.getKey();
+            Object value = null;
+            if (record instanceof CachedDataRecord) {
+                CachedDataRecord cachedDataRecord = (CachedDataRecord) record;
+                value = cachedDataRecord.getCachedValue();
+                if (value == null) {
+                    value = serializationService.toObject(cachedDataRecord.getValue());
+                    cachedDataRecord.setCachedValue(value);
+                }
+            } else if (record instanceof DataRecord) {
+                value = serializationService.toObject(((DataRecord) record).getValue());
+            } else {
+                value = record.getValue();
+            }
+            return new QueryEntry(serializationService, key, key, value);
         }
 
         public void remove() {

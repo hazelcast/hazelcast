@@ -22,6 +22,8 @@ import com.hazelcast.nio.serialization.*;
 import java.io.IOException;
 
 public class QueryEntry implements QueryableEntry {
+    static final String KEY_ATTRIBUTE_NAME = "__key";
+    static final String THIS_ATTRIBUTE_NAME = "this";
     private static PortableExtractor extractor = new PortableExtractor();
     private final SerializationServiceImpl serializationService;
     Object indexKey;
@@ -72,13 +74,12 @@ public class QueryEntry implements QueryableEntry {
         return extractViaReflection(attributeName);
     }
 
-    Comparable extractViaReflection(String attributeName) {
+    final Comparable extractViaReflection(String attributeName) {
         try {
             Object v = getValue();
-            if ("__key".equals(attributeName)) return (Comparable) getKey();
-            else if ("this".equals(attributeName)) return (Comparable) v;
-            ReflectionHelper reflectionHelper = new ReflectionHelper();
-            return (Comparable) reflectionHelper.createGetter(this, attributeName).getValue(v);
+            if (KEY_ATTRIBUTE_NAME.equals(attributeName)) return (Comparable) getKey();
+            else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) return (Comparable) v;
+            return ReflectionHelper.extractValue(this, attributeName, v);
         } catch (Exception e) {
             throw new QueryException(e);
         }
@@ -102,8 +103,7 @@ public class QueryEntry implements QueryableEntry {
             if ("this".equals(attributeName)) {
                 klass = value.getClass();
             } else {
-                ReflectionHelper reflectionHelper = new ReflectionHelper();
-                klass = reflectionHelper.createGetter(this, attributeName).getReturnType();
+                return ReflectionHelper.getAttributeType(this, attributeName);
             }
         }
         return ReflectionHelper.getAttributeType(klass);

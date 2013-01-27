@@ -63,10 +63,7 @@ public class IndexService {
         return mapIndexes.get(attribute);
     }
 
-    int calls = 0;
-
     public Set<QueryableEntry> query(Predicate predicate, Set<QueryableEntry> allEntries) {
-        calls++;
         QueryContext queryContext = new QueryContext(this);
         Set<QueryableEntry> result = null;
         if (predicate instanceof IndexAwarePredicate) {
@@ -75,24 +72,14 @@ public class IndexService {
                 result = iap.filter(queryContext);
             }
         }
-        if (result == null) {
+        if (result == null && allEntries != null) {
             result = new HashSet<QueryableEntry>();
-            int count = 0;
-            long now = System.currentTimeMillis();
             for (QueryableEntry entry : allEntries) {
                 if (predicate.apply(entry)) {
                     result.add(entry);
                 }
-                if (count++ % 1000 == 0) {
-//                    System.out.println(calls + " count " + count);
-                }
             }
-            System.out.println(count + " Took " + (System.currentTimeMillis() - now) + " >>> " + result.size());
         }
-//        for (QueryableEntry queryableEntry : result) {
-//            System.out.println(queryableEntry.getValue());
-//        }
-//        return new HashSet<QueryableEntry>(result);
         return result;
     }
 }

@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ReflectionHelper {
 
-    private static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
+    private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
 
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
@@ -58,10 +58,18 @@ public class ReflectionHelper {
         throw new RuntimeException("Unknown type " + klass);
     }
 
-    public Getter createGetter(QueryableEntry entry, String attribute) {
+    public static void reset() {
+        getterCache.clear();
+    }
+
+    public static AttributeType getAttributeType(QueryableEntry entry, String attribute) {
+        return getAttributeType(createGetter(entry, attribute).getReturnType());
+    }
+
+    private static Getter createGetter(QueryableEntry entry, String attribute) {
         Object obj = entry.getValue();
         Class clazz = obj.getClass();
-        String cacheKey = clazz.getName() + attribute;
+        String cacheKey = clazz.getName() + ":" + attribute;
         Getter getter = getterCache.get(cacheKey);
         if (getter != null) return getter;
         try {
@@ -123,7 +131,11 @@ public class ReflectionHelper {
         }
     }
 
-    abstract class Getter {
+    public static Comparable extractValue(QueryEntry queryEntry, String attributeName, Object object) throws Exception {
+        return (Comparable) createGetter(queryEntry, attributeName).getValue(object);
+    }
+
+    private static abstract class Getter {
         protected final Getter parent;
 
         public Getter(final Getter parent) {
@@ -135,7 +147,7 @@ public class ReflectionHelper {
         abstract Class getReturnType();
     }
 
-    class MethodGetter extends Getter {
+    static class MethodGetter extends Getter {
         final Method method;
 
         MethodGetter(Getter parent, Method method) {
@@ -158,7 +170,7 @@ public class ReflectionHelper {
         }
     }
 
-    class FieldGetter extends Getter {
+    static class FieldGetter extends Getter {
         final Field field;
 
         FieldGetter(Getter parent, Field field) {
@@ -181,7 +193,7 @@ public class ReflectionHelper {
         }
     }
 
-    class ThisGetter extends Getter {
+    static class ThisGetter extends Getter {
         final Object object;
 
         public ThisGetter(final Getter parent, Object object) {

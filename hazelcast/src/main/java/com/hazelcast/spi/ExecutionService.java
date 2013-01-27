@@ -29,7 +29,7 @@ public interface ExecutionService {
 
     <T> Future<T> submit(String name, Callable<T> task);
 
-    Executor getExecutor(String name);
+    ExecutorService getExecutor(String name);
 
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
