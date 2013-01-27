@@ -57,37 +57,51 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     public XmlConfigBuilder() {
         String configFile = System.getProperty("hazelcast.config");
         try {
+            //if the user specified an hazelcast.config file. we are going to try to load that first.
             if (configFile != null) {
-                if(configFile.startsWith("classpath:")){
+               if(configFile.startsWith("classpath:")){
                     String s = configFile.substring("classpath:".length());
-                    URL url =  Config.class.getClassLoader().getResource(s);
-                    configurationFile = new File(url.toURI());
+                    URL resource = getClass().getClassLoader().getResource(s);
+
+                    if(resource == null){
+                        String msg = "Config file at '" + configFile + "' doesn't exist.";
+                        msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
+                        logger.log(Level.WARNING, msg);
+                    } else{
+                        logger.log(Level.INFO, "Using configuration file at " + resource);
+                        configurationFile = new File(resource.getFile());
+                        in = resource.openStream();
+                    }
                 }else{
                     configurationFile = new File(configFile);
-                }
-
-                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
-                if (!configurationFile.exists()) {
-                    String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
-                    msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
-                    logger.log(Level.WARNING, msg);
-                    configurationFile = null;
+                    logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                    if (!configurationFile.exists()) {
+                        String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
+                        msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
+                        logger.log(Level.WARNING, msg);
+                        configurationFile = null;
+                    }
                 }
             }
-            if (configurationFile == null) {
+
+            //if no configuration file has been found, lets try to lookup hazelcast.xml in the working directory.
+            if (in == null && configurationFile == null) {
                 configFile = "hazelcast.xml";
                 configurationFile = new File("hazelcast.xml");
                 if (!configurationFile.exists()) {
                     configurationFile = null;
                 }
             }
-            if (configurationFile != null) {
+
+            //if a configuration file has been found, we are going to try to open it.
+            if (in == null && configurationFile != null) {
                 logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
                     in = new FileInputStream(configurationFile);
                     configurationUrl = configurationFile.toURI().toURL();
                     usingSystemConfig = true;
                 } catch (final Exception e) {
+                    e.printStackTrace();
                     String msg = "Having problem reading config file at '" + configFile + "'.";
                     msg += "\nException message: " + e.getMessage();
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in classpath.";
@@ -95,6 +109,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     in = null;
                 }
             }
+
+            //if no configuration file has been found, we are going to look for a hazelcast.xml in the classpath
+            //and if that doesn't exist, we are going to default to 'hazelcast-default.xml' provided by Hazelcast.
             if (in == null) {
                 logger.log(Level.INFO, "Looking for hazelcast.xml config file in classpath.");
                 configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
@@ -102,6 +119,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
                     logger.log(Level.WARNING,
                             "Could not find hazelcast.xml in classpath.\nHazelcast will use hazelcast-default.xml config file in jar.");
+
                     if (configurationUrl == null) {
                         logger.log(Level.WARNING, "Could not find hazelcast-default.xml in the classpath!"
                                 + "\nThis may be due to a wrong-packaged or corrupted jar file.");
@@ -109,12 +127,15 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     }
                 }
                 logger.log(Level.INFO, "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
+                //todo: the exception is not resolved here.
                 in = configurationUrl.openStream();
-                if (in == null) {
-                    String msg = "Having problem reading config file hazelcast-default.xml in the classpath.";
-                    msg += "\nHazelcast will start with default configuration.";
-                    logger.log(Level.WARNING, msg);
-                }
+            }
+
+            //no usable configuration has been found.
+            if (in == null) {
+                String msg = "Having problem reading config file hazelcast-default.xml in the classpath.";
+                msg += "\nHazelcast will start with default configuration.";
+                logger.log(Level.WARNING, msg);
             }
         } catch (final Throwable e) {
             logger.log(Level.SEVERE, "Error while creating configuration:" + e.getMessage(), e);
