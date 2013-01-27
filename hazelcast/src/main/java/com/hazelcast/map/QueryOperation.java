@@ -48,7 +48,7 @@ public class QueryOperation extends AbstractNamedOperation {
         mapService = getService();
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
-        Set<QueryableEntry> entries = indexService.query(predicate, null);
+        Set<QueryableEntry> entries = indexService.query(predicate);
         if (entries == null) {
             // run in parallel
             entries = runParallel(initialPartitions);

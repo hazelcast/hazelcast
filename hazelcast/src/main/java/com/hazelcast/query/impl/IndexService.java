@@ -19,7 +19,6 @@ package com.hazelcast.query.impl;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -63,23 +62,14 @@ public class IndexService {
         return mapIndexes.get(attribute);
     }
 
-    public Set<QueryableEntry> query(Predicate predicate, Set<QueryableEntry> allEntries) {
+    public Set<QueryableEntry> query(Predicate predicate) {
         QueryContext queryContext = new QueryContext(this);
-        Set<QueryableEntry> result = null;
         if (predicate instanceof IndexAwarePredicate) {
             IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
             if (iap.isIndexed(queryContext)) {
-                result = iap.filter(queryContext);
+                return iap.filter(queryContext);
             }
         }
-        if (result == null && allEntries != null) {
-            result = new HashSet<QueryableEntry>();
-            for (QueryableEntry entry : allEntries) {
-                if (predicate.apply(entry)) {
-                    result.add(entry);
-                }
-            }
-        }
-        return result;
+        return null;
     }
 }

@@ -54,7 +54,7 @@ public class MapIndexServiceTest extends TestUtil {
         System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
         long start = Clock.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            Set<QueryableEntry> results = mapIndexService.query(predicate, null);
+            Set<QueryableEntry> results = mapIndexService.query(predicate);
             assertEquals(1, results.size());
         }
         System.out.println("Took " + (Clock.currentTimeMillis() - start));
@@ -76,7 +76,7 @@ public class MapIndexServiceTest extends TestUtil {
         long start = Clock.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
             SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexService.query(predicate, null));
+            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexService.query(predicate));
             assertEquals(10, results.size());
         }
         System.out.println("Took " + (Clock.currentTimeMillis() - start));
@@ -95,6 +95,6 @@ public class MapIndexServiceTest extends TestUtil {
         indexService.saveEntryIndex(new QueryEntry(null, 7, 7, new Value("prs")));
         indexService.saveEntryIndex(new QueryEntry(null, 8, 8, new Value("def")));
         indexService.saveEntryIndex(new QueryEntry(null, 9, 9, new Value("qwx")));
-        assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"), null)).size());
+        assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"))).size());
     }
 }
