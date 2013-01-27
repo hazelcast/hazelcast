@@ -20,7 +20,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.NodeEngine;
 
 import java.util.AbstractSet;
 import java.util.Iterator;
@@ -31,7 +30,6 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
 
     List<ConcurrentMap<Data, Record>> recordMapList;
     SerializationServiceImpl serializationService;
-
 
     public QueryableEntrySet(SerializationServiceImpl serializationService, List<ConcurrentMap<Data, Record>> recordMapList) {
         this.recordMapList = recordMapList;
@@ -51,7 +49,8 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
     class RecordIterator implements Iterator<QueryableEntry> {
 
         Iterator<Record> innerIterator;
-        Iterator<ConcurrentMap<Data, Record>> iter;
+        Iterator<ConcurrentMap<Data, Record>> iter = null;
+        QueryableEntry currentEntry = null;
 
         RecordIterator() {
             iter = recordMapList.iterator();
@@ -60,7 +59,12 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
         }
 
         public boolean hasNext() {
+            if (innerIterator == null) {
+                return false;
+            }
             if (innerIterator.hasNext()) {
+                Record record = innerIterator.next();
+                currentEntry = new QueryEntry(serializationService, record.getKey(), record.getKey(), record.getValue());
                 return true;
             } else if (iter.hasNext()) {
                 innerIterator = iter.next().values().iterator();
@@ -70,22 +74,11 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
         }
 
         public QueryableEntry next() {
-            if (innerIterator.hasNext()) {
-                Record record = innerIterator.next();
-                QueryableEntry qentry = new QueryEntry(serializationService, record.getKey(), record.getKey(), record.getValue());
-                return qentry;
-            } else if (iter.hasNext()) {
-                innerIterator = iter.next().values().iterator();
-                return next();
-            }
-
-            return null;
+            return currentEntry;
         }
 
         public void remove() {
             throw new UnsupportedOperationException();
         }
     }
-
-
 }

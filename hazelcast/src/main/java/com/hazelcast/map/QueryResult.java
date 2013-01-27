@@ -50,7 +50,7 @@ public class QueryResult implements DataSerializable {
         int psize = partitionIds.size();
         out.writeInt(psize);
         for (int i = 0; i < psize; i++) {
-            out.writeObject(partitionIds.get(i));
+            out.writeInt(partitionIds.get(i));
         }
         int rsize = result.size();
         out.writeInt(rsize);
@@ -62,12 +62,12 @@ public class QueryResult implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         int psize = in.readInt();
-        if(psize > 0) {
+        if (psize > 0) {
             partitionIds = new ArrayList<Integer>(psize);
             partitionIds.add(in.readInt());
         }
         int rsize = in.readInt();
-        if(rsize > 0) {
+        if (rsize > 0) {
             result = new HashSet<QueryableEntry>(rsize);
             result.add((QueryEntry) in.readObject());
         }

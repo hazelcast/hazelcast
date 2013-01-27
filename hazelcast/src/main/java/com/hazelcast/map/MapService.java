@@ -69,7 +69,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
-        ownedPartitions = new AtomicReference<List<Integer>>(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
+        ownedPartitions = new AtomicReference<List<Integer>>();
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -100,12 +100,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public AtomicReference<List<Integer>> getOwnedPartitions() {
+        if (ownedPartitions.get() == null) {
+            ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
+        }
         return ownedPartitions;
     }
 
     public void beforeMigration(MigrationServiceEvent event) {
         // TODO: what if partition has transactions?
-        ownedPartitions.set(null);
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
@@ -168,7 +170,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         } else {
             throw new IllegalArgumentException("Should not happen!");
         }
-
         if (ttl <= 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
             record.getState().updateTtlExpireTime(mapContainer.getMapConfig().getTimeToLiveSeconds());
             scheduleOperation(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds());
@@ -339,7 +340,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         commandHandlers.put(Command.KEYSET, new KeySetHandler(this));
         commandHandlers.put(Command.MGETENTRY, new MapGetEntryHandler(this));
         commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
-
         return commandHandlers;
     }
 
@@ -386,14 +386,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
-
         if (candidates.isEmpty())
             return;
-
         Object key = null;
         Object value = null;
         Object oldValue = null;
-
         for (EventRegistration candidate : candidates) {
             EntryEventFilter filter = (EntryEventFilter) candidate.getFilter();
             if (filter instanceof QueryEventFilter) {
@@ -406,7 +403,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     testValue = value;
                 }
                 key = key != null ? key : toObject(key);
-
                 QueryEventFilter qfilter = (QueryEventFilter) filter;
                 if (qfilter.eval(new SimpleMapEntry(key, testValue))) {
                     if (filter.isIncludeValue()) {
@@ -415,7 +411,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         registrationsWithoutValue.add(candidate);
                     }
                 }
-
             } else if (filter.eval(dataKey)) {
                 if (filter.isIncludeValue()) {
                     registrationsWithValue.add(candidate);
@@ -428,11 +423,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             return;
         String source = nodeEngine.getThisAddress().toString();
         EventData event = new EventData(source, caller, dataKey, dataValue, dataOldValue, eventType);
-
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
-
 
     public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
@@ -465,13 +458,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void dispatchEvent(EventData eventData, EntryListener listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         EntryEvent event = null;
-
         if (eventData.getDataOldValue() == null) {
             event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataNewValue()));
         } else {
             event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataOldValue()), toObject(eventData.getDataNewValue()));
         }
-
         switch (event.getEventType()) {
             case ADDED:
                 listener.entryAdded(event);
@@ -487,7 +478,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 break;
         }
     }
-
 
     public void scheduleOperation(String mapName, Data key, long executeTime) {
         MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
@@ -524,12 +514,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     }
                 }
             }
-
             String evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
             int evictSize = recordList.size() * mapContainer.getMapConfig().getEvictionPercentage() / 100;
             if (evictSize == 0)
                 return;
-
             if (evictionPolicy.equals("LRU")) {
                 Collections.sort(recordList, new Comparator<AbstractRecord>() {
                     public int compare(AbstractRecord o1, AbstractRecord o2) {
@@ -538,7 +526,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 });
                 for (Object record : recordList) {
                     AbstractRecord arec = (AbstractRecord) record;
-
                 }
             } else if (evictionPolicy.equals("LFU")) {
                 Collections.sort(recordList, new Comparator<AbstractRecord>() {
@@ -585,9 +572,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     return totalSize > maxSizeConfig.getSize();
                 else
                     return false;
-
             }
-
             if (maxSizePolicy.equals("USED_HEAP_SIZE") || maxSizePolicy.equals("USED_HEAP_PERCENTAGE")) {
                 long total = Runtime.getRuntime().totalMemory();
                 long used = (total - Runtime.getRuntime().freeMemory());
@@ -599,7 +584,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
             return false;
         }
-
     }
 
     public QueryableEntrySet getQueryableEntrySet(String mapName) {
@@ -610,7 +594,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             RecordStore recordStore = container.getRecordStore(mapName);
             mlist.add(recordStore.getRecords());
         }
-
         return new QueryableEntrySet((SerializationServiceImpl) nodeEngine.getSerializationService(), mlist);
     }
 
@@ -619,14 +602,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
         ConcurrentMap<Data, Record> records = recordStore.getRecords();
+        SerializationServiceImpl serializationService = (SerializationServiceImpl) nodeEngine.getSerializationService();
         for (Record record : records.values()) {
-            QueryEntry queryEntry = new QueryEntry((SerializationServiceImpl) nodeEngine.getSerializationService(), record.getKey(), record.getKey(), record.getValue());
+            Data key = record.getKey();
+            QueryEntry queryEntry = new QueryEntry(serializationService, key, key, record.getValue());
             if (predicate.apply(queryEntry)) {
                 result.add(queryEntry);
             }
         }
+        if (result.size() > 0) System.out.println(partitionId + " >> " + result.size());
         return result;
     }
-
-
 }

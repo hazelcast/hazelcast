@@ -26,13 +26,10 @@ import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.*;
 import com.hazelcast.transaction.TransactionImpl;
+import com.hazelcast.util.QueryResultStream;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -60,7 +57,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             if (cachedData != null)
                 return cachedData;
         }
-
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -619,18 +615,17 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     public void cleanUpNearCache() {
     }
 
-    protected Set<QueryableEntry> valuesInternal(final Predicate predicate) {
+    protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
+        OperationService operationService = nodeEngine.getOperationService();
         QueryOperation operation = new QueryOperation(name, predicate);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+        QueryResultStream<QueryableEntry> result = new QueryResultStream(iterationType, dataResult);
         try {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
-                if (member.localMember())
-                    continue;
-                Invocation invocation = nodeEngine.getOperationService()
+                Invocation invocation = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
                 Future future = invocation.invoke();
                 flist.add(future);
@@ -642,34 +637,34 @@ abstract class MapProxySupport extends AbstractDistributedObject {
                     result.addAll(queryResult.getResult());
                 }
             }
+            if (plist.size() == partitionCount) {
+                return result;
+            }
+            List<Integer> missingList = new ArrayList<Integer>();
+            for (int i = 0; i < partitionCount; i++) {
+                if (!plist.contains(i)) {
+                    missingList.add(i);
+                }
+            }
+            List<Future> futures = new ArrayList<Future>(missingList.size());
+            for (Integer pid : missingList) {
+                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+                queryPartitionOperation.setPartitionId(pid);
+                try {
+                    Future f = operationService.createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
+                    futures.add(f);
+                } catch (Throwable throwable) {
+                    throw new HazelcastException(throwable);
+                }
+            }
+            for (Future future : futures) {
+                QueryResult queryResult = (QueryResult) future.get();
+                result.addAll(queryResult.getResult());
+            }
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
-        }
-
-        if (plist.size() == partitionCount) {
-            return result;
-        }
-
-        List<Integer> missingList = new ArrayList<Integer>();
-        for (int i = 0; i < partitionCount; i++) {
-            if (!plist.contains(i)) {
-                missingList.add(i);
-            }
-        }
-
-        for (Integer pid : missingList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-            queryPartitionOperation.setPartitionId(pid);
-            try {
-                Map<Integer, Object> results = nodeEngine.getOperationService()
-                        .invokeOnAllPartitions(SERVICE_NAME, queryPartitionOperation);
-                for (Object res : results.values()) {
-                    QueryResult queryResult = (QueryResult) nodeEngine.toObject(res);
-                    result.addAll(queryResult.getResult());
-                }
-            } catch (Throwable throwable) {
-                throw new HazelcastException(throwable);
-            }
+        } finally {
+            result.end();
         }
         return result;
     }

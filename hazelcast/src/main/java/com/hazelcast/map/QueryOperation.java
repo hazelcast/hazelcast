@@ -21,15 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.MultiPartitionAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class QueryOperation extends AbstractNamedOperation {
 
@@ -46,10 +42,10 @@ public class QueryOperation extends AbstractNamedOperation {
     public void run() throws Exception {
         mapService = getService();
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
-
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = indexService.query(predicate, mapService.getQueryableEntrySet(name));
         List<Integer> finalPartitions = mapService.getOwnedPartitions().get();
+//        System.out.println(finalPartitions.size() + " queryoperation " + entries.size());
         if (initialPartitions == finalPartitions) {
             result = new QueryResult();
             result.setPartitionIds(finalPartitions);

@@ -16,26 +16,38 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.util.TestUtil;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static junit.framework.Assert.assertEquals;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class QueryTest extends TestUtil {
-//    @BeforeClass
-//    public static void init() throws Exception {
-//        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-//        Hazelcast.shutdownAll();
-//    }
-//
-//    @After
-//    public void cleanUp() {
-//        Hazelcast.shutdownAll();
-//    }
-//
-//    HazelcastInstance newInstance() {
-//        return Hazelcast.newHazelcastInstance(null);
-//    }
-//
+    @BeforeClass
+    public static void init() throws Exception {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        Hazelcast.shutdownAll();
+    }
+
+    @After
+    public void cleanUp() {
+        Hazelcast.shutdownAll();
+    }
+
+    HazelcastInstance newInstance() {
+        return Hazelcast.newHazelcastInstance(new Config());
+    }
 //    @Test
 //    public void issue393() {
 //        final IMap<String, Value> map = Hazelcast.getMap("default");
@@ -808,15 +820,20 @@ public class QueryTest extends TestUtil {
 //        assertEquals(2, map.keySet(predicate).size());
 //    }
 //
-//    /**
-//     * Github issues 98 and 131
-//     */
-//    @Test
-//    public void testPredicateStringAttribute() {
-//        IMap map = Hazelcast.getMap("testPredicateStringWithString");
-//        testPredicateStringAttribute(map);
-//    }
-//
+
+    /**
+     * Github issues 98 and 131
+     */
+    @Test
+    public void testPredicateStringAttribute() {
+        Config config = new Config();
+        StaticNodeFactory factory = new StaticNodeFactory(1);
+        HazelcastInstance h1 = factory.newInstance(config);
+        IMap map = h1.getMap("testPredicateStringWithString");
+        testPredicateStringAttribute(map);
+    }
+
+    //
 //    /**
 //     * Github issues 98 and 131
 //     */
@@ -827,25 +844,25 @@ public class QueryTest extends TestUtil {
 //        testPredicateStringAttribute(map);
 //    }
 //
-//    private void testPredicateStringAttribute(IMap map) {
-//        map.put(1, new Value("abc"));
-//        map.put(2, new Value("xyz"));
-//        map.put(3, new Value("aaa"));
-//        map.put(4, new Value("zzz"));
-//        map.put(5, new Value("klm"));
-//        map.put(6, new Value("prs"));
-//        map.put(7, new Value("prs"));
-//        map.put(8, new Value("def"));
-//        map.put(9, new Value("qwx"));
-//        assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
-//        assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
-//        assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
-//        assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
-//        assertEquals(8, map.values(new PredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
-//        assertEquals(9, map.values(new PredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
-//        assertEquals(7, map.values(new PredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
-//        assertEquals(6, map.values(new PredicateBuilder().getEntryObject().get("name").greaterEqual("gh")).size());
-//    }
+    private void testPredicateStringAttribute(IMap map) {
+        map.put(1, new Value("abc"));
+        map.put(2, new Value("xyz"));
+        map.put(3, new Value("aaa"));
+        map.put(4, new Value("zzz"));
+        map.put(5, new Value("klm"));
+        map.put(6, new Value("prs"));
+        map.put(7, new Value("prs"));
+        map.put(8, new Value("def"));
+        map.put(9, new Value("qwx"));
+        assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
+        assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
+        assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
+        assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
+        assertEquals(8, map.values(new PredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
+        assertEquals(9, map.values(new PredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
+        assertEquals(7, map.values(new PredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
+        assertEquals(6, map.values(new PredicateBuilder().getEntryObject().get("name").greaterEqual("gh")).size());
+    }
 //
 //    @Test
 //    public void testPredicateDateAttribute() {

@@ -23,11 +23,11 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.ObjectFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.Response;
+import com.hazelcast.util.QueryResultStream;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -85,7 +85,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         final Data key = nodeEngine.toData(k);
         final Data oldValue = nodeEngine.toData(o);
         final Data value = nodeEngine.toData(v);
-        return replaceInternal(key,oldValue,value);
+        return replaceInternal(key, oldValue, value);
     }
 
     public V replace(final K k, final V v) {
@@ -196,7 +196,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void addEntryListener(final EntryListener listener, final boolean includeValue) {
-         addEntryListenerInternal(listener, null, includeValue);
+        addEntryListenerInternal(listener, null, includeValue);
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
@@ -217,7 +217,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public Map.Entry<K, V> getMapEntry(final K key) {
         Map.Entry<Data, Data> entry = getMapEntryInternal(nodeEngine.toData(key));
-        return new AbstractMap.SimpleImmutableEntry<K,V>((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()));
+        return new AbstractMap.SimpleImmutableEntry<K, V>((K) nodeEngine.toObject(entry.getKey()), (V) nodeEngine.toObject(entry.getValue()));
     }
 
     public boolean evict(final Object key) {
@@ -246,41 +246,25 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return valueSet;
     }
 
-    public Set<Entry<K, V>> entrySet() {
+    public Set entrySet() {
         Set<Entry<Data, Data>> entries = entrySetInternal();
         Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
         for (Entry<Data, Data> entry : entries) {
-            resultSet.add(new AbstractMap.SimpleImmutableEntry((K)nodeEngine.toObject(entry.getKey()), (V)nodeEngine.toObject(entry.getValue()) )) ;
-
+            resultSet.add(new AbstractMap.SimpleImmutableEntry((K) nodeEngine.toObject(entry.getKey()), (V) nodeEngine.toObject(entry.getValue())));
         }
         return resultSet;
     }
 
     public Set<K> keySet(final Predicate predicate) {
-        Set<QueryableEntry> entries = valuesInternal(predicate);
-        Set<K> result = new HashSet<K>();
-        for (QueryableEntry entry : entries) {
-            result.add((K) entry.getKey());
-        }
-        return result;
+        return query(predicate, QueryResultStream.IterationType.KEY, false);
     }
 
-    public Set<Entry<K, V>> entrySet(final Predicate predicate) {
-        Set<QueryableEntry> entries = valuesInternal(predicate);
-        Set<Entry<K, V>> result = new HashSet<Entry<K, V>>();
-        for (QueryableEntry entry : entries) {
-            result.add(new AbstractMap.SimpleEntry<K,V>((K)entry.getKey(), (V)entry.getValue()));
-        }
-        return result;
+    public Set entrySet(final Predicate predicate) {
+        return query(predicate, QueryResultStream.IterationType.ENTRY, false);
     }
 
     public Collection<V> values(final Predicate predicate) {
-        Set<QueryableEntry> entries = valuesInternal(predicate);
-        Set<V> result = new HashSet<V>();
-        for (QueryableEntry entry : entries) {
-            result.add((V) entry.getValue());
-        }
-        return result;
+        return query(predicate, QueryResultStream.IterationType.VALUE, false);
     }
 
     public Set<K> localKeySet() {

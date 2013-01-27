@@ -16,23 +16,41 @@
 
 package com.hazelcast.util;
 
-import java.util.*;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
+
+import java.util.AbstractSet;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class StreamSet extends AbstractSet {
-    final Set keys = new HashSet();
-    final BlockingQueue<Map.Entry> q = new LinkedBlockingQueue<Map.Entry>();
+public class QueryResultStream<T> extends AbstractSet<QueryableEntry> {
+    final BlockingQueue<QueryableEntry> q = new LinkedBlockingQueue<QueryableEntry>();
     volatile int size = 0;
     boolean ended = false; // guarded by endLock
     final Object endLock = new Object();
+    private static final QueryableEntry END = new QueryEntry(null, "1", "1", "1");
 
-    private static final End END = new End();
-
+    private final boolean set;
+    private final Set<Object> keys;
+    private final boolean data;
     private final IterationType iterationType;
 
-    public StreamSet(IterationType iterationType) {
+    public QueryResultStream(QueryResultStream.IterationType iterationType, boolean data) {
+        this(iterationType, data, (iterationType != IterationType.VALUE));
+    }
+
+    public QueryResultStream(QueryResultStream.IterationType iterationType, boolean data, boolean set) {
+        this.set = set;
+        this.data = data;
         this.iterationType = iterationType;
+        if (set) {
+            keys = new HashSet<Object>();
+        } else {
+            keys = null;
+        }
     }
 
     public enum IterationType {
@@ -46,8 +64,8 @@ public class StreamSet extends AbstractSet {
         }
     }
 
-    public synchronized boolean add(Map.Entry entry) {
-        if (keys.add(entry)) {
+    public synchronized boolean add(QueryableEntry entry) {
+        if (!set || keys.add(entry.getIndexKey())) {
             q.offer(entry);
             size++;
             return true;
@@ -62,7 +80,7 @@ public class StreamSet extends AbstractSet {
 
     class It implements Iterator {
 
-        Map.Entry currentEntry;
+        QueryableEntry currentEntry;
 
         public boolean hasNext() {
             try {
@@ -75,28 +93,14 @@ public class StreamSet extends AbstractSet {
 
         public Object next() {
             if (iterationType == IterationType.VALUE) {
-                return currentEntry.getValue();
+                return (data) ? currentEntry.getValueData() : currentEntry.getValue();
             } else if (iterationType == IterationType.KEY) {
-                return currentEntry.getKey();
+                return (data) ? currentEntry.getKeyData() : currentEntry.getKey();
             } else return currentEntry;
         }
 
         public void remove() {
             throw new UnsupportedOperationException();
-        }
-    }
-
-    private static class End implements Map.Entry {
-        public Object getKey() {
-            return null;
-        }
-
-        public Object getValue() {
-            return null;
-        }
-
-        public Object setValue(Object value) {
-            return null;
         }
     }
 

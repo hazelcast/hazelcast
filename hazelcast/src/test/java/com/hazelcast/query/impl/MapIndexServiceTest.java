@@ -81,4 +81,20 @@ public class MapIndexServiceTest extends TestUtil {
         }
         System.out.println("Took " + (Clock.currentTimeMillis() - start));
     }
+
+    @Test
+    public void testIndex2() throws Exception {
+        IndexService indexService = new IndexService();
+        indexService.addOrGetIndex("name", false);
+        indexService.saveEntryIndex(new QueryEntry(null, 1, 1, new Value("abc")));
+        indexService.saveEntryIndex(new QueryEntry(null, 2, 2, new Value("xyz")));
+        indexService.saveEntryIndex(new QueryEntry(null, 3, 3, new Value("aaa")));
+        indexService.saveEntryIndex(new QueryEntry(null, 4, 4, new Value("zzz")));
+        indexService.saveEntryIndex(new QueryEntry(null, 5, 5, new Value("klm")));
+        indexService.saveEntryIndex(new QueryEntry(null, 6, 6, new Value("prs")));
+        indexService.saveEntryIndex(new QueryEntry(null, 7, 7, new Value("prs")));
+        indexService.saveEntryIndex(new QueryEntry(null, 8, 8, new Value("def")));
+        indexService.saveEntryIndex(new QueryEntry(null, 9, 9, new Value("qwx")));
+        assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"), null)).size());
+    }
 }

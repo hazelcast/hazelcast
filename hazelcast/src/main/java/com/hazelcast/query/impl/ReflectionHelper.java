@@ -22,8 +22,12 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class ReflectionHelper {
+
+    private static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
 
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
@@ -56,10 +60,12 @@ public class ReflectionHelper {
 
     public Getter createGetter(QueryableEntry entry, String attribute) {
         Object obj = entry.getValue();
-        Getter getter = null;
+        Class clazz = obj.getClass();
+        String cacheKey = clazz.getName() + attribute;
+        Getter getter = getterCache.get(cacheKey);
+        if (getter != null) return getter;
         try {
             Getter parent = null;
-            Class clazz = obj.getClass();
             List<String> possibleMethodNames = new ArrayList<String>(3);
             for (final String name : attribute.split("\\.")) {
                 Getter localGetter = null;
@@ -110,6 +116,7 @@ public class ReflectionHelper {
                 parent = localGetter;
             }
             getter = parent;
+            getterCache.putIfAbsent(cacheKey, getter);
             return getter;
         } catch (Throwable e) {
             throw new QueryException(e);
