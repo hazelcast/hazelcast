@@ -22,6 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ExecutorThreadFactory;
 import com.hazelcast.util.PoolExecutorThreadFactory;
 
@@ -77,15 +78,16 @@ public final class ExecutionServiceImpl implements ExecutionService {
         executors.put(name, new ManagedExecutorService(name, maxThreadSize, 1));
     }
 
+    private final ConcurrencyUtil.ConstructorFunction<String, ManagedExecutorService> constructor =
+            new ConcurrencyUtil.ConstructorFunction<String, ManagedExecutorService>() {
+                public ManagedExecutorService createNew(String name) {
+                    // TODO: configure using ExecutorService config!
+                    return new ManagedExecutorService(name, DEFAULT_THREAD_SIZE, 1);
+                }
+            };
+
     public ExecutorService getExecutor(String name) {
-        ManagedExecutorService executor = executors.get(name);
-        if (executor == null) {
-            // TODO: configure using ExecutorService config!
-            executor = new ManagedExecutorService(name, DEFAULT_THREAD_SIZE, 1);
-            ManagedExecutorService current = executors.putIfAbsent(name, executor);
-            executor = current == null ? executor : current;
-        }
-        return executor;
+        return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);
     }
 
     public void execute(String name, Runnable command) {

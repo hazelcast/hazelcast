@@ -32,8 +32,7 @@ public class LockBackupOperation extends TTLAwareOperation implements BackupOper
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        LockInfo lock = recordStore.getOrCreateLock(getKey());
-        lock.lock(getCaller(), threadId, ttl);
+        recordStore.lock(getKey(), getCaller(), threadId, ttl);
     }
 
     @Override

@@ -27,6 +27,7 @@ import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
 import com.hazelcast.spi.Connection;
 import com.hazelcast.spi.ConnectionManager;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -293,15 +294,15 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return connection;
     }
 
-    private ConnectionMonitor getConnectionMonitor(Address endpoint, boolean reset) {
-        ConnectionMonitor monitor = mapMonitors.get(endpoint);
-        if (monitor == null) {
-            monitor = new ConnectionMonitor(this, endpoint);
-            final ConnectionMonitor monitorOld = mapMonitors.putIfAbsent(endpoint, monitor);
-            if (monitorOld != null) {
-                monitor = monitorOld;
-            }
+    private final ConcurrencyUtil.ConstructorFunction<Address, ConnectionMonitor> monitorConstructor
+            = new ConcurrencyUtil.ConstructorFunction<Address, ConnectionMonitor>() {
+        public ConnectionMonitor createNew(Address endpoint) {
+            return new ConnectionMonitor(TcpIpConnectionManager.this, endpoint);
         }
+    };
+
+    private ConnectionMonitor getConnectionMonitor(Address endpoint, boolean reset) {
+        final ConnectionMonitor monitor = ConcurrencyUtil.getOrPutIfAbsent(mapMonitors, endpoint, monitorConstructor);
         if (reset) {
             monitor.reset();
         }

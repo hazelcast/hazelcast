@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,13 +61,15 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         nodeEngine.getEventService().registerListener(NAME, NAME, new Object());
     }
 
-    public DistributedObject getDistributedObject(String serviceName, Object objectId) {
-        ProxyRegistry registry = registries.get(serviceName);
-        if (registry == null) {
-            registry = new ProxyRegistry(serviceName);
-            ProxyRegistry current = registries.putIfAbsent(serviceName, registry);
-            registry = current != null ? current : registry;
+    private final ConcurrencyUtil.ConstructorFunction<String, ProxyRegistry> registryConstructor
+            = new ConcurrencyUtil.ConstructorFunction<String, ProxyRegistry>() {
+        public ProxyRegistry createNew(String serviceName) {
+            return new ProxyRegistry(serviceName);
         }
+    };
+
+    public DistributedObject getDistributedObject(String serviceName, Object objectId) {
+        ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
         return registry.getProxy(objectId);
     }
 

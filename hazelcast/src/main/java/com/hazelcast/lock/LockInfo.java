@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.lock;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,11 +26,11 @@ import java.io.IOException;
 
 
 public class LockInfo implements DataSerializable {
-    Address lockAddress = null;
-    int lockThreadId = -1;
-    int lockCount;
-    long expirationTime = -1;
-    long lockAcquireTime = -1L;
+    private Address lockAddress = null;
+    private int lockThreadId = -1;
+    private int lockCount;
+    private long expirationTime = -1;
+    private long lockAcquireTime = -1L;
 
     public LockInfo() {
     }
@@ -71,7 +71,6 @@ public class LockInfo implements DataSerializable {
         }
     }
 
-
     // todo when a member dies release the lock
     public boolean lock(Address address, int threadId, long ttl) {
         checkTTL();
@@ -106,7 +105,7 @@ public class LockInfo implements DataSerializable {
         return false;
     }
 
-    public boolean testLock(int threadId, Address address) {
+    public boolean canAcquireLock(Address address, int threadId) {
         checkTTL();
         return lockCount == 0 || getLockThreadId() == threadId && getLockAddress().equals(address);
     }

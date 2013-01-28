@@ -18,6 +18,7 @@ package com.hazelcast.logging;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -46,16 +47,15 @@ public class LoggingServiceImpl implements LoggingService {
         thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
     }
 
-    public ILogger getLogger(String name) {
-        ILogger logger = mapLoggers.get(name);
-        if (logger == null) {
-            ILogger newLogger = new DefaultLogger(name);
-            logger = mapLoggers.putIfAbsent(name, newLogger);
-            if (logger == null) {
-                logger = newLogger;
-            }
+    final ConcurrencyUtil.ConstructorFunction<String, ILogger> loggerConstructor
+            = new ConcurrencyUtil.ConstructorFunction<String, ILogger>() {
+        public ILogger createNew(String key) {
+            return new DefaultLogger(key);
         }
-        return logger;
+    };
+
+    public ILogger getLogger(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
     public void addLogListener(Level level, LogListener logListener) {

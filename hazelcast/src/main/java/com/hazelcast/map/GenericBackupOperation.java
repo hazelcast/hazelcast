@@ -80,13 +80,9 @@ public class GenericBackupOperation extends AbstractNamedKeyBasedOperation
             }
         } else {
             if (backupOpType == BackupOpType.LOCK) {
-                LockInfo lock = recordStore.getOrCreateLock(getKey());
-                lock.lock(caller, threadId, ttl);
+                recordStore.lock(getKey(), caller, threadId, ttl);
             } else if (backupOpType == BackupOpType.UNLOCK) {
-                LockInfo lock = recordStore.getLock(getKey());
-                if (lock != null) {
-                    lock.unlock(caller, threadId);
-                }
+                recordStore.unlock(getKey(), caller, threadId);
             }
         }
     }

@@ -16,6 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -79,16 +82,17 @@ public class UnsortedIndexStore implements IndexStore {
         }
     }
 
-    public void newIndex(Comparable newValue, QueryableEntry record) {
-        Object indexKey = record.getIndexKey();
-        ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(newValue);
-        if (records == null) {
-            records = new ConcurrentHashMap<Object, QueryableEntry>();
-            ConcurrentMap<Object, QueryableEntry> existing = mapRecords.putIfAbsent(newValue, records);
-            if (existing != null) {
-                records = existing;
-            }
+    private final ConstructorFunction<Comparable, ConcurrentMap<Object, QueryableEntry>> recordsMapConstructor
+            = new ConstructorFunction<Comparable, ConcurrentMap<Object, QueryableEntry>>() {
+        public ConcurrentMap<Object, QueryableEntry> createNew(Comparable key) {
+            return new ConcurrentHashMap<Object, QueryableEntry>();
         }
+    };
+
+    public void newIndex(Comparable newValue, QueryableEntry record) {
+        final Object indexKey = record.getIndexKey();
+        final ConcurrentMap<Object, QueryableEntry> records
+                = ConcurrencyUtil.getOrPutIfAbsent(mapRecords, newValue, recordsMapConstructor);
         records.put(indexKey, record);
     }
 

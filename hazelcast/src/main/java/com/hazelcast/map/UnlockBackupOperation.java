@@ -33,10 +33,7 @@ public class UnlockBackupOperation extends AbstractNamedKeyBasedOperation implem
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        LockInfo lock = recordStore.getLock(getKey());
-        if (lock != null) {
-            lock.unlock(getCaller(), threadId);
-        }
+        recordStore.unlock(getKey(), getCaller(), threadId);
     }
 
     @Override

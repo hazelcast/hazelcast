@@ -24,6 +24,7 @@ import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,16 +48,16 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         this.nodeEngine = nodeEngine;
     }
 
-    public Permit getOrCreatePermit(String name){
-        Permit permit = permitMap.get(name);
-        if (permit == null){
+    private final ConcurrencyUtil.ConstructorFunction<String, Permit> permitConstructor = new ConcurrencyUtil.ConstructorFunction<String, Permit>() {
+        public Permit createNew(String name) {
             SemaphoreConfig config = nodeEngine.getConfig().getSemaphoreConfig(name);
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
-            permit = new Permit(partitionId, new SemaphoreConfig(config));
-            Permit current = permitMap.putIfAbsent(name, permit);
-            permit = current == null ? permit : current;
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+            return new Permit(partitionId, new SemaphoreConfig(config));
         }
-        return permit;
+    };
+
+    public Permit getOrCreatePermit(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(permitMap, name, permitConstructor);
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {

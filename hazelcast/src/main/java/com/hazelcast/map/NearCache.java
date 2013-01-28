@@ -46,9 +46,7 @@ public class NearCache {
     final NodeEngineImpl nodeEngine;
     final AtomicBoolean canCleanUp;
     final AtomicBoolean canEvict;
-
-
-    ConcurrentMap<Data, CacheRecord> cache;
+    final ConcurrentMap<Data, CacheRecord> cache;
 
     public NearCache(String mapName, NodeEngine nodeEngine) {
         this.mapName = mapName;
@@ -138,6 +136,10 @@ public class NearCache {
 
     public void invalidate(Data key) {
         cache.remove(key);
+    }
+
+    void destroy() {
+        cache.clear();
     }
 
     class CacheRecord implements Comparable<CacheRecord> {

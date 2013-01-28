@@ -21,13 +21,12 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.map.LockInfo;
+import com.hazelcast.lock.LockInfo;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -181,7 +180,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
                         System.out.println("\t\t\tval: " + nodeEngine.toObject(o.getObject()) + ", id: " + o.getRecordId());
                     }
                 }
-                ConcurrentMap<Data, LockInfo> locks = container.getLocks();
+                Map<Data, LockInfo> locks = container.getLocks();
                 System.out.println("\t\t\t\t\t-------------");
                 for (Data key : locks.keySet()) {
                     System.out.println("\t\t\t\t\t\tkey: " + nodeEngine.toObject(key));

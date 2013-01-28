@@ -20,7 +20,7 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.*;
-import com.hazelcast.map.LockInfo;
+import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -174,9 +174,6 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionService().getPartitionCount()) {
-            return null; // is it possible
-        }
         int replicaIndex = event.getReplicaIndex();
         CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
         Map<CollectionProxyId, Map[]> map = new HashMap<CollectionProxyId, Map[]>(partitionContainer.containerMap.size());
@@ -186,7 +183,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             if (container.config.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(proxyId, new Map[]{container.collections, container.locks});
+            map.put(proxyId, new Map[]{container.collections, container.lockStore.getLocks()});
         }
         if (map.isEmpty()) {
             return null;
@@ -201,7 +198,9 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             Map<Data, Collection<CollectionRecord>> collections = entry.getValue()[0];
             container.collections.putAll(collections);
             Map<Data, LockInfo> locks = entry.getValue()[1];
-            container.locks.putAll(locks);
+            for (Map.Entry<Data, LockInfo> lockEntry : locks.entrySet()) {
+                container.lockStore.putLock(lockEntry.getKey(), lockEntry.getValue());
+            }
         }
     }
 
