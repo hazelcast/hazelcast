@@ -227,7 +227,6 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (oldValue != null) {
             mapStoreDelete(record);
-            removeIndex(dataKey);
         }
         return oldValue;
     }
@@ -326,13 +325,17 @@ public class DefaultRecordStore implements RecordStore {
             updateTtl(record, ttl);
         }
         mapStoreWrite(record);
+        return oldValue;
+    }
+
+    private void saveIndex(Record record) {
+        Data dataKey = record.getKey();
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
             SerializationServiceImpl ss = (SerializationServiceImpl) mapService.getSerializationService();
             QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
             indexService.saveEntryIndex(queryableEntry);
         }
-        return oldValue;
     }
 
     public Set<Data> getRemovedDelayedKeys() {
@@ -446,6 +449,7 @@ public class DefaultRecordStore implements RecordStore {
 
     private void mapStoreWrite(Record record) {
         mapStoreWrite(record, false);
+        saveIndex(record);
     }
 
     private void mapStoreWrite(Record record, boolean flush) {
@@ -463,6 +467,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void mapStoreDelete(Record record) {
+        removeIndex(record.getKey());
         if (mapContainer.getStore() != null) {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
