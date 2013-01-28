@@ -35,10 +35,11 @@ public class IndexImpl implements Index {
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 
-    public void removeEntryIndex(QueryableEntry e) {
-        Object key = e.getIndexKey();
-        Comparable oldValue = recordValues.remove(key);
-        indexStore.removeIndex(oldValue, key);
+    public void removeEntryIndex(Object indexKey) {
+        Comparable oldValue = recordValues.remove(indexKey);
+        if (oldValue != null) {
+            indexStore.removeIndex(oldValue, indexKey);
+        }
     }
 
     ConcurrentMap<Object, QueryableEntry> getRecordMap(Comparable indexValue) {

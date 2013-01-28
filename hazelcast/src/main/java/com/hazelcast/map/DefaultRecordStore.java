@@ -18,7 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -130,7 +134,6 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
-
     public boolean forceUnlock(Data dataKey) {
         LockInfo lock = getLock(dataKey);
         if (lock == null)
@@ -154,7 +157,6 @@ public class DefaultRecordStore implements RecordStore {
             records.remove(dataKey);
             removed = true;
         }
-
         if ((removed || evicted) && mapContainer.getStore() != null) {
             mapStoreDelete(record);
         }
@@ -225,15 +227,26 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (oldValue != null) {
             mapStoreDelete(record);
+            removeIndex(dataKey);
         }
         return oldValue;
     }
 
+    private void removeIndex(Data key) {
+        final IndexService indexService = mapContainer.getIndexService();
+        if (indexService.hasIndex()) {
+            indexService.removeEntryIndex(key);
+        }
+    }
+
     public boolean evict(Data dataKey) {
-        Record record = records.get(dataKey);
-        mapService.intercept(name, MapOperationType.EVICT, dataKey, record.getValue(), record.getValue());
-        records.remove(dataKey);
-        return record != null;
+        Record record = records.remove(dataKey);
+        if (record != null) {
+            mapService.intercept(name, MapOperationType.EVICT, dataKey, record.getValue(), record.getValue());
+            removeIndex(dataKey);
+            return true;
+        }
+        return false;
     }
 
     public boolean remove(Data dataKey, Object testValue) {
@@ -249,7 +262,6 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
         }
-
         if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             records.remove(dataKey);
@@ -275,9 +287,7 @@ public class DefaultRecordStore implements RecordStore {
             accessRecord(record);
             value = record.getValue();
         }
-
         value = mapService.intercept(name, MapOperationType.GET, dataKey, value, value);
-
 //        check if record has expired or removed but waiting delay millis
         if (record != null && record.getState().isExpired()) {
             return null;
@@ -316,6 +326,12 @@ public class DefaultRecordStore implements RecordStore {
             updateTtl(record, ttl);
         }
         mapStoreWrite(record);
+        final IndexService indexService = mapContainer.getIndexService();
+        if (indexService.hasIndex()) {
+            SerializationServiceImpl ss = (SerializationServiceImpl) mapService.getSerializationService();
+            QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
+            indexService.saveEntryIndex(queryableEntry);
+        }
         return oldValue;
     }
 
@@ -409,7 +425,6 @@ public class DefaultRecordStore implements RecordStore {
             accessRecord(record);
             oldValue = record.getValue();
         }
-
         if (oldValue == null) {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
@@ -476,6 +491,4 @@ public class DefaultRecordStore implements RecordStore {
         else if (record instanceof ObjectRecord)
             ((ObjectRecord) record).setValue(mapService.toObject(value));
     }
-
-
 }

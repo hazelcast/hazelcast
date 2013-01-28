@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import java.util.Set;
 
 public interface Index {
-    void removeEntryIndex(QueryableEntry e);
+    void removeEntryIndex(Object indexKey);
 
     void saveEntryIndex(QueryableEntry e) throws QueryException;
 

@@ -488,6 +488,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getExecutionService().schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
 
+    public Object getSerializationService() {
+        return nodeEngine.getSerializationService();
+    }
+
     private class MapEvictTask implements Runnable {
         public void run() {
             for (MapContainer mapContainer : mapContainers.values()) {
