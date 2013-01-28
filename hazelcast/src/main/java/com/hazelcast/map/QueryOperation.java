@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
@@ -41,6 +42,9 @@ public class QueryOperation extends AbstractNamedOperation {
     public QueryOperation(String mapName, Predicate predicate) {
         super(mapName);
         this.predicate = predicate;
+    }
+
+    public QueryOperation() {
     }
 
     @Override
