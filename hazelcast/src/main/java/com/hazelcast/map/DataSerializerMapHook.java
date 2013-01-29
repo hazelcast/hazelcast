@@ -33,9 +33,8 @@ public final class DataSerializerMapHook implements DataSerializerHook {
     static final int REMOVE = 102;
     static final int DATA_RECORD = 150;
     static final int OBJECT_RECORD = 151;
-    static final int GENERIC_BACKUP = 160;
-    static final int PUT_BACKUP = 161;
-    static final int REMOVE_BACKUP = 162;
+    static final int PUT_BACKUP = 160;
+    static final int REMOVE_BACKUP = 161;
     // todo add other backup ops
 
     public Map<Integer, DataSerializableFactory> getFactories() {
@@ -64,11 +63,6 @@ public final class DataSerializerMapHook implements DataSerializerHook {
         factories.put(OBJECT_RECORD, new DataSerializableFactory() {
             public IdentifiedDataSerializable create() {
                 return new ObjectRecord();
-            }
-        });
-        factories.put(GENERIC_BACKUP, new DataSerializableFactory() {
-            public IdentifiedDataSerializable create() {
-                return new GenericBackupOperation();
             }
         });
         factories.put(PUT_BACKUP, new DataSerializableFactory() {

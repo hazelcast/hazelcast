@@ -22,35 +22,28 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 
 public class MapRecordStateOperation extends LockAwareOperation implements BackupAwareOperation {
 
+    private transient RecordStore recordStore;
+    private transient MapService mapService;
+    private transient NodeEngine nodeEngine;
+    private transient boolean evicted = false;
 
-    PartitionContainer partitionContainer;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
-    boolean evicted = false;
+    public MapRecordStateOperation() {
+    }
 
     public MapRecordStateOperation(String name, Data dataKey) {
         super(name, dataKey, -1);
     }
 
-    protected void init() {
-        responseHandler = getResponseHandler();
+    public void beforeRun() {
         mapService = getService();
         nodeEngine = getNodeEngine();
-        partitionContainer = mapService.getPartitionContainer(getPartitionId());
+        PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
         recordStore = partitionContainer.getRecordStore(name);
     }
 
-
-    public MapRecordStateOperation() {
-    }
-
-    @Override
     public void run() {
         Record record = recordStore.getRecords().get(dataKey);
         if (record != null) {
@@ -79,11 +72,6 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return null;
     }
@@ -92,10 +80,6 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     public void onWaitExpire() {
     }
 
-
-    public void beforeRun() {
-        init();
-    }
 
     public void afterRun() {
         if (evicted) {

@@ -25,7 +25,6 @@ import java.io.IOException;
 public class TryRemoveOperation extends BaseRemoveOperation {
 
     private long timeout;
-    // TODO: TryRemove never backs up! successful is never set!
     private transient boolean successful;
 
     public TryRemoveOperation(String name, Data dataKey, String txnId, long timeout) {
@@ -40,7 +39,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
         if (prepareTransaction()) {
             return;
         }
-        recordStore.tryRemove(dataKey);
+        successful = recordStore.tryRemove(dataKey);
     }
 
     @Override

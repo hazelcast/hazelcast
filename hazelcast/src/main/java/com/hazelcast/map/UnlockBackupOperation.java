@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
-public class UnlockBackupOperation extends ThreadIdAwareOperation implements BackupOperation {
+public class UnlockBackupOperation extends AbstractMapOperation implements BackupOperation {
 
     public UnlockBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -40,8 +40,4 @@ public class UnlockBackupOperation extends ThreadIdAwareOperation implements Bac
         return Boolean.TRUE;
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
 }

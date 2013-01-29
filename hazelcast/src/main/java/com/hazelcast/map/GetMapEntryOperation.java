@@ -17,11 +17,10 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.util.Map;
 
-public class GetMapEntryOperation extends AbstractNamedKeyBasedOperation {
+public class GetMapEntryOperation extends AbstractMapOperation {
 
     private transient Map.Entry<Data,Data> result;
 
@@ -36,11 +35,6 @@ public class GetMapEntryOperation extends AbstractNamedKeyBasedOperation {
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         result = recordStore.getMapEntryData(dataKey);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

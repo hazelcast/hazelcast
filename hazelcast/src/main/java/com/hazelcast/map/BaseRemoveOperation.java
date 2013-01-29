@@ -23,14 +23,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
-    Object key;
-    Record record;
 
     private transient PartitionContainer pc;
     transient Data dataOldValue;
     transient RecordStore recordStore;
     transient MapService mapService;
-
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
@@ -81,8 +78,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapService.interceptAfterProcess(name, MapOperationType.REMOVE, dataKey, dataValue, dataOldValue);
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, null);
-        if (mapService.getMapContainer(name).getMapConfig().getNearCacheConfig() != null)
-            mapService.invalidateAllNearCaches(name, dataKey);
+        invalidateNearCaches();
     }
 
     @Override

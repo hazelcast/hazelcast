@@ -22,7 +22,7 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class UnlockOperation extends TTLAwareOperation implements BackupAwareOperation, Notifier {
+public class UnlockOperation extends AbstractMapOperation implements BackupAwareOperation, Notifier {
 
     private transient Object keyObject;
     protected transient RecordStore recordStore;
@@ -46,6 +46,11 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
         unlocked = recordStore.unlock(dataKey, getCaller(), threadId);
     }
 
+    @Override
+    public Object getResponse() {
+        return unlocked;
+    }
+
     public boolean shouldBackup() {
         return unlocked;
     }
@@ -59,9 +64,7 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
     }
 
     public Operation getBackupOperation() {
-        GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
-        backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.UNLOCK);
-        return backupOp;
+        return new UnlockBackupOperation(name, dataKey);
     }
 
     public boolean shouldNotify() {

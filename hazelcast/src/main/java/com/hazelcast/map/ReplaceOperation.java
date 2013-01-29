@@ -20,7 +20,6 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ReplaceOperation extends BasePutOperation {
 
-    // TODO: Replace never backs up! shouldBackup is never set!
     private transient boolean shouldBackup = false;
 
     public ReplaceOperation(String name, Data dataKey, Data value, String txnId) {
@@ -34,7 +33,9 @@ public class ReplaceOperation extends BasePutOperation {
         if (prepareTransaction()) {
             return;
         }
-        dataOldValue = mapService.toData(recordStore.replace(dataKey, dataValue));
+        final Object oldValue = recordStore.replace(dataKey, dataValue);
+        dataOldValue = mapService.toData(oldValue);
+        shouldBackup = oldValue != null;
     }
 
     @Override

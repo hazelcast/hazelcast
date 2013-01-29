@@ -18,9 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class GetOperation extends AbstractNamedKeyBasedOperation implements IdentifiedDataSerializable {
+public class GetOperation extends AbstractMapOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
     private transient MapService mapService;
@@ -40,11 +39,6 @@ public class GetOperation extends AbstractNamedKeyBasedOperation implements Iden
 
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.GET, dataKey, result, result);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

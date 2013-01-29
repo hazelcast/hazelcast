@@ -20,9 +20,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
-public abstract class LockAwareOperation extends TTLAwareOperation implements WaitSupport {
+public abstract class LockAwareOperation extends AbstractMapOperation implements WaitSupport {
 
-    protected transient Object keyObject;
+    public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
+
+    private transient Object keyObject;
 
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -39,13 +41,12 @@ public abstract class LockAwareOperation extends TTLAwareOperation implements Wa
     protected LockAwareOperation() {
     }
 
-    public boolean shouldWait() {
+    public final boolean shouldWait() {
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         PartitionContainer pc = mapService.getPartitionContainer(partitionId);
-        RecordStore mapPartition = pc.getRecordStore(name);
-        boolean shouldWait = !mapPartition.canRun(this);
-        return shouldWait;
+        RecordStore recordStore = pc.getRecordStore(name);
+        return !recordStore.canRun(this);
     }
 
     public long getWaitTimeoutMillis() {
@@ -54,7 +55,7 @@ public abstract class LockAwareOperation extends TTLAwareOperation implements Wa
 
     public abstract void onWaitExpire();
 
-    public WaitNotifyKey getWaitKey() {
+    public final WaitNotifyKey getWaitKey() {
         if (keyObject == null) {
             keyObject = getNodeEngine().toObject(dataKey);
         }

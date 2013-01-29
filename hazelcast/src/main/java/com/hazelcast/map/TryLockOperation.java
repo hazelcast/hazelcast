@@ -26,8 +26,6 @@ import java.io.IOException;
 
 public class TryLockOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
-
     private transient RecordStore recordStore;
     private transient MapService mapService;
     private transient boolean locked = false;
@@ -84,9 +82,7 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
     }
 
     public Operation getBackupOperation() {
-        GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
-        backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
-        return backupOp;
+        return new LockBackupOperation(name, dataKey, null, ttl);
     }
 
     @Override
