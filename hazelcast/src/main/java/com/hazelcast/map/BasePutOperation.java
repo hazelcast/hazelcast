@@ -19,20 +19,14 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    Record record;
-
-    Data dataOldValue;
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
+    private transient PartitionContainer pc;
+    protected transient Data dataOldValue;
+    protected transient RecordStore recordStore;
+    protected transient MapService mapService;
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId) {
         super(name, dataKey, value, -1);
@@ -56,9 +50,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     protected void init() {
-        responseHandler = getResponseHandler();
         mapService = getService();
-        nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
         recordStore = pc.getRecordStore(name);
     }

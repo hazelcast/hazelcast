@@ -17,16 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 
 public class UnlockOperation extends TTLAwareOperation implements BackupAwareOperation, Notifier {
 
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
-    boolean unlocked = false;
+    private transient Object keyObject;
+    protected transient RecordStore recordStore;
+    protected transient MapService mapService;
+    protected transient boolean unlocked = false;
 
     public UnlockOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -35,23 +36,13 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
     public UnlockOperation() {
     }
 
-    protected void init() {
-        responseHandler = getResponseHandler();
+    public void beforeRun() {
         mapService = getService();
-        nodeEngine = getNodeEngine();
-        pc = mapService.getPartitionContainer(getPartitionId());
+        PartitionContainer pc = mapService.getPartitionContainer(getPartitionId());
         recordStore = pc.getRecordStore(name);
     }
 
-    public void beforeRun() {
-        init();
-    }
-
     public void run() {
-        doOp();
-    }
-
-    public void doOp() {
         unlocked = recordStore.unlock(dataKey, getCaller(), threadId);
     }
 
@@ -83,4 +74,5 @@ public class UnlockOperation extends TTLAwareOperation implements BackupAwareOpe
         }
         return new MapWaitKey(getName(), keyObject, "lock");
     }
+
 }

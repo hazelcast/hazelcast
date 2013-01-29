@@ -23,8 +23,10 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
-    long timeout;
-    boolean successful;
+
+    private long timeout;
+    // TODO: TryRemove never backs up! successful is never set!
+    private transient boolean successful;
 
     public TryRemoveOperation(String name, Data dataKey, String txnId, long timeout) {
         super(name, dataKey, txnId);

@@ -16,62 +16,42 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
 
-public class RemoveIfSameOperation extends BaseRemoveOperation {
+/**
+ * @mdogan 1/28/13
+ */
+public abstract class ThreadIdAwareOperation extends AbstractNamedKeyBasedOperation {
 
-    private Data testValue;
-    private transient boolean removed = false;
+    protected int threadId = -1;
 
-    public RemoveIfSameOperation(String name, Data dataKey, Data oldValue, String txnId) {
-        super(name, dataKey, txnId);
-        testValue = oldValue;
+    protected ThreadIdAwareOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
-    public RemoveIfSameOperation() {
+    protected ThreadIdAwareOperation() {
     }
 
-    public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
-       removed = recordStore.remove(dataKey, testValue);
+    public final int getThreadId() {
+        return threadId;
     }
 
-    @Override
+    public final void setThreadId(int threadId) {
+        this.threadId = threadId;
+    }
+
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, testValue);
+        out.writeInt(threadId);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        testValue = IOUtil.readNullableData(in);
-    }
-
-    public Object getResponse() {
-        return removed;
-    }
-
-    public boolean shouldBackup() {
-        return removed;
-    }
-
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
-
-    @Override
-    public String toString() {
-        return "RemoveIfSameOperation{" + name + "}";
+        threadId = in.readInt();
     }
 }

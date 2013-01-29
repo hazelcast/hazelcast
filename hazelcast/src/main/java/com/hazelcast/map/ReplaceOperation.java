@@ -20,7 +20,8 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ReplaceOperation extends BasePutOperation {
 
-    boolean shouldBackup = false;
+    // TODO: Replace never backs up! shouldBackup is never set!
+    private transient boolean shouldBackup = false;
 
     public ReplaceOperation(String name, Data dataKey, Data value, String txnId) {
         super(name, dataKey, value, txnId);

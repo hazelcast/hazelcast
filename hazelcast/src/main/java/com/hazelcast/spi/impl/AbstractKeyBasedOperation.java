@@ -25,11 +25,8 @@ import com.hazelcast.spi.KeyBasedOperation;
 import java.io.IOException;
 
 public abstract class AbstractKeyBasedOperation extends AbstractOperation implements KeyBasedOperation {
-    protected Data dataKey = null;
-    protected int threadId = -1;
-    protected long timeout = -1;
-    protected Object keyObject;
 
+    protected Data dataKey = null;
 
     public AbstractKeyBasedOperation(Data dataKey) {
         this.dataKey = dataKey;
@@ -38,32 +35,8 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
     public AbstractKeyBasedOperation() {
     }
 
-    public Object getKeyObject() {
-        return keyObject;
-    }
-
-    public void setKeyObject(Object keyObject) {
-        this.keyObject = keyObject;
-    }
-
     public Data getKey() {
         return dataKey;
-    }
-
-    public int getThreadId() {
-        return threadId;
-    }
-
-    public void setThreadId(int threadId) {
-        this.threadId = threadId;
-    }
-
-    public long getTimeout() {
-        return timeout;
-    }
-
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
     }
 
     public int getKeyHash() {
@@ -71,15 +44,13 @@ public abstract class AbstractKeyBasedOperation extends AbstractOperation implem
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
         dataKey.writeData(out);
-        out.writeInt(threadId);
-        out.writeLong(timeout);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         dataKey = new Data();
         dataKey.readData(in);
-        threadId = in.readInt();
-        timeout = in.readLong();
     }
 }

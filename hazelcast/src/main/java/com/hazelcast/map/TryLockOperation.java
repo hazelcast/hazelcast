@@ -20,22 +20,19 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 
 import java.io.IOException;
 
 public class TryLockOperation extends LockAwareOperation implements BackupAwareOperation {
 
     public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
-    boolean locked = false;
-    long timeout;
+
+    private transient RecordStore recordStore;
+    private transient MapService mapService;
+    private transient boolean locked = false;
+
+    private long timeout;
 
     public TryLockOperation(String name, Data dataKey, long timeout) {
         this(name, dataKey, DEFAULT_LOCK_TTL, timeout);
@@ -50,16 +47,10 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
     public TryLockOperation() {
     }
 
-    protected void init() {
-        responseHandler = getResponseHandler();
-        mapService = getService();
-        nodeEngine = getNodeEngine();
-        pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getRecordStore(name);
-    }
-
     public void beforeRun() {
-        init();
+        mapService = getService();
+        PartitionContainer pc = mapService.getPartitionContainer(getPartitionId());
+        recordStore = pc.getRecordStore(name);
     }
 
     public void run() {
@@ -80,18 +71,6 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
         getResponseHandler().sendResponse(false);
     }
 
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(timeout);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        timeout = in.readLong();
-    }
-
     public long getWaitTimeoutMillis() {
         return timeout;
     }
@@ -108,5 +87,17 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
         GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, ttl);
         backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.LOCK);
         return backupOp;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(timeout);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        timeout = in.readLong();
     }
 }

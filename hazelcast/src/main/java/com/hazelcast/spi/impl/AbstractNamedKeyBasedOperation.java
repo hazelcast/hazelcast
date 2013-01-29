@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 public abstract class AbstractNamedKeyBasedOperation extends AbstractKeyBasedOperation {
+
     protected String name;
 
     public AbstractNamedKeyBasedOperation(String name, Data dataKey) {
@@ -33,7 +34,7 @@ public abstract class AbstractNamedKeyBasedOperation extends AbstractKeyBasedOpe
     public AbstractNamedKeyBasedOperation() {
     }
 
-    public String getName() {
+    public final String getName() {
         return name;
     }
 

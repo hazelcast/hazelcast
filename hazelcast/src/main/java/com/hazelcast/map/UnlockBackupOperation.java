@@ -18,9 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class UnlockBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class UnlockBackupOperation extends ThreadIdAwareOperation implements BackupOperation {
 
     public UnlockBackupOperation(String name, Data dataKey) {
         super(name, dataKey);

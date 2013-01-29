@@ -20,15 +20,17 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
 
-public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
+public abstract class TTLAwareOperation extends ThreadIdAwareOperation {
 
-    Data dataValue = null;
-    long ttl = -1; // how long should this item live? -1 means forever
-    String txnId = null;
+    protected Data dataValue = null;
+    protected long ttl = -1; // how long should this item live? -1 means forever
+    protected String txnId = null;
+
+    public TTLAwareOperation() {
+    }
 
     public TTLAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -61,19 +63,12 @@ public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
         this.txnId = txnId;
     }
 
-    public TTLAwareOperation() {
-    }
-
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
-        boolean txnal = (txnId != null);
-        out.writeBoolean(txnal);
-        if (txnal) {
-            out.writeUTF(txnId);
-        }
+        IOUtil.writeNullableString(out, txnId);
     }
 
     @Override
@@ -81,9 +76,6 @@ public abstract class TTLAwareOperation extends AbstractNamedKeyBasedOperation {
         super.readInternal(in);
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
-        boolean txnal = in.readBoolean();
-        if (txnal) {
-            txnId = in.readUTF();
-        }
+        txnId = IOUtil.readNullableString(in);
     }
 }
