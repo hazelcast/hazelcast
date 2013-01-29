@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,8 +40,8 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
     public PutBackupOperation() {
     }
 
-    public PutBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, Data value, int index) {
-        super(name, proxyType, dataKey);
+    public PutBackupOperation(CollectionProxyId proxyId, Data dataKey, Data value, int index) {
+        super(proxyId, dataKey);
         this.value = value;
         this.index = index;
     }

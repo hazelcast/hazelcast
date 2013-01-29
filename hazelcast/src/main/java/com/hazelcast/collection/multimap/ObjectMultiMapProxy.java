@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V> {
 
-    public ObjectMultiMapProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
-        super(name, service, nodeEngine, proxyType, nodeEngine.getConfig().getMultiMapConfig(name));
+    public ObjectMultiMapProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
+        super(service, nodeEngine, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()), proxyId);
     }
 
     public boolean put(K key, V value) {
@@ -123,25 +123,25 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
-        service.addListener(name, listener, null, false, true);
+        service.addListener(proxyId.getName(), listener, null, false, true);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        service.addListener(name, listener, null, includeValue, false);
+        service.addListener(proxyId.getName(), listener, null, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
-        service.removeListener(name, listener, null);
+        service.removeListener(proxyId.getName(), listener, null);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         Data dataKey = nodeEngine.toData(key);
-        service.addListener(name, listener, dataKey, includeValue, false);
+        service.addListener(proxyId.getName(), listener, dataKey, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         Data dataKey = nodeEngine.toData(key);
-        service.removeListener(name, listener, dataKey);
+        service.removeListener(proxyId.getName(), listener, dataKey);
     }
 
     public void lock(K key) {

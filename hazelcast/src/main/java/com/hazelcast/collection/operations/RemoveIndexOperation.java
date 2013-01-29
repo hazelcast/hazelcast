@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,8 +36,8 @@ public class RemoveIndexOperation extends CollectionBackupAwareOperation {
     public RemoveIndexOperation() {
     }
 
-    public RemoveIndexOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, int index) {
-        super(name, proxyType, dataKey, threadId);
+    public RemoveIndexOperation(CollectionProxyId proxyId, Data dataKey, int threadId, int index) {
+        super(proxyId, dataKey, threadId);
         this.index = index;
     }
 
@@ -51,7 +51,7 @@ public class RemoveIndexOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new RemoveIndexBackupOperation(name, proxyType, dataKey, index);
+        return new RemoveIndexBackupOperation(proxyId, dataKey, index);
     }
 
     public boolean shouldBackup() {

@@ -1,6 +1,6 @@
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -21,8 +21,8 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
     public ContainsAllOperation() {
     }
 
-    public ContainsAllOperation(String name, CollectionProxyType proxyType, Data dataKey, Set<Data> dataSet) {
-        super(name, proxyType, dataKey);
+    public ContainsAllOperation(CollectionProxyId proxyId, Data dataKey, Set<Data> dataSet) {
+        super(proxyId, dataKey);
         this.dataSet = dataSet;
     }
 

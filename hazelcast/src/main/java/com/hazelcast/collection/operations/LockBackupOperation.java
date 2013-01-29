@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,8 +40,8 @@ public class LockBackupOperation extends CollectionKeyBasedOperation implements 
     public LockBackupOperation() {
     }
 
-    public LockBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, long ttl, int threadId, Address firstCaller) {
-        super(name, proxyType, dataKey);
+    public LockBackupOperation(CollectionProxyId proxyId, Data dataKey, long ttl, int threadId, Address firstCaller) {
+        super(proxyId, dataKey);
         this.ttl = ttl;
         this.threadId = threadId;
         this.firstCaller = firstCaller;

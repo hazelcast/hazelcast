@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -38,8 +38,8 @@ public class IndexOfOperation extends CollectionKeyBasedOperation {
     public IndexOfOperation() {
     }
 
-    public IndexOfOperation(String name, CollectionProxyType proxyType, Data dataKey, Data value, boolean last) {
-        super(name, proxyType, dataKey);
+    public IndexOfOperation(CollectionProxyId proxyId, Data dataKey, Data value, boolean last) {
+        super(proxyId, dataKey);
         this.value = value;
         this.last = last;
     }

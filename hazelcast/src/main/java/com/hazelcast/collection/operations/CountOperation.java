@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.serialization.Data;
 
@@ -30,8 +30,8 @@ public class CountOperation extends CollectionKeyBasedOperation {
     public CountOperation() {
     }
 
-    public CountOperation(String name, CollectionProxyType proxyType, Data dataKey) {
-        super(name, proxyType, dataKey);
+    public CountOperation(CollectionProxyId proxyId, Data dataKey) {
+        super(proxyId, dataKey);
     }
 
     public void run() throws Exception {

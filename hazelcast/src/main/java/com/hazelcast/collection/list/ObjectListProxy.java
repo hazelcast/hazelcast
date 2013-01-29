@@ -17,7 +17,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionProxy;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
 import com.hazelcast.collection.operations.CollectionResponse;
@@ -34,29 +34,27 @@ import java.util.*;
  */
 public class ObjectListProxy<E> extends MultiMapProxySupport implements CollectionProxy, IList<E> {
 
-    public static final String COLLECTION_LIST_NAME = "hz:collection:name:list";
-
-    final String listName;
+    public static final String COLLECTION_LIST_NAME = "hz:collection:name:list:";
 
     final Data key;
 
-    public ObjectListProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
-        super(COLLECTION_LIST_NAME, service, nodeEngine, proxyType,
-                nodeEngine.getConfig().getMultiMapConfig("list:" + name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST));
-        listName = name;
-        key = nodeEngine.toData(name);
+    public ObjectListProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
+        super(service, nodeEngine,
+                nodeEngine.getConfig().getMultiMapConfig("list:" + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST),
+                proxyId);
+        key = nodeEngine.toData(proxyId.getKeyName());
     }
 
     public String getName() {
-        return listName;
+        return proxyId.getKeyName();
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-        service.addListener(name, listener, key, includeValue, false);
+        service.addListener(proxyId.getName(), listener, key, includeValue, false);
     }
 
     public void removeItemListener(ItemListener<E> listener) {
-        service.removeListener(name, listener, key);
+        service.removeListener(proxyId.getName(), listener, key);
     }
 
     public int size() {
@@ -176,7 +174,7 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public Object getId() {
-        return listName;//TODO
+        return proxyId;
     }
 
     private List<Data> toDataList(Collection coll) {

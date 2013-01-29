@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.KeyBasedOperation;
 
@@ -29,8 +29,8 @@ public class ContainsOperation extends ContainsEntryOperation implements KeyBase
     public ContainsOperation() {
     }
 
-    public ContainsOperation(String name, CollectionProxyType proxyType, Data key, Data value) {
-        super(name, proxyType, key, value);
+    public ContainsOperation(CollectionProxyId proxyId, Data key, Data value) {
+        super(proxyId, key, value);
     }
 
     public void run() throws Exception {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,50 +30,69 @@ public class CollectionProxyId implements DataSerializable {
 
     String name;
 
+    String keyName;
+
     CollectionProxyType type;
 
     public CollectionProxyId() {
     }
 
-    public CollectionProxyId(String name, CollectionProxyType type) {
+    public CollectionProxyId(String name, String keyName, CollectionProxyType type) {
         this.name = name;
+        this.keyName = keyName;
         this.type = type;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        CollectionProxyId that = (CollectionProxyId) o;
-
-        if (!name.equals(that.name)) return false;
-        if (type != that.type) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + type.hashCode();
-        return result;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(type.getType());
+        IOUtil.writeNullableString(out, keyName);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         type = CollectionProxyType.getByType(in.readInt());
+        keyName = IOUtil.readNullableString(in);
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getKeyName() {
+        return keyName;
+    }
+
+    public CollectionProxyType getType() {
+        return type;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CollectionProxyId)) return false;
+
+        CollectionProxyId proxyId = (CollectionProxyId) o;
+
+        if (keyName != null ? !keyName.equals(proxyId.keyName) : proxyId.keyName != null) return false;
+        if (!name.equals(proxyId.name)) return false;
+        if (type != proxyId.type) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + (keyName != null ? keyName.hashCode() : 0);
+        result = 31 * result + type.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("CollectionProxyId");
         sb.append("{name='").append(name).append('\'');
+        sb.append(", keyName='").append(keyName).append('\'');
         sb.append(", type=").append(type);
         sb.append('}');
         return sb.toString();

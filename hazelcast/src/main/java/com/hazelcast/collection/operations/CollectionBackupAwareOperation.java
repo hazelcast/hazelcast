@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.WaitKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,8 +37,8 @@ public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedO
     protected CollectionBackupAwareOperation() {
     }
 
-    protected CollectionBackupAwareOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId) {
-        super(name, proxyType, dataKey);
+    protected CollectionBackupAwareOperation(CollectionProxyId proxyId, Data dataKey, int threadId) {
+        super(proxyId, dataKey);
         this.threadId = threadId;
     }
 
@@ -57,7 +57,7 @@ public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedO
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new WaitKey(name, dataKey, "lock");
+        return new WaitKey(proxyId.getName(), dataKey, "lock");
     }
 
     public boolean shouldWait() {

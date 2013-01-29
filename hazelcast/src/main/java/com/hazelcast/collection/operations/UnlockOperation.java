@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.WaitKey;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
@@ -32,8 +32,8 @@ public class UnlockOperation extends CollectionBackupAwareOperation implements N
     public UnlockOperation() {
     }
 
-    public UnlockOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId) {
-        super(name, proxyType, dataKey, threadId);
+    public UnlockOperation(CollectionProxyId proxyId, Data dataKey, int threadId) {
+        super(proxyId, dataKey, threadId);
     }
 
     public void run() throws Exception {
@@ -42,7 +42,7 @@ public class UnlockOperation extends CollectionBackupAwareOperation implements N
     }
 
     public Operation getBackupOperation() {
-        return new UnlockBackupOperation(name, proxyType, dataKey, threadId, getCaller());
+        return new UnlockBackupOperation(proxyId, dataKey, threadId, getCaller());
     }
 
     public boolean shouldBackup() {
@@ -54,7 +54,7 @@ public class UnlockOperation extends CollectionBackupAwareOperation implements N
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new WaitKey(name, dataKey, "lock");
+        return new WaitKey(proxyId.getName(), dataKey, "lock");
     }
 
     public boolean shouldWait() {

@@ -75,15 +75,14 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
 
     public DistributedObject createDistributedObject(Object objectId) {
         CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
-        final String name = collectionProxyId.name;
         final CollectionProxyType type = collectionProxyId.type;
         switch (type) {
             case MULTI_MAP:
-                return new ObjectMultiMapProxy(name, this, nodeEngine, collectionProxyId.type);
+                return new ObjectMultiMapProxy(this, nodeEngine, collectionProxyId);
             case LIST:
-                return new ObjectListProxy(name, this, nodeEngine, collectionProxyId.type);
+                return new ObjectListProxy(this, nodeEngine, collectionProxyId);
             case SET:
-                return new ObjectSetProxy(name, this, nodeEngine, collectionProxyId.type);
+                return new ObjectSetProxy(this, nodeEngine, collectionProxyId);
             case QUEUE:
                 return null;
         }

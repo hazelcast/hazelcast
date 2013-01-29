@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
@@ -38,8 +38,8 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     public RemoveOperation() {
     }
 
-    public RemoveOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, Data value) {
-        super(name, proxyType, dataKey, threadId);
+    public RemoveOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Data value) {
+        super(proxyId, dataKey, threadId);
         this.value = value;
     }
 
@@ -67,7 +67,7 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, proxyType, dataKey, value);
+        return new RemoveBackupOperation(proxyId, dataKey, value);
     }
 
     public void onWaitExpire() {

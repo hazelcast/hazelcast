@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -42,8 +42,8 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
     public AddAllBackupOperation() {
     }
 
-    public AddAllBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, List<Data> dataList, int index) {
-        super(name, proxyType, dataKey);
+    public AddAllBackupOperation(CollectionProxyId proxyId, Data dataKey, List<Data> dataList, int index) {
+        super(proxyId, dataKey);
         this.dataList = dataList;
         this.index = index;
     }

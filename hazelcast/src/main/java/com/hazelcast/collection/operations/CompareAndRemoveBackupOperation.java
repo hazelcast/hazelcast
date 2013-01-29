@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,8 +40,8 @@ public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation
     public CompareAndRemoveBackupOperation() {
     }
 
-    public CompareAndRemoveBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, Set<Long> idSet) {
-        super(name, proxyType, dataKey);
+    public CompareAndRemoveBackupOperation(CollectionProxyId proxyId, Data dataKey, Set<Long> idSet) {
+        super(proxyId, dataKey);
         this.idSet = idSet;
     }
 

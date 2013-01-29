@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,8 +40,8 @@ public class SetOperation extends CollectionBackupAwareOperation {
     public SetOperation() {
     }
 
-    public SetOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, int index, Data value) {
-        super(name, proxyType, dataKey, threadId);
+    public SetOperation(CollectionProxyId proxyId, Data dataKey, int threadId, int index, Data value) {
+        super(proxyId, dataKey, threadId);
         this.index = index;
         this.value = value;
     }
@@ -58,7 +58,7 @@ public class SetOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, proxyType, dataKey, index, value);
+        return new SetBackupOperation(proxyId, dataKey, index, value);
     }
 
     public boolean shouldBackup() {

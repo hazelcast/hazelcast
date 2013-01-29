@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 
 /**
  * @ali 1/3/13
@@ -27,8 +27,8 @@ public class KeySetOperation extends CollectionOperation {
     public KeySetOperation() {
     }
 
-    public KeySetOperation(String name, CollectionProxyType proxyType) {
-        super(name, proxyType);
+    public KeySetOperation(CollectionProxyId proxyId) {
+        super(proxyId);
     }
 
     public void run() throws Exception {
