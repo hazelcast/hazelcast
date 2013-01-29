@@ -17,19 +17,23 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.QueueStore;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * @ali 12/14/12
  */
-public class QueueStoreWrapper {
+@SuppressWarnings("unchecked")
+public class QueueStoreWrapper implements QueueStore<Data> {
 
     private static final int DEFAULT_MEMORY_LIMIT = 1000;
 
@@ -59,8 +63,7 @@ public class QueueStoreWrapper {
         }
         this.storeConfig = storeConfig;
         try {
-            Class<?> storeClass = Class.forName(storeConfig.getClassName());
-            store = (QueueStore) storeClass.newInstance();
+            store = ClassLoaderUtil.newInstance(storeConfig.getClassName());
             enabled = storeConfig.isEnabled();
             binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));
             memoryLimit = parseInt("memory-limit", DEFAULT_MEMORY_LIMIT);
@@ -68,12 +71,8 @@ public class QueueStoreWrapper {
             if (bulkLoad < 1) {
                 bulkLoad = 1;
             }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new HazelcastException(e);
         }
     }
 
@@ -93,65 +92,115 @@ public class QueueStoreWrapper {
         return bulkLoad;
     }
 
-    public void store(Long key, Data value) throws Exception {
+    public void store(Long key, Data value) {
         if (enabled) {
-            store.store(key, binary ? value.buffer : serializationService.toObject(value));
+            final Object actualValue;
+            if (binary) {
+                // WARNING: we can't pass original Data to the user
+                BufferObjectDataOutput out = (BufferObjectDataOutput) serializationService.createObjectDataOutput(value.totalSize());
+                try {
+                    value.writeData(out);
+                } catch (IOException e) {
+                    throw new HazelcastException(e);
+                }
+                // buffer size is exactly equal to binary size, no need to copy array. (also no need to close the out)
+                actualValue = out.getBuffer();
+            } else {
+                actualValue = serializationService.toObject(value);
+            }
+            store.store(key, actualValue);
         }
     }
 
-    public void storeAll(Map<Long, Data> map) throws Exception {
+    public void storeAll(Map<Long, Data> map) {
         if (enabled) {
+            final Map<Long, Object> objectMap = new HashMap<Long, Object>(map.size());
             if (binary) {
-                store.storeAll(map);
+                // WARNING: we can't pass original Data to the user
+                // TODO: is there really an advantage of using binary storeAll? since we need to do array copy for each item.
+                BufferObjectDataOutput out = (BufferObjectDataOutput) serializationService.createObjectDataOutput(1024);
+                try {
+                    for (Map.Entry<Long, Data> entry : map.entrySet()) {
+                        entry.getValue().writeData(out);
+                        objectMap.put(entry.getKey(), out.toByteArray());
+                        out.reset();
+                    }
+                } catch (IOException e) {
+                    throw new HazelcastException(e);
+                } finally {
+                    IOUtil.closeResource(out);
+                }
             } else {
-                Map<Long, Object> objectMap = new HashMap<Long, Object>(map.size());
                 for (Map.Entry<Long, Data> entry : map.entrySet()) {
                     objectMap.put(entry.getKey(), serializationService.toObject(entry.getValue()));
                 }
-                store.storeAll(objectMap);
             }
+            store.storeAll(objectMap);
         }
     }
 
-    public void delete(Long key) throws Exception {
+    public void delete(Long key) {
         if (enabled) {
             store.delete(key);
         }
     }
 
-    public void deleteAll(Collection<Long> keys) throws Exception {
+    public void deleteAll(Collection<Long> keys) {
         if (enabled) {
             store.deleteAll(keys);
         }
     }
 
-    public Data load(Long key) throws Exception {
+    public Data load(Long key) {
         if (enabled) {
-            Object val = store.load(key);
+            final Object val = store.load(key);
             if (binary) {
-                return (Data) val;
+                byte[] dataBuffer = (byte[]) val;
+                ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
+                Data data = new Data();
+                try {
+                    data.readData(in);
+                } catch (IOException e) {
+                    throw new HazelcastException(e);
+                }
+                return data;
             }
             return serializationService.toData(val);
         }
         return null;
     }
 
-    public Map<Long, Data> loadAll(Collection<Long> keys) throws Exception {
+    public Map<Long, Data> loadAll(Collection<Long> keys) {
         if (enabled) {
-            Map<Long, ?> map = store.loadAll(keys);
-            if (binary) {
-                return (Map<Long, Data>) map;
+            final Map<Long, ?> map = store.loadAll(keys);
+            if (map == null) {
+                return Collections.emptyMap();
             }
-            Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
-            for (Map.Entry<Long, ?> entry : map.entrySet()) {
-                dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
+            final Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
+            if (binary) {
+                for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                    byte[] dataBuffer = (byte[]) entry.getValue();
+                    ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
+                    Data data = new Data();
+                    try {
+                        data.readData(in);
+                    } catch (IOException e) {
+                        throw new HazelcastException(e);
+                    }
+                    dataMap.put(entry.getKey(), data);
+                }
+                return (Map<Long, Data>) map;
+            } else {
+                for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                    dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
+                }
             }
             return dataMap;
         }
         return null;
     }
 
-    public Set<Long> loadAllKeys() throws Exception {
+    public Set<Long> loadAllKeys() {
         if (enabled) {
             return store.loadAllKeys();
         }

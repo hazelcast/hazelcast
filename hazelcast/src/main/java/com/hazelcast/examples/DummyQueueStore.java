@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * @ali 12/14/12
  */
-public class DummyQueueStore implements QueueStore {
+public class DummyQueueStore implements QueueStore<Object> {
 
     HashMap<Long, Object> map = new HashMap<Long, Object>();
 
@@ -37,7 +37,7 @@ public class DummyQueueStore implements QueueStore {
         map.put(key, value);
     }
 
-    public void storeAll(Map<Long, ?> map) {
+    public void storeAll(Map<Long, Object> map) {
         this.map.putAll(map);
     }
 
@@ -55,7 +55,7 @@ public class DummyQueueStore implements QueueStore {
         return map.get(key);
     }
 
-    public Map<Long, ?> loadAll(Collection<Long> keys) {
+    public Map<Long, Object> loadAll(Collection<Long> keys) {
         Map<Long, Object> temp = new HashMap<Long, Object>(keys.size());
         for (Long key: keys){
             temp.put(key, map.get(key));
