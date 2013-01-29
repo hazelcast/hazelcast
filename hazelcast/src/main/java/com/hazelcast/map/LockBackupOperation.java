@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
-public class LockBackupOperation extends TTLAwareOperation implements BackupOperation {
+public class LockBackupOperation extends AbstractMapOperation implements BackupOperation {
 
     public LockBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name, dataKey, dataValue, ttl);
@@ -32,8 +32,7 @@ public class LockBackupOperation extends TTLAwareOperation implements BackupOper
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        LockInfo lock = recordStore.getOrCreateLock(getKey());
-        lock.lock(getCaller(), threadId, ttl);
+        recordStore.lock(getKey(), getCaller(), threadId, ttl);
     }
 
     @Override
@@ -41,8 +40,4 @@ public class LockBackupOperation extends TTLAwareOperation implements BackupOper
         return Boolean.TRUE;
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
 }

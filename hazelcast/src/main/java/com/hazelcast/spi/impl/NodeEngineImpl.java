@@ -197,7 +197,6 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    @PrivateApi
     public <T> T getService(String serviceName) {
         return serviceManager.getService(serviceName);
     }

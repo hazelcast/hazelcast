@@ -39,6 +39,9 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         if (!(out instanceof BufferObjectDataOutput)) {
             throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
         }
+        if (p.getClassId() == 0) {
+            throw new IllegalArgumentException("Portable class id cannot be zero!");
+        }
         ClassDefinitionImpl cd = getClassDefinition(p);
         DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
@@ -62,17 +63,17 @@ public interface RecordStore {
 
     boolean lock(Data key, Address caller, int threadId, long ttl);
 
-    boolean containsValue(Object testValue);
+    boolean unlock(Data key, Address caller, int threadId);
 
-    LockInfo getOrCreateLock(Data key);
+    Map<Data, LockInfo> getLocks();
+
+    void putLock(Data key, LockInfo lock);
+
+    boolean containsValue(Object testValue);
 
     boolean canRun(LockAwareOperation lockAwareOperation);
 
-    LockInfo getLock(Data key);
-
     boolean evict(Data key);
-
-    boolean unlock(Data key, Address caller, int threadId);
 
     Collection<Object> valuesObject();
 
@@ -91,8 +92,6 @@ public interface RecordStore {
     Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
 
     void setRecordValue(Record record, Object value);
-
-    ConcurrentMap<Data, LockInfo> getLocks();
 
     void flush(boolean flushAllRecords);
 }

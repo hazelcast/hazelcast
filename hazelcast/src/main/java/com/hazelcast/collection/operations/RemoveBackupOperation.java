@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -37,8 +37,8 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
     public RemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, Data value) {
-        super(name, proxyType, dataKey);
+    public RemoveBackupOperation(CollectionProxyId proxyId, Data dataKey, Data value) {
+        super(proxyId, dataKey);
         this.value = value;
     }
 

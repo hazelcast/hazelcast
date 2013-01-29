@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.KeyBasedOperation;
 
@@ -29,8 +29,8 @@ public class ContainsOperation extends ContainsEntryOperation implements KeyBase
     public ContainsOperation() {
     }
 
-    public ContainsOperation(String name, CollectionProxyType proxyType, Data key, Data value) {
-        super(name, proxyType, key, value);
+    public ContainsOperation(CollectionProxyId proxyId, Data key, Data value) {
+        super(proxyId, key, value);
     }
 
     public void run() throws Exception {

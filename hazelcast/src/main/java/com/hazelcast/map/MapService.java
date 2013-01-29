@@ -47,6 +47,8 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 
 import java.io.IOException;
 import java.util.*;
@@ -87,6 +89,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 10, 1, TimeUnit.SECONDS);
     }
+
+    private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
+        public MapContainer createNew(String mapName) {
+            return new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName));
+        }
+    };
 
     public Operation getPostJoinOperation() {
         PostJoinMapOperation o = new PostJoinMapOperation();
@@ -206,9 +214,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public MapContainer getMapContainer(String mapName) {
-        MapContainer mapContainer = new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName));
-        MapContainer temp = mapContainers.putIfAbsent(mapName, mapContainer);
-        return temp == null ? mapContainer : temp;
+        return ConcurrencyUtil.getOrPutIfAbsent(mapContainers, mapName, mapConstructor);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -236,7 +242,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        return new MapMigrationOperation(container, event.getPartitionId(), event.getReplicaIndex(), false);
+        final MapMigrationOperation operation = new MapMigrationOperation(container, event.getPartitionId(), event.getReplicaIndex());
+        return operation.isEmpty() ? null : operation;
     }
 
     public void commitMigration(MigrationServiceEvent event) {
@@ -371,10 +378,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
+
+    private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
+        public NearCache createNew(String mapName) {
+            return new NearCache(mapName, nodeEngine);
+        }
+    };
+
     private NearCache getNearCache(String mapName) {
-        NearCache nearCache = new NearCache(mapName, nodeEngine);
-        NearCache tmp = nearCacheMap.putIfAbsent(mapName, nearCache);
-        return tmp == null ? nearCache : tmp;
+        return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
     public void putNearCache(String mapName, Data key, Data value) {
@@ -442,7 +454,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void memberRemoved(final MembershipServiceEvent membershipEvent) {
-        // submit operations to partition threads to;
+        // TODO: when a member dies;
         // * release locks
         // * rollback transaction
         // * do not know ?
@@ -457,6 +469,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
             containers[i] = null;
         }
+        for (NearCache nearCache : nearCacheMap.values()) {
+            nearCache.destroy();
+        }
+        nearCacheMap.clear();
         mapContainers.clear();
         eventRegistrations.clear();
     }

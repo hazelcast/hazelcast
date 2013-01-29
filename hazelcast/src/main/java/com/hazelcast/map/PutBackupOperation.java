@@ -16,25 +16,14 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-import java.io.IOException;
-
-public class PutBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation, IdentifiedDataSerializable {
-
-    Data dataValue = null;
-    long ttl = -1;
+public class PutBackupOperation extends AbstractMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        super(name, dataKey);
-        this.ttl = ttl;
-        this.dataValue = dataValue;
+        super(name, dataKey, dataValue, ttl);
     }
 
     public PutBackupOperation() {
@@ -54,27 +43,8 @@ public class PutBackupOperation extends AbstractNamedKeyBasedOperation implement
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        IOUtil.writeNullableData(out, dataValue);
-        out.writeLong(ttl);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        dataValue = IOUtil.readNullableData(in);
-        ttl = in.readLong();
-    }
-
-    @Override
     public Object getResponse() {
         return Boolean.TRUE;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

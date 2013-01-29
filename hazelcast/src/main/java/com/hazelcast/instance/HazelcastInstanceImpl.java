@@ -20,6 +20,8 @@ import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.countdownlatch.CountDownLatchService;
@@ -112,17 +114,17 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public <E> ISet<E> getSet(String name) {
         return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(name, CollectionProxyType.SET));
+                new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
     }
 
     public <E> IList<E> getList(String name) {
         return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(name, CollectionProxyType.LIST));
+                new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(name, CollectionProxyType.MULTI_MAP));
+                new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
     }
 
     public ILock getLock(Object key) {

@@ -18,19 +18,15 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 
 public class LockOperation extends LockAwareOperation implements BackupAwareOperation {
 
     public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
-    boolean locked = false;
+
+    private transient RecordStore recordStore;
+    private transient MapService mapService;
+    private transient boolean locked = false;
 
     public LockOperation(String name, Data dataKey) {
         this(name, dataKey, DEFAULT_LOCK_TTL);
@@ -44,16 +40,10 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
     public LockOperation() {
     }
 
-    protected void init() {
-        responseHandler = getResponseHandler();
-        mapService = getService();
-        nodeEngine = getNodeEngine();
-        pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getRecordStore(name);
-    }
-
     public void beforeRun() {
-        init();
+        mapService = getService();
+        PartitionContainer pc = mapService.getPartitionContainer(getPartitionId());
+        recordStore = pc.getRecordStore(name);
     }
 
     public void run() {

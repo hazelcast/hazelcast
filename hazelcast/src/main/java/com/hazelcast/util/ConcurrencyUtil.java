@@ -14,13 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.util;
+
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 8/26/12
+ * @mdogan 1/28/13
  */
-public interface ServiceBuilder<S extends ManagedService> {
+public class ConcurrencyUtil {
 
-    S buildService(NodeEngine nodeEngine, Object someConfigElement); // TODO: params!
+    public static <K,V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K,V> func) {
+        V value = map.get(key);
+        if (value == null) {
+            value = func.createNew(key);
+            V current = map.putIfAbsent(key, value);
+            value = current == null ? value : current;
+        }
+        return value;
+    }
 
+    public static interface ConstructorFunction<K,V> {
+        V createNew(K key);
+    }
 }

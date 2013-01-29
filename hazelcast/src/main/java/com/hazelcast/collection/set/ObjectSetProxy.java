@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.CollectionProxy;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
 import com.hazelcast.collection.operations.CollectionResponse;
@@ -36,31 +36,25 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
 
     public static final String COLLECTION_SET_NAME = "hz:collection:name:set";
 
-    final String setName;
-
     final Data key;
 
-    public ObjectSetProxy(String name, CollectionService service, NodeEngine nodeEngine, CollectionProxyType proxyType) {
-        super(COLLECTION_SET_NAME, service, nodeEngine, proxyType,
-                nodeEngine.getConfig().getMultiMapConfig("set:" + name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET));
-        this.setName = name;
-        this.key = nodeEngine.toData(name);
+    public ObjectSetProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
+        super(service, nodeEngine,
+                nodeEngine.getConfig().getMultiMapConfig("set:" + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET),
+                proxyId);
+        this.key = nodeEngine.toData(proxyId.getKeyName());
     }
 
     public String getName() {
-        return setName;
+        return proxyId.getKeyName();
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-        service.addListener(name, listener, key, includeValue, false);
+        service.addListener(proxyId.getName(), listener, key, includeValue, false);
     }
 
     public void removeItemListener(ItemListener<E> listener) {
-        service.removeListener(name, listener, key);
-    }
-
-    public Object getId() {
-        return name;  //TODO
+        service.removeListener(proxyId.getName(), listener, key);
     }
 
     public int size() {

@@ -30,13 +30,16 @@ public abstract class QueueBackupAwareOperation extends QueueOperation implement
         super(name);
     }
 
-    public int getSyncBackupCount() {
+    protected QueueBackupAwareOperation(String name, long timeoutMillis) {
+        super(name, timeoutMillis);
+    }
+
+    public final int getSyncBackupCount() {
         return getContainer().getConfig().getSyncBackupCount();
     }
 
-    public int getAsyncBackupCount() {
+    public final int getAsyncBackupCount() {
         return getContainer().getConfig().getAsyncBackupCount();
     }
-
 
 }

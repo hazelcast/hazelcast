@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,8 +40,8 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     public CompareAndRemoveOperation() {
     }
 
-    public CompareAndRemoveOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, List<Data> dataList, boolean retain) {
-        super(name, proxyType, dataKey, threadId);
+    public CompareAndRemoveOperation(CollectionProxyId proxyId, Data dataKey, int threadId, List<Data> dataList, boolean retain) {
+        super(proxyId, dataKey, threadId);
         this.dataList = dataList;
         this.retain = retain;
     }
@@ -69,7 +69,7 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new CompareAndRemoveBackupOperation(name, proxyType, dataKey, idSet);
+        return new CompareAndRemoveBackupOperation(proxyId, dataKey, idSet);
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {

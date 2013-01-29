@@ -23,13 +23,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
-public class EntryOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation {
+public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
     EntryProcessor entryProcessor;
     EntryBackupProcessor entryBackupProcessor;
@@ -54,6 +53,11 @@ public class EntryOperation extends AbstractNamedKeyBasedOperation implements Ba
         entry = new AbstractMap.SimpleEntry(nodeEngine.toObject(dataKey), nodeEngine.toObject(mapEntry.getValue()));
         response = nodeEngine.toData(entryProcessor.process(entry));
         recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
     }
 
     @Override

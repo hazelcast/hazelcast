@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,8 +37,8 @@ public class ContainsEntryOperation extends CollectionOperation {
     public ContainsEntryOperation() {
     }
 
-    public ContainsEntryOperation(String name, CollectionProxyType proxyType, Data key, Data value) {
-        super(name, proxyType);
+    public ContainsEntryOperation(CollectionProxyId proxyId, Data key, Data value) {
+        super(proxyId);
         this.key = key;
         this.value = value;
     }

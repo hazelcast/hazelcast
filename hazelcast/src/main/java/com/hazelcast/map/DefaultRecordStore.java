@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.lock.LockInfo;
+import com.hazelcast.lock.LockStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
@@ -34,40 +36,19 @@ public class DefaultRecordStore implements RecordStore {
     final PartitionContainer partitionContainer;
 
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
-    final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
     // todo remove this. do not forget to migrate if decide not to remove
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapContainer mapContainer;
-
     final MapService mapService;
+    final LockStore lockStore;
 
     public DefaultRecordStore(String name, PartitionContainer partitionContainer) {
         this.name = name;
         this.partitionInfo = partitionContainer.partitionInfo;
         this.partitionContainer = partitionContainer;
-        mapService = partitionContainer.getMapService();
+        this.mapService = partitionContainer.getMapService();
         this.mapContainer = mapService.getMapContainer(name);
-    }
-
-    public LockInfo getOrCreateLock(Data key) {
-        LockInfo lock = locks.get(key);
-        if (lock == null) {
-            lock = new LockInfo();
-            locks.put(key, lock);
-        }
-        return lock;
-    }
-
-    public LockInfo getLock(Data key) {
-        return locks.get(key);
-    }
-
-    void removeLock(Data key) {
-        locks.remove(key);
-    }
-
-    public ConcurrentMap<Data, LockInfo> getLocks() {
-        return locks;
+        this.lockStore = new LockStore();
     }
 
     public void flush(boolean flushAllRecords) {
@@ -81,23 +62,13 @@ public class DefaultRecordStore implements RecordStore {
         return mapContainer;
     }
 
-    public boolean canRun(LockAwareOperation op) {
-        LockInfo lock = locks.get(op.getKey());
-        return lock == null || lock.testLock(op.getThreadId(), op.getCaller());
-    }
-
     public ConcurrentMap<Data, Record> getRecords() {
         return records;
     }
 
     void clear() {
         records.clear();
-        locks.clear();
-    }
-
-    public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
-        LockInfo lock = getOrCreateLock(dataKey);
-        return lock.lock(caller, threadId, ttl);
+        lockStore.clear();
     }
 
     public int size() {
@@ -114,32 +85,33 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
-    public boolean isLocked(Data dataKey) {
-        LockInfo lock = getLock(dataKey);
-        if (lock == null)
-            return false;
-        return lock.isLocked();
+    public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
+        return lockStore.lock(dataKey, caller, threadId, ttl);
     }
 
-    // todo remove lock info here
+    public boolean isLocked(Data dataKey) {
+        return lockStore.isLocked(dataKey);
+    }
+
+    public boolean canRun(LockAwareOperation lockAwareOperation) {
+        return lockStore.canAcquireLock(lockAwareOperation.getKey(),
+                lockAwareOperation.getCaller(), lockAwareOperation.getThreadId());
+    }
+
     public boolean unlock(Data dataKey, Address caller, int threadId) {
-        LockInfo lock = getLock(dataKey);
-        if (lock == null)
-            return false;
-        if (lock.testLock(threadId, caller)) {
-            if (lock.unlock(caller, threadId)) {
-                return true;
-            }
-        }
-        return false;
+        return lockStore.unlock(dataKey, caller, threadId);
     }
 
     public boolean forceUnlock(Data dataKey) {
-        LockInfo lock = getLock(dataKey);
-        if (lock == null)
-            return false;
-        lock.clear();
-        return true;
+        return lockStore.forceUnlock(dataKey);
+    }
+
+    public Map<Data, LockInfo> getLocks() {
+        return lockStore.getLocks();
+    }
+
+    public void putLock(Data key, LockInfo lock) {
+        lockStore.putLock(key, lock);
     }
 
     public boolean tryRemove(Data dataKey) {

@@ -58,7 +58,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
@@ -76,7 +75,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     protected Future<Data> getAsyncInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
@@ -284,7 +282,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
         containsKeyOperation.setServiceName(SERVICE_NAME);
-        containsKeyOperation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, containsKeyOperation,
                     partitionId).build();
@@ -405,7 +402,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     protected boolean isLockedInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         IsLockedOperation operation = new IsLockedOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
@@ -568,7 +564,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetMapEntryOperation getMapEntryOperation = new GetMapEntryOperation(name, key);
         getMapEntryOperation.setServiceName(SERVICE_NAME);
-        getMapEntryOperation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, getMapEntryOperation,
                     partitionId).build();

@@ -19,20 +19,14 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    Record record;
-
-    Data dataOldValue;
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
+    private transient PartitionContainer pc;
+    protected transient Data dataOldValue;
+    protected transient RecordStore recordStore;
+    protected transient MapService mapService;
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId) {
         super(name, dataKey, value, -1);
@@ -47,7 +41,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     public BasePutOperation() {
     }
 
-    protected boolean prepareTransaction() {
+    protected final boolean prepareTransaction() {
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
             return true;
@@ -55,36 +49,28 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return false;
     }
 
-    protected void init() {
-        responseHandler = getResponseHandler();
+    public final void beforeRun() {
         mapService = getService();
-        nodeEngine = getNodeEngine();
         pc = mapService.getPartitionContainer(getPartitionId());
         recordStore = pc.getRecordStore(name);
     }
 
-    public void beforeRun() {
-        init();
-    }
-
-    public void afterRun() {
+    public final void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.PUT, dataKey, dataValue, dataOldValue);
         int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, dataValue);
-        if (mapService.getMapContainer(name).getMapConfig().getNearCacheConfig() != null && mapService.getMapContainer(name).getMapConfig().getNearCacheConfig().isInvalidateOnChange())
-            mapService.invalidateAllNearCaches(name, dataKey);
+        invalidateNearCaches();
     }
 
-
-    public Operation getBackupOperation() {
+    public final Operation getBackupOperation() {
         return new PutBackupOperation(name, dataKey, dataValue, ttl);
     }
 
-    public int getAsyncBackupCount() {
+    public final int getAsyncBackupCount() {
         return mapService.getMapContainer(name).getAsyncBackupCount();
     }
 
-    public int getSyncBackupCount() {
+    public final int getSyncBackupCount() {
         return mapService.getMapContainer(name).getBackupCount();
     }
 

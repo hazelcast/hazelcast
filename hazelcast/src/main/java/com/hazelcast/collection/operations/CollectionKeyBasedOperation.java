@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,24 +36,24 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
     protected CollectionKeyBasedOperation() {
     }
 
-    protected CollectionKeyBasedOperation(String name, CollectionProxyType proxyType, Data dataKey) {
-        super(name, proxyType);
+    protected CollectionKeyBasedOperation(CollectionProxyId proxyId, Data dataKey) {
+        super(proxyId);
         this.dataKey = dataKey;
     }
 
-    public int getKeyHash() {
+    public final int getKeyHash() {
         return dataKey == null ? 0 : dataKey.getPartitionHash();
     }
 
-    public Collection<CollectionRecord> getOrCreateCollection() {
+    public final Collection<CollectionRecord> getOrCreateCollection() {
         return getOrCreateContainer().getOrCreateCollection(dataKey);
     }
 
-    public Collection<CollectionRecord> getCollection() {
+    public final Collection<CollectionRecord> getCollection() {
         return getOrCreateContainer().getCollection(dataKey);
     }
 
-    public Collection<CollectionRecord> removeCollection() {
+    public final Collection<CollectionRecord> removeCollection() {
         return getOrCreateContainer().removeCollection(dataKey);
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
@@ -33,14 +33,13 @@ import java.util.Map;
  */
 public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionLevelOperation {
 
-
     transient Map<Data, Collection<CollectionRecord>> objects;
 
     public ClearOperation() {
     }
 
-    public ClearOperation(String name, CollectionProxyType proxyType) {
-        super(name, proxyType);
+    public ClearOperation(CollectionProxyId proxyId) {
+        super(proxyId);
     }
 
     public void beforeRun() throws Exception {
@@ -79,7 +78,7 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
     }
 
     public Operation getBackupOperation() {
-        return new ClearBackupOperation(name, proxyType);
+        return new ClearBackupOperation(proxyId);
     }
 
 }
