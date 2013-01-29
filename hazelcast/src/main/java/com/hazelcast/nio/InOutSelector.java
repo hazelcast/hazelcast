@@ -53,7 +53,7 @@ public final class InOutSelector extends Thread implements Runnable {
         super(connectionManager.ioService.getThreadGroup(), connectionManager.ioService.getThreadPrefix() + id);
         this.connectionManager = connectionManager;
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
-        this.waitTime = 5000;  // TODO: This value has significant effect on idle CPU usage!
+        this.waitTime = 5000;  // WARNING: This value has significant effect on idle CPU usage!
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();

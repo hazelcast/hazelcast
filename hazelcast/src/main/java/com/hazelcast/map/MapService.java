@@ -307,7 +307,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void memberRemoved(final MembershipServiceEvent membershipEvent) {
-        // submit operations to partition threads to;
+        // TODO: when a member dies;
         // * release locks
         // * rollback transaction
         // * do not know ?

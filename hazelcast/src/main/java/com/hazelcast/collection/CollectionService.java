@@ -34,7 +34,8 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @ali 1/1/13
  */
-public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
+public class CollectionService implements ManagedService, RemoteService, MembershipAwareService,
+        EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
 
@@ -253,5 +254,15 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             partitionContainers[i] = null;
         }
         eventRegistrations.clear();
+    }
+
+    public void memberAdded(MembershipServiceEvent event) {
+    }
+
+    public void memberRemoved(MembershipServiceEvent event) {
+        // TODO: when a member dies;
+        // * release locks
+        // * rollback transaction
+        // * do not know ?
     }
 }

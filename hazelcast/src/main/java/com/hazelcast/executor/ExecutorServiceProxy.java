@@ -77,7 +77,6 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId) {
-        // TODO: ???
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new CallableTaskOperation<T>(name, task), partitionId).build();
         return new FutureProxy<T>(inv.invoke(), nodeEngine);
@@ -92,7 +91,6 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
-        // TODO: ???
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress()).build();
         return new FutureProxy<T>(inv.invoke(), nodeEngine);
@@ -136,7 +134,6 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     private <T> void submitToPartitionOwner(Callable<T> task, ExecutionCallback<T> callback, int partitionId) {
-        // TODO: ???
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new CallableTaskOperation<T>(name, task), partitionId).build();
         nodeEngine.getAsyncInvocationService().invoke(inv, callback);
@@ -151,14 +148,12 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback) {
-        // TODO: ???
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress()).build();
         nodeEngine.getAsyncInvocationService().invoke(inv, callback);
     }
 
     public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
-        // TODO: ???
         ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(nodeEngine,
                 members, callback);
         for (Member member : members) {

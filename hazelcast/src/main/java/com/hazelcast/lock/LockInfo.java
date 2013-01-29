@@ -71,7 +71,6 @@ public class LockInfo implements DataSerializable {
         }
     }
 
-    // todo when a member dies release the lock
     public boolean lock(Address address, int threadId, long ttl) {
         checkTTL();
         if (lockCount == 0) {
