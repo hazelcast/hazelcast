@@ -34,7 +34,7 @@ import java.io.IOException;
  * Date: 11/14/12
  * Time: 12:14 AM
  */
-public class OfferOperation extends QueueTimedOperation implements WaitSupport, Notifier, IdentifiedDataSerializable {
+public class OfferOperation extends QueueBackupAwareOperation implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
     private Data data;
 
