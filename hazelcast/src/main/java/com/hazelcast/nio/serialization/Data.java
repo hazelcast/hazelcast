@@ -24,7 +24,7 @@ import java.io.IOException;
 public final class Data implements IdentifiedDataSerializable {
 
     public static final int ID = 0;
-    public static final int NO_CLASS_ID = -1;
+    public static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
 
     public int type = -1;
     public ClassDefinition cd = null;
@@ -127,9 +127,7 @@ public final class Data implements IdentifiedDataSerializable {
             total += 4; // no-classId
         }
         total += 4; // buffer-size
-        if (bufferSize() > 0) {
-            total += buffer.length; // buffer
-        }
+        total += bufferSize(); // buffer
         total += 4; // partition-hash
         return total;
     }

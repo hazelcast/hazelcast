@@ -278,7 +278,7 @@ public final class SerializationServiceImpl implements SerializationService {
         if (type == null) {
             throw new IllegalArgumentException("Class type information is required!");
         }
-        if (serializer.getTypeId() < 0) {
+        if (serializer.getTypeId() <= 0) {
             throw new IllegalArgumentException("Type id must be positive! Current: " + serializer.getTypeId());
         }
         safeRegister(type, serializer);
