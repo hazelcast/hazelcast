@@ -38,7 +38,7 @@ public class Connection {
     private static final int BUFFER_SIZE = 16 << 10; // 32k
 
     private final Socket socket;
-    private final InetSocketAddress address;
+    private final Address address;
     private final int id;
     private final ObjectDataOutputStream dos;
     private final ObjectDataInputStream dis;
@@ -54,14 +54,14 @@ public class Connection {
      * @throws IOException
      */
     public Connection(String host, int port, int id, SerializationService serializationService) {
-        this(new InetSocketAddress(host, port), id, serializationService);
+        this(new Address(new InetSocketAddress(host, port)), id, serializationService);
     }
 
-    public Connection(InetSocketAddress address, int id, SerializationService serializationService) {
+    public Connection(Address address, int id, SerializationService serializationService) {
         this.id = id;
         this.address = address;
         try {
-            final InetSocketAddress isa = new InetSocketAddress(address.getAddress(), address.getPort());
+            final InetSocketAddress isa = address.getInetSocketAddress();
             final Socket socket = new Socket();
             try {
                 socket.setKeepAlive(true);
@@ -89,7 +89,7 @@ public class Connection {
         return socket;
     }
 
-    public InetSocketAddress getAddress() {
+    public Address getAddress() {
         return address;
     }
 

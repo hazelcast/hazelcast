@@ -103,10 +103,12 @@ public class SocketProtocolReader implements SocketReader {
                     }
                     if ((buffers.length == 0 || !buffers[buffers.length - 1].hasRemaining())) {
                         Data[] datas = new Data[buffers.length];
-                        for(int i=0;i<buffers.length;i++) {
-                            datas[i] = new Data();
-                            datas[i].readData(ioService.getSerializationService()
-                                    .createObjectDataInput(buffers[i].array()));
+                        for (int i = 0; i < buffers.length; i++) {
+                            if (buffers[i].capacity() > 0) {
+                                datas[i] = new Data();
+                                datas[i].readData(ioService.getSerializationService()
+                                        .createObjectDataInput(buffers[i].array()));
+                            }
                         }
                         Protocol protocol = new Protocol(connection, command, flag, threadId, noreply, args, datas);
                         connection.setType(TcpIpConnection.Type.PROTOCOL_CLIENT);

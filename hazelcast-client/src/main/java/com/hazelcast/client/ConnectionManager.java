@@ -23,11 +23,13 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -227,7 +229,7 @@ public class ConnectionManager implements MembershipListener {
         binder.bind(connection, config.getCredentials());
     }
 
-    public void destroyConnection(final Connection connection) {
+    public void destroyConnection(final Connection connection) throws UnknownHostException {
         boolean lost = false;
         synchronized (this) {
             if (currentConnection != null &&
@@ -236,7 +238,9 @@ public class ConnectionManager implements MembershipListener {
                 logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
                 // remove current connection's address from member list.
                 // if address is IPv6 then remove all possible socket addresses (for all scopes)
-                while (clusterMembers.remove(currentConnection.getAddress())) ;
+
+                while (clusterMembers.remove(currentConnection.getAddress().getInetSocketAddress())) ;
+
                 currentConnection = null;
                 lost = true;
                 try {
@@ -283,7 +287,7 @@ public class ConnectionManager implements MembershipListener {
 
     protected Connection createNextConnection() {
         InetSocketAddress address = clusterMembers.get(0);
-        return new Connection(address, connectionIdGenerator.incrementAndGet(), client.getSerializationService());
+        return new Connection(new Address(address), connectionIdGenerator.incrementAndGet(), client.getSerializationService());
     }
 
     public void memberAdded(MembershipEvent membershipEvent) {

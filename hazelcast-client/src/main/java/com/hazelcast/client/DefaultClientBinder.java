@@ -42,8 +42,7 @@ public class DefaultClientBinder implements ClientBinder {
     }
 
     public void bind(Connection connection, Credentials credentials) throws IOException {
-        logger.log(Level.FINEST, connection + " -> "
-                + connection.getAddress().getHostName() + ":" + connection.getSocket().getLocalPort());
+        logger.log(Level.FINEST, connection + " -> "+ connection.getAddress());
         authProtocol(connection, credentials);
     }
 

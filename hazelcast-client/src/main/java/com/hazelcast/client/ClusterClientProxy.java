@@ -67,7 +67,7 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public Set<Member> getMembers() {
-        Protocol protocol = proxyHelper.doCommand(Command.MEMBERS, (String[]) null, null);
+        Protocol protocol = proxyHelper.doCommand(null, Command.MEMBERS, (String[]) null, null);
         Set<Member> members = new HashSet<Member>();
         for (String arg : protocol.args) {
             String[] address = arg.split(":");

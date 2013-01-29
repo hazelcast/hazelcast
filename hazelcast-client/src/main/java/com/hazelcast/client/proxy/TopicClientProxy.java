@@ -52,7 +52,7 @@ public class TopicClientProxy<T> implements ITopic {
             boolean shouldCall = messageListenerManager().noListenerRegistered(getName());
             messageListenerManager().registerListener(getName(), messageListener);
             if (shouldCall) {
-                proxyHelper.doCommand(Command.TADDLISTENER, getName(), null);
+                proxyHelper.doCommand(null, Command.TADDLISTENER, getName(), null);
             }
         }
     }
@@ -62,7 +62,7 @@ public class TopicClientProxy<T> implements ITopic {
         synchronized (lock) {
             messageListenerManager().removeListener(getName(), messageListener);
             if (messageListenerManager().noListenerRegistered(getName())) {
-                proxyHelper.doCommand(Command.TREMOVELISTENER, getName(), null);
+                proxyHelper.doCommand(null, Command.TREMOVELISTENER, getName(), null);
             }
         }
     }
@@ -72,7 +72,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(Command.DESTROY, new String[]{"topic", getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"topic", getName()}, null);
     }
 
     public Object getId() {

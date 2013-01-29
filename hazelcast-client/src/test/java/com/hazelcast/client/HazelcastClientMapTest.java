@@ -528,7 +528,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 
-    //TODO
     @Test
     public void addListener() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -540,6 +539,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         final CountDownLatch entryRemovedLatch = new CountDownLatch(1);
         CountDownLatchEntryListener<String, String> listener = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         map.addEntryListener(listener, true);
+        Thread.sleep(1000);
         assertNull(map.get("hello"));
         map.put("hello", "world");
         map.put("hello", "new world");
@@ -550,7 +550,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
     }
 
-    //TODO
     @Test
     public void addListenerForKey() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();

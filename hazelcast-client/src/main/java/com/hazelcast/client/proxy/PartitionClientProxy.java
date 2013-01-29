@@ -40,7 +40,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public Set<Partition> getPartitions() {
-        Protocol protocol = proxyHelper.doCommand(Command.PARTITIONS, new String[]{}, null);
+        Protocol protocol = proxyHelper.doCommand(null, Command.PARTITIONS, new String[]{}, null);
         Set<Partition> set = new LinkedHashSet<Partition>();
         int i = 0;
 
@@ -75,7 +75,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public Partition getPartition(Object key) {
-        Protocol protocol = proxyHelper.doCommand(Command.PARTITIONS, new String[]{}, proxyHelper.toData(key));
+        Protocol protocol = proxyHelper.doCommand(null, Command.PARTITIONS, new String[]{}, proxyHelper.toData(key));
         return partition(Integer.valueOf(protocol.args[0]), protocol.args[1]);
     }
 

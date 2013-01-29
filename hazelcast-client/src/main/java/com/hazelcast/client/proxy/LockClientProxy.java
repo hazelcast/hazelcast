@@ -47,30 +47,30 @@ public class LockClientProxy implements ILock {
     }
 
     public void lock() {
-        proxyHelper.doCommand(Command.LOCK,new String[]{}, proxyHelper.toData(lockObject));
+        proxyHelper.doCommand(null, Command.LOCK,new String[]{}, proxyHelper.toData(lockObject));
     }
 
     public boolean isLocked() {
-        Protocol protocol = proxyHelper.doCommand(Command.ISLOCKED, new String[]{}, proxyHelper.toData(lockObject));
+        Protocol protocol = proxyHelper.doCommand(null, Command.ISLOCKED, new String[]{}, proxyHelper.toData(lockObject));
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public boolean tryLock() {
-        Protocol protocol = proxyHelper.doCommand(Command.TRYLOCK, new String[]{}, proxyHelper.toData(lockObject));
+        Protocol protocol = proxyHelper.doCommand(null, Command.TRYLOCK, new String[]{}, proxyHelper.toData(lockObject));
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public boolean tryLock(long time, TimeUnit timeunit) {
-        Protocol protocol = proxyHelper.doCommand(Command.TRYLOCK, new String[]{String.valueOf(timeunit.toMillis(time))}, proxyHelper.toData(lockObject));
+        Protocol protocol = proxyHelper.doCommand(null, Command.TRYLOCK, new String[]{String.valueOf(timeunit.toMillis(time))}, proxyHelper.toData(lockObject));
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public void unlock() {
-        proxyHelper.doCommand(Command.UNLOCK,new String[]{}, proxyHelper.toData(lockObject));
+        proxyHelper.doCommand(null, Command.UNLOCK,new String[]{}, proxyHelper.toData(lockObject));
     }
 
     public void forceUnlock() {
-        proxyHelper.doCommand(Command.FORCEUNLOCK,new String[]{}, proxyHelper.toData(lockObject));
+        proxyHelper.doCommand(null, Command.FORCEUNLOCK,new String[]{}, proxyHelper.toData(lockObject));
     }
 
     public Condition newCondition() {
@@ -78,7 +78,7 @@ public class LockClientProxy implements ILock {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(Command.DESTROY, "lock", proxyHelper.toData(lockObject));
+        proxyHelper.doCommand(null, Command.DESTROY, "lock", proxyHelper.toData(lockObject));
     }
 
     public Object getId() {

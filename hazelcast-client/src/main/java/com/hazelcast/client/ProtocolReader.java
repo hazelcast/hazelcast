@@ -49,6 +49,7 @@ public class ProtocolReader {
         String[] args;
         final ObjectDataInputStream dis = connection.getInputStream();
         String commandLine = readLine(dis);
+//        System.out.println("Commandline is " + commandLine);
         String[] split = SocketProtocolReader.fastSplit(commandLine, ' ');
         if (split.length == 0) {
             throw new RuntimeException("Wrong command from server");
@@ -86,6 +87,7 @@ public class ProtocolReader {
                 line = ByteBuffer.allocate(bufferCount * 11);
             }
             String sizeLine = readLine(dis);
+//            System.out.println("Size line is " + sizeLine);
             String[] sizes = SocketProtocolReader.fastSplit(sizeLine, ' ');
             int i = 0;
             for (String size : sizes) {
@@ -94,6 +96,7 @@ public class ProtocolReader {
                 dis.readFully(bytes);
                 datas[i] = new Data();
                 datas[i].readData(serializationService.createObjectDataInput(bytes));
+//                System.out.println(command + "datas " + i + ": " +datas[i]);
                 i++;
             }
             dis.readByte();

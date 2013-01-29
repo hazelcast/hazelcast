@@ -18,7 +18,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -32,20 +31,23 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionPool {
-    static private final int POOL_SIZE = 1;
+    static private final int POOL_SIZE = 2;
     private Map<Address, BlockingQueue<Connection>> mPool;
     //    private Connection initialConnection;
-    private BlockingQueue<Connection> singlePool = new LinkedBlockingQueue<Connection>(1);
+    private BlockingQueue<Connection> singlePool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
     private final ConnectionManager connectionManager;
     private final SerializationService serializationService;
     private volatile Map<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
-    private volatile int partitionCount;
+    private final AtomicInteger partitionCount = new AtomicInteger(0);
+    private final Random random = new Random(System.currentTimeMillis());
 
     public ConnectionPool(ClientConfig config, final ConnectionManager connectionManager, final SerializationService serializationService) {
         this.connectionManager = connectionManager;
@@ -56,7 +58,7 @@ public class ConnectionPool {
     public void init(Cluster cluster, PartitionService partitionService) {
         addMembershipListener(cluster);
         addPartitionListener(partitionService);
-        partitionCount = partitionTable.size();
+        partitionCount.set(partitionTable.size());
         Set<Member> members = cluster.getMembers();
         mPool = new ConcurrentHashMap<Address, BlockingQueue<Connection>>(members.size());
         for (Member _member : members) {
@@ -82,7 +84,7 @@ public class ConnectionPool {
     private void createPartitionTable(PartitionService partitionService) {
         Set<Partition> partitions = partitionService.getPartitions();
         for (Partition p : partitions) {
-            if(p.getOwner()!=null)
+            if (p.getOwner() != null)
                 partitionTable.put(p.getPartitionId(), p.getOwner());
         }
     }
@@ -104,10 +106,13 @@ public class ConnectionPool {
         Connection initialConnection = null;
         for (InetSocketAddress isa : config.getAddressList()) {
             try {
-                initialConnection = new Connection(isa, 0, this.serializationService);
-                this.connectionManager.bindConnection(initialConnection);
-                System.out.println("Initial Connection is" + initialConnection);
-                singlePool.offer(initialConnection);
+                int i = 0;
+                while (i++ < POOL_SIZE) {
+                    initialConnection = new Connection(new Address(isa), 0, this.serializationService);
+                    System.out.println("Intial connection " + initialConnection);
+                    this.connectionManager.bindConnection(initialConnection);
+                    singlePool.offer(initialConnection);
+                }
                 break;
             } catch (IOException e) {
                 continue;
@@ -124,20 +129,26 @@ public class ConnectionPool {
             BlockingQueue<Connection> pool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
             mPool.put(address, pool);
             while (pool.size() < POOL_SIZE) {
-                Connection connection = new Connection(address.getInetSocketAddress(), 0, serializationService);
+                Connection connection = new Connection(address, 0, serializationService);
                 connectionManager.bindConnection(connection);
                 pool.offer(connection);
             }
         } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     public Connection takeConnection() throws InterruptedException {
+        System.out.println(singlePool.size() + " : taking connection" + Thread.currentThread().getName());
         return singlePool.take();
     }
 
     public Connection takeConnection(Data key) throws InterruptedException, UnknownHostException {
-        int id = key.getPartitionHash() % partitionCount;
+        if (key == null) return takeConnection();
+        if (partitionCount.get() == 0) {
+            return mPool.values().iterator().next().take();
+        }
+        int id = key.getPartitionHash() % partitionCount.get();
         Member member = partitionTable.get(id);
         if (member == null) {
             return singlePool.take();
@@ -146,10 +157,15 @@ public class ConnectionPool {
     }
 
     public void releaseConnection(Connection connection) {
+        System.out.println(singlePool.size() + " : release connection" + Thread.currentThread().getName());
         singlePool.offer(connection);
     }
-    
+
     public void releaseConnection(Connection connection, Data key) {
+        if (key == null) {
+            releaseConnection(connection);
+            return;
+        }
         mPool.get(connection.getAddress()).offer(connection);
     }
 }

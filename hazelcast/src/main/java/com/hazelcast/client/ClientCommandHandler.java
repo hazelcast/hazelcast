@@ -49,7 +49,8 @@ public abstract class ClientCommandHandler implements CommandHandler {
                     "exception during handling " + protocol.command + ": " + e.getMessage(), e);
             response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getMessage()});
         }
-        sendResponse(node, response, protocol.conn);
+        if(response!=null)
+            sendResponse(node, response, protocol.conn);
     }
 
     protected void sendResponse(Node node, SocketWritable request, TcpIpConnection conn) {

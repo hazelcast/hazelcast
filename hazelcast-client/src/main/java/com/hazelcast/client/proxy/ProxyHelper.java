@@ -27,7 +27,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
@@ -42,9 +43,9 @@ public class ProxyHelper {
 
     private final static AtomicLong callIdGen = new AtomicLong(0);
     private final ILogger logger = com.hazelcast.logging.Logger.getLogger(this.getClass().getName());
-    private final ProtocolWriter writer;
-    private final ProtocolReader reader;
-    private final ConnectionPool cp;
+    final ProtocolWriter writer;
+    final ProtocolReader reader;
+    final ConnectionPool cp;
     private final SerializationService ss;
 
     public ProxyHelper(SerializationService ss, ConnectionPool cp) {
@@ -118,13 +119,13 @@ public class ProxyHelper {
     }
 
     private Object getSingleObjectFromResponse(Protocol response) {
-        if (response!=null && response.buffers != null && response.hasBuffer()) {
+        if (response != null && response.buffers != null && response.hasBuffer()) {
             return ss.toObject(response.buffers[0]);
         } else return null;
     }
 
     public void doFireNForget(Command command, String[] args, Data... data) {
-        Protocol protocol = createProtocol(command,args, data);
+        Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
             Connection connection = cp.takeConnection();
@@ -136,17 +137,17 @@ public class ProxyHelper {
         }
     }
 
-    public Protocol doCommand(Command command, String[] args, Data... data) {
-        Protocol protocol = createProtocol(command,args, data);
+    public Protocol doCommand(Data key, Command command, String[] args, Data... data) {
+        Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
-            Connection connection = cp.takeConnection();
+            Connection connection = cp.takeConnection(key);
             writer.write(connection, protocol);
             writer.flush(connection);
             Protocol response = reader.read(connection);
-            cp.releaseConnection(connection);
-            if(Command.OK.equals(response.command))
-            return response;
+            cp.releaseConnection(connection, key);
+            if (Command.OK.equals(response.command))
+                return response;
             else {
                 throw new RuntimeException(response.args[0]);
             }
@@ -158,9 +159,7 @@ public class ProxyHelper {
         }
     }
 
-
-
-    private Protocol createProtocol(Command command, String[] args, Data[] data) {
+    Protocol createProtocol(Command command, String[] args, Data[] data) {
         if (args == null) args = new String[]{};
         long id = newCallId();
         Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, data);
@@ -192,7 +191,7 @@ public class ProxyHelper {
                     } catch (IOException e) {
                         throw new ExecutionException(e);
                     }
-                    return (V)ProxyHelper.this.getSingleObjectFromResponse(protocol);
+                    return (V) ProxyHelper.this.getSingleObjectFromResponse(protocol);
                 }
 
                 public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
@@ -202,7 +201,7 @@ public class ProxyHelper {
                     } catch (IOException e) {
                         throw new ExecutionException(e);
                     }
-                    return (V)ProxyHelper.this.getSingleObjectFromResponse(protocol);
+                    return (V) ProxyHelper.this.getSingleObjectFromResponse(protocol);
                 }
             };
         } catch (IOException e) {
@@ -221,8 +220,8 @@ public class ProxyHelper {
      * @param data
      * @return
      */
-    public boolean doCommand(Command command, String arg, Data... data) {
-        Protocol response = doCommand(command, new String[]{arg}, data);
+    public boolean doCommand(Data key, Command command, String arg, Data... data) {
+        Protocol response = doCommand(key, command, new String[]{arg}, data);
         return response.command.equals(Command.OK);
     }
 
@@ -234,8 +233,8 @@ public class ProxyHelper {
      * @param data
      * @return
      */
-    public Object doCommandAsObject(Command command, String[] arg, Data... data) {
-        Protocol response = doCommand(command, arg, data);
+    public Object doCommandAsObject(Data key, Command command, String[] arg, Data... data) {
+        Protocol response = doCommand(key, command, arg, data);
         return getSingleObjectFromResponse(response);
     }
 
@@ -247,25 +246,25 @@ public class ProxyHelper {
      * @param data
      * @return
      */
-    public Object doCommandAsObject(Command command, String arg, Data... data) {
-        return doCommandAsObject(command, new String[]{arg}, data);
+    public Object doCommandAsObject(Data key, Command command, String arg, Data... data) {
+        return doCommandAsObject(key, command, new String[]{arg}, data);
     }
 
-    public boolean doCommandAsBoolean(Command command, String[] args, Data... datas) {
-        Protocol protocol = doCommand(command, args, datas);
+    public boolean doCommandAsBoolean(Data key, Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(key, command, args, datas);
         return Boolean.valueOf(protocol.args[0]);
     }
 
-    public int doCommandAsInt(Command command, String[] args, Data... datas) {
-        Protocol protocol = doCommand(command, args, datas);
+    public int doCommandAsInt(Data key, Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(key, command, args, datas);
         return Integer.valueOf(protocol.args[0]);
     }
 
-    public <E> Collection<E> doCommandAsList(Command command, String[] args, Data... datas){
-        Protocol protocol = doCommand(command, args, datas);
+    public <E> Collection<E> doCommandAsList(Data key, Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(key, command, args, datas);
         List<E> list = new ArrayList<E>();
-        if(protocol.hasBuffer()){
-            for(Data bb: protocol.buffers){
+        if (protocol.hasBuffer()) {
+            for (Data bb : protocol.buffers) {
                 list.add((E) ss.toObject(bb));
             }
         }

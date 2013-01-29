@@ -29,11 +29,11 @@ public class TransactionClientProxy implements Transaction {
     }
 
     public void begin() throws IllegalStateException {
-        proxyHelper.doCommand(Command.TRXBEGIN, new String[]{}, null);
+        proxyHelper.doCommand(null, Command.TRXBEGIN, new String[]{}, null);
     }
 
     public void commit() throws IllegalStateException {
-        proxyHelper.doCommand(Command.TRXCOMMIT, new String[]{}, null);
+        proxyHelper.doCommand(null, Command.TRXCOMMIT, new String[]{}, null);
 //        ClientThreadContext threadContext = ClientThreadContext.get();
 //        threadContext.removeTransaction();
     }
@@ -43,7 +43,7 @@ public class TransactionClientProxy implements Transaction {
     }
 
     public void rollback() throws IllegalStateException {
-        proxyHelper.doCommand(Command.TRXROLLBACK, new String[]{}, null);
+        proxyHelper.doCommand(null, Command.TRXROLLBACK, new String[]{}, null);
 //        ClientThreadContext threadContext = ClientThreadContext.get();
 //        threadContext.removeTransaction();
     }

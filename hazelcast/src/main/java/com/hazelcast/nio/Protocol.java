@@ -113,7 +113,8 @@ public class Protocol implements SocketWritable {
         dos.write(response.array());
         if (buffers != null && buffers.length > 0) {
             for (Data buffer : buffers) {
-                buffer.writeData(dos);
+                if(buffer!=null)
+                    buffer.writeData(dos);
             }
             dos.write("\r\n".getBytes());
         }
@@ -156,7 +157,7 @@ public class Protocol implements SocketWritable {
     }
 
     private class BufferWriterIterator {
-        int index = -1;
+        int index = 0;
         DataWriter current = null;
 
         boolean hasNext() {
@@ -172,6 +173,7 @@ public class Protocol implements SocketWritable {
             if (hasCurrent()) {
                 return current;
             }
+
             current = new DataWriter(buffers[index++]);
             return current;
         }
