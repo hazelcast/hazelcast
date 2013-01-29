@@ -17,17 +17,14 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.nio.serialization.Data;
 
-public interface QueryableEntry extends MapEntry {
+public interface QueryableEntry extends MapEntry, QueryResultEntry {
+
+    Object getValue();
+
+    Object getKey();
 
     Comparable getAttribute(String attributeName) throws QueryException;
 
     AttributeType getAttributeType(String attributeName);
-
-    Data getKeyData();
-
-    Data getValueData();
-
-    Object getIndexKey();
 }

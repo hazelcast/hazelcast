@@ -26,7 +26,7 @@ public class QueryEntry implements QueryableEntry {
     static final String THIS_ATTRIBUTE_NAME = "this";
     private static PortableExtractor extractor = new PortableExtractor();
     private final SerializationServiceImpl serializationService;
-    Object indexKey;
+    Data indexKey;
     Data key;
     Object keyObject;
     Object valueObject;
@@ -35,9 +35,9 @@ public class QueryEntry implements QueryableEntry {
 
     PortableReader reader = null;
 
-    public QueryEntry(SerializationServiceImpl serializationService, Object key, Object indexKey, Object value) {
-        if (indexKey == null) throw new IllegalArgumentException("index key cannot be null");
-        if (key == null) throw new IllegalArgumentException("key cannot be null");
+    public QueryEntry(SerializationServiceImpl serializationService, Data indexKey, Object key, Object value) {
+        if (indexKey == null) throw new IllegalArgumentException("index keyData cannot be null");
+        if (key == null) throw new IllegalArgumentException("keyData cannot be null");
         if (value == null) throw new IllegalArgumentException("value cannot be null");
         this.indexKey = indexKey;
         if (key instanceof Data) {
@@ -133,7 +133,7 @@ public class QueryEntry implements QueryableEntry {
         return valueData;
     }
 
-    public Object getIndexKey() {
+    public Data getIndexKey() {
         return indexKey;
     }
 

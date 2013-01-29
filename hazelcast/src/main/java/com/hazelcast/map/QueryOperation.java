@@ -18,12 +18,12 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
-import com.hazelcast.query.impl.MultiResultSet;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
@@ -53,19 +53,23 @@ public class QueryOperation extends AbstractNamedOperation {
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = indexService.query(predicate);
-        if (entries == null) {
+        SerializationServiceImpl ss = (SerializationServiceImpl) getNodeEngine().getSerializationService();
+        result = new QueryResult();
+        if (entries != null) {
+            for (QueryableEntry entry : entries) {
+                result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
+            }
+        } else {
             // run in parallel
-            entries = runParallel(initialPartitions);
+            runParallel(initialPartitions);
         }
         List<Integer> finalPartitions = mapService.getOwnedPartitions().get();
         if (initialPartitions == finalPartitions) {
-            result = new QueryResult();
             result.setPartitionIds(finalPartitions);
-            result.setResult(entries);
         }
     }
 
-    private Set<QueryableEntry> runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
+    private void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final SerializationServiceImpl ss = (SerializationServiceImpl) getNodeEngine().getSerializationService();
         final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor("parallel-query");
         final List<Future<ConcurrentMap<Object, QueryableEntry>>> lsFutures = new ArrayList<Future<ConcurrentMap<Object, QueryableEntry>>>(initialPartitions.size());
@@ -76,7 +80,7 @@ public class QueryOperation extends AbstractNamedOperation {
                     final RecordStore recordStore = container.getRecordStore(name);
                     ConcurrentMap<Object, QueryableEntry> partitionResult = null;
                     for (Record record : recordStore.getRecords().values()) {
-                        Object key = record.getKey();
+                        Data key = record.getKey();
                         Object value = null;
                         if (record instanceof CachedDataRecord) {
                             CachedDataRecord cachedDataRecord = (CachedDataRecord) record;
@@ -103,14 +107,14 @@ public class QueryOperation extends AbstractNamedOperation {
             });
             lsFutures.add(f);
         }
-        MultiResultSet multiResultSet = new MultiResultSet();
         for (Future<ConcurrentMap<Object, QueryableEntry>> future : lsFutures) {
             final ConcurrentMap<Object, QueryableEntry> r = future.get();
             if (r != null) {
-                multiResultSet.addResultSet(r);
+                for (QueryableEntry entry : r.values()) {
+                    result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
+                }
             }
         }
-        return multiResultSet;
     }
 
     @Override

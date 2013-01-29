@@ -75,7 +75,7 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
         public QueryableEntry next() {
             if (currentEntry == null) return null;
             final Record record = currentEntry;
-            Object key = record.getKey();
+            Data key = record.getKey();
             Object value = null;
             if (record instanceof CachedDataRecord) {
                 CachedDataRecord cachedDataRecord = (CachedDataRecord) record;

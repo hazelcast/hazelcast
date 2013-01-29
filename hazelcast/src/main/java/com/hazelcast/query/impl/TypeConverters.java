@@ -16,10 +16,14 @@
 
 package com.hazelcast.query.impl;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
 
 class TypeConverters {
+    public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
+    public static final TypeConverter BIG_DECIMAL_CONVERTER = new BigDecimalConverter();
     public static final TypeConverter DOUBLE_CONVERTER = new DoubleConverter();
     public static final TypeConverter LONG_CONVERTER = new LongConverter();
     public static final TypeConverter INTEGER_CONVERTER = new IntegerConverter();
@@ -111,6 +115,23 @@ class TypeConverters {
             }
             Number number = (Number) value;
             return number.longValue();
+        }
+    }
+
+    static class BigIntegerConverter implements TypeConverter {
+
+        public Comparable convert(Comparable value) {
+            if (value instanceof BigInteger) return value;
+            return new BigInteger(value.toString());
+        }
+    }
+
+    static class BigDecimalConverter implements TypeConverter {
+
+        public Comparable convert(Comparable value) {
+            if (value instanceof BigDecimal) return value;
+            if (value instanceof BigInteger) return new BigDecimal((BigInteger) value);
+            return new BigDecimal(value.toString());
         }
     }
 

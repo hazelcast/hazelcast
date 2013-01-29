@@ -16,10 +16,12 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.Set;
 
 public interface Index {
-    void removeEntryIndex(Object indexKey);
+    void removeEntryIndex(Data indexKey);
 
     void saveEntryIndex(QueryableEntry e) throws QueryException;
 
@@ -30,4 +32,8 @@ public interface Index {
     Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
 
     Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
+
+    String getAttributeName();
+
+    boolean isOrdered();
 }

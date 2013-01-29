@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEvent;
@@ -29,19 +30,25 @@ import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,7 +59,7 @@ import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
-        ClientProtocolService {
+        ClientProtocolService, PostJoinAwareService {
 
     public final static String SERVICE_NAME = "hz:impl:mapService";
 
@@ -79,6 +86,123 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             partitionContainers[i] = new PartitionContainer(this, partition);
         }
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 10, 1, TimeUnit.SECONDS);
+    }
+
+    public Operation getPostJoinOperation() {
+        PostJoinMapOperation o = new PostJoinMapOperation();
+        for (MapContainer mapContainer : mapContainers.values()) {
+            o.addMapIndex(mapContainer);
+        }
+        return o;
+    }
+
+    public static class PostJoinMapOperation extends AbstractOperation implements JoinOperation {
+        private List<MapIndexInfo> lsMapIndexes = new LinkedList<MapIndexInfo>();
+
+        @Override
+        public String getServiceName() {
+            return SERVICE_NAME;
+        }
+
+        void addMapIndex(MapContainer mapContainer) {
+            final IndexService indexService = mapContainer.getIndexService();
+            if (indexService.hasIndex()) {
+                MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
+                for (Index index : indexService.getIndexes()) {
+                    mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
+                }
+                lsMapIndexes.add(mapIndexInfo);
+            }
+        }
+
+        class MapIndexInfo implements DataSerializable {
+            String mapName;
+            private List<IndexInfo> lsIndexes = new LinkedList<IndexInfo>();
+
+            public MapIndexInfo(String mapName) {
+                this.mapName = mapName;
+            }
+
+            public MapIndexInfo() {
+            }
+
+            class IndexInfo implements DataSerializable {
+                String attributeName;
+                boolean ordered;
+
+                IndexInfo() {
+                }
+
+                IndexInfo(String attributeName, boolean ordered) {
+                    this.attributeName = attributeName;
+                    this.ordered = ordered;
+                }
+
+                public void writeData(ObjectDataOutput out) throws IOException {
+                    out.writeUTF(attributeName);
+                    out.writeBoolean(ordered);
+                }
+
+                public void readData(ObjectDataInput in) throws IOException {
+                    attributeName = in.readUTF();
+                    ordered = in.readBoolean();
+                }
+            }
+
+            public void addIndexInfo(String attributeName, boolean ordered) {
+                lsIndexes.add(new IndexInfo(attributeName, ordered));
+            }
+
+            public void writeData(ObjectDataOutput out) throws IOException {
+                out.writeUTF(mapName);
+                out.writeInt(lsIndexes.size());
+                for (IndexInfo indexInfo : lsIndexes) {
+                    indexInfo.writeData(out);
+                }
+            }
+
+            public void readData(ObjectDataInput in) throws IOException {
+                mapName = in.readUTF();
+                int size = in.readInt();
+                for (int i = 0; i < size; i++) {
+                    IndexInfo indexInfo = new IndexInfo();
+                    indexInfo.readData(in);
+                    lsIndexes.add(indexInfo);
+                }
+            }
+        }
+
+        @Override
+        public void run() throws Exception {
+            MapService mapService = getService();
+            for (MapIndexInfo mapIndex : lsMapIndexes) {
+                final MapContainer mapContainer = mapService.getMapContainer(mapIndex.mapName);
+                final IndexService indexService = mapContainer.getIndexService();
+                for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
+                    indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+                }
+            }
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeInt(lsMapIndexes.size());
+            for (MapIndexInfo mapIndex : lsMapIndexes) {
+                mapIndex.writeData(out);
+            }
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                MapIndexInfo mapIndexInfo = new MapIndexInfo();
+                mapIndexInfo.readData(in);
+                lsMapIndexes.add(mapIndexInfo);
+            }
+        }
     }
 
     public MapContainer getMapContainer(String mapName) {
@@ -118,19 +242,42 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void commitMigration(MigrationServiceEvent event) {
         logger.log(Level.FINEST, "Committing " + event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            migrateIndex(event);
             if (event.getMigrationType() == MigrationType.MOVE) {
                 clearPartitionData(event.getPartitionId());
             } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
                 final PartitionContainer container = partitionContainers[event.getPartitionId()];
                 for (DefaultRecordStore mapPartition : container.maps.values()) {
-                    final MapConfig mapConfig = getMapContainer(mapPartition.name).getMapConfig();
+                    final MapContainer mapContainer = getMapContainer(mapPartition.name);
+                    final MapConfig mapConfig = mapContainer.getMapConfig();
                     if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
                         mapPartition.clear();
                     }
                 }
             }
+        } else {
+            migrateIndex(event);
         }
         ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
+    }
+
+    private void migrateIndex(MigrationServiceEvent event) {
+        if (event.getReplicaIndex() == 0) {
+            final PartitionContainer container = partitionContainers[event.getPartitionId()];
+            for (DefaultRecordStore mapPartition : container.maps.values()) {
+                final MapContainer mapContainer = getMapContainer(mapPartition.name);
+                final IndexService indexService = mapContainer.getIndexService();
+                if (indexService.hasIndex()) {
+                    for (Record record : mapPartition.getRecords().values()) {
+                        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+                            indexService.removeEntryIndex(record.getKey());
+                        } else {
+                            indexService.saveEntryIndex(new QueryEntry((SerializationServiceImpl) getSerializationService(), record.getKey(), record.getKey(), record.getValue()));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void rollbackMigration(MigrationServiceEvent event) {
@@ -603,8 +750,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return new QueryableEntrySet((SerializationServiceImpl) nodeEngine.getSerializationService(), mlist);
     }
 
-    public Set<QueryableEntry> queryOnPartition(String mapName, Predicate predicate, int partitionId) {
-        Set<QueryableEntry> result = new HashSet<QueryableEntry>();
+    public void queryOnPartition(String mapName, Predicate predicate, int partitionId, QueryResult result) {
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
         ConcurrentMap<Data, Record> records = recordStore.getRecords();
@@ -613,10 +759,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             Data key = record.getKey();
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, record.getValue());
             if (predicate.apply(queryEntry)) {
-                result.add(queryEntry);
+                result.add(new QueryResultEntryImpl(key, key, queryEntry.getValueData()));
             }
         }
-        if (result.size() > 0) System.out.println(partitionId + " >> " + result.size());
-        return result;
     }
 }

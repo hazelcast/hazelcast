@@ -16,8 +16,10 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.query.impl.QueryResultEntryImpl;
 
 import java.util.AbstractSet;
 import java.util.HashSet;
@@ -26,23 +28,25 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class QueryResultStream<T> extends AbstractSet<QueryableEntry> {
-    final BlockingQueue<QueryableEntry> q = new LinkedBlockingQueue<QueryableEntry>();
+public class QueryResultStream extends AbstractSet<QueryResultEntry> {
+    final BlockingQueue<QueryResultEntry> q = new LinkedBlockingQueue<QueryResultEntry>();
     volatile int size = 0;
     boolean ended = false; // guarded by endLock
     final Object endLock = new Object();
-    private static final QueryableEntry END = new QueryEntry(null, "1", "1", "1");
+    private static final QueryResultEntry END = new QueryResultEntryImpl(null, null, null);
 
+    private final SerializationService serializationService;
     private final boolean set;
     private final Set<Object> keys;
     private final boolean data;
     private final IterationType iterationType;
 
-    public QueryResultStream(QueryResultStream.IterationType iterationType, boolean data) {
-        this(iterationType, data, (iterationType != IterationType.VALUE));
+    public QueryResultStream(SerializationService serializationService, QueryResultStream.IterationType iterationType, boolean data) {
+        this(serializationService, iterationType, data, (iterationType != IterationType.VALUE));
     }
 
-    public QueryResultStream(QueryResultStream.IterationType iterationType, boolean data, boolean set) {
+    public QueryResultStream(SerializationService serializationService, QueryResultStream.IterationType iterationType, boolean data, boolean set) {
+        this.serializationService = serializationService;
         this.set = set;
         this.data = data;
         this.iterationType = iterationType;
@@ -64,7 +68,7 @@ public class QueryResultStream<T> extends AbstractSet<QueryableEntry> {
         }
     }
 
-    public synchronized boolean add(QueryableEntry entry) {
+    public synchronized boolean add(QueryResultEntry entry) {
         if (!set || keys.add(entry.getIndexKey())) {
             q.offer(entry);
             size++;
@@ -80,7 +84,7 @@ public class QueryResultStream<T> extends AbstractSet<QueryableEntry> {
 
     class It implements Iterator {
 
-        QueryableEntry currentEntry;
+        QueryResultEntry currentEntry;
 
         public boolean hasNext() {
             try {
@@ -93,9 +97,11 @@ public class QueryResultStream<T> extends AbstractSet<QueryableEntry> {
 
         public Object next() {
             if (iterationType == IterationType.VALUE) {
-                return (data) ? currentEntry.getValueData() : currentEntry.getValue();
+                Data valueData = currentEntry.getValueData();
+                return (data) ? valueData : serializationService.toObject(valueData);
             } else if (iterationType == IterationType.KEY) {
-                return (data) ? currentEntry.getKeyData() : currentEntry.getKey();
+                Data keyData = currentEntry.getKeyData();
+                return (data) ? keyData : serializationService.toObject(keyData);
             } else return currentEntry;
         }
 

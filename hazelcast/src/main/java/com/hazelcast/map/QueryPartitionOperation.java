@@ -18,22 +18,16 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexService;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Set;
 
 public class QueryPartitionOperation extends AbstractNamedOperation implements PartitionAwareOperation {
     MapService mapService;
     Predicate predicate;
     QueryResult result;
-
 
     public QueryPartitionOperation(String mapName, Predicate predicate) {
         super(mapName);
@@ -45,9 +39,8 @@ public class QueryPartitionOperation extends AbstractNamedOperation implements P
 
     public void run() {
         mapService = getService();
-        Set<QueryableEntry> entries = mapService.queryOnPartition(name, predicate, getPartitionId());
         result = new QueryResult();
-        result.setResult(entries);
+        mapService.queryOnPartition(name, predicate, getPartitionId(), result);
     }
 
     @Override
@@ -68,5 +61,4 @@ public class QueryPartitionOperation extends AbstractNamedOperation implements P
         name = in.readUTF();
         predicate = in.readObject();
     }
-
 }

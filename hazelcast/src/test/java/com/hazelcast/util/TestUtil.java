@@ -20,14 +20,28 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import org.junit.Ignore;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.concurrent.Callable;
 
 public class TestUtil {
+
+    static final private SerializationService serializationService = new SerializationServiceImpl(1, null);
+
+    public static synchronized Data toData(Object obj) {
+        return serializationService.toData(obj);
+    }
+
+    public static synchronized Object toObject(Data data) {
+        return serializationService.toObject(data);
+    }
 
     @Ignore
     public static class ValueType implements Serializable {
@@ -408,6 +422,7 @@ public class TestUtil {
         Date createDate;
         java.sql.Date sqlDate;
         State state;
+        BigDecimal bigDecimal = new BigDecimal("1.23E3");
 
         public Employee(long id, String name, int age, boolean live, double salary, State state) {
             this.state = state;
@@ -434,6 +449,10 @@ public class TestUtil {
         }
 
         public Employee() {
+        }
+
+        public BigDecimal getBigDecimal() {
+            return bigDecimal;
         }
 
         public Timestamp getDate() {

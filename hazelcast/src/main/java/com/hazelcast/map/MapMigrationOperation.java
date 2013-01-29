@@ -37,7 +37,6 @@ public class MapMigrationOperation extends AbstractOperation {
     private Map<String, Map<Data, LockInfo>> locks;
     private boolean diff;
 
-
     public MapMigrationOperation() {
     }
 
@@ -46,28 +45,24 @@ public class MapMigrationOperation extends AbstractOperation {
         this.diff = diff;
         data = new HashMap<String, Map<Data, Record>>(container.maps.size());
         locks = new HashMap<String, Map<Data, LockInfo>>(container.maps.size());
-
         for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
             final MapConfig mapConfig = entry.getValue().getMapContainer().getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-
             RecordStore recordStore = entry.getValue();
             Map<Data, Record> map = new HashMap<Data, Record>(recordStore.getRecords().size());
             for (Entry<Data, Record> recordEntry : recordStore.getRecords().entrySet()) {
                 map.put(recordEntry.getKey(), recordEntry.getValue());
             }
             data.put(name, map);
-
             Map<Data, LockInfo> lockmap = new HashMap<Data, LockInfo>(recordStore.getRecords().size());
             for (Entry<Data, LockInfo> lockEntry : recordStore.getLocks().entrySet()) {
                 lockmap.put(lockEntry.getKey(), lockEntry.getValue());
             }
             locks.put(name, lockmap);
         }
-
     }
 
     public void run() {
@@ -109,7 +104,6 @@ public class MapMigrationOperation extends AbstractOperation {
             }
             data.put(name, map);
         }
-
         int lsize = in.readInt();
         locks = new HashMap<String, Map<Data, LockInfo>>(lsize);
         for (int i = 0; i < lsize; i++) {
@@ -148,6 +142,5 @@ public class MapMigrationOperation extends AbstractOperation {
                 IOUtil.writeNullableObject(out, entry.getValue());
             }
         }
-
     }
 }
