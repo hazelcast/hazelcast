@@ -78,7 +78,7 @@ public abstract class AbstractMapOperation extends Operation implements KeyBased
         this.threadId = threadId;
     }
 
-    public Data getValue() {
+    public final Data getValue() {
         return dataValue;
     }
 

@@ -37,7 +37,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     public BaseRemoveOperation() {
     }
 
-    protected boolean prepareTransaction() {
+    protected final boolean prepareTransaction() {
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
             ResponseHandler responseHandler = getResponseHandler();
