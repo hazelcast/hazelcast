@@ -41,19 +41,19 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
         this.dataKey = dataKey;
     }
 
-    public int getKeyHash() {
+    public final int getKeyHash() {
         return dataKey == null ? 0 : dataKey.getPartitionHash();
     }
 
-    public Collection<CollectionRecord> getOrCreateCollection() {
+    public final Collection<CollectionRecord> getOrCreateCollection() {
         return getOrCreateContainer().getOrCreateCollection(dataKey);
     }
 
-    public Collection<CollectionRecord> getCollection() {
+    public final Collection<CollectionRecord> getCollection() {
         return getOrCreateContainer().getCollection(dataKey);
     }
 
-    public Collection<CollectionRecord> removeCollection() {
+    public final Collection<CollectionRecord> removeCollection() {
         return getOrCreateContainer().removeCollection(dataKey);
     }
 

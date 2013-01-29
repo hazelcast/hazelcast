@@ -33,7 +33,6 @@ import java.util.Map;
  */
 public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionLevelOperation {
 
-
     transient Map<Data, Collection<CollectionRecord>> objects;
 
     public ClearOperation() {
