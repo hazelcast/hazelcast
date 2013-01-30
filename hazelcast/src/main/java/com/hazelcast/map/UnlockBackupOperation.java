@@ -18,9 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class UnlockBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class UnlockBackupOperation extends AbstractMapOperation implements BackupOperation {
 
     public UnlockBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -33,10 +32,7 @@ public class UnlockBackupOperation extends AbstractNamedKeyBasedOperation implem
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        LockInfo lock = recordStore.getLock(getKey());
-        if (lock != null) {
-            lock.unlock(getCaller(), threadId);
-        }
+        recordStore.unlock(getKey(), getCaller(), threadId);
     }
 
     @Override
@@ -44,8 +40,4 @@ public class UnlockBackupOperation extends AbstractNamedKeyBasedOperation implem
         return Boolean.TRUE;
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
 }

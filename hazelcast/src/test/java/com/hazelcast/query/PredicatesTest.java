@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.util.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Date;
 
@@ -33,7 +34,7 @@ import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class PredicatesTest {
+public class PredicatesTest extends TestUtil {
     public PredicatesTest() {
         super();
     }
@@ -50,6 +51,12 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("createDate >= '" + new Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("bigDecimal > '" + new BigDecimal("1.23E2") + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("bigDecimal >= '" + new BigDecimal("1.23E3") + "'").apply(createEntry("1", value)));
+        assertFalse(new SqlPredicate("bigDecimal = '" + new BigDecimal("1.23") + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("bigDecimal = '1.23E3'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("bigDecimal = 1.23E3").apply(createEntry("1", value)));
+        assertFalse(new SqlPredicate("bigDecimal = 1.23").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("state == NULL").apply(createEntry("1", nullNameValue)));
         assertFalse(new SqlPredicate("name = 'null'").apply(createEntry("1", nullNameValue)));
         assertTrue(new SqlPredicate("name = null").apply(createEntry("1", nullNameValue)));
@@ -82,6 +89,9 @@ public class PredicatesTest {
         assertTrue(Predicates.equal(null, TRUE).apply(new DummyEntry(true)));
         assertTrue(Predicates.equal(null, true).apply(new DummyEntry(TRUE)));
         assertFalse(Predicates.equal(null, true).apply(new DummyEntry(FALSE)));
+        assertTrue(Predicates.greaterThan(null, new BigDecimal("1.23E2")).apply(new DummyEntry(new BigDecimal("1.23E3"))));
+        assertFalse(Predicates.equal(null, new BigDecimal("1.23E3")).apply(new DummyEntry(new BigDecimal("1.23E2"))));
+        assertTrue(Predicates.equal(null, new BigDecimal("1.23E3")).apply(new DummyEntry(new BigDecimal("1.23E3"))));
         assertFalse(Predicates.equal(null, 15.22).apply(new DummyEntry(15.23)));
         assertTrue(Predicates.equal(null, 15.22).apply(new DummyEntry(15.22)));
         assertFalse(Predicates.equal(null, 16).apply(new DummyEntry(15)));
@@ -210,7 +220,7 @@ public class PredicatesTest {
     class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
-            super(null, "1", "1", attribute);
+            super(null, toData("1"), "1", attribute);
         }
 
         @Override
@@ -225,6 +235,6 @@ public class PredicatesTest {
     }
 
     static MapEntry createEntry(final Object key, final Object value) {
-        return new QueryEntry(null, key, key, value);
+        return new QueryEntry(null, toData(key), key, value);
     }
 }

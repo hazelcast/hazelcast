@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.WaitKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,13 +42,13 @@ public class LockOperation extends CollectionBackupAwareOperation implements Wai
     public LockOperation() {
     }
 
-    public LockOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, long timeout) {
-        super(name, proxyType, dataKey, threadId);
+    public LockOperation(CollectionProxyId proxyId, Data dataKey, int threadId, long timeout) {
+        super(proxyId, dataKey, threadId);
         this.timeout = timeout;
     }
 
-    public LockOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, long ttl, long timeout) {
-        this(name, proxyType, dataKey, threadId, timeout);
+    public LockOperation(CollectionProxyId proxyId, Data dataKey, int threadId, long ttl, long timeout) {
+        this(proxyId, dataKey, threadId, timeout);
         this.ttl = ttl;
     }
 
@@ -70,7 +70,7 @@ public class LockOperation extends CollectionBackupAwareOperation implements Wai
     }
 
     public Operation getBackupOperation() {
-        return new LockBackupOperation(name, proxyType, dataKey, ttl, threadId, getCaller());
+        return new LockBackupOperation(proxyId, dataKey, ttl, threadId, getCaller());
     }
 
     public boolean shouldBackup() {
@@ -78,7 +78,7 @@ public class LockOperation extends CollectionBackupAwareOperation implements Wai
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new WaitKey(name, dataKey, "lock");
+        return new WaitKey(proxyId.getName(), dataKey, "lock");
     }
 
     public boolean shouldWait() {

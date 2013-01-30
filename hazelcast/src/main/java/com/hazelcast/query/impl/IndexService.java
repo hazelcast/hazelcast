@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 
@@ -48,7 +49,11 @@ public class IndexService {
         return index;
     }
 
-    public void removeEntryIndex(Object indexKey) throws QueryException {
+    public Index[] getIndexes() {
+        return indexes.get();
+    }
+
+    public void removeEntryIndex(Data indexKey) throws QueryException {
         for (Index index : indexes.get()) {
             index.removeEntryIndex(indexKey);
         }

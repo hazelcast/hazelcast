@@ -25,8 +25,8 @@ import java.io.IOException;
 
 public class ReplaceIfSameOperation extends BasePutOperation {
 
-    Data testValue;
-    boolean replaced = false;
+    private Data testValue;
+    private transient boolean replaced = false;
 
 
     public ReplaceIfSameOperation(String name, Data dataKey, Data oldValue, Data value, String txnId) {

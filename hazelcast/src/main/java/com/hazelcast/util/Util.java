@@ -28,7 +28,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class Util {
@@ -65,36 +64,6 @@ public class Util {
         return hash;
     }
 
-    /**
-     * -1 means infinite.
-     * 0 means no-wait.
-     *
-     * @param duration
-     * @param unit
-     * @return
-     */
-    public static long toMillis(long duration, TimeUnit unit) {
-        if (duration == 0 || unit == null) {
-            return 0;
-        } else if (duration < 0) {
-            return -1;
-        } else {
-            return unit.toMillis(duration);
-        }
-    }
-
-    public static void copyFile(final File src, final File dest) {
-        try {
-            final FileInputStream in = new FileInputStream(src);
-            final FileOutputStream out = new FileOutputStream(dest);
-            copyStream(in, out);
-            in.close();
-            out.close();
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-        }
-    }
-
     public static void copyStream(final InputStream in, final OutputStream out)
             throws IOException {
         final byte[] buffer = new byte[1024];
@@ -128,16 +97,6 @@ public class Util {
             final DOMSource source = new DOMSource(doc);
             final StreamResult result = new StreamResult(out);
             transformer.transform(source, result);
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-        }
-    }
-
-    public static void writeText(final String str, final OutputStream out) {
-        try {
-            final BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
-            bw.write(str);
-            bw.flush();
         } catch (final Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }

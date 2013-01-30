@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,14 +46,15 @@ public class PartitionContainer {
         return mapService;
     }
 
-    public RecordStore getRecordStore(String name) {
-        DefaultRecordStore recordStore = maps.get(name);
-        if (recordStore == null) {
-            recordStore = new DefaultRecordStore(name, PartitionContainer.this);
-            final DefaultRecordStore currentRecordStore = maps.putIfAbsent(name, recordStore);
-            recordStore = currentRecordStore == null ? recordStore : currentRecordStore;
+    private final ConcurrencyUtil.ConstructorFunction<String, DefaultRecordStore> recordStoreConstructor
+            = new ConcurrencyUtil.ConstructorFunction<String, DefaultRecordStore>() {
+        public DefaultRecordStore createNew(String name) {
+            return new DefaultRecordStore(name, PartitionContainer.this);
         }
-        return recordStore;
+    };
+
+    public RecordStore getRecordStore(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);
     }
 
     public TransactionLog getTransactionLog(String txnId) {

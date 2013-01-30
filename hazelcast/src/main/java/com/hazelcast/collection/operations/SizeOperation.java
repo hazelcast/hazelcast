@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 
 /**
  * @ali 1/9/13
@@ -27,8 +27,8 @@ public class SizeOperation extends CollectionOperation {
     public SizeOperation() {
     }
 
-    public SizeOperation(String name, CollectionProxyType proxyType) {
-        super(name, proxyType);
+    public SizeOperation(CollectionProxyId proxyId) {
+        super(proxyId);
     }
 
     public void run() throws Exception {

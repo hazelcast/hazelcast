@@ -21,13 +21,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
-public class EntryBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation {
+public class EntryBackupOperation extends AbstractMapOperation implements BackupOperation {
 
     EntryBackupProcessor entryProcessor;
 

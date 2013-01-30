@@ -20,7 +20,7 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.*;
-import com.hazelcast.map.LockInfo;
+import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -34,7 +34,8 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @ali 1/1/13
  */
-public class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
+public class CollectionService implements ManagedService, RemoteService, MembershipAwareService,
+        EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
 
@@ -75,15 +76,14 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
 
     public DistributedObject createDistributedObject(Object objectId) {
         CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
-        final String name = collectionProxyId.name;
         final CollectionProxyType type = collectionProxyId.type;
         switch (type) {
             case MULTI_MAP:
-                return new ObjectMultiMapProxy(name, this, nodeEngine, collectionProxyId.type);
+                return new ObjectMultiMapProxy(this, nodeEngine, collectionProxyId);
             case LIST:
-                return new ObjectListProxy(name, this, nodeEngine, collectionProxyId.type);
+                return new ObjectListProxy(this, nodeEngine, collectionProxyId);
             case SET:
-                return new ObjectSetProxy(name, this, nodeEngine, collectionProxyId.type);
+                return new ObjectSetProxy(this, nodeEngine, collectionProxyId);
             case QUEUE:
                 return null;
         }
@@ -175,9 +175,6 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getPartitionId() < 0 || event.getPartitionId() >= nodeEngine.getPartitionService().getPartitionCount()) {
-            return null; // is it possible
-        }
         int replicaIndex = event.getReplicaIndex();
         CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
         Map<CollectionProxyId, Map[]> map = new HashMap<CollectionProxyId, Map[]>(partitionContainer.containerMap.size());
@@ -187,7 +184,7 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             if (container.config.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(proxyId, new Map[]{container.collections, container.locks});
+            map.put(proxyId, new Map[]{container.collections, container.lockStore.getLocks()});
         }
         if (map.isEmpty()) {
             return null;
@@ -202,7 +199,9 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             Map<Data, Collection<CollectionRecord>> collections = entry.getValue()[0];
             container.collections.putAll(collections);
             Map<Data, LockInfo> locks = entry.getValue()[1];
-            container.locks.putAll(locks);
+            for (Map.Entry<Data, LockInfo> lockEntry : locks.entrySet()) {
+                container.lockStore.putLock(lockEntry.getKey(), lockEntry.getValue());
+            }
         }
     }
 
@@ -255,5 +254,15 @@ public class CollectionService implements ManagedService, RemoteService, EventPu
             partitionContainers[i] = null;
         }
         eventRegistrations.clear();
+    }
+
+    public void memberAdded(MembershipServiceEvent event) {
+    }
+
+    public void memberRemoved(MembershipServiceEvent event) {
+        // TODO: when a member dies;
+        // * release locks
+        // * rollback transaction
+        // * do not know ?
     }
 }

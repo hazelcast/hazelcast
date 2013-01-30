@@ -26,7 +26,6 @@ import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.util.QueryResultStream;
@@ -59,7 +58,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
@@ -77,7 +75,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     protected Future<Data> getAsyncInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
@@ -285,7 +282,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
         containsKeyOperation.setServiceName(SERVICE_NAME);
-        containsKeyOperation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, containsKeyOperation,
                     partitionId).build();
@@ -406,7 +402,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     protected boolean isLockedInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         IsLockedOperation operation = new IsLockedOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
@@ -569,7 +564,6 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetMapEntryOperation getMapEntryOperation = new GetMapEntryOperation(name, key);
         getMapEntryOperation.setServiceName(SERVICE_NAME);
-        getMapEntryOperation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, getMapEntryOperation,
                     partitionId).build();
@@ -621,7 +615,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        QueryResultStream<QueryableEntry> result = new QueryResultStream(iterationType, dataResult);
+        QueryResultStream result = new QueryResultStream(nodeEngine.getSerializationService(), iterationType, dataResult, true);
         try {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
@@ -633,8 +627,11 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             for (Future future : flist) {
                 QueryResult queryResult = (QueryResult) future.get();
                 if (queryResult != null) {
-                    plist.addAll(queryResult.getPartitionIds());
-                    result.addAll(queryResult.getResult());
+                    final List<Integer> partitionIds = queryResult.getPartitionIds();
+                    if (partitionIds != null) {
+                        plist.addAll(partitionIds);
+                        result.addAll(queryResult.getResult());
+                    }
                 }
             }
             if (plist.size() == partitionCount) {

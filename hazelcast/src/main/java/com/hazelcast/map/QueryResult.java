@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.query.impl.QueryResultEntryImpl;
 
 import java.io.IOException;
 import java.util.*;
@@ -28,7 +28,7 @@ import java.util.*;
 public class QueryResult implements DataSerializable {
 
     private List<Integer> partitionIds;
-    private Set<QueryableEntry> result;
+    private final Set<QueryResultEntry> result = new HashSet<QueryResultEntry>();
 
     public List<Integer> getPartitionIds() {
         return partitionIds;
@@ -38,25 +38,28 @@ public class QueryResult implements DataSerializable {
         this.partitionIds = partitionIds;
     }
 
-    public Set<QueryableEntry> getResult() {
+    public void add(QueryResultEntry resultEntry) {
+        result.add(resultEntry);
+    }
+
+    public Set<QueryResultEntry> getResult() {
         return result;
     }
 
-    public void setResult(Set<QueryableEntry> result) {
-        this.result = result;
-    }
-
     public void writeData(ObjectDataOutput out) throws IOException {
-        int psize = partitionIds.size();
+        int psize = (partitionIds == null) ? 0 : partitionIds.size();
         out.writeInt(psize);
         for (int i = 0; i < psize; i++) {
             out.writeInt(partitionIds.get(i));
         }
         int rsize = result.size();
         out.writeInt(rsize);
-        Iterator<QueryableEntry> iterator = result.iterator();
-        for (int i = 0; i < rsize; i++) {
-            out.writeObject(iterator.next());
+        if (rsize > 0) {
+            Iterator<QueryResultEntry> iterator = result.iterator();
+            for (int i = 0; i < rsize; i++) {
+                final QueryResultEntryImpl queryableEntry = (QueryResultEntryImpl) iterator.next();
+                queryableEntry.writeData(out);
+            }
         }
     }
 
@@ -64,12 +67,17 @@ public class QueryResult implements DataSerializable {
         int psize = in.readInt();
         if (psize > 0) {
             partitionIds = new ArrayList<Integer>(psize);
-            partitionIds.add(in.readInt());
+            for (int i = 0; i < psize; i++) {
+                partitionIds.add(in.readInt());
+            }
         }
         int rsize = in.readInt();
         if (rsize > 0) {
-            result = new HashSet<QueryableEntry>(rsize);
-            result.add((QueryEntry) in.readObject());
+            for (int i = 0; i < rsize; i++) {
+                final QueryResultEntryImpl resultEntry = new QueryResultEntryImpl();
+                resultEntry.readData(in);
+                result.add(resultEntry);
+            }
         }
     }
 }

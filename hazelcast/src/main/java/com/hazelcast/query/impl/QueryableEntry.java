@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,14 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.nio.serialization.Data;
 
-public interface QueryableEntry extends MapEntry {
+public interface QueryableEntry extends MapEntry, QueryResultEntry {
+
+    Object getValue();
+
+    Object getKey();
 
     Comparable getAttribute(String attributeName) throws QueryException;
 
     AttributeType getAttributeType(String attributeName);
-
-    Data getKeyData();
-
-    Data getValueData();
-
-    Object getIndexKey();
 }

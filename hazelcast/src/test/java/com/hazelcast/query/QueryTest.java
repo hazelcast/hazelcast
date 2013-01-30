@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,20 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class QueryTest extends TestUtil {
@@ -45,10 +52,7 @@ public class QueryTest extends TestUtil {
         Hazelcast.shutdownAll();
     }
 
-    HazelcastInstance newInstance() {
-        return Hazelcast.newHazelcastInstance(new Config());
-    }
-//    @Test
+    //    @Test
 //    public void issue393() {
 //        final IMap<String, Value> map = Hazelcast.getMap("default");
 //        map.addIndex("name", true);
@@ -281,29 +285,38 @@ public class QueryTest extends TestUtil {
 //        assertEquals(1, actual.size());
 //    }
 //
-//    @Test
-//    public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
-//        Config cfg = null;
-//        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(cfg);
-//        IMap imap = h1.getMap("employees");
-//        imap.addIndex("name", false);
-//        imap.addIndex("age", true);
-//        imap.addIndex("active", false);
-//        for (int i = 0; i < 10000; i++) {
-//            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
-//        }
-//        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(cfg);
-//        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(cfg);
-//        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(cfg);
-//        long startNow = Clock.currentTimeMillis();
-//        while ((Clock.currentTimeMillis() - startNow) < 50000) {
-//            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
-//            for (Employee employee : values) {
-//                assertTrue(employee.isActive());
-//            }
-//            assertEquals(56, values.size());
-//        }
-//    }
+    @Test
+    public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
+        Config config = new Config();
+        StaticNodeFactory factory = new StaticNodeFactory(4);
+        HazelcastInstance h1 = factory.newInstance(config);
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 10000; i++) {
+            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
+        }
+        HazelcastInstance h2 = factory.newInstance(config);
+        HazelcastInstance h3 = factory.newInstance(config);
+        HazelcastInstance h4 = factory.newInstance(config);
+        long startNow = Clock.currentTimeMillis();
+        int count = 0;
+        while ((Clock.currentTimeMillis() - startNow) < 50000) {
+            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+            Set names = new HashSet();
+            for (Employee employee : values) {
+                assertTrue(employee.isActive());
+                assertTrue(employee.getName().startsWith("joe15"));
+                if (!names.add(employee.getName())) {
+                    fail();
+                }
+            }
+            assertEquals(56, values.size());
+            count++;
+        }
+        System.out.println("Done " + count);
+    }
 //
 //    @Test
 //    public void testQueryDuringAndAfterMigration() throws Exception {

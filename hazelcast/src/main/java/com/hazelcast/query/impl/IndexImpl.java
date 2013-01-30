@@ -16,44 +16,47 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class IndexImpl implements Index {
-    // recordKey -- indexValue
-    private final ConcurrentMap<Object, Comparable> recordValues = new ConcurrentHashMap<Object, Comparable>(1000);
+    // indexKey -- indexValue
+    private final ConcurrentMap<Data, Comparable> recordValues = new ConcurrentHashMap<Data, Comparable>(1000);
     private final IndexStore indexStore;
     private final String attribute;
+    private final boolean ordered;
 
     public static final NullObject NULL = new NullObject();
     private volatile AttributeType attributeType;
 
     public IndexImpl(String attribute, boolean ordered) {
         this.attribute = attribute;
+        this.ordered = ordered;
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 
-    public void removeEntryIndex(Object indexKey) {
+    public void removeEntryIndex(Data indexKey) {
         Comparable oldValue = recordValues.remove(indexKey);
         if (oldValue != null) {
             indexStore.removeIndex(oldValue, indexKey);
         }
     }
 
-    ConcurrentMap<Object, QueryableEntry> getRecordMap(Comparable indexValue) {
+    ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
         return indexStore.getRecordMap(indexValue);
     }
 
     public void saveEntryIndex(QueryableEntry e) throws QueryException {
-        Object key = e.getIndexKey();
+        Data key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
         Comparable newValue = e.getAttribute(attribute);
         if (newValue == null) {
             newValue = NULL;
         }
-        if (newValue.equals(oldValue)) return;
         recordValues.put(key, newValue);
         if (oldValue == null) {
             // new
@@ -103,8 +106,16 @@ public class IndexImpl implements Index {
         return attributeType.getConverter().convert(value);
     }
 
-    public ConcurrentMap<Object, Comparable> getRecordValues() {
+    public ConcurrentMap<Data, Comparable> getRecordValues() {
         return recordValues;
+    }
+
+    public String getAttributeName() {
+        return attribute;
+    }
+
+    public boolean isOrdered() {
+        return ordered;
     }
 
     final static class NullObject implements Comparable {

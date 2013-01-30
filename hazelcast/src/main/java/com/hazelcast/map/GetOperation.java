@@ -16,17 +16,13 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class GetOperation extends AbstractNamedKeyBasedOperation implements IdentifiedDataSerializable {
+public class GetOperation extends AbstractMapOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
-    private MapService mapService;
+    private transient MapService mapService;
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -43,11 +39,6 @@ public class GetOperation extends AbstractNamedKeyBasedOperation implements Iden
 
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.GET, dataKey, result, result);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

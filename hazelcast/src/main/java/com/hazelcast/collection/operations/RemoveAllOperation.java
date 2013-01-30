@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
@@ -34,8 +34,8 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     public RemoveAllOperation() {
     }
 
-    public RemoveAllOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId) {
-        super(name, proxyType, dataKey, threadId);
+    public RemoveAllOperation(CollectionProxyId proxyId, Data dataKey, int threadId) {
+        super(proxyId, dataKey, threadId);
     }
 
     public void run() throws Exception {
@@ -52,7 +52,7 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new RemoveAllBackupOperation(name, proxyType, dataKey);
+        return new RemoveAllBackupOperation(proxyId, dataKey);
     }
 
     public void onWaitExpire() {

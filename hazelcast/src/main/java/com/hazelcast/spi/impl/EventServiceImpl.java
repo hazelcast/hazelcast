@@ -30,6 +30,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExecutorThreadFactory;
 
 import java.io.IOException;
@@ -233,9 +235,11 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private EventServiceSegment getSegment(String service, boolean forceCreate) {
         EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
-            segment = new EventServiceSegment(service);
-            EventServiceSegment current = segments.putIfAbsent(service, segment);
-            segment = current == null ? segment : current;
+            return ConcurrencyUtil.getOrPutIfAbsent(segments, service, new ConstructorFunction<String, EventServiceSegment>() {
+                public EventServiceSegment createNew(String key) {
+                    return new EventServiceSegment(key);
+                }
+            });
         }
         return segment;
     }
@@ -273,7 +277,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
-    private class EventServiceSegment {
+    private static class EventServiceSegment {
         final String serviceName;
         final ConcurrentMap<String, Collection<Registration>> registrations
                 = new ConcurrentHashMap<String, Collection<Registration>>();
@@ -287,9 +291,11 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         private Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
             Collection<Registration> listenerList = registrations.get(topic);
             if (listenerList == null && forceCreate) {
-                listenerList = Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
-                Collection<Registration> current = registrations.putIfAbsent(topic, listenerList);
-                listenerList = current == null ? listenerList : current;
+                return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, new ConstructorFunction<String, Collection<Registration>>() {
+                    public Collection<Registration> createNew(String key) {
+                        return Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
+                    }
+                });
             }
             return listenerList;
         }

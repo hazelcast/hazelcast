@@ -18,16 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation implements BackupAwareOperation, Notifier {
-
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
-    boolean unlocked = false;
+public class ForceUnlockOperation extends UnlockOperation implements BackupAwareOperation, Notifier {
 
     public ForceUnlockOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -36,52 +28,7 @@ public class ForceUnlockOperation extends AbstractNamedKeyBasedOperation impleme
     public ForceUnlockOperation() {
     }
 
-    protected void init() {
-        responseHandler = getResponseHandler();
-        mapService = getService();
-        nodeEngine = getNodeEngine();
-        pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getRecordStore(name);
-    }
-
-    public void beforeRun() {
-        init();
-    }
-
     public void run() {
-        doOp();
-    }
-
-    public void doOp() {
         unlocked = recordStore.forceUnlock(dataKey);
-    }
-
-    public boolean shouldBackup() {
-        return unlocked;
-    }
-
-    public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
-    }
-
-    public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
-    }
-
-    public Operation getBackupOperation() {
-        GenericBackupOperation backupOp = new GenericBackupOperation(name, dataKey, null, -1);
-        backupOp.setBackupOpType(GenericBackupOperation.BackupOpType.UNLOCK);
-        return backupOp;
-    }
-
-    public boolean shouldNotify() {
-        return unlocked;
-    }
-
-    public WaitNotifyKey getNotifiedKey() {
-        if (keyObject == null) {
-            keyObject = getNodeEngine().toObject(dataKey);
-        }
-        return new MapWaitKey(getName(), keyObject, "lock");
     }
 }

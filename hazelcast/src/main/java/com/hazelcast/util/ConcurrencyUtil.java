@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.operations;
+package com.hazelcast.util;
 
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * @ali 1/16/13
+ * @mdogan 1/28/13
  */
-public class RemoveAllBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class ConcurrencyUtil {
 
-    public RemoveAllBackupOperation() {
+    public static <K,V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K,V> func) {
+        V value = map.get(key);
+        if (value == null) {
+            value = func.createNew(key);
+            V current = map.putIfAbsent(key, value);
+            value = current == null ? value : current;
+        }
+        return value;
     }
 
-    public RemoveAllBackupOperation(CollectionProxyId proxyId, Data dataKey) {
-        super(proxyId, dataKey);
-    }
-
-    public void run() throws Exception {
-        removeCollection();
-        response = true;
+    public static interface ConstructorFunction<K,V> {
+        V createNew(K key);
     }
 }

@@ -16,15 +16,17 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.AbstractSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
 
 public class SingleResultSet extends AbstractSet<QueryableEntry> {
-    private final ConcurrentMap<Object, QueryableEntry> records;
+    private final ConcurrentMap<Data, QueryableEntry> records;
 
-    public SingleResultSet(ConcurrentMap<Object, QueryableEntry> records) {
+    public SingleResultSet(ConcurrentMap<Data, QueryableEntry> records) {
         this.records = records;
     }
 

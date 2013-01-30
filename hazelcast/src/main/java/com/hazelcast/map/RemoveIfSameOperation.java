@@ -25,8 +25,8 @@ import java.io.IOException;
 
 public class RemoveIfSameOperation extends BaseRemoveOperation {
 
-    Data testValue;
-    boolean removed = false;
+    private Data testValue;
+    private transient boolean removed = false;
 
     public RemoveIfSameOperation(String name, Data dataKey, Data oldValue, String txnId) {
         super(name, dataKey, txnId);

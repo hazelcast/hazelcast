@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.query.impl;
 
-/**
- * @mdogan 8/26/12
- */
-public interface ServiceBuilder<S extends ManagedService> {
+import com.hazelcast.nio.serialization.Data;
 
-    S buildService(NodeEngine nodeEngine, Object someConfigElement); // TODO: params!
+public interface QueryResultEntry {
 
+    Data getKeyData();
+
+    Data getValueData();
+
+    Data getIndexKey();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class MapIndexServiceTest extends TestUtil {
         mapIndexService.addOrGetIndex("salary", true);
         for (int i = 0; i < 20000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            mapIndexService.saveEntryIndex(new QueryEntry(null, i, i, employee));
+            mapIndexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
         int count = 1000;
         Set<String> ages = new HashSet<String>(count);
@@ -68,7 +68,7 @@ public class MapIndexServiceTest extends TestUtil {
         indexService.addOrGetIndex("salary", true);
         for (int i = 0; i < 20000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            indexService.saveEntryIndex(new QueryEntry(null, i, i, employee));
+            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
@@ -86,15 +86,15 @@ public class MapIndexServiceTest extends TestUtil {
     public void testIndex2() throws Exception {
         IndexService indexService = new IndexService();
         indexService.addOrGetIndex("name", false);
-        indexService.saveEntryIndex(new QueryEntry(null, 1, 1, new Value("abc")));
-        indexService.saveEntryIndex(new QueryEntry(null, 2, 2, new Value("xyz")));
-        indexService.saveEntryIndex(new QueryEntry(null, 3, 3, new Value("aaa")));
-        indexService.saveEntryIndex(new QueryEntry(null, 4, 4, new Value("zzz")));
-        indexService.saveEntryIndex(new QueryEntry(null, 5, 5, new Value("klm")));
-        indexService.saveEntryIndex(new QueryEntry(null, 6, 6, new Value("prs")));
-        indexService.saveEntryIndex(new QueryEntry(null, 7, 7, new Value("prs")));
-        indexService.saveEntryIndex(new QueryEntry(null, 8, 8, new Value("def")));
-        indexService.saveEntryIndex(new QueryEntry(null, 9, 9, new Value("qwx")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(1), 1, new Value("abc")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(2), 2, new Value("xyz")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(3), 3, new Value("aaa")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(4), 4, new Value("zzz")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(5), 5, new Value("klm")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(6), 6, new Value("prs")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(7), 7, new Value("prs")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(8), 8, new Value("def")));
+        indexService.saveEntryIndex(new QueryEntry(null, toData(9), 9, new Value("qwx")));
         assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"))).size());
     }
 }

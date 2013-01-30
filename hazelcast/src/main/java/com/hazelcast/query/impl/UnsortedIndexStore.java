@@ -16,17 +16,19 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class UnsortedIndexStore implements IndexStore {
-    private final ConcurrentMap<Comparable, ConcurrentMap<Object, QueryableEntry>> mapRecords = new ConcurrentHashMap<Comparable, ConcurrentMap<Object, QueryableEntry>>(1000);
+    private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
 
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
         int trend = from.compareTo(to);
         if (trend == 0) {
-            ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(from);
+            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(from);
             if (records != null) {
                 results.addResultSet(records);
             }
@@ -40,7 +42,7 @@ public class UnsortedIndexStore implements IndexStore {
         Set<Comparable> values = mapRecords.keySet();
         for (Comparable value : values) {
             if (value.compareTo(from) <= 0 && value.compareTo(to) >= 0) {
-                ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(value);
+                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
                 if (records != null) {
                     results.addResultSet(records);
                 }
@@ -71,7 +73,7 @@ public class UnsortedIndexStore implements IndexStore {
                     break;
             }
             if (valid) {
-                ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(value);
+                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
                 if (records != null) {
                     results.addResultSet(records);
                 }
@@ -80,11 +82,11 @@ public class UnsortedIndexStore implements IndexStore {
     }
 
     public void newIndex(Comparable newValue, QueryableEntry record) {
-        Object indexKey = record.getIndexKey();
-        ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(newValue);
+        Data indexKey = record.getIndexKey();
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
         if (records == null) {
-            records = new ConcurrentHashMap<Object, QueryableEntry>();
-            ConcurrentMap<Object, QueryableEntry> existing = mapRecords.putIfAbsent(newValue, records);
+            records = new ConcurrentHashMap<Data, QueryableEntry>();
+            ConcurrentMap<Data, QueryableEntry> existing = mapRecords.putIfAbsent(newValue, records);
             if (existing != null) {
                 records = existing;
             }
@@ -92,12 +94,12 @@ public class UnsortedIndexStore implements IndexStore {
         records.put(indexKey, record);
     }
 
-    public ConcurrentMap<Object, QueryableEntry> getRecordMap(Comparable indexValue) {
+    public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
         return mapRecords.get(indexValue);
     }
 
-    public void removeIndex(Comparable oldValue, Object indexKey) {
-        ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(oldValue);
+    public void removeIndex(Comparable oldValue, Data indexKey) {
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
         if (records != null) {
             records.remove(indexKey);
             if (records.size() == 0) {
@@ -112,7 +114,7 @@ public class UnsortedIndexStore implements IndexStore {
 
     public void getRecords(MultiResultSet results, Set<Comparable> values) {
         for (Comparable value : values) {
-            ConcurrentMap<Object, QueryableEntry> records = mapRecords.get(value);
+            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
             if (records != null) {
                 results.addResultSet(records);
             }

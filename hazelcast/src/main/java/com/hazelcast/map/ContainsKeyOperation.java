@@ -17,9 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class ContainsKeyOperation extends AbstractNamedKeyBasedOperation {
+public class ContainsKeyOperation extends AbstractMapOperation {
 
     boolean containsKey;
 

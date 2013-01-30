@@ -18,6 +18,8 @@ package com.hazelcast.query.impl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,6 +42,10 @@ public class ReflectionHelper {
             return AttributeType.BOOLEAN;
         } else if (klass == double.class || klass == Double.class) {
             return AttributeType.DOUBLE;
+        } else if (klass == BigDecimal.class) {
+            return AttributeType.BIG_DECIMAL;
+        } else if (klass == BigInteger.class) {
+            return AttributeType.BIG_INTEGER;
         } else if (klass == float.class || klass == Float.class) {
             return AttributeType.FLOAT;
         } else if (klass == byte.class || klass == Byte.class) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
@@ -41,8 +41,8 @@ public class PutOperation extends CollectionBackupAwareOperation {
     public PutOperation() {
     }
 
-    public PutOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, Data value, int index) {
-        super(name, proxyType, dataKey, threadId);
+    public PutOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Data value, int index) {
+        super(proxyId, dataKey, threadId);
         this.value = value;
         this.index = index;
     }
@@ -69,7 +69,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new PutBackupOperation(name, proxyType, dataKey, value, index);
+        return new PutBackupOperation(proxyId, dataKey, value, index);
     }
 
     public boolean shouldBackup() {

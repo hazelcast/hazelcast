@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
         public QueryableEntry next() {
             if (currentEntry == null) return null;
             final Record record = currentEntry;
-            Object key = record.getKey();
+            Data key = record.getKey();
             Object value = null;
             if (record instanceof CachedDataRecord) {
                 CachedDataRecord cachedDataRecord = (CachedDataRecord) record;

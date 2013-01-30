@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,8 +38,8 @@ public class UnlockBackupOperation extends CollectionKeyBasedOperation implement
     public UnlockBackupOperation() {
     }
 
-    public UnlockBackupOperation(String name, CollectionProxyType proxyType, Data dataKey, int threadId, Address firstCaller) {
-        super(name, proxyType, dataKey);
+    public UnlockBackupOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Address firstCaller) {
+        super(proxyId, dataKey);
         this.threadId = threadId;
         this.firstCaller = firstCaller;
     }

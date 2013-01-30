@@ -17,7 +17,8 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.map.LockInfo;
+import com.hazelcast.lock.LockInfo;
+import com.hazelcast.lock.LockStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -42,7 +43,7 @@ public class CollectionContainer {
 
     final ConcurrentMap<Data, Collection<CollectionRecord>> collections = new ConcurrentHashMap<Data, Collection<CollectionRecord>>(1000);
 
-    final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>(100);
+    final LockStore lockStore = new LockStore();
 
     final AtomicLong idGen = new AtomicLong();
 
@@ -54,12 +55,7 @@ public class CollectionContainer {
     }
 
     public LockInfo getOrCreateLock(Data key) {
-        LockInfo lock = locks.get(key);
-        if (lock == null) {
-            lock = new LockInfo();
-            locks.put(key, lock);
-        }
-        return lock;
+        return lockStore.getOrCreateLock(key);
     }
 
     public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
@@ -68,31 +64,15 @@ public class CollectionContainer {
     }
 
     public boolean isLocked(Data dataKey) {
-        LockInfo lock = locks.get(dataKey);
-        if (lock == null)
-            return false;
-        return lock.isLocked();
+        return lockStore.isLocked(dataKey);
     }
 
     public boolean canAcquireLock(Data key, int threadId, Address caller) {
-        LockInfo lock = locks.get(key);
-        return lock == null || lock.testLock(threadId, caller);
+        return lockStore.canAcquireLock(key, caller, threadId);
     }
 
     public boolean unlock(Data dataKey, Address caller, int threadId) {
-        LockInfo lock = locks.get(dataKey);
-        boolean result = false;
-        if (lock == null)
-            return result;
-        if (lock.testLock(threadId, caller)) {
-            if (lock.unlock(caller, threadId)) {
-                result = true;
-            }
-        }
-        if (!lock.isLocked()) {
-            locks.remove(dataKey);
-        }
-        return result;
+        return lockStore.unlock(dataKey, caller, threadId);
     }
 
     public long nextId() {
@@ -178,6 +158,7 @@ public class CollectionContainer {
     }
 
     public void clearCollections() {
+        final Map<Data, LockInfo> locks = lockStore.getLocks();
         Map<Data, Collection<CollectionRecord>> temp = new HashMap<Data, Collection<CollectionRecord>>(locks.size());
         for (Data key : locks.keySet()) {
             temp.put(key, collections.get(key));
@@ -198,13 +179,13 @@ public class CollectionContainer {
         return collections; //TODO for testing only
     }
 
-    public ConcurrentMap<Data, LockInfo> getLocks() {
-        return locks;   //TODO for testing only
+    public Map<Data, LockInfo> getLocks() {
+        return lockStore.getLocks();   //TODO for testing only
     }
 
     public void clear() {
         collections.clear();
-        locks.clear();
+        lockStore.clear();
     }
 
     private CollectionRecord createRecord(boolean binary, Data data) {

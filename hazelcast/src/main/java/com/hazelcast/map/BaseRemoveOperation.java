@@ -19,21 +19,15 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
-    Object key;
-    Record record;
 
-    Data dataOldValue;
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
-
+    private transient PartitionContainer pc;
+    transient Data dataOldValue;
+    transient RecordStore recordStore;
+    transient MapService mapService;
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
@@ -43,25 +37,20 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     public BaseRemoveOperation() {
     }
 
-    protected boolean prepareTransaction() {
+    protected final boolean prepareTransaction() {
         if (txnId != null) {
             pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
+            ResponseHandler responseHandler = getResponseHandler();
             responseHandler.sendResponse(null);
             return true;
         }
         return false;
     }
 
-    protected void init() {
-        responseHandler = getResponseHandler();
-        mapService = (MapService) getService();
-        nodeEngine = (NodeEngine) getNodeEngine();
+    public void beforeRun() {
+        mapService = getService();
         pc = mapService.getPartitionContainer(getPartitionId());
         recordStore = pc.getRecordStore(name);
-    }
-
-    public void beforeRun() {
-        init();
     }
 
     @Override
@@ -89,8 +78,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapService.interceptAfterProcess(name, MapOperationType.REMOVE, dataKey, dataValue, dataOldValue);
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCaller(), name, eventType, dataKey, dataOldValue, null);
-        if (mapService.getMapContainer(name).getMapConfig().getNearCacheConfig() != null)
-            mapService.invalidateAllNearCaches(name, dataKey);
+        invalidateNearCaches();
     }
 
     @Override

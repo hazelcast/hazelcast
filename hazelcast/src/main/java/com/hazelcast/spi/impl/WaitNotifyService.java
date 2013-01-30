@@ -25,6 +25,8 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 
 import java.util.Iterator;
 import java.util.Queue;
@@ -90,17 +92,17 @@ class WaitNotifyService {
         });
     }
 
+    private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>> waitQueueConstructor
+            = new ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>>() {
+        public Queue<WaitingOp> createNew(WaitNotifyKey key) {
+            return new ConcurrentLinkedQueue<WaitingOp>();
+        }
+    };
+
     // runs after queue lock
     public void wait(WaitSupport so) {
         final WaitNotifyKey key = so.getWaitKey();
-        Queue<WaitingOp> q = mapWaitingOps.get(key);
-        if (q == null) {
-            q = new ConcurrentLinkedQueue<WaitingOp>();
-            Queue<WaitingOp> qExisting = mapWaitingOps.putIfAbsent(key, q);
-            if (qExisting != null) {
-                q = qExisting;
-            }
-        }
+        final Queue<WaitingOp> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
         long timeout = so.getWaitTimeoutMillis();
         WaitingOp waitingOp = (so instanceof KeyBasedOperation) ? new KeyBasedWaitingOp(q, so) : new WaitingOp(q, so);
         waitingOp.setNodeEngine(nodeEngine);

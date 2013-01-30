@@ -17,22 +17,25 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
  * @ali 12/6/12
  */
-public abstract class QueueOperation extends AbstractNamedOperation implements KeyBasedOperation {
+public abstract class QueueOperation extends Operation implements KeyBasedOperation {
 
-    transient Object response;
+    protected String name;
+
+    protected long timeoutMillis;
+
+    protected transient Object response;
 
     private transient QueueContainer container;
 
@@ -40,10 +43,15 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
     }
 
     protected QueueOperation(String name) {
-        super(name);
+        this.name = name;
     }
 
-    public QueueContainer getContainer() {
+    protected QueueOperation(String name, long timeoutMillis) {
+        this.name = name;
+        this.timeoutMillis = timeoutMillis;
+    }
+
+    protected final QueueContainer getContainer() {
         if (container == null) {
             QueueService queueService = getService();
             try {
@@ -55,17 +63,34 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
         return container;
     }
 
-    public Object getResponse() {
+    public final Object getResponse() {
         return response;
     }
 
-    public String getServiceName() {
+    public final String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    public final String getName() {
+        return name;
+    }
 
-    public int getKeyHash() {
+    public void afterRun() throws Exception {
+    }
+
+    public void beforeRun() throws Exception {
+    }
+
+    public final boolean returnsResponse() {
+        return true;
+    }
+
+    public final int getKeyHash() {
         return name.hashCode();
+    }
+
+    public final long getWaitTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public boolean hasListener() {
@@ -84,5 +109,14 @@ public abstract class QueueOperation extends AbstractNamedOperation implements K
         }
     }
 
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeLong(timeoutMillis);
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        timeoutMillis = in.readLong();
+    }
 
 }

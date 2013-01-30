@@ -67,7 +67,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
             final Collection<Operation> tasks = prepareMigrationTasks();
             if (tasks.size() > 0) {
-
                 final SerializationService serializationService = nodeEngine.getSerializationService();
                 final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
                 try {
@@ -119,6 +118,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     private void onError(Throwable e) {
+        e.printStackTrace();
         Level level = Level.WARNING;
         if (e instanceof ExecutionException) {
             e = e.getCause();

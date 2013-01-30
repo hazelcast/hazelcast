@@ -19,9 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.AbstractNamedKeyBasedOperation;
 
-public class RemoveBackupOperation extends AbstractNamedKeyBasedOperation implements BackupOperation, IdentifiedDataSerializable {
+public class RemoveBackupOperation extends AbstractMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
 
     public RemoveBackupOperation(String name, Data dataKey) {
@@ -44,11 +43,6 @@ public class RemoveBackupOperation extends AbstractNamedKeyBasedOperation implem
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     public int getId() {

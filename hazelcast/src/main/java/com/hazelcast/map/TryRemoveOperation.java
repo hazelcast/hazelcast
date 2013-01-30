@@ -23,8 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
-    long timeout;
-    boolean successful;
+
+    private long timeout;
+    private transient boolean successful;
 
     public TryRemoveOperation(String name, Data dataKey, String txnId, long timeout) {
         super(name, dataKey, txnId);
@@ -38,7 +39,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
         if (prepareTransaction()) {
             return;
         }
-        recordStore.tryRemove(dataKey);
+        successful = recordStore.tryRemove(dataKey);
     }
 
     @Override

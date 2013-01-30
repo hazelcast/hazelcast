@@ -16,6 +16,9 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,18 +31,19 @@ public class CollectionPartitionContainer {
 
     final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
 
+    private final ConstructorFunction<CollectionProxyId, CollectionContainer> collectionConstructor
+            = new ConstructorFunction<CollectionProxyId, CollectionContainer>() {
+        public CollectionContainer createNew(CollectionProxyId proxyId) {
+            return new CollectionContainer(proxyId, service);
+        }
+    };
+
     public CollectionPartitionContainer(CollectionService service) {
         this.service = service;
     }
 
     public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId) {
-        CollectionContainer collectionContainer = containerMap.get(proxyId);
-        if (collectionContainer == null) {
-            collectionContainer = new CollectionContainer(proxyId, service);
-            CollectionContainer current = containerMap.putIfAbsent(proxyId, collectionContainer);
-            collectionContainer = current == null ? collectionContainer : current;
-        }
-        return collectionContainer;
+        return ConcurrencyUtil.getOrPutIfAbsent(containerMap, proxyId, collectionConstructor);
     }
 
     public ConcurrentMap<CollectionProxyId, CollectionContainer> getContainerMap() {
