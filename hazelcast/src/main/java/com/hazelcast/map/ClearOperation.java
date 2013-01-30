@@ -19,17 +19,13 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionLevelOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import sun.jvm.hotspot.debugger.posix.elf.ELFSectionHeader;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
@@ -64,7 +60,7 @@ public class ClearOperation extends AbstractNamedOperation implements PartitionL
             return;
         }
         for (Data key : keys) {
-            if (!recordStore.getLocks().containsKey(key)){
+            if (!recordStore.getLocks().containsKey(key)) {
                 recordStore.remove(key);
             }
         }
@@ -113,7 +109,7 @@ public class ClearOperation extends AbstractNamedOperation implements PartitionL
         super.readInternal(in);
         name = in.readUTF();
         int size = in.readInt();
-        if(size > -1) {
+        if (size > -1) {
             keys = new HashSet<Data>(size);
             for (int i = 0; i < size; i++) {
                 Data data = new Data();
