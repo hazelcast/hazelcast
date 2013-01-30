@@ -31,7 +31,7 @@ import java.util.Collection;
  */
 public abstract class CollectionOperation extends Operation implements PartitionAwareOperation {
 
-    CollectionProxyId proxyId;
+    protected CollectionProxyId proxyId;
 
     private transient CollectionContainer container;
 
@@ -52,16 +52,13 @@ public abstract class CollectionOperation extends Operation implements Partition
         return CollectionService.SERVICE_NAME;
     }
 
-    @Override
     public void afterRun() throws Exception {
     }
 
-    @Override
     public void beforeRun() throws Exception {
     }
 
-    @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return true;
     }
 

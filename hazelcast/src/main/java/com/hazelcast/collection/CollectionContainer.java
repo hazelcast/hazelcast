@@ -75,6 +75,10 @@ public class CollectionContainer {
         return lockStore.unlock(dataKey, caller, threadId);
     }
 
+    public boolean forceUnlock(Data dataKey) {
+        return lockStore.forceUnlock(dataKey);
+    }
+
     public long nextId() {
         return idGen.getAndIncrement();
     }
@@ -120,7 +124,7 @@ public class CollectionContainer {
         if (coll == null) {
             return false;
         }
-        CollectionRecord record = createRecord(binary, value);
+        CollectionRecord record = new CollectionRecord(binary ? value : nodeEngine.toObject(value));
         return coll.contains(record);
     }
 
@@ -186,14 +190,6 @@ public class CollectionContainer {
     public void clear() {
         collections.clear();
         lockStore.clear();
-    }
-
-    private CollectionRecord createRecord(boolean binary, Data data) {
-        return new CollectionRecord(binary ? data : nodeEngine.toObject(data));
-    }
-
-    private CollectionRecord createRecord(boolean binary, Data data, long recordId) {
-        return new CollectionRecord(recordId, binary ? data : nodeEngine.toObject(data));
     }
 
 }

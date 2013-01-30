@@ -18,14 +18,17 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
+import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.*;
 import com.hazelcast.lock.LockInfo;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,7 +55,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public void init(NodeEngine nodeEngine, Properties properties) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new CollectionPartitionContainer(this);
+            partitionContainers[i] = new CollectionPartitionContainer(this, i);
         }
     }
 
@@ -261,8 +264,25 @@ public class CollectionService implements ManagedService, RemoteService, Members
 
     public void memberRemoved(MembershipServiceEvent event) {
         // TODO: when a member dies;
-        // * release locks
+        // ++++ DONE release locks
         // * rollback transaction
         // * do not know ?
+        Address caller = event.getMember().getAddress();
+        for (CollectionPartitionContainer partitionContainer: partitionContainers){
+            for (Map.Entry<CollectionProxyId, CollectionContainer> entry: partitionContainer.containerMap.entrySet()){
+                CollectionProxyId proxyId = entry.getKey();
+                CollectionContainer container = entry.getValue();
+                for (Map.Entry<Data, LockInfo> lockEntry: container.lockStore.getLocks().entrySet()){
+                    Data key = lockEntry.getKey();
+                    LockInfo lock = lockEntry.getValue();
+                    if (lock.getLockAddress().equals(caller)){
+                        Operation op = new ForceUnlockOperation(proxyId, key).setPartitionId(partitionContainer.partitionId)
+                                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
+                                .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
+                        nodeEngine.getOperationService().runOperation(op);
+                    }
+                }
+            }
+        }
     }
 }
