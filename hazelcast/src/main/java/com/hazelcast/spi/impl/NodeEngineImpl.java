@@ -153,7 +153,7 @@ public class NodeEngineImpl implements NodeEngine {
             }
             final int retries = futureSend.retries;
             if (retries < 5) {
-                connectionManager.getOrConnect(target);
+                connectionManager.getOrConnect(target, true);
                 // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
                 executionService.schedule(futureSend, (retries + 1) * 100, TimeUnit.MILLISECONDS);
                 return true;
@@ -174,6 +174,9 @@ public class NodeEngineImpl implements NodeEngine {
 
         public void run() {
             retries++;
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "Retrying[" + retries + "] packet send operation to: " + target);
+            }
             send(packet, target, this);
         }
     }

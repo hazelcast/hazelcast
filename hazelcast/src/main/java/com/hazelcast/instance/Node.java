@@ -393,6 +393,7 @@ public class Node {
             }
         }
         if (isActive()) {
+            clusterService.sendShutdownMessage();
             // set the joined=false first so that
             // threads do not process unnecessary
             // events, such as remove address
@@ -417,8 +418,6 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down the connection manager");
             connectionManager.shutdown();
-//            logger.log(Level.FINEST, "Shutting down the executorManager");
-//            executorManager.stop();
             textCommandService.stop();
             masterAddress = null;
             if (securityContext != null) {
@@ -431,8 +430,10 @@ public class Node {
             numThreads = threadGroup.enumerate(threads, false);
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
-                logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
-                thread.interrupt();
+                if (thread.isAlive()) {
+                    logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
+                    thread.interrupt();
+                }
             }
             failedConnections.clear();
             systemLogService.shutdown();
@@ -501,18 +502,15 @@ public class Node {
         systemLogService.logJoin("setJoined() master: " + masterAddress);
     }
 
-    public JoinInfo createJoinInfo() {
-        return createJoinInfo(false);
+    public JoinRequest createJoinRequest() {
+        return createJoinRequest(false);
     }
 
-    public JoinInfo createJoinInfo(boolean withCredentials) {
-        final JoinInfo jr = new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
-                Packet.PACKET_VERSION, buildNumber, clusterService.getSize(), 0, localMember.getUuid());
-        if (withCredentials && securityContext != null) {
-            Credentials c = securityContext.getCredentialsFactory().newCredentials();
-            jr.setCredentials(c);
-        }
-        return jr;
+    public JoinRequest createJoinRequest(boolean withCredentials) {
+        final Credentials credentials = (withCredentials && securityContext != null)
+                ? securityContext.getCredentialsFactory().newCredentials() : null;
+        return new JoinRequest(Packet.PACKET_VERSION, buildNumber, address,
+                localMember.getUuid(), config, localNodeType, credentials, clusterService.getSize(), 0);
     }
 
     public void rejoin() {

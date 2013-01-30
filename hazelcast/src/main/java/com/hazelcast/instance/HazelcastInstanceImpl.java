@@ -224,6 +224,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         HazelcastInstanceFactory.remove(this);
     }
 
+    void kill() {
+        managementService.unregister();
+        node.shutdown(true, true);
+        HazelcastInstanceFactory.remove(this);
+    }
+
     public void restartToMerge() {
         lifecycleService.fireLifecycleEvent(MERGING);
         lifecycleService.restart();

@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import org.junit.After;
@@ -46,7 +47,9 @@ public class CountDownLatchTest {
     @Test
     public void testSimpleUsage() {
         final int k = 5;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "0");
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
         Assert.assertEquals(k - 1, latch.getCount());
@@ -78,7 +81,9 @@ public class CountDownLatchTest {
     @Test
     public void testAwaitFail() {
         final int k = 3;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "1");
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
 
@@ -96,8 +101,10 @@ public class CountDownLatchTest {
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testLatchDestroyed() {
         StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance hz1 = factory.newInstance(new Config());
-        HazelcastInstance hz2 = factory.newInstance(new Config());
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "1");
+        HazelcastInstance hz1 = factory.newInstance(config);
+        HazelcastInstance hz2 = factory.newInstance(config);
         final ICountDownLatch latch = hz1.getCountDownLatch("test");
         latch.trySetCount(2);
 
@@ -137,7 +144,7 @@ public class CountDownLatchTest {
         Assert.assertEquals(10, latch2.getCount());
         latch2.countDown();
         Assert.assertEquals(9, latch1.getCount());
-        hz1.getLifecycleService().kill();
+        hz1.getLifecycleService().shutdown();
         Assert.assertEquals(9, latch2.getCount());
 
         HazelcastInstance hz3 = factory.newInstance(new Config());
@@ -145,7 +152,7 @@ public class CountDownLatchTest {
         latch3.countDown();
         Assert.assertEquals(8, latch3.getCount());
 
-        hz2.getLifecycleService().kill();
+        hz2.getLifecycleService().shutdown();
         latch3.countDown();
         Assert.assertEquals(7, latch3.getCount());
 
@@ -153,7 +160,7 @@ public class CountDownLatchTest {
         HazelcastInstance hz5 = factory.newInstance(new Config());
         Thread.sleep(250);
 
-        hz3.getLifecycleService().kill();
+        hz3.getLifecycleService().shutdown();
         final ICountDownLatch latch4 = hz4.getCountDownLatch("test");
         Assert.assertEquals(7, latch4.getCount());
 

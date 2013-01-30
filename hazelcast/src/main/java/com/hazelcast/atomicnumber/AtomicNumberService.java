@@ -59,7 +59,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         this.nodeEngine = nodeEngine;
     }
 
-    public void destroy() {
+    public void shutdown() {
         numbers.clear();
     }
 

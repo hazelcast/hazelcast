@@ -130,16 +130,16 @@ class ServiceManager {
         Collections.reverse(managedServices);
         services.clear();
         for (ManagedService service : managedServices) {
-            destroyService(service);
+            shutdownService(service);
         }
     }
 
-    private void destroyService(final ManagedService service) {
+    private void shutdownService(final ManagedService service) {
         try {
-            logger.log(Level.FINEST, "Destroying service -> " + service);
-            service.destroy();
+            logger.log(Level.FINEST, "Shutting down service -> " + service);
+            service.shutdown();
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, "Error while stopping service: " + t.getMessage(), t);
+            logger.log(Level.SEVERE, "Error while shutting down service[" + service + "]: " + t.getMessage(), t);
         }
     }
 
@@ -158,7 +158,7 @@ class ServiceManager {
                         + ", Service: " + oldService);
             }
             if (oldService instanceof ManagedService) {
-                destroyService((ManagedService) oldService);
+                shutdownService((ManagedService) oldService);
             }
             services.put(serviceName, service);
         }

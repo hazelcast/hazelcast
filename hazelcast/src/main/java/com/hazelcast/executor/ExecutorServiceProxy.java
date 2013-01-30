@@ -35,10 +35,12 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
 
     private final String name;
     private final Random random = new Random();
+    private final int partitionCount;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine) {
         super(nodeEngine);
         this.name = name;
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
     }
 
     public void execute(Runnable command) {
@@ -83,7 +85,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        return submitToPartitionOwner(task, random.nextInt(nodeEngine.getPartitionService().getPartitionCount()));
+        return submitToPartitionOwner(task, random.nextInt(partitionCount));
     }
 
     public <T> Future<T> submitToKeyOwner(Callable<T> task, Object key) {
@@ -140,7 +142,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject implements I
     }
 
     public <T> void submit(Callable<T> task, ExecutionCallback<T> callback) {
-        submitToPartitionOwner(task, callback, random.nextInt(nodeEngine.getPartitionService().getPartitionCount()));
+        submitToPartitionOwner(task, callback, random.nextInt(partitionCount));
     }
 
     public <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback) {

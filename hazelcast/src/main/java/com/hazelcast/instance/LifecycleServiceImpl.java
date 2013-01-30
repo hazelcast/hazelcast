@@ -105,7 +105,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void kill() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            instance.shutdown();
+            instance.kill();
             fireLifecycleEvent(SHUTDOWN);
         }
     }

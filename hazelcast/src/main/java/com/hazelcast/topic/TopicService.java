@@ -44,7 +44,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         this.nodeEngine = nodeEngine;
     }
 
-    public void destroy() {
+    public void shutdown() {
 
     }
 

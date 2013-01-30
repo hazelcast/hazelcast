@@ -86,7 +86,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         this.nodeEngine = nodeEngine;
     }
 
-    public void destroy() {
+    public void shutdown() {
         latches.clear();
     }
 

@@ -248,7 +248,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return max;
     }
 
-    public void destroy() {
+    public void shutdown() {
         for (int i = 0; i < partitionContainers.length; i++) {
             CollectionPartitionContainer container = partitionContainers[i];
             if (container != null) {
