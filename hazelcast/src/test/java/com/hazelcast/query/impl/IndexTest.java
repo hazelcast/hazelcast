@@ -18,7 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.*;
+import com.hazelcast.query.Predicates.AndPredicate;
+import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.util.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +41,178 @@ public class IndexTest extends TestUtil {
 
     QueryRecord newRecord(Object key, final Comparable attributeValue) {
         return new QueryRecord(toData(key), attributeValue);
+    }
+
+    final SerializationServiceImpl ss = new SerializationServiceImpl(1, new TestPortableFactory());
+
+    @Test
+    public void testIndex() throws QueryException {
+        IndexService is = new IndexService();
+        Index dIndex = is.addOrGetIndex("d", false);
+        Index boolIndex = is.addOrGetIndex("bool", false);
+        Index strIndex = is.addOrGetIndex("str", false);
+        for (int i = 0; i < 1000; i++) {
+            Data key = ss.toData(i);
+            Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
+            is.saveEntryIndex(new QueryEntry(ss, key, key, value));
+        }
+        assertEquals(1000, dIndex.getRecords(-10.34d).size());
+        assertEquals(1, strIndex.getRecords("joe23").size());
+        assertEquals(500, boolIndex.getRecords(true).size());
+        for (int i = 0; i < 1000; i++) {
+            Data key = ss.toData(i);
+            Data value = ss.toData(new MainPortable(false, 11.34d, "joe"));
+            is.saveEntryIndex(new QueryEntry(ss, key, key, value));
+        }
+        assertEquals(0, dIndex.getRecords(-10.34d).size());
+        assertEquals(0, strIndex.getRecords("joe23").size());
+        assertEquals(1000, strIndex.getRecords("joe").size());
+        assertEquals(1000, boolIndex.getRecords(false).size());
+        assertEquals(0, boolIndex.getRecords(true).size());
+        for (int i = 0; i < 1000; i++) {
+            Data key = ss.toData(i);
+            Data value = ss.toData(new MainPortable(false, -1 * (i + 1), "joe" + i));
+            is.saveEntryIndex(new QueryEntry(ss, key, key, value));
+        }
+        assertEquals(0, dIndex.getSubRecordsBetween(1d, 1001d).size());
+        assertEquals(1000, dIndex.getSubRecordsBetween(-1d, -1001d).size());
+        for (int i = 0; i < 1000; i++) {
+            Data key = ss.toData(i);
+            Data value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
+            is.saveEntryIndex(new QueryEntry(ss, key, key, value));
+        }
+        assertEquals(1000, dIndex.getSubRecordsBetween(1d, 1001d).size());
+        assertEquals(0, dIndex.getSubRecordsBetween(-1d, -1001d).size());
+        assertEquals(400, dIndex.getSubRecords(ComparisonType.GREATER, 600d).size());
+        assertEquals(401, dIndex.getSubRecords(ComparisonType.GREATER_EQUAL, 600d).size());
+        assertEquals(9, dIndex.getSubRecords(ComparisonType.LESSER, 10d).size());
+        assertEquals(10, dIndex.getSubRecords(ComparisonType.LESSER_EQUAL, 10d).size());
+        assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", 1d), new EqualPredicate("bool", "false"))).size());
+        assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", 1), new EqualPredicate("bool", Boolean.FALSE))).size());
+        assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", "1"), new EqualPredicate("bool", false))).size());
+    }
+
+    private class TestPortableFactory implements PortableFactory {
+
+        public Portable create(int classId) {
+            switch (classId) {
+                case 1:
+                    return new MainPortable();
+            }
+            return null;
+        }
+    }
+
+    private static class MainPortable implements Portable {
+
+        byte b;
+        boolean bool;
+        char c;
+        short s;
+        int i;
+        long l;
+        float f;
+        double d;
+        String str;
+
+        private MainPortable() {
+        }
+
+        private MainPortable(boolean bool, double d, String str) {
+            this.bool = bool;
+            this.d = d;
+            this.str = str;
+        }
+
+        private MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f,
+                             double d, String str) {
+            this.b = b;
+            this.bool = bool;
+            this.c = c;
+            this.s = s;
+            this.i = i;
+            this.l = l;
+            this.f = f;
+            this.d = d;
+            this.str = str;
+        }
+
+        public int getClassId() {
+            return 1;
+        }
+
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeByte("b", b);
+            writer.writeBoolean("bool", bool);
+            writer.writeChar("c", c);
+            writer.writeShort("s", s);
+            writer.writeInt("i", i);
+            writer.writeLong("l", l);
+            writer.writeFloat("f", f);
+            writer.writeDouble("d", d);
+            writer.writeUTF("str", str);
+        }
+
+        public void readPortable(PortableReader reader) throws IOException {
+            b = reader.readByte("b");
+            bool = reader.readBoolean("bool");
+            c = reader.readChar("c");
+            s = reader.readShort("s");
+            i = reader.readInt("i");
+            l = reader.readLong("l");
+            f = reader.readFloat("f");
+            d = reader.readDouble("d");
+            str = reader.readUTF("str");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MainPortable that = (MainPortable) o;
+            if (b != that.b) return false;
+            if (bool != that.bool) return false;
+            if (c != that.c) return false;
+            if (Double.compare(that.d, d) != 0) return false;
+            if (Float.compare(that.f, f) != 0) return false;
+            if (i != that.i) return false;
+            if (l != that.l) return false;
+            if (s != that.s) return false;
+            if (str != null ? !str.equals(that.str) : that.str != null) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            long temp;
+            result = (int) b;
+            result = 31 * result + (bool ? 1 : 0);
+            result = 31 * result + (int) c;
+            result = 31 * result + (int) s;
+            result = 31 * result + i;
+            result = 31 * result + (int) (l ^ (l >>> 32));
+            result = 31 * result + (f != +0.0f ? Float.floatToIntBits(f) : 0);
+            temp = d != +0.0d ? Double.doubleToLongBits(d) : 0L;
+            result = 31 * result + (int) (temp ^ (temp >>> 32));
+            result = 31 * result + (str != null ? str.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "MainPortable{" +
+                    "b=" + b +
+                    ", bool=" + bool +
+                    ", c=" + c +
+                    ", s=" + s +
+                    ", i=" + i +
+                    ", l=" + l +
+                    ", f=" + f +
+                    ", d=" + d +
+                    ", str='" + str + '\'' +
+                    '}';
+        }
     }
 
     class QueryRecord implements QueryableEntry {
