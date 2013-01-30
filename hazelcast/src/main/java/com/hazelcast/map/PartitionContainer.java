@@ -24,7 +24,6 @@ import com.hazelcast.util.ConcurrencyUtil;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
 public class PartitionContainer {
     private final MapService mapService;
     final PartitionInfo partitionInfo;
@@ -79,7 +78,6 @@ public class PartitionContainer {
     }
 
     void commit(String txnId) {
-//        TransactionLog txnLog = transactions.get(txnId);
         TransactionLog txnLog = transactions.remove(txnId); // TODO: not sure?
         if (txnLog == null) return;
         for (TransactionLogItem txnLogItem : txnLog.changes.values()) {
@@ -89,13 +87,7 @@ public class PartitionContainer {
             if (txnLogItem.isRemoved()) {
                 recordStore.remove(key);
             } else {
-                Record record = recordStore.getRecords().get(key);
-                if (record == null) {
-                    record = mapService.createRecord(txnLogItem.getName(), key, txnLogItem.getValue(), -1);
-                    recordStore.getRecords().put(key, record);
-                } else {
-                    recordStore.setRecordValue(record, txnLogItem.getValue());
-                }
+                recordStore.put(key, txnLogItem.getValue(), -1);
             }
         }
     }

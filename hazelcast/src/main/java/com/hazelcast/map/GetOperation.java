@@ -34,6 +34,18 @@ public class GetOperation extends AbstractMapOperation implements IdentifiedData
     public void run() {
         mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        if (getTxnId() != null) {
+            String txnId = getTxnId();
+            PartitionContainer p = mapService.getPartitionContainer(getPartitionId());
+            final TransactionLog log = p.getTransactionLog(txnId);
+            final TransactionLogItem logItem = log.getTransactionLogItem(dataKey);
+            if (logItem != null) {
+                if (!logItem.isRemoved()) {
+                    result = logItem.getValue();
+                }
+                return;
+            }
+        }
         result = mapService.toData(recordStore.get(dataKey));
     }
 
@@ -49,7 +61,7 @@ public class GetOperation extends AbstractMapOperation implements IdentifiedData
     @Override
     public String toString() {
         return "GetOperation{" +
-               '}';
+                '}';
     }
 
     public int getId() {
