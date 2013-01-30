@@ -16,39 +16,47 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class MemberRemoveOperation extends AbstractClusterOperation {
+public class JoinRequestOperation extends AbstractClusterOperation implements JoinOperation {
 
-    private Address deadAddress = null;
+    private JoinRequest message;
 
-    public MemberRemoveOperation() {
+    public JoinRequestOperation() {
+        super();
     }
 
-    public MemberRemoveOperation(Address deadAddress) {
-        super();
-        this.deadAddress = deadAddress;
+    public JoinRequestOperation(JoinRequest message) {
+        this.message = message;
     }
 
     public void run() {
-        final ClusterServiceImpl clusterService = getService();
-        final Address caller = getCaller();
-        if (caller != null &&
-                (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
-            clusterService.removeAddress(deadAddress);
-        }
+        ClusterServiceImpl cm = (ClusterServiceImpl) getService();
+        cm.handleJoinRequest(this);
+    }
+
+    public JoinRequest getMessage() {
+        return message;
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
-        deadAddress = new Address();
-        deadAddress.readData(in);
+        message = new JoinRequest();
+        message.readData(in);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        deadAddress.writeData(out);
+        message.writeData(out);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("JoinRequestOperation");
+        sb.append("{message=").append(message);
+        sb.append('}');
+        return sb.toString();
     }
 }

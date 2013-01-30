@@ -118,11 +118,11 @@ public class MulticastService implements Runnable {
         try {
             while (running) {
                 try {
-                    final JoinInfo joinInfo = receive();
-                    if (joinInfo != null) {
+                    final JoinMessage joinMessage = receive();
+                    if (joinMessage != null) {
                         for (MulticastListener multicastListener : lsListeners) {
                             try {
-                                multicastListener.onMessage(joinInfo);
+                                multicastListener.onMessage(joinMessage);
                             } catch (Exception e) {
                                 logger.log(Level.WARNING, e.getMessage(), e);
                             }
@@ -139,7 +139,7 @@ public class MulticastService implements Runnable {
         }
     }
 
-    private JoinInfo receive() {
+    private JoinMessage receive() {
         final BufferObjectDataOutput out = receiveOutput;
         try {
             out.reset();
@@ -162,9 +162,7 @@ public class MulticastService implements Runnable {
                             + packetVersion);
                     return null;
                 }
-                JoinInfo joinInfo = new JoinInfo();
-                joinInfo.readData(input);
-                return joinInfo;
+                return input.readObject();
             } catch (Exception e) {
                 if (e instanceof EOFException || e instanceof DataFormatException) {
                     logger.log(Level.WARNING, "Received data format is invalid." +
@@ -179,7 +177,7 @@ public class MulticastService implements Runnable {
         return null;
     }
 
-    public void send(JoinInfo joinInfo) {
+    public void send(JoinMessage joinMessage) {
         if (!running) return;
         final BufferObjectDataOutput out = sendOutput;
         synchronized (sendLock) {
@@ -187,7 +185,7 @@ public class MulticastService implements Runnable {
                 out.reset();
                 deflater.reset();
                 out.writeByte(Packet.PACKET_VERSION);
-                joinInfo.writeData(out);
+                out.writeObject(joinMessage);
                 deflater.setInput(out.toByteArray());
                 out.reset();
                 deflater.finish();

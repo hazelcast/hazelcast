@@ -57,7 +57,6 @@ public class PostJoinOperation extends AbstractOperation implements JoinOperatio
                         .setCaller(getCaller())
                         .setConnection(getConnection())
                         .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                OperationAccessor.setCallId(op, getCallId());
                 operations[i] = op;
             }
         }

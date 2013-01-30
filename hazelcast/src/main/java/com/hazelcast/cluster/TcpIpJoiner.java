@@ -429,8 +429,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             final Connection conn = node.connectionManager.getConnection(possibleAddress);
             if (conn != null) {
-                final JoinInfo response = node.clusterService.checkJoinInfo(possibleAddress);
-                System.out.println("response = " + response);
+                final JoinRequest response = node.clusterService.checkJoinInfo(possibleAddress);
                 if (response != null && shouldMerge(response)) {
                     logger.log(Level.WARNING, node.getThisAddress() + " is merging [tcp/ip] to " + possibleAddress);
                     targetAddress = possibleAddress;

@@ -96,36 +96,35 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     public void searchForOtherClusters(SplitBrainHandler splitBrainHandler) {
-        final BlockingQueue q = new LinkedBlockingQueue();
+        final BlockingQueue<JoinMessage> q = new LinkedBlockingQueue<JoinMessage>();
         MulticastListener listener = new MulticastListener() {
             public void onMessage(Object msg) {
                 systemLogService.logJoin("MulticastListener onMessage " + msg);
-                if (msg != null && msg instanceof JoinInfo) {
-                    JoinInfo joinInfo = (JoinInfo) msg;
-                    if (node.getThisAddress() != null && !node.getThisAddress().equals(joinInfo.address)) {
-                        q.offer(msg);
+                if (msg != null && msg instanceof JoinMessage) {
+                    JoinMessage joinRequest = (JoinMessage) msg;
+                    if (node.getThisAddress() != null && !node.getThisAddress().equals(joinRequest.getAddress())) {
+                        q.offer(joinRequest);
                     }
                 }
             }
         };
         node.multicastService.addMulticastListener(listener);
-        node.multicastService.send(node.createJoinInfo());
+        node.multicastService.send(node.createJoinRequest());
         systemLogService.logJoin("Sent multicast join request");
         try {
-            JoinInfo joinInfo = (JoinInfo) q.poll(3, TimeUnit.SECONDS);
+            JoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
                 if (joinInfo.getMemberCount() == 1) {
                     // if the other cluster has just single member, that may be a newly starting node
                     // instead of a split node.
-                    // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinInfo.
+                    // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest.
                     Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
                 }
                 if (shouldMerge(joinInfo)) {
-                    logger.log(Level.WARNING, node.getThisAddress() + " is merging [multicast] to " + joinInfo.address);
-                    targetAddress = joinInfo.address;
+                    logger.log(Level.WARNING, node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
+                    targetAddress = joinInfo.getAddress();
                     sendClusterMergeToOthers(targetAddress);
                     splitBrainHandler.restart();
-                    return;
                 }
             }
         } catch (InterruptedException ignored) {
@@ -157,10 +156,10 @@ public class MulticastJoiner extends AbstractJoiner {
         try {
             final String ip = System.getProperty("join.ip");
             if (ip == null) {
-                JoinInfo joinInfo = node.createJoinInfo();
+                JoinRequest joinRequest = node.createJoinRequest();
                 for (; node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get(); ) {
-                    joinInfo.setTryCount(currentTryCount.get());
-                    node.multicastService.send(joinInfo);
+                    joinRequest.setTryCount(currentTryCount.get());
+                    node.multicastService.send(joinRequest);
                     if (node.getMasterAddress() == null) {
                         //noinspection BusyWait
                         Thread.sleep(10);
@@ -177,7 +176,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
         } finally {
-            this.currentTryCount.set(0);
+            currentTryCount.set(0);
         }
         return null;
     }
@@ -198,10 +197,10 @@ public class MulticastJoiner extends AbstractJoiner {
         return tryCount;
     }
 
-    public void onReceivedJoinInfo(JoinInfo joinInfo) {
-        if (joinInfo.getTryCount() > this.currentTryCount.get() + 20) {
+    public void onReceivedJoinRequest(JoinRequest joinRequest) {
+        if (joinRequest.getTryCount() > currentTryCount.get() + 20) {
             int timeoutSeconds = (config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() + 4) * 100;
-            this.maxTryCount.set(timeoutSeconds);
+            maxTryCount.set(timeoutSeconds);
         }
     }
 }

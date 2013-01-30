@@ -29,15 +29,15 @@ import java.io.IOException;
  */
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
-    private JoinInfo joinInfo;
+    private JoinRequest joinRequest;
 
-    private transient JoinInfo response;
+    private transient JoinRequest response;
 
     public JoinCheckOperation() {
     }
 
-    public JoinCheckOperation(final JoinInfo joinInfo) {
-        this.joinInfo = joinInfo;
+    public JoinCheckOperation(final JoinRequest joinRequest) {
+        this.joinRequest = joinRequest;
     }
 
     public void run() {
@@ -45,14 +45,14 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
         boolean ok = false;
-        if (joinInfo != null && node.joined() && node.isActive()) {
+        if (joinRequest != null && node.joined() && node.isActive()) {
             try {
-                ok = service.validateJoinRequest(joinInfo);
+                ok = service.validateJoinMessage(joinRequest);
             } catch (Exception ignored) {
             }
         }
         if (ok) {
-            response = node.createJoinInfo();
+            response = node.createJoinRequest();
         }
     }
 
@@ -68,13 +68,13 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
 
     @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        joinInfo = new JoinInfo();
-        joinInfo.readData(in);
+        joinRequest = new JoinRequest();
+        joinRequest.readData(in);
     }
 
     @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        joinInfo.writeData(out);
+        joinRequest.writeData(out);
     }
 }
 
