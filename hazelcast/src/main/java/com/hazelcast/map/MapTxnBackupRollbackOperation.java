@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ResponseHandler;
 
 import java.io.IOException;
 
@@ -39,8 +38,6 @@ public class MapTxnBackupRollbackOperation extends AbstractOperation {
         System.out.println(getNodeEngine().getThisAddress() + " backupRollback " + txnId);
         PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
         partitionContainer.rollback(txnId);
-        ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(null);
     }
 
     @Override

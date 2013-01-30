@@ -19,7 +19,6 @@ package com.hazelcast.transaction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.exception.TransactionException;
 
@@ -35,15 +34,9 @@ public class RollbackOperation extends AbstractOperation {
     public RollbackOperation() {
     }
 
-    public void run() {
+    public void run() throws TransactionException {
         TransactionalService txnalService = (TransactionalService) getService();
-        ResponseHandler responseHandler = getResponseHandler();
-        try {
-            txnalService.rollback(txnId, getPartitionId());
-            responseHandler.sendResponse(null);
-        } catch (TransactionException e) {
-            responseHandler.sendResponse(e);
-        }
+        txnalService.rollback(txnId, getPartitionId());
     }
 
     @Override
