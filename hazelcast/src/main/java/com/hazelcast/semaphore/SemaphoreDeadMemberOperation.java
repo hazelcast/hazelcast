@@ -28,14 +28,14 @@ import java.io.IOException;
 /**
  * @ali 1/23/13
  */
-public class DeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
+public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
     Address firstCaller;
 
-    public DeadMemberOperation() {
+    public SemaphoreDeadMemberOperation() {
     }
 
-    public DeadMemberOperation(String name, Address firstCaller) {
+    public SemaphoreDeadMemberOperation(String name, Address firstCaller) {
         super(name, -1);
         this.firstCaller = firstCaller;
     }

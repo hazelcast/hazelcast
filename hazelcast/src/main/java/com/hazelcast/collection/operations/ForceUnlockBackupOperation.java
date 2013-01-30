@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
 
-public class ForceUnlockOperation extends UnlockOperation implements BackupAwareOperation, Notifier {
+/**
+ * @ali 1/30/13
+ */
+public class ForceUnlockBackupOperation extends UnlockBackupOperation {
 
-    public ForceUnlockOperation(String name, Data dataKey) {
-        super(name, dataKey);
+    public ForceUnlockBackupOperation() {
     }
 
-    public ForceUnlockOperation() {
+    public ForceUnlockBackupOperation(CollectionProxyId proxyId, Data dataKey) {
+        super(proxyId, dataKey, -1, null);
     }
 
-    public ForceUnlockBackupOperation getBackupOperation() {
-        return new ForceUnlockBackupOperation(name, dataKey);
-    }
-
-    public void run() {
-        unlocked = recordStore.forceUnlock(dataKey);
+    public void run() throws Exception {
+        CollectionContainer container = getOrCreateContainer();
+        response = container.forceUnlock(dataKey);
     }
 }

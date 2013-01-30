@@ -119,7 +119,7 @@ public class MapMigrationOperation extends AbstractOperation {
             for (int j = 0; j < mapSize; j++) {
                 Data key = new Data();
                 key.readData(in);
-                LockInfo lockInfo = in.readObject();
+                LockInfo lockInfo = IOUtil.readNullableObject(in);
                 map.put(key, lockInfo);
             }
             locks.put(name, map);

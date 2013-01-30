@@ -305,7 +305,7 @@ public class ConfigXmlGenerator {
             xml.append("</topic>");
         }
         final Collection<SemaphoreConfig> semaphoreCfgs = config.getSemaphoreConfigs();
-        //TODO
+        //TODO semaphore
         for (SemaphoreConfig sc : semaphoreCfgs) {
             xml.append("<semaphore name=\"").append(sc.getName()).append("\">");
             xml.append("<initial-permits>").append(sc.getInitialPermits()).append("</initial-permits>");

@@ -853,7 +853,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.addTopicConfig(tConfig);
     }
 
-    //TODO
+    //TODO semaphore
     private void handleSemaphore(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
