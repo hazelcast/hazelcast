@@ -148,7 +148,7 @@
             <hz:map name="testMap2"
                     backup-count="2"
                     max-size="1000"
-                    max-size-policy="cluster_wide_map_size"
+                    max-size-policy="PER_JVM"
                     eviction-percentage="30"
                     read-backup-data="true"
                     cache-value="true"

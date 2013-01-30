@@ -27,8 +27,8 @@ import java.util.concurrent.ConcurrentMap;
 
 public class LockStore {
 
-    private final ConcurrencyUtil.ConstructorFunction<Data,LockInfo> lockConstructor
-            = new ConcurrencyUtil.ConstructorFunction<Data,LockInfo>() {
+    private final ConcurrencyUtil.ConstructorFunction<Data, LockInfo> lockConstructor
+            = new ConcurrencyUtil.ConstructorFunction<Data, LockInfo>() {
         public LockInfo createNew(Data key) {
             return new LockInfo();
         }
@@ -88,11 +88,12 @@ public class LockStore {
         final LockInfo lock = getLock(key);
         if (lock == null)
             return false;
-        lock.clear();
+        else
+            locks.remove(key);
         return true;
     }
 
-    public Map<Data,LockInfo> getLocks() {
+    public Map<Data, LockInfo> getLocks() {
         return Collections.unmodifiableMap(locks);
     }
 
