@@ -45,7 +45,7 @@ public class MapLockHandler extends MapCommandHandler {
         if (protocol.buffers != null && protocol.buffers.length > 0) {
             key = protocol.buffers[0];
         }
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         if (timeout == -1) {
             dataMapProxy.lock(key);
         } else if (timeout == 0) {

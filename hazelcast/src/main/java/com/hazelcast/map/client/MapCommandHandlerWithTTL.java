@@ -34,7 +34,7 @@ public abstract class MapCommandHandlerWithTTL extends MapCommandHandler {
         Data key = protocol.buffers[0];
         Data value = protocol.buffers.length > 1 ? protocol.buffers[1] : null;
         final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         Data oldValue = processMapOp(dataMapProxy, key, value, ttl);
         return protocol.success(oldValue);
     }

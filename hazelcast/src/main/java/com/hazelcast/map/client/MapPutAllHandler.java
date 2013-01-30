@@ -38,7 +38,7 @@ public class MapPutAllHandler extends MapCommandHandler {
         for (int i = 0; i < size; ) {
             map.put(protocol.buffers[i++], protocol.buffers[i++]);
         }
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         dataMapProxy.putAll(map);
         return protocol.success();
     }
