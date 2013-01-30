@@ -23,22 +23,26 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 public class MaxSizeConfig implements DataSerializable {
-    public static final String POLICY_MAP_SIZE_PER_JVM = "map_size_per_jvm";
-    public static final String POLICY_CLUSTER_WIDE_MAP_SIZE = "cluster_wide_map_size";
-    public static final String POLICY_PARTITIONS_WIDE_MAP_SIZE = "partitions_wide_map_size";
-    public static final String POLICY_USED_HEAP_SIZE = "used_heap_size";
-    public static final String POLICY_USED_HEAP_PERCENTAGE = "used_heap_percentage";
     int size = MapConfig.DEFAULT_MAX_SIZE;
-    String maxSizePolicy = POLICY_CLUSTER_WIDE_MAP_SIZE;
+    MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_JVM;
+
+    public enum MaxSizePolicy {
+        PER_JVM, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
+    }
+
+    public static void main(String[] args) {
+        System.out.println(MaxSizePolicy.PER_JVM.name());
+
+    }
 
     public void readData(ObjectDataInput in) throws IOException {
         size = in.readInt();
-        maxSizePolicy = in.readUTF();
+        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(size);
-        out.writeUTF(maxSizePolicy);
+        out.writeUTF(maxSizePolicy.name());
     }
 
     public int getSize() {
@@ -53,11 +57,12 @@ public class MaxSizeConfig implements DataSerializable {
         return this;
     }
 
-    public String getMaxSizePolicy() {
+    public MaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 
-    public MaxSizeConfig setMaxSizePolicy(String maxSizePolicy) {
+    // todo make policy enum
+    public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;
     }

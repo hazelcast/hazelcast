@@ -185,6 +185,17 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
+    public void removeAll() {
+        Map<Data, LockInfo> locks = lockStore.getLocks();
+        final ConcurrentMap<Data, Record> temp = new ConcurrentHashMap<Data, Record>(locks.size());
+        // keys with locks will be re-inserted
+        for (Data key : locks.keySet()) {
+            temp.put(key, records.get(key));
+        }
+        records.clear();
+        records.putAll(temp);
+    }
+
     public Object remove(Data dataKey) {
         Record record = records.get(dataKey);
         Object oldValue = null;

@@ -94,4 +94,6 @@ public interface RecordStore {
     void setRecordValue(Record record, Object value);
 
     void flush(boolean flushAllRecords);
+
+    void removeAll();
 }

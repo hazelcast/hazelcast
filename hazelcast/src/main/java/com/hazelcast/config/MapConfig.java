@@ -40,7 +40,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_TTL_SECONDS = 0;
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
-    public final static String DEFAULT_EVICTION_POLICY = "NONE";
+    public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
     public final static RecordType DEFAULT_RECORD_TYPE = RecordType.DATA;
     public final static String DEFAULT_MERGE_POLICY = AddNewEntryMergePolicy.NAME;
 
@@ -60,7 +60,7 @@ public class MapConfig implements DataSerializable {
 
     private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
 
-    private String evictionPolicy = DEFAULT_EVICTION_POLICY;
+    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
 
     private boolean valueIndexed = false;
 
@@ -88,6 +88,10 @@ public class MapConfig implements DataSerializable {
 
     public enum StorageType {
         HEAP, OFFHEAP
+    }
+
+    public enum EvictionPolicy {
+        LRU, LFU, NONE
     }
 
     public MapConfig(String name) {
@@ -380,14 +384,14 @@ public class MapConfig implements DataSerializable {
     /**
      * @return the evictionPolicy
      */
-    public String getEvictionPolicy() {
+    public EvictionPolicy getEvictionPolicy() {
         return evictionPolicy;
     }
 
     /**
      * @param evictionPolicy the evictionPolicy to set
      */
-    public MapConfig setEvictionPolicy(String evictionPolicy) {
+    public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
         return this;
     }
@@ -585,7 +589,7 @@ public class MapConfig implements DataSerializable {
         boolean[] b = ByteUtil.fromByte(in.readByte());
         valueIndexed = b[0];
         readBackupData = b[1];
-        evictionPolicy = in.readUTF();
+        evictionPolicy = MapConfig.EvictionPolicy.valueOf(in.readUTF());
         mergePolicy = in.readUTF();
         // TODO: MapStoreConfig mapStoreConfig
         // TODO: NearCacheConfig nearCacheConfig
@@ -602,7 +606,7 @@ public class MapConfig implements DataSerializable {
         out.writeInt(evictionDelaySeconds);
         maxSizeConfig.writeData(out);
         out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData));
-        out.writeUTF(evictionPolicy);
+        out.writeUTF(evictionPolicy.name());
         out.writeUTF(mergePolicy);
         // TODO: MapStoreConfig mapStoreConfig
         // TODO: NearCacheConfig nearCacheConfig

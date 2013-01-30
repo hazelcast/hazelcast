@@ -483,12 +483,16 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    // todo certainly must be optimized
     public void clearInternal() {
-        Set<Data> keys = keySetInternal();
-        for (Data key : keys) {
-            removeInternal(key);
+        try {
+            ClearOperation clearOperation = new ClearOperation(name);
+            clearOperation.setServiceName(SERVICE_NAME);
+            nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, clearOperation);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
         }
+
     }
 
     protected void forceUnlockInternal(final Data key) {

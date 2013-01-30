@@ -441,7 +441,7 @@
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:integer">
-                    <xs:attribute name="policy" use="optional" default="cluster_wide_map_size"/>
+                    <xs:attribute name="policy" use="optional" default="PER_JVM"/>
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>

@@ -75,6 +75,19 @@ public class MapTest extends BaseTest {
     }
 
     @Test
+    public void testMapClear() {
+        IMap<String, String> map = getInstance().getMap("testMapClear");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        map.clear();
+        assertEquals(map.size(), 0);
+        assertEquals(map.get("key1"), null);
+        assertEquals(map.get("key2"), null);
+        assertEquals(map.get("key3"), null);
+    }
+
+    @Test
     public void testMapEvict() {
         IMap<String, String> map = getInstance().getMap("testMapEvict");
         map.put("key1", "value1");

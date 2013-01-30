@@ -35,11 +35,11 @@ public class MapEvictionTest {
     public void testMapBasicEviction() throws InterruptedException {
         Config cfg = new Config();
         MapConfig mc = cfg.getMapConfig("testMapBasicEviction");
-        mc.setEvictionPolicy("LRU");
+        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mc.setEvictionPercentage(80);
         MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy("CLUSTER_WIDE");
-        msc.setSize(10);
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setSize(1000);
         mc.setMaxSizeConfig(msc);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
 
