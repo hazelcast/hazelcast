@@ -42,6 +42,7 @@ class SocketPacketReader implements SocketReader {
         this.logger = ioService.getLogger(SocketPacketReader.class.getName());
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
         boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(ioService);
+        System.out.println("symmm " + symmetricEncryptionEnabled);
         if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
             if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
                 logger.log(Level.INFO, "Incorrect encryption configuration.");
