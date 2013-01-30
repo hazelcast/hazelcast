@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.JoinOperation;
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEvent;
@@ -25,6 +26,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.lock.LockInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -46,6 +48,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.spi.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
@@ -454,11 +457,33 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void memberRemoved(final MembershipServiceEvent membershipEvent) {
+        MemberImpl member = membershipEvent.getMember();
+        releaseMemberLocks(member);
         // TODO: when a member dies;
         // * release locks
         // * rollback transaction
         // * do not know ?
     }
+
+    private void releaseMemberLocks(MemberImpl member) {
+        for (PartitionContainer container : partitionContainers) {
+            for (DefaultRecordStore recordStore : container.maps.values()) {
+                Map<Data,LockInfo> locks = recordStore.getLocks();
+                for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
+                    if(entry.getValue().getLockAddress().equals(member.getAddress())) {
+                        ForceUnlockOperation forceUnlockOperation = new ForceUnlockOperation(recordStore.name, entry.getKey());
+                        forceUnlockOperation.setNodeEngine(nodeEngine);
+                        forceUnlockOperation.setServiceName(SERVICE_NAME);
+                        forceUnlockOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        forceUnlockOperation.setPartitionId(container.partitionInfo.getPartitionId());
+                        nodeEngine.getOperationService().runOperation(forceUnlockOperation);
+                        recordStore.forceUnlock(entry.getKey());
+                    }
+                }
+            }
+        }
+    }
+
 
     public void destroy() {
         final PartitionContainer[] containers = partitionContainers;
@@ -656,6 +681,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     // todo map evict task is called every second. if load is very high, is it problem? if it is, you can count map-wide puts and fire map-evict in every thousand put
+    // todo another "maybe" optimization run clear operation for all amps not just one map
     private class MapEvictTask implements Runnable {
         public void run() {
             for (MapContainer mapContainer : mapContainers.values()) {
@@ -671,10 +697,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
 
         // todo call evict map listeners
-        private void evictMap(final MapContainer mapContainer) {
+        private void evictMap(MapContainer mapContainer) {
             MapConfig mapConfig = mapContainer.getMapConfig();
             MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
-            final String mapName = mapContainer.getName();
+
             Comparator comparator = null;
             if (evictionPolicy == MapConfig.EvictionPolicy.LRU) {
                 comparator = new Comparator<AbstractRecord>() {
@@ -703,45 +729,67 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
             }
 
+            for (int i = 0; i < ExecutorConfig.DEFAULT_MAX_POOL_SIZE; i++) {
+                int mod = i + 1;
+                nodeEngine.getExecutionService().execute("map-evict", new EvictRunner(mod, mapConfig, targetSizePerPartition, comparator));
+            }
 
-            for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-                Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
-                if (nodeEngine.getThisAddress().equals(owner)) {
-                    PartitionContainer pc = partitionContainers[i];
-                    final RecordStore recordStore = pc.getRecordStore(mapName);
-                    final int finalI = i;
-                    final Comparator finalComparator = comparator;
-                    final int finalTargetSizePerPartition = targetSizePerPartition;
-                    nodeEngine.getExecutionService().execute("map-eviction", new Runnable() {
-                        public void run() {
-                            SortedSet sortedRecords = new TreeSet(finalComparator);
-                            Set<Map.Entry<Data, Record>> recordEntries = recordStore.getRecords().entrySet();
-                            for (Map.Entry<Data, Record> entry : recordEntries) {
-                                sortedRecords.add(entry.getValue());
-                            }
-                            int evictSize = 0;
-                            if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_JVM || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
-                                evictSize = sortedRecords.size() - finalTargetSizePerPartition;
-                            } else {
-                                evictSize = sortedRecords.size() * evictionPercentage / 100;
-                            }
-                            if (evictSize == 0)
-                                return;
-                            Set<Data> keySet = new HashSet();
-                            Iterator iterator = sortedRecords.iterator();
-                            while (iterator.hasNext() && evictSize-- > 0) {
-                                Record rec = (Record) iterator.next();
-                                keySet.add(rec.getKey());
-                            }
-                            ClearOperation clearOperation = new ClearOperation(mapName, keySet);
-                            clearOperation.setNodeEngine(nodeEngine);
-                            clearOperation.setServiceName(SERVICE_NAME);
-                            clearOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                            clearOperation.setPartitionId(finalI);
-                            nodeEngine.getOperationService().runOperation(clearOperation);
+
+        }
+
+        private class EvictRunner implements Runnable {
+            int mod = 0;
+            String mapName;
+            int targetSizePerPartition;
+            Comparator comparator;
+            MaxSizeConfig.MaxSizePolicy maxSizePolicy;
+            int evictionPercentage;
+
+            private EvictRunner(int mod, MapConfig mapConfig, int targetSizePerPartition, Comparator comparator) {
+                this.mod = mod;
+                mapName = mapConfig.getName();
+                this.targetSizePerPartition = targetSizePerPartition;
+                this.comparator = comparator;
+                maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
+            }
+
+            public void run() {
+                for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                    if (i % mod != 0) {
+                        continue;
+                    }
+                    Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                    if (nodeEngine.getThisAddress().equals(owner)) {
+                        PartitionContainer pc = partitionContainers[i];
+                        final RecordStore recordStore = pc.getRecordStore(mapName);
+                        SortedSet sortedRecords = new TreeSet(comparator);
+                        Set<Map.Entry<Data, Record>> recordEntries = recordStore.getRecords().entrySet();
+                        for (Map.Entry<Data, Record> entry : recordEntries) {
+                            sortedRecords.add(entry.getValue());
                         }
-                    });
+                        int evictSize = 0;
+                        if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_JVM || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
+                            evictSize = sortedRecords.size() - targetSizePerPartition;
+                        } else {
+                            evictSize = sortedRecords.size() * evictionPercentage / 100;
+                        }
+                        if (evictSize == 0)
+                            return;
+                        Set<Data> keySet = new HashSet();
+                        Iterator iterator = sortedRecords.iterator();
+                        while (iterator.hasNext() && evictSize-- > 0) {
+                            Record rec = (Record) iterator.next();
+                            keySet.add(rec.getKey());
+                        }
+                        ClearOperation clearOperation = new ClearOperation(mapName, keySet);
+                        clearOperation.setNodeEngine(nodeEngine);
+                        clearOperation.setServiceName(SERVICE_NAME);
+                        clearOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        clearOperation.setPartitionId(i);
+                        nodeEngine.getOperationService().runOperation(clearOperation);
+                    }
                 }
+
             }
         }
 

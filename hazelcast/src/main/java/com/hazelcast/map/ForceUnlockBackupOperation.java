@@ -17,22 +17,27 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
 
-public class ForceUnlockOperation extends UnlockOperation implements BackupAwareOperation, Notifier {
+public class ForceUnlockBackupOperation extends AbstractMapOperation implements BackupOperation {
 
-    public ForceUnlockOperation(String name, Data dataKey) {
+    public ForceUnlockBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public ForceUnlockOperation() {
-    }
-
-    public ForceUnlockBackupOperation getBackupOperation() {
-        return new ForceUnlockBackupOperation(name, dataKey);
+    public ForceUnlockBackupOperation() {
     }
 
     public void run() {
-        unlocked = recordStore.forceUnlock(dataKey);
+        MapService mapService = (MapService) getService();
+        int partitionId = getPartitionId();
+        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        recordStore.forceUnlock(dataKey);
     }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
+    }
+
 }
