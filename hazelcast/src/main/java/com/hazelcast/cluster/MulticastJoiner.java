@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.Node;
@@ -152,6 +153,9 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
+    private final int publishInterval = 10;
+    private final int tryCountCoefficient = 1000 / publishInterval;
+
     private Address findMasterWithMulticast() {
         try {
             final String ip = System.getProperty("join.ip");
@@ -162,7 +166,7 @@ public class MulticastJoiner extends AbstractJoiner {
                     node.multicastService.send(joinRequest);
                     if (node.getMasterAddress() == null) {
                         //noinspection BusyWait
-                        Thread.sleep(10);
+                        Thread.sleep(publishInterval);
                     } else {
                         return node.getMasterAddress();
                     }
@@ -184,7 +188,7 @@ public class MulticastJoiner extends AbstractJoiner {
     private int calculateTryCount() {
         final NetworkConfig networkConfig = config.getNetworkConfig();
         int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
-        int tryCount = timeoutSeconds * 100;
+        int tryCount = timeoutSeconds * tryCountCoefficient;
         String host = node.getThisAddress().getHost();
         int lastDigits = 0;
         try {
@@ -199,8 +203,9 @@ public class MulticastJoiner extends AbstractJoiner {
 
     public void onReceivedJoinRequest(JoinRequest joinRequest) {
         if (joinRequest.getTryCount() > currentTryCount.get() + 20) {
-            int timeoutSeconds = (config.getNetworkConfig().getJoin().getMulticastConfig().getMulticastTimeoutSeconds() + 4) * 100;
-            maxTryCount.set(timeoutSeconds);
+            final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+            int tryCount = (multicastConfig.getMulticastTimeoutSeconds() + 4) * tryCountCoefficient;
+            maxTryCount.set(tryCount);
         }
     }
 }
