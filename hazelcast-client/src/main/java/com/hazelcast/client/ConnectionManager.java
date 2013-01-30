@@ -225,7 +225,7 @@ public class ConnectionManager implements MembershipListener {
         lifecycleService.fireLifecycleEvent(CLIENT_CONNECTION_OPENED);
     }
 
-    void bindConnection(Connection connection) throws IOException {
+    public void bindConnection(Connection connection) throws IOException {
         binder.bind(connection, config.getCredentials());
     }
 

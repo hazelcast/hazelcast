@@ -16,8 +16,11 @@
 package com.hazelcast.client.proxy;
 
 
+import com.hazelcast.client.Connection;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.client.proxy.listener.EntryEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.client.proxy.listener.MigrationEventLRH;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -27,16 +30,22 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.core.PartitionService;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 
 public class PartitionClientProxy implements PartitionService {
     final private ProxyHelper proxyHelper;
+    final private HazelcastClient client;
 
     public PartitionClientProxy(HazelcastClient client) {
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        this.client = client;
     }
 
     public Set<Partition> getPartitions() {
@@ -80,7 +89,17 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {
-//        throw new UnsupportedOperationException();
+//        Protocol request = proxyHelper.createProtocol(Command.ADDLISTENER, null, null);
+//
+//        InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
+//        final Connection connection = new Connection(new Address(isa), 0, client.getSerializationService());
+//        try {
+//            client.getConnectionManager().bindConnection(connection);
+//        } catch (IOException e) {
+//        }
+//        ListenerThread thread = new ListenerThread(request, new MigrationEventLRH(migrationListener), connection, client.getSerializationService());
+//        thread.start();
+//        System.out.println("Started the thread!");
     }
 
     public void removeMigrationListener(MigrationListener migrationListener) {

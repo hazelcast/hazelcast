@@ -18,11 +18,11 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.Connection;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.DataAwareEntryEvent;
 import com.hazelcast.client.impl.EntryListenerManager;
+import com.hazelcast.client.proxy.listener.EntryEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.monitor.LocalMapStats;
@@ -32,18 +32,17 @@ import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
     final private String name;
     final HazelcastClient client;
+    final Map<EntryListener<K, V>, Map<Object, ListenerThread>> listenerMap = new IdentityHashMap<EntryListener<K, V>, Map<Object, ListenerThread>>();
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
@@ -73,60 +72,30 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
-        final Data dKey = key == null? null : proxyHelper.toData(key);
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
-                Protocol request = proxyHelper.createProtocol(Command.MADDLISTENER, new String[]{getName(),
-                        String.valueOf(includeValue)}, new Data[]{dKey});
-                try {
-                    request.onEnqueue();
-                    Connection connection = dKey == null ? proxyHelper.cp.takeConnection() : proxyHelper.cp.takeConnection(dKey);
-                    proxyHelper.writer.write(connection, request);
-                    proxyHelper.writer.flush(connection);
-                    while (true) {
-                        Protocol response = proxyHelper.reader.read(connection);
-                        if (Command.EVENT.equals(response.command)) {
-                            String eventType = response.args[2];
-                            EntryEventType entryEventType = EntryEventType.valueOf(eventType);
-                            String eventInitiaterAddress = response.args[3];
-                            String[] address = eventInitiaterAddress.split(":");
-                            Member source = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
-                            final Data value = includeValue && response.buffers.length > 1 ? response.buffers[1] : null;
-                            final Data oldValue = response.buffers.length > 2 && includeValue ? response.buffers[2] : null;
-                            EntryEvent<K, V> event = new DataAwareEntryEvent(source, entryEventType.getType(), name,
-                                    response.buffers[0], value, oldValue, false, client.getSerializationService());
-                            switch (entryEventType) {
-                                case ADDED:
-                                    listener.entryAdded(event);
-                                    break;
-                                case REMOVED:
-                                    listener.entryRemoved(event);
-                                    break;
-                                case UPDATED:
-                                    listener.entryUpdated(event);
-                                    break;
-                                case EVICTED:
-                                    listener.entryEvicted(event);
-                                    break;
-                            }
-                        } else {
-                            throw new RuntimeException(response.args[0]);
-                        }
-                    }
-                } catch (EOFException e) {
-                    //Means that the connection is broken. The best is to re add the listener and end the current thread.
-                    addEntryListener(listener, key, includeValue);
-                    return; // will end the current thread
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+        Data dKey = key == null ? null : proxyHelper.toData(key);
+        Protocol request = proxyHelper.createProtocol(Command.MADDLISTENER, new String[]{name,
+                String.valueOf(includeValue)}, new Data[]{dKey});
+
+        InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
+        final Connection connection = new Connection(new Address(isa), 0, client.getSerializationService());
+        try {
+            client.getConnectionManager().bindConnection(connection);
+        } catch (IOException e) {
+        }
+        ListenerThread thread = new ListenerThread(request, new EntryEventLRH(listener), connection, client.getSerializationService());
+        synchronized (listenerMap) {
+            Map<Object, ListenerThread> map = listenerMap.get(listener);
+            if (map == null) {
+                map = new HashMap<Object, ListenerThread>();
+                listenerMap.put(listener, map);
             }
-        });
+            map.put(key, thread);
+        }
         thread.start();
+        System.out.println("Started the thread!");
     }
+
+
 
     private void check(Object obj) {
         if (obj == null) {
@@ -154,15 +123,16 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
-        proxyHelper.doCommand(null, Command.MREMOVELISTENER, getName(), null);
-        listenerManager().removeListener(getName(), getName(), listener);
+        removeEntryListener(listener, null);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
-        check(key);
-        proxyHelper.doCommand(null, Command.MREMOVELISTENER, getName(), proxyHelper.toData(key));
-        listenerManager().removeListener(getName(), key, listener);
+        Map<Object, ListenerThread> map = listenerMap.get(listener);
+        if (map != null) {
+            ListenerThread thread = map.remove(key);
+            if(thread!=null) thread.interrupt();
+        }
     }
 
     private EntryListenerManager listenerManager() {

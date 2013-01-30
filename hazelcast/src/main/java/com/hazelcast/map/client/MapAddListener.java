@@ -38,6 +38,7 @@ public class MapAddListener extends MapCommandHandler {
     @Override
     public Protocol processCall(final Node node, final Protocol protocol) {
         String name = protocol.args[0];
+        System.out.println("Received the addListener for " + name);
         boolean includeValue = Boolean.valueOf(protocol.args[1]);
         final Data key = protocol.buffers.length > 0 ? protocol.buffers[0] : null;
         final DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
@@ -60,6 +61,7 @@ public class MapAddListener extends MapCommandHandler {
             }
 
             public void sendEvent(EntryEvent<Data, Data> entryEvent) {
+                System.out.println("Sending the event");
                 if (connection.live()) {
                     String[] args = new String[]{"map", dataMapProxy.getName(), entryEvent.getEventType().toString(),
                             entryEvent.getMember().getInetSocketAddress().getHostName() + ":" + entryEvent.getMember().getInetSocketAddress().getPort()};
@@ -70,8 +72,10 @@ public class MapAddListener extends MapCommandHandler {
                     if (entryEvent.getOldValue() != null)
                         list.add(node.serializationService.toData(entryEvent.getOldValue()));
                     Protocol event = new Protocol(connection, Command.EVENT, args, list.toArray(new Data[]{}));
+                    System.out.println("Connection is " + connection);
                     sendResponse(node, event, connection);
                 } else {
+                    System.out.println("on Server removing the listener");
                     dataMapProxy.removeEntryListener(this, key);
                 }
             }

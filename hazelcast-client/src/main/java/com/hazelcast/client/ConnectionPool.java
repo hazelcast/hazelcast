@@ -30,9 +30,7 @@ import com.hazelcast.partition.Partition;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -47,7 +45,6 @@ public class ConnectionPool {
     private final SerializationService serializationService;
     private volatile Map<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
     private final AtomicInteger partitionCount = new AtomicInteger(0);
-    private final Random random = new Random(System.currentTimeMillis());
 
     public ConnectionPool(ClientConfig config, final ConnectionManager connectionManager, final SerializationService serializationService) {
         this.connectionManager = connectionManager;
@@ -55,9 +52,15 @@ public class ConnectionPool {
         initialConnection(config);
     }
 
-    public void init(Cluster cluster, PartitionService partitionService) {
+    public void init(Cluster cluster, final PartitionService partitionService) {
         addMembershipListener(cluster);
-        addPartitionListener(partitionService);
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                createPartitionTable(partitionService);
+            }
+        }, 0, 1000);
         partitionCount.set(partitionTable.size());
         Set<Member> members = cluster.getMembers();
         mPool = new ConcurrentHashMap<Address, BlockingQueue<Connection>>(members.size());
@@ -66,28 +69,15 @@ public class ConnectionPool {
         }
     }
 
-    private void addPartitionListener(final PartitionService partitionService) {
-        createPartitionTable(partitionService);
-        partitionService.addMigrationListener(new MigrationListener() {
-            public void migrationStarted(MigrationEvent migrationEvent) {
-            }
-
-            public void migrationCompleted(MigrationEvent migrationEvent) {
-                createPartitionTable(partitionService);
-            }
-
-            public void migrationFailed(MigrationEvent migrationEvent) {
-            }
-        });
-    }
-
     private void createPartitionTable(PartitionService partitionService) {
         Set<Partition> partitions = partitionService.getPartitions();
         for (Partition p : partitions) {
+            System.out.println("Partition Table is not null!");
             if (p.getOwner() != null)
                 partitionTable.put(p.getPartitionId(), p.getOwner());
         }
     }
+
 
     private void addMembershipListener(final Cluster cluster) {
         cluster.addMembershipListener(new MembershipListener() {

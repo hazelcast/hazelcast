@@ -67,7 +67,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         imap.put(1, null);
     }
 
-    //TODO
     @Test
     public void testIssue321() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -95,7 +94,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertNull(event2.getValue());
     }
 
-    //TODO
     @Test
     public void testIssue321_2() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -124,7 +122,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertNull(event2.getValue());
     }
 
-    //TODO
     @Test
     public void testIssue321_3() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -133,6 +130,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         final EntryAdapter listener = new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
+                System.out.println("Received an event " + event);
                 events.add(event);
             }
         };
@@ -144,8 +142,9 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         final EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.MILLISECONDS);
         assertNotNull(event1);
         assertNotNull(event2);
-        assertNotNull(event1.getValue());
-        assertNull(event2.getValue());
+        
+        assertTrue(event1.getValue() == null || event2.getValue() == null);
+        assertTrue(event1.getValue() != null || event2.getValue() != null);
     }
 
     @Test
@@ -155,7 +154,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals("getMapName", map.getName());
     }
 
-    //TODO
     @Test
     public void testGetAsync() throws Exception {
         HazelcastClient hClient = getHazelcastClient();
@@ -571,7 +569,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertTrue(entryRemovedLatch.await(10, TimeUnit.SECONDS));
     }
 
-    //TODO
     @Test
     public void addListenerAndMultiPut() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -607,16 +604,16 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         map.addEntryListener(listener1, true);
         map.addEntryListener(listener2, "hello", true);
+        Thread.sleep(500);
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
-        Thread.sleep(100);
+        Thread.sleep(500);
         assertEquals(3, entryAddLatch.getCount());
         assertEquals(3, entryRemovedLatch.getCount());
         assertEquals(3, entryUpdatedLatch.getCount());
     }
 
-    //TODO
     @Test
     public void addSameListener1stToKeyThenToMap() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -636,7 +633,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(3, entryUpdatedLatch.getCount());
     }
 
-    //TODO
     @Test
     public void removeListener() throws InterruptedException, IOException {
         HazelcastClient hClient = getHazelcastClient();
@@ -647,10 +643,11 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         CountDownLatchEntryListener<String, String> listener1 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         map.addEntryListener(listener1, true);
+        Thread.sleep(500);
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
-        Thread.sleep(100);
+        Thread.sleep(1000);
         assertEquals(4, entryAddLatch.getCount());
         assertEquals(4, entryRemovedLatch.getCount());
         assertEquals(4, entryUpdatedLatch.getCount());

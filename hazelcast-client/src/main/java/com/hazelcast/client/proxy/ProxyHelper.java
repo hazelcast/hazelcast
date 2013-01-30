@@ -27,12 +27,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EventListener;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -149,9 +147,12 @@ public class ProxyHelper {
             if (Command.OK.equals(response.command))
                 return response;
             else {
-                throw new RuntimeException(response.args[0]);
+                throw new RuntimeException(response.command + ": " + Arrays.asList(response.args));
             }
-        } catch (IOException e) {
+        }catch (EOFException e) {
+            return doCommand(key, command, args, data);
+        }
+        catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -168,9 +169,11 @@ public class ProxyHelper {
 
     <V> Future<V> doAsync(final Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command, args, data);
+        protocol.onEnqueue();
         try {
             final Connection connection = cp.takeConnection();
             writer.write(connection, protocol);
+            writer.flush(connection);
             return new Future<V>() {
                 public boolean cancel(boolean mayInterruptIfRunning) {
                     return false;
