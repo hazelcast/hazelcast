@@ -16,27 +16,30 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.Connection;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+
+import static java.lang.String.*;
 
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
@@ -73,16 +76,13 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MADDLISTENER, new String[]{name,
-                String.valueOf(includeValue)}, new Data[]{dKey});
+        Protocol request = proxyHelper.createProtocol(Command.MADDLISTENER, new String[]{name,valueOf(includeValue)}, new Data[]{dKey});
+        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new EntryEventLRH<K, V>(listener));
+        storeListener(listener, key, thread);
+        thread.start();
+    }
 
-        InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
-        final Connection connection = new Connection(new Address(isa), 0, client.getSerializationService());
-        try {
-            client.getConnectionManager().bindConnection(connection);
-        } catch (IOException e) {
-        }
-        ListenerThread thread = new ListenerThread(request, new EntryEventLRH(listener), connection, client.getSerializationService());
+    private void storeListener(EntryListener<K, V> listener, K key, ListenerThread thread) {
         synchronized (listenerMap) {
             Map<Object, ListenerThread> map = listenerMap.get(listener);
             if (map == null) {
@@ -91,11 +91,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
             }
             map.put(key, thread);
         }
-        thread.start();
-        System.out.println("Started the thread!");
     }
-
-
 
     private void check(Object obj) {
         if (obj == null) {
@@ -131,7 +127,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         Map<Object, ListenerThread> map = listenerMap.get(listener);
         if (map != null) {
             ListenerThread thread = map.remove(key);
-            if(thread!=null) thread.interrupt();
+            if (thread != null) thread.interrupt();
         }
     }
 

@@ -909,7 +909,6 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             assertTrue(c.isActive());
         }
     }
-    //TODO
     @Test
     public void testSqlPredicate() {
         HazelcastInstance h = getHazelcastInstance();

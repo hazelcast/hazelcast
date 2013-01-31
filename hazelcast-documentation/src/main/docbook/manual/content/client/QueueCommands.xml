@@ -306,7 +306,7 @@
             </para>
 
             <programlisting language="java"><![CDATA[
-        QEVENT <-1> <name> <eventType> #1
+        EVENT <-1> <name> <eventType> <address of the source member> #1
         <size of element in bytes>
         <element in bytes>
             ]]></programlisting>

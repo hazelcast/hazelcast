@@ -16,10 +16,11 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.Connection;
-import com.hazelcast.client.ConnectionPool;
-import com.hazelcast.client.ProtocolReader;
-import com.hazelcast.client.ProtocolWriter;
+import com.hazelcast.client.*;
+import com.hazelcast.client.proxy.listener.ItemEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerResponseHandler;
+import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -30,6 +31,7 @@ import com.hazelcast.query.Predicate;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -133,6 +135,13 @@ public class ProxyHelper {
             e.printStackTrace();
         } catch (InterruptedException e) {
         }
+    }
+    
+    public ListenerThread  createAListenerThread(HazelcastClient client, Protocol request, ListenerResponseHandler lrh){
+        InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
+        final Connection connection = client.getConnectionManager().createAndBindConnection(isa);
+        ListenerThread thread = new ListenerThread(request, lrh, connection, ss);
+        return thread;
     }
 
     public Protocol doCommand(Data key, Command command, String[] args, Data... data) {

@@ -16,21 +16,25 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.Connection;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.QueueItemListenerManager;
 import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.client.proxy.listener.ItemEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.QueueItemIterator;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 
-import java.util.AbstractQueue;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
@@ -39,12 +43,14 @@ import static com.hazelcast.client.proxy.ProxyHelper.checkTime;
 public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected ProxyHelper proxyHelper;
     final protected String name;
+    final private HazelcastClient client;
 
     final Object lock = new Object();
 
     public QueueClientProxy(HazelcastClient client, String name) {
         super();
         this.name = name;
+        this.client = client;
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
@@ -174,23 +180,20 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         return new QueueItemIterator(list.toArray(), this);
     }
 
+    private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
+    
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
-        synchronized (lock) {
-            boolean shouldCall = listenerManager().noListenerRegistered(getName());
-            listenerManager().registerListener(getName(), listener, includeValue);
-            if (shouldCall) {
-                proxyHelper.doCommand(null, Command.QADDLISTENER, new String[]{getName(), String.valueOf(includeValue)}, null);
-            }
-        }
+        Protocol request = proxyHelper.createProtocol(Command.QADDLISTENER, new String[]{getName(), String.valueOf(includeValue)}, null);
+        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new ItemEventLRH<E>(listener));
+        listenerMap.put(listener, thread);
+        thread.start();
     }
 
     public void removeItemListener(ItemListener<E> listener) {
-        check(listener);
-        synchronized (lock) {
-            listenerManager().removeListener(getName(), listener);
-            proxyHelper.doCommand(null, Command.QREMOVELISTENER, getName(), null);
-        }
+        ListenerThread thread = listenerMap.remove(listener);
+        if(thread!=null)
+            thread.interrupt();
     }
 
     private QueueItemListenerManager listenerManager() {

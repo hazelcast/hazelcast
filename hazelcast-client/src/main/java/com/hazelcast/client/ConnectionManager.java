@@ -229,6 +229,17 @@ public class ConnectionManager implements MembershipListener {
         binder.bind(connection, config.getCredentials());
     }
 
+
+    public Connection createAndBindConnection(InetSocketAddress isa){
+        final Connection connection = new Connection(new Address(isa), 0, client.getSerializationService());
+        try {
+            client.getConnectionManager().bindConnection(connection);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return connection;
+    }
+
     public void destroyConnection(final Connection connection) throws UnknownHostException {
         boolean lost = false;
         synchronized (this) {
