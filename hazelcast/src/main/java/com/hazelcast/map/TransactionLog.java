@@ -61,4 +61,8 @@ public class TransactionLog implements DataSerializable {
     public void addLogItem(TransactionLogItem logItem) {
         changes.put(logItem.getKey(), logItem);
     }
+
+    public TransactionLogItem getTransactionLogItem(Data dataKey) {
+        return changes.get(dataKey);
+    }
 }

@@ -16,9 +16,6 @@
 
 package com.hazelcast.map.test;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -28,29 +25,32 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class MapEvictionTest {
-
+public class MapDeathTest  {
 
     @Test
-    public void testMapBasicEviction() throws InterruptedException {
-        Config cfg = new Config();
-        MapConfig mc = cfg.getMapConfig("testMapBasicEviction");
-        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        mc.setEvictionPercentage(80);
-        MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
-        msc.setSize(1000);
-        mc.setMaxSizeConfig(msc);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
-
-        IMap map = instance.getMap("testMapBasicEviction");
-        int size = 10;
+    public void testMapReleaseLocks() throws InterruptedException {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        IMap map = instance1.getMap("testMapReleaseLocks");
+        int size = 1000;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
-            Thread.sleep(5);
+            map.lock(i);
         }
-        Thread.sleep(5000);
 
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(true, map.isLocked(i));
+        }
+        Thread.sleep(100);
+        instance1.getLifecycleService().shutdown();
+        IMap map2 = instance2.getMap("testMapReleaseLocks");
+
+        Thread.sleep(3000);
+        for (int i = 0; i < size; i++) {
+            assertEquals(false, map2.isLocked(i));
+        }
+        assertEquals(map2.size(), size);
     }
 
 }

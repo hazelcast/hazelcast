@@ -51,13 +51,13 @@ public class CommitOperation extends AbstractOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+        super.writeInternal(out);
         out.writeUTF(txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readData(in);
+        super.readInternal(in);
         txnId = in.readUTF();
     }
 }

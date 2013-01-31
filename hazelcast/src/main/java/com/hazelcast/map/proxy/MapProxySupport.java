@@ -56,17 +56,19 @@ abstract class MapProxySupport extends AbstractDistributedObject {
             if (cachedData != null)
                 return cachedData;
         }
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
+        return (Data) doTxnAwareOperation(key, operation);
+    }
+
+    private Object doTxnAwareOperation(Data key, AbstractMapOperation operation) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        operation.setTxnId(getCurrentTransactionId());
+        operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
-            Future invoke = invocation.invoke();
-            Data value = (Data) invoke.get();
-            if (nearCacheEnabled) {
-                mapService.putNearCache(name, key, value);
-            }
-            return value;
+            Future f = invocation.invoke();
+            return f.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -85,60 +87,34 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        PutOperation operation = new PutOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Data) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        PutOperation operation = new PutOperation(name, key, value, null, getTimeInMillis(ttl, timeunit));
+        return (Data) doTxnalOperation(key, operation);
     }
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        TryPutOperation operation = new TryPutOperation(name, key, value, txnId, getTimeInMillis(timeout, timeunit));
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Boolean) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        TryPutOperation operation = new TryPutOperation(name, key, value, null, getTimeInMillis(timeout, timeunit));
+        return (Boolean) doTxnalOperation(key, operation);
     }
 
     protected Data putIfAbsentInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Data) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, null, getTimeInMillis(ttl, timeunit));
+        return (Data) doTxnalOperation(key, operation);
     }
 
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
+        PutTransientOperation operation = new PutTransientOperation(name, key, value, null, getTimeInMillis(ttl, timeunit));
+        doTxnalOperation(key, operation);
+    }
+
+    private Object doTxnalOperation(Data key, AbstractMapOperation operation) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        PutTransientOperation operation = new PutTransientOperation(name, key, value, txnId, getTimeInMillis(ttl, timeunit));
+        operation.setTxnId(attachTxnParticipant(partitionId));
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             Future f = invocation.invoke();
-            f.get();
+            return f.get();
         } catch (Throwable throwable) {
             throw new HazelcastException(throwable);
         }
@@ -146,7 +122,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
 
     protected Future<Data> putAsyncInternal(final Data key, final Data value) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
+        String txnId = attachTxnParticipant(partitionId);
         PutOperation operation = new PutOperation(name, key, value, txnId, -1);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -159,114 +135,43 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue, txnId);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Boolean) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue, null);
+        return (Boolean) doTxnalOperation(key, operation);
     }
 
     protected Data replaceInternal(final Data key, final Data value) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        ReplaceOperation operation = new ReplaceOperation(name, key, value, txnId);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Data) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        ReplaceOperation operation = new ReplaceOperation(name, key, value, null);
+        return (Data) doTxnalOperation(key, operation);
     }
 
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        SetOperation setOperation = new SetOperation(name, key, value, txnId, ttl);
-        setOperation.setThreadId(ThreadContext.getThreadId());
-        setOperation.setServiceName(SERVICE_NAME);
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, setOperation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
-            future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        SetOperation operation = new SetOperation(name, key, value, null, ttl);
+        doTxnalOperation(key, operation);
     }
 
     protected boolean evictInternal(final Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        EvictOperation operation = new EvictOperation(name, key, txnId);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Boolean) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        EvictOperation operation = new EvictOperation(name, key, null);
+        return (Boolean) doTxnalOperation(key, operation);
     }
 
     protected Data removeInternal(Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        RemoveOperation operation = new RemoveOperation(name, key, txnId);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Data) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        RemoveOperation operation = new RemoveOperation(name, key, null);
+        return (Data) doTxnalOperation(key, operation);
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value, txnId);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Boolean) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value, null);
+        return (Boolean) doTxnalOperation(key, operation);
     }
 
     protected Data tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
-        TryRemoveOperation operation = new TryRemoveOperation(name, key, txnId, getTimeInMillis(timeout, timeunit));
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return (Data) f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
+        TryRemoveOperation operation = new TryRemoveOperation(name, key, null, getTimeInMillis(timeout, timeunit));
+        return (Data) doTxnalOperation(key, operation);
     }
 
     protected Future<Data> removeAsyncInternal(final Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        String txnId = prepareTransaction(partitionId);
+        String txnId = attachTxnParticipant(partitionId);
         RemoveOperation operation = new RemoveOperation(name, key, txnId);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
@@ -483,11 +388,14 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         }
     }
 
-    // todo certainly must be optimized
     public void clearInternal() {
-        Set<Data> keys = keySetInternal();
-        for (Data key : keys) {
-            removeInternal(key);
+        try {
+            ClearOperation clearOperation = new ClearOperation(name);
+            clearOperation.setServiceName(SERVICE_NAME);
+            nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, clearOperation);
+        } catch (Throwable throwable) {
+            throw new HazelcastException(throwable);
         }
     }
 
@@ -685,12 +593,28 @@ abstract class MapProxySupport extends AbstractDistributedObject {
         return null;
     }
 
-    protected String prepareTransaction(int partitionId) {
+    /**
+     * Attaches mapService and partition as a transaction participant
+     * if thread is in transaction.
+     *
+     * @param partitionId
+     * @return txnId if thread is in transaction, null otherwise
+     */
+    protected String attachTxnParticipant(int partitionId) {
         TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
             txnId = txn.getTxnId();
             txn.attachParticipant(SERVICE_NAME, partitionId);
+        }
+        return txnId;
+    }
+
+    protected String getCurrentTransactionId() {
+        TransactionImpl txn = nodeEngine.getTransaction();
+        String txnId = null;
+        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+            return txn.getTxnId();
         }
         return txnId;
     }

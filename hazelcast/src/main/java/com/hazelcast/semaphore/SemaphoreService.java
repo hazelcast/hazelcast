@@ -71,14 +71,12 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     public void memberRemoved(MembershipServiceEvent event) {
-        System.out.println("removed: " + event);
-
         Address caller = event.getMember().getAddress();
         for (String name: permitMap.keySet()){
             int partitionId = nodeEngine.getPartitionService().getPartitionId(name);
             PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             if (nodeEngine.getThisAddress().equals(info.getOwner())){
-                Operation op = new DeadMemberOperation(name, caller).setPartitionId(partitionId)
+                Operation op = new SemaphoreDeadMemberOperation(name, caller).setPartitionId(partitionId)
                         .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
                         .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().runOperation(op);

@@ -74,7 +74,7 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size policy="cluster_wide_map_size">5000</max-size>
+        <max-size policy="PER_JVM">5000</max-size>
 
         <!--
             When max. size is reached, specified percentage of
@@ -100,33 +100,28 @@
     <para>
         There are 5 defined policies can be used in max-size configuration.
         <orderedlist>
+
             <listitem>
                 <para>
-                    <emphasis role="bold">cluster_wide_map_size:</emphasis> Cluster-wide total max map size (default policy).
-                    <programlisting language="xml"><![CDATA[<max-size policy="cluster_wide_map_size">50000</max-size>]]></programlisting>
-                </para>
-            </listitem>
-            <listitem>
-                <para>
-                    <emphasis role="bold">map_size_per_jvm:</emphasis>  Max map size per JVM.
+                    <emphasis role="bold">PER_JVM:</emphasis>  Max map size per JVM.
                     <programlisting language="xml"><![CDATA[<max-size policy="map_size_per_jvm">5000</max-size>]]></programlisting>
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">partitions_wide_map_size:</emphasis> Partitions (default 271) wide max map size.
+                    <emphasis role="bold">PER_PARTITION:</emphasis> Partitions (default 271) wide max map size.
                     <programlisting language="xml"><![CDATA[<max-size policy="partitions_wide_map_size">27100</max-size>]]></programlisting>
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">used_heap_size:</emphasis> Max used heap size in MB (mega-bytes) per JVM.
+                    <emphasis role="bold">USED_HEAP_SIZE:</emphasis> Max used heap size in MB (mega-bytes) per JVM.
                     <programlisting language="xml"><![CDATA[<max-size policy="used_heap_size">4096</max-size>]]></programlisting>
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">used_heap_percentage:</emphasis> Max used heap size percentage per JVM.
+                    <emphasis role="bold">USED_HEAP_PERCENTAGE:</emphasis> Max used heap size percentage per JVM.
                     <programlisting language="xml"><![CDATA[<max-size policy="used_heap_percentage">75</max-size>]]></programlisting>
                 </para>
             </listitem>

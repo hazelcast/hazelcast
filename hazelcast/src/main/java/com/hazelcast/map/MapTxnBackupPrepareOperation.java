@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ResponseHandler;
 
 import java.io.IOException;
 
@@ -38,19 +37,17 @@ public class MapTxnBackupPrepareOperation extends AbstractOperation {
         MapService mapService = (MapService) getService();
         System.out.println(getNodeEngine().getThisAddress() + " backupPrepare " + txnLog.txnId);
         mapService.getPartitionContainer(partitionId).putTransactionLog(txnLog.txnId, txnLog);
-        ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(null);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+        super.writeInternal(out);
         txnLog.writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readData(in);
+        super.readInternal(in);
         txnLog = new TransactionLog();
         txnLog.readData(in);
     }

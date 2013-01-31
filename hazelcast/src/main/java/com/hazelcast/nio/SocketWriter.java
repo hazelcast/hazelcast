@@ -20,5 +20,7 @@ import java.nio.ByteBuffer;
 
 public interface SocketWriter<T> {
 
+    public static final int SEND_SOCKET_BUFFER_SIZE = 32 * 1024;
+
     boolean write(T socketWritable, ByteBuffer socketBuffer) throws Exception;
 }

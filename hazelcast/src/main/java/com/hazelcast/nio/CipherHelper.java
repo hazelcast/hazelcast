@@ -20,6 +20,7 @@ import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.Connection;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -244,5 +245,10 @@ final class CipherHelper {
         public boolean isAsymmetric() {
             return false;
         }
+    }
+
+    public static void handleCipherException(Exception e, Connection connection) {
+        logger.log(Level.WARNING, e.getMessage(), e);
+        connection.close();
     }
 }

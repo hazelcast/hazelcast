@@ -83,7 +83,6 @@ public class TransactionImpl implements Transaction {
             throw new IllegalStateException("Transaction is already active");
         }
         status = TXN_STATUS_ACTIVE;
-//        ThreadContext.get().getCallContext().setTransaction(this);
         ThreadContext.setTransaction(instance.getName(), this);
     }
 
@@ -91,9 +90,8 @@ public class TransactionImpl implements Transaction {
         if (status != TXN_STATUS_ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
         }
-        status = TXN_STATUS_COMMITTING;
         try {
-//            ThreadContext.get().setCurrentInstance(instance);
+            status = TXN_STATUS_PREPARING;
             List<Future> futures = new ArrayList<Future>(participants.size());
             for (TxnParticipant t : participants) {
                 Operation op = new PrepareOperation(txnId);
@@ -103,7 +101,9 @@ public class TransactionImpl implements Transaction {
             for (Future future : futures) {
                 future.get(300, TimeUnit.SECONDS);
             }
+            status = TXN_STATUS_PREPARED;
             futures.clear();
+            status = TXN_STATUS_COMMITTING;
             for (TxnParticipant t : participants) {
                 Operation op = new CommitOperation(txnId);
                 futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
@@ -123,6 +123,28 @@ public class TransactionImpl implements Transaction {
     }
 
     public void rollback() throws IllegalStateException {
+        if (status == TXN_STATUS_NO_TXN) {
+            throw new IllegalStateException("Transaction is not active");
+        }
+        status = TXN_STATUS_ROLLING_BACK;
+        try {
+            List<Future> futures = new ArrayList<Future>(participants.size());
+            for (TxnParticipant t : participants) {
+                Operation op = new RollbackOperation(txnId);
+                futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
+                        .invoke());
+            }
+            for (Future future : futures) {
+                future.get(300, TimeUnit.SECONDS);
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            finalizeTxn();
+            status = TXN_STATUS_ROLLED_BACK;
+        }
     }
 
     public int getStatus() {

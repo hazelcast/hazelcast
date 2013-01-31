@@ -86,4 +86,8 @@ public final class Packet extends DataWriter implements SocketWritable {
         }
         return super.readFrom(source);
     }
+
+    public int size() {
+        return (data == null) ? 1 : data.totalSize() + 1;
+    }
 }

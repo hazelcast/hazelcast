@@ -16,7 +16,6 @@
   -->
 
 <sect1 xml:id="GettingStarted" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xi="http://www.w3.org/2001/XInclude"
        xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
@@ -153,7 +152,7 @@ public class GettingStartedClient {
             </listitem>
             <listitem>
                 <para>You can browse Hazelcast
-                    <link xlink:href="http://code.google.com/p/hazelcast/source/browse/#svn/trunk">source
+                    <link xlink:href="https://github.com/hazelcast/hazelcast">source
                         code</link>.
                 </para>
             </listitem>

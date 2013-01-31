@@ -685,12 +685,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
-                mapConfig.setEvictionPolicy(value);
+                mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(value));
             } else if ("max-size".equals(nodeName)) {
                 final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
                 final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
                 if (maxSizePolicy != null) {
-                    msc.setMaxSizePolicy(getTextContent(maxSizePolicy));
+                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getTextContent(maxSizePolicy)));
                 }
                 int size = 0;
                 if (value.length() < 2) {
@@ -853,7 +853,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.addTopicConfig(tConfig);
     }
 
-    //TODO
+    //TODO semaphore
     private void handleSemaphore(final org.w3c.dom.Node node) {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);

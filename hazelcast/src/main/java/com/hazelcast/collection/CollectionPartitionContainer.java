@@ -27,6 +27,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CollectionPartitionContainer {
 
+    final int partitionId;
+
     final CollectionService service;
 
     final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
@@ -38,8 +40,9 @@ public class CollectionPartitionContainer {
         }
     };
 
-    public CollectionPartitionContainer(CollectionService service) {
+    public CollectionPartitionContainer(CollectionService service, int partitionId) {
         this.service = service;
+        this.partitionId = partitionId;
     }
 
     public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId) {
