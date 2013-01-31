@@ -30,7 +30,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapEvictionTest {
 
-
     @Test
     public void testMapBasicEviction() throws InterruptedException {
         Config cfg = new Config();
@@ -44,12 +43,21 @@ public class MapEvictionTest {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
 
         IMap map = instance.getMap("testMapBasicEviction");
-        int size = 10;
+        int size = 1001;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
-            Thread.sleep(5);
+            Thread.sleep(10);
         }
         Thread.sleep(5000);
+
+        for (int i = 0; i < size; i++) {
+            Object o = map.get(i);
+            if(o != null)
+                System.out.println(o);
+            else
+                System.out.println("evicted:"+i);
+        }
+        System.out.println("size:"+map.size());
 
     }
 

@@ -51,6 +51,7 @@ public class MapDeathTest  {
             assertEquals(false, map2.isLocked(i));
         }
         assertEquals(map2.size(), size);
+        Hazelcast.shutdownAll();
     }
 
 }
