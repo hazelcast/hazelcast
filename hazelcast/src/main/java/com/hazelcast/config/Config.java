@@ -18,10 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.merge.AddNewEntryMergePolicy;
-import com.hazelcast.merge.HigherHitsMergePolicy;
-import com.hazelcast.merge.LatestUpdateMergePolicy;
-import com.hazelcast.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -68,8 +64,6 @@ public class Config implements DataSerializable {
 
     private Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
-    private Map<String, MergePolicyConfig> mergePolicyConfigs = new ConcurrentHashMap<String, MergePolicyConfig>();
-
     private Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
     private ServicesConfig servicesConfigConfig = new ServicesConfig();
@@ -93,23 +87,6 @@ public class Config implements DataSerializable {
         if ("true".equalsIgnoreCase(liteMemberProp)) {
             liteMember = true;
         }
-        addMergePolicyConfig(new MergePolicyConfig(AddNewEntryMergePolicy.NAME, new AddNewEntryMergePolicy()));
-        addMergePolicyConfig(new MergePolicyConfig(HigherHitsMergePolicy.NAME, new HigherHitsMergePolicy()));
-        addMergePolicyConfig(new MergePolicyConfig(LatestUpdateMergePolicy.NAME, new LatestUpdateMergePolicy()));
-        addMergePolicyConfig(new MergePolicyConfig(PassThroughMergePolicy.NAME, new PassThroughMergePolicy()));
-    }
-
-    public Config addMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-        mergePolicyConfigs.put(mergePolicyConfig.getName(), mergePolicyConfig);
-        return this;
-    }
-
-    public MergePolicyConfig getMergePolicyConfig(String name) {
-        return mergePolicyConfigs.get(name);
-    }
-
-    public Map<String, MergePolicyConfig> getMergePolicyConfigs() {
-        return mergePolicyConfigs;
     }
 
     public WanReplicationConfig getWanReplicationConfig(String name) {
@@ -546,9 +523,8 @@ public class Config implements DataSerializable {
         boolean hasMapExecutors = b2[1];
         boolean hasMapTopicConfigs = b2[2];
         boolean hasMapQueueConfigs = b2[3];
-        boolean hasMapMergePolicyConfigs = b2[4];
-        boolean hasMapSemaphoreConfigs = b2[5];
-        boolean hasProperties = b2[6];
+        boolean hasMapSemaphoreConfigs = b2[4];
+        boolean hasProperties = b2[5];
         networkConfig = new NetworkConfig();
         networkConfig.readData(in);
         if (hasMapConfigs) {
@@ -596,9 +572,6 @@ public class Config implements DataSerializable {
                 queueConfigs.put(queueConfig.getName(), queueConfig);
             }
         }
-        if (hasMapMergePolicyConfigs) {
-            // TODO: Map<String, MergePolicyConfig> mergePolicyConfigs
-        }
         if (hasProperties) {
             int size = in.readInt();
             properties = new Properties();
@@ -616,7 +589,6 @@ public class Config implements DataSerializable {
         boolean hasMapExecutors = executorConfigs != null && !executorConfigs.isEmpty();
         boolean hasMapTopicConfigs = topicConfigs != null && !topicConfigs.isEmpty();
         boolean hasMapQueueConfigs = queueConfigs != null && !queueConfigs.isEmpty();
-        boolean hasMapMergePolicyConfigs = mergePolicyConfigs != null && !mergePolicyConfigs.isEmpty();
         boolean hasMapSemaphoreConfigs = semaphoreConfigs != null && !semaphoreConfigs.isEmpty();
         boolean hasProperties = properties != null && !properties.isEmpty();
         out.writeByte(ByteUtil.toByte(checkCompatibility, liteMember));
@@ -625,7 +597,6 @@ public class Config implements DataSerializable {
                 hasMapExecutors,
                 hasMapTopicConfigs,
                 hasMapQueueConfigs,
-                hasMapMergePolicyConfigs,
                 hasMapSemaphoreConfigs,
                 hasProperties));
         networkConfig.writeData(out);
@@ -673,9 +644,6 @@ public class Config implements DataSerializable {
                 queueConfig.setName(name);
                 queueConfig.writeData(out);
             }
-        }
-        if (hasMapMergePolicyConfigs) {
-            // TODO: Map<String, MergePolicyConfig> mergePolicyConfigs
         }
         if (hasProperties) {
             out.writeInt(properties.size());
@@ -729,7 +697,6 @@ public class Config implements DataSerializable {
         sb.append(", multiMapConfigs=").append(multiMapConfigs);
         sb.append(", executorConfigs=").append(executorConfigs);
         sb.append(", semaphoreConfigs=").append(semaphoreConfigs);
-        sb.append(", mergePolicyConfigs=").append(mergePolicyConfigs);
         sb.append(", wanReplicationConfigs=").append(wanReplicationConfigs);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", partitionGroupConfig=").append(partitionGroupConfig);

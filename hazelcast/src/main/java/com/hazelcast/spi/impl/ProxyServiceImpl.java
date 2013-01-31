@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -185,6 +186,9 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         DistributedObject getProxy(Object objectId) {
             DistributedObject proxy = proxies.get(objectId);
             if (proxy == null) {
+                if (!nodeEngine.isActive()) {
+                    throw new HazelcastInstanceNotActiveException();
+                }
                 proxy = service.createDistributedObject(objectId);
                 DistributedObject current = proxies.putIfAbsent(objectId, proxy);
                 if (current == null) {

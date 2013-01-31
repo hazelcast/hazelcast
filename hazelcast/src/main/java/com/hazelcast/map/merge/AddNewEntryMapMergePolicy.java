@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.merge;
+package com.hazelcast.map.merge;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.map.DataRecordEntry;
 
-public class AddNewEntryMergePolicy implements MergePolicy {
+public class AddNewEntryMapMergePolicy implements MapMergePolicy {
     public static final String NAME = "hz.ADD_NEW_ENTRY";
 
     public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
-        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
-        DataRecordEntry existingDataEntry = (DataRecordEntry) existingEntry;
-        return (existingEntry == null || !existingDataEntry.hasValue()) ? mergingDataEntry.getValueData() : null;
+        return null;
     }
 }

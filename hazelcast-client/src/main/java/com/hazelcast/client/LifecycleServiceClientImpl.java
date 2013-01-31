@@ -160,4 +160,8 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     public boolean isRunning() {
         return running.get();
     }
+
+    public boolean isPaused() {
+        return paused.get();
+    }
 }

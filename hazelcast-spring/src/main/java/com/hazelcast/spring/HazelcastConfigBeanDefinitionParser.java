@@ -569,7 +569,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final String implAttr = "implementation";
             for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("map-merge-policy".equals(cleanNodeName(n))) {
-                    BeanDefinitionBuilder mergePolicyConfigBuilder = createBeanBuilder(MergePolicyConfig.class);
+                    BeanDefinitionBuilder mergePolicyConfigBuilder = createBeanBuilder(MapMergePolicyConfig.class);
                     final AbstractBeanDefinition beanDefinition = mergePolicyConfigBuilder.getBeanDefinition();
                     fillValues(n, mergePolicyConfigBuilder, implAttr);
                     final Node impl = n.getAttributes().getNamedItem(implAttr);

@@ -16,32 +16,25 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.merge.MergePolicy;
+import com.hazelcast.map.merge.AddNewEntryMapMergePolicy;
+import com.hazelcast.map.merge.MapMergePolicy;
 
-public class MergePolicyConfig {
-    String name;
-    String className;
-    MergePolicy implementation;
+public class MapMergePolicyConfig {
 
-    public MergePolicyConfig() {
+    public static final String DEFAULT_POLICY = AddNewEntryMapMergePolicy.class.getName();
+
+    String className = DEFAULT_POLICY;
+    MapMergePolicy implementation;
+
+    public MapMergePolicyConfig() {
     }
 
-    public MergePolicyConfig(String name, MergePolicy implementation) {
-        this.name = name;
+    public MapMergePolicyConfig(MapMergePolicy implementation) {
         this.implementation = implementation;
     }
 
-    public MergePolicyConfig(String name, String className) {
-        this.name = name;
+    public MapMergePolicyConfig(String className) {
         this.className = className;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getClassName() {
@@ -52,19 +45,18 @@ public class MergePolicyConfig {
         this.className = className;
     }
 
-    public MergePolicy getImplementation() {
+    public MapMergePolicy getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(MergePolicy implementation) {
+    public void setImplementation(MapMergePolicy implementation) {
         this.implementation = implementation;
     }
 
     @Override
     public String toString() {
-        return "MergePolicyConfig{" +
-                "name='" + name + '\'' +
-                ", className='" + className + '\'' +
+        return "MapMergePolicyConfig{" +
+                "className='" + className + '\'' +
                 '}';
     }
 }

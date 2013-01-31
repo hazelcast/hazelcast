@@ -14,29 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map.merge;
 
-/**
- * LifecycleService allows you to shutdown, restart, pause and resume an HazelcastInstance.
- * LifecycleListeners also can be added to listen for lifecycle state changes.
- */
-public interface LifecycleService {
+import com.hazelcast.core.MapEntry;
 
-    void kill();
+public class PassThroughMapMergePolicy implements MapMergePolicy {
+    public static final String NAME = "hz.PASS_THROUGH";
 
-    void shutdown();
-
-    boolean pause();
-
-    boolean resume();
-
-    void restart();
-
-    void addLifecycleListener(LifecycleListener lifecycleListener);
-
-    void removeLifecycleListener(LifecycleListener lifecycleListener);
-
-    boolean isRunning();
-
-    boolean isPaused();
+    public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
+        return null;
+    }
 }

@@ -34,7 +34,7 @@
                 <xs:element ref="multimap" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="semaphore" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element ref="merge-policies" minOccurs="0" maxOccurs="1"/>
+                <!--<xs:element ref="merge-policies" minOccurs="0" maxOccurs="1"/>-->
                 <xs:element ref="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="services" minOccurs="0" maxOccurs="1"/>
@@ -370,7 +370,7 @@
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
     </xs:element>
-    <xs:element name="merge-policy" default="hz.ADD_NEW_ENTRY">
+    <xs:element name="merge-policy">
         <xs:annotation>
             <xs:documentation>
                 While recovering from split-brain (network partitioning), map entries in the small cluster will merge
@@ -388,39 +388,34 @@
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
-            <xs:restriction base="xs:string">
-                <!--                 <xs:enumeration value="hz.NO_MERGE"/> -->
-                <!--                 <xs:enumeration value="hz.ADD_NEW_ENTRY"/> -->
-                <!--                 <xs:enumeration value="hz.HIGHER_HITS"/> -->
-                <!--                 <xs:enumeration value="hz.LATEST_UPDATE"/> -->
-            </xs:restriction>
+            <xs:restriction base="xs:string" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="merge-policies">
-        <xs:annotation>
-            <xs:documentation>
-                Can be used to custom map merge policy implementations.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="map-merge-policy" minOccurs="0" maxOccurs="unbounded"/>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="map-merge-policy">
-        <xs:annotation>
-            <xs:documentation>
-                Custom defined merge policy.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="class-name" minOccurs="1" maxOccurs="1"/>
-            </xs:sequence>
-            <xs:attribute name="name" type="xs:string" use="required"/>
-        </xs:complexType>
-    </xs:element>
+    <!--<xs:element name="merge-policies">-->
+        <!--<xs:annotation>-->
+            <!--<xs:documentation>-->
+                <!--Can be used to custom map merge policy implementations.-->
+            <!--</xs:documentation>-->
+        <!--</xs:annotation>-->
+        <!--<xs:complexType>-->
+            <!--<xs:sequence>-->
+                <!--<xs:element ref="map-merge-policy" minOccurs="0" maxOccurs="unbounded"/>-->
+            <!--</xs:sequence>-->
+        <!--</xs:complexType>-->
+    <!--</xs:element>-->
+    <!--<xs:element name="map-merge-policy">-->
+        <!--<xs:annotation>-->
+            <!--<xs:documentation>-->
+                <!--Custom defined merge policy.-->
+            <!--</xs:documentation>-->
+        <!--</xs:annotation>-->
+        <!--<xs:complexType>-->
+            <!--<xs:sequence>-->
+                <!--<xs:element ref="class-name" minOccurs="1" maxOccurs="1"/>-->
+            <!--</xs:sequence>-->
+            <!--<xs:attribute name="name" type="xs:string" use="required"/>-->
+        <!--</xs:complexType>-->
+    <!--</xs:element>-->
     <xs:element name="class-name">
         <xs:annotation>
             <xs:documentation>

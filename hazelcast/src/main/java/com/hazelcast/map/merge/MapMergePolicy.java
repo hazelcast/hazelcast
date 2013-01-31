@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.merge;
+package com.hazelcast.map.merge;
 
 import com.hazelcast.core.MapEntry;
-import com.hazelcast.map.DataRecordEntry;
 
-public class PassThroughMergePolicy implements MergePolicy {
-    public static final String NAME = "hz.PASS_THROUGH";
+public interface MapMergePolicy {
 
-    public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
-        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
-        if (!mergingDataEntry.isValid()) {
-            return REMOVE_EXISTING;
-        } else {
-            return mergingDataEntry.getValueData();
-        }
-    }
+    /**
+     * Returns the value of the entry after the merge
+     * of entries with the same key. Returning value can be
+     * You should consider the case where existingEntry is null.
+     *
+     * @param mapName       name of the map
+     * @param mergingEntry  entry merging into the destination cluster
+     * @param existingEntry existing entry in the destination cluster
+     * @return final value of the entry. If returns null then no change on the entry.
+     */
+    Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry);
 }

@@ -41,10 +41,24 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     public final NodeEngine getNodeEngine() {
         final NodeEngine engine = nodeEngine;
+        lifecycleCheck(engine);
+        return engine;
+    }
+
+    private void lifecycleCheck(final NodeEngine engine) {
         if (engine == null) {
             throw new HazelcastInstanceNotActiveException();
         }
-        return engine;
+        while (engine.isActive() && engine.getHazelcastInstance().getLifecycleService().isPaused()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+                return;
+            }
+        }
+        if (!engine.isActive()) {
+            throw new HazelcastInstanceNotActiveException();
+        }
     }
 
     public final S getService() {

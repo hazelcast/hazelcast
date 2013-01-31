@@ -88,6 +88,10 @@ public class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
+    public boolean isPaused() {
+        return paused.get();
+    }
+
     public boolean isRunning() {
         synchronized (lifecycleLock) {
             return instance.node.isActive();
@@ -119,8 +123,8 @@ public class LifecycleServiceImpl implements LifecycleService {
             fireLifecycleEvent(RESTARTING);
             paused.set(true);
             final Node node = instance.node;
+
             node.onRestart();
-//            node.clientHandlerService.restart();
             node.connectionManager.onRestart();
             node.clusterService.onRestart();
             node.partitionService.onRestart();

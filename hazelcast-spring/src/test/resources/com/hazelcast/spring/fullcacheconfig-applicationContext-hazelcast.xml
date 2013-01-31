@@ -245,7 +245,7 @@
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
-    <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMergePolicy"/>
+    <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMapMergePolicy"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
     <bean id="dummySSLContextFactory" class="com.hazelcast.spring.DummySSLContextFactory"/>

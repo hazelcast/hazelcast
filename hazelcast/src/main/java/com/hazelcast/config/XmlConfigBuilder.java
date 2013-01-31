@@ -196,8 +196,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleTopic(node);
             } else if ("semaphore".equals(nodeName)) {
                 handleSemaphore(node);
-            } else if ("merge-policies".equals(nodeName)) {
-                handleMergePolicies(node);
+//            } else if ("merge-policies".equals(nodeName)) {
+//                handleMergePolicies(node);
             } else if ("listeners".equals(nodeName)) {
                 handleListeners(node);
             } else if ("partition-group".equals(nodeName)) {
@@ -720,7 +720,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("near-cache".equals(nodeName)) {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
-                mapConfig.setMergePolicy(value);
+                mapConfig.getMergePolicyConfig().setClassName(value);
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
@@ -872,14 +872,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.addSemaphoreConfig(sConfig);
     }
 
-    private void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
-            if (nodeName.equals("map-merge-policy")) {
-                handleViaReflection(n, config, new MergePolicyConfig());
-            }
-        }
-    }
+//    private void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
+//        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+//            final String nodeName = cleanNodeName(n.getNodeName());
+//            if (nodeName.equals("map-merge-policy")) {
+//                handleViaReflection(n, config, new MapMergePolicyConfig());
+//            }
+//        }
+//    }
 
     private void handleListeners(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {

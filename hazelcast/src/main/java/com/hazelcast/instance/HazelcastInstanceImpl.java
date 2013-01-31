@@ -183,18 +183,10 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <S extends DistributedObject> S getDistributedObject(final Class<? extends RemoteService> serviceClass, Object id) {
-        checkActive();
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceClass, id);
     }
 
-    private void checkActive() {
-        if (!node.isActive()) {
-            throw new HazelcastInstanceNotActiveException();
-        }
-    }
-
     public <S extends DistributedObject> S getDistributedObject(final String serviceName, Object id) {
-        checkActive();
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
     }
 
