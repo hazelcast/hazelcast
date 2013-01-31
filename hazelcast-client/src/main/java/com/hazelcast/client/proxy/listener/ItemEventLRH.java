@@ -18,6 +18,7 @@
 package com.hazelcast.client.proxy.listener;
 
 import com.hazelcast.client.impl.DataAwareItemEvent;
+import com.hazelcast.client.proxy.QueueClientProxy;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
@@ -30,10 +31,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 public class ItemEventLRH<E> implements ListenerResponseHandler {
-    private ItemListener<E> listener;
+    final private ItemListener<E> listener;
+    final private boolean includeValue;
+    final private QueueClientProxy<E> proxy;
 
-    public ItemEventLRH(ItemListener<E> listener) {
+
+    public ItemEventLRH(ItemListener<E> listener, boolean includeValue, QueueClientProxy<E> proxy) {
         this.listener = listener;
+        this.includeValue = includeValue;
+        this.proxy = proxy;
     }
 
     public void handleResponse(Protocol response, SerializationService ss) throws Exception {
@@ -56,5 +62,9 @@ public class ItemEventLRH<E> implements ListenerResponseHandler {
         } else {
             throw new RuntimeException(response.args[0]);
         }
+    }
+
+    public void onError(Exception e) {
+        proxy.addItemListener(listener, includeValue);
     }
 }

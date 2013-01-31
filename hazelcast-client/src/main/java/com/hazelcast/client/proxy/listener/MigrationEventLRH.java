@@ -31,4 +31,7 @@ public class MigrationEventLRH implements ListenerResponseHandler {
     public void handleResponse(Protocol response, SerializationService ss) throws Exception {
 
     }
+
+    public void onError(Exception e) {
+    }
 }

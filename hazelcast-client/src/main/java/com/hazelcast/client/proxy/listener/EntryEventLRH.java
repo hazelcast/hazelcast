@@ -18,6 +18,7 @@
 package com.hazelcast.client.proxy.listener;
 
 import com.hazelcast.client.impl.DataAwareEntryEvent;
+import com.hazelcast.client.proxy.MapClientProxy;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
@@ -31,13 +32,18 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 import java.net.UnknownHostException;
 
-public class EntryEventLRH<K,V> implements ListenerResponseHandler{
+public class EntryEventLRH<K, V> implements ListenerResponseHandler {
 
-    final EntryListener<K,V> listener;
+    final EntryListener<K, V> listener;
+    final K key;
+    final MapClientProxy<K, V> proxy;
+    final boolean includeValue;
 
-    public EntryEventLRH(EntryListener<K,V> listener) {
+    public EntryEventLRH(EntryListener<K, V> listener, K key, boolean includeValue, MapClientProxy<K, V> proxy) {
         this.listener = listener;
-
+        this.key = key;
+        this.proxy = proxy;
+        this.includeValue = includeValue;
     }
 
     public void handleResponse(Protocol response, SerializationService ss) throws UnknownHostException {
@@ -51,7 +57,6 @@ public class EntryEventLRH<K,V> implements ListenerResponseHandler{
             final Data oldValue = response.buffers.length > 2 ? response.buffers[2] : null;
             EntryEvent event = new DataAwareEntryEvent(source, entryEventType.getType(), name,
                     response.buffers[0], value, oldValue, false, ss);
-
             switch (entryEventType) {
                 case ADDED:
                     listener.entryAdded(event);
@@ -69,5 +74,9 @@ public class EntryEventLRH<K,V> implements ListenerResponseHandler{
         } else {
             throw new RuntimeException(response.args[0]);
         }
+    }
+
+    public void onError(Exception e) {
+        proxy.addEntryListener(listener, key, includeValue);
     }
 }

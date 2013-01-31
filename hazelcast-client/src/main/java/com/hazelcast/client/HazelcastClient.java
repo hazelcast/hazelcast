@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.ListenerManager;
+//import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.client.proxy.*;
 import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
@@ -59,7 +59,7 @@ public class HazelcastClient implements HazelcastInstance {
     private final int id;
     private final ClientConfig config;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    private final ListenerManager listenerManager;
+//    private final ListenerManager listenerManager;
     private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
     private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     private final ClusterClientProxy clusterClientProxy;
@@ -88,7 +88,7 @@ public class HazelcastClient implements HazelcastInstance {
         connectionPool = new ConnectionPool(config, connectionManager, serializationService);
         partitionClientProxy = new PartitionClientProxy(this);
         clusterClientProxy = new ClusterClientProxy(this);
-        listenerManager = new ListenerManager(this, serializationService);
+//        listenerManager = new ListenerManager(this, serializationService);
 
         connectionPool.init(getCluster(), getPartitionService());
 
@@ -121,9 +121,9 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionPool;
     }
 
-    public ListenerManager getListenerManager() {
-        return listenerManager;
-    }
+//    public ListenerManager getListenerManager() {
+//        return listenerManager;
+//    }
 
     /**
      * @param config
@@ -348,7 +348,7 @@ public class HazelcastClient implements HazelcastInstance {
             connectionManager.shutdown();
 //            out.shutdown();
 //            in.shutdown();
-            listenerManager.shutdown();
+//            listenerManager.shutdown();
             lsClients.remove(this);
             serializationService.destroy();
         }

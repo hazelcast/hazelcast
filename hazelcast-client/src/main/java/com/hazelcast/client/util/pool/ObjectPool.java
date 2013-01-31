@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util;
+package com.hazelcast.client.util.pool;
 
 public abstract class ObjectPool<E> {
 
+    abstract public E take() throws Exception;
 
+    abstract public E take(Object hint) throws Exception;
+
+    abstract public void release(E e) throws Exception;
+
+    abstract public void release(E e, Object hint) throws Exception;
 }
+
+

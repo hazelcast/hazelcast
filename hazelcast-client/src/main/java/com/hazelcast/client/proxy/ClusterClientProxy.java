@@ -14,20 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.InstanceListenerManager;
 import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.client.proxy.listener.EntryEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.client.proxy.listener.MembershipLRH;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
+import static java.lang.String.valueOf;
 
 public class ClusterClientProxy implements Cluster {
     //    final PacketProxyHelper proxyHelper;
@@ -57,13 +65,18 @@ public class ClusterClientProxy implements Cluster {
         return list;
     }
 
+    
+    Map<MembershipListener, ListenerThread> listenerMap = new ConcurrentHashMap<MembershipListener, ListenerThread>();
     public void addMembershipListener(MembershipListener listener) {
-//        check(listener);
-//        client.getListenerManager().getMembershipListenerManager().registerListener(listener);
+        Protocol request = proxyHelper.createProtocol(Command.MEMBERLISTEN, null, null);
+        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new MembershipLRH(listener, this));
+        listenerMap.put(listener, thread);
+        thread.start();
     }
 
     public void removeMembershipListener(MembershipListener listener) {
-        client.getListenerManager().getMembershipListenerManager().removeListener(listener);
+        ListenerThread thread = listenerMap.remove(listener);
+        thread.stopListening();
     }
 
     public Set<Member> getMembers() {
@@ -113,12 +126,12 @@ public class ClusterClientProxy implements Cluster {
 
     public void removeInstanceListener(DistributedObjectListener distributedObjectListener) {
         check(distributedObjectListener);
-        instanceListenerManager().removeListener(distributedObjectListener);
+//        instanceListenerManager().removeListener(distributedObjectListener);
     }
 
-    private InstanceListenerManager instanceListenerManager() {
-        return client.getListenerManager().getInstanceListenerManager();
-    }
+//    private InstanceListenerManager instanceListenerManager() {
+//        return client.getListenerManager().getInstanceListenerManager();
+//    }
 
     @Override
     public String toString() {

@@ -26,6 +26,7 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.AddressUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +63,8 @@ public class MapListenHandler extends MapCommandHandler {
 
             public void sendEvent(EntryEvent<Data, Data> entryEvent) {
                 System.out.println("Sending the event");
-                if (connection.live()) {
+
+                if (connection.live()) {                       
                     String[] args = new String[]{"map", dataMapProxy.getName(), entryEvent.getEventType().toString(),
                             entryEvent.getMember().getInetSocketAddress().getHostName() + ":" + entryEvent.getMember().getInetSocketAddress().getPort()};
                     List<Data> list = new ArrayList<Data>();

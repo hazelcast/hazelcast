@@ -69,6 +69,7 @@ public class PartitionClientProxy implements PartitionService {
             try {
                 address = new Address(a[0], Integer.valueOf(a[1]));
             } catch (UnknownHostException e) {
+                e.printStackTrace();
             }
         }
         final Member member = address == null? null: new MemberImpl(address, false);

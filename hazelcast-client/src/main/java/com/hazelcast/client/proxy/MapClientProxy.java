@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
@@ -77,9 +76,23 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
         Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name,valueOf(includeValue)}, new Data[]{dKey});
-        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new EntryEventLRH<K, V>(listener));
+        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
         thread.start();
+    }
+
+    public void removeEntryListener(EntryListener<K, V> listener) {
+        check(listener);
+        removeEntryListener(listener, null);
+    }
+
+    public void removeEntryListener(EntryListener<K, V> listener, K key) {
+        check(listener);
+        Map<Object, ListenerThread> map = listenerMap.remove(listener);
+        if (map != null) {
+            ListenerThread thread = map.remove(key);
+            if (thread != null) thread.stopListening();
+        }
     }
 
     private void storeListener(EntryListener<K, V> listener, K key, ListenerThread thread) {
@@ -115,24 +128,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         if (timeunit == null) {
             throw new NullPointerException("TimeUnit can not be null.");
         }
-    }
-
-    public void removeEntryListener(EntryListener<K, V> listener) {
-        check(listener);
-        removeEntryListener(listener, null);
-    }
-
-    public void removeEntryListener(EntryListener<K, V> listener, K key) {
-        check(listener);
-        Map<Object, ListenerThread> map = listenerMap.get(listener);
-        if (map != null) {
-            ListenerThread thread = map.remove(key);
-            if (thread != null) thread.interrupt();
-        }
-    }
-
-    private EntryListenerManager listenerManager() {
-        return null;//proxyHelper.client.getListenerManager().getEntryListenerManager();
     }
 
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {

@@ -128,9 +128,9 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
-            Connection connection = cp.takeConnection();
+            Connection connection = cp.takeConnection(null);
             writer.write(connection, protocol);
-            cp.releaseConnection(connection);
+            cp.releaseConnection(connection, null);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -169,7 +169,7 @@ public class ProxyHelper {
         }
     }
 
-    Protocol createProtocol(Command command, String[] args, Data[] data) {
+    public Protocol createProtocol(Command command, String[] args, Data[] data) {
         if (args == null) args = new String[]{};
         long id = newCallId();
         Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, data);
@@ -180,7 +180,7 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command, args, data);
         protocol.onEnqueue();
         try {
-            final Connection connection = cp.takeConnection();
+            final Connection connection = cp.takeConnection(null);
             writer.write(connection, protocol);
             writer.flush(connection);
             return new Future<V>() {

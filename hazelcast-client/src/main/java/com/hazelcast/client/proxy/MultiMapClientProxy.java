@@ -18,16 +18,15 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.EntryListenerManager;
-import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -64,42 +63,42 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-        check(listener);
-        Boolean noEntryListenerRegistered = entryListenerManager().noListenerRegistered(key, name, includeValue);
-        if (noEntryListenerRegistered == null) {
+//        check(listener);
+//        Boolean noEntryListenerRegistered = entryListenerManager().noListenerRegistered(key, name, includeValue);
+//        if (noEntryListenerRegistered == null) {
 //            proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-            if (key == null)
-                proxyHelper.doCommand(null, Command.MMREMOVELISTENER, getName(), null);
-            else
-                proxyHelper.doCommand(null, Command.MMREMOVELISTENER, getName(),
-                        client.getSerializationService().toData(key));
-            noEntryListenerRegistered = Boolean.TRUE;
-        }
-        if (noEntryListenerRegistered.booleanValue()) {
+//            if (key == null)
+//                proxyHelper.doCommand(null, Command.MMREMOVELISTENER, getName(), null);
+//            else
+//                proxyHelper.doCommand(null, Command.MMREMOVELISTENER, getName(),
+//                        client.getSerializationService().toData(key));
+//            noEntryListenerRegistered = Boolean.TRUE;
+//        }
+//        if (noEntryListenerRegistered.booleanValue()) {
 //            Call c = entryListenerManager().createNewAddListenerCall(proxyHelper, key, includeValue);
 //            proxyHelper.doCall(c);
 //            if(key==null)
 //            proxyHelper.doCommand(null, Command.MMADDLISTENER, )
-        }
-        entryListenerManager().registerListener(name, key, includeValue, listener);
+//        }
+//        entryListenerManager().registerListener(name, key, includeValue, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
 //        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-        entryListenerManager().removeListener(name, null, listener);
+//        entryListenerManager().removeListener(name, null, listener);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
         check(key);
 //        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-        entryListenerManager().removeListener(name, key, listener);
+//        entryListenerManager().removeListener(name, key, listener);
     }
 
-    private EntryListenerManager entryListenerManager() {
-        return client.getListenerManager().getEntryListenerManager();
-    }
+//    private EntryListenerManager entryListenerManager() {
+//        return client.getListenerManager().getEntryListenerManager();
+//    }
 
     public void lock(K key) {
         check(key);

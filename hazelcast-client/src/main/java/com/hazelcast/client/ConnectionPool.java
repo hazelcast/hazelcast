@@ -127,13 +127,8 @@ public class ConnectionPool {
         }
     }
 
-    public Connection takeConnection() throws InterruptedException {
-        System.out.println(singlePool.size() + " : taking connection" + Thread.currentThread().getName());
-        return singlePool.take();
-    }
-
     public Connection takeConnection(Data key) throws InterruptedException, UnknownHostException {
-        if (key == null) return takeConnection();
+        if (key == null) return singlePool.take();
         if (partitionCount.get() == 0) {
             return mPool.values().iterator().next().take();
         }
@@ -145,14 +140,9 @@ public class ConnectionPool {
         return mPool.get(member.getInetSocketAddress()).take();
     }
 
-    public void releaseConnection(Connection connection) {
-        System.out.println(singlePool.size() + " : release connection" + Thread.currentThread().getName());
-        singlePool.offer(connection);
-    }
-
     public void releaseConnection(Connection connection, Data key) {
         if (key == null) {
-            releaseConnection(connection);
+            singlePool.offer(connection);
             return;
         }
         mPool.get(connection.getAddress()).offer(connection);

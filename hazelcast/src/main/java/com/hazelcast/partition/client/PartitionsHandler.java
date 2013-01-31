@@ -42,7 +42,7 @@ public class PartitionsHandler extends PartitionCommandHandler {
             Set<Partition> set = partitionService.getPartitionServiceProxy().getPartitions();
             for (Partition partition : set) {
                 args.add(String.valueOf(partition.getPartitionId()));
-                args.add(partition.getOwner().getInetSocketAddress().toString());
+                args.add(partition.getOwner().getInetSocketAddress().getHostName() + ":" + partition.getOwner().getInetSocketAddress().getPort());
             }
         }
         return protocol.success(args.toArray(new String[0]));

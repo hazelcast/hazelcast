@@ -23,9 +23,8 @@ import com.hazelcast.client.ProtocolWriter;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.io.EOFException;
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
 
 public class ListenerThread extends Thread {
     final private ListenerResponseHandler listenerResponseHandler;
@@ -34,6 +33,7 @@ public class ListenerThread extends Thread {
     final private SerializationService ss;
     final private ProtocolWriter writer;
     final private ProtocolReader reader;
+    volatile boolean running;
 
     public ListenerThread(Protocol request, ListenerResponseHandler listenerResponseHandler, Connection connection, SerializationService ss) {
         this.request = request;
@@ -42,53 +42,42 @@ public class ListenerThread extends Thread {
         this.ss = ss;
         writer = new ProtocolWriter(ss);
         reader = new ProtocolReader(ss);
+        running = true;
     }
 
     public void run() {
-        ExecutorService ex = Executors.newFixedThreadPool(1);
         try {
             request.onEnqueue();
             writer.write(connection, request);
             writer.flush(connection);
             Future<Protocol> f = null;
-            while (!Thread.interrupted()) {
-                if (f == null) {
-                    f = ex.submit(new Callable<Protocol>() {
-                        public Protocol call() throws Exception {
-                            return reader.read(connection);
-                        }
-                    });
-                }
-                Protocol response = f.get(1, TimeUnit.SECONDS);
-                if (response == null) continue;
-                f = null;
+            while (running) {
+                Protocol response = reader.read(connection);
                 listenerResponseHandler.handleResponse(response, ss);
             }
-            connection.close();
-            ex.shutdown();
-            System.out.println("Closed connection and thus removed the listener");
-        } catch (EOFException e) {
-            e.printStackTrace();
-            //Means that the connection is broken. The best is to re add the listener and end the current thread.
-//                addEntryListener(listener, key, includeValue);
-            return; // will end the current thread
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            try {
-                connection.close();
-            } catch (IOException e1) {
-            }
-            ex.shutdown();
-            System.out.println("Closed connection and thus removed the listener");
-            return;
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
+            cleanup();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (!running)
+                return;
+            else
+                listenerResponseHandler.onError(e);
+        } finally {
+            cleanup();
+        }
+    }
+
+    private void cleanup() {
+        try {
+            connection.close();
+        } catch (IOException e) {
+        }
+    }
+
+    public void stopListening() {
+        running = false;
+        try {
+            this.connection.close();
+        } catch (IOException e) {
         }
     }
 }

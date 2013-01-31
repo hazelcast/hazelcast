@@ -20,7 +20,8 @@ package com.hazelcast.client.proxy.listener;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializationService;
 
-public interface ListenerResponseHandler{
+public interface ListenerResponseHandler {
     abstract public void handleResponse(Protocol response, SerializationService ss) throws Exception;
 
+    void onError(Exception e);
 }

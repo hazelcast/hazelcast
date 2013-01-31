@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.QueueItemListenerManager;
 import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.QueueItemIterator;
@@ -39,6 +38,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected ProxyHelper proxyHelper;
     final protected String name;
     final private HazelcastClient client;
+    private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
 
     final Object lock = new Object();
 
@@ -175,12 +175,10 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         return new QueueItemIterator(list.toArray(), this);
     }
 
-    private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
-    
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Protocol request = proxyHelper.createProtocol(Command.QLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
-        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new ItemEventLRH<E>(listener));
+        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new ItemEventLRH<E>(listener, includeValue, this));
         listenerMap.put(listener, thread);
         thread.start();
     }
@@ -189,9 +187,5 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         ListenerThread thread = listenerMap.remove(listener);
         if(thread!=null)
             thread.interrupt();
-    }
-
-    private QueueItemListenerManager listenerManager() {
-        return null;// proxyHelper.client.getListenerManager().getQueueItemListenerManager();
     }
 }
