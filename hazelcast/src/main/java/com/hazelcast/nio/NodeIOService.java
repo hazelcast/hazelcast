@@ -126,7 +126,7 @@ public class NodeIOService implements IOService {
     }
 
     public String getThreadPrefix() {
-        return node.getThreadPoolNamePrefix("hz:io");
+        return node.getThreadPoolNamePrefix("IO");
     }
 
     public ThreadGroup getThreadGroup() {
@@ -208,12 +208,12 @@ public class NodeIOService implements IOService {
     }
 
     public void onShutdown() {
-        try {
+//        try {
 //            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
             // wait a little
 //            Thread.sleep(100);
-        } catch (Throwable ignored) {
-        }
+//        } catch (Throwable ignored) {
+//        }
     }
 
     public void executeAsync(final Runnable runnable) {

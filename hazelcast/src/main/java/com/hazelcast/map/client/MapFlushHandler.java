@@ -29,7 +29,7 @@ public class MapFlushHandler extends MapCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         dataMapProxy.flush(false);
         return protocol.success();
     }

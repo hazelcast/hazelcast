@@ -48,9 +48,14 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     public String readUTF(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        return in.readUTF();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            return in.readUTF();
+        } finally {
+            in.position(currentPos);
+        }
     }
 
     public boolean readBoolean(String fieldName) throws IOException {
@@ -84,80 +89,115 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     public byte[] readByteArray(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        final int len = in.readInt();
-        final byte[] values = new byte[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readByte();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            final int len = in.readInt();
+            final byte[] values = new byte[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readByte();
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
         }
-        return values;
     }
 
     public char[] readCharArray(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        final int len = in.readInt();
-        final char[] values = new char[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readChar();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            final int len = in.readInt();
+            final char[] values = new char[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readChar();
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
         }
-        return values;
     }
 
     public int[] readIntArray(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        final int len = in.readInt();
-        final int [] values = new int[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readInt();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            final int len = in.readInt();
+            final int [] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readInt();
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
         }
-        return values;
     }
 
     public long[] readLongArray(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        final int len = in.readInt();
-        final long[] values = new long[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readLong();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            final int len = in.readInt();
+            final long[] values = new long[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readLong();
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
         }
-        return values;
     }
 
     public double[] readDoubleArray(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        final int len = in.readInt();
-        final double [] values = new double[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readDouble();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            final int len = in.readInt();
+            final double [] values = new double[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readDouble();
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
         }
-        return values;
     }
 
     public float[] readFloatArray(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        final int len = in.readInt();
-        final float [] values = new float[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readFloat();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            final int len = in.readInt();
+            final float [] values = new float[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readFloat();
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
         }
-        return values;
     }
 
     public short[] readShortArray(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
-        in.position(pos);
-        final int len = in.readInt();
-        final short [] values = new short[len];
-        for (int i = 0; i < len; i++) {
-            values[i] = in.readShort();
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fieldName);
+            in.position(pos);
+            final int len = in.readInt();
+            final short [] values = new short[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readShort();
+            }
+            return values;
+        } finally {
+            in.position(currentPos);
         }
-        return values;
     }
 
     public Portable readPortable(String fieldName) throws IOException {
@@ -165,19 +205,24 @@ public class DefaultPortableReader implements PortableReader {
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
-        int pos = getPosition(fd);
-        in.position(pos);
-        final boolean NULL = in.readBoolean();
-        if (!NULL) {
-            final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
-            try {
-                ctxIn.setDataClassId(fd.getClassId());
-                return serializer.read(in);
-            } finally {
-                ctxIn.setDataClassId(cd.classId);
+        final int currentPos = in.position();
+        try {
+            int pos = getPosition(fd);
+            in.position(pos);
+            final boolean NULL = in.readBoolean();
+            if (!NULL) {
+                final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+                try {
+                    ctxIn.setDataClassId(fd.getClassId());
+                    return serializer.read(in);
+                } finally {
+                    ctxIn.setDataClassId(cd.classId);
+                }
             }
+            return null;
+        } finally {
+            in.position(currentPos);
         }
-        return null;
     }
 
     private HazelcastSerializationException throwUnknownFieldException(String fieldName) {
@@ -190,61 +235,31 @@ public class DefaultPortableReader implements PortableReader {
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
-        int pos = getPosition(fd);
-        in.position(pos);
-        final int len = in.readInt();
-        final Portable[] portables = new Portable[len];
-        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+        final int currentPos = in.position();
         try {
-            ctxIn.setDataClassId(fd.getClassId());
-            for (int i = 0; i < len; i++) {
-                portables[i] = serializer.read(in);
+            int pos = getPosition(fd);
+            in.position(pos);
+            final int len = in.readInt();
+            final Portable[] portables = new Portable[len];
+            if (len > 0) {
+                final int offset = in.position();
+                final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+                try {
+                    ctxIn.setDataClassId(fd.getClassId());
+                    for (int i = 0; i < len; i++) {
+                        final int start = in.readInt(offset + i * 4);
+                        in.position(start);
+                        portables[i] = serializer.read(in);
+                    }
+                } finally {
+                    ctxIn.setDataClassId(cd.classId);
+                }
             }
+            return portables;
         } finally {
-            ctxIn.setDataClassId(cd.classId);
+            in.position(currentPos);
         }
-        return portables;
     }
-
-//    public Map<Integer, Portable> readIntMap(String fieldName) throws IOException {
-//        FieldDefinition fd = cd.get(fieldName);
-//        int pos = getPosition(fd);
-//        in.position(pos);
-//        final int len = in.readInt();
-//        final Map<Integer, Portable> portables = new HashMap<Integer, Portable>(len);
-//        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
-//        try {
-//            ctxIn.setDataClassId(fd.getDataClassId());
-//            for (int i = 0; i < len; i++) {
-//                int key = in.readInt();
-//                Portable p = serializer.read(in);
-//                portables.put(key, p);
-//            }
-//        } finally {
-//            ctxIn.setDataClassId(cd.classId);
-//        }
-//        return portables;
-//    }
-//
-//    public Map<String, Portable> readStringMap(String fieldName) throws IOException {
-//        FieldDefinition fd = cd.get(fieldName);
-//        int pos = getPosition(fd);
-//        in.position(pos);
-//        final int len = in.readInt();
-//        final Map<String, Portable> portables = new HashMap<String, Portable>(len);
-//        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
-//        try {
-//            ctxIn.setDataClassId(fd.getDataClassId());
-//            for (int i = 0; i < len; i++) {
-//                String key = in.readUTF();
-//                Portable p = serializer.read(in);
-//                portables.put(key, p);
-//            }
-//        } finally {
-//            ctxIn.setDataClassId(cd.classId);
-//        }
-//        return portables;
-//    }
 
     protected int getPosition(String fieldName) throws IOException {
         FieldDefinition fd = cd.get(fieldName);

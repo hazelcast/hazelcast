@@ -36,7 +36,7 @@ import java.util.logging.Level;
  */
 public final class ExecutionServiceImpl implements ExecutionService {
 
-    private static final int DEFAULT_THREAD_SIZE = ExecutorConfig.DEFAULT_MAX_POOL_SIZE;
+    public static final int DEFAULT_THREAD_SIZE = ExecutorConfig.DEFAULT_MAX_POOL_SIZE;
 
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
@@ -60,7 +60,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         scheduledExecutorService = Executors.newScheduledThreadPool(2,
                 new PoolExecutorThreadFactory(node.threadGroup,
                         node.hazelcastInstance,
-                        node.getThreadPoolNamePrefix("hz:scheduled"), classLoader));
+                        node.getThreadPoolNamePrefix("scheduled"), classLoader));
 
         // default executors
         register("hz:system", 30);

@@ -32,17 +32,15 @@ import java.util.concurrent.Future;
  * Date: 11/14/12
  * Time: 12:47 AM
  */
-abstract class QueueProxySupport extends AbstractDistributedObject {
+abstract class QueueProxySupport extends AbstractDistributedObject<QueueService> {
 
     final String name;
-    final QueueService queueService;
     final int partitionId;
     final QueueConfig config;
 
     QueueProxySupport(final String name, final QueueService queueService, NodeEngine nodeEngine) {
-        super(nodeEngine);
+        super(nodeEngine, queueService);
         this.name = name;
-        this.queueService = queueService;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
         this.config = nodeEngine.getConfig().getQueueConfig(name);
     }
@@ -118,6 +116,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
     }
 
     private <T> T invoke(QueueOperation operation) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();
@@ -128,6 +127,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject {
     }
 
     private Object invokeData(QueueOperation operation) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
             Future f = inv.invoke();

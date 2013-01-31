@@ -33,20 +33,14 @@ import java.util.concurrent.Future;
 /**
  * @ali 1/2/13
  */
-public abstract class MultiMapProxySupport extends AbstractDistributedObject {
-
-
-    protected final CollectionService service;
+public abstract class MultiMapProxySupport extends AbstractDistributedObject<CollectionService> {
 
     protected final MultiMapConfig config;
-
     protected final CollectionProxyId proxyId;
-
 
     protected MultiMapProxySupport(CollectionService service, NodeEngine nodeEngine,
                                    MultiMapConfig config, CollectionProxyId proxyId) {
-        super(nodeEngine);
-        this.service = service;
+        super(nodeEngine, service);
         this.config = new MultiMapConfig(config);
         this.proxyId = proxyId;
     }
@@ -97,10 +91,11 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
     }
 
     protected Set<Data> localKeySetInternal() {
-        return service.localKeySet(proxyId);
+        return getService().localKeySet(proxyId);
     }
 
     protected Set<Data> keySetInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             KeySetOperation operation = new KeySetOperation(proxyId);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
@@ -119,6 +114,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
     }
 
     protected Map valuesInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             ValuesOperation operation = new ValuesOperation(proxyId);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
@@ -130,6 +126,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
 
 
     protected Map entrySetInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             EntrySetOperation operation = new EntrySetOperation(proxyId);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
@@ -140,6 +137,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean containsInternal(Data key, Data value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             ContainsEntryOperation operation = new ContainsEntryOperation(proxyId, key, value);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
@@ -159,6 +157,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
     }
 
     public int size() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             SizeOperation operation = new SizeOperation(proxyId);
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
@@ -177,6 +176,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
     }
 
     public void clear() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             ClearOperation operation = new ClearOperation(proxyId);
             nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
@@ -297,6 +297,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
     }
 
     private <T> T invoke(CollectionOperation operation, Data dataKey) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
@@ -308,6 +309,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject {
     }
 
     private Object invokeData(CollectionOperation operation, Data dataKey) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();

@@ -16,7 +16,6 @@
 
 package com.hazelcast.countdownlatch;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
@@ -31,13 +30,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * @mdogan 1/10/13
  */
-public class CountDownLatchProxy extends AbstractDistributedObject implements ICountDownLatch, DistributedObject {
+public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatchService> implements ICountDownLatch {
 
     private final String name;
     private final int partitionId;
 
     public CountDownLatchProxy(String name, NodeEngine nodeEngine) {
-        super(nodeEngine);
+        super(nodeEngine, null);
         this.name = name;
         partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
     }
@@ -55,6 +54,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject implements IC
     }
 
     private boolean awaitInternal(long timeout) throws MemberLeftException, InterruptedException {
+        final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
                 new AwaitOperation(name, timeout), partitionId).build();
         try {
@@ -65,6 +65,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject implements IC
     }
 
     public void countDown() {
+        final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
                 new CountDownOperation(name), partitionId).build();
         try {
@@ -75,6 +76,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject implements IC
     }
 
     public int getCount() {
+        final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
                 new GetCountOperation(name), partitionId).build();
         try {
@@ -85,6 +87,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject implements IC
     }
 
     public boolean trySetCount(int count) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
                 new SetCountOperation(name, count), partitionId).build();
         try {

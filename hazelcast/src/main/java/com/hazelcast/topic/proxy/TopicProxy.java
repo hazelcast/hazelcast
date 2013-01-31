@@ -18,8 +18,6 @@ package com.hazelcast.topic.proxy;
 
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventRegistration;
@@ -36,15 +34,14 @@ import java.util.concurrent.ConcurrentMap;
  * Date: 12/26/12
  * Time: 2:06 PM
  */
-public class TopicProxy<E> extends AbstractDistributedObject implements ITopic<E> {
+public class TopicProxy<E> extends AbstractDistributedObject<TopicService> implements ITopic<E> {
 
     private final String name;
     private final EventService eventService;
-    private final ILogger logger = Logger.getLogger(TopicProxy.class.getName());
     private final ConcurrentMap<MessageListener, String> registeredIds = new ConcurrentHashMap<MessageListener, String>();
 
     public TopicProxy(String name, NodeEngine nodeEngine) {
-        super(nodeEngine);
+        super(nodeEngine, null);
         this.name = name;
         this.eventService = nodeEngine.getEventService();
     }
@@ -54,6 +51,7 @@ public class TopicProxy<E> extends AbstractDistributedObject implements ITopic<E
     }
 
     public void publish(E message) {
+        final NodeEngine nodeEngine = getNodeEngine();
         TopicEvent topicEvent = new TopicEvent(name, nodeEngine.toData(message));
         eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
     }

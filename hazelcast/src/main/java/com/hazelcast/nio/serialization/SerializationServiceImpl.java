@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.TypeSerializerConfig;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -58,6 +59,8 @@ public final class SerializationServiceImpl implements SerializationService {
     private final PortableSerializer portableSerializer;
     private final ManagedContext managedContext;
     private final SerializationContext serializationContext;
+
+    private volatile boolean active = true;
 
     public SerializationServiceImpl(SerializationConfig config, ManagedContext managedContext) throws Exception {
         this(config.getPortableVersion(), createPortableFactory(config), managedContext);
@@ -136,7 +139,10 @@ public final class SerializationServiceImpl implements SerializationService {
         try {
             final TypeSerializer serializer = serializerFor(obj.getClass());
             if (serializer == null) {
-                throw new NotSerializableException("There is no suitable serializer for " + obj.getClass());
+                if (active) {
+                    throw new NotSerializableException("There is no suitable serializer for " + obj.getClass());
+                }
+                throw new HazelcastInstanceNotActiveException();
             }
             serializer.write(out, obj);
             final Data data = new Data(serializer.getTypeId(), out.toByteArray());
@@ -185,7 +191,10 @@ public final class SerializationServiceImpl implements SerializationService {
             final int typeId = data.type;
             final TypeSerializer serializer = serializerFor(typeId);
             if (serializer == null) {
-                throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
+                if (active) {
+                    throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
             }
             if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
                 serializationContext.registerClassDefinition(data.cd);
@@ -376,6 +385,7 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public void destroy() {
+        active = false;
         for (TypeSerializer serializer : typeMap.values()) {
             serializer.destroy();
         }

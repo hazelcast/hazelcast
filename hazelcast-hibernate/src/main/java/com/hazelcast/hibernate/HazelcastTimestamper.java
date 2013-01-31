@@ -29,7 +29,7 @@ public final class HazelcastTimestamper {
 
     public static int getTimeout(HazelcastInstance instance, String regionName) {
         try {
-            final MapConfig cfg = instance.getConfig().findMatchingMapConfig(regionName);
+            final MapConfig cfg = instance.getConfig().getMapConfig(regionName);
             if (cfg.getTimeToLiveSeconds() > 0) {
                 return cfg.getTimeToLiveSeconds() * 1000; // TTL in ms.
             }

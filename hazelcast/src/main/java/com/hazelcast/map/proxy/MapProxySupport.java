@@ -38,18 +38,17 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-abstract class MapProxySupport extends AbstractDistributedObject {
+abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected final String name;
-    protected final MapService mapService;
 
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
-        super(nodeEngine);
+        super(nodeEngine, mapService);
         this.name = name;
-        this.mapService = mapService;
     }
 
     protected Data getInternal(Data key) {
+        final MapService mapService = getService();
         final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
         if (nearCacheEnabled) {
             Data cachedData = mapService.getFromNearCache(name, key);
@@ -61,6 +60,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     private Object doTxnAwareOperation(Data key, AbstractMapOperation operation) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operation.setTxnId(getCurrentTransactionId());
         operation.setThreadId(ThreadContext.getThreadId());
@@ -75,6 +75,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Future<Data> getAsyncInternal(final Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         try {
@@ -107,6 +108,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     private Object doTxnalOperation(Data key, AbstractMapOperation operation) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operation.setTxnId(attachTxnParticipant(partitionId));
         operation.setThreadId(ThreadContext.getThreadId());
@@ -121,6 +123,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Future<Data> putAsyncInternal(final Data key, final Data value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = attachTxnParticipant(partitionId);
         PutOperation operation = new PutOperation(name, key, value, txnId, -1);
@@ -170,6 +173,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Future<Data> removeAsyncInternal(final Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         String txnId = attachTxnParticipant(partitionId);
         RemoveOperation operation = new RemoveOperation(name, key, txnId);
@@ -184,6 +188,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean containsKeyInternal(Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
         containsKeyOperation.setServiceName(SERVICE_NAME);
@@ -198,6 +203,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public int size() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapSizeOperation mapSizeOperation = new MapSizeOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -214,6 +220,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public boolean containsValueInternal(Data dataValue) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             ContainsValueOperation containsValueOperation = new ContainsValueOperation(name, dataValue);
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -230,6 +237,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public boolean isEmpty() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapIsEmptyOperation mapIsEmptyOperation = new MapIsEmptyOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -255,6 +263,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
 
     // todo optimize this
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Map<Object, Object> res = new HashMap(keys.size());
         for (Data key : keys) {
             res.put(nodeEngine.toObject(key), nodeEngine.toObject(getInternal(key)));
@@ -271,12 +280,14 @@ abstract class MapProxySupport extends AbstractDistributedObject {
 
     // todo optimize these
     protected void putAllObjectInternal(final Map<? extends Object, ? extends Object> m) {
+        final NodeEngine nodeEngine = getNodeEngine();
         for (Entry<? extends Object, ? extends Object> entry : m.entrySet()) {
             putInternal(nodeEngine.toData(entry.getKey()), nodeEngine.toData(entry.getValue()), -1, null);
         }
     }
 
     protected void lockInternal(final Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         LockOperation operation = new LockOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -291,6 +302,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected void unlockInternal(final Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         UnlockOperation operation = new UnlockOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -305,6 +317,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean isLockedInternal(final Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         IsLockedOperation operation = new IsLockedOperation(name, key);
         try {
@@ -318,6 +331,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected boolean tryLockInternal(final Data key, final long timeout, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         TryLockOperation operation = new TryLockOperation(name, key, getTimeInMillis(timeout, timeunit));
         operation.setThreadId(ThreadContext.getThreadId());
@@ -332,6 +346,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Set<Data> keySetInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -348,6 +363,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Set<Data> localKeySetInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapKeySetOperation mapKeySetOperation = new MapKeySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -364,6 +380,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public void flush(boolean flushAll) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapFlushOperation mapFlushOperation = new MapFlushOperation(name, flushAll);
             nodeEngine.getOperationService()
@@ -374,6 +391,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Collection<Data> valuesInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapValuesOperation mapValuesOperation = new MapValuesOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -389,6 +407,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public void clearInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             ClearOperation clearOperation = new ClearOperation(name);
             clearOperation.setServiceName(SERVICE_NAME);
@@ -400,6 +419,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected void forceUnlockInternal(final Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ForceUnlockOperation operation = new ForceUnlockOperation(name, key);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -414,6 +434,8 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public void addMapInterceptorInternal(MapInterceptor interceptor) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final MapService mapService = getService();
         String id = mapService.addInterceptor(name, interceptor);
         AddInterceptorOperation operation = new AddInterceptorOperation(id, interceptor, name);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
@@ -431,6 +453,8 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public void removeMapInterceptorInternal(MapInterceptor interceptor) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final MapService mapService = getService();
         String id = mapService.removeInterceptor(name, interceptor);
         RemoveInterceptorOperation operation = new RemoveInterceptorOperation(interceptor, name, id);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
@@ -456,19 +480,23 @@ abstract class MapProxySupport extends AbstractDistributedObject {
 
     protected void addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
+        final MapService mapService = getService();
         mapService.addEventListener(listener, eventFilter, name);
     }
 
     protected void addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        final MapService mapService = getService();
         mapService.addEventListener(listener, eventFilter, name);
     }
 
     protected void removeEntryListenerInternal(final EntryListener listener, final Data key) {
+        final MapService mapService = getService();
         mapService.removeEventListener(listener, name, key);
     }
 
     protected Map.Entry<Data, Data> getMapEntryInternal(final Data key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetMapEntryOperation getMapEntryOperation = new GetMapEntryOperation(name, key);
         getMapEntryOperation.setServiceName(SERVICE_NAME);
@@ -484,6 +512,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Set<Entry<Data, Data>> entrySetInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapEntrySetOperation mapEntrySetOperation = new MapEntrySetOperation(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
@@ -501,6 +530,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public Data executeOnKeyInternal(Data key, EntryProcessor entryProcessor) {
+        final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         EntryOperation operation = new EntryOperation(name, key, entryProcessor);
         operation.setThreadId(ThreadContext.getThreadId());
@@ -518,6 +548,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
+        final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         QueryOperation operation = new QueryOperation(name, predicate);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
@@ -579,6 +610,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     public void addIndex(final String attribute, final boolean ordered) {
+        final NodeEngine nodeEngine = getNodeEngine();
         if (attribute == null) throw new IllegalArgumentException("attribute name cannot be null");
         try {
             AddIndexOperation mapKeySetOperation = new AddIndexOperation(name, attribute, ordered);
@@ -601,6 +633,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
      * @return txnId if thread is in transaction, null otherwise
      */
     protected String attachTxnParticipant(int partitionId) {
+        final NodeEngine nodeEngine = getNodeEngine();
         TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
@@ -611,6 +644,7 @@ abstract class MapProxySupport extends AbstractDistributedObject {
     }
 
     protected String getCurrentTransactionId() {
+        final NodeEngine nodeEngine = getNodeEngine();
         TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = null;
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {

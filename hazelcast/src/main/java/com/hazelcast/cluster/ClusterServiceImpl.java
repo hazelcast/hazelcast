@@ -121,7 +121,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         final long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
-//                heartBeater();
+                heartBeater();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
         final long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
@@ -147,23 +147,23 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    public JoinInfo checkJoinInfo(Address target) {
+    public JoinRequest checkJoinInfo(Address target) {
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new JoinCheckOperation(node.createJoinInfo()), target)
+                new JoinCheckOperation(node.createJoinRequest()), target)
                 .setTryCount(1).build();
         try {
-            return (JoinInfo) nodeEngine.toObject(inv.invoke().get());
+            return (JoinRequest) nodeEngine.toObject(inv.invoke().get());
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error during join check!", e);
         }
         return null;
     }
 
-    public boolean validateJoinRequest(JoinRequest joinRequest) throws Exception {
-        boolean valid = Packet.PACKET_VERSION == joinRequest.packetVersion;
+    public boolean validateJoinMessage(JoinMessage joinMessage) throws Exception {
+        boolean valid = Packet.PACKET_VERSION == joinMessage.getPacketVersion();
         if (valid) {
             try {
-                valid = node.getConfig().isCompatible(joinRequest.config);
+                valid = node.getConfig().isCompatible(joinMessage.getConfig());
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Invalid join request, reason:" + e.getMessage());
                 node.getSystemLogService().logJoin("Invalid join request, reason:" + e.getMessage());
@@ -428,25 +428,26 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     @ExecutedBy(ThreadType.EXECUTOR_THREAD)
-    void handleJoinRequest(JoinRequest joinRequest) {
+    void handleJoinRequest(JoinRequestOperation joinRequest) {
         lock.lock();
         try {
+            final JoinRequest joinMessage = joinRequest.getMessage();
             final long now = Clock.currentTimeMillis();
-            String msg = "Handling join from " + joinRequest.address + ", inProgress: " + joinInProgress
+            String msg = "Handling join from " + joinMessage.getAddress() + ", inProgress: " + joinInProgress
                     + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
             logger.log(Level.FINEST, msg);
             boolean validJoinRequest;
             try {
-                validJoinRequest = validateJoinRequest(joinRequest);
+                validJoinRequest = validateJoinMessage(joinMessage);
             } catch (Exception e) {
                 validJoinRequest = false;
             }
-            final Connection conn = joinRequest.getConnection();
+//            final Connection conn = joinMessage.getConnection();
             if (validJoinRequest) {
-                final MemberImpl member = getMember(joinRequest.address);
+                final MemberImpl member = getMember(joinMessage.getAddress());
                 if (member != null) {
-                    if (joinRequest.getUuid().equals(member.getUuid())) {
-                        String message = "Ignoring join request, member already exists.. => " + joinRequest;
+                    if (joinMessage.getUuid().equals(member.getUuid())) {
+                        String message = "Ignoring join request, member already exists.. => " + joinMessage;
                         logger.log(Level.FINEST, message);
                         // send members update back to node trying to join again...
                         invokeClusterOperation(new FinalizeJoinOperation(createMemberInfos(getMemberList()), getClusterTime()),
@@ -462,25 +463,25 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                                 + " Removing old member and processing join request...");
                         // If existing connection of endpoint is different from current connection
                         // destroy it, otherwise keep it.
-//                    final Connection existingConnection = node.connectionManager.getConnection(joinRequest.address);
+//                    final Connection existingConnection = node.connectionManager.getConnection(joinMessage.address);
 //                    final boolean destroyExistingConnection = existingConnection != conn;
                         doRemoveAddress(member.getAddress(), false);
                     }
                 }
                 final boolean multicastEnabled = node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
                 if (!multicastEnabled && node.isActive() && node.joined() && node.getMasterAddress() != null && !node.isMaster()) {
-                    sendMasterAnswer(joinRequest);
+                    sendMasterAnswer(joinMessage);
                 }
                 if (node.isMaster() && node.joined() && node.isActive()) {
-                    final MemberInfo newMemberInfo = new MemberInfo(joinRequest.address, joinRequest.nodeType,
-                            joinRequest.getUuid());
+                    final MemberInfo newMemberInfo = new MemberInfo(joinMessage.getAddress(), joinMessage.getNodeType(),
+                            joinMessage.getUuid());
                     if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
-                        final Credentials cr = joinRequest.getCredentials();
+                        final Credentials cr = joinMessage.getCredentials();
                         ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
                         if (cr == null) {
                             securityLogger.log(Level.SEVERE, "Expecting security credentials " +
                                     "but credentials could not be found in JoinRequest!");
-                            invokeClusterOperation(new AuthenticationFailureOperation(), joinRequest.address);
+                            invokeClusterOperation(new AuthenticationFailureOperation(), joinMessage.getAddress());
                             return;
                         } else {
                             try {
@@ -491,21 +492,21 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                                         + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
                                         ")");
                                 securityLogger.log(Level.FINEST, e.getMessage(), e);
-                                invokeClusterOperation(new AuthenticationFailureOperation(), joinRequest.address);
+                                invokeClusterOperation(new AuthenticationFailureOperation(), joinMessage.getAddress());
                                 return;
                             }
                         }
                     }
-                    if (joinRequest.to != null && !joinRequest.to.equals(thisAddress)) {
-                        sendMasterAnswer(joinRequest);
-                        return;
-                    }
+//                    if (joinMessage.getRemoteAddress() != null && !joinMessage.getRemoteAddress().equals(thisAddress)) {
+//                        sendMasterAnswer(joinMessage);
+//                        return;
+//                    }
                     if (!joinInProgress) {
                         if (firstJoinRequest != 0 && now - firstJoinRequest >= maxWaitSecondsBeforeJoin * 1000) {
                             startJoin();
                         } else {
                             if (setJoins.add(newMemberInfo)) {
-                                sendMasterAnswer(joinRequest);
+                                sendMasterAnswer(joinMessage);
                                 if (firstJoinRequest == 0) {
                                     firstJoinRequest = now;
                                 }
@@ -520,7 +521,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
             } else {
-                conn.close();
+//                conn.close();
             }
         } finally {
             lock.unlock();
@@ -528,7 +529,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void sendMasterAnswer(final JoinRequest joinRequest) {
-        invokeClusterOperation(new SetMasterOperation(node.getMasterAddress()), joinRequest.address);
+        invokeClusterOperation(new SetMasterOperation(node.getMasterAddress()), joinRequest.getAddress());
     }
 
     void acceptMasterConfirmation(MemberImpl member) {
@@ -662,7 +663,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
         }
-        JoinRequest joinRequest = node.createJoinInfo(withCredentials);
+        JoinRequestOperation joinRequest = new JoinRequestOperation(node.createJoinRequest(withCredentials));
         invokeClusterOperation(joinRequest, toAddress);
         return true;
     }
@@ -746,58 +747,61 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 }
                 setMembers(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
+                sendMembershipEventNotifications(deadMember, false); // async events
                 if (node.isMaster()) {
                     logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");
-                    invokeMemberRemoveOperation(deadMember);
+                    invokeMemberRemoveOperation(deadMember.getAddress(), false);
                 }
-                sendMembershipEventNotifications(deadMember, false); // async events
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private void invokeMemberRemoveOperation(final MemberImpl deadMember) {
-        final Address deadAddress = deadMember.getAddress();
+    private void invokeMemberRemoveOperation(final Address deadAddress, boolean fireAndForget) {
         final Collection<Future> responses = new LinkedList<Future>();
         for (MemberImpl member : getMemberList()) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
-                Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                        new MemberRemoveOperation(deadAddress), address)
-                        .setTryCount(10).setTryPauseMillis(100).build().invoke();
+                Future f = invokeClusterOperation(new MemberRemoveOperation(deadAddress), address);
                 responses.add(f);
             }
         }
-        for (Future response : responses) {
-            try {
-                response.get(1, TimeUnit.SECONDS);
-            } catch (Throwable e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+        if (!fireAndForget) {
+            for (Future response : responses) {
+                try {
+                    response.get(1, TimeUnit.SECONDS);
+                } catch (Throwable e) {
+                    logger.log(Level.FINEST, e.getMessage(), e);
+                }
             }
         }
+    }
+
+    public void sendShutdownMessage() {
+        invokeMemberRemoveOperation(thisAddress, true);
     }
 
     private void sendMembershipEventNotifications(final MemberImpl member, final boolean added) {
         final int eventType = added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED;
         final MembershipEvent membershipEvent = new MembershipEvent(member, eventType);
-        final EventService eventService = nodeEngine.getEventService();
         final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
-            eventService.executeEvent(new Runnable() {
-                final MembershipServiceEvent event = new MembershipServiceEvent(member, eventType);
-
-                public void run() {
-                    for (MembershipAwareService service : membershipAwareServices) {
+            final MembershipServiceEvent event = new MembershipServiceEvent(member, eventType);
+            for (final MembershipAwareService service : membershipAwareServices) {
+                // service events should not block each other
+                nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
+                    public void run() {
                         if (added) {
                             service.memberAdded(event);
                         } else {
                             service.memberRemoved(event);
                         }
                     }
-                }
-            });
+                });
+            }
         }
+        final EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
         eventService.publishEvent(SERVICE_NAME, registrations, membershipEvent);
     }
@@ -841,7 +845,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    public void destroy() {
+    public void shutdown() {
         reset();
     }
 

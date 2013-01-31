@@ -38,7 +38,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 @PrivateApi
 public class HazelcastInstanceFactory {
 
-    private static final ConcurrentMap<String, HazelcastInstance> INSTANCE_MAP = new ConcurrentHashMap<String, HazelcastInstance>(5);
+    private static final ConcurrentMap<String, HazelcastInstanceProxy> INSTANCE_MAP
+            = new ConcurrentHashMap<String, HazelcastInstanceProxy>(5);
 
     private static final AtomicInteger factoryIdGen = new AtomicInteger();
 
@@ -93,10 +94,11 @@ public class HazelcastInstanceFactory {
         if (instanceName == null || instanceName.trim().length() == 0) {
             instanceName = createInstanceName(config);
         }
-        HazelcastInstanceImpl hazelcastInstance = null;
+        HazelcastInstanceProxy proxy = null;
         try {
-            hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
-            INSTANCE_MAP.put(instanceName, hazelcastInstance);
+            final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
+            proxy = new HazelcastInstanceProxy(hazelcastInstance);
+            INSTANCE_MAP.put(instanceName, proxy);
             final Node node = hazelcastInstance.node;
             boolean firstMember = (node.getClusterService().getMembers().iterator().next().localMember());
             int initialWaitSeconds = node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
@@ -129,28 +131,28 @@ public class HazelcastInstanceFactory {
                         + initialMinClusterSize);
             }
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
-            return hazelcastInstance;
         } catch (Throwable t) {
-            if (hazelcastInstance != null) {
-                hazelcastInstance.logger.log(Level.SEVERE, t.getMessage(), t);
-            }
             Util.throwUncheckedException(t);
-            return null;
         }
+        return proxy;
     }
 
     public static void shutdownAll() {
-        Collection<HazelcastInstance> instances = INSTANCE_MAP.values();
-        for (HazelcastInstance instance : instances) {
-            instance.getLifecycleService().shutdown();
+        Collection<HazelcastInstanceProxy> instances = INSTANCE_MAP.values();
+        for (HazelcastInstanceProxy proxy : instances) {
+            proxy.getLifecycleService().shutdown();
+            proxy.original = null;
         }
         INSTANCE_MAP.clear();
         ManagementService.shutdown();
         ThreadContext.shutdownAll();
     }
 
-    public static void remove(HazelcastInstance instance) {
-        INSTANCE_MAP.remove(instance.getName());
+    static void remove(HazelcastInstance instance) {
+        final HazelcastInstanceProxy proxy = INSTANCE_MAP.remove(instance.getName());
+        if (proxy != null) {
+            proxy.original = null;
+        }
         if (INSTANCE_MAP.size() == 0) {
             ManagementService.shutdown();
         }

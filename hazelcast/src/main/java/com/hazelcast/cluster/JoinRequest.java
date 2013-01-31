@@ -22,99 +22,75 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
 
-public class JoinRequest extends AbstractClusterOperation implements JoinOperation {
+public class JoinRequest extends JoinMessage implements DataSerializable {
 
-    protected NodeType nodeType = NodeType.MEMBER;
-    public Address address;
-    public Address to;
-    public byte packetVersion;
-    public int buildNumber;
-    public Config config;
-    public String uuid;
+    private NodeType nodeType;
     private Credentials credentials;
+    private int tryCount = 0;
 
     public JoinRequest() {
         super();
     }
 
-    public JoinRequest(Address address, Config config, NodeType type, byte packetVersion, int buildNumber, String nodeUuid) {
-        this(null, address, config, type, packetVersion, buildNumber, nodeUuid);
-    }
-
-    public JoinRequest(Address to, Address address, Config config, NodeType type, byte packetVersion, int buildNumber, String nodeUuid) {
-        super();
-        this.to = to;
-        this.address = address;
-        this.config = config;
-        this.nodeType = type;
-        this.packetVersion = packetVersion;
-        this.buildNumber = buildNumber;
-        this.uuid = nodeUuid;
-    }
-
-    public void run() {
-        ClusterServiceImpl cm = (ClusterServiceImpl) getService();
-        cm.handleJoinRequest(this);
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        packetVersion = in.readByte();
-        buildNumber = in.readInt();
-        boolean hasTo = in.readBoolean();
-        if (hasTo) {
-            to = new Address();
-            to.readData(in);
-        }
-        address = new Address();
-        address.readData(in);
-        nodeType = NodeType.create(in.readInt());
-        config = new Config();
-        config.readData(in);
-        uuid = in.readUTF();
-        credentials = IOUtil.readNullableObject(in);
-        if (credentials != null) {
-            credentials.setEndpoint(address.getHost());
-        }
-    }
-
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeByte(packetVersion);
-        out.writeInt(buildNumber);
-        boolean hasTo = (to != null);
-        out.writeBoolean(hasTo);
-        if (hasTo) {
-            to.writeData(out);
-        }
-        address.writeData(out);
-        out.writeInt(nodeType.getValue());
-        config.writeData(out);
-        out.writeUTF(uuid);
-        IOUtil.writeNullableObject(out, credentials);
-    }
-
-    public void setCredentials(Credentials credentials) {
+    public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, Config config,
+                       NodeType nodeType, Credentials credentials, int memberCount, int tryCount) {
+        super(packetVersion, buildNumber, address, uuid, config, memberCount);
+        this.nodeType = nodeType;
         this.credentials = credentials;
+        this.tryCount = tryCount;
+    }
+
+    public NodeType getNodeType() {
+        return nodeType;
     }
 
     public Credentials getCredentials() {
         return credentials;
     }
 
-    public String getUuid() {
-        return uuid;
+    public int getTryCount() {
+        return tryCount;
+    }
+
+    public void setTryCount(int tryCount) {
+        this.tryCount = tryCount;
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        nodeType = NodeType.create(in.readInt());
+        credentials = IOUtil.readNullableObject(in);
+        if (credentials != null) {
+            credentials.setEndpoint(getAddress().getHost());
+        }
+        tryCount = in.readInt();
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeInt(nodeType.getValue());
+        IOUtil.writeNullableObject(out, credentials);
+        out.writeInt(tryCount);
     }
 
     @Override
     public String toString() {
-        return "JoinRequest{"
-                + "nodeType=" + nodeType
-                + ", address=" + address
-                + ", buildNumber='" + buildNumber + '\''
-                + ", packetVersion='" + packetVersion + '\''
-                + ", config='" + config + "'}";
+        final StringBuilder sb = new StringBuilder();
+        sb.append("JoinRequest");
+        sb.append("{packetVersion=").append(packetVersion);
+        sb.append(", buildNumber=").append(buildNumber);
+        sb.append(", address=").append(address);
+        sb.append(", uuid='").append(uuid).append('\'');
+        sb.append(", nodeType=").append(nodeType);
+        sb.append(", credentials=").append(credentials);
+        sb.append(", memberCount=").append(memberCount);
+        sb.append(", tryCount=").append(tryCount);
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -999,7 +999,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         reset();
     }
 
-    public void destroy() {
+    public void shutdown() {
         logger.log(Level.FINEST, "Shutting down the partition service");
         migrationService.stopNow();
         reset();

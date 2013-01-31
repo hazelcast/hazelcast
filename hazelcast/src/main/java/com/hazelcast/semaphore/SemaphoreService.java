@@ -63,7 +63,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
-    public void destroy() {
+    public void shutdown() {
         permitMap.clear();
     }
 

@@ -36,22 +36,26 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     public void onMessage(Object msg) {
-        if (msg != null && msg instanceof JoinInfo) {
-            JoinInfo joinInfo = (JoinInfo) msg;
-            if (node.getThisAddress() != null && !node.getThisAddress().equals(joinInfo.address)) {
+        if (msg != null && msg instanceof JoinMessage) {
+            JoinMessage joinMessage = (JoinMessage) msg;
+            if (node.getThisAddress() != null && !node.getThisAddress().equals(joinMessage.getAddress())) {
                 boolean validJoinRequest;
                 try {
-                    validJoinRequest = node.getClusterService().validateJoinRequest(joinInfo);
+                    validJoinRequest = node.getClusterService().validateJoinMessage(joinMessage);
                 } catch (Exception e) {
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
                     if (node.isActive() && node.joined()) {
-                        if (joinInfo.isRequest()) {
+                        if (joinMessage instanceof JoinRequest) {
                             if (node.isMaster()) {
-                                node.multicastService.send(joinInfo.copy(false, node.getThisAddress(),
-                                        node.getClusterService().getMembers().size()));
-                            } else if (isMasterNode(joinInfo.address) && !checkMasterUuid(joinInfo.getUuid())) {
+                                JoinRequest request = (JoinRequest) joinMessage;
+                                final JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
+                                        node.getThisAddress(), request.getUuid(), request.getConfig(),
+                                        node.getClusterService().getSize());
+                                node.multicastService.send(response);
+
+                            } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
                                 node.getLogger("NodeMulticastListener").log(Level.WARNING,
                                         "New join request has been received from current master. "
                                         + "Removing " + node.getMasterAddress());
@@ -59,19 +63,19 @@ public class NodeMulticastListener implements MulticastListener {
                             }
                         }
                     } else {
-                        if (!node.joined() && !joinInfo.isRequest()) {
+                        if (!node.joined() && !(joinMessage instanceof JoinRequest)) {
                             if (node.getMasterAddress() == null) {
-                                final String masterHost = joinInfo.address.getHost();
+                                final String masterHost = joinMessage.getAddress().getHost();
                                 if (trustedInterfaces.isEmpty() ||
                                     AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
-                                    node.setMasterAddress(new Address(joinInfo.address));
+                                    node.setMasterAddress(new Address(joinMessage.getAddress()));
                                 }
                             }
-                        } else if (joinInfo.isRequest()) {
+                        } else if (joinMessage instanceof JoinRequest) {
                             Joiner joiner = node.getJoiner();
                             if (joiner instanceof MulticastJoiner) {
-                                MulticastJoiner mjoiner = (MulticastJoiner) joiner;
-                                mjoiner.onReceivedJoinInfo(joinInfo);
+                                MulticastJoiner multicastJoiner = (MulticastJoiner) joiner;
+                                multicastJoiner.onReceivedJoinRequest((JoinRequest) joinMessage);
                             }
                         }
                     }

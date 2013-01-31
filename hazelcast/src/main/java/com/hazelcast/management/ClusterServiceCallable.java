@@ -18,7 +18,6 @@ package com.hazelcast.management;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 
 public abstract class ClusterServiceCallable implements HazelcastInstanceAware {
 
@@ -32,8 +31,6 @@ public abstract class ClusterServiceCallable implements HazelcastInstanceAware {
 //        FactoryImpl factory = getFactory();
 //        return factory.node.clusterService;
 //    }
-
-    protected HazelcastInstanceFactory getFactory() {return (HazelcastInstanceFactory) hazelcastInstance;}
 
     /**
      * ServiceThread-only!

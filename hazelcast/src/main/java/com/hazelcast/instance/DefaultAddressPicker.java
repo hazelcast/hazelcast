@@ -301,7 +301,7 @@ class DefaultAddressPicker implements AddressPicker {
         boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
                 || node.groupProperties.PREFER_IPv4_STACK.getBoolean();
         // AWS does not support IPv6.
-        Join join = node.getConfig().getNetworkConfig().getJoin();
+        JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();
         boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
         return preferIPv4Stack || awsEnabled;

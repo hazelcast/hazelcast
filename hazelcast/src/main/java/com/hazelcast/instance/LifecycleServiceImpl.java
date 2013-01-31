@@ -97,7 +97,9 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void shutdown() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            instance.shutdown();
+            instance.managementService.unregister();
+            instance.node.shutdown(false, true);
+            HazelcastInstanceFactory.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }
     }
@@ -105,7 +107,9 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void kill() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            instance.shutdown();
+            instance.managementService.unregister();
+            instance.node.shutdown(true, true);
+            HazelcastInstanceFactory.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }
     }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.config.ClientProperties.ClientPropertyName;
 import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperties.ClientPropertyName;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -128,7 +127,7 @@ public class HazelcastClientClusterTest {
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName("q");
         mapConfig.setReadBackupData(true);
-        config.setMapConfigs(Collections.singletonMap(mapConfig.getName(), mapConfig));
+        config.getMapConfigs().put(mapConfig.getName(), mapConfig);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         h1.getMap("q").put("q", "Q");

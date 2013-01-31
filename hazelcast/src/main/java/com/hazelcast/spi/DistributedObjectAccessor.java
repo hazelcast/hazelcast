@@ -14,25 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.spi;
 
-import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.annotation.PrivateApi;
 
-public interface NodeInitializer {
+/**
+ * @mdogan 1/31/13
+ */
+@PrivateApi
+public class DistributedObjectAccessor {
 
-    void beforeInitialize(Node node);
+    public static void onNodeShutdown(AbstractDistributedObject distributedObject) {
+        distributedObject.onShutdown();
+    }
 
-    void printNodeInfo(Node node);
-
-    void afterInitialize(Node node);
-
-    String getBuild();
-
-    int getBuildNumber();
-
-    String getVersion();
-
-    SecurityContext getSecurityContext();
-
-    void destroy();
 }

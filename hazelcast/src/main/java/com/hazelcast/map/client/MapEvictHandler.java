@@ -32,7 +32,7 @@ public class MapEvictHandler extends MapCommandHandler {
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         boolean result = dataMapProxy.evict(key);
         return protocol.success(String.valueOf(result));
     }
