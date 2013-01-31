@@ -111,7 +111,6 @@ public class Node {
     public final LoggingServiceImpl loggingService;
 
     public final ClientCommandService clientCommandService;
-    //    public final ClientServiceImpl clientService;
 
     private final SystemLogService systemLogService;
 
@@ -408,15 +407,15 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-//            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
-//            clientHandlerService.shutdown();
-            logger.log(Level.FINEST, "Shutting down the node engine");
+            logger.log(Level.FINEST, "Shutting down client command service");
+            clientCommandService.shutdown();
+            logger.log(Level.FINEST, "Shutting down node engine");
             nodeEngine.shutdown();
             if (multicastService != null) {
-                logger.log(Level.FINEST, "Shutting down the multicast service");
+                logger.log(Level.FINEST, "Shutting down multicast service");
                 multicastService.stop();
             }
-            logger.log(Level.FINEST, "Shutting down the connection manager");
+            logger.log(Level.FINEST, "Shutting down connection manager");
             connectionManager.shutdown();
             textCommandService.stop();
             masterAddress = null;

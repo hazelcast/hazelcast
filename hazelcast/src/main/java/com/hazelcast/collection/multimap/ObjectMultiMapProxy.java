@@ -39,24 +39,28 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public boolean put(K key, V value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
         return putInternal(dataKey, dataValue, -1);
     }
 
     public Collection<V> get(K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         CollectionResponse result = getAllInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
     }
 
     public boolean remove(Object key, Object value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         Data dataValue = nodeEngine.toData(value);
         return removeInternal(dataKey, dataValue);
     }
 
     public Collection<V> remove(Object key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         CollectionResponse result = removeInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
@@ -73,6 +77,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public Collection<V> values() {
+        final NodeEngine nodeEngine = getNodeEngine();
         Map map = valuesInternal();
         Collection values = new LinkedList();
         for (Object obj : map.values()) {
@@ -86,6 +91,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public Set<Map.Entry<K, V>> entrySet() {
+        final NodeEngine nodeEngine = getNodeEngine();
         Map map = entrySetInternal();
         Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
         for (Object obj : map.values()) {
@@ -100,47 +106,52 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public boolean containsKey(K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return containsInternal(dataKey, null);
     }
 
     public boolean containsValue(Object value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data valueKey = nodeEngine.toData(value);
         return containsInternal(null, valueKey);
     }
 
     public boolean containsEntry(K key, V value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         Data valueKey = nodeEngine.toData(value);
         return containsInternal(dataKey, valueKey);
     }
 
-
     public int valueCount(K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return countInternal(dataKey);
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
-        service.addListener(proxyId.getName(), listener, null, false, true);
+        getService().addListener(proxyId.getName(), listener, null, false, true);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        service.addListener(proxyId.getName(), listener, null, includeValue, false);
+        getService().addListener(proxyId.getName(), listener, null, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
-        service.removeListener(proxyId.getName(), listener, null);
+        getService().removeListener(proxyId.getName(), listener, null);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        service.addListener(proxyId.getName(), listener, dataKey, includeValue, false);
+        getService().addListener(proxyId.getName(), listener, dataKey, includeValue, false);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        service.removeListener(proxyId.getName(), listener, dataKey);
+        getService().removeListener(proxyId.getName(), listener, dataKey);
     }
 
     public void lock(K key) {
@@ -152,19 +163,22 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return lockInternal(dataKey, timeunit.toMillis(time));
     }
 
     public void unlock(K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         unlockInternal(dataKey);
     }
 
     public LocalMapStats getLocalMultiMapStats() {
+        final NodeEngine nodeEngine = getNodeEngine();
         int count = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < count; i++) {
-            CollectionPartitionContainer partitionContainer = service.getPartitionContainer(i);
+            CollectionPartitionContainer partitionContainer = getService().getPartitionContainer(i);
             Map<CollectionProxyId, CollectionContainer> multiMaps = partitionContainer.getContainerMap();
             if (multiMaps.size() > 0) {
                 System.out.println("partitionId: " + i);
@@ -193,6 +207,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Set<K> keySet = new HashSet<K>(dataSet.size());
         for (Data dataKey : dataSet) {
             keySet.add((K) nodeEngine.toObject(dataKey));

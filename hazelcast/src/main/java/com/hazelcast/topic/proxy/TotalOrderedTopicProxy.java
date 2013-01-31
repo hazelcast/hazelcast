@@ -40,6 +40,7 @@ public class TotalOrderedTopicProxy extends TopicProxy{
     @Override
     public void publish(Object message) {
         try {
+            final NodeEngine nodeEngine = getNodeEngine();
             PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(TopicService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();

@@ -18,7 +18,6 @@ package com.hazelcast.atomicnumber.proxy;
 
 import com.hazelcast.atomicnumber.*;
 import com.hazelcast.core.AtomicNumber;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
@@ -27,16 +26,14 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.concurrent.Future;
 
 // author: sancar - 21.12.2012
-public class AtomicNumberProxy extends AbstractDistributedObject implements DistributedObject, AtomicNumber {
+public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberService> implements AtomicNumber {
 
     private final String name;
-    private final AtomicNumberService atomicNumberService;
     private final int partitionId;
 
-    public AtomicNumberProxy(String name, AtomicNumberService atomicNumberService, NodeEngine nodeEngine) {
-        super(nodeEngine);
+    public AtomicNumberProxy(String name, NodeEngine nodeEngine) {
+        super(nodeEngine, null);
         this.name = name;
-        this.atomicNumberService = atomicNumberService;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
     }
 
@@ -45,7 +42,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     }
 
     public long addAndGet(long delta) {
-
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             AddAndGetOperation operation = new AddAndGetOperation(name, delta);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
@@ -57,6 +54,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     }
 
     public boolean compareAndSet(long expect, long update) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             CompareAndSetOperation operation = new CompareAndSetOperation(name, expect, update);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
@@ -84,6 +82,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     }
 
     public long getAndAdd(long delta) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             GetAndAddOperation operation = new GetAndAddOperation(name, delta);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
@@ -95,6 +94,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     }
 
     public long getAndSet(long newValue) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             GetAndSetOperation operation = new GetAndSetOperation(name, newValue);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
@@ -106,6 +106,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
     }
 
     public void set(long newValue) {
+        final NodeEngine nodeEngine = getNodeEngine();
         try {
             SetOperation operation = new SetOperation(name, newValue);
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
@@ -117,12 +118,12 @@ public class AtomicNumberProxy extends AbstractDistributedObject implements Dist
 
     @Deprecated
     public boolean weakCompareAndSet(long expect, long update) {
-        return false;
+        throw new UnsupportedOperationException("Not implemented. Use compareAndSet().");
     }
 
     @Deprecated
     public void lazySet(long newValue) {
-
+        throw new UnsupportedOperationException("Not implemented. Use set().");
     }
 
     public LocalAtomicNumberStats getLocalAtomicNumberStats() {

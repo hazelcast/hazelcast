@@ -17,21 +17,46 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 
 /**
  * @mdogan 1/14/13
  */
-public abstract class AbstractDistributedObject implements DistributedObject {
+public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 
-    protected final NodeEngine nodeEngine;
+    private volatile NodeEngine nodeEngine;
+    private volatile S service;
 
-    protected AbstractDistributedObject(NodeEngine nodeEngine) {
+    protected AbstractDistributedObject(NodeEngine nodeEngine, S service) {
         this.nodeEngine = nodeEngine;
+        this.service = service;
     }
 
     protected abstract String getServiceName();
 
     public final void destroy() {
-        nodeEngine.getProxyService().destroyDistributedObject(getServiceName(), getId());
+        final NodeEngine engine = getNodeEngine();
+        engine.getProxyService().destroyDistributedObject(getServiceName(), getId());
+    }
+
+    public final NodeEngine getNodeEngine() {
+        final NodeEngine engine = nodeEngine;
+        if (engine == null) {
+            throw new HazelcastInstanceNotActiveException();
+        }
+        return engine;
+    }
+
+    public final S getService() {
+        final S s = service;
+        if (s == null) {
+            throw new HazelcastInstanceNotActiveException();
+        }
+        return s;
+    }
+
+    void onShutdown() {
+        nodeEngine = null;
+        service = null;
     }
 }

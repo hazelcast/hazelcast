@@ -244,6 +244,16 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         }
 
         void destroy() {
+            for (DistributedObject distributedObject : proxies.values()) {
+                if (distributedObject instanceof AbstractDistributedObject) {
+                    DistributedObjectAccessor.onNodeShutdown((AbstractDistributedObject) distributedObject);
+                }
+            }
+            for (DistributedObject distributedObject : clientProxies.values()) {
+                if (distributedObject instanceof AbstractDistributedObject) {
+                    DistributedObjectAccessor.onNodeShutdown((AbstractDistributedObject) distributedObject);
+                }
+            }
             proxies.clear();
             clientProxies.clear();
         }

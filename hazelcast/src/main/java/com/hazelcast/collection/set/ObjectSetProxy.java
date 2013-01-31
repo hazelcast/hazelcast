@@ -50,11 +50,11 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-        service.addListener(proxyId.getName(), listener, key, includeValue, false);
+        getService().addListener(proxyId.getName(), listener, key, includeValue, false);
     }
 
     public void removeItemListener(ItemListener<E> listener) {
-        service.removeListener(proxyId.getName(), listener, key);
+        getService().removeListener(proxyId.getName(), listener, key);
     }
 
     public int size() {
@@ -66,37 +66,44 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
     }
 
     public boolean contains(Object o) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data data = nodeEngine.toData(o);
         return containsInternalList(key, data);
     }
 
     public Iterator<E> iterator() {
+        final NodeEngine nodeEngine = getNodeEngine();
         CollectionResponse result = getAllInternal(key);
         return result.getObjectCollection(nodeEngine).iterator();
     }
 
     public Object[] toArray() {
+        final NodeEngine nodeEngine = getNodeEngine();
         CollectionResponse result = getAllInternal(key);
         return result.getObjectCollection(nodeEngine).toArray();
     }
 
     public <T> T[] toArray(T[] a) {
+        final NodeEngine nodeEngine = getNodeEngine();
         CollectionResponse result = getAllInternal(key);
         Collection<T> col = result.getObjectCollection(nodeEngine);
         return col.toArray(a);
     }
 
     public boolean add(E e) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data data = nodeEngine.toData(e);
         return putInternal(key, data, -1);
     }
 
     public boolean remove(Object o) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data data = nodeEngine.toData(o);
         return removeInternal(key, data);
     }
 
     public boolean containsAll(Collection<?> c) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Set<Data> dataSet = new HashSet<Data>(c.size());
         for (Object o : c) {
             dataSet.add(nodeEngine.toData(o));
@@ -125,6 +132,7 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
     }
 
     private List<Data> toDataList(Collection coll) {
+        final NodeEngine nodeEngine = getNodeEngine();
         List<Data> dataList = new ArrayList<Data>(coll.size());
         for (Object obj : coll) {
             dataList.add(nodeEngine.toData(obj));

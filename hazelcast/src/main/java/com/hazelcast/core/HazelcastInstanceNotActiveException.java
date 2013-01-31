@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.core;
 
-import com.hazelcast.security.SecurityContext;
+public class HazelcastInstanceNotActiveException extends IllegalStateException {
 
-public interface NodeInitializer {
-
-    void beforeInitialize(Node node);
-
-    void printNodeInfo(Node node);
-
-    void afterInitialize(Node node);
-
-    String getBuild();
-
-    int getBuildNumber();
-
-    String getVersion();
-
-    SecurityContext getSecurityContext();
-
-    void destroy();
+    public HazelcastInstanceNotActiveException() {
+        super("Hazelcast instance is not active!");
+    }
 }
