@@ -45,11 +45,10 @@ public class TopicTest {
     public void testTopicTotalOrder() throws Exception {
         //final Config cfg = new XmlConfigBuilder("/Users/msk/IdeaProjects/sample/src/main/resources/hazelcast.xml").build();
         final Config cfg = new Config();
-        Map<String, TopicConfig> tpCfgs = new HashMap<String, TopicConfig>();
+        Map<String, TopicConfig> tpCfgs = cfg.getTopicConfigs();
         TopicConfig topicConfig = new TopicConfig();
         topicConfig.setGlobalOrderingEnabled(true);
         tpCfgs.put("*", topicConfig);
-        cfg.setTopicConfigs(tpCfgs);
 
         final Map<Long, String> stringMap = new HashMap<Long, String>();
         final CountDownLatch countDownLatch = new CountDownLatch(4);

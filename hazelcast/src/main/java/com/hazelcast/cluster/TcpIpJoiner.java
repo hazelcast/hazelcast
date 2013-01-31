@@ -17,7 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.Interfaces;
+import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Member;
@@ -264,7 +264,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (AddressUtil.isIpAddress(addressHolder.address)) {
                 return new Address(addressHolder.address, addressHolder.port);
             } else {
-                final Interfaces interfaces = config.getNetworkConfig().getInterfaces();
+                final InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
                 if (interfaces.isEnabled()) {
                     final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.address);
                     if (inetAddresses.length > 1) {
@@ -339,7 +339,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     }
                 } else {
                     final String host = addressHolder.address;
-                    final Interfaces interfaces = networkConfig.getInterfaces();
+                    final InterfacesConfig interfaces = networkConfig.getInterfaces();
                     if (interfaces.isEnabled()) {
                         final InetAddress[] inetAddresses = InetAddress.getAllByName(host);
                         if (inetAddresses.length > 1) {

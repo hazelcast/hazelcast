@@ -92,7 +92,7 @@ public class ConfigXmlGenerator {
         }
         xml.append("<port auto-increment=\"").append(config.getNetworkConfig().isPortAutoIncrement()).append("\">")
                 .append(config.getNetworkConfig().getPort()).append("</port>");
-        final Join join = netCfg.getJoin();
+        final JoinConfig join = netCfg.getJoin();
         xml.append("<join>");
         final MulticastConfig mcast = join.getMulticastConfig();
         xml.append("<multicast enabled=\"").append(mcast.isEnabled()).append("\">");
@@ -132,7 +132,7 @@ public class ConfigXmlGenerator {
         xml.append("<tag-value>").append(awsConfig.getTagValue()).append("</tag-value>");
         xml.append("</aws>");
         xml.append("</join>");
-        final Interfaces interfaces = netCfg.getInterfaces();
+        final InterfacesConfig interfaces = netCfg.getInterfaces();
         xml.append("<interfaces enabled=\"").append(interfaces.isEnabled()).append("\">");
         final Collection<String> interfaceList = interfaces.getInterfaces();
         for (String i : interfaceList) {

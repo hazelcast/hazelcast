@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Interfaces implements DataSerializable {
+public class InterfacesConfig implements DataSerializable {
 
     private boolean enabled = false;
 
@@ -43,7 +43,7 @@ public class Interfaces implements DataSerializable {
     /**
      * @param enabled the enabled to set
      */
-    public Interfaces setEnabled(final boolean enabled) {
+    public InterfacesConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -53,7 +53,7 @@ public class Interfaces implements DataSerializable {
      *
      * @param ip
      */
-    public Interfaces addInterface(final String ip) {
+    public InterfacesConfig addInterface(final String ip) {
         interfaceSet.add(ip);
         return this;
     }
@@ -61,7 +61,7 @@ public class Interfaces implements DataSerializable {
     /**
      * clears all interfaces.
      */
-    public Interfaces clear() {
+    public InterfacesConfig clear() {
         interfaceSet.clear();
         return this;
     }
@@ -79,7 +79,7 @@ public class Interfaces implements DataSerializable {
      *
      * @param interfaces the interfaces to set
      */
-    public Interfaces setInterfaces(final Collection<String> interfaces) {
+    public InterfacesConfig setInterfaces(final Collection<String> interfaces) {
         clear();
         this.interfaceSet.addAll(interfaces);
         return this;
@@ -112,7 +112,7 @@ public class Interfaces implements DataSerializable {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("Interfaces");
+        sb.append("InterfacesConfig");
         sb.append("{enabled=").append(enabled);
         sb.append(", interfaces=").append(interfaceSet);
         sb.append('}');

@@ -21,7 +21,7 @@ import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.ClientCommandService;
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.Join;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.DistributedObjectListener;
@@ -175,7 +175,7 @@ public class Node {
         initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
-        Join join = config.getNetworkConfig().getJoin();
+        JoinConfig join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
             if (join.getMulticastConfig().isEnabled()) {
@@ -342,7 +342,7 @@ public class Node {
         if (config.getNetworkConfig().isPortAutoIncrement()
                 && address.getPort() >= config.getNetworkConfig().getPort() + clusterSize) {
             StringBuilder sb = new StringBuilder("Config seed port is ");
-            sb.append(config.getPort());
+            sb.append(config.getNetworkConfig().getPort());
             sb.append(" and cluster size is ");
             sb.append(clusterSize);
             sb.append(". Some of the ports seem occupied!");
@@ -548,7 +548,7 @@ public class Node {
     }
 
     Joiner createJoiner() {
-        Join join = config.getNetworkConfig().getJoin();
+        JoinConfig join = config.getNetworkConfig().getJoin();
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             systemLogService.logJoin("Creating MulticastJoiner");
             return new MulticastJoiner(this);

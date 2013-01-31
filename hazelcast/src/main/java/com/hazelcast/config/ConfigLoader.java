@@ -47,7 +47,7 @@ public class ConfigLoader {
         if (file.exists()) {
             try {
                 return file.toURI().toURL();
-            } catch (MalformedURLException e) {
+            } catch (MalformedURLException ignored) {
             }
         }
         return null;
@@ -56,12 +56,12 @@ public class ConfigLoader {
     private static URL asURL(final String path) {
         try {
             return new URL(path);
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException ignored) {
         }
         return null;
     }
 
-    private static final URL asResource(final String path) {
+    private static URL asResource(final String path) {
         URL url = null;
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if (contextClassLoader != null) {

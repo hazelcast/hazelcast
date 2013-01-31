@@ -33,7 +33,7 @@ public class TcpIpJoinerOverAWSTest {
     @Test
     public void testAWSConfig() throws Exception {
         Config config = new Config();
-        config.setPortAutoIncrement(false);
+        config.getNetworkConfig().setPortAutoIncrement(false);
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getAwsConfig().setEnabled(true);
         Properties bundle = new Properties();

@@ -22,12 +22,14 @@ import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.util.Util;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Arrays;
@@ -145,21 +147,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.config = config;
         if (element == null) {
             final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc = null;
+            Document doc;
             try {
                 doc = builder.parse(in);
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                Util.streamXML(doc, baos);
-                final byte[] bytes = baos.toByteArray();
-                final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-                config.setXmlConfig(Util.inputStreamToString(bais));
-                if ("true".equals(System.getProperty("hazelcast.config.print"))) {
-                    logger.log(Level.INFO, "Hazelcast config URL : " + config.getConfigurationUrl());
-                    logger.log(Level.INFO, "=== Hazelcast config xml ===");
-                    logger.log(Level.INFO, config.getXmlConfig());
-                    logger.log(Level.INFO, "==============================");
-                    logger.log(Level.INFO, "");
-                }
             } catch (final Exception e) {
                 String msgPart = "config file '" + config.getConfigurationFile() + "' set as a system property.";
                 if (!usingSystemConfig) {
@@ -389,7 +379,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void handleInterfaces(final org.w3c.dom.Node node) {
         final NamedNodeMap atts = node.getAttributes();
-        final Interfaces interfaces = config.getNetworkConfig().getInterfaces();
+        final InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             if ("enabled".equals(att.getNodeName())) {
@@ -497,7 +487,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private void handleAWS(Node node) {
-        final Join join = config.getNetworkConfig().getJoin();
+        final JoinConfig join = config.getNetworkConfig().getJoin();
         final NamedNodeMap atts = node.getAttributes();
         for (int a = 0; a < atts.getLength(); a++) {
             final Node att = atts.item(a);
@@ -529,7 +519,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private void handleMulticast(final org.w3c.dom.Node node) {
-        final Join join = config.getNetworkConfig().getJoin();
+        final JoinConfig join = config.getNetworkConfig().getJoin();
         final NamedNodeMap atts = node.getAttributes();
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
@@ -560,7 +550,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void handleTcpIp(final org.w3c.dom.Node node) {
         final NamedNodeMap atts = node.getAttributes();
-        final Join join = config.getNetworkConfig().getJoin();
+        final JoinConfig join = config.getNetworkConfig().getJoin();
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();

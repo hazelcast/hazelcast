@@ -41,9 +41,9 @@ public class NetworkConfig implements DataSerializable {
 
     private Collection<Integer> outboundPorts;
 
-    private Interfaces interfaces = new Interfaces();
+    private InterfacesConfig interfaces = new InterfacesConfig();
 
-    private Join join = new Join();
+    private JoinConfig join = new JoinConfig();
 
     private SymmetricEncryptionConfig symmetricEncryptionConfig = null;
 
@@ -134,14 +134,14 @@ public class NetworkConfig implements DataSerializable {
     /**
      * @return the interfaces
      */
-    public Interfaces getInterfaces() {
+    public InterfacesConfig getInterfaces() {
         return interfaces;
     }
 
     /**
      * @param interfaces the interfaces to set
      */
-    public NetworkConfig setInterfaces(final Interfaces interfaces) {
+    public NetworkConfig setInterfaces(final InterfacesConfig interfaces) {
         this.interfaces = interfaces;
         return this;
     }
@@ -149,14 +149,14 @@ public class NetworkConfig implements DataSerializable {
     /**
      * @return the join
      */
-    public Join getJoin() {
+    public JoinConfig getJoin() {
         return join;
     }
 
     /**
      * @param join the join to set
      */
-    public NetworkConfig setJoin(final Join join) {
+    public NetworkConfig setJoin(final JoinConfig join) {
         this.join = join;
         return this;
     }
@@ -223,9 +223,9 @@ public class NetworkConfig implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         port = in.readInt();
-        interfaces = new Interfaces();
+        interfaces = new InterfacesConfig();
         interfaces.readData(in);
-        join = new Join();
+        join = new JoinConfig();
         join.readData(in);
         boolean[] b = ByteUtil.fromByte(in.readByte());
         portAutoIncrement = b[0];
