@@ -181,6 +181,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         commandHandlers.put(Command.QREMOVE, new QueueRemoveHandler(this));
         commandHandlers.put(Command.QREMCAPACITY, new QueueCapacityHandler(this));
         commandHandlers.put(Command.QENTRIES, new QueueEntriesHandler(this));
+        commandHandlers.put(Command.QLISTEN, new QListenHandler(this));
         return commandHandlers;
     }
 

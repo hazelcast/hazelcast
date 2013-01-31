@@ -74,7 +74,7 @@ public class QueueTest extends ProtocolTest {
 
     @Test
     public void addListener() throws IOException {
-        doOp("QADDLISTENER default true", null);
+        doOp("QLISTEN default true", null);
         assertTrue(read(socket).contains("OK"));
         final String item = "a";
         new Thread(new Runnable() {

@@ -19,7 +19,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Queue Commands</title>
-    QOFFER, QPOLL, QSIZE, QPEEK, QREMOVE, QREMCAPACITY, QENTRIES, QADDLISTENER, QREMOVELISTENER
+    QOFFER, QPOLL, QSIZE, QPEEK, QREMOVE, QREMCAPACITY, QENTRIES, QLISTEN, QREMOVELISTENER
 
     <sect2 xml:id="QOFFER" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>QOFFER</title>
@@ -269,8 +269,8 @@
             ]]></programlisting>
     </sect2>
 
-    <sect2 xml:id="QADDLISTENER" version="5.0" xmlns="http://docbook.org/ns/docbook">
-        <title>QADDLISTENER</title>
+    <sect2 xml:id="QLISTEN" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>QLISTEN</title>
 
         <para>
             Adds an entry listener for this map. Listener will get notified
@@ -282,7 +282,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        QADDLISTENER <name> <includevalue> [noreply]
+        QLISTEN <name> <includevalue> [noreply]
         ]]></programlisting>
         <para>
             providing key is optional. If provided the listener will be notified only for the key, otherwise it will be
@@ -306,7 +306,7 @@
             </para>
 
             <programlisting language="java"><![CDATA[
-        EVENT <-1> <name> <eventType> <address of the source member> #1
+        EVENT <name> <eventType> <address of the source member> #1
         <size of element in bytes>
         <element in bytes>
             ]]></programlisting>

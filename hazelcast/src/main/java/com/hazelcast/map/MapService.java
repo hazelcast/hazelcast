@@ -406,7 +406,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         commandHandlers.put(Command.KEYSET, new KeySetHandler(this));
         commandHandlers.put(Command.MGETENTRY, new MapGetEntryHandler(this));
         commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
-        commandHandlers.put(Command.MADDLISTENER, new MapAddListener(this));
+        commandHandlers.put(Command.MLISTEN, new MapListenHandler(this));
         return commandHandlers;
     }
 

@@ -25,7 +25,7 @@
     MGET, MGETALL, MPUT, MTRYPUT, MSET, MPUTTRANSIENT, MPUTANDUNLOCK, MREMOVE, MREMOVEITEM,
     MCONTAINSKEY, MCONTAINSVALUE, ADDLISTENER, EVENT, REMOVELISTENER, KEYSET, ENTRYSET, MGETENTRY, MLOCK, MISLOCKED,
     MUNLOCK, MLOCKMAP, MUNLOCKMAP, MFORCEUNLOCK, MPUTALL, MPUTIFABSENT, MREMOVEIFSAME, MREPLACEIFNOTNULL, MREPLACEIFSAME,
-    MTRYLOCKANDGET, MFLUSH, MEVICT, MADDLISTENER, MREMOVELISTENER
+    MTRYLOCKANDGET, MFLUSH, MEVICT, MLISTEN, MREMOVELISTENER
 
     <sect2 xml:id="MPUT" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>MPUT</title>
@@ -933,8 +933,8 @@
         </para>
     </sect2>
 
-    <sect2 xml:id="MADDLISTENER" version="5.0" xmlns="http://docbook.org/ns/docbook">
-        <title>MADDLISTENER</title>
+    <sect2 xml:id="MLISTEN" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>MLISTEN</title>
 
         <para>
             Adds an entry listener for this map. Listener will get notified
@@ -946,7 +946,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        MADDLISTENER <name> <includevalue> [noreply] #1
+        MLISTEN <name> <includevalue> [noreply] #1
         <size of key in bytes>
         <key in bytes>
         ]]></programlisting>

@@ -30,8 +30,8 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapAddListener extends MapCommandHandler {
-    public MapAddListener(MapService mapService) {
+public class MapListenHandler extends MapCommandHandler {
+    public MapListenHandler(MapService mapService) {
         super(mapService);
     }
 

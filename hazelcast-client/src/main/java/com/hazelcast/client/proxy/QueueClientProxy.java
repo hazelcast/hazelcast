@@ -16,23 +16,18 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.Connection;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.QueueItemListenerManager;
-import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.QueueItemIterator;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -184,7 +179,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
-        Protocol request = proxyHelper.createProtocol(Command.QADDLISTENER, new String[]{getName(), String.valueOf(includeValue)}, null);
+        Protocol request = proxyHelper.createProtocol(Command.QLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
         ListenerThread thread = proxyHelper.createAListenerThread(client, request, new ItemEventLRH<E>(listener));
         listenerMap.put(listener, thread);
         thread.start();

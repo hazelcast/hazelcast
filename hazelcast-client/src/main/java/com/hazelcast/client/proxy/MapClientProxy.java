@@ -76,7 +76,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MADDLISTENER, new String[]{name,valueOf(includeValue)}, new Data[]{dKey});
+        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name,valueOf(includeValue)}, new Data[]{dKey});
         ListenerThread thread = proxyHelper.createAListenerThread(client, request, new EntryEventLRH<K, V>(listener));
         storeListener(listener, key, thread);
         thread.start();

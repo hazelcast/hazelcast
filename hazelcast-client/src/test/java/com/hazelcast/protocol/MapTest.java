@@ -310,7 +310,7 @@ public class MapTest extends ProtocolTest{
 
     @Test
     public void addListenerReturnValueTrue() throws IOException, InterruptedException {
-        doOp("MADDLISTENER default true", null);
+        doOp("MLISTEN default true", null);
         assertTrue(read(socket).contains("OK"));
         final String value = "a";
         putFromAnotherThread("1", value);
@@ -321,7 +321,7 @@ public class MapTest extends ProtocolTest{
 
     @Test
     public void addListenerReturnValueFalse() throws IOException, InterruptedException {
-        doOp("MADDLISTENER default false", null);
+        doOp("MLISTEN default false", null);
         assertTrue(read(socket).contains("OK"));
         final String value = "a";
         putFromAnotherThread("1", value);
@@ -336,7 +336,7 @@ public class MapTest extends ProtocolTest{
         new Thread(new Runnable(){
             public void run() {
                 try {
-                    OutputStream out = doOp("MADDLISTENER default true #1", "" + "2".getBytes().length);
+                    OutputStream out = doOp("MLISTEN default true #1", "" + "2".getBytes().length);
                     out.write("b".getBytes());
                     out.write("\r\n".getBytes());
                     out.flush();

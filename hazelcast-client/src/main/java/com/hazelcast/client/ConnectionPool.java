@@ -71,7 +71,7 @@ public class ConnectionPool {
     private void createPartitionTable(PartitionService partitionService) {
         Set<Partition> partitions = partitionService.getPartitions();
         for (Partition p : partitions) {
-            System.out.println("Partition Table is not null!");
+            System.out.println("Partition element" + p.getPartitionId() + ": " + p.getOwner());
             if (p.getOwner() != null)
                 partitionTable.put(p.getPartitionId(), p.getOwner());
         }

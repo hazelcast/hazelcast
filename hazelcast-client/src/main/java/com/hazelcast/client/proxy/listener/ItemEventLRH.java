@@ -38,9 +38,9 @@ public class ItemEventLRH<E> implements ListenerResponseHandler {
 
     public void handleResponse(Protocol response, SerializationService ss) throws Exception {
         if (Command.EVENT.equals(response.command)) {
-            String eventType = response.args[2];
-            String name = response.args[1];
-            String[] address = response.args[3].split(":");
+            String name = response.args[0];
+            String eventType = response.args[1];
+            String[] address = response.args[2].split(":");
             Member source = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
             Data item = response.buffers[0];
             ItemEventType itemEventType = ItemEventType.valueOf(eventType);
