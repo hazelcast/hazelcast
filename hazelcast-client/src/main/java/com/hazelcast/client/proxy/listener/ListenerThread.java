@@ -21,6 +21,7 @@ import com.hazelcast.client.Connection;
 import com.hazelcast.client.ProtocolReader;
 import com.hazelcast.client.ProtocolWriter;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
@@ -58,7 +59,11 @@ public class ListenerThread extends Thread {
             Future<Protocol> f = null;
             while (running) {
                 Protocol response = reader.read(connection);
-                listenerResponseHandler.handleResponse(response, ss);
+                if (Command.EVENT.equals(response.command)) {
+                    listenerResponseHandler.handleResponse(response, ss);
+                }else{
+                    throw new RuntimeException(response.args[0]);
+                }
             }
             cleanup();
         } catch (Exception e) {

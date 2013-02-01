@@ -17,21 +17,45 @@
 
 package com.hazelcast.client.proxy.listener;
 
+import com.hazelcast.client.proxy.PartitionClientProxy;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.partition.MigrationStatus;
 
 public class MigrationEventLRH implements ListenerResponseHandler {
-    final MigrationListener lister;
+    final MigrationListener listener;
+    final PartitionClientProxy partitionClientProxy;
 
-    public MigrationEventLRH(MigrationListener lister) {
-        this.lister = lister;
+    public MigrationEventLRH(MigrationListener lister, PartitionClientProxy partitionClientProxy) {
+        this.listener = lister;
+        this.partitionClientProxy = partitionClientProxy;
     }
 
     public void handleResponse(Protocol response, SerializationService ss) throws Exception {
-
+        int partitionId = Integer.valueOf(response.args[0]);
+        Member oldOwner = new MemberImpl(new Address(response.args[1], Integer.valueOf(response.args[2])), false);
+        Member newOwner = new MemberImpl(new Address(response.args[3], Integer.valueOf(response.args[4])), false);
+        MigrationStatus status = MigrationStatus.valueOf(response.args[5]);
+        MigrationEvent event = new MigrationEvent(partitionId, oldOwner, newOwner, status);
+        switch (status) {
+            case STARTED:
+                listener.migrationStarted(event);
+                break;
+            case COMPLETED:
+                listener.migrationCompleted(event);
+                break;
+            case FAILED:
+                listener.migrationFailed(event);
+                break;
+        }
     }
 
     public void onError(Exception e) {
+        partitionClientProxy.addMigrationListener(listener);
     }
 }

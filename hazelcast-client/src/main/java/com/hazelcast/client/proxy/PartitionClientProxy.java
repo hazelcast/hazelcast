@@ -16,10 +16,9 @@
 package com.hazelcast.client.proxy;
 
 
-import com.hazelcast.client.Connection;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.client.proxy.listener.MembershipLRH;
 import com.hazelcast.client.proxy.listener.MigrationEventLRH;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
@@ -30,18 +29,16 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.core.PartitionService;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PartitionClientProxy implements PartitionService {
     final private ProxyHelper proxyHelper;
     final private HazelcastClient client;
+    Map<MigrationListener, ListenerThread> listenerMap = new ConcurrentHashMap<MigrationListener, ListenerThread>();
 
     public PartitionClientProxy(HazelcastClient client) {
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
@@ -55,19 +52,20 @@ public class PartitionClientProxy implements PartitionService {
 
         while(i<protocol.args.length-1){
             final int partitionId = Integer.valueOf(protocol.args[i++]);
-            String owner = protocol.args[i++];
-            Partition partition = partition(partitionId, owner);
+            String hostname = protocol.args[i++];
+            int port = Integer.valueOf(protocol.args[i++]);
+            Partition partition = partition(partitionId, hostname, port);
             set.add(partition);
         }
         return set;
     }
 
-    private Partition partition(final int partitionId, String owner) {
+    private Partition partition(final int partitionId, String hostname, int port) {
         Address address = null;
-        if(owner!="null"){
-            String[] a = owner.split(":");
+        if(hostname!="null"){
+           
             try {
-                address = new Address(a[0], Integer.valueOf(a[1]));
+                address = new Address(hostname, port);
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
@@ -86,24 +84,21 @@ public class PartitionClientProxy implements PartitionService {
 
     public Partition getPartition(Object key) {
         Protocol protocol = proxyHelper.doCommand(null, Command.PARTITIONS, new String[]{}, proxyHelper.toData(key));
-        return partition(Integer.valueOf(protocol.args[0]), protocol.args[1]);
+        return partition(Integer.valueOf(protocol.args[0]), protocol.args[1], Integer.valueOf(protocol.args[2]));
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {
-//        Protocol request = proxyHelper.createProtocol(Command.ADDLISTENER, null, null);
-//
-//        InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
-//        final Connection connection = new Connection(new Address(isa), 0, client.getSerializationService());
-//        try {
-//            client.getConnectionManager().bindConnection(connection);
-//        } catch (IOException e) {
-//        }
-//        ListenerThread thread = new ListenerThread(request, new MigrationEventLRH(migrationListener), connection, client.getSerializationService());
-//        thread.start();
-//        System.out.println("Started the thread!");
+        Protocol request  = proxyHelper.createProtocol(Command.MIGRATIONLISTEN, null, null);
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.migrationListener.",
+                client, request, new MigrationEventLRH(migrationListener, this));
+        listenerMap.put(migrationListener, thread);
+        thread.start();
     }
 
     public void removeMigrationListener(MigrationListener migrationListener) {
-        throw new UnsupportedOperationException();
+        ListenerThread thread = listenerMap.remove(migrationListener);
+        if(thread!=null){
+            thread.stopListening();
+        }
     }
 }

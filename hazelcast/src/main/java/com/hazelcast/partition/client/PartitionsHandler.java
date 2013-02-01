@@ -37,12 +37,14 @@ public class PartitionsHandler extends PartitionCommandHandler {
         if (protocol.buffers.length > 0) {
             Partition partition = partitionService.getPartitionServiceProxy().getPartition(protocol.buffers[0]);
             args.add(String.valueOf(partition.getPartitionId()));
-            args.add(partition.getOwner().getInetSocketAddress().toString());
+            args.add(partition.getOwner().getInetSocketAddress().getHostName());
+            args.add(String.valueOf(partition.getOwner().getInetSocketAddress().getPort()));
         } else {
             Set<Partition> set = partitionService.getPartitionServiceProxy().getPartitions();
             for (Partition partition : set) {
                 args.add(String.valueOf(partition.getPartitionId()));
-                args.add(partition.getOwner().getInetSocketAddress().getHostName() + ":" + partition.getOwner().getInetSocketAddress().getPort());
+                args.add(partition.getOwner().getInetSocketAddress().getHostName());
+                args.add(String.valueOf(partition.getOwner().getInetSocketAddress().getPort()));
             }
         }
         return protocol.success(args.toArray(new String[0]));

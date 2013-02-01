@@ -26,7 +26,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -35,7 +34,6 @@ public class ItemEventLRH<E> implements ListenerResponseHandler {
     final private boolean includeValue;
     final private QueueClientProxy<E> proxy;
 
-
     public ItemEventLRH(ItemListener<E> listener, boolean includeValue, QueueClientProxy<E> proxy) {
         this.listener = listener;
         this.includeValue = includeValue;
@@ -43,24 +41,20 @@ public class ItemEventLRH<E> implements ListenerResponseHandler {
     }
 
     public void handleResponse(Protocol response, SerializationService ss) throws Exception {
-        if (Command.EVENT.equals(response.command)) {
-            String name = response.args[0];
-            String eventType = response.args[1];
-            String[] address = response.args[2].split(":");
-            Member source = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
-            Data item = response.buffers[0];
-            ItemEventType itemEventType = ItemEventType.valueOf(eventType);
-            ItemEvent event = new DataAwareItemEvent(name, itemEventType, item, source, ss);
-            switch (itemEventType) {
-                case ADDED:
-                    listener.itemAdded(event);
-                    break;
-                case REMOVED:
-                    listener.itemRemoved(event);
-                    break;
-            }
-        } else {
-            throw new RuntimeException(response.args[0]);
+        String name = response.args[0];
+        String eventType = response.args[1];
+        String[] address = response.args[2].split(":");
+        Member source = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
+        Data item = response.buffers[0];
+        ItemEventType itemEventType = ItemEventType.valueOf(eventType);
+        ItemEvent event = new DataAwareItemEvent(name, itemEventType, item, source, ss);
+        switch (itemEventType) {
+            case ADDED:
+                listener.itemAdded(event);
+                break;
+            case REMOVED:
+                listener.itemRemoved(event);
+                break;
         }
     }
 
