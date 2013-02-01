@@ -35,7 +35,8 @@ public class ListenerThread extends Thread {
     final private ProtocolReader reader;
     volatile boolean running;
 
-    public ListenerThread(Protocol request, ListenerResponseHandler listenerResponseHandler, Connection connection, SerializationService ss) {
+    public ListenerThread(String name, Protocol request, ListenerResponseHandler listenerResponseHandler, Connection connection, SerializationService ss) {
+        super(name);
         this.request = request;
         this.listenerResponseHandler = listenerResponseHandler;
         this.connection = connection;
@@ -45,8 +46,10 @@ public class ListenerThread extends Thread {
         running = true;
     }
 
+
     public void run() {
         try {
+            System.out.println("Thread " + getName() + " is running");
             request.onEnqueue();
             writer.write(connection, request);
             writer.flush(connection);

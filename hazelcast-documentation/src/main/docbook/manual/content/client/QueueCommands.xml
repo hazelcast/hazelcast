@@ -274,7 +274,7 @@
 
         <para>
             Adds an entry listener for this map. Listener will get notified
-            for all map add/remove/update/evict events.
+            for all Queue add and remove events.
         </para>
 
         <para>
@@ -284,18 +284,10 @@
         <programlisting language="java"><![CDATA[
         QLISTEN <name> <includevalue> [noreply]
         ]]></programlisting>
-        <para>
-            providing key is optional. If provided the listener will be notified only for the key, otherwise it will be
-            notified for all entries in the map.
-        </para>
 
         <para>
             <emphasis role="bold">Return value:</emphasis>
         </para>
-        <para>
-        OK will return.
-        </para>
-
 
             <para>
                 After adding the listener. The following events will be received from the server.

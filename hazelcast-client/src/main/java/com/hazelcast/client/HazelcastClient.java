@@ -105,8 +105,8 @@ public class HazelcastClient implements HazelcastInstance {
 //            throw new ClusterClientException(e.getMessage(), e);
 //        }
         if (config.isUpdateAutomatic()) {
-            this.getCluster().addMembershipListener(connectionManager);
-            connectionManager.updateMembers();
+//            this.getCluster().addMembershipListener(connectionManager);
+//            connectionManager.updateMembers();
         }
         lifecycleService.fireLifecycleEvent(STARTED);
 //        connectionManager.scheduleHeartbeatTimerTask();

@@ -59,6 +59,7 @@ public class MembershipLRH implements ListenerResponseHandler {
     }
 
     public void onError(Exception e) {
+        e.printStackTrace();
         clusterClientProxy.addMembershipListener(listener);
     }
 }

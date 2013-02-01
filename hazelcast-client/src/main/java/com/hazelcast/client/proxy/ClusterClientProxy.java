@@ -33,6 +33,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
 import static java.lang.String.valueOf;
@@ -41,6 +42,7 @@ public class ClusterClientProxy implements Cluster {
     //    final PacketProxyHelper proxyHelper;
     final ProxyHelper proxyHelper;
     final private HazelcastClient client;
+    final static AtomicInteger threadCounter = new AtomicInteger(0);
 
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
@@ -69,7 +71,8 @@ public class ClusterClientProxy implements Cluster {
     Map<MembershipListener, ListenerThread> listenerMap = new ConcurrentHashMap<MembershipListener, ListenerThread>();
     public void addMembershipListener(MembershipListener listener) {
         Protocol request = proxyHelper.createProtocol(Command.MEMBERLISTEN, null, null);
-        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new MembershipLRH(listener, this));
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.membershipListener." + threadCounter.incrementAndGet(),
+                client, request, new MembershipLRH(listener, this));
         listenerMap.put(listener, thread);
         thread.start();
     }
@@ -91,19 +94,7 @@ public class ClusterClientProxy implements Cluster {
                 e.printStackTrace();
             }
         }
-//
-//
-//        Keys cw = (Keys) proxyHelper.doOp(ClusterOperation.GET_MEMBERS, null, null);
-//        Collection<Data> datas = cw.getKeys();
-//        Set<Member> set = new LinkedHashSet<Member>();
-//        for (Data d : datas) {
-//            set.add((Member) IOUtil.toObject(d.buffer));
-//        }
         return members;
-    }
-
-    public Member getMember(Address address) {
-        throw new UnsupportedOperationException();
     }
 
     public Member getLocalMember() {

@@ -137,10 +137,10 @@ public class ProxyHelper {
         }
     }
     
-    public ListenerThread  createAListenerThread(HazelcastClient client, Protocol request, ListenerResponseHandler lrh){
+    public ListenerThread  createAListenerThread(String threadName, HazelcastClient client, Protocol request, ListenerResponseHandler lrh){
         InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
         final Connection connection = client.getConnectionManager().createAndBindConnection(isa);
-        ListenerThread thread = new ListenerThread(request, lrh, connection, ss);
+        ListenerThread thread = new ListenerThread(threadName, request, lrh, connection, ss);
         return thread;
     }
 
