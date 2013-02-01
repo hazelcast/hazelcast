@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,30 +12,27 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.spi.NodeEngine;
 
-import java.util.Collection;
+public class ClusterTimeHandler extends ClientCommandHandler {
+    final ClusterServiceImpl clusterService;
 
-public class GetMembersHandler extends ClientCommandHandler {
+    public ClusterTimeHandler(ClusterServiceImpl clusterService) {
+        super();
+        this.clusterService = clusterService;
+    }
 
+    @Override
     public Protocol processCall(Node node, Protocol protocol) {
-        Collection<Member> collection = node.nodeEngine.getClusterService().getMembers();
-        String[] args = new String[collection.size()*2];
-        int i = 0;
-        for (Member member : collection) {
-            MemberImpl m = (MemberImpl) member;
-            args[i++] = m.getAddress().getHost() ;
-            args[i++] = String.valueOf(m.getAddress().getPort());
-        }
-        return protocol.success(args);
+        String time = String.valueOf(clusterService.getClusterProxy().getClusterTime());
+        return protocol.success(time);
     }
 }

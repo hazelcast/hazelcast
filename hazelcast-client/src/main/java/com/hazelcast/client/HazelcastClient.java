@@ -200,7 +200,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        clusterClientProxy.addInstanceListener(distributedObjectListener);
+        throw new UnsupportedOperationException();
     }
 
     public Cluster getCluster() {
@@ -259,7 +259,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public Collection<DistributedObject> getDistributedObjects() {
-        return clusterClientProxy.getInstances();
+        throw new UnsupportedOperationException();
     }
 
     public <E> IList<E> getList(String name) {
@@ -321,7 +321,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        clusterClientProxy.removeInstanceListener(distributedObjectListener);
+        throw new UnsupportedOperationException();
     }
 
     public static void shutdownAll() {

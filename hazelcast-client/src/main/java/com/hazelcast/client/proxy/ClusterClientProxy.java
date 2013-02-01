@@ -17,57 +17,33 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.InstanceListenerManager;
-import com.hazelcast.client.proxy.ProxyHelper;
-import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.proxy.listener.MembershipLRH;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.nio.serialization.Data;
 
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.client.proxy.ProxyHelper.check;
-import static java.lang.String.valueOf;
 
 public class ClusterClientProxy implements Cluster {
-    //    final PacketProxyHelper proxyHelper;
     final ProxyHelper proxyHelper;
     final private HazelcastClient client;
 
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
-//        proxyHelper = new PacketProxyHelper("", client);
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
-    public Collection<DistributedObject> getInstances() {
-//        Keys instances = (Keys) proxyHelper.doOp(ClusterOperation.GET_INSTANCES, null, null);
-        List<DistributedObject> list = new ArrayList<DistributedObject>();
-//        if (instances != null) {
-//            for (Data data : instances) {
-//                Object o = IOUtil.toObject(data.buffer);
-//                if (o instanceof FactoryImpl.ProxyKey) {
-//                    FactoryImpl.ProxyKey proxyKey = (FactoryImpl.ProxyKey) o;
-//                    list.add((Instance) client.getClientProxy(proxyKey.getKey()));
-//                } else {
-//                    list.add((Instance) client.getClientProxy(o));
-//                }
-//            }
-//        }
-        return list;
-    }
-
-    
     Map<MembershipListener, ListenerThread> listenerMap = new ConcurrentHashMap<MembershipListener, ListenerThread>();
+
     public void addMembershipListener(MembershipListener listener) {
         Protocol request = proxyHelper.createProtocol(Command.MEMBERLISTEN, null, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.membershipListener.",
@@ -84,13 +60,13 @@ public class ClusterClientProxy implements Cluster {
     public Set<Member> getMembers() {
         Protocol protocol = proxyHelper.doCommand(null, Command.MEMBERS, (String[]) null, null);
         Set<Member> members = new HashSet<Member>();
-        for (String arg : protocol.args) {
-            String[] address = arg.split(":");
+        for (int i = 0; i < protocol.args.length; ) {
+            String hostname = protocol.args[i++];
+            int port = Integer.valueOf(protocol.args[i++]);
             try {
-                Member member = new MemberImpl(new Address(address[0], Integer.valueOf(address[1])), false);
+                Member member = new MemberImpl(new Address(hostname, port), false);
                 members.add(member);
             } catch (UnknownHostException e) {
-                e.printStackTrace();
             }
         }
         return members;
@@ -101,27 +77,10 @@ public class ClusterClientProxy implements Cluster {
     }
 
     public long getClusterTime() {
-//        return (Long) proxyHelper.doOp(ClusterOperation.GET_CLUSTER_TIME, null, null);
-        return 0;
+        Protocol protocol = proxyHelper.doCommand(null, Command.CLUSTERTIME, (String[]) null, null);
+        long time = Long.valueOf(protocol.args[0]);
+        return time;
     }
-
-    public void addInstanceListener(DistributedObjectListener listener) {
-//        check(listener);
-//        if (instanceListenerManager().noListenerRegistered()) {
-//            Call c = instanceListenerManager().createNewAddListenerCall(proxyHelper);
-//            proxyHelper.doCall(c);
-//        }
-//        instanceListenerManager().registerListener(listener);
-    }
-
-    public void removeInstanceListener(DistributedObjectListener distributedObjectListener) {
-        check(distributedObjectListener);
-//        instanceListenerManager().removeListener(distributedObjectListener);
-    }
-
-//    private InstanceListenerManager instanceListenerManager() {
-//        return client.getListenerManager().getInstanceListenerManager();
-//    }
 
     @Override
     public String toString() {

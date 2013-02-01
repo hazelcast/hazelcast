@@ -17,10 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.cluster.client.ClientAuthenticateHandler;
-import com.hazelcast.cluster.client.DestroyHandler;
-import com.hazelcast.cluster.client.GetMembersHandler;
-import com.hazelcast.cluster.client.MembershipListenHandler;
+import com.hazelcast.cluster.client.*;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
@@ -931,6 +928,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         commandHandlers.put(Command.MEMBERS, new GetMembersHandler());
         commandHandlers.put(Command.DESTROY, new DestroyHandler());
         commandHandlers.put(Command.MEMBERLISTEN, new MembershipListenHandler(this));
+        commandHandlers.put(Command.CLUSTERTIME, new ClusterTimeHandler(this));
         return commandHandlers;
     }
 

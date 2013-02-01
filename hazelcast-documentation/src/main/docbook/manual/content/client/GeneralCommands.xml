@@ -236,7 +236,7 @@
             <emphasis role="bold">Return value:</emphasis>
         </para>
         <programlisting language="java"><![CDATA[
-        OK <member1> ... <memberN>
+        OK <member1 hostname> <member1 port> ... <memberN hostname> <memberN port>
             ]]></programlisting>
     </sect2>
 
