@@ -23,14 +23,13 @@ import com.hazelcast.client.util.QueueItemIterator;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
 import static com.hazelcast.client.proxy.ProxyHelper.checkTime;
@@ -40,7 +39,6 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected String name;
     final private HazelcastClient client;
     private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
-    final static AtomicInteger threadCounter = new AtomicInteger(0);
     final Object lock = new Object();
 
     public QueueClientProxy(HazelcastClient client, String name) {
@@ -179,7 +177,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Protocol request = proxyHelper.createProtocol(Command.QLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
-        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.qListener." + threadCounter.incrementAndGet(),
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.qListener.",
                 client, request, new ItemEventLRH<E>(listener, includeValue, this));
         listenerMap.put(listener, thread);
         thread.start();
@@ -187,7 +185,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     public void removeItemListener(ItemListener<E> listener) {
         ListenerThread thread = listenerMap.remove(listener);
-        if(thread!=null)
+        if (thread != null)
             thread.interrupt();
     }
 }

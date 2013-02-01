@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListenerThread extends Thread {
     final private ListenerResponseHandler listenerResponseHandler;
@@ -33,10 +34,11 @@ public class ListenerThread extends Thread {
     final private SerializationService ss;
     final private ProtocolWriter writer;
     final private ProtocolReader reader;
+    final private static AtomicInteger idGen = new AtomicInteger(0);
     volatile boolean running;
 
     public ListenerThread(String name, Protocol request, ListenerResponseHandler listenerResponseHandler, Connection connection, SerializationService ss) {
-        super(name);
+        super(name + idGen.incrementAndGet());
         this.request = request;
         this.listenerResponseHandler = listenerResponseHandler;
         this.connection = connection;

@@ -37,7 +37,7 @@ public class TopicTest extends ProtocolTest {
 
     @Test
     public void addListener() throws IOException {
-        OutputStream out = doOp("TADDLISTENER default", null, socket);
+        OutputStream out = doOp("TLISTEN default", null, socket);
         out.flush();
         assertTrue(read(socket).contains("OK"));
         final String message = "m";

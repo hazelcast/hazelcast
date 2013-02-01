@@ -45,7 +45,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final private String name;
     final HazelcastClient client;
     final Map<EntryListener<K, V>, Map<Object, ListenerThread>> listenerMap = new IdentityHashMap<EntryListener<K, V>, Map<Object, ListenerThread>>();
-    final static AtomicInteger threadCounter = new AtomicInteger(0);
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.client = client;
@@ -76,7 +75,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
         Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name,valueOf(includeValue)}, new Data[]{dKey});
-        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.mapListener." + threadCounter.incrementAndGet(),
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.mapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
         thread.start();

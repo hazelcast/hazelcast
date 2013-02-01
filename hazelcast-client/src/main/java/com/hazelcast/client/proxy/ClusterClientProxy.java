@@ -42,7 +42,6 @@ public class ClusterClientProxy implements Cluster {
     //    final PacketProxyHelper proxyHelper;
     final ProxyHelper proxyHelper;
     final private HazelcastClient client;
-    final static AtomicInteger threadCounter = new AtomicInteger(0);
 
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
@@ -71,7 +70,7 @@ public class ClusterClientProxy implements Cluster {
     Map<MembershipListener, ListenerThread> listenerMap = new ConcurrentHashMap<MembershipListener, ListenerThread>();
     public void addMembershipListener(MembershipListener listener) {
         Protocol request = proxyHelper.createProtocol(Command.MEMBERLISTEN, null, null);
-        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.membershipListener." + threadCounter.incrementAndGet(),
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.membershipListener.",
                 client, request, new MembershipLRH(listener, this));
         listenerMap.put(listener, thread);
         thread.start();
