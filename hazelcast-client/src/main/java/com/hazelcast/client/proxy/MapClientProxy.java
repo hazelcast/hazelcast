@@ -36,15 +36,15 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.lang.String.*;
+import static java.lang.String.valueOf;
 
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
     final private String name;
     final HazelcastClient client;
     final Map<EntryListener<K, V>, Map<Object, ListenerThread>> listenerMap = new IdentityHashMap<EntryListener<K, V>, Map<Object, ListenerThread>>();
+
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.client = client;
@@ -52,6 +52,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void flush(boolean flushAllEntries) {
+        proxyHelper.doCommand(null, Command.MFLUSH, new String[]{getName(), String.valueOf(flushAllEntries)}, null);
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -74,7 +75,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name,valueOf(includeValue)}, new Data[]{dKey});
+        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.mapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
@@ -121,15 +122,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         }
     }
 
-    private void checkTime(long time, TimeUnit timeunit) {
-        if (time < 0) {
-            throw new IllegalArgumentException("Time can not be less than 0.");
-        }
-        if (timeunit == null) {
-            throw new NullPointerException("TimeUnit can not be null.");
-        }
-    }
-
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
         Map<K, V> map = getCopyOfTheMap(predicate);
         return map.entrySet();
@@ -149,10 +141,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
             map.put(key, value);
         }
         return map;
-    }
-
-    public void flush() {
-        proxyHelper.doCommand(null, Command.MFLUSH, getName(), null);
     }
 
     public boolean evict(Object key) {
@@ -251,6 +239,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         proxyHelper.doCommand(dKey, Command.MLOCK, getName(), dKey);
     }
 
+    private void threadLocal(){
+        Thread thread = Thread.currentThread();
+        thread.
+        
+    }
+    
     public boolean isLocked(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
