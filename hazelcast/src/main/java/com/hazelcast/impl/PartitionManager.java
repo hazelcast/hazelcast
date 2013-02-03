@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ public class PartitionManager {
 
     private void sendPartitionRuntimeState() {
         if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()
-            || !concurrentMapManager.node.joined()) {
+                || !concurrentMapManager.node.joined()) {
             return;
         }
         if (!migrationActive.get()) {
@@ -214,26 +214,30 @@ public class PartitionManager {
                     ? cmap.getTotalBackupCount() == replicaIndex
                     : cmap.getTotalBackupCount() >= replicaIndex;
             if (includeCMap) {
-                for (Record rec : cmap.mapRecords.values()) {
-                    if (rec.isActive() && rec.isValid(now)) {
-                        if (rec.getKeyData() == null || rec.getKeyData().size() == 0) {
-                            throw new RuntimeException("Record.key is null or empty " + rec.getKeyData());
+                for (final Record record : cmap.mapRecords.values()) {
+                    if (record.isActive() && record.isValid(now)) {
+                        if (record.getKeyData() == null || record.getKeyData().size() == 0) {
+                            throw new RuntimeException("Record.key is null or empty " + record.getKeyData());
                         }
-                        if (rec.getBlockId() == partitionId) {
-                            cmap.onMigrate(rec);
+                        if (record.getBlockId() == partitionId) {
+                            concurrentMapManager.enqueueAndWait(new Processable() {
+                                public void process() {
+                                    cmap.onMigrate(record);
+                                }
+                            });
                             if (cmap.isMultiMap()) {
-                                final Collection<ValueHolder> colValues = rec.getMultiValues();
+                                final Collection<ValueHolder> colValues = record.getMultiValues();
                                 if (colValues != null) {
                                     for (ValueHolder valueHolder : colValues) {
-                                        Record record = rec.copy();
-                                        record.setValueData(valueHolder.getData());
-                                        lsResultSet.add(record);
+                                        Record copy = record.copy();
+                                        copy.setValueData(valueHolder.getData());
+                                        lsResultSet.add(copy);
                                     }
                                 }
                             } else {
-                                lsResultSet.add(rec);
+                                lsResultSet.add(record);
                             }
-                            lsResultSet.addCost(rec.getCost());
+                            lsResultSet.addCost(record.getCost());
                         }
                     }
                 }
@@ -531,9 +535,15 @@ public class PartitionManager {
         } else {
             final Address master = concurrentMapManager.getMasterAddress();
             if (sender == null || !sender.equals(master)) {
-                logger.log(Level.WARNING, "Received a ClusterRuntimeState, but its sender doesn't seem master!" +
-                        " => Sender: " + sender + ", Master: " + master + "! " +
-                        "(Ignore if master node has changed recently.)");
+                if (concurrentMapManager.getMember(sender) == null) {
+                    logger.log(Level.SEVERE, "Received a ClusterRuntimeState from an unknown member!" +
+                            " => Sender: " + sender + ", Master: " + master + "! ");
+                    return;
+                } else {
+                    logger.log(Level.WARNING, "Received a ClusterRuntimeState, but its sender doesn't seem master!" +
+                            " => Sender: " + sender + ", Master: " + master + "! " +
+                            "(Ignore if master node has changed recently.)");
+                }
             }
         }
         PartitionInfo[] newPartitions = runtimeState.getPartitions();
@@ -602,8 +612,8 @@ public class PartitionManager {
         // volatile read
         final MigratingPartition currentMigratingPartition = migratingPartition;
         return currentMigratingPartition != null
-               && currentMigratingPartition.getPartitionId() == partitionId
-               && currentMigratingPartition.getReplicaIndex() == replicaIndex;
+                && currentMigratingPartition.getPartitionId() == partitionId
+                && currentMigratingPartition.getReplicaIndex() == replicaIndex;
     }
 
     public PartitionInfo getPartition(int partitionId) {
@@ -622,18 +632,19 @@ public class PartitionManager {
         MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(
                 concurrentMapManager.node.config.getPartitionGroupConfig());
         if (mgf.createMemberGroups(members).size() < 2) return false;
-        boolean needBackup = false;
-        if (immediateTasksQueue.isEmpty()) {
+        final int size = immediateTasksQueue.size();
+        if (size == 0) {
             for (PartitionInfo partition : partitions) {
                 if (partition.getReplicaAddress(1) == null) {
-                    needBackup = true;
-                    logger.log(Level.WARNING, concurrentMapManager.thisAddress
-                            + " still has no replica for partitionId:" + partition.getPartitionId());
-                    break;
+                    logger.log(Level.WARNING, "Waiting for safe-backup of partition: " + partition.getPartitionId());
+                    return true;
                 }
             }
+        } else {
+            logger.log(Level.WARNING, "Waiting for ongoing immediate migration tasks: " + size);
+            return true;
         }
-        return needBackup || !immediateTasksQueue.isEmpty();
+        return false;
     }
 
     public void fireMigrationEvent(final MigrationStatus status, int partitionId, Address from, Address to) {
@@ -922,15 +933,15 @@ public class PartitionManager {
                         try {
                             result = future.get(partitionMigrationTimeout, TimeUnit.SECONDS);
                         } catch (Throwable e) {
-                            logger.log(Level.WARNING, "Failed migrating from " + fromMember);
+                            logger.log(Level.WARNING, "Failed migrating from " + fromMember, e);
                         }
                     } else {
                         // Partition is lost! Assign new owner and exit.
                         result = Boolean.TRUE;
                     }
-                    logger.log(Level.FINEST, "Finished Migration : " + migrationRequestTask);
-                    systemLogService.logPartition("Finished Migration : " + migrationRequestTask);
                     if (Boolean.TRUE.equals(result)) {
+                        logger.log(Level.FINEST, "Finished Migration : " + migrationRequestTask);
+                        systemLogService.logPartition("Finished Migration : " + migrationRequestTask);
                         concurrentMapManager.enqueueAndWait(new ProcessMigrationResult(migrationRequestTask), 10000);
                     } else {
                         // remove active partition migration

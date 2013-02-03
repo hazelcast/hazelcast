@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,11 @@ import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -87,6 +92,22 @@ public class QueryTest extends TestUtil {
         } catch (Throwable e) {
             assertEquals("There is no suitable accessor for 'qwe'", e.getMessage());
         }
+    }
+
+    @Test
+    public void negativeDouble() {
+        final IMap<String, Employee> map = Hazelcast.getMap("default");
+        map.addIndex("salary", false);
+        map.put("" + 4, new Employee(1, "default", 1, true, -70D));
+        map.put("" + 3, new Employee(1, "default", 1, true, -60D));
+        map.put("" + 1, new Employee(1, "default", 1, true, -10D));
+        map.put("" + 2, new Employee(2, "default", 2, true, 10D));
+        Predicate predicate = new SqlPredicate("salary >= -60");
+        Collection<Employee> values = map.values(predicate);
+        assertEquals(3, values.size());
+        predicate = new SqlPredicate("salary between -20 and 20");
+        values = map.values(predicate);
+        assertEquals(2, values.size());
     }
 
     @Test
@@ -511,7 +532,7 @@ public class QueryTest extends TestUtil {
         imap.clear();
         imap = h1.getMap("employees2");
         imap.addIndex("name", false);
-        imap.addIndex("salary", true);
+        imap.addIndex("salary", false);
         imap.addIndex("active", false);
         for (int i = 0; i < 50000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
@@ -812,7 +833,7 @@ public class QueryTest extends TestUtil {
     }
 
     /**
-     *  Github issues 98 and 131
+     * Github issues 98 and 131
      */
     @Test
     public void testPredicateStringAttribute() {
@@ -821,7 +842,7 @@ public class QueryTest extends TestUtil {
     }
 
     /**
-     *  Github issues 98 and 131
+     * Github issues 98 and 131
      */
     @Test
     public void testPredicateStringAttributesWithIndex() {
@@ -840,12 +861,10 @@ public class QueryTest extends TestUtil {
         map.put(7, new Value("prs"));
         map.put(8, new Value("def"));
         map.put(9, new Value("qwx"));
-
         assertEquals(8, map.values(new SqlPredicate("name > 'aac'")).size());
         assertEquals(9, map.values(new SqlPredicate("name between 'aaa' and 'zzz'")).size());
         assertEquals(7, map.values(new SqlPredicate("name < 't'")).size());
         assertEquals(6, map.values(new SqlPredicate("name >= 'gh'")).size());
-
         assertEquals(8, map.values(new PredicateBuilder().getEntryObject().get("name").greaterThan("aac")).size());
         assertEquals(9, map.values(new PredicateBuilder().getEntryObject().get("name").between("aaa", "zzz")).size());
         assertEquals(7, map.values(new PredicateBuilder().getEntryObject().get("name").lessThan("t")).size());
@@ -877,21 +896,18 @@ public class QueryTest extends TestUtil {
         map.put(4, cal.getTime());
         cal.set(2000, 5, 5);
         map.put(5, cal.getTime());
-
         cal.set(2011, 0, 1);
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").greaterThan(cal.getTime())).size());
         assertEquals(3, map.values(new SqlPredicate("this > 'Sat Jan 01 11:43:05 EET 2011'")).size());
-
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("this").lessThan(cal.getTime())).size());
         assertEquals(2, map.values(new SqlPredicate("this < 'Sat Jan 01 11:43:05 EET 2011'")).size());
-
         cal.set(2003, 10, 10);
         Date d1 = cal.getTime();
         cal.set(2012, 1, 10);
         Date d2 = cal.getTime();
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
         assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
-                                                    " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
+                " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
     @Test
@@ -911,7 +927,6 @@ public class QueryTest extends TestUtil {
         map.put(1, NodeType.MEMBER);
         map.put(2, NodeType.LITE_MEMBER);
         map.put(3, NodeType.JAVA_CLIENT);
-
         assertEquals(NodeType.MEMBER, map.values(new SqlPredicate("this=MEMBER")).iterator().next());
         assertEquals(2, map.values(new SqlPredicate("this in (MEMBER, LITE_MEMBER)")).size());
         assertEquals(NodeType.JAVA_CLIENT,
@@ -921,7 +936,25 @@ public class QueryTest extends TestUtil {
                 .get("this").equal(NodeType.CSHARP_CLIENT)).size());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject()
                 .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
+    }
 
+    @Test
+    public void testPredicateNotEqualWithIndex() {
+        IMap map1 = Hazelcast.getMap("testPredicateNotEqualWithIndex-ordered");
+        IMap map2 = Hazelcast.getMap("testPredicateNotEqualWithIndex-unordered");
+        testPredicateNotEqualWithIndex(map1, true);
+        testPredicateNotEqualWithIndex(map2, false);
+    }
+
+    private void testPredicateNotEqualWithIndex(final IMap map, boolean ordered) {
+        map.addIndex("name", ordered);
+        map.put(1, new Value("abc", 1));
+        map.put(2, new Value("xyz", 2));
+        map.put(3, new Value("aaa", 3));
+        assertEquals(3, map.values(new SqlPredicate("name != 'aac'")).size());
+        assertEquals(2, map.values(new SqlPredicate("index != 2")).size());
+        assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
+        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
     }
 
     public void doFunctionalSQLQueryTest(IMap imap) {
@@ -1065,6 +1098,67 @@ public class QueryTest extends TestUtil {
                 fail("Unknown expression: " + e.getKey()
                         + "! Has toString() of GetExpressionImpl changed?");
             }
+        }
+    }
+
+    /**
+     * test for issue #359
+     */
+    @Test
+    public void testIndexCleanupOnMigration() throws InterruptedException {
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        final String mapName = "testIndexCleanupOnMigration";
+        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
+        final int n = 6;
+        final int runCount = 500;
+        ExecutorService ex = Executors.newFixedThreadPool(n);
+        final CountDownLatch latch = new CountDownLatch(n);
+        final AtomicInteger countdown = new AtomicInteger(n * runCount);
+        final Random rand = new Random();
+        for (int i = 0; i < n; i++) {
+            Thread.sleep(rand.nextInt((i + 1) * 100) + 10);
+            ex.execute(new Runnable() {
+                public void run() {
+                    final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+                    final String name = UUID.randomUUID().toString();
+                    final IMap<Object, Value> map = hz.getMap(mapName);
+                    map.put(name, new Value(name, 0));
+                    try {
+                        for (int j = 1; j <= runCount; j++) {
+                            Value v = map.get(name);
+                            v.setIndex(j);
+                            map.put(name, v);
+
+                            try {
+                                Thread.sleep(rand.nextInt(100) + 1);
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                            EntryObject e = new PredicateBuilder().getEntryObject();
+                            Predicate<?, ?> predicate = e.get("name").equal(name);
+                            final Collection<Value> values = map.values(predicate);
+                            assertEquals(1, values.size());
+                            Value v1 = values.iterator().next();
+                            Value v2 = map.get(name);
+                            assertEquals(v1, v2);
+                            countdown.decrementAndGet();
+                        }
+                    } catch (AssertionError e) {
+                            e.printStackTrace();
+                    } catch (Throwable e) {
+                            System.err.println(e.getClass().getName() + "-> " +e.getMessage());
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+        try {
+            assertTrue(latch.await(60, TimeUnit.SECONDS));
+            assertEquals(0, countdown.get());
+        } finally {
+            ex.shutdownNow();
         }
     }
 }

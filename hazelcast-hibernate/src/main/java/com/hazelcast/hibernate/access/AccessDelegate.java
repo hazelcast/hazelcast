@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.hibernate.access;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
@@ -32,8 +31,6 @@ public interface AccessDelegate<T extends HazelcastRegion> {
      * @return The underlying region
      */
     T getHazelcastRegion();
-
-    IMap getCache();
 
     /**
      * Attempt to retrieve an object from the cache. Mainly used in attempting

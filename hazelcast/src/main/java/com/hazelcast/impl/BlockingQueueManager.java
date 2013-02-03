@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,9 +114,9 @@ public class BlockingQueueManager extends BaseManager {
         node.listenerManager.removeAllRegisteredListeners(name);
     }
 
-    public void syncForDead(MemberImpl deadMember) {
+    public void syncForDead(Address deadAddress) {
         for (BQ queue : mapBQ.values()) {
-            queue.invalidateScheduledActionsFor(deadMember);
+            queue.invalidateScheduledActionsFor(deadAddress);
         }
     }
 
@@ -155,7 +155,7 @@ public class BlockingQueueManager extends BaseManager {
 
     public int size(String name) {
         ThreadContext threadContext = ThreadContext.get();
-        TransactionImpl txn = threadContext.getCallContext().getTransaction();
+        TransactionImpl txn = threadContext.getTransaction();
         int size = queueSize(name);
         if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
             size += txn.size(name);
@@ -170,10 +170,7 @@ public class BlockingQueueManager extends BaseManager {
             for (Long key : keys) {
                 Data keyData = toData(key);
                 if (removeKey(name, keyData)) {
-                    try {
-                        getStorageMap(name).tryRemove(keyData, 0, TimeUnit.SECONDS);
-                    } catch (TimeoutException ignored) {
-                    }
+                    getStorageMap(name).remove(keyData);
                     fireQueueEvent(name, EntryEventType.REMOVED, dataValue);
                     return true;
                 }
@@ -235,11 +232,7 @@ public class BlockingQueueManager extends BaseManager {
             throw new IndexOutOfBoundsException();
         }
         IMap imap = getStorageMap(name);
-        try {
-            return imap.tryRemove(key, 0, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            return null;
-        }
+        return imap.remove(key);
     }
 
     public void offerCommit(String name, Object key, Data item, int index) {
@@ -249,7 +242,7 @@ public class BlockingQueueManager extends BaseManager {
             storeQueueItem(name, key, item, index);
     }
 
-    public void rollbackPoll(String name, Object key, Object obj) {
+    public void rollbackPoll(String name, Object key) {
         final Data dataKey = toData(key);
         if (addKeyAsync) {
             sendKeyToMaster(name, dataKey, 0);
@@ -282,19 +275,15 @@ public class BlockingQueueManager extends BaseManager {
                 return null;
             }
             IMap imap = getStorageMap(name);
-            try {
-                removedItem = imap.tryRemove(key, 0, TimeUnit.MILLISECONDS);
-                if (removedItem != null) {
-                    ThreadContext threadContext = ThreadContext.get();
-                    TransactionImpl txn = threadContext.getCallContext().getTransaction();
-                    final Data removedItemData = toData(removedItem);
-                    if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-                        txn.attachRemoveOp(name, key, removedItemData, true);
-                    }
-                    fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
+            removedItem = imap.remove(key);
+            if (removedItem != null) {
+                ThreadContext threadContext = ThreadContext.get();
+                TransactionImpl txn = threadContext.getCallContext().getTransaction();
+                final Data removedItemData = toData(removedItem);
+                if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+                    txn.attachRemoveOp(name, key, removedItemData, true);
                 }
-            } catch (TimeoutException e) {
-                throw new OperationTimeoutException();
+                fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
             }
             long now = Clock.currentTimeMillis();
             timeout -= (now - start);
@@ -320,7 +309,7 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_TAKE_KEY, name, getOperationTimeout(timeout));
             op.request.longValue = index;
-            op.request.txnId = ThreadContext.get().getThreadId();
+            op.request.txnId = ThreadContext.get().getTxnId();
             op.initOp();
             return (Data) op.getResultAsIs();
         } catch (Exception e) {
@@ -328,7 +317,7 @@ public class BlockingQueueManager extends BaseManager {
                 MasterOp op = new MasterOp(ClusterOperation.BLOCKING_CANCEL_TAKE_KEY, name,
                         getOperationTimeout(timeout));
                 op.request.longValue = index;
-                op.request.txnId = ThreadContext.get().getThreadId();
+                op.request.txnId = ThreadContext.get().getTxnId();
                 op.initOp();
                 throw new InterruptedException(e.getMessage());
             }
@@ -519,14 +508,11 @@ public class BlockingQueueManager extends BaseManager {
 
             public void remove() {
                 if (key != null) {
-                    try {
-                        final Data dataKey = toData(key);
-                        final Object removedItem = imap.tryRemove(dataKey, 0, TimeUnit.MILLISECONDS);
-                        removeKey(name, dataKey);
-                        final Data removedItemData = toData(removedItem);
-                        fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
-                    } catch (TimeoutException ignored) {
-                    }
+                    final Data dataKey = toData(key);
+                    final Object removedItem = imap.remove(dataKey);
+                    removeKey(name, dataKey);
+                    final Data removedItemData = toData(removedItem);
+                    fireQueueEvent(name, EntryEventType.REMOVED, removedItemData);
                 }
             }
 
@@ -558,7 +544,7 @@ public class BlockingQueueManager extends BaseManager {
         if (bq != null && bq.mapListeners.size() > 0) {
             enqueueAndReturn(new Processable() {
                 public void process() {
-                    fireMapEvent(bq.mapListeners, name, type.getType(), itemData, thisAddress);
+                    fireEvent(bq.mapListeners, name, type.getType(), itemData, thisAddress);
                 }
             });
         }
@@ -594,7 +580,7 @@ public class BlockingQueueManager extends BaseManager {
         try {
             MasterOp op = new MasterOp(ClusterOperation.BLOCKING_GENERATE_KEY, name, getOperationTimeout(timeout));
             op.request.setLongRequest();
-            op.request.txnId = ThreadContext.get().getThreadId();
+            op.request.txnId = ThreadContext.get().getTxnId();
             op.initOp();
             return (Long) op.getResultAsObject();
         } catch (Exception e) {
@@ -742,7 +728,7 @@ public class BlockingQueueManager extends BaseManager {
         final CMap cmapStorage = getOrCreateStorageCMap(queueName);
         executeLocally(new Runnable() {
             public void run() {
-                TreeSet itemKeys = null;
+                TreeSet<Long> itemKeys = null;
                 if (cmapStorage.loader != null) {
                     Set keys = cmapStorage.loader.loadAllKeys();
                     if (keys != null && keys.size() > 0) {
@@ -755,8 +741,8 @@ public class BlockingQueueManager extends BaseManager {
                         itemKeys = new TreeSet<Long>(keys);
                     } else {
                         itemKeys.addAll(keys);
+                        }
                     }
-                }
                 if (itemKeys != null) {
                     final Set<Long> queueKeys = itemKeys;
                     enqueueAndReturn(new Processable() {
@@ -786,7 +772,7 @@ public class BlockingQueueManager extends BaseManager {
     public void removeItemListener(final String name, final ItemListener listener) {
         List<ListenerManager.ListenerItem> lsListenerItems = node.listenerManager.getOrCreateListenerList(name);
         for (ListenerManager.ListenerItem listenerItem : lsListenerItems) {
-            if (listenerItem.listener == listener) {
+            if (listener != null && listener.equals(listenerItem.listener)) {
                 lsListenerItems.remove(listenerItem);
                 return;
             }
@@ -947,7 +933,7 @@ public class BlockingQueueManager extends BaseManager {
             }
         }
 
-        QData pollValidItem() {
+        private QData pollValidItem() {
             QData qdata = queue.poll();
             if (qdata == null) {
                 return null;
@@ -965,7 +951,7 @@ public class BlockingQueueManager extends BaseManager {
             return qdata;
         }
 
-        QData removeItemByIndex(int index) {
+        private QData removeItemByIndex(int index) {
             if (index >= queue.size()) {
                 return null;
             }
@@ -1106,15 +1092,15 @@ public class BlockingQueueManager extends BaseManager {
             return new LocalQueueStatsImpl(ownedCount, backupCount, minAge, maxAge, aveAge);
         }
 
-        public void invalidateScheduledActionsFor(MemberImpl deadMember) {
+        public void invalidateScheduledActionsFor(Address deadAddress) {
             for (PollAction pollAction : pollWaitList) {
-                if (deadMember.address.equals(pollAction.getRequest().caller)) {
+                if (deadAddress.equals(pollAction.getRequest().caller)) {
                     pollAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(pollAction);
                 }
             }
             for (ScheduledAction offerAction : offerWaitList) {
-                if (deadMember.address.equals(offerAction.getRequest().caller)) {
+                if (deadAddress.equals(offerAction.getRequest().caller)) {
                     offerAction.setValid(false);
                     node.clusterManager.deregisterScheduledAction(offerAction);
                 }

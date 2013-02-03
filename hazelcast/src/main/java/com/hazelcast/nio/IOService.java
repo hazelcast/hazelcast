@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
+
+import java.util.Collection;
 
 public interface IOService {
 
@@ -101,4 +103,6 @@ public interface IOService {
     void onShutdown();
 
     void executeAsync(Runnable runnable);
+
+    Collection<Integer> getOutboundPorts();
 }

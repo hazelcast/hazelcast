@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 /**
  * Holds the socket to one of the members of Hazelcast Cluster.
@@ -41,19 +40,7 @@ public class Connection {
     boolean headersWritten = false;
     boolean headerRead = false;
 
-    /**
-     * Creates the Socket to the given host and port
-     *
-     * @param host ip address of the host
-     * @param port port of the host
-     * @throws UnknownHostException
-     * @throws IOException
-     */
-    public Connection(String host, int port, int id) {
-        this(new InetSocketAddress(host, port), id);
-    }
-
-    public Connection(InetSocketAddress address, int id) {
+    public Connection(int timeout, InetSocketAddress address, int id) {
         this.id = id;
         this.address = address;
         try {
@@ -65,7 +52,7 @@ public class Connection {
                 socket.setSoLinger(true, 5);
 //                socket.setSendBufferSize(BUFFER_SIZE);
 //                socket.setReceiveBufferSize(BUFFER_SIZE);
-                socket.connect(isa, 3000);
+                socket.connect(isa, timeout);
             } catch (IOException e) {
                 socket.close();
                 throw e;

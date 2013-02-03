@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -417,7 +417,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     public String getLongName() {
-        return dynamicProxy.getLongName();
+        return name;
     }
 
     public void addGenericListener(Object listener, Object key, boolean includeValue,
@@ -542,7 +542,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             mapOperationCounter.incrementGets(Clock.currentTimeMillis() - begin);
             return mapEntry;
         }
-        
+
         public boolean putMulti(Object key, Object value) {
             long begin = Clock.currentTimeMillis();
             check(key);
@@ -728,7 +728,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             mapOperationCounter.incrementOtherOperations();
             MLock mlock = concurrentMapManager.new MLock();
             if (!mlock.unlock(name, key, 0)) {
-                throw new IllegalMonitorStateException("Current thread is not owner of the lock!") ;
+                throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
             }
         }
 
@@ -983,9 +983,15 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public void clear() {
-            Set keys = keySet();
-            for (Object key : keys) {
-                removeKey(key);
+            if (concurrentMapManager.getMap(name).isClearQuick()) {
+                mapOperationCounter.incrementOtherOperations();
+                MClearQuick mClearQuick = concurrentMapManager.new MClearQuick(name);
+                mClearQuick.call();
+            } else {
+                Set keys = keySet();
+                for (Object key : keys) {
+                    removeKey(key);
+                }
             }
         }
 

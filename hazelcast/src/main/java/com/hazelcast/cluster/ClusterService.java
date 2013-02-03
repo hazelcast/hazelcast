@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.impl.*;
 import com.hazelcast.impl.base.PacketProcessor;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadWatcher;
@@ -41,8 +42,6 @@ public final class ClusterService implements Runnable, Constants {
 
     private final ILogger logger;
 
-    private final long PERIODIC_CHECK_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(1);
-
     private final long MAX_IDLE_MILLIS;
 
     private final boolean RESTART_ON_MAX_IDLE;
@@ -51,15 +50,13 @@ public final class ClusterService implements Runnable, Constants {
 
     private final Queue<Processable> processableQueue = new ConcurrentLinkedQueue<Processable>();
 
-    private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.LENGTH];
+    private final Queue<Processable> processablePriorityQueue = new ConcurrentLinkedQueue<Processable>();
 
-    private final Runnable[] periodicRunnables = new Runnable[5];
+    private final PacketProcessor[] packetProcessors = new PacketProcessor[ClusterOperation.LENGTH];
 
     private final Node node;
 
-    private long lastPeriodicCheck = 0;
-
-    private long lastCheck = 0;
+    private long lastIdleCheck = 0;
 
     private volatile boolean running = true;
 
@@ -77,17 +74,6 @@ public final class ClusterService implements Runnable, Constants {
 
     public Thread getServiceThread() {
         return serviceThread;
-    }
-
-    public void registerPeriodicRunnable(Runnable runnable) {
-        int len = periodicRunnables.length;
-        for (int i = 0; i < len; i++) {
-            if (periodicRunnables[i] == null) {
-                periodicRunnables[i] = runnable;
-                return;
-            }
-        }
-        throw new RuntimeException("Not enough space for a runnable " + runnable);
     }
 
     public void registerPacketProcessor(ClusterOperation operation, PacketProcessor packetProcessor) {
@@ -154,13 +140,19 @@ public final class ClusterService implements Runnable, Constants {
         unpark();
     }
 
+    public void enqueuePriorityAndReturn(Processable processable) {
+        processablePriorityQueue.offer(processable);
+        unpark();
+    }
+
     private void unpark() {
         LockSupport.unpark(serviceThread);
     }
 
     private void processPacket(Packet packet) {
         if (!running) return;
-        final MemberImpl memberFrom = node.clusterManager.getMember(packet.conn.getEndPoint());
+        final Address endPoint = packet.conn.getEndPoint();
+        final MemberImpl memberFrom = node.clusterManager.getMember(endPoint);
         if (memberFrom != null) {
             memberFrom.didRead();
         }
@@ -203,7 +195,6 @@ public final class ClusterService implements Runnable, Constants {
                         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
                         long now = System.nanoTime();
                         threadWatcher.addWait((now - startWait), now);
-                        checkPeriodics();
                     } catch (Exception e) {
                         node.handleInterruptedException(Thread.currentThread(), e);
                     }
@@ -226,7 +217,7 @@ public final class ClusterService implements Runnable, Constants {
         Packet packet = null;
         try {
             for (int i = 0; i < PACKET_BULK_SIZE; i++) {
-                checkPeriodics();
+                dequeuePriorityProcessables();
                 packet = packetQueue.poll();
                 if (packet == null) {
                     return i;
@@ -246,7 +237,7 @@ public final class ClusterService implements Runnable, Constants {
         Processable processable = null;
         try {
             for (int i = 0; i < PROCESSABLE_BULK_SIZE; i++) {
-                checkPeriodics();
+                dequeuePriorityProcessables();
                 processable = processableQueue.poll();
                 if (processable == null) {
                     return i;
@@ -262,9 +253,24 @@ public final class ClusterService implements Runnable, Constants {
         return PACKET_BULK_SIZE;
     }
 
+    private int dequeuePriorityProcessables() throws Throwable {
+        Processable processable = processablePriorityQueue.poll();
+        try {
+            while (processable != null) {
+                processProcessable(processable);
+                processable = processablePriorityQueue.poll();
+            }
+        } catch (OutOfMemoryError e) {
+            throw e;
+        } catch (Throwable e) {
+            logger.log(Level.SEVERE, "error processing messages processable=" + processable, e);
+            throw e;
+        }
+        return PACKET_BULK_SIZE;
+    }
+
     public void start() {
-        lastPeriodicCheck = Clock.currentTimeMillis();
-        lastCheck = Clock.currentTimeMillis();
+        lastIdleCheck = Clock.currentTimeMillis();
         running = true;
     }
 
@@ -290,19 +296,19 @@ public final class ClusterService implements Runnable, Constants {
     @Override
     public String toString() {
         return "ClusterService packetQueueSize=" + packetQueue.size()
-                + "unknownQueueSize=" + processableQueue.size() + " isMaster= " + node.isMaster()
-                + " isMaster= " + node.getMasterAddress();
+                + "processableQueueSize=" + processableQueue.size() + " isMaster= " + node.isMaster()
+                + " master= " + node.getMasterAddress();
     }
 
-    private void checkPeriodics() {
+    public void checkIdle() {
         final long now = Clock.currentTimeMillis();
-        if (RESTART_ON_MAX_IDLE && (now - lastCheck) > MAX_IDLE_MILLIS) {
+        if (RESTART_ON_MAX_IDLE && (now - lastIdleCheck) > MAX_IDLE_MILLIS) {
             if (logger.isLoggable(Level.INFO)) {
                 final StringBuilder sb = new StringBuilder("Hazelcast ServiceThread is blocked for ");
-                sb.append((now - lastCheck));
+                sb.append((now - lastIdleCheck));
                 sb.append(" ms. Restarting Hazelcast!");
                 sb.append("\n\tnow:").append(now);
-                sb.append("\n\tlastCheck:").append(lastCheck);
+                sb.append("\n\tlastIdleCheck:").append(lastIdleCheck);
                 sb.append("\n\tmaxIdleMillis:").append(MAX_IDLE_MILLIS);
                 sb.append("\n\tRESTART_ON_MAX_IDLE:").append(RESTART_ON_MAX_IDLE);
                 sb.append("\n");
@@ -314,15 +320,7 @@ public final class ClusterService implements Runnable, Constants {
                 }
             }, "hz.RestartThread").start();
         }
-        lastCheck = now;
-        if ((now - lastPeriodicCheck) > PERIODIC_CHECK_INTERVAL_MILLIS) {
-            publishUtilization();
-            for (Runnable runnable : periodicRunnables) {
-                if (runnable != null) {
-                    runnable.run();
-                }
-            }
-            lastPeriodicCheck = now;
-        }
+        lastIdleCheck = now;
+        publishUtilization();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.cluster.AddOrRemoveConnection;
-import com.hazelcast.config.AsymmetricEncryptionConfig;
-import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.impl.Node;
 import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.impl.Processable;
@@ -28,6 +25,11 @@ import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.ascii.TextCommandService;
 import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class NodeIOService implements IOService {
 
@@ -142,7 +144,7 @@ public class NodeIOService implements IOService {
     }
 
     public boolean isSocketBindAny() {
-        return node.groupProperties.SOCKET_BIND_ANY.getBoolean();
+        return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
     }
 
     public boolean isSocketPortAutoIncrement() {
@@ -197,6 +199,7 @@ public class NodeIOService implements IOService {
 
     public void onShutdown() {
         try {
+            ThreadContext.get().setCurrentFactory(node.factory);
             node.clusterManager.sendProcessableToAll(new AddOrRemoveConnection(getThisAddress(), false), false);
             // wait a little
             Thread.sleep(100);
@@ -206,6 +209,43 @@ public class NodeIOService implements IOService {
 
     public void executeAsync(final Runnable runnable) {
         node.executorManager.executeNow(runnable);
+    }
+
+    public Collection<Integer> getOutboundPorts() {
+        final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
+        final Collection<String> portDefinitions = networkConfig.getOutboundPortDefinitions() == null
+                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
+        final Set<Integer> ports = networkConfig.getOutboundPorts() == null
+                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+
+        if (portDefinitions.isEmpty() && ports.isEmpty()) {
+            return Collections.emptySet(); // means any port
+        }
+        if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
+            return Collections.emptySet(); // means any port
+        }
+
+        // not checking port ranges...
+        for (String portDef : portDefinitions) {
+            String[] portDefs = portDef.split("[,; ]");
+            for (String def : portDefs) {
+                def = def.trim();
+                final int dashPos = def.indexOf('-');
+                if (dashPos > 0) {
+                    final int start = Integer.parseInt(def.substring(0, dashPos));
+                    final int end = Integer.parseInt(def.substring(dashPos + 1));
+                    for (int port = start; port <= end; port++) {
+                        ports.add(port);
+                    }
+                } else {
+                    ports.add(Integer.parseInt(def));
+                }
+            }
+        }
+        if (ports.contains(0)) {
+            return Collections.emptySet(); // means any port
+        }
+        return ports;
     }
 }
 

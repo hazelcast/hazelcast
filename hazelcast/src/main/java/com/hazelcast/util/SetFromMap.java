@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,75 +16,74 @@
 
 package com.hazelcast.util;
 
-import java.io.Serializable;
 import java.util.*;
 
-public class SetFromMap<E> extends AbstractSet<E> implements Set<E>, Serializable {
+public class SetFromMap<E> extends AbstractSet<E> implements Set<E> {
 
-    private final Map<E, Boolean> m;
+    private final Map<E, Boolean> map;
 
     public SetFromMap(final Map<E, Boolean> map) {
         super();
-        this.m = map;
+        this.map = map;
     }
 
     public void clear() {
-        m.clear();
+        map.clear();
     }
 
     public int size() {
-        return m.size();
+        return map.size();
     }
 
     public boolean isEmpty() {
-        return m.isEmpty();
+        return map.isEmpty();
     }
 
     public boolean contains(Object o) {
-        return m.containsKey(o);
+        return map.containsKey(o);
     }
 
     public boolean remove(Object o) {
-        return m.remove(o) != null;
+        return map.remove(o) != null;
     }
 
     public boolean add(E e) {
-        return m.put(e, Boolean.TRUE) == null;
+        return map.put(e, Boolean.TRUE) == null;
     }
 
     public Iterator<E> iterator() {
-        return m.keySet().iterator();
+        return map.keySet().iterator();
     }
 
     public Object[] toArray() {
-        return m.keySet().toArray();
+        return map.keySet().toArray();
     }
 
     public <T> T[] toArray(T[] a) {
-        return m.keySet().toArray(a);
+        return map.keySet().toArray(a);
     }
 
     public String toString() {
-        return m.keySet().toString();
+        return map.keySet().toString();
     }
 
     public int hashCode() {
-        return m.keySet().hashCode();
+        return map.keySet().hashCode();
     }
 
     public boolean equals(Object o) {
-        return o == this || m.keySet().equals(o);
+        return o == this || map.keySet().equals(o);
     }
 
     public boolean containsAll(Collection<?> c) {
-        return m.keySet().containsAll(c);
+        return map.keySet().containsAll(c);
     }
 
     public boolean removeAll(Collection<?> c) {
-        return m.keySet().removeAll(c);
+        return map.keySet().removeAll(c);
     }
 
     public boolean retainAll(Collection<?> c) {
-        return m.keySet().retainAll(c);
+        return map.keySet().retainAll(c);
     }
 }

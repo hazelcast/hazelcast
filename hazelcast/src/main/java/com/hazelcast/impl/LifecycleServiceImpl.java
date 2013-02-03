@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,6 +116,7 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public void restart() {
         synchronized (lifecycleLock) {
+            ThreadContext.get().setCurrentFactory(factory);
             fireLifecycleEvent(RESTARTING);
             paused.set(true);
             final Node node = factory.node;

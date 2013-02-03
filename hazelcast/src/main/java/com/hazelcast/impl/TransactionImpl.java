@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,8 +120,8 @@ public class TransactionImpl implements Transaction {
         status = TXN_STATUS_COMMITTING;
         try {
             ThreadContext.get().setCurrentFactory(factory);
-            for (TransactionRecord transactionRecord : transactionRecords) {
-                transactionRecord.commit();
+            for (TransactionRecord record : transactionRecords) {
+                record.commit();
             }
         } catch (RuntimeException e) {
             throw e;
@@ -417,8 +417,7 @@ public class TransactionImpl implements Transaction {
         public void commitMap() {
             if (removed) {
                 if (instanceType.isSet()) {
-                    ConcurrentMapManager.MRemoveItem mRemoveItem = factory.node.concurrentMapManager.new MRemoveItem();
-                    mRemoveItem.removeItem(name, key);
+                    factory.node.concurrentMapManager.new MRemoveItem().removeItem(name, key);
                 } else if (!newRecord) {
                     if (instanceType.isMap()) {
                         factory.node.concurrentMapManager.new MRemove().remove(name, key);
@@ -429,9 +428,9 @@ public class TransactionImpl implements Transaction {
                             factory.node.concurrentMapManager.new MRemoveMulti().remove(name, key, value);
                         }
                     }
-                } else {
-                    factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                 }
+                // since we do not have removeAndUnlock op, we should explicitly call unlock after remove!
+                factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
             } else {
                 if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
@@ -460,17 +459,12 @@ public class TransactionImpl implements Transaction {
         }
 
         public void rollbackMap() {
-            MProxy mapProxy = null;
-            Object proxy = factory.getOrCreateProxyByName(name);
-            if (proxy instanceof MProxy) {
-                mapProxy = (MProxy) proxy;
-            }
-            if (mapProxy != null) mapProxy.unlock(key);
+            factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
         }
 
         public void rollbackQueue() {
             if (removed) {
-                factory.node.blockingQueueManager.rollbackPoll(name, key, value);
+                factory.node.blockingQueueManager.rollbackPoll(name, key);
             }
         }
 

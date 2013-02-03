@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.EntryListenerManager;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.core.Prefix;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.impl.CMap.CMapEntry;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.Keys;
@@ -43,10 +43,38 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     final ProxyHelper proxyHelper;
     final private String name;
+    final NearCache<K, V> nearCache;
+    private static String PROP_CLIENT_NEAR_CACHE_CONFIG_ENABLED = "hazelcast.client.near.cache.enabled";
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.proxyHelper = new ProxyHelper(name, client);
+        Config config = (Config) proxyHelper.doOp(ClusterOperation.GET_CONFIG, null, null);
+        MapConfig mapConfig = config.getMapConfig(name);
+        NearCacheConfig ncc = mapConfig.getNearCacheConfig();
+
+        boolean nearCacheEnabled = "true".equalsIgnoreCase(System.getProperty(PROP_CLIENT_NEAR_CACHE_CONFIG_ENABLED, "false"));
+        nearCache = (nearCacheEnabled && ncc != null) ? new GuavaNearCacheImpl<K, V>(ncc, this) : null;
+        if (nearCache != null) {
+            if (ncc.isInvalidateOnChange()) {
+                addEntryListener(new EntryListener<K, V>() {
+                    public void entryAdded(EntryEvent<K, V> kvEntryEvent) {
+                    }
+
+                    public void entryRemoved(EntryEvent<K, V> kvEntryEvent) {
+                        nearCache.invalidate(kvEntryEvent.getKey());
+                    }
+
+                    public void entryUpdated(EntryEvent<K, V> kvEntryEvent) {
+                        nearCache.invalidate(kvEntryEvent.getKey());
+                    }
+
+                    public void entryEvicted(EntryEvent<K, V> kvEntryEvent) {
+                        nearCache.invalidate(kvEntryEvent.getKey());
+                    }
+                }, false);
+            }
+        }
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
@@ -131,7 +159,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public boolean isLocked(K key) {
-        return (Boolean)doLock(ClusterOperation.CONCURRENT_MAP_IS_KEY_LOCKED, key, -1, null);
+        return (Boolean) doLock(ClusterOperation.CONCURRENT_MAP_IS_KEY_LOCKED, key, -1, null);
     }
 
     public boolean tryLock(K key) {
@@ -229,6 +257,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public V get(Object key) {
+        if (nearCache != null)
+            return nearCache.get((K) key);
+        return get0(key);
+    }
+
+    protected V get0(Object key) {
         check(key);
         return (V) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_GET, (K) key, null);
     }
@@ -388,5 +422,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     @Override
     public int hashCode() {
         return getName().hashCode();
+    }
+
+    public NearCache<K, V> getNearCache() {
+        return nearCache;
     }
 }

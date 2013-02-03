@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -382,6 +382,31 @@ public class CMapTest extends TestUtil {
         assertEquals(0, cmap.size());
         assertFalse(cmap.containsKey(newContainsRequest(dKey, null)));
         assertFalse(cmap.containsKey(newContainsRequest(dKey2, null)));
+        node.connectionManager.shutdown();
+    }
+
+    @Test
+    public void testContainsKeyUpdatesLastAccessTime() throws Exception {
+        Config config = new Config();
+        FactoryImpl mockFactory = mock(FactoryImpl.class);
+        // we mocked the node
+        // do not forget to shutdown the connectionManager
+        // so that server socket can be released.
+        Node node = new Node(mockFactory, config);
+        node.serviceThread = Thread.currentThread();
+        CMap cmap = new CMap(node.concurrentMapManager, "c:myMap");
+        Object key = "1";
+        Object value = "istanbul";
+        Data dKey = toData(key);
+        Data dValue = toData(value);
+        cmap.put(newPutRequest(dKey, dValue));
+        Record record = cmap.getRecord(dKey);
+        long firstAccessTime = record.getLastAccessTime();
+        Thread.sleep(10);
+        assertTrue(cmap.containsKey(newContainsRequest(dKey, null)));
+        record = cmap.getRecord(dKey);
+        long secondAccessTime = record.getLastAccessTime();
+        assertTrue("record access time should have been updated on containsKey()", secondAccessTime > firstAccessTime);
         node.connectionManager.shutdown();
     }
 }

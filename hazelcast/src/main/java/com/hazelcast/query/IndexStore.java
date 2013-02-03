@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 public interface IndexStore {
     void getSubRecordsBetween(MultiResultSet results, Long from, Long to);
 
-    void getSubRecords(MultiResultSet results, boolean equal, boolean lessThan, Long searchedValue);
+    void getSubRecords(MultiResultSet results, PredicateType predicateType, Long searchedValue);
 
     void newRecordIndex(Long newValue, Record record);
 

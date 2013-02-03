@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperationStats> implements LocalMapStats {
     private final AtomicLong lastAccessTime = new AtomicLong();
     private final AtomicLong hits = new AtomicLong();
+    private final AtomicLong misses = new AtomicLong();
     private long ownedEntryCount;
     private long backupEntryCount;
     private long markedAsRemovedEntryCount;
@@ -57,6 +58,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     void writeDataInternal(DataOutput out) throws IOException {
         out.writeLong(lastAccessTime.get());
         out.writeLong(hits.get());
+//        out.writeLong(misses.get());
         out.writeLong(ownedEntryCount);
         out.writeLong(backupEntryCount);
         out.writeLong(markedAsRemovedEntryCount);
@@ -74,6 +76,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     void readDataInternal(DataInput in) throws IOException {
         lastAccessTime.set(in.readLong());
         hits.set(in.readLong());
+//        misses.set(in.readLong());
         ownedEntryCount = in.readLong();
         backupEntryCount = in.readLong();
         markedAsRemovedEntryCount = in.readLong();
@@ -181,6 +184,14 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         this.hits.set(hits);
     }
 
+    public long getMisses() {
+        return misses.get();
+    }
+
+    public void setMisses(long misses) {
+        this.misses.set(misses);
+    }
+
     public long getLockedEntryCount() {
         return lockedEntryCount;
     }
@@ -219,6 +230,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", lastEvictionTime=" + lastEvictionTime +
                 ", hits=" + hits.get() +
+//                ", misses=" + misses.get() +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", lockWaitCount=" + lockWaitCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +

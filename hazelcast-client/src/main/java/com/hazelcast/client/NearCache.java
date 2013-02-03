@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.entity;
+package com.hazelcast.client;
 
-import com.hazelcast.hibernate.access.ReadOnlyAccessDelegate;
+public interface NearCache<K, V> {
 
-import java.util.Properties;
+    void invalidate(K key);
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-final class ReadOnlyAccessStrategy extends AbstractEntityRegionAccessStrategy {
-    ReadOnlyAccessStrategy(final HazelcastEntityRegion entityRegion, final Properties props) {
-        super(new ReadOnlyAccessDelegate<HazelcastEntityRegion>(entityRegion, props));
-    }
+    V get(K key);
 }

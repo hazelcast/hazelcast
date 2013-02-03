@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -169,7 +170,7 @@ public class HazelcastClientPerformanceTest extends HazelcastClientTestBase {
         HazelcastClient client = mock(HazelcastClient.class);
         ConnectionManager connectionManager = mock(ConnectionManager.class);
         when(client.getConnectionManager()).thenReturn(connectionManager);
-        Connection connection = new Connection("localhost", 5799, 1);
+        Connection connection = new Connection(3, new InetSocketAddress("localhost", 5799), 1);
         when(connectionManager.getConnection()).thenReturn(connection);
         PacketWriter packetWriter = new PacketWriter();
         packetWriter.setConnection(connection);

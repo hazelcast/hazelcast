@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,18 @@ public class FactoryImpl implements HazelcastInstance {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
+        return newHazelcastInstanceProxy(config, config.isLiteMember());
+    }
+    
+    public static HazelcastInstanceProxy newHazelcastInstanceProxy(Config config, Boolean liteMember) {
+        if (config == null) {
+            config = new XmlConfigBuilder().build();
+        }
+
+        if (liteMember != null) {
+            config.setLiteMember(liteMember);
+        }
+
         String name = config.getInstanceName();
         if (name == null || name.trim().length() == 0) {
             name = "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
@@ -578,10 +590,15 @@ public class FactoryImpl implements HazelcastInstance {
                 return;
             }
             if (!cmap.isMapForQueue() && cmap.notInitialized()) {
+                int k = 0;
                 while (!node.concurrentMapManager.partitionServiceImpl.allPartitionsOwned()) {
                     try {
                         Thread.sleep(250);
-                        logger.log(Level.FINEST, "Waiting for all partitions to be owned...");
+                        Level level = Level.FINEST;
+                        if (++k % 20 == 0) {
+                            level = Level.WARNING;
+                        }
+                        logger.log(level, "Waiting for all partitions to be owned...");
                     } catch (InterruptedException e) {
                         return;
                     }
@@ -592,7 +609,7 @@ public class FactoryImpl implements HazelcastInstance {
                         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
                             cmap.setInitState(InitializationState.INITIALIZING);
                             try {
-                                ExecutorService es = getExecutorService();
+                                ExecutorService es = getExecutorService("hz.initialization");
                                 final Set<Member> members = new HashSet<Member>(getCluster().getMembers());
                                 members.remove(node.localMember);
                                 final MultiTask task = new MultiTask(new InitializeMap(mProxy.getName()), members);

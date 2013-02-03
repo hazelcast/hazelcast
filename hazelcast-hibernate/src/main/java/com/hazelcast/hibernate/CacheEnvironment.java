@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,14 @@ public final class CacheEnvironment {
 
     public static final String SHUTDOWN_ON_STOP = "hibernate.cache.hazelcast.shutdown_on_session_factory_close";
 
-    public static final String LOCK_TIMEOUT = "hibernate.cache.hazelcast.lock_timeout_in_seconds";
+    @Deprecated
+    public static final String LOCK_TIMEOUT_SECONDS = "hibernate.cache.hazelcast.lock_timeout_in_seconds";
+
+    public static final String LOCK_TIMEOUT = "hibernate.cache.hazelcast.lock_timeout";
 
     public static final String HAZELCAST_INSTANCE_NAME = "hibernate.cache.hazelcast.instance_name";
 
-    private static final int MAXIMUM_LOCK_TIMEOUT = 60; // seconds
+    private static final int MAXIMUM_LOCK_TIMEOUT = 10000; // milliseconds
 
     private final static int DEFAULT_CACHE_TIMEOUT = (3600 * 1000); // one hour in milliseconds
 
@@ -85,12 +88,22 @@ public final class CacheEnvironment {
         return DEFAULT_CACHE_TIMEOUT;
     }
 
-    public static int getLockTimeoutInSeconds(Properties props) {
+    public static int getLockTimeoutInMillis(Properties props) {
+        int timeout = -1;
         try {
-            return PropertiesHelper.getInt(LOCK_TIMEOUT, props, MAXIMUM_LOCK_TIMEOUT);
+            timeout = PropertiesHelper.getInt(LOCK_TIMEOUT, props, -1);
         } catch (Exception ignored) {
         }
-        return MAXIMUM_LOCK_TIMEOUT;
+        if (timeout < 0) {
+            try {
+                timeout = PropertiesHelper.getInt(LOCK_TIMEOUT_SECONDS, props, -1) * 1000;
+            } catch (Exception ignored) {
+            }
+        }
+        if (timeout < 0) {
+            timeout = MAXIMUM_LOCK_TIMEOUT;
+        }
+        return timeout;
     }
 
     public static boolean shutdownOnStop(Properties props, boolean defaultValue) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import static com.hazelcast.nio.IOUtil.toData;
 
 public class TopicManager extends BaseManager {
 
-    final boolean FLOW_CONTROL_ENABLED;
+    private final boolean FLOW_CONTROL_ENABLED;
 
     TopicManager(Node node) {
         super(node);
@@ -88,15 +88,15 @@ public class TopicManager extends BaseManager {
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        if (FLOW_CONTROL_ENABLED) {
-            while (node.connectionManager.getTotalWriteQueueSize() > 10000) {
-                try {
-                    //noinspection BusyWait
-                    Thread.sleep(10);
-                } catch (InterruptedException ignored) {
-                }
-            }
-        }
+//        if (FLOW_CONTROL_ENABLED) {
+//            while (node.connectionManager.getTotalWriteQueueSize() > 10000) {
+//                try {
+//                    //noinspection BusyWait
+//                    Thread.sleep(10);
+//                } catch (InterruptedException ignored) {
+//                }
+//            }
+//        }
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
     }
 
@@ -158,7 +158,7 @@ public class TopicManager extends BaseManager {
         }
 
         public void publish(final Data msg) {
-            topicManager.fireMapEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg, thisAddress);
+            topicManager.fireEvent(mapListeners, name, EntryEvent.TYPE_ADDED, msg, thisAddress, !FLOW_CONTROL_ENABLED);
         }
 
         public LocalTopicStatsImpl getTopicStats() {

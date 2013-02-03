@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,12 +82,15 @@ public class IndexTest extends TestUtil {
         assertEquals(3, index.getSubRecordsBetween(55L, 555L).size());
         assertEquals(3, index.getSubRecordsBetween(66L, 555L).size());
         assertEquals(2, index.getSubRecordsBetween(555L, 555L).size());
-        assertEquals(0, index.getSubRecords(false, true, 66L).size());
-        assertEquals(1, index.getSubRecords(true, true, 66L).size());
-        assertEquals(1, index.getSubRecords(true, true, 67L).size());
-        assertEquals(2, index.getSubRecords(false, false, 66L).size());
-        assertEquals(3, index.getSubRecords(true, false, 66L).size());
-        assertEquals(3, index.getSubRecords(true, false, 61L).size());
+        assertEquals(0, index.getSubRecords(PredicateType.LESSER, 66L).size());
+        assertEquals(1, index.getSubRecords(PredicateType.LESSER_EQUAL, 66L).size());
+        assertEquals(1, index.getSubRecords(PredicateType.LESSER_EQUAL, 67L).size());
+        assertEquals(2, index.getSubRecords(PredicateType.GREATER, 66L).size());
+        assertEquals(3, index.getSubRecords(PredicateType.GREATER_EQUAL, 66L).size());
+        assertEquals(3, index.getSubRecords(PredicateType.GREATER_EQUAL, 61L).size());
+        assertEquals(3, index.getSubRecords(PredicateType.NOT_EQUAL, 61L).size());
+        assertEquals(2, index.getSubRecords(PredicateType.NOT_EQUAL, 66L).size());
+        assertEquals(1, index.getSubRecords(PredicateType.NOT_EQUAL, 555L).size());
         assertEquals(3, index.getRecords(new HashSet<Long>(Arrays.asList(66L, 555L, 34234L))).size());
         assertEquals(2, index.getRecords(new HashSet<Long>(Arrays.asList(555L, 34234L))).size());
         record5.setActive(false);
@@ -104,12 +107,12 @@ public class IndexTest extends TestUtil {
         assertEquals(2, index.getSubRecordsBetween(55L, 555L).size());
         assertEquals(2, index.getSubRecordsBetween(66L, 555L).size());
         assertEquals(1, index.getSubRecordsBetween(555L, 555L).size());
-        assertEquals(0, index.getSubRecords(false, true, 66L).size());
-        assertEquals(1, index.getSubRecords(true, true, 66L).size());
-        assertEquals(1, index.getSubRecords(true, true, 67L).size());
-        assertEquals(1, index.getSubRecords(false, false, 66L).size());
-        assertEquals(2, index.getSubRecords(true, false, 66L).size());
-        assertEquals(2, index.getSubRecords(true, false, 61L).size());
+        assertEquals(0, index.getSubRecords(PredicateType.LESSER, 66L).size());
+        assertEquals(1, index.getSubRecords(PredicateType.LESSER_EQUAL, 66L).size());
+        assertEquals(1, index.getSubRecords(PredicateType.LESSER_EQUAL, 67L).size());
+        assertEquals(1, index.getSubRecords(PredicateType.GREATER, 66L).size());
+        assertEquals(2, index.getSubRecords(PredicateType.GREATER_EQUAL, 66L).size());
+        assertEquals(2, index.getSubRecords(PredicateType.GREATER_EQUAL, 61L).size());
         record50.setActive(false);
         index.index(-1L, record50);
         assertEquals(1, index.getRecordValues().size());

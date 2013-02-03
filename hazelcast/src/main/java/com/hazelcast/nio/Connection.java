@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,22 @@ import java.net.SocketAddress;
 import java.util.logging.Level;
 
 public final class Connection {
-    final SocketChannelWrapper socketChannel;
 
-    final ReadHandler readHandler;
+    private final SocketChannelWrapper socketChannel;
 
-    final WriteHandler writeHandler;
+    private final ReadHandler readHandler;
 
-    final ConnectionManager connectionManager;
+    private final WriteHandler writeHandler;
 
-    final InOutSelector inOutSelector;
+    private final ConnectionManager connectionManager;
+
+    private final InOutSelector inOutSelector;
 
     private volatile boolean live = true;
 
     private volatile Type type = Type.NONE;
 
-    Address endPoint = null;
+    private Address endPoint = null;
 
     private final ILogger logger;
 
@@ -72,6 +73,8 @@ public final class Connection {
     }
 
     public void releasePacket(Packet packet) {
+        if (packet == null) return;
+        packet.reset();
         packetQueue.offer(packet);
     }
 
@@ -181,14 +184,15 @@ public final class Connection {
     }
 
     public void close0() throws IOException {
-        if (!live)
+        if (!live) {
             return;
+        }
+        readHandler.shutdown();
+        writeHandler.shutdown();
         live = false;
         if (socketChannel != null && socketChannel.isOpen()) {
             socketChannel.close();
         }
-        readHandler.shutdown();
-        writeHandler.shutdown();
     }
 
     public void close() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ public abstract class BaseManager {
         qServiceThreadPacketCache = node.baseVariables.qServiceThreadPacketCache;
         localIdGen = node.baseVariables.localIdGen;
         logger = node.getLogger(this.getClass().getName());
-        maxOperationTimeout = Math.max(node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong(), 0L);
+        maxOperationTimeout = Math.max(node.getGroupProperties().MAX_OPERATION_TIMEOUT.getLong(), MIN_POLL_TIMEOUT);
         maxOperationLimit = node.getGroupProperties().MAX_CONCURRENT_OPERATION_LIMIT.getInteger();
         responsePollTimeout = Math.min(Math.max(maxOperationTimeout / 5, MIN_POLL_TIMEOUT), MAX_POLL_TIMEOUT);
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
@@ -190,7 +190,6 @@ public abstract class BaseManager {
 
     abstract class AbstractCall implements Call, CallStateAware {
         protected long callId = -1;
-        protected long firstEnqueueTime = -1;
         protected int enqueueCount = 0;
         protected CallState callState = null;
 
@@ -216,9 +215,6 @@ public abstract class BaseManager {
         }
 
         public void onEnqueue() {
-            if (firstEnqueueTime == -1) {
-                firstEnqueueTime = Clock.currentTimeMillis();
-            }
             enqueueCount++;
         }
 
@@ -233,7 +229,6 @@ public abstract class BaseManager {
 
         public void reset() {
             initCall();
-            firstEnqueueTime = -1;
             enqueueCount = 0;
         }
 
@@ -241,16 +236,11 @@ public abstract class BaseManager {
             return enqueueCount;
         }
 
-        protected int getDurationSeconds() {
-            return (int) (Clock.currentTimeMillis() - firstEnqueueTime) / 1000;
-        }
-
         @Override
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], duration=" + (+getDurationSeconds()) +
-                    "sn., enqueueCount=" + getEnqueueCount() +
+                    "] enqueueCount=" + getEnqueueCount() +
                     '}';
         }
     }
@@ -533,8 +523,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], duration=" + (+getDurationSeconds()) +
-                    "sn., enqueueCount=" + getEnqueueCount() +
+                    "] enqueueCount=" + getEnqueueCount() +
                     ", " + request +
                     '}';
         }
@@ -592,10 +581,12 @@ public abstract class BaseManager {
 
         public Object waitAndGetResult() {
             // should be more than request timeout
+//            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
+//                                           ? Long.MAX_VALUE
+//                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
+//                                                                         : responsePollTimeout;
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
-                                           ? Long.MAX_VALUE
-                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
-                                                                         : responsePollTimeout;
+                    ? Long.MAX_VALUE : maxOperationTimeout;
 
             final long start = Clock.currentTimeMillis();
             while (true) {
@@ -617,7 +608,7 @@ public abstract class BaseManager {
                         }
                         if (canTimeout() && noResponseTimeout <= (Clock.currentTimeMillis() - start)) {
                             throw new OperationTimeoutException(request.operation.toString(),
-                                    "Operation Timeout (with no response!): " + request.timeout);
+                                    "Operation Timeout (with no response!): " + noResponseTimeout);
                         }
                     }
                     node.checkNodeState();
@@ -807,8 +798,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
-                    "sn., enqueueCount=" + enqueueCount +
+                    "] enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +
                     '}';
@@ -964,8 +954,7 @@ public abstract class BaseManager {
         public String toString() {
             return this.getClass().getSimpleName() + "{[" +
                     "" + getCallId() +
-                    "], firstEnqueue=" + (Clock.currentTimeMillis() - firstEnqueueTime) / 1000 +
-                    "sn., enqueueCount=" + enqueueCount +
+                    "] enqueueCount=" + enqueueCount +
                     ", " + request +
                     ", target=" + getTarget() +
                     '}';
@@ -1193,7 +1182,8 @@ public abstract class BaseManager {
         return node.clusterService.getPacketProcessor(operation);
     }
 
-    public void sendEvents(int eventType, String name, Data key, Data value, Map<Address, Boolean> mapListeners, Address callerAddress) {
+    public void sendEvents(int eventType, String name, Data key, Data value, Map<Address, Boolean> mapListeners,
+                           Address callerAddress, boolean fireAndForget) {
         if (mapListeners != null) {
             checkServiceThread();
             final Set<Map.Entry<Address, Boolean>> listeners = mapListeners.entrySet();
@@ -1208,6 +1198,25 @@ public abstract class BaseManager {
                     // and an EntryListener whose include-value is false. 
                     enqueueEvent(eventType, name, key, /*(includeValue) ? value : null*/ value, callerAddress, true);
                 } else {
+                    final Connection conn = node.connectionManager.getConnection(toAddress);
+                    if (conn != null && conn.getWriteHandler().size() > 10000) {
+                        // flow control
+                        if (fireAndForget) {
+                            if (logger.isLoggable(Level.FINEST)) {
+                                logger.log(Level.FINEST, "Event[" + eventType + "] for " + name
+                                          + " could not be send, packet queue of " + toAddress + " is full!");
+                            }
+                            continue;
+                        } else {
+                            while (conn.getWriteHandler().size() > 10000) {
+                                try {
+                                    //noinspection BusyWait
+                                    Thread.sleep(10);
+                                } catch (InterruptedException ignored) {
+                                }
+                            }
+                        }
+                    }
                     final Packet packet = obtainPacket();
                     packet.set(name, ClusterOperation.EVENT, key, (includeValue) ? value : null);
                     packet.lockAddress = callerAddress;
@@ -1402,19 +1411,25 @@ public abstract class BaseManager {
         return hash1 * 29 + hash2;
     }
 
-    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data value, Address callerAddress) {
-        fireMapEvent(mapListeners, name, eventType, null, value, callerAddress);
+    void fireEvent(final Map<Address, Boolean> mapListeners, final String name,
+                   final int eventType, final Data value, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, null, null, value, null, callerAddress, true);
     }
 
-    void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
-                      final int eventType, final Data oldValue, final Data value, Address callerAddress) {
-        fireMapEvent(mapListeners, name, eventType, null, oldValue, value, null, callerAddress);
+    void fireEvent(final Map<Address, Boolean> mapListeners, final String name,
+                      final int eventType, final Data value, Address callerAddress, boolean fireAndForget) {
+        fireMapEvent(mapListeners, name, eventType, null, null, value, null, callerAddress, fireAndForget);
     }
 
     void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
                       final int eventType, final Data key, final Data oldValue, final Data value,
                       Map<Address, Boolean> keyListeners, Address callerAddress) {
+        fireMapEvent(mapListeners, name, eventType, key, oldValue, value, keyListeners, callerAddress, true);
+    }
+
+    private void fireMapEvent(final Map<Address, Boolean> mapListeners, final String name,
+                      final int eventType, final Data key, final Data oldValue, final Data value,
+                      Map<Address, Boolean> keyListeners, Address callerAddress, boolean fireAndForget) {
         if (keyListeners == null && (mapListeners == null || mapListeners.size() == 0)) {
             return;
         }
@@ -1451,7 +1466,7 @@ public abstract class BaseManager {
                 }
                 packetValue = toData(keys);
             }
-            sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress);
+            sendEvents(eventType, name, key, packetValue, mapTargetListeners, callerAddress, fireAndForget);
         } catch (final Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }

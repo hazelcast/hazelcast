@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.hazelcast.web;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Data;
+import com.hazelcast.util.Clock;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -52,6 +55,12 @@ public class WebFilter implements Filter {
 
     private String sessionCookieName = HAZELCAST_SESSION_COOKIE_NAME;
 
+    private String sessionCookieDomain = null;
+
+    private boolean sessionCookieSecure = false;
+
+    private boolean sessionCookieHttpOnly = false;
+
     private boolean stickySession = true;
 
     private boolean debug = false;
@@ -64,7 +73,8 @@ public class WebFilter implements Filter {
 
     protected FilterConfig filterConfig;
 
-    public WebFilter() {}
+    public WebFilter() {
+    }
 
     public WebFilter(Properties properties) {
         this();
@@ -75,7 +85,6 @@ public class WebFilter implements Filter {
         filterConfig = config;
         servletContext = config.getServletContext();
         initInstance();
-
         String debugParam = getParam("debug");
         if (debugParam != null) {
             debug = Boolean.valueOf(debugParam);
@@ -86,9 +95,28 @@ public class WebFilter implements Filter {
         } else {
             clusterMapName = "_web_" + servletContext.getServletContextName();
         }
+        Config hzConfig = hazelcastInstance.getConfig();
+        String sessionTTL = getParam("session-ttl-seconds");
+        if (sessionTTL != null) {
+            MapConfig mapConfig = new MapConfig(clusterMapName);
+            mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
+            hzConfig.addMapConfig(mapConfig);
+        }
         String cookieName = getParam("cookie-name");
         if (cookieName != null) {
             sessionCookieName = cookieName;
+        }
+        String cookieDomain = getParam("cookie-domain");
+        if (cookieDomain != null) {
+            sessionCookieDomain = cookieDomain;
+        }
+        String cookieSecure = getParam("cookie-secure");
+        if (cookieSecure != null) {
+            sessionCookieSecure = Boolean.valueOf(cookieSecure);
+        }
+        String cookieHttpOnly = getParam("cookie-http-only");
+        if (cookieHttpOnly != null) {
+            sessionCookieHttpOnly = Boolean.valueOf(cookieHttpOnly);
         }
         String stickySessionParam = getParam("sticky-session");
         if (stickySessionParam != null) {
@@ -105,19 +133,20 @@ public class WebFilter implements Filter {
 
                 public void entryRemoved(EntryEvent entryEvent) {
                     if (entryEvent.getMember() == null || // client events has no owner member
-                        !entryEvent.getMember().localMember()) {
+                            !entryEvent.getMember().localMember()) {
                         removeSessionLocally((String) entryEvent.getKey());
                     }
                 }
 
                 public void entryUpdated(EntryEvent entryEvent) {
                     if (entryEvent.getMember() == null || // client events has no owner member
-                        !entryEvent.getMember().localMember()) {
+                            !entryEvent.getMember().localMember()) {
                         markSessionDirty((String) entryEvent.getKey());
                     }
                 }
 
                 public void entryEvicted(EntryEvent entryEvent) {
+                    entryRemoved(entryEvent);
                 }
             }, false);
         }
@@ -129,19 +158,16 @@ public class WebFilter implements Filter {
         if (properties == null) {
             properties = new Properties();
         }
-
         setProperty(CONFIG_LOCATION);
         setProperty(INSTANCE_NAME);
         setProperty(USE_CLIENT);
         setProperty(CLIENT_CONFIG_LOCATION);
-
-        hazelcastInstance = getInstance(properties);
+        hazelcastInstance = (HazelcastInstance) getInstance(properties);
     }
 
     private void setProperty(String propertyName) {
         String value = getParam(propertyName);
-
-        if(value != null) {
+        if (value != null) {
             properties.setProperty(propertyName, value);
         }
     }
@@ -201,29 +227,17 @@ public class WebFilter implements Filter {
     /**
      * Destroys a session, determining if it should be destroyed clusterwide automatically or via expiry.
      *
-     * @param session       The session to be destroyed
-     * @param ignoreTimeout Boolean value - true if the session should be destroyed irrespective of active time
+     * @param session             The session to be destroyed
+     * @param removeGlobalSession boolean value - true if the session should be destroyed irrespective of active time
      */
-    private void destroySession(final HazelcastHttpSession session, final Boolean ignoreTimeout) {
+    private void destroySession(HazelcastHttpSession session, boolean removeGlobalSession) {
         log("Destroying local session: " + session.getId());
         mapSessions.remove(session.getId());
         mapOriginalSessions.remove(session.originalSession.getId());
         session.destroy();
-
-        if(ignoreTimeout) {
+        if (removeGlobalSession) {
             log("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
             getClusterMap().remove(session.getId());
-        } else {
-            final long maxInactive = session.originalSession.getMaxInactiveInterval() * 1000; // getMaxInactiveInterval() is in seconds
-            final long clusterLastAccess = session.getLastAccessed();
-            final long now = System.currentTimeMillis(); // Hazelcast.getCluster().getClusterTime() ?
-            if ((now - clusterLastAccess) >= maxInactive) {
-                log("Destroying cluster session: " + session.getId() + " => Max-inactive: " + maxInactive
-                        + ", Local-Last-Access: " + session.originalSession.getLastAccessedTime()
-                        + ", Cluster-Last-Access: " + clusterLastAccess
-                        + ", Now: " + now);
-                getClusterMap().remove(session.getId());
-            }
         }
     }
 
@@ -433,7 +447,6 @@ public class WebFilter implements Filter {
         public void invalidate() {
             originalSession.invalidate();
             destroySession(this, true);
-            timestamp.destroy();
         }
 
         public boolean isNew() {
@@ -464,10 +477,7 @@ public class WebFilter implements Filter {
                 if (data == null) {
                     return currentSessionData != null;
                 }
-                if (currentSessionData == null) {
-                    return true;
-                }
-                return !data.equals(currentSessionData);
+                return currentSessionData == null || !data.equals(currentSessionData);
             } finally {
                 currentSessionData = data;
             }
@@ -497,6 +507,7 @@ public class WebFilter implements Filter {
 
         void destroy() {
             valid = false;
+            timestamp.destroy();
         }
 
         public boolean isValid() {
@@ -504,13 +515,12 @@ public class WebFilter implements Filter {
         }
 
         void setAccessed() {
-            // timestamp.set(Hazelcast.getCluster().getClusterTime()); ???
-            timestamp.set(System.currentTimeMillis());
+            timestamp.set(Clock.currentTimeMillis());
         }
 
         long getLastAccessed() {
             return hazelcastInstance.getLifecycleService().isRunning()
-                ? timestamp.get() : 0L;
+                    ? timestamp.get() : 0L;
         }
     }// END of HazelSession
 
@@ -537,6 +547,11 @@ public class WebFilter implements Filter {
         }
         sessionCookie.setPath(path);
         sessionCookie.setMaxAge(-1);
+        if (sessionCookieDomain != null) {
+            sessionCookie.setDomain(sessionCookieDomain);
+        }
+        sessionCookie.setHttpOnly(sessionCookieHttpOnly);
+        sessionCookie.setSecure(sessionCookieSecure);
         req.res.addCookie(sessionCookie);
     }
 

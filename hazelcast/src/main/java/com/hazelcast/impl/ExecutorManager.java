@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package com.hazelcast.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.DistributedTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.core.Prefix;
+import com.hazelcast.impl.Constants.RedoType;
 import com.hazelcast.impl.executor.ParallelExecutor;
 import com.hazelcast.impl.executor.ParallelExecutorService;
 import com.hazelcast.impl.monitor.ExecutorOperationsCounter;
@@ -66,7 +69,6 @@ public class ExecutorManager extends BaseManager {
     private final ConcurrentMap<String, ExecutorOperationsCounter> internalThroughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
     private final ConcurrentMap<String, ExecutorOperationsCounter> throughputMap = new ConcurrentHashMap<String, ExecutorOperationsCounter>();
 
-
     final AtomicLong executionIdGen = new AtomicLong();
     private final int interval = 60000;
 
@@ -86,7 +88,7 @@ public class ExecutorManager extends BaseManager {
                 threadPoolBeforeExecute(t, r);
             }
         };
-        esScheduled = new ScheduledThreadPoolExecutor(2, new ExecutorThreadFactory(node.threadGroup,
+        esScheduled = new ScheduledThreadPoolExecutor(3, new ExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);
@@ -98,6 +100,8 @@ public class ExecutorManager extends BaseManager {
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(gp.MAP_LOAD_THREAD_COUNT.getInteger());
         asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(24, 1000);
+        newNamedExecutorService(Prefix.EXECUTOR_SERVICE + "hz.initialization", new ExecutorConfig("hz.initialization",
+                Integer.MAX_VALUE, Integer.MAX_VALUE, 60));
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
@@ -163,15 +167,23 @@ public class ExecutorManager extends BaseManager {
 
     class ExecutionOperationHandler extends AbstractOperationHandler {
         void doOperation(Request request) {
-            NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(request.name);
-            ExecutionKey executionKey = new ExecutionKey(request.caller, request.longValue);
-            RequestExecutor requestExecutor = new RequestExecutor(request, executionKey);
-            executions.put(executionKey, requestExecutor);
-            namedExecutorService.execute(requestExecutor);
+            if (isCallerKnownMember(request)) {
+                NamedExecutorService namedExecutorService = getOrCreateNamedExecutorService(request.name);
+                ExecutionKey executionKey = new ExecutionKey(request.caller, request.longValue);
+                RequestExecutor requestExecutor = new RequestExecutor(request, executionKey);
+                executions.put(executionKey, requestExecutor);
+                namedExecutorService.execute(requestExecutor);
+            } else {
+                returnRedoResponse(request, RedoType.REDO_MEMBER_UNKNOWN);
+            }
         }
 
         public void handle(Request request) {
             doOperation(request);
+        }
+
+        boolean isCallerKnownMember(Request request) {
+            return (request.local || getMember(request.caller) != null);
         }
     }
 
@@ -277,7 +289,6 @@ public class ExecutorManager extends BaseManager {
 
     public void appendFullState(StringBuffer sbState) {
         Set<String> names = mapExecutors.keySet();
-
         for (String name : names) {
             NamedExecutorService namedExecutorService = mapExecutors.get(name);
             namedExecutorService.appendState(sbState);
@@ -597,7 +608,7 @@ public class ExecutorManager extends BaseManager {
             boolean done = true;
             try {
                 result = doGetResult((time == -1) ? -1 : unit.toMillis(time));
-                if (result == OBJECT_NO_RESPONSE) {
+                if (result == OBJECT_NO_RESPONSE || result == OBJECT_REDO) {
                     done = false;
                     innerFutureTask.innerSetException(new TimeoutException(), false);
                 } else if (result instanceof CancellationException) {
@@ -610,6 +621,9 @@ public class ExecutorManager extends BaseManager {
                     innerFutureTask.innerSet(result);
                 }
             } catch (Exception e) {
+                if (time > 0 && e instanceof OperationTimeoutException) {
+                    e = new TimeoutException();
+                }
                 innerFutureTask.innerSetException(e, done);
             } finally {
                 if (singleTask && done) {

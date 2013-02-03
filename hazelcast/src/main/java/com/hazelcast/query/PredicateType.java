@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.collection;
-
-import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
-
-import java.util.Properties;
+package com.hazelcast.query;
 
 /**
- * @author Leo Kim (lkim@limewire.com)
+ * @mdogan 9/5/12
  */
-final class NonStrictReadWriteAccessStrategy extends AbstractCollectionRegionAccessStrategy {
+public enum PredicateType {
 
-    NonStrictReadWriteAccessStrategy(final HazelcastCollectionRegion collectionRegion, final Properties props) {
-        super(new NonStrictReadWriteAccessDelegate<HazelcastCollectionRegion>(collectionRegion, props));
-    }
+    NOT_EQUAL,
+    LESSER,
+    GREATER,
+    LESSER_EQUAL,
+    GREATER_EQUAL
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.config.*;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -49,7 +50,7 @@ class AddressPicker {
             final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
             final AddressDefinition bindAddressDef = pickAddress(networkConfig);
             final boolean reuseAddress = networkConfig.isReuseAddress();
-            final boolean bindAny = node.getGroupProperties().SOCKET_BIND_ANY.getBoolean();
+            final boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
             serverSocketChannel = ServerSocketChannel.open();
             final ServerSocket serverSocket = serverSocketChannel.socket();
             /**
@@ -72,6 +73,7 @@ class AddressPicker {
             serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
             int port = networkConfig.getPort();
+            Throwable error = null;
             for (int i = 0; i < 100; i++) {
                 try {
                     if (bindAny) {
@@ -86,6 +88,7 @@ class AddressPicker {
                 } catch (final Exception e) {
                     if (networkConfig.isPortAutoIncrement()) {
                         port++;
+                        error = e;
                     } else {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                      "disabled. Hazelcast cannot start.";
@@ -93,6 +96,9 @@ class AddressPicker {
                         throw e;
                     }
                 }
+            }
+            if (!serverSocket.isBound()) {
+                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start!", error);
             }
             serverSocketChannel.configureBlocking(false);
             bindAddress = createAddress(bindAddressDef, port);
@@ -120,7 +126,7 @@ class AddressPicker {
     }
 
     private AddressDefinition pickAddress(final NetworkConfig networkConfig) throws UnknownHostException, SocketException {
-        AddressDefinition addressDef = getSystemConfiguredAddress();
+        AddressDefinition addressDef = getSystemConfiguredAddress(node.getConfig());
         if (addressDef == null) {
             final Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
             if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
@@ -216,14 +222,14 @@ class AddressPicker {
         return addresses;
     }
 
-    private AddressDefinition getSystemConfiguredAddress() throws UnknownHostException {
-    	String address = System.getProperty("hazelcast.local.localAddress");
+    private AddressDefinition getSystemConfiguredAddress(Config config) throws UnknownHostException {
+    	String address = config.getProperty("hazelcast.local.localAddress");
         if (address != null) {
             address = address.trim();
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress();
             } else {
-                log(Level.INFO, "Picking address configured by System property 'hazelcast.local.localAddress'");
+                log(Level.INFO, "Picking address configured by property 'hazelcast.local.localAddress'");
                 return new AddressDefinition(address, InetAddress.getByName(address));
             }
         }

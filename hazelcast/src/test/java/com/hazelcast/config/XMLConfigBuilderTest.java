@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ public class XMLConfigBuilderTest {
     public void testConfig2Xml() throws SAXException, IOException {
         String fullXml = new ConfigXmlGenerator().generate(new ClasspathXmlConfig("hazelcast-fullconfig.xml"));
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.3.xsd");
+        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.5.xsd");
         File schemaFile = new File(schemaUrl.getFile());
         Schema schema = factory.newSchema(schemaFile);
         Validator validator = schema.newValidator();
@@ -147,7 +147,7 @@ public class XMLConfigBuilderTest {
 
     private void testXSDConfigXML(String xmlResource) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.3.xsd");
+        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-2.5.xsd");
         URL xmlURL = XMLConfigBuilderTest.class.getClassLoader().getResource(xmlResource);
         File schemaFile = new File(schemaUrl.getFile());
         File defaultXML = new File(xmlURL.getFile());

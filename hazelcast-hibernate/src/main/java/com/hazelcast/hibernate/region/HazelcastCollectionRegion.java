@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.collection;
+package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.region.AbstractTransactionalDataRegion;
+import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
+import com.hazelcast.hibernate.access.ReadOnlyAccessDelegate;
+import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CollectionRegion;
@@ -27,13 +30,15 @@ import org.hibernate.cache.access.CollectionRegionAccessStrategy;
 import java.util.Properties;
 
 /**
- * @author Leo Kim (lkim@limewire.com)
+ * @mdogan 11/9/12
  */
-public class HazelcastCollectionRegion extends AbstractTransactionalDataRegion implements CollectionRegion {
+public final class HazelcastCollectionRegion<Cache extends RegionCache> extends AbstractTransactionalDataRegion<Cache>
+        implements CollectionRegion {
 
-    public HazelcastCollectionRegion(final HazelcastInstance instance, final String regionName,
-                                     final Properties props, final CacheDataDescription metadata) {
-        super(instance, regionName, props, metadata);
+    public HazelcastCollectionRegion(final HazelcastInstance instance,
+                                     final String regionName, final Properties props,
+                                     final CacheDataDescription metadata, final Cache cache) {
+        super(instance, regionName, props, metadata, cache);
     }
 
     public CollectionRegionAccessStrategy buildAccessStrategy(final AccessType accessType) throws CacheException {
@@ -42,18 +47,21 @@ public class HazelcastCollectionRegion extends AbstractTransactionalDataRegion i
                     "Got null AccessType while attempting to build CollectionRegionAccessStrategy. This can't happen!");
         }
         if (AccessType.READ_ONLY.equals(accessType)) {
-            return new ReadOnlyAccessStrategy(this, props);
+            return new CollectionRegionAccessStrategyAdapter(
+                    new ReadOnlyAccessDelegate<HazelcastCollectionRegion>(this, props));
         }
         if (AccessType.NONSTRICT_READ_WRITE.equals(accessType)) {
-            return new NonStrictReadWriteAccessStrategy(this, props);
+            return new CollectionRegionAccessStrategyAdapter(
+                    new NonStrictReadWriteAccessDelegate<HazelcastCollectionRegion>(this, props));
         }
         if (AccessType.READ_WRITE.equals(accessType)) {
-            return new ReadWriteAccessStrategy(this, props);
+            return new CollectionRegionAccessStrategyAdapter(
+                    new ReadWriteAccessDelegate<HazelcastCollectionRegion>(this, props));
         }
         if (AccessType.TRANSACTIONAL.equals(accessType)) {
             throw new CacheException("Transactional access is not currently supported by Hazelcast.");
         }
         throw new CacheException("Got unknown AccessType " + accessType
-                + " while attempting to build CollectionRegionAccessStrategy.");
+                                 + " while attempting to build CollectionRegionAccessStrategy.");
     }
 }

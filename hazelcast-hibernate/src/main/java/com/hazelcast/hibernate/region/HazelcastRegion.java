@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,18 @@
 package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.logging.ILogger;
 import org.hibernate.cache.Region;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
-public interface HazelcastRegion extends Region {
+public interface HazelcastRegion<Cache extends RegionCache> extends Region {
 
     HazelcastInstance getInstance();
 
-    IMap getCache();
+    Cache getCache();
 
-    void clearCache();
+    ILogger getLogger();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class MapConfig implements DataSerializable {
 
     private MapStoreConfig mapStoreConfig = null;
 
-    private NearCacheConfig nearCacheConfig = null;
+    private NearCacheConfig nearCacheConfig;
 
     private boolean readBackupData = false;
 
@@ -85,6 +85,8 @@ public class MapConfig implements DataSerializable {
     private List<MapIndexConfig> mapIndexConfigs;
 
     private StorageType storageType = null;
+
+    private boolean clearQuick = false;
 
     public enum StorageType {
         HEAP, OFFHEAP
@@ -112,6 +114,7 @@ public class MapConfig implements DataSerializable {
         this.readBackupData = config.readBackupData;
         this.cacheValue = config.cacheValue;
         this.mergePolicy = config.mergePolicy;
+        this.clearQuick = config.clearQuick;
     }
 
     /**
@@ -175,6 +178,26 @@ public class MapConfig implements DataSerializable {
     }
 
     /**
+     * Returns if the map can be cleared quickly assuming there is no lock or transaction related
+     *
+     * @return true if clear quick is enabled, false otherwise
+     */
+    public boolean isClearQuick() {
+        return clearQuick;
+    }
+
+    /**
+     * Sets if the map can be cleared quickly assuming there is no lock or transaction related
+     *
+     * @param clearQuick
+     * @return this MapConfig
+     */
+    public MapConfig setClearQuick(boolean clearQuick) {
+        this.clearQuick = clearQuick;
+        return this;
+    }
+
+    /**
      * @return the backupCount
      * @see #getAsyncBackupCount()
      */
@@ -194,11 +217,11 @@ public class MapConfig implements DataSerializable {
     public MapConfig setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
             throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                                               + MIN_BACKUP_COUNT);
+                    + MIN_BACKUP_COUNT);
         }
         if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                                               + MAX_BACKUP_COUNT);
+                    + MAX_BACKUP_COUNT);
         }
         this.backupCount = backupCount;
         return this;
@@ -223,11 +246,11 @@ public class MapConfig implements DataSerializable {
     public MapConfig setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
             throw new IllegalArgumentException("map async backup count must be equal to or bigger than "
-                                               + MIN_BACKUP_COUNT);
+                    + MIN_BACKUP_COUNT);
         }
         if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                                               + MAX_BACKUP_COUNT);
+                    + MAX_BACKUP_COUNT);
         }
         this.asyncBackupCount = asyncBackupCount;
         return this;
@@ -237,7 +260,7 @@ public class MapConfig implements DataSerializable {
      * Number of sync and async backups.
      * 0 means no backup.
      *
-     * @param backupCount the sync backup count to set
+     * @param backupCount      the sync backup count to set
      * @param asyncBackupCount the async backup count to set
      * @see #setBackupCount(int)
      * @see #setAsyncBackupCount(int)
@@ -245,11 +268,11 @@ public class MapConfig implements DataSerializable {
     public MapConfig setBackupCounts(final int backupCount, final int asyncBackupCount) {
         if (backupCount < MIN_BACKUP_COUNT || asyncBackupCount < MIN_BACKUP_COUNT) {
             throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                                               + MIN_BACKUP_COUNT);
+                    + MIN_BACKUP_COUNT);
         }
         if ((backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                                               + MAX_BACKUP_COUNT);
+                    + MAX_BACKUP_COUNT);
         }
         this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
@@ -489,18 +512,19 @@ public class MapConfig implements DataSerializable {
             return true;
         }
         return other != null &&
-               (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-               this.backupCount == other.backupCount &&
-               this.asyncBackupCount == other.asyncBackupCount &&
-               this.evictionDelaySeconds == other.evictionDelaySeconds &&
-               this.evictionPercentage == other.evictionPercentage &&
-               this.maxIdleSeconds == other.maxIdleSeconds &&
-               (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() ||
-                (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
-                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
-               this.timeToLiveSeconds == other.timeToLiveSeconds &&
-               this.readBackupData == other.readBackupData &&
-               this.valueIndexed == other.valueIndexed;
+                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
+                this.backupCount == other.backupCount &&
+                this.asyncBackupCount == other.asyncBackupCount &&
+                this.evictionDelaySeconds == other.evictionDelaySeconds &&
+                this.evictionPercentage == other.evictionPercentage &&
+                this.maxIdleSeconds == other.maxIdleSeconds &&
+                (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() ||
+                        (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
+                                && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
+                this.timeToLiveSeconds == other.timeToLiveSeconds &&
+                this.readBackupData == other.readBackupData &&
+                this.clearQuick == other.clearQuick &&
+                this.valueIndexed == other.valueIndexed;
     }
 
     @Override
@@ -512,26 +536,27 @@ public class MapConfig implements DataSerializable {
         result = prime * result + this.evictionDelaySeconds;
         result = prime * result + this.evictionPercentage;
         result = prime
-                 * result
-                 + ((this.evictionPolicy == null) ? 0 : this.evictionPolicy
+                * result
+                + ((this.evictionPolicy == null) ? 0 : this.evictionPolicy
                 .hashCode());
         result = prime
-                 * result
-                 + ((this.mapStoreConfig == null) ? 0 : this.mapStoreConfig
+                * result
+                + ((this.mapStoreConfig == null) ? 0 : this.mapStoreConfig
                 .hashCode());
         result = prime * result + this.maxIdleSeconds;
         result = prime * result + this.maxSizeConfig.getSize();
         result = prime
-                 * result
-                 + ((this.mergePolicy == null) ? 0 : this.mergePolicy.hashCode());
+                * result
+                + ((this.mergePolicy == null) ? 0 : this.mergePolicy.hashCode());
         result = prime * result
-                 + ((this.name == null) ? 0 : this.name.hashCode());
+                + ((this.name == null) ? 0 : this.name.hashCode());
         result = prime
-                 * result
-                 + ((this.nearCacheConfig == null) ? 0 : this.nearCacheConfig
+                * result
+                + ((this.nearCacheConfig == null) ? 0 : this.nearCacheConfig
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
         result = prime * result + (this.readBackupData ? 1231 : 1237);
+        result = prime * result + (this.clearQuick ? 1231 : 1237);
         result = prime * result + (this.valueIndexed ? 1231 : 1237);
         return result;
     }
@@ -547,42 +572,23 @@ public class MapConfig implements DataSerializable {
         MapConfig other = (MapConfig) obj;
         return
                 (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-                this.backupCount == other.backupCount &&
-                this.asyncBackupCount == other.asyncBackupCount &&
-                this.evictionDelaySeconds == other.evictionDelaySeconds &&
-                this.evictionPercentage == other.evictionPercentage &&
-                this.maxIdleSeconds == other.maxIdleSeconds &&
-                this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() &&
-                this.timeToLiveSeconds == other.timeToLiveSeconds &&
-                this.readBackupData == other.readBackupData &&
-                this.valueIndexed == other.valueIndexed &&
-                (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
-                (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
-                                             : other.evictionPolicy == null) &&
-                (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
-                                             : other.mapStoreConfig == null) &&
-                (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
-                                              : other.nearCacheConfig == null);
-    }
-
-    @Override
-    public String toString() {
-        return "MapConfig{" +
-               "name='" + name + '\'' +
-               ", backupCount=" + backupCount +
-               ", asyncBackupCount=" + asyncBackupCount +
-               ", mergePolicy=" + mergePolicy +
-               ", evictionPercentage=" + evictionPercentage +
-               ", timeToLiveSeconds=" + timeToLiveSeconds +
-               ", maxIdleSeconds=" + maxIdleSeconds +
-               ", evictionDelaySeconds=" + evictionDelaySeconds +
-               ", maxSizeConfig=" + maxSizeConfig +
-               ", evictionPolicy='" + evictionPolicy + '\'' +
-               ", mapStoreConfig=" + mapStoreConfig +
-               ", nearCacheConfig=" + nearCacheConfig +
-               ", readBackupData=" + readBackupData +
-               ", wanReplicationRef=" + wanReplicationRef +
-               '}';
+                        this.backupCount == other.backupCount &&
+                        this.asyncBackupCount == other.asyncBackupCount &&
+                        this.evictionDelaySeconds == other.evictionDelaySeconds &&
+                        this.evictionPercentage == other.evictionPercentage &&
+                        this.maxIdleSeconds == other.maxIdleSeconds &&
+                        this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() &&
+                        this.timeToLiveSeconds == other.timeToLiveSeconds &&
+                        this.readBackupData == other.readBackupData &&
+                        this.valueIndexed == other.valueIndexed &&
+//                        this.clearQuick == other.clearQuick &&
+                        (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
+                        (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
+                                : other.evictionPolicy == null) &&
+                        (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
+                                : other.mapStoreConfig == null) &&
+                        (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
+                                : other.nearCacheConfig == null);
     }
 
     public void readData(DataInput in) throws IOException {
@@ -600,8 +606,13 @@ public class MapConfig implements DataSerializable {
         cacheValue = b[2];
         evictionPolicy = in.readUTF();
         mergePolicy = in.readUTF();
-        // TODO: MapStoreConfig mapStoreConfig
-        // TODO: NearCacheConfig nearCacheConfig
+        clearQuick = in.readBoolean();
+        boolean hasNearCacheConfig = in.readBoolean();
+        if (hasNearCacheConfig) {
+            nearCacheConfig = new NearCacheConfig();
+            nearCacheConfig.readData(in);
+        }
+//        TODO: MapStoreConfig mapStoreConfig
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -616,7 +627,41 @@ public class MapConfig implements DataSerializable {
         out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData, cacheValue));
         out.writeUTF(evictionPolicy);
         out.writeUTF(mergePolicy);
-        // TODO: MapStoreConfig mapStoreConfig
-        // TODO: NearCacheConfig nearCacheConfig
+        out.writeBoolean(clearQuick);
+        if (nearCacheConfig == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            nearCacheConfig.writeData(out);
+        }
+//        TODO: MapStoreConfig mapStoreConfig
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("MapConfig");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append(", timeToLiveSeconds=").append(timeToLiveSeconds);
+        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
+        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
+        sb.append(", evictionPercentage=").append(evictionPercentage);
+        sb.append(", evictionDelaySeconds=").append(evictionDelaySeconds);
+        sb.append(", maxSizeConfig=").append(maxSizeConfig);
+        sb.append(", cacheValue=").append(cacheValue);
+        sb.append(", readBackupData=").append(readBackupData);
+        sb.append(", nearCacheConfig=").append(nearCacheConfig);
+        sb.append(", mapStoreConfig=").append(mapStoreConfig);
+        sb.append(", mergePolicy='").append(mergePolicy).append('\'');
+        sb.append(", wanReplicationRef=").append(wanReplicationRef);
+        sb.append(", listenerConfigs=").append(listenerConfigs);
+        sb.append(", valueIndexed=").append(valueIndexed);
+        sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
+        sb.append(", storageType=").append(storageType);
+        sb.append(", clearQuick=").append(clearQuick);
+        sb.append('}');
+        return sb.toString();
     }
 }

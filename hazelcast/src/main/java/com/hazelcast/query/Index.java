@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class Index {
 
     public void index(Long newValue, Record record) {
         if (expression != null && returnType == -1) {
-            returnType = record.getIndexTypes()[attributeIndex];
+            setReturnType(record.getIndexTypes()[attributeIndex]);
         }
         final Long recordId = record.getId();
         Long oldValue = recordValues.get(recordId);
@@ -83,13 +83,24 @@ public class Index {
         }
     }
 
+    void setReturnType(byte returnType) {
+        this.returnType = returnType;
+        if (returnType == TYPE_DOUBLE) {
+            if (indexStore instanceof SortedIndexStore) {
+                throw new RuntimeException("Double type indexes cannot be sorted!");
+            }
+            UnsortedIndexStore unsortedIndexStore = (UnsortedIndexStore) indexStore;
+            unsortedIndexStore.setDoubleValue(true);
+        }
+    }
+
     public Long extractLongValue(Object value) {
         Object extractedValue = expression.getValue(value);
-        setIndexType(extractedValue);
+        setReturnType(extractedValue);
         if (extractedValue == null) {
             return Long.MIN_VALUE;
         } else {
-            returnType = getIndexType(extractedValue.getClass());
+            setReturnType(getIndexType(extractedValue.getClass()));
             if (!checkedStrength) {
                 if (extractedValue instanceof Boolean || extractedValue instanceof Number) {
                     strong = true;
@@ -106,7 +117,7 @@ public class Index {
         recordValues.put(recordId, newValue);
     }
 
-    private void removeRecordIndex(Long oldValue, Long recordId) {
+    void removeRecordIndex(Long oldValue, Long recordId) {
         recordValues.remove(recordId);
         indexStore.removeRecordIndex(oldValue, recordId);
     }
@@ -135,20 +146,20 @@ public class Index {
         return results;
     }
 
-    public Set<MapEntry> getSubRecords(boolean equal, boolean lessThan, Long searchedValue) {
+    public Set<MapEntry> getSubRecords(PredicateType predicateType, Long searchedValue) {
         MultiResultSet results = new MultiResultSet(recordValues);
-        indexStore.getSubRecords(results, equal, lessThan, searchedValue);
+        indexStore.getSubRecords(results, predicateType, searchedValue);
         return results;
     }
 
-    void setIndexType(Object extractedValue) {
+    void setReturnType(Object extractedValue) {
         if (returnType == -1) {
             if (expression instanceof Predicates.GetExpressionImpl) {
                 Predicates.GetExpressionImpl ex = (Predicates.GetExpressionImpl) expression;
-                returnType = getIndexType(ex.getter.getReturnType());
+                setReturnType(getIndexType(ex.getter.getReturnType()));
             } else {
                 if (extractedValue == null) throw new RuntimeException("Indexed value cannot be null!");
-                returnType = getIndexType(extractedValue.getClass());
+                setReturnType(getIndexType(extractedValue.getClass()));
             }
         }
     }

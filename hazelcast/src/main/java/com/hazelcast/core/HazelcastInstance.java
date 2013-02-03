@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,7 +163,7 @@ public interface HazelcastInstance {
      *    txn.rollback();
      *  }
      * </pre>
-     * Isolation is always <tt>READ_COMMITTED</tt> . If you are in
+     * Isolation is always <tt>REPEATABLE_READ</tt> . If you are in
      * a transaction, you can read the data in your transaction and the data that
      * is already committed and if not in a transaction, you can only read the
      * committed data. Implementation is different for queue and map/set. For

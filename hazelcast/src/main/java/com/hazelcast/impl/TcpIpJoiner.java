@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,10 +82,17 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public static class MasterQuestion extends AbstractRemotelyProcessable {
         public void process() {
-            TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) getNode().getJoiner();
-            boolean shouldApprove = (!(tcpIpJoiner.askingForApproval || node.isMaster()));
-            getNode().clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove),
-                                                       getConnection());
+            final Joiner joiner = node.getJoiner();
+            final Connection conn = getConnection();
+            final Address endpoint = conn.getEndPoint();
+            boolean shouldApprove = false;
+            if (joiner instanceof TcpIpJoiner) {
+                TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
+                final Address masterAddress = node.getMasterAddress();
+                shouldApprove = !tcpIpJoiner.askingForApproval && !node.isMaster()
+                                && (masterAddress == null || masterAddress.equals(endpoint));
+            }
+            node.clusterManager.sendProcessableTo(new MasterAnswer(node.getThisAddress(), shouldApprove), conn);
         }
     }
 

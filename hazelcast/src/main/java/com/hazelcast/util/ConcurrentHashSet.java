@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package com.hazelcast.util;
 
-import java.io.Serializable;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ConcurrentHashSet<E> extends SetFromMap<E> implements Set<E>, Serializable {
+public class ConcurrentHashSet<E> extends SetFromMap<E> implements Set<E> {
 
     public ConcurrentHashSet() {
         super(new ConcurrentHashMap<E, Boolean>());

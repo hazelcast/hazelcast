@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,13 @@ public final class Predicates {
 
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
-            return index.getSubRecords(equal, less, index.getLongValue(second));
+            final PredicateType predicateType;
+            if (less) {
+                predicateType = equal ? PredicateType.LESSER_EQUAL : PredicateType.LESSER;
+            } else {
+                predicateType = equal ? PredicateType.GREATER_EQUAL : PredicateType.GREATER;
+            }
+            return index.getSubRecords(predicateType, index.getLongValue(second));
         }
 
         @Override
@@ -159,7 +165,7 @@ public final class Predicates {
         public Set<MapEntry> filter(QueryContext queryContext) {
             Index index = queryContext.getMapIndexes().get(first);
             if (index != null) {
-                return index.getSubRecords(false, false, index.getLongValue(second));
+                return index.getSubRecords(PredicateType.NOT_EQUAL, index.getLongValue(second));
             } else {
                 return null;
             }

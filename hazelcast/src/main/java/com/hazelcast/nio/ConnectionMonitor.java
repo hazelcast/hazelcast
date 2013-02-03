@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,14 +47,13 @@ class ConnectionMonitor {
     }
 
     public synchronized void onError(Throwable t) {
-        faults++;
         String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
         logger.log(Level.FINEST, errorMessage);
         ioService.getSystemLogService().logConnection(errorMessage);
         final long now = Clock.currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
-            if (faults >= maxFaults) {
+            if (faults++ >= maxFaults) {
                 String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
                 logger.log(Level.WARNING, removeEndpointMessage);
                 ioService.getSystemLogService().logConnection(removeEndpointMessage);
@@ -79,6 +78,6 @@ class ConnectionMonitor {
         } else {
             s.append("Unknown");
         }
-        return s.append(", Error-Count: ").append(faults).toString();
+        return s.append(", Error-Count: ").append(faults + 1).toString();
     }
 }

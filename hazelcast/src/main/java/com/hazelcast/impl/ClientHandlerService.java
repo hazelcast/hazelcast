@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.impl;
 
 import com.hazelcast.cluster.Bind;
 import com.hazelcast.cluster.RemotelyProcessable;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.core.Instance.InstanceType;
 import com.hazelcast.impl.base.KeyValue;
@@ -53,10 +54,7 @@ public class ClientHandlerService implements ConnectionListener {
     private final ClientOperationHandler[] clientOperationHandlers = new ClientOperationHandler[ClusterOperation.LENGTH];
     private final ClientOperationHandler unknownOperationHandler = new UnknownClientOperationHandler();
     private final ILogger logger;
-    private final int THREAD_COUNT;
-    final Worker[] workers;
     private final FactoryImpl factory;
-    boolean firstCall = true;
 
     public ClientHandlerService(Node node) {
         this.node = node;
@@ -121,6 +119,7 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(GET_INSTANCES.getValue(), new GetInstancesHandler());
         registerHandler(GET_MEMBERS.getValue(), new GetMembersHandler());
         registerHandler(GET_CLUSTER_TIME.getValue(), new GetClusterTimeHandler());
+        registerHandler(GET_CONFIG.getValue(), new GetConfigHandler());
         registerHandler(CLIENT_AUTHENTICATE.getValue(), new ClientAuthenticateHandler());
         registerHandler(CLIENT_ADD_INSTANCE_LISTENER.getValue(), new ClientAddInstanceListenerHandler());
         registerHandler(CLIENT_GET_PARTITIONS.getValue(), new GetPartitionsHandler());
@@ -146,11 +145,6 @@ public class ClientHandlerService implements ConnectionListener {
         registerHandler(LOCK_FORCE_UNLOCK.getValue(), new UnlockOperationHandler());
         registerHandler(LOCK_IS_LOCKED.getValue(), new IsLockedOperationHandler());
         node.connectionManager.addConnectionListener(this);
-        this.THREAD_COUNT = node.getGroupProperties().EXECUTOR_CLIENT_THREAD_COUNT.getInteger();
-        workers = new Worker[THREAD_COUNT];
-        for (int i = 0; i < THREAD_COUNT; i++) {
-            workers[i] = new Worker();
-        }
         this.factory = node.factory;
     }
 
@@ -160,14 +154,6 @@ public class ClientHandlerService implements ConnectionListener {
 
     // always called by InThread
     public void handle(Packet packet) {
-        if (firstCall) {
-            String threadNamePrefix = node.getThreadPoolNamePrefix("client.service");
-            for (int i = 0; i < THREAD_COUNT; i++) {
-                Worker worker = workers[i];
-                new Thread(node.threadGroup, worker, threadNamePrefix + i).start();
-            }
-            firstCall = false;
-        }
         ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
@@ -184,19 +170,11 @@ public class ClientHandlerService implements ConnectionListener {
         ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, packet, callContext,
                 clientOperationHandler, clientEndpoint.getSubject());
         clientEndpoint.addRequest(clientRequestHandler);
-        if (packet.operation == CONCURRENT_MAP_UNLOCK) {
-            node.executorManager.executeNow(clientRequestHandler);
-        } else {
-            int hash = hash(callContext.getThreadId(), THREAD_COUNT);
-            workers[hash].addWork(clientRequestHandler);
-        }
+        node.executorManager.executeNow(clientRequestHandler);
     }
 
     public void shutdown() {
         mapClientEndpoints.clear();
-        for (Worker worker : workers) {
-            worker.stop();
-        }
     }
 
     public void restart() {
@@ -315,7 +293,7 @@ public class ClientHandlerService implements ConnectionListener {
                 } else if (millis == 0) {
                     return (Data) queue.poll();
                 } else {
-                    return (Data) queue.poll((Long) millis, TimeUnit.MILLISECONDS);
+                    return (Data) queue.poll(millis, TimeUnit.MILLISECONDS);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -837,6 +815,13 @@ public class ClientHandlerService implements ConnectionListener {
             Cluster cluster = factory.getCluster();
             long clusterTime = cluster.getClusterTime();
             packet.setValue(toData(clusterTime));
+        }
+    }
+
+    private class GetConfigHandler extends ClientOperationHandler {
+        public void processCall(Node node, Packet packet) {
+            Config config = factory.getConfig();
+            packet.setValue(toData(config));
         }
     }
 

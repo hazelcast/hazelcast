@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private volatile boolean urlChanged = false;
     private final int updateIntervalMs;
     private final ManagementCenterConfig managementCenterConfig;
+    private boolean versionMismatch = false;
 
     public ManagementCenterService(FactoryImpl factoryImpl) {
         this.factory = factoryImpl;
@@ -227,7 +228,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         return list;
     }
 
+    public void setVersionMismatch(boolean mismatch){
+        versionMismatch = mismatch;
+    }
+
     class StateSender extends Thread {
+
         StateSender() {
             super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.State.Sender"));
         }
@@ -238,7 +244,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 return;
             }
             try {
+                boolean firstError = true;
                 while (running.get()) {
+                    if(versionMismatch){
+                        Thread.sleep(1000*60);
+                        versionMismatch = false;
+                    }
+
                     try {
                         URL url = new URL(webServerUrl + "collector.do");
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -248,11 +260,20 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         connection.setReadTimeout(1000);
                         final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
                         TimedMemberState ts = getTimedMemberState();
+                        out.writeUTF(getHazelcastInstance().node.initializer.getVersion());
+                        factory.node.getThisAddress().writeData(out);
+                        out.writeUTF(factory.getConfig().getGroupConfig().getName());
                         ts.writeData(out);
                         out.flush();
                         connection.getInputStream();
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
+                        if(firstError) {
+                            logger.log(Level.SEVERE, "Can not connect to Management Center. Check url connectivity:" + webServerUrl);
+                            firstError = false;
+                        }
+                        else {
+                            logger.log(Level.FINEST, e.getMessage(), e);
+                        }
                     }
                     Thread.sleep(updateIntervalMs);
                 }
@@ -267,7 +288,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     class TaskPoller extends Thread {
-        final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
+        final ConsoleRequest[] consoleRequests = new ConsoleRequest[20];
 
         TaskPoller() {
             super(factory.node.threadGroup, factory.node.getThreadNamePrefix("MC.Task.Poller"));
@@ -278,6 +299,18 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
             register(new DetectDeadlockRequest());
+            register(new MemberConfigRequest());
+            register(new ClusterPropsRequest());
+            register(new SetLogLevelRequest());
+            register(new GetLogLevelRequest());
+            register(new GetVersionRequest());
+            register(new GetLogsRequest());
+            register(new RunGcRequest());
+            register(new GetMemberSystemPropertiesRequest());
+            register(new GetMapEntryRequest());
+            register(new VersionMismatchLogRequest());
+            register(new ShutdownMemberRequest());
+            register(new RestartMemberRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
@@ -614,6 +647,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
                 }
             }
+
             timedMemberState.setExecutorList(getExecutorNames());
             timedMemberState.setMemberState(memberState);
             timedMemberState.setClusterName(groupConfig.getName());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,6 +201,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSSLConfig(child, networkConfigBuilder);
                 } else if ("socket-interceptor".equals(nodeName)) {
                     handleSocketInterceptorConfig(child, networkConfigBuilder);
+                } else if ("outbound-ports".equals(nodeName)) {
+                    handleOutboundPorts(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
@@ -287,6 +289,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             networkConfigBuilder.addPropertyValue("socketInterceptorConfig",
                                                   socketInterceptorConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleOutboundPorts(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
+            ManagedList outboundPorts = new ManagedList();
+            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(child);
+                if ("ports".equals(name)) {
+                    String value = getValue(child);
+                    outboundPorts.add(value);
+                }
+            }
+            networkConfigBuilder.addPropertyValue("outboundPortDefinitions", outboundPorts);
         }
 
         private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {

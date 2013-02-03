@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,9 @@ public class MapIndexService {
     public void remove(Record record) {
         Record existingRecord = records.remove(record.getId());
         if (existingRecord != null) {
+            for (Index index : mapIndexes.values()) {
+                index.removeRecordIndex(record.getIndexes()[index.getAttributeIndex()], record.getId());
+            }
             size.decrementAndGet();
         }
     }

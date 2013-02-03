@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,9 @@ public final class IOUtil {
             }
 
             public int read(byte[] bytes, int off, int len) throws IOException {
+                if (!buf.hasRemaining()) {
+                    return -1;
+                }
                 len = Math.min(len, buf.remaining());
                 buf.get(bytes, off, len);
                 return len;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -83,6 +83,10 @@ public class ConnectionManager {
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
+    private final int outboundPortCount;
+
+    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();  // accessed only in synchronized block
+
     private Thread socketAcceptorThread; // accessed only in synchronized block
 
     public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
@@ -96,6 +100,11 @@ public class ConnectionManager {
         this.SOCKET_NO_DELAY = ioService.getSocketNoDelay();
         int selectorCount = ioService.getSelectorThreadCount();
         selectors = new InOutSelector[selectorCount];
+        final Collection<Integer> ports = ioService.getOutboundPorts();
+        outboundPortCount = ports == null ? 0 : ports.size();
+        if (ports != null) {
+            outboundPorts.addAll(ports);
+        }
         SSLConfig sslConfig = ioService.getSSLConfig();
         if (sslConfig != null && sslConfig.isEnabled()) {
             socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
@@ -398,25 +407,23 @@ public class ConnectionManager {
         log(Level.FINEST, "Stopping ConnectionManager");
         shutdownSocketAcceptor(); // interrupt acceptor thread after live=false
         ioService.onShutdown();
-        for (Connection conn : mapConnections.values()) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
-            }
-        }
-        for (Connection conn : setActiveConnections) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
-            }
-        }
+        closeConnections(mapConnections.values());
+        closeConnections(setActiveConnections);
         shutdownIOSelectors();
         setConnectionInProgress.clear();
         mapConnections.clear();
         mapMonitors.clear();
         setActiveConnections.clear();
+    }
+
+    private void closeConnections(Collection<Connection> connections) {
+        for (Connection conn : connections) {
+            try {
+                destroyConnection(conn);
+            } catch (final Throwable t) {
+                logger.log(Level.FINEST, t.getMessage(), t);
+            }
+        }
     }
 
     private synchronized void shutdownIOSelectors() {
@@ -467,6 +474,25 @@ public class ConnectionManager {
     private void log(Level level, String message) {
         logger.log(level, message);
         ioService.getSystemLogService().logConnection(message);
+    }
+
+    boolean useAnyOutboundPort() {
+        return outboundPortCount == 0;
+    }
+
+    int getOutboundPortCount() {
+        return outboundPortCount;
+    }
+
+    int acquireOutboundPort() {
+        if (useAnyOutboundPort()) {
+            return 0;
+        }
+        synchronized (outboundPorts) {
+            final Integer port = outboundPorts.removeFirst();
+            outboundPorts.addLast(port);
+            return port;
+        }
     }
 
     public void appendState(StringBuffer sbState) {

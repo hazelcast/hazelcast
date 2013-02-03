@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -283,6 +283,11 @@ public class TestFullApplicationContext {
         assertNotNull(networkConfig);
         assertEquals(5700, networkConfig.getPort());
         assertFalse(networkConfig.isPortAutoIncrement());
+        final Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
+        assertEquals(2, allowedPorts.size());
+        Iterator portIter = allowedPorts.iterator();
+        assertEquals("35000-35100", portIter.next());
+        assertEquals("36000,36100", portIter.next());
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);

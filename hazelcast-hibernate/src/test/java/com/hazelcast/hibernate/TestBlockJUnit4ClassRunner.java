@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,22 @@ import com.hazelcast.impl.GroupProperties;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
 
+import java.io.InputStream;
+import java.util.logging.LogManager;
+
 /**
  * @mdogan 7/19/12
  */
 public class TestBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
+        try {
+            InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("logging.properties");
+            LogManager.getLogManager().readConfiguration(in);
+            in.close();
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");

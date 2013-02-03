@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,7 @@ public enum ClusterOperation {
     CONCURRENT_MAP_EVICT(99),
     CONCURRENT_MAP_FLUSH(100),
     CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK(101),
+    CONCURRENT_MAP_CLEAR_QUICK(102),
     //TOPIC
     TOPIC_PUBLISH(111),
     //ATOMIC NUMBER
@@ -131,6 +132,7 @@ public enum ClusterOperation {
     GET_INSTANCES(130),
     GET_MEMBERS(131),
     GET_CLUSTER_TIME(132),
+    GET_CONFIG(133),
     //CLIENT
     CLIENT_AUTHENTICATE(135),
     CLIENT_ADD_INSTANCE_LISTENER(136),

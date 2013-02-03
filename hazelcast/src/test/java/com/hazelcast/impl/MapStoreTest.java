@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Data;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1345,6 +1346,7 @@ public class MapStoreTest extends TestUtil {
         }
     }
 
+
     @Test
     public void testMapLoaderInitialization() {
         Config config = new Config();
@@ -1384,6 +1386,71 @@ public class MapStoreTest extends TestUtil {
         assertEquals(initialKeys, superClient.getMap("testMapLoader-1").size());
         assertEquals(initialKeys, superClient.getMap("testMapLoader-2").size());
         assertEquals(initialKeys, member.getMap("testMapLoader-2").size());
+        Hazelcast.shutdownAll();
+    }
+
+
+    @Test
+    /**
+     * Issue 293.
+     */
+    public void testStoreAllShouldNotBlockPut() {
+        Config config = new Config();
+        config.setProperty("hazelcast.map.cleanup.delay.seconds", "5");
+        MapConfig mapConfig = config.getMapConfig("testStoreAllShouldNotBlockPut");
+        MapStoreConfig msConfig = new MapStoreConfig();
+        msConfig.setWriteDelaySeconds(5);
+        mapConfig.setMapStoreConfig(msConfig);
+        msConfig.setEnabled(true);
+
+
+        msConfig.setImplementation(new MapStore() {
+
+            public void store(Object key, Object value) {
+            }
+
+            public void storeAll(Map map) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            public void delete(Object key) {
+            }
+
+            public void deleteAll(Collection keys) {
+            }
+
+            public Object load(Object key) {
+                return null;
+            }
+
+            public Map loadAll(Collection keys) {
+                return null;
+            }
+
+            public Set loadAllKeys() {
+                return null;
+            }
+        });
+
+
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        IMap map = instance.getMap("testStoreAllShouldNotBlockPut");
+        for (int i = 0; i < 30000; i++) {
+            try {
+                long start = Clock.currentTimeMillis();
+                map.put(i,i);
+                long end = Clock.currentTimeMillis();
+                assertTrue((end-start) < 1000);
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
         Hazelcast.shutdownAll();
     }
 

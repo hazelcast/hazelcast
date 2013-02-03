@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.RegionCache;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.TransactionalDataRegion;
 
@@ -25,15 +26,18 @@ import java.util.Properties;
 /**
  * @author Leo Kim (lkim@limewire.com)
  */
-public abstract class AbstractTransactionalDataRegion extends AbstractHazelcastRegion implements
+public abstract class AbstractTransactionalDataRegion<Cache extends RegionCache> extends AbstractHazelcastRegion<Cache>
+        implements
         TransactionalDataRegion {
 
     private final CacheDataDescription metadata;
+    private final Cache cache;
 
     protected AbstractTransactionalDataRegion(final HazelcastInstance instance, final String regionName,
-                                              final Properties props, final CacheDataDescription metadata) {
+                                              final Properties props, final CacheDataDescription metadata, final Cache cache) {
         super(instance, regionName, props);
         this.metadata = metadata;
+        this.cache = cache;
     }
 
     /**
@@ -48,5 +52,9 @@ public abstract class AbstractTransactionalDataRegion extends AbstractHazelcastR
      */
     public boolean isTransactionAware() {
         return false;
+    }
+
+    public Cache getCache() {
+        return cache;
     }
 }

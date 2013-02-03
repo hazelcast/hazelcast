@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.3.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-2.5.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -82,6 +82,11 @@
     </wan-replication>
     <network>
         <port auto-increment="true">5701</port>
+        <outbound-ports>
+            <ports>33000-35000</ports>
+            <ports>37000,37001,37002,37003</ports>
+            <ports>38000,38500-38600</ports>
+        </outbound-ports>
         <join>
             <multicast enabled="true">
                 <multicast-group>224.2.2.3</multicast-group>
@@ -392,7 +397,7 @@
                 </actions>
             </queue-permission>
             <transaction-permission/>
-            <listener-permisson name="instance"/>
+            <listener-permission name="instance"/>
         </client-permissions>
     </security>
 

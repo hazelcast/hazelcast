@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hibernate.query;
+package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.region.AbstractGeneralRegion;
+import com.hazelcast.hibernate.local.LocalRegionCache;
 import org.hibernate.cache.QueryResultsRegion;
 
 import java.util.Properties;
 
-/**
- * @author Leo Kim (lkim@limewire.com)
- */
-public class HazelcastQueryResultsRegion extends AbstractGeneralRegion implements QueryResultsRegion {
+public class HazelcastQueryResultsRegion extends AbstractGeneralRegion<LocalRegionCache> implements QueryResultsRegion {
 
     public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name, final Properties props) {
-        super(instance, name, props);
+        // Note: We can pass HazelcastInstance as null, because instead of invalidation
+        // timestamps cache can take care of outdated queries.
+        super(instance, name, props, new LocalRegionCache(name, null, null));
     }
 }

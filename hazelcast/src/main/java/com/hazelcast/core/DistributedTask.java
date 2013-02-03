@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,18 @@ public class DistributedTask<V> extends FutureTask<V> {
 
     public DistributedTask(Runnable task, V result) {
         this(callable(task, result));
+    }
+
+    public DistributedTask(Runnable task, V result, Member member){
+        this(callable(task, result), member);
+    }
+
+    public DistributedTask(Runnable task, V result, Set<Member> members){
+        this(callable(task, result), members);
+    }
+
+    public DistributedTask(Runnable task, V result, Object key){
+        this(callable(task,result), key);
     }
 
     @Override

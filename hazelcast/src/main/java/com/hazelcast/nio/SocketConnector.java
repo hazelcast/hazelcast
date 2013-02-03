@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetSocketAddress;
+import java.net.*;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -94,10 +93,7 @@ public class SocketConnector implements Runnable {
             throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
-        if (!connectionManager.ioService.isSocketBindAny()) {
-            final Address thisAddress = connectionManager.ioService.getThisAddress();
-            socketChannel.socket().bind(new InetSocketAddress(thisAddress.getInetAddress(), 0));
-        }
+        bindSocket(socketChannel);
         final String message = "Connecting to " + socketAddress
                                + ", timeout: " + timeout
                                + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
@@ -128,6 +124,36 @@ public class SocketConnector implements Runnable {
                                       + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                                       + "[" + e.getMessage() + "]");
             throw e;
+        }
+    }
+
+    private void bindSocket(final SocketChannel socketChannel) throws IOException {
+        final InetAddress inetAddress;
+        if (connectionManager.ioService.isSocketBindAny()) {
+            inetAddress = null;
+        } else {
+            final Address thisAddress = connectionManager.ioService.getThisAddress();
+            inetAddress = thisAddress.getInetAddress();
+        }
+        final Socket socket = socketChannel.socket();
+        if (connectionManager.useAnyOutboundPort()) {
+            final SocketAddress socketAddress = new InetSocketAddress(inetAddress, 0);
+            socket.bind(socketAddress);
+        } else {
+            IOException ex = null;
+            final int retryCount = connectionManager.getOutboundPortCount() * 2;
+            for (int i = 0; i < retryCount; i++) {
+                final int port = connectionManager.acquireOutboundPort();
+                final SocketAddress socketAddress = new InetSocketAddress(inetAddress, port);
+                try {
+                    socket.bind(socketAddress);
+                    return;
+                } catch (IOException e) {
+                    ex = e;
+                    log(Level.FINEST, "Could not bind port[ " + port + "]: " +  e.getMessage());
+                }
+            }
+            throw ex;
         }
     }
 

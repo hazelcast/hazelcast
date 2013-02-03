@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,7 +161,8 @@ public class Config implements DataSerializable {
     }
 
     public String getProperty(String name) {
-        return properties.getProperty(name);
+        String value = properties.getProperty(name);
+        return value != null ? value : System.getProperty(name);
     }
 
     public QueueConfig findMatchingQueueConfig(final String name) {
@@ -405,15 +406,17 @@ public class Config implements DataSerializable {
      * @return ExecutorConfig
      */
     public ExecutorConfig getExecutorConfig(String name) {
-        ExecutorConfig ec = this.executorConfigs.get(name);
-        if (ec == null) {
-            ExecutorConfig defaultConfig = executorConfigs.get("default");
-            if (defaultConfig != null) {
-                ec = new ExecutorConfig(name,
-                        defaultConfig.getCorePoolSize(),
-                        defaultConfig.getMaxPoolSize(),
-                        defaultConfig.getKeepAliveSeconds());
-            }
+        ExecutorConfig ec = lookupByPattern(executorConfigs, name);
+        if (ec != null) {
+            return ec;
+        }
+
+        ExecutorConfig defaultConfig = executorConfigs.get("default");
+        if (defaultConfig != null) {
+            ec = new ExecutorConfig(name,
+                defaultConfig.getCorePoolSize(),
+                defaultConfig.getMaxPoolSize(),
+                defaultConfig.getKeepAliveSeconds());
         }
         if (ec == null) {
             ec = new ExecutorConfig(name);
@@ -558,12 +561,14 @@ public class Config implements DataSerializable {
      * @return SemaphoreConfig
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
-        SemaphoreConfig sc = this.semaphoreConfigs.get(name);
-        if (sc == null) {
-            SemaphoreConfig defaultConfig = semaphoreConfigs.get("default");
-            if (defaultConfig != null) {
-                sc = new SemaphoreConfig(name, defaultConfig);
-            }
+        SemaphoreConfig sc = lookupByPattern(semaphoreConfigs, name);
+        if (sc != null) {
+            return sc;
+        }
+
+        SemaphoreConfig defaultConfig = semaphoreConfigs.get("default");
+        if (defaultConfig != null) {
+           sc = new SemaphoreConfig(name, defaultConfig);
         }
         if (sc == null) {
             sc = new SemaphoreConfig(name);

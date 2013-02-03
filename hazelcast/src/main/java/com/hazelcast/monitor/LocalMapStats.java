@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,13 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
      * @return number of hits (reads).
      */
     long getHits();
+
+    /**
+     * Returns the number of misses (get returns null) of the locally owned entries.
+     *
+     * @return number of misses.
+     */
+    long getMisses();
 
     /**
      * Returns the number of currently locked locally owned keys.

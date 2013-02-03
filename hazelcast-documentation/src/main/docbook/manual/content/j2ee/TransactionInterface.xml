@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -32,11 +32,13 @@ import java.util.Set;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Transaction; 
 
-Queue queue = Hazelcast.getQueue("myqueue");
-Map map     = Hazelcast.getMap  ("mymap");
-Set set     = Hazelcast.getSet  ("myset");
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+Queue queue = hz.getQueue("myqueue");
+Map map     = hz.getMap  ("mymap");
+Set set     = hz.getSet  ("myset");
 
-Transaction txn = Hazelcast.getTransaction();
+Transaction txn = hz.getTransaction();
 txn.begin();
 try {    
     Object obj = queue.poll();
@@ -51,7 +53,7 @@ try {
 ]]></programlisting>
 
         Isolation is always
-        <literal>READ_COMMITTED</literal>
+        <literal>REPEATABLE_READ</literal>
         . If you are in a transaction, you can read the data in your transaction and the data that is already committed
         and if not in a transaction, you can only read the committed data. Implementation is different for queue and
         map/set. For queue operations (offer,poll), offered and/or polled objects are copied to the next member in order

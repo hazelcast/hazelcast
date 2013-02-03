@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazel Bilisim Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -299,7 +299,7 @@ public final class Hazelcast {
      *    txn.rollback();
      *  }
      * </pre>
-     * Isolation is always <tt>READ_COMMITTED</tt> . If you are in
+     * Isolation is always <tt>REPEATABLE_READ</tt> . If you are in
      * a transaction, you can read the data in your transaction and the data that
      * is already committed and if not in a transaction, you can only read the
      * committed data. Implementation is different for queue and map/set. For
@@ -505,6 +505,64 @@ public final class Hazelcast {
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
         return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(config);
+    }
+
+    /**
+     * Creates a new HazelcastInstance (a new node in a cluster).
+     * This method allows you to create and run multiple instances
+     * of Hazelcast cluster members on the same JVM.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * Hazelcast will look into two places for the configuration file:
+     * <ol>
+     *     <li>
+     *         System property: Hazelcast will first check if "hazelcast.config" system property is set to a file path.
+     *         Example: -Dhazelcast.config=C:/myhazelcast.xml.
+     *     </li>
+     *     <li>
+     *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
+     *     </li>
+     * </ol>
+     * If Hazelcast doesn't find any config file, it will happily start with default configuration (hazelcast-default.xml)
+     * located in hazelcast.jar.
+     *
+     * @return new HazelcastInstance
+     * @see #shutdownAll()
+     * @see #getHazelcastInstanceByName(String)
+     */
+    public static HazelcastInstance newHazelcastInstance() {
+        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null);
+    }
+
+    /**
+     * Creates a new HazelcastInstance Lite Member (a new node in a cluster).
+     * This method allows you to create and run multiple instances
+     * of Hazelcast cluster members on the same JVM.
+     * <p/>
+     * To shutdown all running HazelcastInstances (all members on this JVM)
+     * call {@link #shutdownAll()}.
+     *
+     * Hazelcast will look into two places for the configuration file:
+      * <ol>
+      *     <li>
+      *         System property: Hazelcast will first check if "hazelcast.config" system property is set to a file path.
+     *         Example: -Dhazelcast.config=C:/myhazelcast.xml.
+      *     </li>
+      *     <li>
+      *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
+      *     </li>
+      * </ol>
+     * If Hazelcast doesn't find any config file, it will happily start with default configuration (hazelcast-default.xml)
+     * located in hazelcast.jar.
+     *
+     * @return new HazelcastInstance
+     * @see #shutdownAll()
+     * @see #getHazelcastInstanceByName(String)
+     */
+    public static HazelcastInstance newLiteMemberHazelcastInstance() {
+        return com.hazelcast.impl.FactoryImpl.newHazelcastInstanceProxy(null, true);
     }
 
     /**
