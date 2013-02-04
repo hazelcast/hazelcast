@@ -17,10 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.*;
-import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerResponseHandler;
 import com.hazelcast.client.proxy.listener.ListenerThread;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -32,6 +30,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -54,6 +53,8 @@ public class ProxyHelper {
         this.writer = new ProtocolWriter(ss);
         this.reader = new ProtocolReader(ss);
     }
+
+    static final ThreadLocal<Context> threadLocal = new ThreadLocal<Context>();
 
     public int getCurrentThreadId() {
         return (int) Thread.currentThread().getId();
@@ -136,8 +137,8 @@ public class ProxyHelper {
         } catch (InterruptedException e) {
         }
     }
-    
-    public ListenerThread  createAListenerThread(String threadName, HazelcastClient client, Protocol request, ListenerResponseHandler lrh){
+
+    public ListenerThread createAListenerThread(String threadName, HazelcastClient client, Protocol request, ListenerResponseHandler lrh) {
         InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
         final Connection connection = client.getConnectionManager().createAndBindConnection(isa);
         ListenerThread thread = new ListenerThread(threadName, request, lrh, connection, ss);
@@ -148,7 +149,10 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
-            Connection connection = cp.takeConnection(key);
+            Context context = threadLocal.get();
+            Connection connection = context == null ? null : context.getConnection();
+            if (connection == null)
+                connection = cp.takeConnection(key);
             writer.write(connection, protocol);
             writer.flush(connection);
             Protocol response = reader.read(connection);
@@ -158,10 +162,9 @@ public class ProxyHelper {
             else {
                 throw new RuntimeException(response.command + ": " + Arrays.asList(response.args));
             }
-        }catch (EOFException e) {
+        } catch (EOFException e) {
             return doCommand(key, command, args, data);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -281,5 +284,36 @@ public class ProxyHelper {
             }
         }
         return list;
+    }
+
+    protected Protocol lock(String name, Data key, Command command, String[] args, Data data) {
+        Context context = threadLocal.get();
+        if (context == null) threadLocal.set(new Context());
+        if (context.getConnection() == null) {
+            try {
+                Connection connection = cp.takeConnection(key);
+                context.setConnection(connection);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        }
+        context.incrementAndGet(name, key.hashCode());
+        return doCommand(key, command, args, data);
+    }
+
+    protected Protocol unlock(String name, Data key, Command command, String[] args, Data data) {
+        Context context = threadLocal.get();
+        if (context == null) {
+            throw new IllegalStateException("You don't seem to have a lock to unlock.");
+        }
+        Protocol response = doCommand(key, command, args, data);
+        if (context.decrementAndGet(name, key.hashCode()) == 0 && context.noMoreLocks()) {
+            Connection connection = context.getConnection();
+            cp.releaseConnection(connection, key);
+            threadLocal.remove();
+        }
+        return response;
     }
 }

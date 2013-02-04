@@ -23,6 +23,7 @@ import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -272,12 +273,8 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public ILock getLock(Object obj) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Lock");
-        DistributedObject proxy = innerProxyMap.get(obj);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(obj, innerProxyMap, new LockClientProxy(this, obj));
-        }
-        return (ILock) proxy;
+        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
+        return new ObjectLockProxy(obj, map);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {

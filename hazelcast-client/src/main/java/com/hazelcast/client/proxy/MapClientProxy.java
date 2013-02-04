@@ -169,40 +169,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         final boolean valid = Boolean.valueOf(protocol.args[7]);
         final V v = (V) proxyHelper.toObject(protocol.buffers[0]);
         return new MapEntry<K, V>() {
-            public long getCost() {
-                return cost;
-            }
-
             public long getCreationTime() {
                 return creationTime;
             }
 
-            public long getExpirationTime() {
-                return expTime;
-            }
-
-            public int getHits() {
-                return hits;
-            }
-
             public long getLastAccessTime() {
                 return lastAccessTime;
-            }
-
-            public long getLastStoredTime() {
-                return lastStoredTime;
-            }
-
-            public long getLastUpdateTime() {
-                return lastUpdateTime;
-            }
-
-            public long getVersion() {
-                return version;
-            }
-
-            public boolean isValid() {
-                return valid;
             }
 
             public K getKey() {
@@ -236,15 +208,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public void lock(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        proxyHelper.doCommand(dKey, Command.MLOCK, getName(), dKey);
+        proxyHelper.lock(getName(), dKey, Command.MLOCK, new String[]{getName()}, dKey);
     }
 
-    private void threadLocal(){
-        Thread thread = Thread.currentThread();
-        thread.
-        
-    }
-    
     public boolean isLocked(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
@@ -253,23 +219,21 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public boolean tryLock(K key) {
-        check(key);
-        Data dKey = proxyHelper.toData(key);
-        Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYLOCK, new String[]{getName(), "0"}, dKey);
-        return Boolean.valueOf(protocol.args[0]);
+        return tryLock(key, 0, TimeUnit.MILLISECONDS);
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYLOCK, new String[]{getName(), "" + timeunit.toMillis(time)}, dKey);
+        String[] args = new String[]{getName(), "" + timeunit.toMillis(time)};
+        Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYLOCK, args, dKey);
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public void unlock(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        proxyHelper.doCommand(dKey, Command.MUNLOCK, getName(), dKey);
+        proxyHelper.unlock(getName(), dKey, Command.MUNLOCK, new String[]{getName()}, dKey);
     }
 
     public void forceUnlock(K key) {
