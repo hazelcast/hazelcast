@@ -22,21 +22,29 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-public class ListRemoveHandler extends ListCommandHandler {
-    public ListRemoveHandler(CollectionService collectionService) {
+import java.util.Arrays;
+import java.util.Collection;
+
+public class AddHandler extends ListCommandHandler {
+    public AddHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
     @Override
     protected Protocol processCall(ObjectListProxy proxy, Protocol protocol) {
-        if (protocol.hasBuffer()) {
-            Data item = protocol.buffers[0];
-            boolean added = proxy.remove(item);
-            return protocol.success(String.valueOf(added));    
+        Data item = protocol.buffers[0];
+        int index = protocol.args.length > 1 ? Integer.valueOf(protocol.args[1]) : -1;
+        //implement add all
+        if (protocol.buffers.length > 1) {
+            Collection<Data> list = Arrays.asList(protocol.buffers);
+            return protocol.success(String.valueOf(proxy.addAll(index, list)));
         } else {
-            int index = Integer.valueOf(protocol.args[1]);
-            Object o = proxy.remove(index);
-            return protocol.success(collectionService.getSerializationService().toData(o));
+            if (index > 0) {
+                proxy.add(index, item);
+                return protocol.success();
+            } else {
+                return protocol.success(String.valueOf(proxy.add(item)));
+            }
         }
     }
 }

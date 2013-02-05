@@ -16,15 +16,15 @@
 
 package com.hazelcast.client.util;
 
-public interface EntryHolder<K, V> {
+import com.hazelcast.core.EntryListener;
 
-    V remove(Object arg0);
+public interface EntryHolder<K, V> {
 
     V get(K key);
 
     boolean remove(Object key, Object value);
 
-    boolean containsValue(Object v);
-
     int size();
+
+    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue);
 }

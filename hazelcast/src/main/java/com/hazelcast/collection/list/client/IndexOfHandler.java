@@ -22,8 +22,8 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-public class ListIndexOfHandler extends ListCommandHandler {
-    public ListIndexOfHandler(CollectionService collectionService) {
+public class IndexOfHandler extends ListCommandHandler {
+    public IndexOfHandler(CollectionService collectionService) {
         super(collectionService);
     }
 

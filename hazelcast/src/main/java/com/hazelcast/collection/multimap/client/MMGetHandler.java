@@ -15,21 +15,24 @@
  *
  */
 
-package com.hazelcast.collection.list.client;
+package com.hazelcast.collection.multimap.client;
 
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.serialization.Data;
 
-public class ListGetHandler extends ListCommandHandler {
-    public ListGetHandler(CollectionService collectionService) {
+import java.util.Collection;
+
+public class MMGetHandler extends MultiMapCommandHandler {
+    public MMGetHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
     @Override
-    protected Protocol processCall(ObjectListProxy proxy, Protocol protocol) {
-        int index = Integer.valueOf(protocol.args[1]);
-        Object o = proxy.get(index);
-        return protocol.success(collectionService.getSerializationService().toData(o));
+    protected Protocol processCall(ObjectMultiMapProxy proxy, Protocol protocol) {
+        Data key = protocol.buffers[0];
+        Collection<Object> result = proxy.get(key);
+        return success(proxy, protocol, result);
     }
 }

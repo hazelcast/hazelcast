@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy.listener;
 
 import com.hazelcast.client.impl.DataAwareEntryEvent;
 import com.hazelcast.client.proxy.MapClientProxy;
+import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
@@ -35,10 +36,10 @@ public class EntryEventLRH<K, V> implements ListenerResponseHandler {
 
     final EntryListener<K, V> listener;
     final K key;
-    final MapClientProxy<K, V> proxy;
+    final EntryHolder<K, V> proxy;
     final boolean includeValue;
 
-    public EntryEventLRH(EntryListener<K, V> listener, K key, boolean includeValue, MapClientProxy<K, V> proxy) {
+    public EntryEventLRH(EntryListener<K, V> listener, K key, boolean includeValue, EntryHolder<K, V> proxy) {
         this.listener = listener;
         this.key = key;
         this.proxy = proxy;

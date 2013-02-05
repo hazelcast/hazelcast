@@ -22,15 +22,21 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-public class ListContainsHandler extends ListCommandHandler {
-    public ListContainsHandler(CollectionService collectionService) {
+public class RemoveHandler extends ListCommandHandler {
+    public RemoveHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
     @Override
     protected Protocol processCall(ObjectListProxy proxy, Protocol protocol) {
-        Data item = protocol.buffers[0];
-        String result = String.valueOf(proxy.contains(item));
-        return protocol.success(result);
+        if (protocol.hasBuffer()) {
+            Data item = protocol.buffers[0];
+            boolean added = proxy.remove(item);
+            return protocol.success(String.valueOf(added));    
+        } else {
+            int index = Integer.valueOf(protocol.args[1]);
+            Object o = proxy.remove(index);
+            return protocol.success(collectionService.getSerializationService().toData(o));
+        }
     }
 }

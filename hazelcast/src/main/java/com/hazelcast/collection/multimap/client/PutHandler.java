@@ -15,28 +15,25 @@
  *
  */
 
-package com.hazelcast.collection.list.client;
+package com.hazelcast.collection.multimap.client;
 
+import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
+import org.omg.CORBA.DATA_CONVERSION;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class ListGetAllHandler extends ListCommandHandler {
-    public ListGetAllHandler(CollectionService collectionService) {
+public class PutHandler extends MultiMapCommandHandler {
+    public PutHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
     @Override
-    protected Protocol processCall(ObjectListProxy proxy, Protocol protocol) {
-        Object[] all = proxy.toArray();
-        List<Data> buffers = new ArrayList<Data>();
-        for (Object o : all) {
-            buffers.add(proxy.getNodeEngine().getSerializationService().toData(o));
-        }
-        return protocol.success(buffers.toArray(new Data[]{}));
+    protected Protocol processCall(ObjectMultiMapProxy proxy, Protocol protocol) {
+        Data key = protocol.buffers[0];
+        Data value = protocol.buffers[1];
+        boolean put = proxy.put(key, value);
+        return protocol.success(String.valueOf(put));
     }
 }

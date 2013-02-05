@@ -21,6 +21,9 @@ import com.hazelcast.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.list.client.*;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
+import com.hazelcast.collection.multimap.client.MMGetHandler;
+import com.hazelcast.collection.multimap.client.MMRemoveHandler;
+import com.hazelcast.collection.multimap.client.PutHandler;
 import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
@@ -289,6 +292,8 @@ public class CollectionService implements ManagedService, RemoteService, Members
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
+        
+        //Set commands
         map.put(Command.SADD, new SetAddHandler(this));
         map.put(Command.SREMOVE, new SetRemoveHandler(this));
         map.put(Command.SCONTAINS, new SetContainsHandler(this));
@@ -299,12 +304,14 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 return new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, protocol.args[0], CollectionProxyType.SET);
             }
         });
-        map.put(Command.LADD, new ListAddHandler(this));
-        map.put(Command.LREMOVE, new ListRemoveHandler(this));
-        map.put(Command.LCONTAINS, new ListContainsHandler(this));
-        map.put(Command.LGETALL, new ListGetAllHandler(this));
-        map.put(Command.LGET, new ListGetHandler(this));
-        map.put(Command.LINDEXOF, new ListIndexOfHandler(this));
+        
+        //List commands
+        map.put(Command.LADD, new AddHandler(this));
+        map.put(Command.LREMOVE, new RemoveHandler(this));
+        map.put(Command.LCONTAINS, new ContainsHandler(this));
+        map.put(Command.LGETALL, new GetAllHandler(this));
+        map.put(Command.LGET, new GetHandler(this));
+        map.put(Command.LINDEXOF, new IndexOfHandler(this));
         map.put(Command.LLASTINDEXOF, new LastIndexOfHandler(this));
         map.put(Command.LSET, new ListSetHandler(this));
         map.put(Command.LLISTEN, new CollectionItemListenHandler(this) {
@@ -313,6 +320,13 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 return new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, protocol.args[0], CollectionProxyType.LIST);
             }
         });
+
+        //MultiMap commands
+
+        map.put(Command.MMPUT, new PutHandler(this));
+        map.put(Command.MMGET, new MMGetHandler(this));
+        map.put(Command.MMREMOVE, new MMRemoveHandler(this));
+
         return map;
     }
 }

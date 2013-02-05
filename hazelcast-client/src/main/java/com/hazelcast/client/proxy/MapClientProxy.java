@@ -39,7 +39,7 @@ import java.util.concurrent.TimeoutException;
 
 import static java.lang.String.valueOf;
 
-public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
+public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     final ProxyHelper proxyHelper;
     final private String name;
     final HazelcastClient client;

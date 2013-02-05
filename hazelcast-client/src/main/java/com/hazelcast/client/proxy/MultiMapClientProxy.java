@@ -18,6 +18,8 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.EntryListenerManager;
+import com.hazelcast.client.proxy.listener.EntryEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
@@ -27,25 +29,23 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
 import static com.hazelcast.client.proxy.ProxyHelper.checkTime;
+import static java.lang.String.valueOf;
 
-public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
+public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,V> {
     private final String name;
-    //    private final PacketProxyHelper proxyHelper;
     private final ProxyHelper proxyHelper;
     private final HazelcastClient client;
+    final Map<EntryListener<K, V>, Map<Object, ListenerThread>> listenerMap = new IdentityHashMap<EntryListener<K, V>, Map<Object, ListenerThread>>();
 
     public MultiMapClientProxy(HazelcastClient client, String name) {
         this.name = name;
-//        this.proxyHelper = new PacketProxyHelper(name, client);
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
         this.client = client;
     }
@@ -58,78 +58,71 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
+
+
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-//        check(listener);
-//        Boolean noEntryListenerRegistered = entryListenerManager().noListenerRegistered(key, name, includeValue);
-//        if (noEntryListenerRegistered == null) {
-//            proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-//            if (key == null)
-//                proxyHelper.doCommand(null, Command.MMREMOVELISTENER, getName(), null);
-//            else
-//                proxyHelper.doCommand(null, Command.MMREMOVELISTENER, getName(),
-//                        client.getSerializationService().toData(key));
-//            noEntryListenerRegistered = Boolean.TRUE;
-//        }
-//        if (noEntryListenerRegistered.booleanValue()) {
-//            Call c = entryListenerManager().createNewAddListenerCall(proxyHelper, key, includeValue);
-//            proxyHelper.doCall(c);
-//            if(key==null)
-//            proxyHelper.doCommand(null, Command.MMADDLISTENER, )
-//        }
-//        entryListenerManager().registerListener(name, key, includeValue, listener);
+    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+        Data dKey = key == null ? null : proxyHelper.toData(key);
+        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.multiMapListener.",
+                client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
+        storeListener(listener, key, thread);
+        thread.start();
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {
         check(listener);
-//        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, null, null);
-//        entryListenerManager().removeListener(name, null, listener);
+        removeEntryListener(listener, null);
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {
         check(listener);
-        check(key);
-//        proxyHelper.doOp(ClusterOperation.REMOVE_LISTENER, key, null);
-//        entryListenerManager().removeListener(name, key, listener);
+        Map<Object, ListenerThread> map = listenerMap.remove(listener);
+        if (map != null) {
+            ListenerThread thread = map.remove(key);
+            if (thread != null) thread.stopListening();
+        }
     }
 
-//    private EntryListenerManager entryListenerManager() {
-//        return client.getListenerManager().getEntryListenerManager();
-//    }
+    private void storeListener(EntryListener<K, V> listener, K key, ListenerThread thread) {
+        synchronized (listenerMap) {
+            Map<Object, ListenerThread> map = listenerMap.get(listener);
+            if (map == null) {
+                map = new HashMap<Object, ListenerThread>();
+                listenerMap.put(listener, map);
+            }
+            map.put(key, thread);
+        }
+    }
 
     public void lock(K key) {
         check(key);
-        proxyHelper.doCommand(null, Command.MMLOCK, getName(), client.getSerializationService().toData(key));
+        Data dKey = proxyHelper.toData(key);
+        proxyHelper.lock(getName(), dKey, Command.MMLOCK, new String[]{getName()}, dKey);
     }
 
     public boolean tryLock(K key) {
         check(key);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMTRYLOCK, new String[]{getName()},
-                client.getSerializationService().toData(key));
+        Data dKey = proxyHelper.toData(key);
+        Protocol response = proxyHelper.lock(getName(), dKey, Command.MMTRYLOCK, new String[]{getName()}, dKey);
+        return Boolean.valueOf(response.args[0]);
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMTRYLOCK, new String[]{getName(),
-                String.valueOf(timeunit.toMillis(time))}, client.getSerializationService().toData(key));
+        Data dKey = proxyHelper.toData(key);
+        String[] args = new String[]{getName(), String.valueOf(timeunit.toMillis(time))};
+        Protocol response = proxyHelper.lock(getName(), dKey, Command.MMTRYLOCK, args, dKey);
+        return Boolean.valueOf(response.args[0]);
     }
 
     public void unlock(K key) {
         check(key);
-        proxyHelper.doCommand(null, Command.MMUNLOCK, getName(), client.getSerializationService().toData(key));
-    }
-
-    public boolean lockMap(long time, TimeUnit timeunit) {
-        checkTime(time, timeunit);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMLOCK, new String[]{getName(),
-                String.valueOf(timeunit.toMillis(time))}, null);
-    }
-
-    public void unlockMap() {
-        proxyHelper.doCommand(null, Command.MMUNLOCK, getName(), null);
+        Data dKey = proxyHelper.toData(key);
+        proxyHelper.unlock(getName(), dKey, Command.MMUNLOCK, new String[]{getName()}, dKey);
     }
 
     public LocalMapStats getLocalMultiMapStats() {
@@ -139,27 +132,25 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     public boolean put(K key, V value) {
         check(key);
         check(value);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMPUT, new String[]{getName()},
-                client.getSerializationService().toData(key), client.getSerializationService().toData(value));
+        Data[] datas = new Data[]{proxyHelper.toData(key), proxyHelper.toData(value)};
+        return proxyHelper.doCommandAsBoolean(null, Command.MMPUT, new String[]{getName()}, datas);
     }
 
     public Collection get(Object key) {
         check(key);
-        return proxyHelper.doCommandAsList(null, Command.MMGET, new String[]{getName()},
-                client.getSerializationService().toData(key));
+        return proxyHelper.doCommandAsList(null, Command.MMGET, new String[]{getName()}, proxyHelper.toData(key));
     }
 
     public boolean remove(Object key, Object value) {
         check(key);
         check(value);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMREMOVE, new String[]{getName()},
-                client.getSerializationService().toData(key), client.getSerializationService().toData(value));
+        Data[] datas = new Data[]{proxyHelper.toData(key), proxyHelper.toData(value)};
+        return proxyHelper.doCommandAsBoolean(null, Command.MMREMOVE, new String[]{getName()}, datas);
     }
 
     public Collection remove(Object key) {
         check(key);
-        return proxyHelper.doCommandAsList(null, Command.MMREMOVE, new String[]{getName()},
-                client.getSerializationService().toData(key));
+        return proxyHelper.doCommandAsList(null, Command.MMREMOVE, new String[]{getName()}, proxyHelper.toData(key));
     }
 
     public Set<K> localKeySet() {
@@ -167,14 +158,8 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
     }
 
     public Set keySet() {
-        Protocol protocol = proxyHelper.doCommand(null, Command.MMKEYS, new String[]{getName()}, null);
-        Set set = new HashSet();
-        if (protocol.hasBuffer()) {
-            for (Data bb : protocol.buffers) {
-                set.add(client.getSerializationService().toObject(bb));
-            }
-        }
-        return set;
+        List<Data> list =  proxyHelper.doCommandAsList(null, Command.MMKEYS, new String[]{getName()}, null);
+        return new HashSet(list);
     }
 
     public Collection values() {
@@ -189,21 +174,22 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public boolean containsKey(Object key) {
         check(key);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSKEY, new String[]{getName()},
-                client.getSerializationService().toData(key));
+        String[] args = new String[]{getName()};
+        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSKEY, args, proxyHelper.toData(key));
     }
 
     public boolean containsValue(Object value) {
         check(value);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSVALUE, new String[]{getName()},
-                client.getSerializationService().toData(value));
+        String[] args = new String[]{getName()};
+        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSVALUE, args, proxyHelper.toData(value));
     }
 
     public boolean containsEntry(Object key, Object value) {
         check(key);
         check(value);
-        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSENTRY, new String[]{getName()},
-                client.getSerializationService().toData(key), client.getSerializationService().toData(value));
+        String[] args = new String[]{getName()};
+        Data[] datas = new Data[]{proxyHelper.toData(key), proxyHelper.toData(value)};
+        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSENTRY, args, datas);
     }
 
     public int size() {
@@ -219,12 +205,11 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder {
 
     public int valueCount(Object key) {
         check(key);
-        return proxyHelper.doCommandAsInt(null, Command.MMVALUECOUNT, new String[]{getName()},
-                client.getSerializationService().toData(key));
+        return proxyHelper.doCommandAsInt(null, Command.MMVALUECOUNT, new String[]{getName()}, proxyHelper.toData(key));
     }
 
     public void destroy() {
-//        proxyHelper.destroy();
+        proxyHelper.destroy();
     }
 
     public Object getId() {
