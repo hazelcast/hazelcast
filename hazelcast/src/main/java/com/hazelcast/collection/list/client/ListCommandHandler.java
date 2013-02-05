@@ -18,6 +18,8 @@
 package com.hazelcast.collection.list.client;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.instance.Node;
@@ -34,7 +36,8 @@ public abstract class ListCommandHandler extends ClientCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        ObjectListProxy proxy = (ObjectListProxy) collectionService.createDistributedObjectForClient(name);
+        CollectionProxyId id = new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST);
+        ObjectListProxy proxy = (ObjectListProxy) collectionService.createDistributedObjectForClient(id);
         return processCall(proxy, protocol);
     }
 

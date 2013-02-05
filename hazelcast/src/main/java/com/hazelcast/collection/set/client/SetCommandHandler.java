@@ -18,7 +18,10 @@
 package com.hazelcast.collection.set.client;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
@@ -33,6 +36,7 @@ public abstract class SetCommandHandler extends ClientCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
+        CollectionProxyId id = new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET);
         ObjectSetProxy proxy = (ObjectSetProxy)collectionService.createDistributedObjectForClient(name);
         return processCall(proxy, protocol);
     }
