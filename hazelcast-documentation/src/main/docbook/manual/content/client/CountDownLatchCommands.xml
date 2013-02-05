@@ -23,7 +23,7 @@
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>CountDownLatch Commands</title>
 
-    CDLAWAIT, CDLGETCOUNT, CDLGETOWNER, CDLSETCOUNT, CDLCOUNTDOWN
+    CDLAWAIT, CDLGETCOUNT, CDLSETCOUNT, CDLCOUNTDOWN
 
     <sect2 xml:id="CDLAWAIT" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>CDLAWAIT</title>

@@ -16,8 +16,14 @@
 
 package com.hazelcast.countdownlatch;
 
+import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.countdownlatch.client.CDLAwaitHandler;
+import com.hazelcast.countdownlatch.client.CDLCountdownHandler;
+import com.hazelcast.countdownlatch.client.CDLGetCountHandler;
+import com.hazelcast.countdownlatch.client.CDLSetCountHandler;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
@@ -29,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 1/10/13
  */
-public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService {
+public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService, ClientProtocolService {
 
     public final static String SERVICE_NAME = "hz:impl:countDownLatchService";
 
@@ -94,11 +100,11 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         return SERVICE_NAME;
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
+    public CountDownLatchProxy createDistributedObject(Object objectId) {
         return new CountDownLatchProxy(String.valueOf(objectId), nodeEngine);
     }
 
-    public DistributedObject createDistributedObjectForClient(Object objectId) {
+    public CountDownLatchProxy createDistributedObjectForClient(Object objectId) {
         return new CountDownLatchProxy(String.valueOf(objectId), nodeEngine);
     }
 
@@ -151,5 +157,14 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
 
     public void add(CountDownLatchInfo latch) {
         latches.put(latch.getName(), latch);
+    }
+
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
+        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
+        map.put(Command.CDLAWAIT, new CDLAwaitHandler(this));
+        map.put(Command.CDLCOUNTDOWN, new CDLCountdownHandler(this));
+        map.put(Command.CDLGETCOUNT, new CDLGetCountHandler(this));
+        map.put(Command.CDLSETCOUNT, new CDLSetCountHandler(this));
+        return map;
     }
 }
