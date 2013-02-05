@@ -15,22 +15,28 @@
  *
  */
 
-package com.hazelcast.collection.client;
+package com.hazelcast.collection.list.client;
 
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-public class SetRemoveHandler extends SetCommandHandler {
-    public SetRemoveHandler(CollectionService collectionService) {
+import java.util.ArrayList;
+import java.util.List;
+
+public class ListGetAllHandler extends ListCommandHandler {
+    public ListGetAllHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
     @Override
-    protected Protocol processCall(ObjectSetProxy proxy, Protocol protocol) {
-        Data item = protocol.buffers[0];
-        String result = String.valueOf(proxy.remove(item));
-        return protocol.success(result);
+    protected Protocol processCall(ObjectListProxy proxy, Protocol protocol) {
+        Object[] all = proxy.toArray();
+        List<Data> buffers = new ArrayList<Data>();
+        for (Object o : all) {
+            buffers.add(proxy.getNodeEngine().getSerializationService().toData(o));
+        }
+        return protocol.success(buffers.toArray(new Data[]{}));
     }
 }

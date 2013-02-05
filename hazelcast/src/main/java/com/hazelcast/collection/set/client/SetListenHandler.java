@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.collection.client;
+package com.hazelcast.collection.set.client;
 
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.set.ObjectSetProxy;

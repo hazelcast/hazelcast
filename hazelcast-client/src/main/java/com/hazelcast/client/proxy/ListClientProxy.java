@@ -18,14 +18,22 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.CollectionClientProxy;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.proxy.listener.ItemEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class ListClientProxy<E> extends CollectionClientProxy<E> implements IList<E> {
+    private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
+
     public ListClientProxy(HazelcastClient hazelcastClient, String name) {
         super(hazelcastClient, name);
     }
@@ -39,15 +47,13 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     @Override
     public boolean remove(Object o) {
         check(o);
-        return false;
-//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, o, null);
+        return proxyHelper.doCommandAsBoolean(null, Command.LREMOVE, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public boolean contains(Object o) {
         check(o);
-        return false;
-//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, o, null);
+        return proxyHelper.doCommandAsBoolean(null, Command.LCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
@@ -60,40 +66,8 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     }
 
     @Override
-    protected Collection<E> getTheCollection() {
-        final Collection<Map.Entry<?, E>> entries = proxyHelper.entries(null);
-        final Iterator<Map.Entry<?, E>> it = entries.iterator();
-        final ListClientProxy thisListProxy = this;
-        return new AbstractCollection<E>() {
-            @Override
-            public Iterator<E> iterator() {
-                return new Iterator<E>() {
-                    volatile E lastRecord;
-
-                    public boolean hasNext() {
-                        return it.hasNext();
-                    }
-
-                    public E next() {
-                        lastRecord = it.next().getValue();
-                        return lastRecord;
-                    }
-
-                    public void remove() {
-                        if (lastRecord == null) {
-                            throw new IllegalStateException();
-                        }
-                        it.remove();
-                        thisListProxy.remove(lastRecord);
-                    }
-                };
-            }
-
-            @Override
-            public int size() {
-                return entries.size();
-            }
-        };
+    protected List<E> getTheCollection() {
+        return proxyHelper.doCommandAsList(null, Command.LGETALL, new String[]{getName()});
     }
 
     public String getName() {
@@ -101,42 +75,66 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     }
 
     public void add(int index, E element) {
-        throw new UnsupportedOperationException();
+        String[] args = new String[]{getName(), String.valueOf(index)};
+        proxyHelper.doCommand(null, Command.LADD, args, proxyHelper.toData(element));
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
-        throw new UnsupportedOperationException();
+        String[] args = new String[]{getName(), String.valueOf(index)};
+        List<Data> list = new ArrayList<Data>();
+        for(E e: c){
+            list.add(proxyHelper.toData(e));
+        }
+        return proxyHelper.doCommandAsBoolean(null, Command.LCONTAINS, args, list.toArray(new Data[]{}));
     }
 
     public E get(int index) {
-        throw new UnsupportedOperationException();
+        return (E)proxyHelper.doCommandAsObject(null, Command.LGET, new String[]{getName(), String.valueOf(index)});
     }
 
     public int indexOf(Object o) {
-        throw new UnsupportedOperationException();
+        check(o);
+        return proxyHelper.doCommandAsInt(null, Command.LINDEXOF, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     public int lastIndexOf(Object o) {
-        throw new UnsupportedOperationException();
+        check(o);
+        return proxyHelper.doCommandAsInt(null, Command.LLASTINDEXOF, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     public ListIterator<E> listIterator() {
-        throw new UnsupportedOperationException();
+        return getTheCollection().listIterator();
     }
 
     public ListIterator<E> listIterator(int index) {
-        throw new UnsupportedOperationException();
+        return getTheCollection().listIterator(index);
     }
 
     public E remove(int index) {
-        throw new UnsupportedOperationException();
+        return (E) proxyHelper.doCommandAsObject(null, Command.LREMOVE, new String[]{getName(), String.valueOf(index)});
     }
 
     public E set(int index, E element) {
-        throw new UnsupportedOperationException();
+        String[] args = new String[]{getName(), String.valueOf(index)};
+        return (E) proxyHelper.doCommandAsObject(null, Command.LSET, args, proxyHelper.toData(element));
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
-        throw new UnsupportedOperationException();
+        return getTheCollection().subList(fromIndex, toIndex);
+    }
+
+    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+        check(listener);
+        Protocol request = proxyHelper.createProtocol(Command.SLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.listListener.",
+                client, request, new ItemEventLRH<E>(listener, includeValue, this));
+        listenerMap.put(listener, thread);
+        thread.start();
+    }
+
+    public void removeItemListener(ItemListener<E> listener) {
+        ListenerThread thread = listenerMap.remove(listener);
+        if (thread != null)
+            thread.interrupt();
     }
 }

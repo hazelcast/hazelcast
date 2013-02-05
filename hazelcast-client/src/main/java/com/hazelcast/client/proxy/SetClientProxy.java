@@ -18,20 +18,19 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.CollectionClientProxy;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
-//import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
+//import com.hazelcast.impl.ClusterOperation;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E> {
     private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
@@ -69,8 +68,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
 
     @Override
     protected Collection<E> getTheCollection() {
-        Collection<E> result = proxyHelper.doCommandAsList(null, Command.SGETALL, new String[]{getName()});
-        return result;
+        return proxyHelper.doCommandAsList(null, Command.SGETALL, new String[]{getName()});
     }
 
     public String getName() {

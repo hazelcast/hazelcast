@@ -275,7 +275,7 @@ public class ProxyHelper {
         return Integer.valueOf(protocol.args[0]);
     }
 
-    public <E> Collection<E> doCommandAsList(Data key, Command command, String[] args, Data... datas) {
+    public <E> List<E> doCommandAsList(Data key, Command command, String[] args, Data... datas) {
         Protocol protocol = doCommand(key, command, args, datas);
         List<E> list = new ArrayList<E>();
         if (protocol.hasBuffer()) {

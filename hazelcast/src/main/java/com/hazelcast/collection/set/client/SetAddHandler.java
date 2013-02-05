@@ -15,27 +15,22 @@
  *
  */
 
-package com.hazelcast.collection.client;
+package com.hazelcast.collection.set.client;
 
-import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.serialization.Data;
 
-public abstract class SetCommandHandler extends ClientCommandHandler {
-
-    final CollectionService collectionService;
-    public SetCommandHandler(CollectionService collectionService) {
-        this.collectionService = collectionService;
+public class SetAddHandler extends SetCommandHandler {
+    public SetAddHandler(CollectionService collectionService) {
+        super(collectionService);
     }
 
     @Override
-    public Protocol processCall(Node node, Protocol protocol) {
-        String name = protocol.args[0];
-        ObjectSetProxy proxy = (ObjectSetProxy)collectionService.createDistributedObjectForClient(name);
-        return processCall(proxy, protocol);
+    protected Protocol processCall(ObjectSetProxy proxy, Protocol protocol) {
+        Data item = protocol.buffers[0];
+        String result = String.valueOf(proxy.add(item));
+        return protocol.success(result);
     }
-
-    protected abstract Protocol processCall(ObjectSetProxy proxy, Protocol protocol);
 }

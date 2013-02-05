@@ -15,20 +15,20 @@
  *
  */
 
-package com.hazelcast.collection.client;
+package com.hazelcast.collection.list.client;
 
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-public class SetContainsHandler extends SetCommandHandler {
-    public SetContainsHandler(CollectionService collectionService) {
+public class ListContainsHandler extends ListCommandHandler {
+    public ListContainsHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
     @Override
-    protected Protocol processCall(ObjectSetProxy proxy, Protocol protocol) {
+    protected Protocol processCall(ObjectListProxy proxy, Protocol protocol) {
         Data item = protocol.buffers[0];
         String result = String.valueOf(proxy.contains(item));
         return protocol.success(result);

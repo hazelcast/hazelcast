@@ -15,24 +15,22 @@
  *
  */
 
-package com.hazelcast.collection.client;
+package com.hazelcast.collection.set.client;
 
-import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-public class SetAddHandler extends SetCommandHandler {
-    public SetAddHandler(CollectionService collectionService) {
+public class SetRemoveHandler extends SetCommandHandler {
+    public SetRemoveHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
     @Override
     protected Protocol processCall(ObjectSetProxy proxy, Protocol protocol) {
         Data item = protocol.buffers[0];
-        String result = String.valueOf(proxy.add(item));
+        String result = String.valueOf(proxy.remove(item));
         return protocol.success(result);
     }
 }

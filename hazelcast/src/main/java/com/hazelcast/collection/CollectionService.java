@@ -17,14 +17,17 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.collection.client.*;
+import com.hazelcast.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.list.client.*;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
 import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -69,7 +72,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public CollectionPartitionContainer getPartitionContainer(int partitionId) {
         return partitionContainers[partitionId];
     }
-
 
     <V> Collection<V> createNew(CollectionProxyId proxyId) {
         CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(SERVICE_NAME, proxyId);
@@ -139,7 +141,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
         } else {
             registration = eventService.registerListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
         }
-
         eventRegistrations.put(listenerKey, registration.getId());
     }
 
@@ -157,8 +158,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
             EntryListener entryListener = (EntryListener) listener;
             EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
                     event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-
-
             if (event.eventType.equals(EntryEventType.ADDED)) {
                 entryListener.entryAdded(entryEvent);
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
@@ -177,7 +176,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
-
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
@@ -271,14 +269,14 @@ public class CollectionService implements ManagedService, RemoteService, Members
         // * rollback transaction
         // * do not know ?
         Address caller = event.getMember().getAddress();
-        for (CollectionPartitionContainer partitionContainer: partitionContainers){
-            for (Map.Entry<CollectionProxyId, CollectionContainer> entry: partitionContainer.containerMap.entrySet()){
+        for (CollectionPartitionContainer partitionContainer : partitionContainers) {
+            for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
                 CollectionProxyId proxyId = entry.getKey();
                 CollectionContainer container = entry.getValue();
-                for (Map.Entry<Data, LockInfo> lockEntry: container.lockStore.getLocks().entrySet()){
+                for (Map.Entry<Data, LockInfo> lockEntry : container.lockStore.getLocks().entrySet()) {
                     Data key = lockEntry.getKey();
                     LockInfo lock = lockEntry.getValue();
-                    if (lock.getLockAddress().equals(caller)){
+                    if (lock.getLockAddress().equals(caller)) {
                         Operation op = new ForceUnlockOperation(proxyId, key).setPartitionId(partitionContainer.partitionId)
                                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
                                 .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
@@ -295,7 +293,26 @@ public class CollectionService implements ManagedService, RemoteService, Members
         map.put(Command.SREMOVE, new SetRemoveHandler(this));
         map.put(Command.SCONTAINS, new SetContainsHandler(this));
         map.put(Command.SGETALL, new SetGetAllHandler(this));
-        map.put(Command.SLISTEN, new SetListenHandler(this));
+        map.put(Command.SLISTEN, new CollectionItemListenHandler(this) {
+            @Override
+            protected CollectionProxyId getCollectionProxyId(Protocol protocol) {
+                return new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, protocol.args[0], CollectionProxyType.SET);
+            }
+        });
+        map.put(Command.LADD, new ListAddHandler(this));
+        map.put(Command.LREMOVE, new ListRemoveHandler(this));
+        map.put(Command.LCONTAINS, new ListContainsHandler(this));
+        map.put(Command.LGETALL, new ListGetAllHandler(this));
+        map.put(Command.LGET, new ListGetHandler(this));
+        map.put(Command.LINDEXOF, new ListIndexOfHandler(this));
+        map.put(Command.LLASTINDEXOF, new LastIndexOfHandler(this));
+        map.put(Command.LSET, new ListSetHandler(this));
+        map.put(Command.LLISTEN, new CollectionItemListenHandler(this) {
+            @Override
+            protected CollectionProxyId getCollectionProxyId(Protocol protocol) {
+                return new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, protocol.args[0], CollectionProxyType.LIST);
+            }
+        });
         return map;
     }
 }
