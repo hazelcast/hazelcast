@@ -16,6 +16,8 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.collection.client.*;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.operations.ForceUnlockOperation;
@@ -23,6 +25,7 @@ import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.*;
 import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -38,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
  * @ali 1/1/13
  */
 public class CollectionService implements ManagedService, RemoteService, MembershipAwareService,
-        EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
+        EventPublishingService<CollectionEvent, EventListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
 
@@ -284,5 +287,15 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 }
             }
         }
+    }
+
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
+        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
+        map.put(Command.SADD, new SetAddHandler(this));
+        map.put(Command.SREMOVE, new SetRemoveHandler(this));
+        map.put(Command.SCONTAINS, new SetContainsHandler(this));
+        map.put(Command.SGETALL, new SetGetAllHandler(this));
+        map.put(Command.SLISTEN, new SetListenHandler(this));
+        return map;
     }
 }

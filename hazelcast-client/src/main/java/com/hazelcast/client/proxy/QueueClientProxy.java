@@ -39,7 +39,6 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected String name;
     final private HazelcastClient client;
     private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
-    final Object lock = new Object();
 
     public QueueClientProxy(HazelcastClient client, String name) {
         super();

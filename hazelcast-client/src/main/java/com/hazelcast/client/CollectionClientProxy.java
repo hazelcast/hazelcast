@@ -27,15 +27,12 @@ import java.util.Iterator;
 public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
     final protected ProxyHelper proxyHelper;
     final protected String name;
+    final protected HazelcastClient client;
 
     public CollectionClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
+        this.client = hazelcastClient;
         proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
-    }
-
-    public CollectionClientProxy(ProxyHelper proxyHelper, String name) {
-        this.name = name;
-        this.proxyHelper = proxyHelper;
     }
 
     public void destroy() {
@@ -77,22 +74,6 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
         return "CollectionClientProxy{" +
                 "name='" + name + '\'' +
                 '}';
-    }
-
-    public synchronized void addItemListener(ItemListener<E> listener, boolean includeValue) {
-//        check(listener);
-//        Call c = itemListenerManager().createNewAddListenerCall(proxyHelper, includeValue);
-//        itemListenerManager().registerListener(name, listener, includeValue);
-//        proxyHelper.doCall(c);
-    }
-
-
-    public void removeItemListener(ItemListener<E> eItemListener) {
-    }
-
-
-    private ItemListenerManager itemListenerManager() {
-        return null;//proxyHelper.client.getListenerManager().getItemListenerManager();
     }
 
     @Override

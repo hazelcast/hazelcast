@@ -19,42 +19,43 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.CollectionClientProxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.client.proxy.listener.ItemEventLRH;
+import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.core.ISet;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 //import com.hazelcast.impl.ClusterOperation;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<E> {
+    private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
 
     public SetClientProxy(HazelcastClient client, String name) {
         super(client, name);
     }
 
-    public SetClientProxy(ProxyHelper proxyHelper, String name) {
-        super(proxyHelper, name);
-    }
-
     @Override
     public boolean add(E o) {
         check(o);
-//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_SET, o, null);
-        return false;
+        return proxyHelper.doCommandAsBoolean(null, Command.SADD, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public boolean remove(Object o) {
         check(o);
-        return false;
-//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_REMOVE_ITEM, o, null);
+        return proxyHelper.doCommandAsBoolean(null, Command.SREMOVE, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public boolean contains(Object o) {
         check(o);
-        return false;
-//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_CONTAINS_KEY, o, null);
+        return proxyHelper.doCommandAsBoolean(null, Command.SCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
@@ -68,11 +69,26 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
 
     @Override
     protected Collection<E> getTheCollection() {
-        return proxyHelper.keys(null);
+        Collection<E> result = proxyHelper.doCommandAsList(null, Command.SGETALL, new String[]{getName()});
+        return result;
     }
 
     public String getName() {
         return name;
     }
 
+    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+        check(listener);
+        Protocol request = proxyHelper.createProtocol(Command.SLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.setListener.",
+                client, request, new ItemEventLRH<E>(listener, includeValue, this));
+        listenerMap.put(listener, thread);
+        thread.start();
+    }
+
+    public void removeItemListener(ItemListener<E> listener) {
+        ListenerThread thread = listenerMap.remove(listener);
+        if (thread != null)
+            thread.interrupt();
+    }
 }

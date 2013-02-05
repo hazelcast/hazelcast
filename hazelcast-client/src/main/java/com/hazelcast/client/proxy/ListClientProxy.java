@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.CollectionClientProxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.IList;
+import com.hazelcast.nio.protocol.Command;
 
 import java.util.*;
 
@@ -32,8 +33,7 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     @Override
     public boolean add(E o) {
         check(o);
-//        return (Boolean) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_ADD_TO_LIST, o, null);
-    return false;
+        return proxyHelper.doCommandAsBoolean(null, Command.LADD, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
