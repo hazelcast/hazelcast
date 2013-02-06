@@ -16,9 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.ItemListenerManager;
 import com.hazelcast.client.proxy.ProxyHelper;
-import com.hazelcast.core.ItemListener;
 
 import java.util.AbstractCollection;
 import java.util.Collection;
@@ -33,10 +31,6 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
         this.name = name;
         this.client = hazelcastClient;
         proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
-    }
-
-    public void destroy() {
-        proxyHelper.destroy();
     }
 
     public Object getId() {

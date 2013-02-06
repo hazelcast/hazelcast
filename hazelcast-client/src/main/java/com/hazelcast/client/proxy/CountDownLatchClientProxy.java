@@ -75,7 +75,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"cdl", getName()}, null);
     }
 
     public Object getId() {

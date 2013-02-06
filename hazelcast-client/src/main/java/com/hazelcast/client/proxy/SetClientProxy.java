@@ -75,6 +75,10 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
         return name;
     }
 
+    public void destroy() {
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"set", getName()}, null);
+    }
+
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Protocol request = proxyHelper.createProtocol(Command.SLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);

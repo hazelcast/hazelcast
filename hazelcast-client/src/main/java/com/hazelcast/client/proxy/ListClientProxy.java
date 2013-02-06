@@ -74,6 +74,10 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
         return name;
     }
 
+    public void destroy() {
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"list", getName()}, null);
+    }
+
     public void add(int index, E element) {
         String[] args = new String[]{getName(), String.valueOf(index)};
         proxyHelper.doCommand(null, Command.LADD, args, proxyHelper.toData(element));

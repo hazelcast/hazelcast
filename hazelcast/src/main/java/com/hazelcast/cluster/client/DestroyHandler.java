@@ -33,6 +33,23 @@ public class DestroyHandler extends ClientCommandHandler {
         if("map".equals(type)){
             proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
         }
+        else if("set".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }
         return protocol.success();
     }
 }

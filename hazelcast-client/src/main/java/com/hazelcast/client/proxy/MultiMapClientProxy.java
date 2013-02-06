@@ -209,7 +209,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"mmap", getName()}, null);
     }
 
     public Object getId() {

@@ -43,7 +43,7 @@ public class IdGeneratorClientProxy implements IdGenerator {
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"idg", getName()}, null);
     }
 
     public Object getId() {
