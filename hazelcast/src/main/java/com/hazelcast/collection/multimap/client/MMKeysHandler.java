@@ -18,40 +18,27 @@
 package com.hazelcast.collection.multimap.client;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
-import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
-public abstract class MultiMapCommandHandler extends ClientCommandHandler {
-    final protected CollectionService collectionService;
-
-    public MultiMapCommandHandler(CollectionService collectionService) {
-        this.collectionService = collectionService;
+public class MMKeysHandler extends MultiMapCommandHandler {
+    public MMKeysHandler(CollectionService collectionService) {
+        super(collectionService);
     }
 
     @Override
-    public Protocol processCall(Node node, Protocol protocol) {
-        String name = protocol.args[0];
-        CollectionProxyId id = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
-        ObjectMultiMapProxy proxy = (ObjectMultiMapProxy) collectionService.createDistributedObjectForClient(id);
-        return processCall(proxy, protocol);
-    }
-
-    protected Protocol success(ObjectMultiMapProxy proxy, Protocol protocol, Collection<Object> result) {
+    protected Protocol processCall(ObjectMultiMapProxy proxy, Protocol protocol) {
+        Set all = proxy.keySet();
         List<Data> buffers = new ArrayList<Data>();
-        for (Object o : result) {
+        for (Object o : all) {
             buffers.add(proxy.getNodeEngine().getSerializationService().toData(o));
         }
-        return protocol.success(String.valueOf(buffers.toArray(new Data[]{})));
+        return protocol.success(buffers.toArray(new Data[]{}));
     }
-
-    protected abstract Protocol processCall(ObjectMultiMapProxy proxy, Protocol protocol);
 }

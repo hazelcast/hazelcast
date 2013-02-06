@@ -15,34 +15,35 @@
  *
  */
 
-package com.hazelcast.map.client;
+package com.hazelcast.collection.multimap.client;
 
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.AddressUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapListenHandler extends MapCommandHandler {
-    public MapListenHandler(MapService mapService) {
-        super(mapService);
+public class ListenHandler extends MultiMapCommandHandler {
+    public ListenHandler(CollectionService collectionService) {
+        super(collectionService);
     }
 
     @Override
     public Protocol processCall(final Node node, final Protocol protocol) {
         String name = protocol.args[0];
-        System.out.println("Received the addListener for " + name);
         boolean includeValue = Boolean.valueOf(protocol.args[1]);
         final Data key = protocol.hasBuffer() ? protocol.buffers[0] : null;
-        final DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        CollectionProxyId id = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
+        final ObjectMultiMapProxy proxy = (ObjectMultiMapProxy) collectionService.createDistributedObjectForClient(id);
         final TcpIpConnection connection = protocol.conn;
         EntryListener<Data, Data> entryListener = new EntryListener<Data, Data>() {
             public void entryAdded(EntryEvent<Data, Data> entryEvent) {
@@ -62,10 +63,8 @@ public class MapListenHandler extends MapCommandHandler {
             }
 
             public void sendEvent(EntryEvent<Data, Data> entryEvent) {
-                System.out.println("Sending the event");
-
-                if (connection.live()) {                       
-                    String[] args = new String[]{"map", dataMapProxy.getName(), entryEvent.getEventType().toString(),
+                if (connection.live()) {
+                    String[] args = new String[]{"map", proxy.getName(), entryEvent.getEventType().toString(),
                             entryEvent.getMember().getInetSocketAddress().getHostName() + ":" + entryEvent.getMember().getInetSocketAddress().getPort()};
                     List<Data> list = new ArrayList<Data>();
                     list.add(node.serializationService.toData(entryEvent.getKey()));
@@ -74,18 +73,21 @@ public class MapListenHandler extends MapCommandHandler {
                     if (entryEvent.getOldValue() != null)
                         list.add(node.serializationService.toData(entryEvent.getOldValue()));
                     Protocol event = new Protocol(connection, Command.EVENT, args, list.toArray(new Data[]{}));
-                    System.out.println("Connection is " + connection);
                     sendResponse(node, event, connection);
                 } else {
-                    System.out.println("on Server removing the listener");
-                    dataMapProxy.removeEntryListener(this, key);
+                    proxy.removeEntryListener(this, key);
                 }
             }
         };
         if (key == null)
-            dataMapProxy.addEntryListener(entryListener, includeValue);
+            proxy.addEntryListener(entryListener, includeValue);
         else
-            dataMapProxy.addEntryListener(entryListener, key, includeValue);
+            proxy.addEntryListener(entryListener, key, includeValue);
+        return null;
+    }
+
+    @Override
+    protected Protocol processCall(ObjectMultiMapProxy proxy, Protocol protocol) {
         return null;
     }
 }

@@ -66,7 +66,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
+        Protocol request = proxyHelper.createProtocol(Command.MMLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.multiMapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);

@@ -21,12 +21,13 @@ import com.hazelcast.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.list.client.*;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
-import com.hazelcast.collection.multimap.client.MMGetHandler;
-import com.hazelcast.collection.multimap.client.MMRemoveHandler;
-import com.hazelcast.collection.multimap.client.PutHandler;
+import com.hazelcast.collection.multimap.client.*;
 import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.collection.set.client.*;
+import com.hazelcast.collection.set.client.SetAddHandler;
+import com.hazelcast.collection.set.client.SetContainsHandler;
+import com.hazelcast.collection.set.client.SetGetAllHandler;
+import com.hazelcast.collection.set.client.SetRemoveHandler;
 import com.hazelcast.core.*;
 import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.Address;
@@ -292,7 +293,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
-        
         //Set commands
         map.put(Command.SADD, new SetAddHandler(this));
         map.put(Command.SREMOVE, new SetRemoveHandler(this));
@@ -304,7 +304,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 return new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, protocol.args[0], CollectionProxyType.SET);
             }
         });
-        
         //List commands
         map.put(Command.LADD, new AddHandler(this));
         map.put(Command.LREMOVE, new RemoveHandler(this));
@@ -320,13 +319,20 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 return new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, protocol.args[0], CollectionProxyType.LIST);
             }
         });
-
         //MultiMap commands
-
         map.put(Command.MMPUT, new PutHandler(this));
         map.put(Command.MMGET, new MMGetHandler(this));
+        map.put(Command.MMSIZE, new MMSizeHandler(this));
         map.put(Command.MMREMOVE, new MMRemoveHandler(this));
-
+        map.put(Command.MMVALUECOUNT, new ValueCountHandler(this));
+        map.put(Command.MMCONTAINSKEY, new ContainsKeyHandler(this));
+        map.put(Command.MMCONTAINSVALUE, new ContainsValueHandler(this));
+        map.put(Command.MMCONTAINSENTRY, new ContainsEntryHandler(this));
+        map.put(Command.MMKEYS, new MMKeysHandler(this));
+        map.put(Command.MMLOCK, new LockHandler(this));
+        map.put(Command.MMUNLOCK, new UnlockHandler(this));
+        map.put(Command.MMTRYLOCK, new TryLockHandler(this));
+        map.put(Command.MMLISTEN, new ListenHandler(this));
         return map;
     }
 }

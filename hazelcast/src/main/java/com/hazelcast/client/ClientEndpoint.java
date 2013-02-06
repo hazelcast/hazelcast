@@ -33,12 +33,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ClientEndpoint implements ConnectionListener, Client {
     final TcpIpConnection conn;
 //    final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
-    final Map<ITopic, MessageListener<Object>> messageListeners = new HashMap<ITopic, MessageListener<Object>>();
-    final List<IMap> listeningMaps = new ArrayList<IMap>();
-    final List<MultiMap> listeningMultiMaps = new ArrayList<MultiMap>();
-    final List<Map.Entry<IMap, Object>> listeningKeysOfMaps = new ArrayList<Map.Entry<IMap, Object>>();
-    final List<Map.Entry<MultiMap, Object>> listeningKeysOfMultiMaps = new ArrayList<Map.Entry<MultiMap, Object>>();
-    final Map<IQueue, ItemListener<Object>> queueItemListeners = new ConcurrentHashMap<IQueue, ItemListener<Object>>();
 //    final Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
     final Set<ClientRequestHandler> currentRequests = Collections.newSetFromMap(new ConcurrentHashMap<ClientRequestHandler, Boolean>());
     final Node node;
