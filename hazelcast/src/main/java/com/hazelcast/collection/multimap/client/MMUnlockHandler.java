@@ -24,8 +24,8 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 
-public class UnlockHandler extends MultiMapCommandHandler {
-    public UnlockHandler(CollectionService collectionService) {
+public class MMUnlockHandler extends MultiMapCommandHandler {
+    public MMUnlockHandler(CollectionService collectionService) {
         super(collectionService);
     }
 
