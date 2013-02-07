@@ -17,6 +17,8 @@
 package com.hazelcast.jmxlocal;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 
 /**
  * @ali 1/31/13
@@ -24,9 +26,23 @@ import com.hazelcast.core.IList;
 @ManagedDescription("IList")
 public class ListMBean extends HazelcastMBean<IList<?>> {
 
+    private long totalAddedItemCount;
+
+    private long totalRemovedItemCount;
+
     protected ListMBean(IList<?> managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = createObjectName("List",managedObject.getName());
+        ItemListener itemListener = new ItemListener() {
+            public void itemAdded(ItemEvent item) {
+                totalAddedItemCount++;
+            }
+
+            public void itemRemoved(ItemEvent item) {
+                totalRemovedItemCount++;
+            }
+        };
+        managedObject.addItemListener(itemListener, false);
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
@@ -39,6 +55,18 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
     @ManagedDescription("Name of the DistributedObject")
     public String getName() {
         return managedObject.getName();
+    }
+
+    @ManagedAnnotation("totalAddedItemCount")
+    @ManagedDescription("Name of the DistributedObject")
+    public long getTotalAddedItemCount() {
+        return totalAddedItemCount;
+    }
+
+    @ManagedAnnotation("totalRemovedItemCount")
+    @ManagedDescription("Name of the DistributedObject")
+    public long getTotalRemovedItemCount() {
+        return totalRemovedItemCount;
     }
 
 }

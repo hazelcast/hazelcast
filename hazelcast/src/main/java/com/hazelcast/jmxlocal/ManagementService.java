@@ -16,10 +16,7 @@
 
 package com.hazelcast.jmxlocal;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.DistributedObjectEvent;
-import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.IList;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 
 import javax.management.*;
@@ -139,6 +136,9 @@ public class ManagementService implements DistributedObjectListener {
     private HazelcastMBean createHazelcastBean(DistributedObject distributedObject){
         if (distributedObject instanceof IList){
             return new ListMBean((IList)distributedObject, this);
+        }
+        if (distributedObject instanceof AtomicNumber){
+            return new AtomicNumberMBean((AtomicNumber)distributedObject, this);
         }
         return null;
     }
