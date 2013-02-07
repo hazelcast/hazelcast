@@ -189,7 +189,8 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public com.hazelcast.core.Transaction getTransaction() {
-        return TransactionUtil.getTransaction(this);
+        Context context = Context.getOrCreate();
+        return context.getTransaction(this);
     }
 
     public ConnectionManager getConnectionManager() {
