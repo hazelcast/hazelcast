@@ -29,7 +29,6 @@ public class FlushCommandProcessor extends AbstractTextCommandProcessor<FlushCom
     public void handle(FlushCommand command) {
     	String mapName = "default";
 
-        System.out.println("FLUSHED");
         textCommandService.flush(mapName);
         
         command.setResponse(OK);

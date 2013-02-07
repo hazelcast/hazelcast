@@ -115,7 +115,6 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     }
 
     public void processRequest(TextCommand command) {
-        System.out.println(command.getType().getValue());
         if (responseThreadRunnable == null) {
             synchronized (this) {
                 if (responseThreadRunnable == null) {
