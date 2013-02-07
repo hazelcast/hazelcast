@@ -27,7 +27,8 @@ import com.hazelcast.core.*;
 import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.idgen.IdGeneratorProxy;
-import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.jmxlocal.ManagementService;
+//import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -89,7 +90,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             throw new IllegalStateException("Node failed to start!");
         }
         managementService = new ManagementService(this);
-        managementService.register();
+//        managementService.register();//TODO
     }
 
     public ThreadMonitoringService getThreadMonitoringService() {
@@ -219,7 +220,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     void shutdown() {
-        managementService.unregister();
+        managementService.destroy();//TODO
+//        managementService.unregister();
         node.shutdown(false, true);
         HazelcastInstanceFactory.remove(this);
     }

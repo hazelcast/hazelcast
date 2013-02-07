@@ -72,7 +72,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * {@inheritDoc}
      * <p/>
      * <p><b>Warning:</b></p>
-     * <p>
+     * <p>ˆ                                                                                      ˆ
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
