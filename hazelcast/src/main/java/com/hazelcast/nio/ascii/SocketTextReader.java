@@ -50,6 +50,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         mapCommandParsers.put("append", new SetCommandParser(APPEND));
         mapCommandParsers.put("prepend", new SetCommandParser(PREPEND));
         mapCommandParsers.put("delete", new DeleteCommandParser());
+        mapCommandParsers.put("flush_all", new FlushCommandParser());
         mapCommandParsers.put("quit", new SimpleCommandParser(QUIT));
         mapCommandParsers.put("stats", new SimpleCommandParser(STATS));
         mapCommandParsers.put("GET", new HttpGetCommandParser());

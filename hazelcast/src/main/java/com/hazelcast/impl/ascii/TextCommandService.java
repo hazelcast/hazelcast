@@ -52,6 +52,8 @@ public interface TextCommandService {
     long incrementHitCount();
 
     Object delete(String mapName, String key);
+    
+    void flush(String mapName);
 
     Stats getStats();
 

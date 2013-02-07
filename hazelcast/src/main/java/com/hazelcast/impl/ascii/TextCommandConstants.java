@@ -24,6 +24,7 @@ public interface TextCommandConstants {
     final static byte[] FLAG_ZERO = new String(" 0 ").getBytes();
     final static byte[] VALUE_SPACE = new String("VALUE ").getBytes();
     final static byte[] DELETED = new String("DELETED\r\n").getBytes();
+    final static byte[] OK = new String("OK\r\n").getBytes();
     final static byte[] STORED = new String("STORED\r\n").getBytes();
     final static byte[] NOT_STORED = new String("NOT_STORED\r\n").getBytes();
     final static byte[] NOT_FOUND = new String("NOT_FOUND\r\n").getBytes();
@@ -49,6 +50,7 @@ public interface TextCommandConstants {
         ERROR_CLIENT((byte) 12),
         ERROR_SERVER((byte) 13),
         UNKNOWN((byte) 14),
+        FLUSH((byte) 18),
         HTTP_GET((byte) 30),
         HTTP_POST((byte) 31),
         HTTP_PUT((byte) 32),

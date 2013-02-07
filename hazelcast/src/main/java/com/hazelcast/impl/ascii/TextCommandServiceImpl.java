@@ -17,6 +17,7 @@
 package com.hazelcast.impl.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.Clock;
 import com.hazelcast.impl.Node;
@@ -65,6 +66,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         textCommandProcessors[REPLACE.getValue()] = new SetCommandProcessor(this);
         textCommandProcessors[GET_END.getValue()] = new NoOpCommandProcessor(this);
         textCommandProcessors[DELETE.getValue()] = new DeleteCommandProcessor(this);
+        textCommandProcessors[FLUSH.getValue()] = new FlushCommandProcessor(this);
         textCommandProcessors[QUIT.getValue()] = new SimpleCommandProcessor(this);
         textCommandProcessors[STATS.getValue()] = new StatsCommandProcessor(this);
         textCommandProcessors[UNKNOWN.getValue()] = new ErrorCommandProcessor(this);
@@ -113,6 +115,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     }
 
     public void processRequest(TextCommand command) {
+        System.out.println(command.getType().getValue());
         if (responseThreadRunnable == null) {
             synchronized (this) {
                 if (responseThreadRunnable == null) {
@@ -168,6 +171,11 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     public Object delete(String mapName, String key) {
         return hazelcast.getMap(mapName).remove(key);
     }
+    
+    public void flush(String mapName) {
+    	IMap<String, Object> map = hazelcast.getMap(mapName);
+    	map.clear();
+	}
 
     public boolean offer(String queueName, Object value) {
         return hazelcast.getQueue(queueName).offer(value);
