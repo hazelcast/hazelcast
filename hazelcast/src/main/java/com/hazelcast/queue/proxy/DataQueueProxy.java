@@ -125,11 +125,11 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public void addItemListener(ItemListener<Data> listener, boolean includeValue) {
-        queueService.addItemListener(name, listener, includeValue);
+        getService().addItemListener(name, listener, includeValue);
     }
 
     public void removeItemListener(ItemListener<Data> listener) {
-        queueService.removeItemListener(name, listener);
+        getService().removeItemListener(name, listener);
     }
 
     public Data remove() {
@@ -139,7 +139,6 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
         }
         return res;
     }
-
 
     public Data poll() {
         try {

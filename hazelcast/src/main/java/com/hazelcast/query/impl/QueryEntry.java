@@ -25,7 +25,7 @@ public class QueryEntry implements QueryableEntry {
     static final String KEY_ATTRIBUTE_NAME = "__key";
     static final String THIS_ATTRIBUTE_NAME = "this";
     private static PortableExtractor extractor = new PortableExtractor();
-    private final SerializationServiceImpl serializationService;
+    private final SerializationService serializationService;
     Data indexKey;
     Data key;
     Object keyObject;
@@ -35,7 +35,7 @@ public class QueryEntry implements QueryableEntry {
 
     PortableReader reader = null;
 
-    public QueryEntry(SerializationServiceImpl serializationService, Data indexKey, Object key, Object value) {
+    public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
         if (indexKey == null) throw new IllegalArgumentException("index keyData cannot be null");
         if (key == null) throw new IllegalArgumentException("keyData cannot be null");
         if (value == null) throw new IllegalArgumentException("value cannot be null");
@@ -152,7 +152,7 @@ public class QueryEntry implements QueryableEntry {
     PortableReader getOrCreatePortableReader() {
         if (reader != null) return reader;
         ClassDefinitionImpl cd = (ClassDefinitionImpl) valueData.cd;
-        PortableSerializer portableSerializer = serializationService.getPortableSerializer();
+        PortableSerializer portableSerializer = ((SerializationServiceImpl) serializationService).getPortableSerializer();
         BufferObjectDataInput in = (BufferObjectDataInput) serializationService.createObjectDataInput(valueData.buffer);
         reader = new DefaultPortableReader(portableSerializer, in, cd);
         return reader;

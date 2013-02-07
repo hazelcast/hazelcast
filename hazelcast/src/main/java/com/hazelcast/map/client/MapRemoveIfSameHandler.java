@@ -32,7 +32,7 @@ public class MapRemoveIfSameHandler extends MapCommandHandler {
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
         Data value = protocol.buffers[1];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         boolean result = dataMapProxy.remove(key, value);
         return protocol.success(String.valueOf(result));
     }

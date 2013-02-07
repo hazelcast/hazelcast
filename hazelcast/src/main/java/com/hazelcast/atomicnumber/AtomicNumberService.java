@@ -59,7 +59,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
         this.nodeEngine = nodeEngine;
     }
 
-    public void destroy() {
+    public void shutdown() {
         numbers.clear();
     }
 
@@ -72,7 +72,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
-        return new AtomicNumberProxy(String.valueOf(objectId), this, nodeEngine);
+        return new AtomicNumberProxy(String.valueOf(objectId), nodeEngine);
     }
 
     public DistributedObject createDistributedObjectForClient(Object objectId) {

@@ -174,9 +174,9 @@
         </member-group>
     </partition-group>
     <executor-service name="default">
-        <core-pool-size>16</core-pool-size>
+        <!--<core-pool-size>16</core-pool-size>-->
         <max-pool-size>64</max-pool-size>
-        <keep-alive-seconds>60</keep-alive-seconds>
+        <!--<keep-alive-seconds>60</keep-alive-seconds>-->
     </executor-service>
     <queue name="default">
         <!--

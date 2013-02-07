@@ -31,14 +31,11 @@ public class ObjectLockProxy implements ILock {
 
     public static final String LOCK_MAP_NAME = "hz:map:lock";
 
-    final NodeEngine nodeEngine;
-
     final Object key;
 
     final IMap<Object, Object> lockMap;
 
-    public ObjectLockProxy(NodeEngine nodeEngine, Object key, IMap<Object, Object> lockMap) {
-        this.nodeEngine = nodeEngine;
+    public ObjectLockProxy(Object key, IMap<Object, Object> lockMap) {
         this.key = key;
         this.lockMap = lockMap;
     }

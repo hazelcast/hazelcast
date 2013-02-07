@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class Join implements DataSerializable {
+public class JoinConfig implements DataSerializable {
 
     private MulticastConfig multicastConfig = new MulticastConfig();
 
@@ -40,7 +40,7 @@ public class Join implements DataSerializable {
     /**
      * @param multicastConfig the multicastConfig to set
      */
-    public Join setMulticastConfig(final MulticastConfig multicastConfig) {
+    public JoinConfig setMulticastConfig(final MulticastConfig multicastConfig) {
         this.multicastConfig = multicastConfig;
         return this;
     }
@@ -55,7 +55,7 @@ public class Join implements DataSerializable {
     /**
      * @param tcpIpConfig the tcpIpConfig to set
      */
-    public Join setTcpIpConfig(final TcpIpConfig tcpIpConfig) {
+    public JoinConfig setTcpIpConfig(final TcpIpConfig tcpIpConfig) {
         this.tcpIpConfig = tcpIpConfig;
         return this;
     }
@@ -70,7 +70,7 @@ public class Join implements DataSerializable {
     /**
      * @param awsConfig the AwsConfig to set
      */
-    public Join setAwsConfig(final AwsConfig awsConfig) {
+    public JoinConfig setAwsConfig(final AwsConfig awsConfig) {
         this.awsConfig = awsConfig;
         return this;
     }
@@ -89,6 +89,7 @@ public class Join implements DataSerializable {
 
     @Override
     public String toString() {
-        return "Join [multicastConfig=" + multicastConfig + ", tcpIpConfig=" + tcpIpConfig + ", awsConfig=" + awsConfig + "]";
+        return "JoinConfig [multicastConfig=" + multicastConfig + ", tcpIpConfig="
+                + tcpIpConfig + ", awsConfig=" + awsConfig + "]";
     }
 }

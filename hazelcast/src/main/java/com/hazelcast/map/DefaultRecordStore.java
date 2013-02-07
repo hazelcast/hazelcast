@@ -20,7 +20,7 @@ import com.hazelcast.lock.LockInfo;
 import com.hazelcast.lock.LockStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -315,7 +315,7 @@ public class DefaultRecordStore implements RecordStore {
         Data dataKey = record.getKey();
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
-            SerializationServiceImpl ss = (SerializationServiceImpl) mapService.getSerializationService();
+            SerializationService ss = mapService.getSerializationService();
             QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
             indexService.saveEntryIndex(queryableEntry);
         }

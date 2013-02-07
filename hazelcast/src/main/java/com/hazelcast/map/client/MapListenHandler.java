@@ -26,6 +26,7 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.AddressUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ public class MapListenHandler extends MapCommandHandler {
         String name = protocol.args[0];
         System.out.println("Received the addListener for " + name);
         boolean includeValue = Boolean.valueOf(protocol.args[1]);
-        final Data key = protocol.buffers.length > 0 ? protocol.buffers[0] : null;
+        final Data key = protocol.hasBuffer() ? protocol.buffers[0] : null;
         final DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
         final TcpIpConnection connection = protocol.conn;
         EntryListener<Data, Data> entryListener = new EntryListener<Data, Data>() {
@@ -62,7 +63,8 @@ public class MapListenHandler extends MapCommandHandler {
 
             public void sendEvent(EntryEvent<Data, Data> entryEvent) {
                 System.out.println("Sending the event");
-                if (connection.live()) {
+
+                if (connection.live()) {                       
                     String[] args = new String[]{"map", dataMapProxy.getName(), entryEvent.getEventType().toString(),
                             entryEvent.getMember().getInetSocketAddress().getHostName() + ":" + entryEvent.getMember().getInetSocketAddress().getPort()};
                     List<Data> list = new ArrayList<Data>();

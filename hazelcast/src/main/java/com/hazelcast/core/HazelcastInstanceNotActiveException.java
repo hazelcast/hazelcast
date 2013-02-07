@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util;
+package com.hazelcast.core;
 
-public abstract class ObjectPool<E> {
+public class HazelcastInstanceNotActiveException extends IllegalStateException {
 
-
+    public HazelcastInstanceNotActiveException() {
+        super("Hazelcast instance is not active!");
+    }
 }

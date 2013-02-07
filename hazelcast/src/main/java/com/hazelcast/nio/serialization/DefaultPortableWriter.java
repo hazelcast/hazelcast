@@ -175,7 +175,11 @@ class DefaultPortableWriter implements PortableWriter {
         final int len = portables == null ? 0 : portables.length;
         out.writeInt(len);
         if (len > 0) {
-            for (Portable portable : portables) {
+            final int offset = out.position();
+            out.position(offset + len * 4);
+            for (int i = 0; i < portables.length; i++) {
+                out.writeInt(offset + i * 4, out.position());
+                final Portable portable = portables[i];
                 serializer.write(out, portable);
             }
         }

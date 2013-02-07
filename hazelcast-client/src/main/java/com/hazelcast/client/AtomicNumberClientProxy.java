@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
+import com.hazelcast.nio.protocol.Command;
 
 public class AtomicNumberClientProxy implements AtomicNumber {
     private final String name;
@@ -71,7 +72,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"an", getName()}, null);
     }
 
     public Object getId() {

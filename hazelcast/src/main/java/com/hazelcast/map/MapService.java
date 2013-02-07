@@ -37,6 +37,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
@@ -48,7 +49,6 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
-import com.hazelcast.spi.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -283,7 +283,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
                             indexService.removeEntryIndex(record.getKey());
                         } else {
-                            indexService.saveEntryIndex(new QueryEntry((SerializationServiceImpl) getSerializationService(), record.getKey(), record.getKey(), record.getValue()));
+                            indexService.saveEntryIndex(new QueryEntry(getSerializationService(), record.getKey(), record.getKey(), record.getValue()));
                         }
                     }
                 }
@@ -486,7 +486,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
 
-    public void destroy() {
+    public void shutdown() {
         final PartitionContainer[] containers = partitionContainers;
         for (int i = 0; i < containers.length; i++) {
             PartitionContainer container = containers[i];
@@ -678,7 +678,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getExecutionService().schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
 
-    public Object getSerializationService() {
+    public SerializationService getSerializationService() {
         return nodeEngine.getSerializationService();
     }
 

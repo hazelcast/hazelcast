@@ -29,8 +29,9 @@ public class MapFlushHandler extends MapCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
-        dataMapProxy.flush(false);
+        Boolean flashAllEntries = Boolean.valueOf(protocol.args[1]);
+        DataMapProxy dataMapProxy = getMapProxy(name);
+        dataMapProxy.flush(flashAllEntries);
         return protocol.success();
     }
 }

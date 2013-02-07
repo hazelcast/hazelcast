@@ -17,13 +17,17 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.NoMemberAvailableException;
-import com.hazelcast.client.proxy.ProxyHelper;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
-
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -40,48 +44,38 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
         await(Long.MAX_VALUE, MILLISECONDS);
     }
 
-    public boolean await(long timeout, TimeUnit unit) throws  MemberLeftException, InterruptedException {
-        try {
-            return false;
-//            return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_AWAIT, null, null, timeout, unit);
-        } catch (RuntimeException re) {
-            Throwable e = re.getCause();
-            if (e instanceof MemberLeftException) {
-                throw (MemberLeftException) e;
-            } else if (e instanceof InterruptedException) {
-                throw (InterruptedException) e;
-            } else if (re instanceof NoMemberAvailableException) {
-                throw new IllegalStateException();
+    public boolean await(long timeout, TimeUnit unit) throws MemberLeftException, InterruptedException {
+        String[] args = new String[]{getName(), String.valueOf(unit.toMillis(timeout))};
+        Protocol response = proxyHelper.doCommand(null, Command.CDLAWAIT, args, null);
+        if ("member.left.exception".equalsIgnoreCase(response.args[0])) {
+            String hostname = response.args[1];
+            String port = response.args[2];
+            Member member = null;
+            try {
+                member = new MemberImpl(new Address(hostname, Integer.valueOf(port)), false);
+            } catch (UnknownHostException e) {
             }
-            throw re;
+            throw new MemberLeftException(member);
+        } else {
+            return Boolean.valueOf(response.args[0]);
         }
     }
 
     public void countDown() {
-//        proxyHelper.doOp(COUNT_DOWN_LATCH_COUNT_DOWN, null, null);
+        proxyHelper.doCommand(null, Command.CDLCOUNTDOWN, getName(), null);
     }
 
     public int getCount() {
-        return 0;
-//        return (Integer) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_COUNT, null, null);
-    }
-
-    public Member getOwner() {
-        return null;
-//        return (Member) proxyHelper.doOp(COUNT_DOWN_LATCH_GET_OWNER, null, null);
-    }
-
-    public boolean hasCount() {
-        return getCount() > 0;
+        return proxyHelper.doCommandAsInt(null, Command.CDLGETCOUNT, new String[]{getName()}, null);
     }
 
     public boolean trySetCount(int count) {
-        return false;
-//        return (Boolean) proxyHelper.doOp(COUNT_DOWN_LATCH_SET_COUNT, null, count);
+        String[] args = new String[]{getName(), String.valueOf(count)};
+        return proxyHelper.doCommandAsBoolean(null, Command.CDLSETCOUNT, args, null);
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"cdl", getName()}, null);
     }
 
     public Object getId() {

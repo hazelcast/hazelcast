@@ -26,8 +26,6 @@ import java.util.Set;
  * Factory for all of the Hazelcast data and execution components such as
  * maps, queues, multimaps, topics and executor service.
  * <p/>
- * If not started already, Hazelcast member (HazelcastInstance) will start
- * automatically if any of the functions is called on Hazelcast.
  */
 public final class Hazelcast {
 
@@ -35,8 +33,8 @@ public final class Hazelcast {
     }
 
     /**
-     * Shuts down all running Hazelcast Instances on this JVM, including the
-     * default one if it is running. It doesn't shutdown all members of the
+     * Shuts down all running Hazelcast Instances on this JVM.
+     * It doesn't shutdown all members of the
      * cluster but just the ones running on this JVM.
      *
      * @see #newHazelcastInstance(Config)

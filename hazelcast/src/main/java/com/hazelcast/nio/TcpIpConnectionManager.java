@@ -369,6 +369,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         try {
             if (live) {
                 stop();
+                setConnectionListeners.clear();
             }
         } finally {
             if (serverSocketChannel != null) {

@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.IdGenerator;
+import com.hazelcast.nio.protocol.Command;
 
 public class IdGeneratorClientProxy implements IdGenerator {
     private final String name;
@@ -34,16 +35,15 @@ public class IdGeneratorClientProxy implements IdGenerator {
     }
 
     public boolean init(long id) {
-        return false;
+        return proxyHelper.doCommandAsBoolean(null, Command.INITID, new String[]{getName(), String.valueOf(id)}, null);
     }
 
     public long newId() {
-        return 0;
-//        return (Long) proxyHelper.doOp(ClusterOperation.NEW_ID, null, null);
+        return proxyHelper.doCommandAsInt(null, Command.NEWID, new String[]{getName()}, null);
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"idg", getName()}, null);
     }
 
     public Object getId() {

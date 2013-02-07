@@ -46,7 +46,7 @@ public class LocalRegionCache implements RegionCache {
     public LocalRegionCache(final String name, final HazelcastInstance hazelcastInstance,
                             final CacheDataDescription metadata) {
         try {
-            config = hazelcastInstance != null ? hazelcastInstance.getConfig().findMatchingMapConfig(name) : null;
+            config = hazelcastInstance != null ? hazelcastInstance.getConfig().getMapConfig(name) : null;
         } catch (UnsupportedOperationException ignored) {
         }
         versionComparator = metadata != null && metadata.isVersioned() ? metadata.getVersionComparator() : null;

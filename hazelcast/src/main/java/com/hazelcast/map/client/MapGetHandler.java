@@ -34,7 +34,7 @@ public class MapGetHandler extends MapCommandHandler {
         System.out.println("Here is the get");
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         Data value = dataMapProxy.get(key);
         return protocol.success(value);
     }

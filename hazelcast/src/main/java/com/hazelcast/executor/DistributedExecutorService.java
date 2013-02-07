@@ -72,7 +72,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         executionService.destroyExecutor(String.valueOf(objectId));
     }
 
-    public void destroy() {
+    public void shutdown() {
 
     }
 }

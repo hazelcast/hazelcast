@@ -18,22 +18,29 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.MessageListenerManager;
-import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.client.proxy.listener.MessageLRH;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
 
 public class TopicClientProxy<T> implements ITopic {
     private final String name;
     private final ProxyHelper proxyHelper;
-
+    Map<MessageListener<T>, ListenerThread> listenerMap = new ConcurrentHashMap<MessageListener<T>, ListenerThread>();
     private final Object lock = new Object();
+    final HazelcastClient client;
 
     public TopicClientProxy(HazelcastClient client, String name) {
         this.name = name;
+        this.client = client;
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
@@ -47,28 +54,20 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public void addMessageListener(MessageListener messageListener) {
-        check(messageListener);
-        synchronized (lock) {
-            boolean shouldCall = messageListenerManager().noListenerRegistered(getName());
-            messageListenerManager().registerListener(getName(), messageListener);
-            if (shouldCall) {
-                proxyHelper.doCommand(null, Command.TADDLISTENER, getName(), null);
-            }
-        }
+        Protocol request = proxyHelper.createProtocol(Command.TLISTEN, new String[]{getName()}, null);
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.topicListener.",
+                client, request, new MessageLRH(messageListener, this));
+        listenerMap.put(messageListener, thread);
+        thread.start();
     }
 
     public void removeMessageListener(MessageListener messageListener) {
-        check(messageListener);
-        synchronized (lock) {
-            messageListenerManager().removeListener(getName(), messageListener);
-            if (messageListenerManager().noListenerRegistered(getName())) {
-                proxyHelper.doCommand(null, Command.TREMOVELISTENER, getName(), null);
-            }
+        System.out.println("ListenerMap sizeis " + listenerMap.size() );
+        ListenerThread thread = listenerMap.remove(messageListener);
+        if(thread!=null) {
+            thread.stopListening();
         }
-    }
-
-    private MessageListenerManager messageListenerManager() {
-        return null;//proxyHelper.client.getListenerManager().getMessageListenerManager();
+        System.out.println("ListenerMap sizeis " + listenerMap.size() );
     }
 
     public void destroy() {

@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
@@ -113,7 +114,7 @@ abstract class InvocationImpl implements Future, Invocation {
 
     private void doInvoke() {
         if (!isActive()) {
-            throw new IllegalStateException("Hazelcast instance is not active!");
+            throw new HazelcastInstanceNotActiveException();
         }
         invokeCount++;
         final Address target = getTarget();
@@ -124,7 +125,7 @@ abstract class InvocationImpl implements Future, Invocation {
             if (isActive()) {
                 setResult(new WrongTargetException(thisAddress, target, partitionId, op.getClass().getName(), serviceName));
             } else {
-                setResult(new IllegalStateException("Hazelcast instance is not active!"));
+                setResult(new HazelcastInstanceNotActiveException());
             }
         } else if (!isJoinOperation(op) && nodeEngine.getClusterService().getMember(target) == null) {
             setResult(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));

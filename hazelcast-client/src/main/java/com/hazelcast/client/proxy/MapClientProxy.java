@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
@@ -38,10 +37,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static java.lang.String.valueOf;
 
-import static java.lang.String.*;
-
-public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
+public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     final ProxyHelper proxyHelper;
     final private String name;
     final HazelcastClient client;
@@ -54,6 +52,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public void flush(boolean flushAllEntries) {
+        proxyHelper.doCommand(null, Command.MFLUSH, new String[]{getName(), String.valueOf(flushAllEntries)}, null);
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -76,10 +75,25 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name,valueOf(includeValue)}, new Data[]{dKey});
-        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new EntryEventLRH<K, V>(listener));
+        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.mapListener.",
+                client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
         thread.start();
+    }
+
+    public void removeEntryListener(EntryListener<K, V> listener) {
+        check(listener);
+        removeEntryListener(listener, null);
+    }
+
+    public void removeEntryListener(EntryListener<K, V> listener, K key) {
+        check(listener);
+        Map<Object, ListenerThread> map = listenerMap.remove(listener);
+        if (map != null) {
+            ListenerThread thread = map.remove(key);
+            if (thread != null) thread.stopListening();
+        }
     }
 
     private void storeListener(EntryListener<K, V> listener, K key, ListenerThread thread) {
@@ -108,33 +122,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         }
     }
 
-    private void checkTime(long time, TimeUnit timeunit) {
-        if (time < 0) {
-            throw new IllegalArgumentException("Time can not be less than 0.");
-        }
-        if (timeunit == null) {
-            throw new NullPointerException("TimeUnit can not be null.");
-        }
-    }
-
-    public void removeEntryListener(EntryListener<K, V> listener) {
-        check(listener);
-        removeEntryListener(listener, null);
-    }
-
-    public void removeEntryListener(EntryListener<K, V> listener, K key) {
-        check(listener);
-        Map<Object, ListenerThread> map = listenerMap.get(listener);
-        if (map != null) {
-            ListenerThread thread = map.remove(key);
-            if (thread != null) thread.interrupt();
-        }
-    }
-
-    private EntryListenerManager listenerManager() {
-        return null;//proxyHelper.client.getListenerManager().getEntryListenerManager();
-    }
-
     public Set<java.util.Map.Entry<K, V>> entrySet(Predicate predicate) {
         Map<K, V> map = getCopyOfTheMap(predicate);
         return map.entrySet();
@@ -154,10 +141,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
             map.put(key, value);
         }
         return map;
-    }
-
-    public void flush() {
-        proxyHelper.doCommand(null, Command.MFLUSH, getName(), null);
     }
 
     public boolean evict(Object key) {
@@ -186,40 +169,12 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         final boolean valid = Boolean.valueOf(protocol.args[7]);
         final V v = (V) proxyHelper.toObject(protocol.buffers[0]);
         return new MapEntry<K, V>() {
-            public long getCost() {
-                return cost;
-            }
-
             public long getCreationTime() {
                 return creationTime;
             }
 
-            public long getExpirationTime() {
-                return expTime;
-            }
-
-            public int getHits() {
-                return hits;
-            }
-
             public long getLastAccessTime() {
                 return lastAccessTime;
-            }
-
-            public long getLastStoredTime() {
-                return lastStoredTime;
-            }
-
-            public long getLastUpdateTime() {
-                return lastUpdateTime;
-            }
-
-            public long getVersion() {
-                return version;
-            }
-
-            public boolean isValid() {
-                return valid;
             }
 
             public K getKey() {
@@ -253,7 +208,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     public void lock(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        proxyHelper.doCommand(dKey, Command.MLOCK, getName(), dKey);
+        proxyHelper.lock(getName(), dKey, Command.MLOCK, new String[]{getName()}, dKey);
     }
 
     public boolean isLocked(K key) {
@@ -264,23 +219,21 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
     }
 
     public boolean tryLock(K key) {
-        check(key);
-        Data dKey = proxyHelper.toData(key);
-        Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYLOCK, new String[]{getName(), "0"}, dKey);
-        return Boolean.valueOf(protocol.args[0]);
+        return tryLock(key, 0, TimeUnit.MILLISECONDS);
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYLOCK, new String[]{getName(), "" + timeunit.toMillis(time)}, dKey);
+        String[] args = new String[]{getName(), "" + timeunit.toMillis(time)};
+        Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYLOCK, args, dKey);
         return Boolean.valueOf(protocol.args[0]);
     }
 
     public void unlock(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        proxyHelper.doCommand(dKey, Command.MUNLOCK, getName(), dKey);
+        proxyHelper.unlock(getName(), dKey, Command.MUNLOCK, new String[]{getName()}, dKey);
     }
 
     public void forceUnlock(K key) {

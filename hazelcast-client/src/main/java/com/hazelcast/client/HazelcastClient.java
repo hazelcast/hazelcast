@@ -17,12 +17,13 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.ListenerManager;
+//import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.client.proxy.*;
 import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -59,7 +60,7 @@ public class HazelcastClient implements HazelcastInstance {
     private final int id;
     private final ClientConfig config;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    private final ListenerManager listenerManager;
+//    private final ListenerManager listenerManager;
     private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
     private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     private final ClusterClientProxy clusterClientProxy;
@@ -88,7 +89,7 @@ public class HazelcastClient implements HazelcastInstance {
         connectionPool = new ConnectionPool(config, connectionManager, serializationService);
         partitionClientProxy = new PartitionClientProxy(this);
         clusterClientProxy = new ClusterClientProxy(this);
-        listenerManager = new ListenerManager(this, serializationService);
+//        listenerManager = new ListenerManager(this, serializationService);
 
         connectionPool.init(getCluster(), getPartitionService());
 
@@ -105,8 +106,8 @@ public class HazelcastClient implements HazelcastInstance {
 //            throw new ClusterClientException(e.getMessage(), e);
 //        }
         if (config.isUpdateAutomatic()) {
-            this.getCluster().addMembershipListener(connectionManager);
-            connectionManager.updateMembers();
+//            this.getCluster().addMembershipListener(connectionManager);
+//            connectionManager.updateMembers();
         }
         lifecycleService.fireLifecycleEvent(STARTED);
 //        connectionManager.scheduleHeartbeatTimerTask();
@@ -121,9 +122,9 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionPool;
     }
 
-    public ListenerManager getListenerManager() {
-        return listenerManager;
-    }
+//    public ListenerManager getListenerManager() {
+//        return listenerManager;
+//    }
 
     /**
      * @param config
@@ -200,7 +201,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        clusterClientProxy.addInstanceListener(distributedObjectListener);
+        throw new UnsupportedOperationException();
     }
 
     public Cluster getCluster() {
@@ -259,7 +260,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public Collection<DistributedObject> getDistributedObjects() {
-        return clusterClientProxy.getInstances();
+        throw new UnsupportedOperationException();
     }
 
     public <E> IList<E> getList(String name) {
@@ -272,12 +273,8 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public ILock getLock(Object obj) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Lock");
-        DistributedObject proxy = innerProxyMap.get(obj);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(obj, innerProxyMap, new LockClientProxy(this, obj));
-        }
-        return (ILock) proxy;
+        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
+        return new ObjectLockProxy(obj, map);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
@@ -321,7 +318,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        clusterClientProxy.removeInstanceListener(distributedObjectListener);
+        throw new UnsupportedOperationException();
     }
 
     public static void shutdownAll() {
@@ -348,7 +345,7 @@ public class HazelcastClient implements HazelcastInstance {
             connectionManager.shutdown();
 //            out.shutdown();
 //            in.shutdown();
-            listenerManager.shutdown();
+//            listenerManager.shutdown();
             lsClients.remove(this);
             serializationService.destroy();
         }

@@ -21,11 +21,12 @@ import com.hazelcast.client.Connection;
 import com.hazelcast.client.ProtocolReader;
 import com.hazelcast.client.ProtocolWriter;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.io.EOFException;
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListenerThread extends Thread {
     final private ListenerResponseHandler listenerResponseHandler;
@@ -34,61 +35,59 @@ public class ListenerThread extends Thread {
     final private SerializationService ss;
     final private ProtocolWriter writer;
     final private ProtocolReader reader;
+    final private static AtomicInteger idGen = new AtomicInteger(0);
+    volatile boolean running;
 
-    public ListenerThread(Protocol request, ListenerResponseHandler listenerResponseHandler, Connection connection, SerializationService ss) {
+    public ListenerThread(String name, Protocol request, ListenerResponseHandler listenerResponseHandler, Connection connection, SerializationService ss) {
+        super(name + idGen.incrementAndGet());
         this.request = request;
         this.listenerResponseHandler = listenerResponseHandler;
         this.connection = connection;
         this.ss = ss;
         writer = new ProtocolWriter(ss);
         reader = new ProtocolReader(ss);
+        running = true;
     }
 
+
     public void run() {
-        ExecutorService ex = Executors.newFixedThreadPool(1);
         try {
+            System.out.println("Thread " + getName() + " is running");
             request.onEnqueue();
             writer.write(connection, request);
             writer.flush(connection);
             Future<Protocol> f = null;
-            while (!Thread.interrupted()) {
-                if (f == null) {
-                    f = ex.submit(new Callable<Protocol>() {
-                        public Protocol call() throws Exception {
-                            return reader.read(connection);
-                        }
-                    });
+            while (running) {
+                Protocol response = reader.read(connection);
+                if (Command.EVENT.equals(response.command)) {
+                    listenerResponseHandler.handleResponse(response, ss);
+                }else{
+                    throw new RuntimeException(response.args[0]);
                 }
-                Protocol response = f.get(1, TimeUnit.SECONDS);
-                if (response == null) continue;
-                f = null;
-                listenerResponseHandler.handleResponse(response, ss);
             }
-            connection.close();
-            ex.shutdown();
-            System.out.println("Closed connection and thus removed the listener");
-        } catch (EOFException e) {
-            e.printStackTrace();
-            //Means that the connection is broken. The best is to re add the listener and end the current thread.
-//                addEntryListener(listener, key, includeValue);
-            return; // will end the current thread
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            try {
-                connection.close();
-            } catch (IOException e1) {
-            }
-            ex.shutdown();
-            System.out.println("Closed connection and thus removed the listener");
-            return;
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
+            cleanup();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (!running)
+                return;
+            else
+                listenerResponseHandler.onError(e);
+        } finally {
+            cleanup();
+        }
+    }
+
+    private void cleanup() {
+        try {
+            connection.close();
+        } catch (IOException e) {
+        }
+    }
+
+    public void stopListening() {
+        running = false;
+        try {
+            this.connection.close();
+        } catch (IOException e) {
         }
     }
 }

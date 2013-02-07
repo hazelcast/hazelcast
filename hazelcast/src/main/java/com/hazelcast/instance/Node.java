@@ -21,7 +21,7 @@ import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.ClientCommandService;
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.Join;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.DistributedObjectListener;
@@ -111,7 +111,6 @@ public class Node {
     public final LoggingServiceImpl loggingService;
 
     public final ClientCommandService clientCommandService;
-    //    public final ClientServiceImpl clientService;
 
     private final SystemLogService systemLogService;
 
@@ -175,7 +174,7 @@ public class Node {
         initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
-        Join join = config.getNetworkConfig().getJoin();
+        JoinConfig join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
             if (join.getMulticastConfig().isEnabled()) {
@@ -342,7 +341,7 @@ public class Node {
         if (config.getNetworkConfig().isPortAutoIncrement()
                 && address.getPort() >= config.getNetworkConfig().getPort() + clusterSize) {
             StringBuilder sb = new StringBuilder("Config seed port is ");
-            sb.append(config.getPort());
+            sb.append(config.getNetworkConfig().getPort());
             sb.append(" and cluster size is ");
             sb.append(clusterSize);
             sb.append(". Some of the ports seem occupied!");
@@ -393,6 +392,7 @@ public class Node {
             }
         }
         if (isActive()) {
+            clusterService.sendShutdownMessage();
             // set the joined=false first so that
             // threads do not process unnecessary
             // events, such as remove address
@@ -407,18 +407,16 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-//            logger.log(Level.FINEST, "Shutting down the clientHandlerService");
-//            clientHandlerService.shutdown();
-            logger.log(Level.FINEST, "Shutting down the node engine");
+            logger.log(Level.FINEST, "Shutting down client command service");
+            clientCommandService.shutdown();
+            logger.log(Level.FINEST, "Shutting down node engine");
             nodeEngine.shutdown();
             if (multicastService != null) {
-                logger.log(Level.FINEST, "Shutting down the multicast service");
+                logger.log(Level.FINEST, "Shutting down multicast service");
                 multicastService.stop();
             }
-            logger.log(Level.FINEST, "Shutting down the connection manager");
+            logger.log(Level.FINEST, "Shutting down connection manager");
             connectionManager.shutdown();
-//            logger.log(Level.FINEST, "Shutting down the executorManager");
-//            executorManager.stop();
             textCommandService.stop();
             masterAddress = null;
             if (securityContext != null) {
@@ -431,8 +429,10 @@ public class Node {
             numThreads = threadGroup.enumerate(threads, false);
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
-                logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
-                thread.interrupt();
+                if (thread.isAlive()) {
+                    logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
+                    thread.interrupt();
+                }
             }
             failedConnections.clear();
             systemLogService.shutdown();
@@ -501,18 +501,15 @@ public class Node {
         systemLogService.logJoin("setJoined() master: " + masterAddress);
     }
 
-    public JoinInfo createJoinInfo() {
-        return createJoinInfo(false);
+    public JoinRequest createJoinRequest() {
+        return createJoinRequest(false);
     }
 
-    public JoinInfo createJoinInfo(boolean withCredentials) {
-        final JoinInfo jr = new JoinInfo(this.getLogger(JoinInfo.class.getName()), true, address, config, getLocalNodeType(),
-                Packet.PACKET_VERSION, buildNumber, clusterService.getSize(), 0, localMember.getUuid());
-        if (withCredentials && securityContext != null) {
-            Credentials c = securityContext.getCredentialsFactory().newCredentials();
-            jr.setCredentials(c);
-        }
-        return jr;
+    public JoinRequest createJoinRequest(boolean withCredentials) {
+        final Credentials credentials = (withCredentials && securityContext != null)
+                ? securityContext.getCredentialsFactory().newCredentials() : null;
+        return new JoinRequest(Packet.PACKET_VERSION, buildNumber, address,
+                localMember.getUuid(), config, localNodeType, credentials, clusterService.getSize(), 0);
     }
 
     public void rejoin() {
@@ -550,7 +547,7 @@ public class Node {
     }
 
     Joiner createJoiner() {
-        Join join = config.getNetworkConfig().getJoin();
+        JoinConfig join = config.getNetworkConfig().getJoin();
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             systemLogService.logJoin("Creating MulticastJoiner");
             return new MulticastJoiner(this);

@@ -16,13 +16,23 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.list.client.*;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
+import com.hazelcast.collection.multimap.client.*;
 import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.set.client.SetAddHandler;
+import com.hazelcast.collection.set.client.SetContainsHandler;
+import com.hazelcast.collection.set.client.SetGetAllHandler;
+import com.hazelcast.collection.set.client.SetRemoveHandler;
 import com.hazelcast.core.*;
 import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -38,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
  * @ali 1/1/13
  */
 public class CollectionService implements ManagedService, RemoteService, MembershipAwareService,
-        EventPublishingService<CollectionEvent, EventListener>, MigrationAwareService {
+        EventPublishingService<CollectionEvent, EventListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
 
@@ -66,7 +76,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public CollectionPartitionContainer getPartitionContainer(int partitionId) {
         return partitionContainers[partitionId];
     }
-
 
     <V> Collection<V> createNew(CollectionProxyId proxyId) {
         CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(SERVICE_NAME, proxyId);
@@ -136,7 +145,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
         } else {
             registration = eventService.registerListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
         }
-
         eventRegistrations.put(listenerKey, registration.getId());
     }
 
@@ -154,8 +162,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
             EntryListener entryListener = (EntryListener) listener;
             EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
                     event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-
-
             if (event.eventType.equals(EntryEventType.ADDED)) {
                 entryListener.entryAdded(entryEvent);
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
@@ -174,7 +180,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
     }
 
     public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
-
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
@@ -248,7 +253,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return max;
     }
 
-    public void destroy() {
+    public void shutdown() {
         for (int i = 0; i < partitionContainers.length; i++) {
             CollectionPartitionContainer container = partitionContainers[i];
             if (container != null) {
@@ -268,14 +273,14 @@ public class CollectionService implements ManagedService, RemoteService, Members
         // * rollback transaction
         // * do not know ?
         Address caller = event.getMember().getAddress();
-        for (CollectionPartitionContainer partitionContainer: partitionContainers){
-            for (Map.Entry<CollectionProxyId, CollectionContainer> entry: partitionContainer.containerMap.entrySet()){
+        for (CollectionPartitionContainer partitionContainer : partitionContainers) {
+            for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
                 CollectionProxyId proxyId = entry.getKey();
                 CollectionContainer container = entry.getValue();
-                for (Map.Entry<Data, LockInfo> lockEntry: container.lockStore.getLocks().entrySet()){
+                for (Map.Entry<Data, LockInfo> lockEntry : container.lockStore.getLocks().entrySet()) {
                     Data key = lockEntry.getKey();
                     LockInfo lock = lockEntry.getValue();
-                    if (lock.getLockAddress().equals(caller)){
+                    if (lock.getLockAddress().equals(caller)) {
                         Operation op = new ForceUnlockOperation(proxyId, key).setPartitionId(partitionContainer.partitionId)
                                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
                                 .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
@@ -284,5 +289,50 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 }
             }
         }
+    }
+
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
+        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
+        //Set commands
+        map.put(Command.SADD, new SetAddHandler(this));
+        map.put(Command.SREMOVE, new SetRemoveHandler(this));
+        map.put(Command.SCONTAINS, new SetContainsHandler(this));
+        map.put(Command.SGETALL, new SetGetAllHandler(this));
+        map.put(Command.SLISTEN, new CollectionItemListenHandler(this) {
+            @Override
+            protected CollectionProxyId getCollectionProxyId(Protocol protocol) {
+                return new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, protocol.args[0], CollectionProxyType.SET);
+            }
+        });
+        //List commands
+        map.put(Command.LADD, new AddHandler(this));
+        map.put(Command.LREMOVE, new RemoveHandler(this));
+        map.put(Command.LCONTAINS, new ContainsHandler(this));
+        map.put(Command.LGETALL, new GetAllHandler(this));
+        map.put(Command.LGET, new GetHandler(this));
+        map.put(Command.LINDEXOF, new IndexOfHandler(this));
+        map.put(Command.LLASTINDEXOF, new LastIndexOfHandler(this));
+        map.put(Command.LSET, new ListSetHandler(this));
+        map.put(Command.LLISTEN, new CollectionItemListenHandler(this) {
+            @Override
+            protected CollectionProxyId getCollectionProxyId(Protocol protocol) {
+                return new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, protocol.args[0], CollectionProxyType.LIST);
+            }
+        });
+        //MultiMap commands
+        map.put(Command.MMPUT, new PutHandler(this));
+        map.put(Command.MMGET, new MMGetHandler(this));
+        map.put(Command.MMSIZE, new MMSizeHandler(this));
+        map.put(Command.MMREMOVE, new MMRemoveHandler(this));
+        map.put(Command.MMVALUECOUNT, new ValueCountHandler(this));
+        map.put(Command.MMCONTAINSKEY, new ContainsKeyHandler(this));
+        map.put(Command.MMCONTAINSVALUE, new ContainsValueHandler(this));
+        map.put(Command.MMCONTAINSENTRY, new ContainsEntryHandler(this));
+        map.put(Command.MMKEYS, new MMKeysHandler(this));
+        map.put(Command.MMLOCK, new LockHandler(this));
+        map.put(Command.MMUNLOCK, new UnlockHandler(this));
+        map.put(Command.MMTRYLOCK, new TryLockHandler(this));
+        map.put(Command.MMLISTEN, new ListenHandler(this));
+        return map;
     }
 }

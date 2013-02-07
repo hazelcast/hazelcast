@@ -35,7 +35,7 @@ public class MapTryPutHandler extends MapCommandHandler {
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
         Data value = protocol.buffers[1];
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         final long ttl = (args.length > 1) ? Long.valueOf(args[1]) : 0;
         boolean isPut = dataMapProxy.tryPut(key, protocol.buffers.length > 1 ? value : null, ttl, TimeUnit.MILLISECONDS);
         return protocol.success(String.valueOf(isPut));

@@ -17,16 +17,15 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.QueueItemListenerManager;
 import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.QueueItemIterator;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,8 +38,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     final protected ProxyHelper proxyHelper;
     final protected String name;
     final private HazelcastClient client;
-
-    final Object lock = new Object();
+    private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
 
     public QueueClientProxy(HazelcastClient client, String name) {
         super();
@@ -175,23 +173,18 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         return new QueueItemIterator(list.toArray(), this);
     }
 
-    private Map<ItemListener, ListenerThread> listenerMap = new ConcurrentHashMap<ItemListener, ListenerThread>();
-    
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Protocol request = proxyHelper.createProtocol(Command.QLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
-        ListenerThread thread = proxyHelper.createAListenerThread(client, request, new ItemEventLRH<E>(listener));
+        ListenerThread thread = proxyHelper.createAListenerThread("hz.client.qListener.",
+                client, request, new ItemEventLRH<E>(listener, includeValue, this));
         listenerMap.put(listener, thread);
         thread.start();
     }
 
     public void removeItemListener(ItemListener<E> listener) {
         ListenerThread thread = listenerMap.remove(listener);
-        if(thread!=null)
+        if (thread != null)
             thread.interrupt();
-    }
-
-    private QueueItemListenerManager listenerManager() {
-        return null;// proxyHelper.client.getListenerManager().getQueueItemListenerManager();
     }
 }

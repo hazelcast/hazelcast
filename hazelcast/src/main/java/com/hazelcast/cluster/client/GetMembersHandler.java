@@ -29,11 +29,12 @@ public class GetMembersHandler extends ClientCommandHandler {
 
     public Protocol processCall(Node node, Protocol protocol) {
         Collection<Member> collection = node.nodeEngine.getClusterService().getMembers();
-        String[] args = new String[collection.size()];
+        String[] args = new String[collection.size()*2];
         int i = 0;
         for (Member member : collection) {
             MemberImpl m = (MemberImpl) member;
-            args[i++] = m.getAddress().getHost() + ":" + m.getAddress().getPort();
+            args[i++] = m.getAddress().getHost() ;
+            args[i++] = String.valueOf(m.getAddress().getPort());
         }
         return protocol.success(args);
     }

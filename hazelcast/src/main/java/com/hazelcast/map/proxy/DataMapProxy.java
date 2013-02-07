@@ -39,6 +39,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data get(Object k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         return getInternal(key);
     }
@@ -88,11 +89,13 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data remove(Object k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         return removeInternal(key);
     }
 
     public boolean remove(final Object k, final Object v) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         Data value = nodeEngine.toData(v);
         return removeInternal(key, value);
@@ -107,11 +110,13 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public boolean containsKey(Object k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         return containsKeyInternal(key);
     }
 
     public boolean containsValue(final Object value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data v = nodeEngine.toData(value);
         return containsValueInternal(v);
     }

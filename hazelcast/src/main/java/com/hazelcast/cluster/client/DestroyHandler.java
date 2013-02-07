@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.spi.ProxyService;
 
 public class DestroyHandler extends ClientCommandHandler {
 
@@ -28,8 +29,26 @@ public class DestroyHandler extends ClientCommandHandler {
         String[] args = protocol.args;
         String type = args[0];
         String name = args[1];
+        final ProxyService proxyService = node.nodeEngine.getProxyService();
         if("map".equals(type)){
-            ((MapService) node.nodeEngine.getService(MapService.SERVICE_NAME)).createDistributedObjectForClient(name).destroy();
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }
+        else if("set".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        }else if("map".equals(type)){
+            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
         }
         return protocol.success();
     }

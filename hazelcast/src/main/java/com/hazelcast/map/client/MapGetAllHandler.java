@@ -37,7 +37,7 @@ public class MapGetAllHandler extends MapCommandHandler {
         for (int i = 0; i < size; i++) {
             set.add(protocol.buffers[i]);
         }
-        DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
+        DataMapProxy dataMapProxy = getMapProxy(name);
         Map<Data, Data> result = dataMapProxy.getAll(set);
         List<Data> list = new ArrayList<Data>();
         for (Map.Entry<Data, Data> entry : result.entrySet()) {

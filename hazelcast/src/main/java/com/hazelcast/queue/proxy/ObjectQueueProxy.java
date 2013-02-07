@@ -61,6 +61,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(e);
         return offerInternal(data, timeUnit.toMillis(timeout));
     }
@@ -70,6 +71,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Object data = pollInternal(timeUnit.toMillis(timeout));
         return nodeEngine.toObject(data);
     }
@@ -79,11 +81,13 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean remove(Object o) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);
         return removeInternal(data);
     }
 
     public boolean contains(Object o) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);
         List<Data> dataSet = new ArrayList<Data>(1);
         dataSet.add(data);
@@ -95,6 +99,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public int drainTo(Collection<? super E> objects, int i) {
+        final NodeEngine nodeEngine = getNodeEngine();
         if (this.equals(objects)) {
             throw new IllegalArgumentException("Can not drain to same Queue");
         }
@@ -132,6 +137,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public E peek() {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Object data = peekInternal();
         return (E) nodeEngine.toObject(data);
     }
@@ -141,10 +147,12 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public Iterator<E> iterator() {
+        final NodeEngine nodeEngine = getNodeEngine();
         return new QueueIterator<E>(listInternal().iterator(), nodeEngine.getSerializationService(), false);
     }
 
     public Object[] toArray() {
+        final NodeEngine nodeEngine = getNodeEngine();
         List<Data> list = listInternal();
         int size = list.size();
         Object[] array = new Object[size];
@@ -155,6 +163,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public <T> T[] toArray(T[] ts) {
+        final NodeEngine nodeEngine = getNodeEngine();
         List<Data> list = listInternal();
         int size = list.size();
         if (ts.length < size) {
@@ -183,11 +192,11 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-        queueService.addItemListener(name, listener, includeValue);
+        getService().addItemListener(name, listener, includeValue);
     }
 
     public void removeItemListener(ItemListener<E> listener) {
-        queueService.removeItemListener(name, listener);
+        getService().removeItemListener(name, listener);
     }
 
     public String toString() {
@@ -199,6 +208,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     private List<Data> getDataList(Collection<?> objects) {
+        final NodeEngine nodeEngine = getNodeEngine();
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
             dataList.add(nodeEngine.toData(o));

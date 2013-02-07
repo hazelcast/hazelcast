@@ -189,7 +189,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         return nodeEngine;
     }
 
-    public void destroy() {
+    public void shutdown() {
         containerMap.clear();
         eventRegistrations.clear();
     }

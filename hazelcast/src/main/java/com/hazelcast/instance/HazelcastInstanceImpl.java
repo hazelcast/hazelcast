@@ -39,6 +39,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.semaphore.SemaphoreService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.topic.TopicService;
 
@@ -51,6 +52,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
  */
 
 @SuppressWarnings("unchecked")
+@PrivateApi
 public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public final Node node;
@@ -58,8 +60,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     final ILogger logger;
 
     final String name;
-
-    final ProxyFactory proxyFactory;
 
     final ManagementService managementService;
 
@@ -83,7 +83,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
         lifecycleService.fireLifecycleEvent(STARTING);
-        proxyFactory = node.initializer.getProxyFactory();
         node.start();
         if (!node.isActive()) {
             node.connectionManager.shutdown();
@@ -130,7 +129,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public ILock getLock(Object key) {
         final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
-        return new ObjectLockProxy(nodeEngine, key, map);
+        return new ObjectLockProxy(key, map);
     }
 
     public IExecutorService getExecutorService(final String name) {
@@ -192,7 +191,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     private void checkActive() {
         if (!node.isActive()) {
-            throw new IllegalStateException("Hazelcast instance is not active!");
+            throw new HazelcastInstanceNotActiveException();
         }
     }
 
@@ -219,13 +218,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         proxyService.removeProxyListener(distributedObjectListener);
     }
 
-    void shutdown() {
-        managementService.destroy();//TODO
-//        managementService.unregister();
-        node.shutdown(false, true);
-        HazelcastInstanceFactory.remove(this);
-    }
-
     public void restartToMerge() {
         lifecycleService.fireLifecycleEvent(MERGING);
         lifecycleService.restart();
@@ -236,17 +228,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return threadGroup;
     }
 
-    public ManagedContext getManagedContext() {
-        return managedContext;
-    }
-
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("HazelcastInstanceImpl");
+        sb.append("HazelcastInstance");
         sb.append("{name='").append(name).append('\'');
-        sb.append(", node=").append(node);
+        sb.append(", node=").append(node.getThisAddress());
         sb.append('}');
         return sb.toString();
     }

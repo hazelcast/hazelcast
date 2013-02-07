@@ -25,6 +25,6 @@ public interface ManagedService {
 
     void init(NodeEngine nodeEngine, Properties properties);
 
-    void destroy();
+    void shutdown();
 
 }

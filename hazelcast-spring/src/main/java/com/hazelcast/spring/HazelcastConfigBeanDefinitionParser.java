@@ -233,7 +233,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleInterfaces(Node node, final BeanDefinitionBuilder networkConfigBuilder) {
-            BeanDefinitionBuilder builder = createBeanBuilder(Interfaces.class);
+            BeanDefinitionBuilder builder = createBeanBuilder(InterfacesConfig.class);
             final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
             final NamedNodeMap atts = node.getAttributes();
             if (atts != null) {
@@ -257,7 +257,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleJoin(Node node, BeanDefinitionBuilder networkConfigBuilder) {
-            BeanDefinitionBuilder joinConfigBuilder = createBeanBuilder(Join.class);
+            BeanDefinitionBuilder joinConfigBuilder = createBeanBuilder(JoinConfig.class);
             final AbstractBeanDefinition beanDefinition = joinConfigBuilder.getBeanDefinition();
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String name = cleanNodeName(child);

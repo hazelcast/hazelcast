@@ -33,8 +33,8 @@ public class ClientCommandService {
     private final Node node;
     private final ILogger logger;
     private final Map<TcpIpConnection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<TcpIpConnection, ClientEndpoint>();
-    private ConcurrentHashMap<Command, ClientCommandHandler> services;
-    private Executor executor;
+    private final ConcurrentHashMap<Command, ClientCommandHandler> services;
+    private final Executor executor;
     private final ClientCommandHandler unknownCommandHandler;
 
     public ClientCommandService(Node node) {
@@ -91,5 +91,10 @@ public class ClientCommandService {
     public ClientCommandHandler getService(Protocol protocol) {
         ClientCommandHandler handler = services.get(protocol.command);
         return (handler == null) ? unknownCommandHandler : handler;
+    }
+
+    public void shutdown() {
+        mapClientEndpoints.clear();
+        services.clear();
     }
 }

@@ -43,6 +43,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V get(Object k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         return nodeEngine.toObject(getInternal(key));
     }
@@ -52,6 +53,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V put(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         final Data result = putInternal(key, value, ttl, timeunit);
@@ -59,6 +61,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         return tryPutInternal(key, value, timeout, timeunit);
@@ -69,6 +72,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V putIfAbsent(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
@@ -76,12 +80,14 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void putTransient(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         putTransientInternal(key, value, ttl, timeunit);
     }
 
     public boolean replace(final K k, final V o, final V v) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data oldValue = nodeEngine.toData(o);
         final Data value = nodeEngine.toData(v);
@@ -89,76 +95,90 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V replace(final K k, final V v) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         return nodeEngine.toObject(replaceInternal(key, value));
     }
 
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         setInternal(key, value, ttl, timeunit);
     }
 
     public V remove(Object k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data result = removeInternal(key);
         return nodeEngine.toObject(result);
     }
 
     public boolean remove(final Object k, final Object v) {
+        final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);
         final Data value = nodeEngine.toData(v);
         return removeInternal(key, value);
     }
 
     public boolean containsKey(Object k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         return containsKeyInternal(key);
     }
 
     public boolean containsValue(final Object v) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data value = nodeEngine.toData(v);
         return containsValueInternal(value);
     }
 
     public void lock(final K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
         lockInternal(k);
     }
 
     public void unlock(final K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
         unlockInternal(k);
     }
 
     public Object tryRemove(final K key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
         return nodeEngine.toObject(tryRemoveInternal(k, timeout, timeunit));
     }
 
     public Future<V> getAsync(final K k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         return new ObjectFuture(getAsyncInternal(key), nodeEngine.getSerializationService());
     }
 
     public boolean isLocked(final K k) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
         return isLockedInternal(key);
     }
 
     public Future putAsync(final K key, final V value) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
         Data v = nodeEngine.toData(value);
         return new ObjectFuture(putAsyncInternal(k, v), nodeEngine.getSerializationService());
     }
 
     public Future removeAsync(final K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
         return new ObjectFuture(removeAsyncInternal(k), nodeEngine.getSerializationService());
     }
 
     public Map<K, V> getAll(final Set<K> keys) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Set<Data> ks = new HashSet(keys.size());
         for (K key : keys) {
             Data k = nodeEngine.toData(key);
@@ -172,14 +192,17 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public boolean tryLock(final K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         return tryLockInternal(nodeEngine.toData(key), 0, null);
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
         return tryLockInternal(nodeEngine.toData(key), time, timeunit);
     }
 
     public void forceUnlock(final K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
         forceUnlockInternal(k);
     }
@@ -200,10 +223,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+        final NodeEngine nodeEngine = getNodeEngine();
         addEntryListenerInternal(listener, nodeEngine.toData(key), includeValue);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        final NodeEngine nodeEngine = getNodeEngine();
         addEntryListenerInternal(listener, predicate, nodeEngine.toData(key), includeValue);
     }
 
@@ -212,15 +237,18 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         removeEntryListenerInternal(listener, nodeEngine.toData(key));
     }
 
     public Map.Entry<K, V> getMapEntry(final K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         Map.Entry<Data, Data> entry = getMapEntryInternal(nodeEngine.toData(key));
         return new AbstractMap.SimpleImmutableEntry<K, V>((K) nodeEngine.toObject(entry.getKey()), (V) nodeEngine.toObject(entry.getValue()));
     }
 
     public boolean evict(final Object key) {
+        final NodeEngine nodeEngine = getNodeEngine();
         return evictInternal(nodeEngine.toData(key));
     }
 
@@ -229,6 +257,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet() {
+        final NodeEngine nodeEngine = getNodeEngine();
         Set<Data> dataSet = keySetInternal();
         HashSet<K> keySet = new HashSet<K>();
         for (Data data : dataSet) {
@@ -238,6 +267,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Collection<V> values() {
+        final NodeEngine nodeEngine = getNodeEngine();
         Collection<Data> dataSet = valuesInternal();
         Collection<V> valueSet = new ArrayList<V>();
         for (Data data : dataSet) {
@@ -247,6 +277,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set entrySet() {
+        final NodeEngine nodeEngine = getNodeEngine();
         Set<Entry<Data, Data>> entries = entrySetInternal();
         Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
         for (Entry<Data, Data> entry : entries) {
@@ -268,8 +299,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> localKeySet() {
-        Set<Data> dataSet = localKeySetInternal();
-        HashSet<K> keySet = new HashSet<K>();
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Set<Data> dataSet = localKeySetInternal();
+        final Set<K> keySet = new HashSet<K>(dataSet.size());
         for (Data data : dataSet) {
             keySet.add((K) nodeEngine.toObject(data));
         }
@@ -277,14 +309,17 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> localKeySet(final Predicate predicate) {
+        final NodeEngine nodeEngine = getNodeEngine();
         return null;
     }
 
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+        final NodeEngine nodeEngine = getNodeEngine();
         return nodeEngine.toObject(executeOnKeyInternal(nodeEngine.toData(key), entryProcessor));
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
+        final NodeEngine nodeEngine = getNodeEngine();
         Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();

@@ -133,13 +133,13 @@ public abstract class AbstractJoiner implements Joiner {
         throw new IllegalStateException(sb.toString());
     }
 
-    boolean shouldMerge(JoinInfo joinInfo) {
+    boolean shouldMerge(JoinMessage joinRequest) {
         boolean shouldMerge = false;
-        if (joinInfo != null) {
+        if (joinRequest != null) {
             boolean validJoinRequest;
             try {
                 try {
-                    validJoinRequest = node.getClusterService().validateJoinRequest(joinInfo);
+                    validJoinRequest = node.getClusterService().validateJoinMessage(joinRequest);
                 } catch (Exception e) {
                     logger.log(Level.FINEST, e.getMessage());
                     validJoinRequest = false;
@@ -147,31 +147,31 @@ public abstract class AbstractJoiner implements Joiner {
                 if (validJoinRequest) {
                     for (Member member : node.getClusterService().getMembers()) {
                         MemberImpl memberImpl = (MemberImpl) member;
-                        if (memberImpl.getAddress().equals(joinInfo.address)) {
-                            logger.log(Level.FINEST, "Should not merge to " + joinInfo.address
+                        if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
+                            logger.log(Level.FINEST, "Should not merge to " + joinRequest.getAddress()
                                     + ", because it is already member of this cluster.");
                             return false;
                         }
                     }
                     int currentMemberCount = node.getClusterService().getMembers().size();
-                    if (joinInfo.getMemberCount() > currentMemberCount) {
+                    if (joinRequest.getMemberCount() > currentMemberCount) {
                         // I should join the other cluster
-                        logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinInfo.address
-                                + ", because : joinInfo.getMemberCount() > currentMemberCount ["
-                                + (joinInfo.getMemberCount() + " > " + currentMemberCount) + "]");
-                        logger.log(Level.FINEST, joinInfo.toString());
+                        logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinRequest.getAddress()
+                                + ", because : joinRequest.getMemberCount() > currentMemberCount ["
+                                + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
+                        logger.log(Level.FINEST, joinRequest.toString());
                         shouldMerge = true;
-                    } else if (joinInfo.getMemberCount() == currentMemberCount) {
+                    } else if (joinRequest.getMemberCount() == currentMemberCount) {
                         // compare the hashes
-                        if (node.getThisAddress().hashCode() > joinInfo.address.hashCode()) {
-                            logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinInfo.address
-                                    + ", because : node.getThisAddress().hashCode() > joinInfo.address.hashCode() "
+                        if (node.getThisAddress().hashCode() > joinRequest.getAddress().hashCode()) {
+                            logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinRequest.getAddress()
+                                    + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
-                            logger.log(Level.FINEST, joinInfo.toString());
+                            logger.log(Level.FINEST, joinRequest.toString());
                             shouldMerge = true;
                         } else {
-                            logger.log(Level.FINEST, joinInfo.address + " should merge to this node "
-                                    + ", because : node.getThisAddress().hashCode() < joinInfo.address.hashCode() "
+                            logger.log(Level.FINEST, joinRequest.getAddress() + " should merge to this node "
+                                    + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
                         }
                     }

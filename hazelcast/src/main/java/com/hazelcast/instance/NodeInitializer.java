@@ -32,8 +32,6 @@ public interface NodeInitializer {
 
     String getVersion();
 
-    ProxyFactory getProxyFactory();
-
     SecurityContext getSecurityContext();
 
     void destroy();

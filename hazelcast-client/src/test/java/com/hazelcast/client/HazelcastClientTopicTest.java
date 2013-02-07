@@ -158,36 +158,39 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
     public void add2listenerAndRemoveOne() throws InterruptedException {
         HazelcastClient hClient = getHazelcastClient();
         ITopic<String> topic = hClient.getTopic("removeMessageListener");
-        final CountDownLatch latch = new CountDownLatch(4);
-        final CountDownLatch cp = new CountDownLatch(2);
+        final CountDownLatch latch4 = new CountDownLatch(4);
+        final CountDownLatch latch3 = new CountDownLatch(3);
+        final CountDownLatch latch2 = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
         MessageListener<String> messageListener1 = new MessageListener<String>() {
             public void onMessage(Message<String> msg) {
                 if (msg.getMessageObject().startsWith(message)) {
-//                    System.out.println("Received "+msg+" at "+ this);
-                    latch.countDown();
-                    cp.countDown();
+                    System.out.println("Received "+msg+" at "+ this);
+                    latch4.countDown();
+                    latch3.countDown();
+                    latch2.countDown();
                 }
             }
         };
         MessageListener<String> messageListener2 = new MessageListener<String>() {
             public void onMessage(Message<String> msg) {
                 if (msg.getMessageObject().startsWith(message)) {
-//                    System.out.println("Received "+msg+" at "+ this);
-                    latch.countDown();
-                    cp.countDown();
+                    System.out.println("Received "+msg+" at "+ this);
+                    latch4.countDown();
+                    latch3.countDown();
+                    latch2.countDown();
                 }
             }
         };
         topic.addMessageListener(messageListener1);
         topic.addMessageListener(messageListener2);
-        topic.publish(message + "1");
         Thread.sleep(50);
+        topic.publish(message + "1");
+        latch2.await();
         topic.removeMessageListener(messageListener1);
-        cp.await();
         topic.publish(message + "2");
-        Thread.sleep(100);
-        assertEquals(1, latch.getCount());
+        latch3.await();
+        assertEquals(1, latch4.getCount());
     }
 
     @AfterClass

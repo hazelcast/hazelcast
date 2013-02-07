@@ -85,10 +85,6 @@ public class DefaultNodeInitializer implements NodeInitializer {
         return build;
     }
 
-    public ProxyFactory getProxyFactory() {
-        return new DefaultProxyFactory(node.hazelcastInstance);
-    }
-
     public SecurityContext getSecurityContext() {
         logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
         return null;

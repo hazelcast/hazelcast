@@ -37,7 +37,8 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
     public void run() {
         final ClusterServiceImpl clusterService = getService();
         final Address caller = getCaller();
-        if (caller != null && caller.equals(clusterService.getMasterAddress())) {
+        if (caller != null &&
+                (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
             clusterService.removeAddress(deadAddress);
         }
     }

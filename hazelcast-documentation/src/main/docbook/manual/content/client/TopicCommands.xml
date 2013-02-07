@@ -50,8 +50,8 @@
             No return value. Topic publish is a fire and forget operations.
         </para>
     </sect2>
-    <sect2 xml:id="TADDLISTENER" version="5.0" xmlns="http://docbook.org/ns/docbook">
-        <title>TADDLISTENER</title>
+    <sect2 xml:id="TLISTEN" version="5.0" xmlns="http://docbook.org/ns/docbook">
+        <title>TLISTEN</title>
 
         <para>
             Listen's to the messages published to the topic.
@@ -62,7 +62,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        TADDLISTENER <name>
+        TLISTEN <name>
         ]]></programlisting>
 
         <para>

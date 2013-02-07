@@ -35,7 +35,7 @@ public class PortableTest {
 
         NamedPortable[] nn = new NamedPortable[5];
         for (int i = 0; i < nn.length; i++) {
-            nn[i] = new NamedPortable("named-portable-" + i);
+            nn[i] = new NamedPortable("named-portable-" + i, i);
         }
 
         NamedPortable np = nn[0];
@@ -72,7 +72,7 @@ public class PortableTest {
             }
         });
 
-        NamedPortable p1 = new NamedPortable("portable-v1");
+        NamedPortable p1 = new NamedPortable("portable-v1", 111);
         Data data = serializationService.toData(p1);
 
         NamedPortableV2 p2 = new NamedPortableV2("portable-v2", 123);
@@ -87,11 +87,11 @@ public class PortableTest {
 
         public Portable create(int classId) {
             switch (classId) {
-                case 0:
-                    return new MainPortable();
                 case 1:
-                    return new InnerPortable();
+                    return new MainPortable();
                 case 2:
+                    return new InnerPortable();
+                case 3:
                     return new NamedPortable();
             }
             return null;
@@ -129,7 +129,7 @@ public class PortableTest {
         }
 
         public int getClassId() {
-            return 0;
+            return 1;
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
@@ -225,7 +225,7 @@ public class PortableTest {
         }
 
         public int getClassId() {
-            return 1;
+            return 2;
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
@@ -288,23 +288,27 @@ public class PortableTest {
     private static class NamedPortable implements Portable {
 
         String name;
+        int k;
 
         private NamedPortable() {
         }
 
-        private NamedPortable(String name) {
+        private NamedPortable(String name, int k) {
             this.name = name;
+            this.k = k;
         }
 
         public int getClassId() {
-            return 2;
+            return 3;
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeUTF("name", name);
+            writer.writeInt("myint", k);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
+            k = reader.readInt("myint");
             name = reader.readUTF("name");
         }
 
@@ -315,6 +319,7 @@ public class PortableTest {
 
             NamedPortable that = (NamedPortable) o;
 
+            if (k != that.k) return false;
             if (name != null ? !name.equals(that.name) : that.name != null) return false;
 
             return true;
@@ -322,7 +327,9 @@ public class PortableTest {
 
         @Override
         public int hashCode() {
-            return name != null ? name.hashCode() : 0;
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + k;
+            return result;
         }
     }
 
@@ -338,7 +345,7 @@ public class PortableTest {
         }
 
         private NamedPortableV2(String name, int v) {
-            super(name);
+            super(name, v * 10);
             this.v = v;
         }
 

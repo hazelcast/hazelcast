@@ -35,11 +35,11 @@ public class TestUtil {
 
     static final private SerializationService serializationService = new SerializationServiceImpl(1, null);
 
-    public static synchronized Data toData(Object obj) {
+    public static Data toData(Object obj) {
         return serializationService.toData(obj);
     }
 
-    public static synchronized Object toObject(Data data) {
+    public static Object toObject(Data data) {
         return serializationService.toObject(data);
     }
 
