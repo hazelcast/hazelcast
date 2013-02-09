@@ -229,7 +229,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 serviceConfig.setEnabled(enabled);
 
                 for (org.w3c.dom.Node n : new IterableNodeList(child.getChildNodes())) {
-                    final String value = cleanNodeName(child.getNodeName());
+                    final String value = cleanNodeName(n.getNodeName());
                     if ("name".equals(value)) {
                         String name = getTextContent(n);
                         serviceConfig.setName(name);
