@@ -26,6 +26,7 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.QueueService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,7 +53,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"queue", getName()});
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{QueueService.SERVICE_NAME, getName()});
     }
 
     public Object getId() {

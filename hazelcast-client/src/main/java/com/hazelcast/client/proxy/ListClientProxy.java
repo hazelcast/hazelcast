@@ -20,6 +20,7 @@ import com.hazelcast.client.CollectionClientProxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Protocol;
@@ -51,6 +52,11 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     }
 
     @Override
+    public int size() {
+        return proxyHelper.doCommandAsInt(null, Command.LSIZE, new String[]{getName()});
+    }
+
+    @Override
     public boolean contains(Object o) {
         check(o);
         return proxyHelper.doCommandAsBoolean(null, Command.LCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
@@ -75,7 +81,7 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"list", getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{ObjectListProxy.COLLECTION_LIST_NAME, getName()}, null);
     }
 
     public void add(int index, E element) {

@@ -23,6 +23,7 @@ import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
+import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
@@ -209,7 +210,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"mmap", getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"multimap", getName()}, null);
     }
 
     public Object getId() {

@@ -24,10 +24,7 @@ import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.multimap.client.*;
 import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.collection.set.client.SetAddHandler;
-import com.hazelcast.collection.set.client.SetContainsHandler;
-import com.hazelcast.collection.set.client.SetGetAllHandler;
-import com.hazelcast.collection.set.client.SetRemoveHandler;
+import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
 import com.hazelcast.lock.LockInfo;
 import com.hazelcast.nio.Address;
@@ -295,6 +292,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
         //Set commands
         map.put(Command.SADD, new SetAddHandler(this));
+        map.put(Command.SSIZE, new SetSizeHandler(this));
         map.put(Command.SREMOVE, new SetRemoveHandler(this));
         map.put(Command.SCONTAINS, new SetContainsHandler(this));
         map.put(Command.SGETALL, new SetGetAllHandler(this));
@@ -306,6 +304,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         });
         //List commands
         map.put(Command.LADD, new AddHandler(this));
+        map.put(Command.LSIZE, new SizeHandler(this));
         map.put(Command.LREMOVE, new RemoveHandler(this));
         map.put(Command.LCONTAINS, new ContainsHandler(this));
         map.put(Command.LGETALL, new GetAllHandler(this));

@@ -50,7 +50,7 @@ public abstract class MultiMapCommandHandler extends ClientCommandHandler {
         for (Object o : result) {
             buffers.add(proxy.getNodeEngine().getSerializationService().toData(o));
         }
-        return protocol.success(String.valueOf(buffers.toArray(new Data[]{})));
+        return protocol.success(buffers.toArray(new Data[]{}));
     }
 
     protected abstract Protocol processCall(ObjectMultiMapProxy proxy, Protocol protocol);

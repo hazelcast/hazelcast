@@ -25,6 +25,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -467,7 +468,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"map", getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{MapService.SERVICE_NAME, getName()}, null);
     }
 
     @Override

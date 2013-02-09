@@ -54,6 +54,7 @@ public class HazelcastClientSetTest extends HazelcastClientTestBase {
         final CountDownLatch removeLatch = new CountDownLatch(2);
         ItemListener<String> listener = new CountDownItemListener<String>(addLatch, removeLatch);
         set.addItemListener(listener, true);
+        Thread.sleep(100);
         set.add("hello");
         set.add("hello");
         set.remove("hello");

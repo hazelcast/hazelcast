@@ -23,6 +23,7 @@ import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.idgen.IdGeneratorProxy;
 import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -225,13 +226,16 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public IdGenerator getIdGenerator(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IdGenerator");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new IdGeneratorClientProxy(this, name));
-        }
-        return (IdGenerator) proxy;
+        return new IdGeneratorProxy(this, name);
     }
+//    public IdGenerator getIdGenerator(String name) {
+//        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IdGenerator");
+//        DistributedObject proxy = innerProxyMap.get(name);
+//        if (proxy == null) {
+//            proxy = putAndReturnProxy(name, innerProxyMap, new IdGeneratorClientProxy(this, name));
+//        }
+//        return (IdGenerator) proxy;
+//    }
 
     public AtomicNumber getAtomicNumber(String name) {
         Map<Object, DistributedObject> innerProxyMap = getProxiesMap("AtomicNumber");

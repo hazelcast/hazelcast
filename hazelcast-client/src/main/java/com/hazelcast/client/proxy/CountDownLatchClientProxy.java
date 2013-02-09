@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
 import com.hazelcast.nio.Address;
@@ -75,7 +76,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"cdl", getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{CountDownLatchService.SERVICE_NAME, getName()}, null);
     }
 
     public Object getId() {

@@ -929,6 +929,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         commandHandlers.put(Command.DESTROY, new DestroyHandler());
         commandHandlers.put(Command.MEMBERLISTEN, new MembershipListenHandler(this));
         commandHandlers.put(Command.CLUSTERTIME, new ClusterTimeHandler(this));
+        commandHandlers.put(Command.TRXBEGIN, new TransactionBeginHandler(this));
+        commandHandlers.put(Command.TRXCOMMIT, new TransactionCommitHandler(this));
+        commandHandlers.put(Command.TRXROLLBACK, new TransactionRollbackHandler(this));
+        commandHandlers.put(Command.TRXSTATUS, new TransactionStatusHandler(this));
         return commandHandlers;
     }
 

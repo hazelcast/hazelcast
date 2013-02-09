@@ -37,7 +37,7 @@ public abstract class SetCommandHandler extends ClientCommandHandler {
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
         CollectionProxyId id = new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET);
-        ObjectSetProxy proxy = (ObjectSetProxy)collectionService.createDistributedObjectForClient(name);
+        ObjectSetProxy proxy = (ObjectSetProxy)collectionService.createDistributedObjectForClient(id);
         return processCall(proxy, protocol);
     }
 
