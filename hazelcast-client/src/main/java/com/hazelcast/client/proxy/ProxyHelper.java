@@ -234,7 +234,12 @@ public class ProxyHelper {
      * @return
      */
     public boolean doCommand(Data key, Command command, String arg, Data... data) {
-        Protocol response = doCommand(key, command, new String[]{arg}, data);
+        String[] args;
+        if(arg == null)
+            args = new String[]{};
+        else 
+            args = new String[]{arg};
+        Protocol response = doCommand(key, command, args, data);
         return response.command.equals(Command.OK);
     }
 

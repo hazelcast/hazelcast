@@ -44,7 +44,8 @@ public enum Command {
     MMGET(), MMLOCK(), MMUNLOCK(), MMTRYLOCK(), MMLISTEN(),
     ADDANDGET(), GETANDSET(), COMPAREANDSET(), GETANDADD(),
     NEWID(), INITID(),
-    TPUBLISH(), TLISTEN(), TREMOVELISTENER(),  MESSAGE();
+    TPUBLISH(), TLISTEN(), TREMOVELISTENER(),  MESSAGE(),
+    EXECUTE();
 
     private final byte value;
 

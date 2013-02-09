@@ -18,213 +18,209 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.executor.RunnableAdapter;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.protocol.Command;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
-public class ExecutorServiceClientProxy implements ExecutorService {
+public class ExecutorServiceClientProxy implements IExecutorService {
 
     final ProxyHelper proxyHelper;
-    final ExecutorService callBackExecutors = Executors.newFixedThreadPool(5);
+    final HazelcastClient client;
+    final String name;
+    final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public ExecutorServiceClientProxy(HazelcastClient client, String name) {
+        this.client = client;
+        this.name = name;
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+    }
+
+    public void execute(Runnable command) {
+        executeOnKeyOwner(command, null);
+    }
+
+    public void executeOnKeyOwner(Runnable command, Object key) {
+        submitToKeyOwner(new RunnableAdapter<Object>(command), key);
+    }
+
+    public void executeOnMember(Runnable command, Member member) {
+        submitToMember(new RunnableAdapter<Object>(command), member);
+    }
+
+    public void executeOnMembers(Runnable command, Collection<Member> members) {
+        for(Member member: members){
+            executeOnMember(command, member);
+        }
+    }
+
+    public void executeOnAllMembers(Runnable command) {
+        executeOnMembers(command, client.getCluster().getMembers());
+    }
+
+    public <T> Future<T> submit(Callable<T> task) {
+        return submitToKeyOwner(task, null);
+    }
+
+    public <T> Future<T> submitToKeyOwner(final Callable<T> task, final Object key) {
+        return executorService.submit(new Callable<T>() {
+            public T call() throws Exception {
+                return (T) proxyHelper.doCommandAsObject(proxyHelper.toData(key), Command.EXECUTE,
+                        new String[]{}, proxyHelper.toData(task), proxyHelper.toData(key));
+            }
+        });
+    }
+
+    public <T> Future<T> submitToMember(final Callable<T> task, final Member member) {
+        return executorService.submit(new Callable<T>() {
+            public T call() throws Exception {
+                InetSocketAddress address = member.getInetSocketAddress();
+                return (T) proxyHelper.doCommandAsObject(proxyHelper.toData(member), Command.EXECUTE,
+                        new String[]{address.getHostName(), String.valueOf(address.getPort())}, proxyHelper.toData(task));
+            }
+        });
+    }
+
+    public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
+        return null;
+    }
+
+    public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
+        return null;
+    }
+
+    public void submit(final Runnable task, final ExecutionCallback callback) {
+        submit(new RunnableAdapter(task), callback);
+    }
+
+    public void submitToKeyOwner(Runnable task, Object key, ExecutionCallback callback) {
+        submitToKeyOwner(new RunnableAdapter<Object>(task), key, callback);
+    }
+
+    public void submitToMember(Runnable task, Member member, ExecutionCallback callback) {
+        submitToMember(new RunnableAdapter<Object>(task), member, callback);
+    }
+
+    public void submitToMembers(Runnable task, Collection<Member> members, MultiExecutionCallback callback) {
+        submitToMembers(new RunnableAdapter<Object>(task), members, callback);
+    }
+
+    public void submitToAllMembers(Runnable task, MultiExecutionCallback callback) {
+        submitToAllMembers(new RunnableAdapter<Object>(task), callback);
+    }
+
+    public <T> void submit(final Callable<T> task, final ExecutionCallback<T> callback) {
+        executorService.submit(new Runnable() {
+            public void run() {
+                Future<T> f = submit(task);
+                try {
+                    callback.onResponse(f.get());
+                } catch (InterruptedException e) {
+                    return;
+                } catch (ExecutionException e) {
+                    callback.onFailure(e);
+                }
+            }
+        });
+    }
+
+    public <T> void submitToKeyOwner(final Callable<T> task, final Object key, final ExecutionCallback<T> callback) {
+        executorService.submit(new Runnable() {
+            public void run() {
+                Future<T> f = submitToKeyOwner(task, key);
+                try {
+                    callback.onResponse(f.get());
+                } catch (InterruptedException e) {
+                    return;
+                } catch (ExecutionException e) {
+                    callback.onFailure(e);
+                }
+            }
+        });
+    }
+
+    public <T> void submitToMember(final Callable<T> task, final Member member, final ExecutionCallback<T> callback) {
+        executorService.submit(new Runnable() {
+            public void run() {
+                Future<T> f = submitToMember(task, member);
+                try {
+                    callback.onResponse(f.get());
+                } catch (InterruptedException e) {
+                    return;
+                } catch (ExecutionException e) {
+                    callback.onFailure(e);
+                }
+            }
+        });
+    }
+
+    public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
+    }
+
+    public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
+    }
+
+    public Object getId() {
+        return null;
+    }
+
+    public String getName() {
+        return null;
+    }
+
+    public void destroy() {
     }
 
     public void shutdown() {
     }
 
     public List<Runnable> shutdownNow() {
-        return new ArrayList<Runnable>();
+        return null;
     }
 
     public boolean isShutdown() {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isTerminated() {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
         return false;
     }
 
-    public <T> Future<T> submit(Callable<T> callable) {
-//        return submit(new DistributedTask(callable));
+    public boolean isTerminated() {
+        return false;
+    }
+
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        return false;
+    }
+
+    public <T> Future<T> submit(Runnable task, T result) {
+        return submit(new RunnableAdapter<T>(task, result));
+    }
+
+    public Future<?> submit(Runnable task) {
+        return submit(new RunnableAdapter(task));
+    }
+
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
         return null;
     }
 
-//    private <T> Future<T> submit(DistributedTask dt) {
-//        ClientDistributedTask cdt = null;
-//        InnerFutureTask inner = (InnerFutureTask) dt.getInner();
-//        check(inner.getCallable());
-//        if (dt instanceof MultiTask) {
-//            if (inner.getMembers() == null) {
-//                Set<Member> set = new HashSet<Member>();
-//                set.add(inner.getMember());
-//                cdt = new ClientDistributedTask(inner.getCallable(), null, set, null);
-//            }
-//        }
-//        if (cdt == null) {
-//            cdt = new ClientDistributedTask(inner.getCallable(), inner.getMember(), inner.getMembers(), inner.getKey());
-//        }
-//        return submit(dt, cdt);
-//    }
-//    private <T> void check(Object o) {
-//        if (o == null) {
-//            throw new NullPointerException("Object cannot be null.");
-//        }
-//        if (!(o instanceof Serializable)) {
-//            throw new IllegalArgumentException(o.getClass().getName() + " is not Serializable.");
-//        }
-//    }
-
-//    private Future submit(final DistributedTask dt, final ClientDistributedTask cdt) {
-//        final Packet request = proxyHelper.prepareRequest(ClusterOperation.EXECUTE, cdt, null);
-//        final InnerFutureTask inner = (InnerFutureTask) dt.getInner();
-//        request.setCallId(PacketProxyHelper.newCallId());
-//        final Call call = new Call(request.getCallId(), request) {
-//            public void onDisconnect(final Member member) {
-//                setResponse(new MemberLeftException(member));
-//            }
-//
-//            public void setResponse(Object response) {
-//                super.setResponse(response);
-//                if (dt.getExecutionCallback() != null) {
-//                    callBackExecutors.execute(new Runnable() {
-//                        public void run() {
-//                            ((InnerFutureTask) dt.getInner()).innerDone();
-//                            dt.getExecutionCallback().done(dt);
-//                        }
-//                    });
-//                }
-//            }
-//        };
-//        inner.setExecutionManagerCallback(new ExecutionManagerCallback() {
-//            private volatile boolean cancelled = false;
-//
-//            public boolean cancel(boolean mayInterruptIfRunning) {
-//                cancelled = (Boolean) proxyHelper.doOp(ClusterOperation.CANCEL_EXECUTION, call.getId(), mayInterruptIfRunning);
-//                return cancelled;
-//                return false;
-//            }
-//
-//            public void get() throws InterruptedException, ExecutionException {
-//                if (cancelled) throw new CancellationException();
-//                try {
-//                    Object response = call.getResponse();
-//                    handle(response);
-//                } catch (Throwable e) {
-//                    handle(e);
-//                }
-//            }
-//
-//            public void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
-//                if (cancelled) throw new CancellationException();
-//                try {
-//                    Object response = call.getResponse(timeout, unit);
-//                    handle(response);
-//                } catch (Throwable e) {
-//                    handle(e);
-//                }
-//            }
-//
-//    }
-//            private void handle(Object response) {
-//                Object result = response;
-//                if (response == null) {
-//                    inner.innerSetException(new TimeoutException(), false);
-//                } else {
-//                    if (response instanceof Packet) {
-//                        Packet responsePacket = (Packet) response;
-//                        result = toObject(responsePacket.getValue());
-//                    }
-//                    if (result instanceof MemberLeftException) {
-//                        MemberLeftException memberLeftException = (MemberLeftException) result;
-//                        inner.innerSetMemberLeft(memberLeftException.getMember());
-//                    } else if (result instanceof Throwable) {
-//                        inner.innerSetException((Throwable) result, true);
-//                    } else {
-//                        if (dt instanceof MultiTask) {
-//                            if (result != null) {
-//                                Collection colResults = (Collection) result;
-//                                for (Object obj : colResults) {
-//                                    inner.innerSet(obj);
-//                                }
-//                            } else {
-//                                inner.innerSet(result);
-//                            }
-//                        } else {
-//                            inner.innerSet(result);
-//                        }
-//                    }
-//                }
-//                inner.innerDone();
-//            }
-//        });
-//        proxyHelper.sendCall(call);
-//        return dt;
-//    }
-
-    public <T> Future<T> submit(Runnable runnable, T t) {
-//        if (runnable instanceof DistributedTask) {
-//            return submit((DistributedTask) runnable);
-//        } else {
-//            return submit(DistributedTask.callable(runnable, t));
-//        }
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
         return null;
     }
 
-    public Future<?> submit(Runnable runnable) {
-        return submit(runnable, null);
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+        return null;
     }
 
-    public List<Future> invokeAll(Collection tasks) throws InterruptedException {
-        // Inspired to JDK7
-        if (tasks == null)
-            throw new NullPointerException();
-        List<Future> futures = new ArrayList<Future>(tasks.size());
-        boolean done = false;
-        try {
-            for (Object command : tasks) {
-                futures.add(submit((Callable) command));
-            }
-            for (Future f : futures) {
-                if (!f.isDone()) {
-                    try {
-                        f.get();
-                    } catch (CancellationException ignore) {
-                    } catch (ExecutionException ignore) {
-                    }
-                }
-            }
-            done = true;
-            return futures;
-        } finally {
-            if (!done)
-                for (Future f : futures)
-                    f.cancel(true);
-        }
-    }
-
-    public List invokeAll(Collection tasks, long timeout, TimeUnit unit)
-            throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    public Object invokeAny(Collection tasks) throws InterruptedException, ExecutionException {
-        throw new UnsupportedOperationException();
-    }
-
-    public Object invokeAny(Collection tasks, long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
-    }
-
-    public void execute(Runnable runnable) {
-        submit(runnable, null);
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return null;
     }
 }
