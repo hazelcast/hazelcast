@@ -48,7 +48,7 @@
     <constructor-arg value="map"/>
 </bean>
 ]]></programlisting>
-    Hazelcast has Spring integration (requires version 2.5 or greater) since 1.9.1
+    Hazelcast has Spring integration (requires version 2.5.6 or greater) since 1.9.1
     using
     <emphasis>hazelcast</emphasis>
     namespace.
