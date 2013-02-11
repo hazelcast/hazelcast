@@ -32,7 +32,7 @@ import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.Util;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.*;
@@ -55,7 +55,7 @@ abstract class InvocationImpl implements Future, Invocation {
     private volatile int invokeCount = 0;
     private volatile boolean done = false;
 
-    private Callback<InvocationImpl> callback;  // TODO: do we need volatile?
+    private Callback<InvocationImpl> callback;  // TODO: @mm - do we need volatile?
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout) {
@@ -95,18 +95,25 @@ abstract class InvocationImpl implements Future, Invocation {
     public abstract Address getTarget();
 
     public final Future invoke() {
-        if (invokeCount > 0) {
+        if (invokeCount > 0) {   // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
         }
+        final ThreadContext threadContext = ThreadContext.getOrCreate();
+        checkOperationType(op, threadContext);
         try {
-            checkOperationType(op);
             OperationAccessor.setCallTimeout(op, callTimeout);
+            op.setNodeEngine(nodeEngine).setServiceName(serviceName).setCallerAddress(nodeEngine.getThisAddress())
+                    .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+            op.setCallerUuid(threadContext.getCallerUuid());
+            if (op.getCallerUuid() == null) {
+                op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+            }
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
                 setResult(e);
             } else {
-                Util.throwUncheckedException(e);
+                ExceptionUtil.rethrow(e);
             }
         }
         return this;
@@ -119,8 +126,6 @@ abstract class InvocationImpl implements Future, Invocation {
         invokeCount++;
         final Address target = getTarget();
         final Address thisAddress = nodeEngine.getThisAddress();
-        op.setNodeEngine(nodeEngine).setServiceName(serviceName).setCaller(thisAddress)
-                .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         if (target == null) {
             if (isActive()) {
                 setResult(new WrongTargetException(thisAddress, target, partitionId, op.getClass().getName(), serviceName));
@@ -215,7 +220,7 @@ abstract class InvocationImpl implements Future, Invocation {
                         return e;
                     }
                     timeout = decrementTimeout(timeout, tryPauseMillis);
-                    // TODO: improve logging (see SystemLogService)
+                    // TODO: @mm - improve logging (see SystemLogService)
                     if (localInvokeCount > 5 && localInvokeCount % 10 == 0) {
                         logger.log(Level.WARNING, "Still invoking: " + toString());
                     }
@@ -234,7 +239,7 @@ abstract class InvocationImpl implements Future, Invocation {
                     // target may change during invocation because of migration!
                    continue;
                 }
-                // TODO: improve logging (see SystemLogService)
+                // TODO: @mm - improve logging (see SystemLogService)
                 logger.log(Level.WARNING, "No response for " + pollTimeout + " ms. " + toString());
 
                 boolean executing = isOperationExecuting(target);
@@ -258,22 +263,23 @@ abstract class InvocationImpl implements Future, Invocation {
             final InvocationImpl inv = new TargetInvocationImpl(nodeEngine, serviceName,
                     new IsStillExecuting(op.getCallId()), target, 0, 0, 5000);
             inv.invoke();
-            // TODO: improve logging (see SystemLogService)
+            // TODO: @mm - improve logging (see SystemLogService)
             logger.log(Level.WARNING, "Asking if operation execution has been started: " + toString());
             executing = (Boolean) nodeEngine.toObject(inv.get(5000, TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             logger.log(Level.WARNING, "While asking 'is-executing': " + toString(), e);
         }
-        // TODO: improve logging (see SystemLogService)
+        // TODO: @mm - improve logging (see SystemLogService)
         logger.log(Level.WARNING, "'is-executing': " + executing + " -> " + toString());
         return executing;
     }
 
     static Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
         if (response instanceof Throwable) {
-            if (response instanceof RuntimeException) {
-                throw (RuntimeException) response;
-            }
+            // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
+//            if (response instanceof RuntimeException) {
+//                throw (RuntimeException) response;
+//            }
             if (response instanceof ExecutionException) {
                 throw (ExecutionException) response;
             }
@@ -304,9 +310,9 @@ abstract class InvocationImpl implements Future, Invocation {
         return timeout;
     }
 
-    // TODO: works only for parent-child invocations; multiple chained invocations can break the rule!
-    private static void checkOperationType(Operation op) {
-        final Operation parentOp = (Operation) ThreadContext.getOrCreate().getCurrentOperation();
+    // TODO: @mm - works only for parent-child invocations; multiple chained invocations can break the rule!
+    private static void checkOperationType(Operation op, ThreadContext threadContext) {
+        final Operation parentOp = threadContext.getCurrentOperation();
         boolean allowed = true;
         if (parentOp != null) {
             if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
@@ -417,7 +423,7 @@ abstract class InvocationImpl implements Future, Invocation {
         public void run() throws Exception {
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             OperationServiceImpl operationService = nodeEngine.operationService;
-            boolean executing = operationService.isOperationExecuting(getCaller(), operationCallId);
+            boolean executing = operationService.isOperationExecuting(getCallerAddress(), operationCallId);
             getResponseHandler().sendResponse(executing);
         }
 

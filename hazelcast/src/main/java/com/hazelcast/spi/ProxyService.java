@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
 
 import java.util.Collection;
 
@@ -36,4 +37,8 @@ public interface ProxyService extends CoreService {
     Collection<DistributedObject> getDistributedObjects(String serviceName);
 
     Collection<DistributedObject> getAllDistributedObjects();
+
+    void addProxyListener(DistributedObjectListener distributedObjectListener);
+
+    void removeProxyListener(DistributedObjectListener distributedObjectListener);
 }

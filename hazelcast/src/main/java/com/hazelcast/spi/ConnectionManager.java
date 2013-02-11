@@ -39,7 +39,7 @@ public interface ConnectionManager {
 
     void destroyConnection(Connection conn);
 
-    void onRestart();
+    void restart();
 
     int getCurrentClientConnections();
 

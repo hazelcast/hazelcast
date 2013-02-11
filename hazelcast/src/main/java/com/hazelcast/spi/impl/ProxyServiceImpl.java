@@ -215,7 +215,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         };
 
         DistributedObject getClientProxy(Object objectId) {
-            // TODO: fire object created event if required!
+            // TODO: @mm - fire object created event if required!
             return ConcurrencyUtil.getOrPutIfAbsent(clientProxies, objectId, clientProxyConstructor);
         }
 

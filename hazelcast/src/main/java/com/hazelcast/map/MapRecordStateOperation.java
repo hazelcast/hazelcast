@@ -84,7 +84,7 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     public void afterRun() {
         if (evicted) {
             int eventType = EntryEvent.TYPE_EVICTED;
-            mapService.publishEvent(getCaller(), name, eventType, dataKey, null, dataValue);
+            mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, null, dataValue);
         }
     }
 

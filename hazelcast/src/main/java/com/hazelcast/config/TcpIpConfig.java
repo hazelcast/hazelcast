@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -36,8 +35,6 @@ public class TcpIpConfig implements DataSerializable {
 
     private String requiredMember = null;
 
-    private final List<Address> addresses = new ArrayList<Address>();
-
     public TcpIpConfig addMember(final String member) {
         this.members.add(member);
         return this;
@@ -45,17 +42,7 @@ public class TcpIpConfig implements DataSerializable {
 
     public TcpIpConfig clear() {
         members.clear();
-        addresses.clear();
         return this;
-    }
-
-    public TcpIpConfig addAddress(final Address address) {
-        addresses.add(address);
-        return this;
-    }
-
-    public List<Address> getAddresses() {
-        return addresses;
     }
 
     /**
@@ -130,14 +117,13 @@ public class TcpIpConfig implements DataSerializable {
                 + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
                 + ", members=" + members
                 + ", requiredMember=" + requiredMember
-                + ", addresses=" + addresses + "]";
+                + "]";
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         boolean hasMembers = members != null && !members.isEmpty();
-        boolean hasAddresses = addresses != null && !addresses.isEmpty();
         boolean hasRequiredMember = requiredMember != null;
-        out.writeByte(ByteUtil.toByte(enabled, hasRequiredMember, hasMembers, hasAddresses));
+        out.writeByte(ByteUtil.toByte(enabled, hasRequiredMember, hasMembers));
         out.writeInt(connectionTimeoutSeconds);
         if (hasRequiredMember) {
             out.writeUTF(requiredMember);
@@ -148,12 +134,6 @@ public class TcpIpConfig implements DataSerializable {
                 out.writeUTF(member);
             }
         }
-        if (hasAddresses) {
-            out.writeInt(addresses.size());
-            for (final Address address : addresses) {
-                address.writeData(out);
-            }
-        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -161,7 +141,6 @@ public class TcpIpConfig implements DataSerializable {
         enabled = b[0];
         boolean hasRequiredMember = b[1];
         boolean hasMembers = b[2];
-        boolean hasAddresses = b[3];
         connectionTimeoutSeconds = in.readInt();
         if (hasRequiredMember) {
             requiredMember = in.readUTF();
@@ -171,15 +150,6 @@ public class TcpIpConfig implements DataSerializable {
             members = new ArrayList<String>(size);
             for (int i = 0; i < size; i++) {
                 members.add(in.readUTF());
-            }
-        }
-        if (hasAddresses) {
-            int size = in.readInt();
-            addresses.clear();
-            for (int i = 0; i < size; i++) {
-                Address address = new Address();
-                address.readData(in);
-                addresses.add(address);
             }
         }
     }

@@ -20,13 +20,13 @@ package com.hazelcast.map.client;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.AddressUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +37,7 @@ public class MapListenHandler extends MapCommandHandler {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Protocol processCall(final Node node, final Protocol protocol) {
         String name = protocol.args[0];
         System.out.println("Received the addListener for " + name);
@@ -44,35 +45,36 @@ public class MapListenHandler extends MapCommandHandler {
         final Data key = protocol.hasBuffer() ? protocol.buffers[0] : null;
         final DataMapProxy dataMapProxy = mapService.createDistributedObjectForClient(name);
         final TcpIpConnection connection = protocol.conn;
-        EntryListener<Data, Data> entryListener = new EntryListener<Data, Data>() {
-            public void entryAdded(EntryEvent<Data, Data> entryEvent) {
+        EntryListener<Data, Data> entryListener = new EntryListener() {
+            public void entryAdded(EntryEvent entryEvent) {
                 sendEvent(entryEvent);
             }
 
-            public void entryRemoved(EntryEvent<Data, Data> entryEvent) {
+            public void entryRemoved(EntryEvent entryEvent) {
                 sendEvent(entryEvent);
             }
 
-            public void entryUpdated(EntryEvent<Data, Data> entryEvent) {
+            public void entryUpdated(EntryEvent entryEvent) {
                 sendEvent(entryEvent);
             }
 
-            public void entryEvicted(EntryEvent<Data, Data> entryEvent) {
+            public void entryEvicted(EntryEvent entryEvent) {
                 sendEvent(entryEvent);
             }
 
-            public void sendEvent(EntryEvent<Data, Data> entryEvent) {
+            public void sendEvent(EntryEvent entryEvent) {
                 System.out.println("Sending the event");
 
-                if (connection.live()) {                       
+                if (connection.live()) {
+                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) entryEvent;
                     String[] args = new String[]{"map", dataMapProxy.getName(), entryEvent.getEventType().toString(),
                             entryEvent.getMember().getInetSocketAddress().getHostName() + ":" + entryEvent.getMember().getInetSocketAddress().getPort()};
                     List<Data> list = new ArrayList<Data>();
-                    list.add(node.serializationService.toData(entryEvent.getKey()));
-                    if (entryEvent.getValue() != null)
-                        list.add(node.serializationService.toData(entryEvent.getValue()));
-                    if (entryEvent.getOldValue() != null)
-                        list.add(node.serializationService.toData(entryEvent.getOldValue()));
+                    list.add(dataAwareEntryEvent.getKeyData());
+                    if (dataAwareEntryEvent.getOldValueData() != null)
+                        list.add(dataAwareEntryEvent.getNewValueData());
+                    if (dataAwareEntryEvent.getOldValueData() != null)
+                        list.add(dataAwareEntryEvent.getOldValueData());
                     Protocol event = new Protocol(connection, Command.EVENT, args, list.toArray(new Data[]{}));
                     System.out.println("Connection is " + connection);
                     sendResponse(node, event, connection);

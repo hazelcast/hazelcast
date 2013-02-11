@@ -21,19 +21,22 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
 public class LifecycleServiceImpl implements LifecycleService {
-    final HazelcastInstanceImpl instance;
-    final AtomicBoolean paused = new AtomicBoolean(false);
-    final List<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
-    final Object lifecycleLock = new Object();
+    private final HazelcastInstanceImpl instance;
+    private final List<LifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
+    private final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -44,11 +47,11 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {
-        lsLifecycleListeners.add(lifecycleListener);
+        lifecycleListeners.add(lifecycleListener);
     }
 
     public void removeLifecycleListener(LifecycleListener lifecycleListener) {
-        lsLifecycleListeners.remove(lifecycleListener);
+        lifecycleListeners.remove(lifecycleListener);
     }
 
     public void fireLifecycleEvent(LifecycleState lifecycleState) {
@@ -57,39 +60,9 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
         getLogger().log(Level.INFO, instance.node.getThisAddress() + " is " + lifecycleEvent.getState());
-        for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
+        for (LifecycleListener lifecycleListener : lifecycleListeners) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }
-    }
-
-    public boolean pause() {
-        synchronized (lifecycleLock) {
-            if (!paused.get()) {
-                fireLifecycleEvent(PAUSING);
-            } else {
-                return false;
-            }
-            paused.set(true);
-            fireLifecycleEvent(PAUSED);
-            return true;
-        }
-    }
-
-    public boolean resume() {
-        synchronized (lifecycleLock) {
-            if (paused.get()) {
-                fireLifecycleEvent(RESUMING);
-            } else {
-                return false;
-            }
-            paused.set(false);
-            fireLifecycleEvent(RESUMED);
-            return true;
-        }
-    }
-
-    public boolean isPaused() {
-        return paused.get();
     }
 
     public boolean isRunning() {
@@ -118,19 +91,38 @@ public class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    public void restart() {
+    public void merge() {
+        // TODO: @mm - improve cluster merge process
         synchronized (lifecycleLock) {
-            fireLifecycleEvent(RESTARTING);
-            paused.set(true);
+            fireLifecycleEvent(MERGING);
             final Node node = instance.node;
-
+            final NodeEngineImpl nodeEngine = node.nodeEngine;
+            final Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
+            final Collection<Runnable> tasks = new LinkedList<Runnable>();
+            for (SplitBrainHandlerService service : services) {
+                final Runnable runnable = service.prepareMergeRunnable();
+                if (runnable != null) {
+                    tasks.add(runnable);
+                }
+            }
             node.onRestart();
-            node.connectionManager.onRestart();
+            node.connectionManager.restart();
             node.clusterService.onRestart();
             node.partitionService.onRestart();
             node.rejoin();
-            paused.set(false);
-            fireLifecycleEvent(RESTARTED);
+            final Collection<Future> futures = new LinkedList<Future>();
+            for (Runnable task : tasks) {
+                Future f = nodeEngine.getExecutionService().submit("hz:system", task);
+                futures.add(f);
+            }
+            for (Future f : futures) {
+                try {
+                    f.get();
+                } catch (Exception e) {
+                    getLogger().log(Level.SEVERE, "While merging..." , e);
+                }
+            }
+            fireLifecycleEvent(MERGED);
         }
     }
 }

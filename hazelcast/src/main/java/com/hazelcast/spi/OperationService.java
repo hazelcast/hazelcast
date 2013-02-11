@@ -28,7 +28,17 @@ import java.util.concurrent.TimeoutException;
  */
 public interface OperationService {
 
+    /**
+     * Runs operation in caller thread.
+     * @param op
+     */
     void runOperation(Operation op);
+
+    /**
+     * Executes operation in operation executor pool.
+     * @param op
+     */
+    void executeOperation(final Operation op);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 

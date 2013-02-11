@@ -24,8 +24,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.*;
 import com.hazelcast.partition.Partition;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -60,6 +64,13 @@ public class SimpleMapTest {
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
         cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.DATA);
+        cfg.getSerializationConfig().setPortableFactory(new PortableFactory() {
+            public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
+            }
+            public Portable create(int classId) {
+                return new PortableByteArray();
+            }
+        });
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
     }
@@ -108,12 +119,11 @@ public class SimpleMapTest {
     }
 
     private void run(ExecutorService es) {
-        final IMap<String, byte[]> map = instance.getMap(NAMESPACE);
+        final IMap<String, Object> map = instance.getMap(NAMESPACE);
         for (int i = 0; i < threadCount; i++) {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-//                        ThreadContext.get().setCurrentInstance((HazelcastInstanceImpl) instance);
                         while (true) {
                             int key = (int) (Math.random() * entryCount);
                             int operation = ((int) (Math.random() * 100));
@@ -121,7 +131,7 @@ public class SimpleMapTest {
                                 map.get(String.valueOf(key));
                                 stats.gets.incrementAndGet();
                             } else if (operation < getPercentage + putPercentage) {
-                                map.put(String.valueOf(key), new byte[valueSize]);
+                                map.put(String.valueOf(key), createValue());
                                 stats.puts.incrementAndGet();
                             } else {
                                 map.remove(String.valueOf(key));
@@ -136,10 +146,16 @@ public class SimpleMapTest {
         }
     }
 
+    private Object createValue() {
+        return new byte[valueSize];
+//        return new DataSerializableByteArray(new byte[valueSize]);
+//        return new PortableByteArray(new byte[valueSize]);
+    }
+
     private void load(ExecutorService es) throws InterruptedException {
         if (!load) return;
 
-        final IMap<String, byte[]> map = instance.getMap(NAMESPACE);
+        final IMap<String, Object> map = instance.getMap(NAMESPACE);
         final Member thisMember = instance.getCluster().getLocalMember();
         List<String> lsOwnedEntries = new LinkedList<String>();
         for (int i = 0; i < entryCount; i++) {
@@ -153,7 +169,7 @@ public class SimpleMapTest {
         for (final String ownedKey : lsOwnedEntries) {
             es.execute(new Runnable() {
                 public void run() {
-                    map.put(ownedKey, new byte[valueSize]);
+                    map.put(ownedKey, createValue());
                     latch.countDown();
                 }
             });
@@ -195,6 +211,62 @@ public class SimpleMapTest {
             logger.log(Level.INFO, "total= " + total + ", gets:" + getsNow
                                    + ", puts:" + putsNow + ", removes:" + removesNow);
             logger.log(Level.INFO, "Operations per Second : " + total / STATS_SECONDS);
+        }
+    }
+
+    private static class DataSerializableByteArray implements DataSerializable {
+
+        byte[] data;
+
+        public DataSerializableByteArray() {
+        }
+
+        private DataSerializableByteArray(byte[] data) {
+            this.data = data;
+        }
+
+        public void writeData(ObjectDataOutput out) throws IOException {
+            int len = data != null ? data.length : 0;
+            out.writeInt(len);
+            if (len > 0) {
+                for (int i = 0; i < len; i++) {
+                    out.writeByte(data[i]);
+                }
+            }
+        }
+
+        public void readData(ObjectDataInput in) throws IOException {
+            int len = in.readInt();
+            if (len > 0) {
+                data = new byte[len];
+                for (int i = 0; i < len; i++) {
+                    data[i] = in.readByte();
+                }
+            }
+        }
+    }
+
+    private static class PortableByteArray implements Portable {
+
+        byte[] data;
+
+        public PortableByteArray() {
+        }
+
+        private PortableByteArray(byte[] data) {
+            this.data = data;
+        }
+
+        public int getClassId() {
+            return 1;
+        }
+
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeByteArray("d", data);
+        }
+
+        public void readPortable(PortableReader reader) throws IOException {
+            data = reader.readByteArray("d");
         }
     }
 

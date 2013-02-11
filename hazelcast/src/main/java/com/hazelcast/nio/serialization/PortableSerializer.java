@@ -42,19 +42,18 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         if (p.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        ClassDefinitionImpl cd = getClassDefinition(p);
+        ClassDefinition cd = getClassDefinition(p);
         DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);
     }
 
-    public ClassDefinitionImpl getClassDefinition(Portable p) throws IOException {
+    public ClassDefinition getClassDefinition(Portable p) throws IOException {
         final int classId = p.getClassId();
-        ClassDefinitionImpl cd = context.lookup(classId);
+        ClassDefinition cd = context.lookup(classId);
         if (cd == null) {
             ClassDefinitionWriter classDefinitionWriter = new ClassDefinitionWriter(classId);
             p.writePortable(classDefinitionWriter);
-            cd = classDefinitionWriter.cd;
-            context.registerClassDefinition(cd);
+            cd = classDefinitionWriter.register();
         }
         return cd;
     }
@@ -68,7 +67,7 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         final int dataVersion = ctxIn.getDataVersion();
         final Portable p = context.createPortable(dataClassId);
         final PortableReader reader;
-        final ClassDefinitionImpl cd;
+        final ClassDefinition cd;
         if (context.getVersion() == dataVersion) {
             cd = context.lookup(dataClassId); // using context.version
             reader = new DefaultPortableReader(this, (BufferObjectDataInput) in, cd);
@@ -80,133 +79,125 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         return p;
     }
 
-    public SerializationContext getContext() {
-        return context;
-    }
-
-    public int getVersion() {
-        return context.getVersion();
-    }
-
     public void destroy() {
     }
 
     private class ClassDefinitionWriter implements PortableWriter {
 
-        final ClassDefinitionImpl cd = new ClassDefinitionImpl();
-        int index = 0;
+        final ClassDefinitionBuilderImpl builder;
 
-        public ClassDefinitionWriter(int classId) {
-            cd.classId = classId;
-            cd.version = getVersion();
+        ClassDefinitionWriter(int classId) {
+            builder = new ClassDefinitionBuilderImpl(context, classId);
+        }
+
+        private ClassDefinitionWriter(ClassDefinitionBuilderImpl builder) {
+            this.builder = builder;
+        }
+
+        public int getVersion() {
+            return context.getVersion();
         }
 
         public void writeInt(String fieldName, int value) {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_INT));
+            builder.addIntField(fieldName);
         }
 
         public void writeLong(String fieldName, long value) {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_LONG));
+            builder.addLongField(fieldName);
         }
 
         public void writeUTF(String fieldName, String str) {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_UTF));
+            builder.addUTFField(fieldName);
         }
 
         public void writeBoolean(String fieldName, boolean value) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_BOOLEAN));
+            builder.addBooleanField(fieldName);
         }
 
         public void writeByte(String fieldName, byte value) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_BYTE));
+            builder.addByteField(fieldName);
         }
 
         public void writeChar(String fieldName, int value) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_CHAR));
+            builder.addCharField(fieldName);
         }
 
         public void writeDouble(String fieldName, double value) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_DOUBLE));
+            builder.addDoubleField(fieldName);
         }
 
         public void writeFloat(String fieldName, float value) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_FLOAT));
+            builder.addFloatField(fieldName);
         }
 
         public void writeShort(String fieldName, short value) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_SHORT));
-        }
-
-        public void writePortable(String fieldName, Portable portable) throws IOException {
-            final FieldDefinitionImpl fd = new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_PORTABLE, portable.getClassId());
-            addNestedField(portable, fd);
+            builder.addShortField(fieldName);
         }
 
         public void writeByteArray(String fieldName, byte[] bytes) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_BYTE_ARRAY));
+            builder.addByteArrayField(fieldName);
         }
 
         public void writeCharArray(String fieldName, char[] chars) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_CHAR_ARRAY));
+            builder.addCharArrayField(fieldName);
         }
 
         public void writeIntArray(String fieldName, int[] ints) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_INT_ARRAY));
+            builder.addIntArrayField(fieldName);
         }
 
         public void writeLongArray(String fieldName, long[] longs) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_LONG_ARRAY));
+            builder.addLongArrayField(fieldName);
         }
 
         public void writeDoubleArray(String fieldName, double[] values) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_DOUBLE_ARRAY));
+            builder.addDoubleArrayField(fieldName);
         }
 
         public void writeFloatArray(String fieldName, float[] values) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_FLOAT_ARRAY));
+            builder.addFloatArrayField(fieldName);
         }
 
         public void writeShortArray(String fieldName, short[] values) throws IOException {
-            cd.add(new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_SHORT_ARRAY));
+            builder.addShortArrayField(fieldName);
+        }
+
+        public void writePortable(String fieldName, Portable portable) throws IOException {
+            if (portable == null) {
+                throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
+                        "registering class definition!");
+            }
+            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
+                    .createPortableFieldBuilder(fieldName, portable.getClassId());
+            addNestedField(portable, nestedBuilder);
         }
 
         public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
             if (portables == null || portables.length == 0) {
-                throw new IllegalArgumentException();
+                throw new HazelcastSerializationException("Cannot write null portable array without explicitly " +
+                        "registering class definition!");
             }
             final Portable p = portables[0];
             final int classId = p.getClassId();
             for (int i = 1; i < portables.length; i++) {
                 if (portables[i].getClassId() != classId) {
-                    throw new IllegalArgumentException();
+                    throw new IllegalArgumentException("Detected different class-ids in portable array!");
                 }
             }
-            final FieldDefinitionImpl fd = new FieldDefinitionImpl(index++, fieldName,
-                    FieldDefinitionImpl.TYPE_PORTABLE_ARRAY, classId);
-            addNestedField(p, fd);
+            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
+                    .createPortableArrayFieldBuilder(fieldName, classId);
+            addNestedField(p, nestedBuilder);
         }
 
-        private void addNestedField(Portable p, FieldDefinitionImpl fd) throws IOException {
-            cd.add(fd);
-            ClassDefinitionImpl nestedCd = getClassDefinition(p);
-            cd.add(nestedCd);
+        private void addNestedField(Portable portable, ClassDefinitionBuilderImpl nestedBuilder) throws IOException {
+            ClassDefinitionWriter nestedWriter = new ClassDefinitionWriter(nestedBuilder);
+            portable.writePortable(nestedWriter);
+            nestedBuilder.buildAndRegister();
+        }
+
+        ClassDefinitionImpl register() {
+            builder.buildAndRegister();
+            return builder.getCd();
         }
     }
 }

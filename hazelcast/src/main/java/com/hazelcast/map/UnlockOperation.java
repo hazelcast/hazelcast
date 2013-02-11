@@ -43,7 +43,7 @@ public class UnlockOperation extends AbstractMapOperation implements BackupAware
     }
 
     public void run() {
-        unlocked = recordStore.unlock(dataKey, getCaller(), threadId);
+        unlocked = recordStore.unlock(dataKey, getCallerUuid(), threadId);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class UnlockOperation extends AbstractMapOperation implements BackupAware
     }
 
     public Operation getBackupOperation() {
-        return new UnlockBackupOperation(name, dataKey);
+        return new UnlockBackupOperation(name, dataKey, getCallerUuid(), getThreadId());
     }
 
     public boolean shouldNotify() {

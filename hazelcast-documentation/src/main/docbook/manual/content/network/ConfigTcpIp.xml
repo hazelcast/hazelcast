@@ -46,11 +46,11 @@
                 <multicast-port>54327</multicast-port>
             </multicast>
             <tcp-ip enabled="true">
-                <hostname>machine1</hostname>
-                <hostname>machine2</hostname>
-                <hostname>machine3:5799</hostname>
-                <interface>192.168.1.0-7</interface>     
-                <interface>192.168.1.21</interface> 
+                <member>machine1</member>
+                <member>machine2</member>
+                <member>machine3:5799</member>
+                <member>192.168.1.0-7</member>
+                <member>192.168.1.21</member>
             </tcp-ip>
         </join>
         ...

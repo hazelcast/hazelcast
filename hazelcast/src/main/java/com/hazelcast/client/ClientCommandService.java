@@ -16,19 +16,27 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.spi.ClientProtocolService;
+import com.hazelcast.spi.Connection;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.UuidUtil;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
-public class ClientCommandService {
+public class ClientCommandService implements ConnectionListener {
 
     private final Node node;
     private final ILogger logger;
@@ -40,6 +48,7 @@ public class ClientCommandService {
     public ClientCommandService(Node node) {
         this.node = node;
         logger = node.getLogger(ClientCommandService.class.getName());
+        node.getConnectionManager().addConnectionListener(this);
         executor = node.nodeEngine.getExecutionService().getExecutor("hz:client");
         services = new ConcurrentHashMap<Command, ClientCommandHandler>();
         unknownCommandHandler = new ClientCommandHandler() {
@@ -58,14 +67,14 @@ public class ClientCommandService {
             checkAuth(protocol.conn);
             return;
         }
-        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, protocol, clientEndpoint.getSubject());
+        ClientRequestHandler clientRequestHandler = new ClientRequestHandler(node, clientEndpoint, protocol);
         executor.execute(clientRequestHandler);
     }
 
     public ClientEndpoint getClientEndpoint(TcpIpConnection conn) {
         ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
         if (clientEndpoint == null) {
-            clientEndpoint = new ClientEndpoint(node, conn);
+            clientEndpoint = new ClientEndpoint(node, conn, UuidUtil.createClientUuid(conn.getEndPoint()));
             mapClientEndpoints.put(conn, clientEndpoint);
         }
         return clientEndpoint;
@@ -76,7 +85,6 @@ public class ClientCommandService {
         node.clientCommandService.removeClientEndpoint(conn);
         if (conn != null)
             conn.close();
-        return;
     }
 
     public void removeClientEndpoint(TcpIpConnection conn) {
@@ -84,8 +92,10 @@ public class ClientCommandService {
     }
 
     public void register(ClientProtocolService service) {
-        Map<Command, ClientCommandHandler> commandMap = service.getCommandsAsMap();
-        services.putAll(commandMap);
+        final Map<Command, ClientCommandHandler> commandMap = service.getCommandsAsMap();
+        if (commandMap != null && !commandMap.isEmpty()) {
+            services.putAll(commandMap);
+        }
     }
 
     public ClientCommandHandler getService(Protocol protocol) {
@@ -96,5 +106,29 @@ public class ClientCommandService {
     public void shutdown() {
         mapClientEndpoints.clear();
         services.clear();
+    }
+
+    public void connectionAdded(Connection connection) {
+    }
+
+    public void connectionRemoved(Connection connection) {
+        if (connection.isClient() && connection instanceof TcpIpConnection) {
+            final ClientEndpoint clientEndpoint = mapClientEndpoints.remove(connection);
+            if (clientEndpoint != null) {
+                final Collection<MemberImpl> memberList = node.nodeEngine.getClusterService().getMemberList();
+                for (MemberImpl member : memberList) {
+                    if (member.localMember()) {
+                        final ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientEndpoint.uuid);
+                        op.setNodeEngine(node.nodeEngine).setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        node.nodeEngine.getOperationService().executeOperation(op);
+                    } else {
+                        final Invocation inv = node.nodeEngine.getOperationService()
+                                .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                                        new ClientDisconnectionOperation(clientEndpoint.uuid), member.getAddress()).build();
+                        inv.invoke();
+                    }
+                }
+            }
+        }
     }
 }

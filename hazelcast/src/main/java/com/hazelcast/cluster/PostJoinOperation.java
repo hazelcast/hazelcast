@@ -54,7 +54,7 @@ public class PostJoinOperation extends AbstractOperation implements JoinOperatio
             for (int i = 0; i < len; i++) {
                 final Operation op = operations[i];
                 op.setNodeEngine(nodeEngine)
-                        .setCaller(getCaller())
+                        .setCallerAddress(getCallerAddress())
                         .setConnection(getConnection())
                         .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 operations[i] = op;

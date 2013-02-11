@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.atomicnumber.AtomicNumberService;
+import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -30,7 +30,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.semaphore.SemaphoreService;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;

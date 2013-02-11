@@ -28,8 +28,6 @@ public class TypeSerializerConfig {
 
     private String typeClassName;
 
-    boolean global = false;
-
     public TypeSerializerConfig() {
         super();
     }
@@ -40,15 +38,6 @@ public class TypeSerializerConfig {
 
     public TypeSerializerConfig setClassName(final String className) {
         this.className = className;
-        return this;
-    }
-
-    public boolean isGlobal() {
-        return global;
-    }
-
-    public TypeSerializerConfig setGlobal(final boolean global) {
-        this.global = global;
         return this;
     }
 

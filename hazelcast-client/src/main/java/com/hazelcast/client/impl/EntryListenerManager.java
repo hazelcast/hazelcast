@@ -20,6 +20,7 @@ import com.hazelcast.client.*;
 import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -149,7 +150,7 @@ public class EntryListenerManager {
         String eventType = protocol.args[2];
         EntryEventType entryEventType = EntryEventType.valueOf(eventType);
         final DataAwareEntryEvent event =
-                new DataAwareEntryEvent(null, entryEventType.getType(), name, key, newValue, oldValue, false, serializationService);
+                new DataAwareEntryEvent(null, entryEventType.getType(), name, key, newValue, oldValue, serializationService);
         if (entryListeners.get(name) != null) {
             notifyListeners(event, entryListeners.get(name).get(NULL_KEY));
             if (key != NULL_KEY) {
@@ -164,7 +165,7 @@ public class EntryListenerManager {
         }
         DataAwareEntryEvent eventNoValue = event.getValue() != null ?
                 new DataAwareEntryEvent(event.getMember(), event.getEventType().getType(), event.getName(),
-                        event.getKeyData(), null, null, false, serializationService) :
+                        event.getKeyData(), null, null, serializationService) :
                 event;
         switch (event.getEventType()) {
             case ADDED:

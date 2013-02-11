@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -112,12 +111,12 @@ public class ConfigXmlGenerator {
         xml.append("<tcp-ip enabled=\"").append(tcpCfg.isEnabled()).append("\">");
         final List<String> members = tcpCfg.getMembers();
         for (String m : members) {
-            xml.append("<interface>").append(m).append("</interface>");
+            xml.append("<member>").append(m).append("</member>");
         }
-        final List<Address> addresses = tcpCfg.getAddresses();
-        for (Address a : addresses) {
-            xml.append("<address>").append(a.getHost()).append(":").append(a.getPort()).append("</address>");
-        }
+//        final List<Address> addresses = tcpCfg.getAddresses();
+//        for (Address a : addresses) {
+//            xml.append("<address>").append(a.getHost()).append(":").append(a.getPort()).append("</address>");
+//        }
         if (tcpCfg.getRequiredMember() != null) {
             xml.append("<required-member>").append(tcpCfg.getRequiredMember()).append("</required-member>");
         }
@@ -183,7 +182,7 @@ public class ConfigXmlGenerator {
         for (ExecutorConfig ex : exCfgs) {
             xml.append("<executor-service name=\"").append(ex.getName()).append("\">");
 //            xml.append("<core-pool-size>").append(ex.getCorePoolSize()).append("</core-pool-size>");
-            xml.append("<max-pool-size>").append(ex.getMaxPoolSize()).append("</max-pool-size>");
+            xml.append("<max-pool-size>").append(ex.getPoolSize()).append("</max-pool-size>");
 //            xml.append("<keep-alive-seconds>").append(ex.getKeepAliveSeconds()).append("</keep-alive-seconds>");
             xml.append("</executor-service>");
         }

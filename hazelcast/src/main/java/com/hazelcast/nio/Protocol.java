@@ -100,7 +100,7 @@ public class Protocol implements SocketWritable {
                     return false;
                 }
             }
-            totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap("\r\n".getBytes()), destination);
+            totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap(NEWLINE.getBytes()), destination);
         }
         return totalWritten >= totalSize;
     }
@@ -116,7 +116,7 @@ public class Protocol implements SocketWritable {
                 if(buffer!=null)
                     buffer.writeData(dos);
             }
-            dos.write("\r\n".getBytes());
+            dos.write(NEWLINE.getBytes());
         }
         return true;
     }

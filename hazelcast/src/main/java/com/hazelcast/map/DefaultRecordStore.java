@@ -16,9 +16,8 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.lock.LockInfo;
-import com.hazelcast.lock.LockStore;
-import com.hazelcast.nio.Address;
+import com.hazelcast.concurrent.lock.LockInfo;
+import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionInfo;
@@ -77,6 +76,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean containsValue(Object dataValue) {
         for (Record record : records.values()) {
+            // TODO: @mm - do we actually need to de-serialize to object?
             Object value = mapService.toObject(dataValue);
             Object recordValue = mapService.toObject(record.getValue());
             if (recordValue.equals(value))
@@ -85,7 +85,7 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
-    public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
+    public boolean lock(Data dataKey, String caller, int threadId, long ttl) {
         return lockStore.lock(dataKey, caller, threadId, ttl);
     }
 
@@ -95,10 +95,10 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean canRun(LockAwareOperation lockAwareOperation) {
         return lockStore.canAcquireLock(lockAwareOperation.getKey(),
-                lockAwareOperation.getCaller(), lockAwareOperation.getThreadId());
+                lockAwareOperation.getCallerUuid(), lockAwareOperation.getThreadId());
     }
 
-    public boolean unlock(Data dataKey, Address caller, int threadId) {
+    public boolean unlock(Data dataKey, String caller, int threadId) {
         return lockStore.unlock(dataKey, caller, threadId);
     }
 

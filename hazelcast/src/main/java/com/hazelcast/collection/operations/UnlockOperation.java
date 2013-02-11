@@ -38,11 +38,11 @@ public class UnlockOperation extends CollectionBackupAwareOperation implements N
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        response = container.unlock(dataKey, getCaller(), threadId);
+        response = container.unlock(dataKey, getCallerUuid(), threadId);
     }
 
     public Operation getBackupOperation() {
-        return new UnlockBackupOperation(proxyId, dataKey, threadId, getCaller());
+        return new UnlockBackupOperation(proxyId, dataKey, threadId, getCallerUuid());
     }
 
     public boolean shouldBackup() {

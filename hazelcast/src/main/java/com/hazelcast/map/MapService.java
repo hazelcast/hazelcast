@@ -26,7 +26,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.lock.LockInfo;
+import com.hazelcast.concurrent.lock.LockInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -50,7 +50,6 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 
@@ -65,7 +64,7 @@ import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
-        ClientProtocolService, PostJoinAwareService {
+        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService {
 
     public final static String SERVICE_NAME = "hz:impl:mapService";
 
@@ -106,6 +105,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             o.addMapIndex(mapContainer);
         }
         return o;
+    }
+
+    public Runnable prepareMergeRunnable() {
+        // TODO: @mm - create merge runnable according to map merge policies.
+        return null;
     }
 
     public static class PostJoinMapOperation extends AbstractOperation implements JoinOperation {
@@ -241,7 +245,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void beforeMigration(MigrationServiceEvent event) {
-        // TODO: what if partition has transactions?
+        // TODO: @mm - what if partition has transactions?
     }
 
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
@@ -460,7 +464,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void memberRemoved(final MembershipServiceEvent membershipEvent) {
         MemberImpl member = membershipEvent.getMember();
         releaseMemberLocks(member);
-        // TODO: when a member dies;
+        // TODO: @mm - when a member dies;
         // * release locks
         // * rollback transaction
         // * do not know ?
@@ -471,7 +475,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             for (DefaultRecordStore recordStore : container.maps.values()) {
                 Map<Data, LockInfo> locks = recordStore.getLocks();
                 for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
-                    if (entry.getValue().getLockAddress().equals(member.getAddress())) {
+                    if (entry.getValue().getLockOwner().equals(member.getAddress())) {
                         ForceUnlockOperation forceUnlockOperation = new ForceUnlockOperation(recordStore.name, entry.getKey());
                         forceUnlockOperation.setNodeEngine(nodeEngine);
                         forceUnlockOperation.setServiceName(SERVICE_NAME);
@@ -533,6 +537,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
         commandHandlers.put(Command.MLISTEN, new MapListenHandler(this));
         return commandHandlers;
+    }
+
+    @Override
+    public void onClientDisconnect(String clientUuid) {
+        // TODO: @mm - release locks owned by this client.
     }
 
     public String addInterceptor(String mapName, MapInterceptor interceptor) {
@@ -647,14 +656,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             return nodeEngine.toData(object);
     }
 
+    @SuppressWarnings("unchecked")
     public void dispatchEvent(EventData eventData, EntryListener listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        EntryEvent event = null;
-        if (eventData.getDataOldValue() == null) {
-            event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataNewValue()));
-        } else {
-            event = new EntryEvent(eventData.getSource(), member, eventData.getEventType(), toObject(eventData.getDataKey()), toObject(eventData.getDataOldValue()), toObject(eventData.getDataNewValue()));
-        }
+        EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getSource(),
+                    eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
         switch (event.getEventType()) {
             case ADDED:
                 listener.entryAdded(event);
@@ -729,7 +735,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 maxPartitionSize = mapConfig.getMaxSizeConfig().getSize();
                 targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
             }
-            for (int i = 0; i < ExecutorConfig.DEFAULT_MAX_POOL_SIZE; i++) {
+            for (int i = 0; i < ExecutorConfig.DEFAULT_POOL_SIZE; i++) {
                 nodeEngine.getExecutionService().execute("map-evict", new EvictRunner(i, mapConfig, targetSizePerPartition, comparator));
             }
 
@@ -754,7 +760,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
             public void run() {
                     for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-                        if ((i % ExecutorConfig.DEFAULT_MAX_POOL_SIZE) != mod) {
+                        if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
                             continue;
                         }
                         Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);

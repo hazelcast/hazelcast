@@ -18,11 +18,10 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.*;
+import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
+import com.hazelcast.concurrent.lock.ObjectLockProxy;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.idgen.IdGeneratorProxy;
-import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;

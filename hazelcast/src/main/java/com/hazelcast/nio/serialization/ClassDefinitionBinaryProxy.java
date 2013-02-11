@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * @mdogan 1/3/13
@@ -49,6 +50,22 @@ public class ClassDefinitionBinaryProxy implements ClassDefinition {
         throw new UnsupportedOperationException();
     }
 
+    public boolean hasField(String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Set<String> getFieldNames() {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getFieldTypeId(String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getFieldClassId(String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
     public int getFieldCount() {
         throw new UnsupportedOperationException();
     }
@@ -66,10 +83,10 @@ public class ClassDefinitionBinaryProxy implements ClassDefinition {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-
+        throw new UnsupportedOperationException();
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-
+        throw new UnsupportedOperationException();
     }
 }

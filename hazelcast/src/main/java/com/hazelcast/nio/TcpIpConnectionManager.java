@@ -360,7 +360,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
     }
 
-    public synchronized void onRestart() {
+    public synchronized void restart() {
         stop();
         start();
     }

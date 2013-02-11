@@ -16,13 +16,21 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
+import java.io.IOException;
+
 public class LockBackupOperation extends AbstractMapOperation implements BackupOperation {
 
-    public LockBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        super(name, dataKey, dataValue, ttl);
+    private String originalCaller;
+
+    public LockBackupOperation(String name, Data dataKey, String originalCaller, int threadId, long ttl) {
+        super(name, dataKey, ttl);
+        setThreadId(threadId);
+        this.originalCaller = originalCaller;
     }
 
     public LockBackupOperation() {
@@ -32,7 +40,7 @@ public class LockBackupOperation extends AbstractMapOperation implements BackupO
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        recordStore.lock(getKey(), getCaller(), threadId, ttl);
+        recordStore.lock(getKey(), originalCaller, threadId, ttl);
     }
 
     @Override
@@ -40,4 +48,15 @@ public class LockBackupOperation extends AbstractMapOperation implements BackupO
         return Boolean.TRUE;
     }
 
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(originalCaller);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        originalCaller = in.readUTF();
+    }
 }

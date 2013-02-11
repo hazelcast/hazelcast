@@ -22,7 +22,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.Util;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -132,7 +132,7 @@ public class HazelcastInstanceFactory {
             }
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
-            Util.throwUncheckedException(t);
+            ExceptionUtil.rethrow(t);
         }
         return proxy;
     }
@@ -144,7 +144,7 @@ public class HazelcastInstanceFactory {
             proxy.original = null;
         }
         INSTANCE_MAP.clear();
-        ManagementService.shutdown();
+        ManagementService.shutdownAll();
         ThreadContext.shutdownAll();
     }
 
@@ -154,7 +154,7 @@ public class HazelcastInstanceFactory {
             proxy.original = null;
         }
         if (INSTANCE_MAP.size() == 0) {
-            ManagementService.shutdown();
+            ManagementService.shutdownAll();
         }
     }
 }

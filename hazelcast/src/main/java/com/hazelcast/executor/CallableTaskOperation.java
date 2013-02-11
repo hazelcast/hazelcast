@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
@@ -40,6 +41,9 @@ public class CallableTaskOperation<V> extends AbstractNamedOperation {
 
     @Override
     public void beforeRun() throws Exception {
+        if (callable instanceof HazelcastInstanceAware && getCallId() < 0) {
+            ((HazelcastInstanceAware) callable).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
     }
 
     public void run() throws Exception {

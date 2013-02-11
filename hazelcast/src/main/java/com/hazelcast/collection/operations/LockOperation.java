@@ -54,7 +54,7 @@ public class LockOperation extends CollectionBackupAwareOperation implements Wai
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        response = container.lock(dataKey, getCaller(), threadId, ttl);
+        response = container.lock(dataKey, getCallerUuid(), threadId, ttl);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -70,7 +70,7 @@ public class LockOperation extends CollectionBackupAwareOperation implements Wai
     }
 
     public Operation getBackupOperation() {
-        return new LockBackupOperation(proxyId, dataKey, ttl, threadId, getCaller());
+        return new LockBackupOperation(proxyId, dataKey, ttl, threadId, getCallerUuid());
     }
 
     public boolean shouldBackup() {
@@ -82,7 +82,7 @@ public class LockOperation extends CollectionBackupAwareOperation implements Wai
     }
 
     public boolean shouldWait() {
-        return timeout != 0 && !getOrCreateContainer().canAcquireLock(dataKey, threadId, getCaller());
+        return timeout != 0 && !getOrCreateContainer().canAcquireLock(dataKey, threadId, getCallerUuid());
     }
 
     public long getWaitTimeoutMillis() {

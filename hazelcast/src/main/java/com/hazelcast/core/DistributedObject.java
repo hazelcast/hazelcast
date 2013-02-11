@@ -26,8 +26,7 @@ public interface DistributedObject {
     Object getId();
 
     /**
-     * Returns the name for this object.
-     *
+     * @return the name for this object.
      */
     String getName();
 

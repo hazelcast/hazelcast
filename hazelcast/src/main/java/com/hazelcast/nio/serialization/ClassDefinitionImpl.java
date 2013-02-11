@@ -56,6 +56,30 @@ public class ClassDefinitionImpl implements DataSerializable, ClassDefinition {
         return nestedClassDefinitions;
     }
 
+    public boolean hasField(String fieldName) {
+        return fieldDefinitionsMap.containsKey(fieldName);
+    }
+
+    public Set<String> getFieldNames() {
+        return new HashSet<String>(fieldDefinitionsMap.keySet());
+    }
+
+    public int getFieldTypeId(String fieldName) {
+        final FieldDefinition fd = get(fieldName);
+        if (fd != null) {
+            return fd.getType();
+        }
+        throw new IllegalArgumentException();
+    }
+
+    public int getFieldClassId(String fieldName) {
+        final FieldDefinition fd = get(fieldName);
+        if (fd != null) {
+            return fd.getClassId();
+        }
+        throw new IllegalArgumentException();
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(classId);
         out.writeInt(version);

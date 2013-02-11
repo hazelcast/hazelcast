@@ -441,10 +441,10 @@
             </xs:simpleContent>
         </xs:complexType>
     </xs:element>
-    <xs:element name="max-pool-size" default="64">
+    <xs:element name="pool-size" default="8">
         <xs:annotation>
             <xs:documentation>
-                The maximum pool size.
+                The pool size.
             </xs:documentation>
         </xs:annotation>
         <xs:simpleType>
@@ -591,7 +591,7 @@
         <xs:complexType>
             <xs:sequence>
                 <!--<xs:element ref="core-pool-size"/>-->
-                <xs:element ref="max-pool-size"/>
+                <xs:element ref="pool-size"/>
                 <!--<xs:element ref="keep-alive-seconds"/>-->
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
@@ -967,9 +967,15 @@
     <xs:element name="serializers">
         <xs:complexType>
             <xs:sequence>
+                <xs:element ref="global-serializer" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="type-serializer" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
+    </xs:element>
+    <xs:element name="global-serializer">
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
     </xs:element>
     <xs:element name="type-serializer">
         <xs:complexType>

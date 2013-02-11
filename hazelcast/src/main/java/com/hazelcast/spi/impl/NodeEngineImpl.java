@@ -75,6 +75,10 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getThisAddress();
     }
 
+    public MemberImpl getLocalMember() {
+        return node.getLocalMember();
+    }
+
     public Config getConfig() {
         return node.getConfig();
     }

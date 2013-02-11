@@ -44,7 +44,8 @@ import com.hazelcast.spi.ConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.Util;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.VersionCheck;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -55,7 +56,6 @@ import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -137,7 +137,7 @@ public class Node {
         try {
             ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
         } catch (Exception e) {
-            Util.throwUncheckedException(e);
+            ExceptionUtil.rethrow(e);
         }
         serializationService = ss;
         systemLogService = new SystemLogService(this);
@@ -145,11 +145,11 @@ public class Node {
         try {
             addressPicker.pickAddress();
         } catch (Throwable e) {
-            Util.throwUncheckedException(e);
+            ExceptionUtil.rethrow(e);
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
-        localMember = new MemberImpl(address, true, localNodeType, UUID.randomUUID().toString());
+        localMember = new MemberImpl(address, true, localNodeType, UuidUtil.createMemberUuid(address));
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
         logger = loggingService.getLogger(Node.class.getName());
@@ -161,7 +161,7 @@ public class Node {
                 serverSocketChannel.close();
             } catch (Throwable ignored) {
             }
-            Util.throwUncheckedException(e);
+            ExceptionUtil.rethrow(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeEngine = new NodeEngineImpl(this);
@@ -443,7 +443,7 @@ public class Node {
     public void onRestart() {
         joined.set(false);
         joiner.reset();
-        final String uuid = UUID.randomUUID().toString();
+        final String uuid = UuidUtil.createMemberUuid(address);
         logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
         localMember.setUuid(uuid);
     }

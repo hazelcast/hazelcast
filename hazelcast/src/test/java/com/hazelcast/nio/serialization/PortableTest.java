@@ -62,11 +62,17 @@ public class PortableTest {
     @Test
     public void testDifferentVersions() {
         final SerializationService serializationService = new SerializationServiceImpl(1, new PortableFactory() {
+            public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
+            }
+
             public Portable create(int classId) {
                 return new NamedPortable();
             }
         });
         final SerializationService serializationService2 = new SerializationServiceImpl(2, new PortableFactory() {
+            public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
+            }
+
             public Portable create(int classId) {
                 return new NamedPortableV2();
             }
@@ -84,6 +90,9 @@ public class PortableTest {
 
 
     private class TestPortableFactory implements PortableFactory {
+
+        public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
+        }
 
         public Portable create(int classId) {
             switch (classId) {

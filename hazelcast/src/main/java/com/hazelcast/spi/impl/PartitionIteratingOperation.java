@@ -52,7 +52,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 ResponseQueue responseQueue = new ResponseQueue();
                 final Operation op = operationFactory.createOperation();
                 op.setNodeEngine(nodeEngine)
-                        .setCaller(getCaller())
+                        .setCallerAddress(getCallerAddress())
                         .setPartitionId(partitionId)
                         .setReplicaIndex(getReplicaIndex())
                         .setResponseHandler(responseQueue)

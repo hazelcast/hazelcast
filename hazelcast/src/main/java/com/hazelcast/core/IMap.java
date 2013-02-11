@@ -580,16 +580,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      */
+    // TODO: @mm - proposal for new addEntryListener
+    // String /* id of registration */ addEntryListener(EntryListener<K, V> listener, boolean includeValue)
     void addEntryListener(EntryListener<K, V> listener, boolean includeValue);
-
-    /**
-     * Adds an continuous entry listener for this map. Listener will get notified
-     * for all map add/remove/update/evict events.
-     *
-     * @param listener  entry listener
-     * @param predicate predicate for filtering entries
-     */
-    void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Removes the specified entry listener
@@ -597,6 +590,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      *
      * @param listener entry listener
      */
+    // TODO: @mm - proposal for new removeEntryListener
+    // void removeEntryListener(String idOfRegistration)
     void removeEntryListener(EntryListener<K, V> listener);
 
     /**
@@ -615,6 +610,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      *                     contain the value.
      */
     void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
+
+    /**
+     * Adds an continuous entry listener for this map. Listener will get notified
+     * for all map add/remove/update/evict events.
+     *
+     * @param listener  entry listener
+     * @param predicate predicate for filtering entries
+     */
+    // TODO: @mm - Why do we need key here? Predicate has already access to the key.
+    void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Removes the specified entry listener for the specified key.

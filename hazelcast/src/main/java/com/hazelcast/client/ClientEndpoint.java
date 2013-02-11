@@ -16,34 +16,33 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.spi.Connection;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientEndpoint implements ConnectionListener, Client {
     final TcpIpConnection conn;
-//    final Map<Integer, CallContext> callContexts = new HashMap<Integer, CallContext>(100);
-//    final Map<Long, DistributedTask> runningExecutorTasks = new ConcurrentHashMap<Long, DistributedTask>();
     final Set<ClientRequestHandler> currentRequests = Collections.newSetFromMap(new ConcurrentHashMap<ClientRequestHandler, Boolean>());
     final Node node;
-    final Map<String, AtomicInteger> attachedSemaphorePermits = new ConcurrentHashMap<String, AtomicInteger>();
+    final String uuid;
     volatile boolean authenticated = false;
-
     LoginContext loginContext = null;
 
-    ClientEndpoint(Node node, TcpIpConnection conn) {
+    ClientEndpoint(Node node, TcpIpConnection conn, String uuid) {
         this.node = node;
         this.conn = conn;
+        this.uuid = uuid;
     }
 
 //    public CallContext getCallContext(int threadId) {
@@ -60,13 +59,6 @@ public class ClientEndpoint implements ConnectionListener, Client {
     public int hashCode() {
         return this.conn.hashCode();
     }
-
-    void sendPacket(Packet packet) {
-        if (conn != null && conn.live()) {
-            conn.getWriteHandler().enqueueSocketWritable(packet);
-        }
-    }
-
 
     public void connectionAdded(Connection connection) {
     }

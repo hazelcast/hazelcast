@@ -31,7 +31,7 @@ public class MapContainer {
     private final String name;
     private final MapConfig mapConfig;
     private final MapStore store;
-    // TODO: do we really need to store interceptors in 3 separate collections?
+    // TODO: @mm - do we really need to store interceptors in 3 separate collections?
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final Map<MapInterceptor, String> interceptorIdMap;

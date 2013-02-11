@@ -16,10 +16,9 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.concurrent.lock.LockInfo;
+import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.lock.LockInfo;
-import com.hazelcast.lock.LockStore;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
@@ -58,7 +57,7 @@ public class CollectionContainer {
         return lockStore.getOrCreateLock(key);
     }
 
-    public boolean lock(Data dataKey, Address caller, int threadId, long ttl) {
+    public boolean lock(Data dataKey, String caller, int threadId, long ttl) {
         LockInfo lock = getOrCreateLock(dataKey);
         return lock.lock(caller, threadId, ttl);
     }
@@ -67,11 +66,11 @@ public class CollectionContainer {
         return lockStore.isLocked(dataKey);
     }
 
-    public boolean canAcquireLock(Data key, int threadId, Address caller) {
+    public boolean canAcquireLock(Data key, int threadId, String caller) {
         return lockStore.canAcquireLock(key, caller, threadId);
     }
 
-    public boolean unlock(Data dataKey, Address caller, int threadId) {
+    public boolean unlock(Data dataKey, String caller, int threadId) {
         return lockStore.unlock(dataKey, caller, threadId);
     }
 

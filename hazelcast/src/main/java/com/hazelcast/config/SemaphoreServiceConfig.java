@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.semaphore.SemaphoreService;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 
 /**
  * @mdogan 1/24/13

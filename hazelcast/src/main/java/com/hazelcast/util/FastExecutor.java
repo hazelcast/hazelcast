@@ -25,24 +25,41 @@ import java.util.concurrent.*;
  */
 public class FastExecutor implements Executor {
 
-    private final BlockingQueue<Task> queue = new LinkedBlockingQueue<Task>();
+    private final BlockingQueue<Task> queue;
     private final Collection<Thread> threads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
     private final ThreadFactory threadFactory;
+    private final int maxSize;
+    private final long backlogInterval;
     private volatile boolean live = true;
 
     public FastExecutor(int coreSize, String namePrefix, ThreadFactory threadFactory) {
+        this(coreSize, coreSize * 100, Math.max(Integer.MAX_VALUE, coreSize * (1 << 16)),
+                500L, namePrefix, threadFactory);
+    }
+
+    public FastExecutor(int coreSize, int maxSize, int queueCapacity, long backlogIntervalInMillis,
+                        String namePrefix, ThreadFactory threadFactory) {
         this.threadFactory = threadFactory;
-        Thread t = new Thread(new BacklogDetector(), namePrefix + "backlog");
+        backlogInterval = backlogIntervalInMillis;
+        this.queue = new LinkedBlockingQueue<Task>(queueCapacity);
+        Thread t = new Thread(new BacklogDetector(coreSize), namePrefix + "backlog");
         threads.add(t);
         t.start();
         for (int i = 0; i < coreSize; i++) {
             addThread();
         }
+        this.maxSize = maxSize;
     }
 
     public void execute(Runnable command) {
         if (!live) throw new RejectedExecutionException("Executor has been shutdown!");
-        queue.offer(new Task(command));
+        try {
+            if (!queue.offer(new Task(command), backlogInterval, TimeUnit.MILLISECONDS)) {
+                throw new RejectedExecutionException("Executor reached to max capacity!");
+            }
+        } catch (InterruptedException e) {
+            throw new RejectedExecutionException(e);
+        }
     }
 
     public void shutdown() {
@@ -76,15 +93,23 @@ public class FastExecutor implements Executor {
     }
 
     private class BacklogDetector implements Runnable {
-        final long diff = 500;
+        int threadSize;
+
+        private BacklogDetector(int coreSize) {
+            threadSize = coreSize;
+        }
 
         public void run() {
             final Thread thread = Thread.currentThread();
             while (!thread.isInterrupted() && live) {
                 final Task task = queue.peek();
                 if (task != null) {
-                    if (task.creationTime + diff < System.currentTimeMillis()) {
+                    if (task.creationTime + backlogInterval < System.currentTimeMillis()) {
                         addThread();
+                        if (++threadSize == maxSize) {
+                            // thread pool size reached max-size
+                            return;
+                        }
                     }
                 }
                 try {

@@ -561,8 +561,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         final NodeList nodelist = node.getChildNodes();
-        final Set<String> memberTags = new HashSet<String>(Arrays.asList(
-                "hostname", "address", "interface", "member", "members"));
+        final Set<String> memberTags = new HashSet<String>(Arrays.asList("interface", "member", "members"));
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
@@ -927,23 +926,23 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 String value = getTextContent(child);
                 serializationConfig.setPortableFactoryClass(value);
             } else if ("serializers".equals(name)) {
-                handleSerializers(child);
+                handleSerializers(child, serializationConfig);
             }
         }
     }
 
-    private void handleSerializers(final Node node) {
+    private void handleSerializers(final Node node, SerializationConfig serializationConfig) {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             if ("type-serializer".equals(cleanNodeName(child))) {
                 TypeSerializerConfig typeSerializerConfig = new TypeSerializerConfig();
                 typeSerializerConfig.setClassName(getValue(node));
-
-                final NamedNodeMap atts = node.getAttributes();
-                final Node globalNode = atts.getNamedItem("global");
-                typeSerializerConfig.setGlobal(checkTrue(getValue(globalNode)));
-                final Node typeNode = atts.getNamedItem("type-class");
-                final String typeClassName = getValue(typeNode);
+                final String typeClassName = getAttribute(node, "type-class");
                 typeSerializerConfig.setTypeClassName(typeClassName);
+                serializationConfig.addTypeSerializer(typeSerializerConfig);
+            } else if ("global-serializer".equals(cleanNodeName(child))) {
+                GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+                globalSerializerConfig.setClassName(getValue(node));
+                serializationConfig.setGlobalSerializer(globalSerializerConfig);
             }
         }
     }

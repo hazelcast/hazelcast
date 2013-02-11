@@ -129,7 +129,7 @@ public class StaticNodeRegistry {
             public void destroyConnection(Connection conn) {
             }
 
-            public void onRestart() {
+            public void restart() {
             }
 
             public int getCurrentClientConnections() {

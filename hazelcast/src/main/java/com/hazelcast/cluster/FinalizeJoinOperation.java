@@ -75,7 +75,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             }
 
             if (postJoinOp != null) {
-                postJoinOp.setNodeEngine(nodeEngine).setCaller(getCaller()).setConnection(getConnection());
+                postJoinOp.setNodeEngine(nodeEngine).setCallerAddress(getCallerAddress()).setConnection(getConnection());
                 postJoinOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 nodeEngine.getOperationService().runOperation(postJoinOp);
             }

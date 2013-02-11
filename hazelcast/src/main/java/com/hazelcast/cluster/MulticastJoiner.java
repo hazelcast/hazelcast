@@ -51,15 +51,10 @@ public class MulticastJoiner extends AbstractJoiner {
             logger.log(Level.FINEST, msg);
             systemLogService.logJoin(msg);
             
-            final Address masterAddressNow;
-            if (targetAddress == null) {
+            Address masterAddressNow = getTargetAddress();
+            if (masterAddressNow == null) {
                 masterAddressNow = findMasterWithMulticast();
-            } else {
-                // if target address is set explicitly, try to join target address first.
-                masterAddressNow = targetAddress;
-                targetAddress = null;
             }
-            
             node.setMasterAddress(masterAddressNow);
             if (masterAddressNow != null) {
                 systemLogService.logJoin("Setting master address to " + masterAddressNow);
@@ -123,9 +118,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
                 if (shouldMerge(joinInfo)) {
                     logger.log(Level.WARNING, node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
-                    targetAddress = joinInfo.getAddress();
-                    sendClusterMergeToOthers(targetAddress);
-                    splitBrainHandler.restart();
+                    startClusterMerge(joinInfo.getAddress());
                 }
             }
         } catch (InterruptedException ignored) {

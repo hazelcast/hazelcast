@@ -39,19 +39,18 @@ public class MergeClustersOperation extends AbstractClusterOperation {
     }
 
     public void run() {
-        final Address endpoint = getCaller();
+        final Address caller = getCallerAddress();
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
-        if (endpoint == null || !endpoint.equals(masterAddress)) {
-            logger.log(Level.WARNING, "Merge instruction sent from non-master endpoint: " + endpoint);
+        if (caller != null && !caller.equals(masterAddress)) { // caller null means local invocation.
+            logger.log(Level.WARNING, "Merge instruction sent from non-master endpoint: " + caller);
             return;
         }
         logger.log(Level.WARNING, node.getThisAddress() + " is merging to " + newTargetAddress
                 + ", because: instructed by master " + masterAddress);
-        node.getJoiner().setTargetAddress(newTargetAddress);
-        node.hazelcastInstance.getLifecycleService().restart();
+        node.getClusterService().merge(newTargetAddress);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {

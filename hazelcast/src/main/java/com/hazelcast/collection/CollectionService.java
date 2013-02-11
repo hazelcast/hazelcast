@@ -26,7 +26,7 @@ import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
-import com.hazelcast.lock.LockInfo;
+import com.hazelcast.concurrent.lock.LockInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -277,7 +277,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 for (Map.Entry<Data, LockInfo> lockEntry : container.lockStore.getLocks().entrySet()) {
                     Data key = lockEntry.getKey();
                     LockInfo lock = lockEntry.getValue();
-                    if (lock.getLockAddress().equals(caller)) {
+                    if (lock.getLockOwner().equals(caller)) {
                         Operation op = new ForceUnlockOperation(proxyId, key).setPartitionId(partitionContainer.partitionId)
                                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
                                 .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
@@ -333,5 +333,10 @@ public class CollectionService implements ManagedService, RemoteService, Members
         map.put(Command.MMTRYLOCK, new TryLockHandler(this));
         map.put(Command.MMLISTEN, new ListenHandler(this));
         return map;
+    }
+
+    @Override
+    public void onClientDisconnect(String clientUuid) {
+        // TODO: @mm - release locks owned by this client.
     }
 }

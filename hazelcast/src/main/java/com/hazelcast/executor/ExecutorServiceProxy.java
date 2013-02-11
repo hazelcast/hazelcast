@@ -16,10 +16,7 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
@@ -74,6 +71,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
+        // TODO: Future should return given result!
         Callable<T> callable = new RunnableAdapter<T>(task, result);
         return submit(callable);
     }
@@ -86,7 +84,19 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        return submitToPartitionOwner(task, random.nextInt(partitionCount));
+        final int partitionId = getTaskPartitionId(task);
+        return submitToPartitionOwner(task, partitionId);
+    }
+
+    private <T> int getTaskPartitionId(Callable<T> task) {
+        final int partitionId;
+        if (task instanceof PartitionAware) {
+            final Object partitionKey = ((PartitionAware) task).getPartitionKey();
+            partitionId = getNodeEngine().getPartitionService().getPartitionId(partitionKey);
+        } else {
+            partitionId = random.nextInt(partitionCount);
+        }
+        return partitionId;
     }
 
     public <T> Future<T> submitToKeyOwner(Callable<T> task, Object key) {
@@ -147,7 +157,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> void submit(Callable<T> task, ExecutionCallback<T> callback) {
-        submitToPartitionOwner(task, callback, random.nextInt(partitionCount));
+        final int partitionId = getTaskPartitionId(task);
+        submitToPartitionOwner(task, callback, partitionId);
     }
 
     public <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback) {
@@ -213,7 +224,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         return null;
     }
 
-    protected String getServiceName() {
+    public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
 

@@ -23,16 +23,16 @@ import java.io.IOException;
  */
 public interface SerializationContext {
 
-    ClassDefinitionImpl lookup(int classId);
+    int getVersion();
 
-    ClassDefinitionImpl lookup(int classId, int version);
+    ClassDefinition lookup(int classId);
+
+    ClassDefinition lookup(int classId, int version);
 
     Portable createPortable(int classId);
 
-    ClassDefinitionImpl createClassDefinition(byte[] binary) throws IOException;
+    ClassDefinition createClassDefinition(byte[] binary) throws IOException;
 
-    void registerClassDefinition(ClassDefinition cd) throws IOException;
-
-    int getVersion();
+    ClassDefinition registerClassDefinition(ClassDefinition cd);
 
 }

@@ -260,10 +260,10 @@ public class Config implements DataSerializable {
         if (defaultConfig != null) {
 //            ec = new ExecutorConfig(name,
 //                    defaultConfig.getCorePoolSize(),
-//                    defaultConfig.getMaxPoolSize(),
+//                    defaultConfig.getPoolSize(),
 //                    defaultConfig.getKeepAliveSeconds());
             ec = new ExecutorConfig(name,
-                    defaultConfig.getMaxPoolSize());
+                    defaultConfig.getPoolSize());
         }
         if (ec == null) {
             ec = new ExecutorConfig(name);

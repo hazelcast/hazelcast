@@ -22,4 +22,5 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * @mdogan 1/15/13
  */
 public interface Endpoint extends DataSerializable {
+
 }

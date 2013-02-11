@@ -20,12 +20,6 @@ public final class LifecycleEvent {
     public enum LifecycleState {
         STARTING,
         STARTED,
-        RESTARTING,
-        RESTARTED,
-        PAUSING,
-        PAUSED,
-        RESUMING,
-        RESUMED,
         SHUTTING_DOWN,
         SHUTDOWN,
         MERGING,

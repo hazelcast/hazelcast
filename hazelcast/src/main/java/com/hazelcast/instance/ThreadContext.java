@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionImpl;
 
 import java.util.HashMap;
@@ -41,7 +42,7 @@ public final class ThreadContext {
         ThreadContext threadContext = contexts.get(currentThread);
         if (threadContext == null) {
             try {
-                threadContext = new ThreadContext(Thread.currentThread());
+                threadContext = new ThreadContext(currentThread);
                 contexts.put(currentThread, threadContext);
                 Iterator<Entry<Thread, ThreadContext>> threads = contexts.entrySet().iterator();
                 while (threads.hasNext()) {
@@ -56,15 +57,16 @@ public final class ThreadContext {
                 throw e;
             }
             if (contexts.size() > 1000) {
-                String msg = " ThreadContext is created!! You might have too many threads. Is that normal?";
-                Logger.getLogger(ThreadContext.class.getName()).log(Level.WARNING, contexts.size() + msg);
+                final String msg = contexts.size()
+                        + " ThreadContexts are created!! You might have too many threads. Is that normal?";
+                Logger.getLogger(ThreadContext.class.getName()).log(Level.WARNING, msg);
             }
         }
         return threadContext;
     }
 
     public static int getThreadId() {
-        return (int) Thread.currentThread().getId();  // truncate
+        return (int) Thread.currentThread().getId();  // TODO: @mm - thread-id is truncated from native thread id
     }
 
     public static TransactionImpl getTransaction(String name) {
@@ -113,22 +115,36 @@ public final class ThreadContext {
 
     private final Map<String, TransactionImpl> transactions = new HashMap<String, TransactionImpl>(2);
 
-    private Object currentOperation = null;
+    private Operation currentOperation;
 
-    private ThreadContext(Thread thread) {
+    private String callerUuid;
+
+    public ThreadContext(Thread thread) {
         this.thread = thread;
     }
 
-    public Object getCurrentOperation() {
+    public Operation getCurrentOperation() {
         return currentOperation;
     }
 
-    public void setCurrentOperation(Object currentOperation) {
+    public void setCurrentOperation(Operation currentOperation) {
         this.currentOperation = currentOperation;
+    }
+
+    public String getCallerUuid() {
+        return callerUuid;
+    }
+
+    public void setCallerUuid(String callerUuid) {
+        this.callerUuid = callerUuid;
     }
 
     private void destroy() {
         transactions.clear();
+    }
+
+    public Thread getThread() {
+        return thread;
     }
 
     @Override

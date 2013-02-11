@@ -17,59 +17,67 @@
 package com.hazelcast.client;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.TcpIpConnection;
-import com.hazelcast.util.Util;
+import com.hazelcast.util.ExceptionUtil;
 
 import javax.security.auth.Subject;
 import java.security.PrivilegedExceptionAction;
 import java.util.logging.Level;
 
-public class ClientRequestHandler implements Runnable {
-    private final Protocol protocol;
-    //    private final CallContext callContext;
+public final class ClientRequestHandler implements Runnable {
     private final Node node;
-    //    private final ClientHandlerService.ClientCommandHandler clientOperationHandler;
+    private final Protocol protocol;
+    private final ClientEndpoint clientEndpoint;
+    private final ILogger logger;
+
     private volatile Thread runningThread = null;
     private volatile boolean valid = true;
-    private final ILogger logger;
-    private final Subject subject;
 
-    public ClientRequestHandler(Node node, Protocol protocol, Subject subject) {
+    public ClientRequestHandler(Node node, ClientEndpoint clientEndpoint, Protocol protocol) {
+        this.clientEndpoint = clientEndpoint;
         this.protocol = protocol;
-//        this.callContext = callContext;
         this.node = node;
         this.logger = node.getLogger(ClientRequestHandler.class.getName());
-        this.subject = subject;
     }
 
-    public void run0() {
+    private void run0() {
         runningThread = Thread.currentThread();
-//        ThreadContext.get().setCallContext(callContext);
+        final ThreadContext threadContext = ThreadContext.getOrCreate();
+        threadContext.setCallerUuid(clientEndpoint.uuid);
         try {
             if (!valid) return;
-            final PrivilegedExceptionAction<Void> action = new PrivilegedExceptionAction<Void>() {
-                public Void run() {
-                    TcpIpConnection connection = protocol.conn;
-                    ClientCommandHandler clientOperationHandler = node.clientCommandService.getService(protocol);
-                    clientOperationHandler.handle(node, protocol);
-                    node.clientCommandService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);
-                    return null;
-                }
-            };
             if (node.securityContext == null) {
-                action.run();
+                handleCommand();
             } else {
+                final Subject subject = clientEndpoint.getSubject();
+                final PrivilegedExceptionAction<Void> action = new ClientPrivilegedAction();
                 node.securityContext.doAsPrivileged(subject, action);
             }
         } catch (Throwable e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             if (node.isActive()) {
-                Util.throwUncheckedException(e);
+                ExceptionUtil.rethrow(e);
             }
         } finally {
             runningThread = null;
+            threadContext.setCallerUuid(null);
+        }
+    }
+
+    private void handleCommand() {
+        TcpIpConnection connection = protocol.conn;
+        ClientCommandHandler commandHandler = node.clientCommandService.getService(protocol);
+        commandHandler.handle(node, protocol);
+        node.clientCommandService.getClientEndpoint(connection).removeRequest(this);
+    }
+
+    private class ClientPrivilegedAction implements PrivilegedExceptionAction<Void> {
+        public Void run() throws Exception {
+            handleCommand();
+            return null;
         }
     }
 

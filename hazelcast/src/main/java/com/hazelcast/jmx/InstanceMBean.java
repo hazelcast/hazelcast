@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,40 +110,16 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstance> {
         return managedObject.getLifecycleService().isRunning();
     }
 
-    @ManagedAnnotation(value = "restart", operation = true)
-    @ManagedDescription("Restart the Node")
-    public void restart(){
-        managedObject.getLifecycleService().restart();
-    }
+//    @ManagedAnnotation(value = "restart", operation = true)
+//    @ManagedDescription("Restart the Node")
+//    public void restart(){
+//        managedObject.getLifecycleService().restart();
+//    }
 
     @ManagedAnnotation(value = "shutdown", operation = true)
     @ManagedDescription("Shutdown the Node")
     public void shutdown(){
         managedObject.getLifecycleService().shutdown();
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }

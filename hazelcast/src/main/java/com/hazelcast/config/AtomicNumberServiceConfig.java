@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.atomicnumber.AtomicNumberService;
+import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
 
 /**
  * @mdogan 1/24/13
