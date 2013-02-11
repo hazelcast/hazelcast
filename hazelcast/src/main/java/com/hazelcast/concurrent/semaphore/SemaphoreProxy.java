@@ -16,12 +16,12 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -51,7 +51,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return (Boolean) invoke(new InitOperation(name, permits));
         } catch (Throwable t) {
-            throw new HazelcastException(t);
+            return (Boolean) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -64,7 +64,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             invoke(new AcquireOperation(name, permits, -1));
         } catch (Throwable t) {
-            throw new HazelcastException(t);
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -72,7 +72,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return (Integer) invoke(new AvailableOperation(name));
         } catch (Throwable t) {
-            throw new HazelcastException(t);
+            return (Integer) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -80,7 +80,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return (Integer) invoke(new DrainOperation(name));
         } catch (Throwable t) {
-            throw new HazelcastException(t);
+            return (Integer) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -89,7 +89,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             invoke(new ReduceOperation(name, reduction));
         } catch (Throwable t) {
-            throw new HazelcastException(t);
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -102,7 +102,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             invoke(new ReleaseOperation(name, permits));
         } catch (Throwable t) {
-            throw new HazelcastException(t);
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -110,7 +110,6 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return tryAcquire(1, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -119,7 +118,6 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return tryAcquire(permits, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -133,7 +131,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return (Boolean) invoke(new AcquireOperation(name, permits, unit.toMillis(timeout)));
         } catch (Throwable t) {
-            throw new HazelcastException(t);
+            return (Boolean) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -157,7 +155,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 

@@ -21,6 +21,7 @@ import com.hazelcast.monitor.LocalAtomicNumberStats;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
@@ -48,7 +49,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return (Long) ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -60,7 +61,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
             Future f = inv.invoke();
             return (Boolean) f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return (Boolean) ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -88,7 +89,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return (Long) ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -100,7 +101,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return (Long) ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -111,7 +112,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
             inv.invoke();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            ExceptionUtil.rethrow(throwable);
         }
     }
 
