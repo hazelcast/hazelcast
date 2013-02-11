@@ -18,6 +18,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.Connection;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.Transaction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,9 +28,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Context {
     private Connection connection;
 
+    static final ThreadLocal<Context> threadLocal = new ThreadLocal<Context>();
+
     //Context will be accessed using threadlocal. Here I am using AtomicInteger as a mutable Integer. 
     // Not for being thread safe.
     private Map<String, AtomicInteger> counterMap = new HashMap<String, AtomicInteger>(0);
+    private Transaction transaction;
+
+    public static Context get() {
+        return threadLocal.get();
+    }
+
+    public static Context getOrCreate() {
+        Context context = threadLocal.get();
+        if (context == null) threadLocal.set(new Context());
+        return threadLocal.get();
+    }
+
+    public static void remove() {
+        threadLocal.remove();
+    }
 
     public Connection getConnection() {
         return connection;
@@ -64,6 +83,13 @@ public class Context {
 
     public boolean noMoreLocks() {
         return counterMap.size() == 0;
+    }
+
+    public Transaction getTransaction(HazelcastClient client) {
+        if(transaction == null) {
+            transaction = new TransactionClientProxy(client);
+        }
+        return transaction;
     }
 }
 

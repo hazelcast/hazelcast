@@ -423,8 +423,9 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
 
     @Test
     public void listener() throws InterruptedException {
-        HazelcastClient hClient = getHazelcastClient();
-        final MultiMap<Integer, String> map = hClient.getMultiMap("listener");
+//        HazelcastClient hClient = getHazelcastClient();
+//        final MultiMap<Integer, String> map = hClient.getMultiMap("listener");
+        final MultiMap<Integer, String> map = getHazelcastInstance().getMultiMap("listener");
         final CountDownLatch added = new CountDownLatch(1);
         map.addEntryListener(new EntryListener<Integer, String>() {
             public void entryAdded(EntryEvent<Integer, String> integerStringEntryEvent) {
@@ -440,10 +441,12 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
             public void entryEvicted(EntryEvent<Integer, String> integerStringEntryEvent) {
             }
         }, true);
+        Thread.sleep(200);
         map.put(1, "v");
         assertTrue(added.await(5000, TimeUnit.MILLISECONDS));
     }
 
+    //TODO
     @Test
     public void testIssue508And513() throws Exception {
         HazelcastClient client = getHazelcastClient();

@@ -54,8 +54,6 @@ public class ProxyHelper {
         this.reader = new ProtocolReader(ss);
     }
 
-    static final ThreadLocal<Context> threadLocal = new ThreadLocal<Context>();
-
     public int getCurrentThreadId() {
         return (int) Thread.currentThread().getId();
     }
@@ -149,7 +147,7 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
-            Context context = threadLocal.get();
+            Context context = Context.get();
             Connection connection = context == null ? null : context.getConnection();
             if (connection == null)
                 connection = cp.takeConnection(key);
@@ -236,7 +234,12 @@ public class ProxyHelper {
      * @return
      */
     public boolean doCommand(Data key, Command command, String arg, Data... data) {
-        Protocol response = doCommand(key, command, new String[]{arg}, data);
+        String[] args;
+        if(arg == null)
+            args = new String[]{};
+        else 
+            args = new String[]{arg};
+        Protocol response = doCommand(key, command, args, data);
         return response.command.equals(Command.OK);
     }
 
@@ -287,8 +290,13 @@ public class ProxyHelper {
     }
 
     protected Protocol lock(String name, Data key, Command command, String[] args, Data data) {
-        Context context = threadLocal.get();
-        if (context == null) threadLocal.set(new Context());
+        Context context = ensureContextHasConnection(key);
+        context.incrementAndGet(name, key.hashCode());
+        return doCommand(key, command, args, data);
+    }
+
+    protected Context ensureContextHasConnection(Data key) {
+        Context context = Context.getOrCreate();
         if (context.getConnection() == null) {
             try {
                 Connection connection = cp.takeConnection(key);
@@ -299,12 +307,11 @@ public class ProxyHelper {
                 e.printStackTrace();
             }
         }
-        context.incrementAndGet(name, key.hashCode());
-        return doCommand(key, command, args, data);
+        return context;
     }
 
     protected Protocol unlock(String name, Data key, Command command, String[] args, Data data) {
-        Context context = threadLocal.get();
+        Context context = Context.get();
         if (context == null) {
             throw new IllegalStateException("You don't seem to have a lock to unlock.");
         }
@@ -312,7 +319,7 @@ public class ProxyHelper {
         if (context.decrementAndGet(name, key.hashCode()) == 0 && context.noMoreLocks()) {
             Connection connection = context.getConnection();
             cp.releaseConnection(connection, key);
-            threadLocal.remove();
+            Context.remove();
         }
         return response;
     }

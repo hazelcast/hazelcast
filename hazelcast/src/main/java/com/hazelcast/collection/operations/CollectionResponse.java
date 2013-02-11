@@ -27,6 +27,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * @ali 1/3/13
@@ -61,7 +62,7 @@ public class CollectionResponse implements DataSerializable {
 
     public Collection getObjectCollection(NodeEngine nodeEngine) {
         if (collection == null) {
-            return null;
+            return Collections.emptyList();
         }
         Collection coll = new ArrayList(collection.size());
         for (Data data : collection) {

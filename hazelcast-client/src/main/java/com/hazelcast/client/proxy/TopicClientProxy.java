@@ -25,6 +25,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.topic.TopicService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,7 +72,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"topic", getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{TopicService.SERVICE_NAME, getName()}, null);
     }
 
     public Object getId() {

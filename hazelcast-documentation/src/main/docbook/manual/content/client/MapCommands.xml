@@ -318,7 +318,7 @@
         <para>
             <emphasis role="bold">COMMAND:</emphasis>
         </para>
-
+        <!--  TODO: Getall returns entries  -->
         <programlisting language="java"><![CDATA[
         MGETALL <name> #N
         <size of key1 in bytes> ... <size of keyN in bytes>
@@ -722,7 +722,7 @@
         </para>
 
         <programlisting language="java"><![CDATA[
-        MCONTAINSKEY <name> #1
+        MCONTAINSVALUE <name> #1
         <size of value in bytes>
         <value in bytes>
         ]]></programlisting>
@@ -884,7 +884,7 @@
         <para>
             <emphasis role="bold">COMMAND:</emphasis>
         </para>
-
+         <!-- TODO: flush has flushAll parameter -->
         <programlisting language="java"><![CDATA[
         MFLUSH <name> [noreply]
         ]]></programlisting>

@@ -20,6 +20,7 @@ import com.hazelcast.client.CollectionClientProxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.Protocol;
@@ -52,6 +53,11 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
     }
 
     @Override
+    public int size() {
+        return proxyHelper.doCommandAsInt(null, Command.SSIZE, new String[]{getName()});
+    }
+
+    @Override
     public boolean contains(Object o) {
         check(o);
         return proxyHelper.doCommandAsBoolean(null, Command.SCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
@@ -76,7 +82,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"set", getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{ObjectSetProxy.COLLECTION_SET_NAME, getName()}, null);
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {

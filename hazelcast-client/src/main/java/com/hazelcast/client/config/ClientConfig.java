@@ -20,6 +20,7 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -83,6 +84,10 @@ public class ClientConfig {
     }
 
     public Credentials getCredentials() {
+        if (getCredentials() == null) {
+            setCredentials(new UsernamePasswordCredentials(getGroupConfig().getName(),
+                    getGroupConfig().getPassword()));
+        }
         return credentials;
     }
 
@@ -119,6 +124,9 @@ public class ClientConfig {
     }
 
     public Collection<InetSocketAddress> getAddressList() {
+        if (getAddressList().size() == 0) {
+            addAddress("localhost");
+        }
         return addressList;
     }
 
@@ -153,6 +161,7 @@ public class ClientConfig {
 
     /**
      * Adds a listener object to configuration to be registered when {@code HazelcastClient} starts.
+     *
      * @param listener one of {@link com.hazelcast.core.LifecycleListener}, {@link com.hazelcast.core.DistributedObjectListener}
      *                 or {@link com.hazelcast.core.MembershipListener}
      * @return

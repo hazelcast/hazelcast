@@ -17,6 +17,9 @@
 package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Protocol;
@@ -27,28 +30,16 @@ public class DestroyHandler extends ClientCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String[] args = protocol.args;
-        String type = args[0];
+        String serviceName = args[0];
         String name = args[1];
         final ProxyService proxyService = node.nodeEngine.getProxyService();
-        if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        if("multimap".equalsIgnoreCase(serviceName)){
+            CollectionProxyId id = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
+            proxyService.destroyDistributedObject(CollectionService.SERVICE_NAME, id);
         }
-        else if("set".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
-        }else if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
-        }else if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
-        }else if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
-        }else if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
-        }else if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
-        }else if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
-        }else if("map".equals(type)){
-            proxyService.destroyDistributedObject(MapService.SERVICE_NAME, name);
+        else {
+
+            proxyService.destroyDistributedObject(serviceName, name);
         }
         return protocol.success();
     }

@@ -17,12 +17,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-//import com.hazelcast.client.impl.ListenerManager;
 import com.hazelcast.client.proxy.*;
-import com.hazelcast.client.util.TransactionUtil;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.idgen.IdGeneratorProxy;
 import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -30,7 +29,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
@@ -44,6 +42,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+//import com.hazelcast.client.impl.ListenerManager;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -60,7 +59,7 @@ public class HazelcastClient implements HazelcastInstance {
     private final int id;
     private final ClientConfig config;
     private final AtomicBoolean active = new AtomicBoolean(true);
-//    private final ListenerManager listenerManager;
+    //    private final ListenerManager listenerManager;
     private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
     private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     private final ClusterClientProxy clusterClientProxy;
@@ -71,28 +70,16 @@ public class HazelcastClient implements HazelcastInstance {
     private final ConnectionPool connectionPool;
 
     private HazelcastClient(ClientConfig config) {
-        if (config.getAddressList().size() == 0) {
-            config.addAddress("localhost");
-        }
-        if (config.getCredentials() == null) {
-            config.setCredentials(new UsernamePasswordCredentials(config.getGroupConfig().getName(),
-                    config.getGroupConfig().getPassword()));
-        }
         this.config = config;
         this.id = clientIdCounter.incrementAndGet();
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
-
-
         connectionManager = new ConnectionManager(this, config, lifecycleService);
         connectionManager.setBinder(new DefaultClientBinder(serializationService));
         connectionPool = new ConnectionPool(config, connectionManager, serializationService);
         partitionClientProxy = new PartitionClientProxy(this);
         clusterClientProxy = new ClusterClientProxy(this);
-//        listenerManager = new ListenerManager(this, serializationService);
-
         connectionPool.init(getCluster(), getPartitionService());
-
 //        try {
 //            final Connection c = connectionManager.getInitConnection();
 //            if (c == null) {
@@ -114,17 +101,9 @@ public class HazelcastClient implements HazelcastInstance {
         lsClients.add(HazelcastClient.this);
     }
 
-    GroupConfig groupConfig() {
-        return config.getGroupConfig();
-    }
-
     public ConnectionPool getConnectionPool() {
         return connectionPool;
     }
-
-//    public ListenerManager getListenerManager() {
-//        return listenerManager;
-//    }
 
     /**
      * @param config
@@ -146,7 +125,7 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public ClientService getClientService() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public LoggingService getLoggingService() {
@@ -189,7 +168,8 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public com.hazelcast.core.Transaction getTransaction() {
-        return TransactionUtil.getTransaction(this);
+        Context context = Context.getOrCreate();
+        return context.getTransaction(this);
     }
 
     public ConnectionManager getConnectionManager() {
@@ -209,28 +189,25 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public IExecutorService getExecutorService(String name) {
-        if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
-//        name = Prefix.EXECUTOR_SERVICE + name;
-        ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
-        if (executorServiceProxy == null) {
-            executorServiceProxy = new ExecutorServiceClientProxy(this, name);
-            ExecutorServiceClientProxy old = mapExecutors.putIfAbsent(name, executorServiceProxy);
-            if (old != null) {
-                executorServiceProxy = old;
-            }
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("ExecutorService");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new ExecutorServiceClientProxy(this, name));
         }
-        return null;
-//        return executorServiceProxy;
+        return (IExecutorService) proxy;
     }
 
     public IdGenerator getIdGenerator(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IdGenerator");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new IdGeneratorClientProxy(this, name));
-        }
-        return (IdGenerator) proxy;
+        return new IdGeneratorProxy(this, name);
     }
+//    public IdGenerator getIdGenerator(String name) {
+//        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IdGenerator");
+//        DistributedObject proxy = innerProxyMap.get(name);
+//        if (proxy == null) {
+//            proxy = putAndReturnProxy(name, innerProxyMap, new IdGeneratorClientProxy(this, name));
+//        }
+//        return (IdGenerator) proxy;
+//    }
 
     public AtomicNumber getAtomicNumber(String name) {
         Map<Object, DistributedObject> innerProxyMap = getProxiesMap("AtomicNumber");
@@ -283,7 +260,7 @@ public class HazelcastClient implements HazelcastInstance {
         if (proxy == null) {
             proxy = putAndReturnProxy(name, innerProxyMap, new MultiMapClientProxy(this, name));
         }
-        return (MultiMap<K,V>) proxy;
+        return (MultiMap<K, V>) proxy;
     }
 
     public String getName() {
@@ -359,10 +336,6 @@ public class HazelcastClient implements HazelcastInstance {
         mapProxies.remove(proxyName);
     }
 
-    public void restart() {
-        lifecycleService.restart();
-    }
-
     public LifecycleService getLifecycleService() {
         return lifecycleService;
     }
@@ -373,15 +346,6 @@ public class HazelcastClient implements HazelcastInstance {
 
     public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
         return null;
-    }
-
-    static void runAsyncAndWait(final Runnable runnable) {
-        callAsyncAndWait(new Callable<Boolean>() {
-            public Boolean call() throws Exception {
-                runnable.run();
-                return true;
-            }
-        });
     }
 
     static <V> V callAsyncAndWait(final Callable<V> callable) {

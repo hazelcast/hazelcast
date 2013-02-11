@@ -71,12 +71,6 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
     }
 
     @Override
-    public int size() {
-        return 0;
-//        return (Integer) proxyHelper.doOp(ClusterOperation.CONCURRENT_MAP_SIZE, null, null);
-    }
-
-    @Override
     public int hashCode() {
         return name.hashCode();
     }

@@ -63,6 +63,7 @@ public class ListenHandler extends MultiMapCommandHandler {
             }
 
             public void sendEvent(EntryEvent<Data, Data> entryEvent) {
+                System.out.println("Here is the event " +entryEvent);
                 if (connection.live()) {
                     String[] args = new String[]{"map", proxy.getName(), entryEvent.getEventType().toString(),
                             entryEvent.getMember().getInetSocketAddress().getHostName() + ":" + entryEvent.getMember().getInetSocketAddress().getPort()};
@@ -79,6 +80,7 @@ public class ListenHandler extends MultiMapCommandHandler {
                 }
             }
         };
+        System.out.println("Name is " + name);
         if (key == null)
             proxy.addEntryListener(entryListener, includeValue);
         else

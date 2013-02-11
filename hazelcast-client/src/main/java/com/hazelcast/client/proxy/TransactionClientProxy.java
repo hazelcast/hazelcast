@@ -17,34 +17,49 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.nio.protocol.Command;
 
 public class TransactionClientProxy implements Transaction {
     final ProxyHelper proxyHelper;
 
-    public TransactionClientProxy(String name, HazelcastClient client) {
+    public TransactionClientProxy(HazelcastClient client) {
         proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
     public void begin() throws IllegalStateException {
+        proxyHelper.ensureContextHasConnection(null);
         proxyHelper.doCommand(null, Command.TRXBEGIN, new String[]{}, null);
     }
 
     public void commit() throws IllegalStateException {
+        Context context = Context.get();
+        checkNull(context);
         proxyHelper.doCommand(null, Command.TRXCOMMIT, new String[]{}, null);
-//        ClientThreadContext threadContext = ClientThreadContext.get();
-//        threadContext.removeTransaction();
+        release(context);
+    }
+
+    private void checkNull(Context context) {
+        if(context == null) {
+            throw new IllegalStateException("Transaction is not active");
+        }
+    }
+
+    private void release(Context context) {
+        if (context.noMoreLocks()) {
+            proxyHelper.cp.releaseConnection(context.getConnection(), null);
+            Context.remove();
+        }
     }
 
     public int getStatus() {
-        return 0;
+        return proxyHelper.doCommandAsInt(null, Command.TRXSTATUS, new String[]{}, null);
     }
 
     public void rollback() throws IllegalStateException {
+        Context context = Context.get();
+        checkNull(context);
         proxyHelper.doCommand(null, Command.TRXROLLBACK, new String[]{}, null);
-//        ClientThreadContext threadContext = ClientThreadContext.get();
-//        threadContext.removeTransaction();
+        release(context);
     }
 }

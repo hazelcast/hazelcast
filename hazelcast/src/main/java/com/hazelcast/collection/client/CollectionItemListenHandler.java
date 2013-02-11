@@ -53,6 +53,7 @@ public abstract class CollectionItemListenHandler extends ClientCommandHandler {
             }
 
             public void sendEvent(ItemEvent<Object> itemEvent) {
+                System.out.println("Sending event " + itemEvent);
                 if (connection.live()) {
                     String[] args = new String[]{proxy.getName(), itemEvent.getEventType().toString(),
                             itemEvent.getMember().getInetSocketAddress().getHostName() + ":" + itemEvent.getMember().getInetSocketAddress().getPort()};
