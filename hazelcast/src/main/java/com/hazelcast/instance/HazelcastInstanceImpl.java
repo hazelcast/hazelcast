@@ -178,7 +178,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return node.loggingService;
     }
 
-    public LifecycleService getLifecycleService() {
+    public LifecycleServiceImpl getLifecycleService() {
         return lifecycleService;
     }
 
@@ -206,10 +206,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         final ProxyService proxyService = node.nodeEngine.getProxyService();
         proxyService.removeProxyListener(distributedObjectListener);
-    }
-
-    public void restartToMerge() {
-        lifecycleService.merge();
     }
 
     public ThreadGroup getThreadGroup() {

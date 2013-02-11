@@ -84,7 +84,7 @@ public class ClientConfig {
     }
 
     public Credentials getCredentials() {
-        if (getCredentials() == null) {
+        if (credentials == null) {
             setCredentials(new UsernamePasswordCredentials(getGroupConfig().getName(),
                     getGroupConfig().getPassword()));
         }
@@ -102,9 +102,7 @@ public class ClientConfig {
     }
 
     public ClientConfig addInetSocketAddress(InetSocketAddress... inetSocketAddresses) {
-        for (InetSocketAddress inetSocketAddress : inetSocketAddresses) {
-            this.addressList.add(inetSocketAddress);
-        }
+        Collections.addAll(this.addressList, inetSocketAddresses);
         return this;
     }
 
@@ -124,7 +122,7 @@ public class ClientConfig {
     }
 
     public Collection<InetSocketAddress> getAddressList() {
-        if (getAddressList().size() == 0) {
+        if (addressList.size() == 0) {
             addAddress("localhost");
         }
         return addressList;

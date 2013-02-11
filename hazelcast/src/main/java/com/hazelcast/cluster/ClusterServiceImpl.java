@@ -22,6 +22,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeType;
@@ -48,6 +49,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
+
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener>, ClientProtocolService {
@@ -559,7 +563,39 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     void merge(Address newTargetAddress) {
         if (preparingToMerge.compareAndSet(true, false)) {
             node.getJoiner().setTargetAddress(newTargetAddress);
-            node.hazelcastInstance.restartToMerge();
+            final LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
+            lifecycleService.runUnderLifecycleLock(new Runnable() {
+                public void run() {
+                    lifecycleService.fireLifecycleEvent(MERGING);
+                    final NodeEngineImpl nodeEngine = node.nodeEngine;
+                    final Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
+                    final Collection<Runnable> tasks = new LinkedList<Runnable>();
+                    for (SplitBrainHandlerService service : services) {
+                        final Runnable runnable = service.prepareMergeRunnable();
+                        if (runnable != null) {
+                            tasks.add(runnable);
+                        }
+                    }
+                    node.onRestart();
+                    node.connectionManager.restart();
+                    node.clusterService.onRestart();
+                    node.partitionService.onRestart();
+                    node.rejoin();
+                    final Collection<Future> futures = new LinkedList<Future>();
+                    for (Runnable task : tasks) {
+                        Future f = nodeEngine.getExecutionService().submit("hz:system", task);
+                        futures.add(f);
+                    }
+                    for (Future f : futures) {
+                        try {
+                            f.get();
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "While merging...", e);
+                        }
+                    }
+                    lifecycleService.fireLifecycleEvent(MERGED);
+                }
+            });
         }
     }
 

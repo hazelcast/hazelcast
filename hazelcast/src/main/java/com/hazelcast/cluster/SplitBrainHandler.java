@@ -17,7 +17,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,9 +45,5 @@ public class SplitBrainHandler implements Runnable {
         if (joiner != null) {
             joiner.searchForOtherClusters(this);
         }
-    }
-
-    public void mergeTo(Address targetAddress) {
-        node.hazelcastInstance.restartToMerge();
     }
 }

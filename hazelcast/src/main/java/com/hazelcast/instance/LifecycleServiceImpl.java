@@ -21,17 +21,13 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
 public class LifecycleServiceImpl implements LifecycleService {
     private final HazelcastInstanceImpl instance;
@@ -91,38 +87,9 @@ public class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    public void merge() {
-        // TODO: @mm - improve cluster merge process
+    public void runUnderLifecycleLock(final Runnable runnable) {
         synchronized (lifecycleLock) {
-            fireLifecycleEvent(MERGING);
-            final Node node = instance.node;
-            final NodeEngineImpl nodeEngine = node.nodeEngine;
-            final Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
-            final Collection<Runnable> tasks = new LinkedList<Runnable>();
-            for (SplitBrainHandlerService service : services) {
-                final Runnable runnable = service.prepareMergeRunnable();
-                if (runnable != null) {
-                    tasks.add(runnable);
-                }
-            }
-            node.onRestart();
-            node.connectionManager.restart();
-            node.clusterService.onRestart();
-            node.partitionService.onRestart();
-            node.rejoin();
-            final Collection<Future> futures = new LinkedList<Future>();
-            for (Runnable task : tasks) {
-                Future f = nodeEngine.getExecutionService().submit("hz:system", task);
-                futures.add(f);
-            }
-            for (Future f : futures) {
-                try {
-                    f.get();
-                } catch (Exception e) {
-                    getLogger().log(Level.SEVERE, "While merging..." , e);
-                }
-            }
-            fireLifecycleEvent(MERGED);
+            runnable.run();
         }
     }
 }

@@ -30,8 +30,6 @@ public interface ProxyService extends CoreService {
 
     DistributedObject getDistributedObject(Class<? extends RemoteService> serviceClass, Object objectId);
 
-    DistributedObject getDistributedObjectForClient(String serviceName, Object objectId);
-
     void destroyDistributedObject(String serviceName, Object objectId);
 
     Collection<DistributedObject> getDistributedObjects(String serviceName);
