@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jmxlocal;
+package com.hazelcast.jmx;
 
-import com.hazelcast.core.HazelcastInstance;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * @ali 2/1/13
+ * @ali 1/31/13
  */
-public class InstanceMBean extends HazelcastMBean<HazelcastInstance> {
-
-    protected InstanceMBean(HazelcastInstance managedObject, ManagementService service) {
-        super(managedObject, service);
-        objectName = createObjectName(null, null);
-    }
-
-    @ManagedAnnotation("name")
-    @ManagedDescription("Name of the Instance")
-    public String getName() {
-        return managedObject.getName();
-    }
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ManagedAnnotation {
+    String value();
+    boolean operation() default false;
 }

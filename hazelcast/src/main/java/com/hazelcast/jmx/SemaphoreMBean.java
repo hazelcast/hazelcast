@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,53 +19,43 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.ISemaphore;
 
 /**
- * MBean for ISemaphore
+ * @ali 2/11/13
  */
-@JMXDescription("A distributed Semaphore")
-public class SemaphoreMBean extends AbstractMBean<ISemaphore> {
+@ManagedDescription("ISemaphore")
+public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
 
-    public SemaphoreMBean(ISemaphore managedObject, ManagementService managementService) {
-        super(managedObject, managementService);
+    protected SemaphoreMBean(ISemaphore managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = createObjectName("Semaphore", managedObject.getName());
     }
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("Semaphore", getName());
+    @ManagedAnnotation("name")
+    public String getName(){
+        return managedObject.getName();
     }
 
-    @JMXAttribute("CurrentPermits")
-    @JMXDescription("availablePermits() result")
-    public long getCurrentPermits() {
-        return available();
+    @ManagedAnnotation("available")
+    public int getAvailable(){
+        return managedObject.availablePermits();
     }
 
-    @JMXAttribute("Name")
-    @JMXDescription("Instance name of the Semaphore")
-    public String getName() {
-        return getManagedObject().getName();
+    @ManagedAnnotation(value = "drain", operation = true)
+    @ManagedDescription("Acquire and return all permits that are immediately available")
+    public int drain(){
+        return managedObject.drainPermits();
     }
 
-    @JMXOperation("available")
-    @JMXDescription("number of permits immediately available")
-    public int available() {
-        return getManagedObject().availablePermits();
+    @ManagedAnnotation(value = "reduce", operation = true)
+    @ManagedDescription("Shrinks the number of available permits by the indicated reduction. Does not block")
+    public void reduce(int reduction){
+        managedObject.reducePermits(reduction);
     }
 
-    @JMXOperation("drain")
-    @JMXDescription("acquire and return all permits immediately available")
-    public int drain() {
-        return getManagedObject().drainPermits();
+    @ManagedAnnotation(value = "release", operation = true)
+    @ManagedDescription("Releases the given number of permits, increasing the number of available permits by that amount")
+    public void release(int permits){
+        managedObject.release(permits);
     }
 
-    @JMXOperation("reduce")
-    @JMXDescription("reduce the number of permits available")
-    public void reduce(int reduction) {
-        getManagedObject().reducePermits(reduction);
-    }
 
-    @JMXOperation("release")
-    @JMXDescription("increase the number of permits available")
-    public void release(int permits) {
-        getManagedObject().release(permits);
-    }
 }

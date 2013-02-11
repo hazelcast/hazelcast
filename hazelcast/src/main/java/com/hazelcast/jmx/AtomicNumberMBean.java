@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,85 +19,75 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.AtomicNumber;
 
 /**
- * MBean for AtomicNumber
- *
- * @author Vladimir Dolzhenko, vladimir.dolzhenko@gmail.com
+ * @ali 2/7/13
  */
-@JMXDescription("A distributed AtomicLong")
-public class AtomicNumberMBean extends AbstractMBean<AtomicNumber> {
+@ManagedDescription("AtomicNumber")
+public class AtomicNumberMBean extends HazelcastMBean<AtomicNumber> {
 
-    public AtomicNumberMBean(AtomicNumber managedObject, ManagementService managementService) {
-        super(managedObject, managementService);
+    public AtomicNumberMBean(AtomicNumber managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = createObjectName("AtomicNumber",managedObject.getName());
     }
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("AtomicLong", getName());
-    }
-
-    @JMXAttribute("ActualValue")
-    @JMXDescription("get() result")
-    public long getActualValue() {
-        return get();
-    }
-
-    @JMXAttribute("Name")
-    @JMXDescription("Instance name of the atomic long")
+    @ManagedAnnotation("name")
+    @ManagedDescription("Name of the DistributedObject")
     public String getName() {
-        return getManagedObject().getName();
+        return managedObject.getName();
     }
 
-    @JMXOperation("get")
-    @JMXDescription("return value")
-    public long get() {
-        return getManagedObject().get();
+    @ManagedAnnotation("currentValue")
+    @ManagedDescription("Current Value")
+    public long getCurrentValue() {
+        return managedObject.get();
     }
 
-    @JMXOperation("set")
-    @JMXDescription("set value")
-    public void set(final long newValue) {
-        getManagedObject().set(newValue);
+    @ManagedAnnotation(value = "set", operation = true)
+    @ManagedDescription("set value")
+    public void set(long value) {
+        managedObject.set(value);
     }
 
-    @JMXOperation("add")
-    @JMXDescription("add value and return")
-    public void add(final long delta) {
-        getManagedObject().addAndGet(delta);
+    @ManagedAnnotation(value = "addAndGet", operation = true)
+    @ManagedDescription("add value and get")
+    public long addAndGet(long delta) {
+        return managedObject.addAndGet(delta);
     }
 
-    @JMXOperation("getAndAdd")
-    @JMXDescription("add value return original")
-    public long getAdd(final long delta) {
-        return getManagedObject().addAndGet(delta);
+    @ManagedAnnotation(value = "compareAndSet", operation = true)
+    @ManagedDescription("compare expected value with current value if equals then set")
+    public boolean compareAndSet(long expect, long value) {
+        return managedObject.compareAndSet(expect, value);
     }
 
-    @JMXOperation("getAndSet")
-    @JMXDescription("set value return original")
-    public long getSet(final long delta) {
-        return getManagedObject().addAndGet(delta);
+    @ManagedAnnotation(value = "decrementAndGet", operation = true)
+    @ManagedDescription("decrement the current value and get")
+    public long decrementAndGet() {
+        return managedObject.decrementAndGet();
     }
 
-    @JMXOperation("increment")
-    @JMXDescription("add 1 and return")
-    public void incrementAndGet() {
-        getManagedObject().incrementAndGet();
+    @ManagedAnnotation(value = "getAndAdd", operation = true)
+    @ManagedDescription("get the current value then add")
+    public long getAndAdd(long delta) {
+        return managedObject.getAndAdd(delta);
     }
 
-    @JMXOperation("decrement")
-    @JMXDescription("subtract 1 and return")
-    public void decrementAndGet() {
-        getManagedObject().decrementAndGet();
+    @ManagedAnnotation(value = "getAndIncrement", operation = true)
+    @ManagedDescription("get the current value then increment")
+    public long getAndIncrement() {
+        return managedObject.getAndIncrement();
     }
 
-    @JMXOperation("reset")
-    @JMXDescription("reset value to 0")
-    public void reset() {
-        getManagedObject().set(0L);
+    @ManagedAnnotation(value = "getAndSet", operation = true)
+    @ManagedDescription("get the current value then set")
+    public long  getAndSet(long value) {
+        return managedObject.getAndSet(value);
     }
 
-    @JMXOperation("compareAndSet")
-    @JMXDescription("if expected set value")
-    public void compareAndSet(final long expectedValue, final long newValue) {
-        getManagedObject().compareAndSet(expectedValue, newValue);
+    @ManagedAnnotation(value = "incrementAndGet", operation = true)
+    @ManagedDescription("increment the current value then get")
+    public long incrementAndGet() {
+        return managedObject.incrementAndGet();
     }
+
+
 }

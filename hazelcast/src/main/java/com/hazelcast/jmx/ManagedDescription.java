@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jmxlocal;
+package com.hazelcast.jmx;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

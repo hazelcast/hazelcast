@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,38 +19,28 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.MultiMap;
 
 /**
- * MBean for MultiMap
- *
- * @author Marco Ferrante, DISI - University of Genova
+ * @ali 2/11/13
  */
-@SuppressWarnings("unchecked")
-@JMXDescription("A distributed MultiMap")
-public class MultiMapMBean extends AbstractMBean<MultiMap> {
+@ManagedDescription("MultiMap")
+public class MultiMapMBean extends HazelcastMBean<MultiMap> {
 
-    public MultiMapMBean(MultiMap managedObject, ManagementService managementService) {
-        super(managedObject, managementService);
+    protected MultiMapMBean(MultiMap managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = createObjectName("MultiMap", managedObject.getName());
     }
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("MultiMap", getName());
+    @ManagedAnnotation("name")
+    public String getName(){
+        return managedObject.getName();
     }
 
-    @JMXOperation("clear")
-    @JMXDescription("Clear multi map")
-    public void clear() {
-        getManagedObject().clear();
+    @ManagedAnnotation(value = "clear", operation = true)
+    public void clear(){
+        managedObject.clear();
     }
 
-    @JMXAttribute("Name")
-    @JMXDescription("Registration name of the list")
-    public String getName() {
-        return getManagedObject().getName();
-    }
-
-    @JMXAttribute("Size")
-    @JMXDescription("Current size")
-    public int getSize() {
-        return getManagedObject().size();
+    @ManagedAnnotation("size")
+    public int getSize(){
+        return managedObject.size();
     }
 }

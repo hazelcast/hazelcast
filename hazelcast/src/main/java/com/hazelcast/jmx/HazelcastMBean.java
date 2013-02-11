@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jmxlocal;
+package com.hazelcast.jmx;
 
 import javax.management.*;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.regex.Pattern;
 
 /**
  * @ali 1/30/13
  */
-public abstract class HazelcastMBean<T> implements DynamicMBean {
+public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistration {
 
     public static final String DOMAIN = "com.hazelcast";
 
@@ -42,11 +43,6 @@ public abstract class HazelcastMBean<T> implements DynamicMBean {
     protected HazelcastMBean(T managedObject, ManagementService service) {
         this.managedObject = managedObject;
         this.service = service;
-        try {
-            scan();
-        } catch (Exception e) {
-            throw new IllegalArgumentException();
-        }
     }
 
     private void scan() throws Exception {
@@ -110,7 +106,18 @@ public abstract class HazelcastMBean<T> implements DynamicMBean {
     }
 
     public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
-        throw new UnsupportedOperationException();
+        if (actionName == null || actionName.isEmpty()){
+            throw new IllegalArgumentException("Empty actionName");
+        }
+        BeanInfo info = operationMap.get(actionName);
+        if (info == null){
+            throw new UnsupportedOperationException("Operation: " + actionName + " not registered");
+        }
+        try {
+            return info.method.invoke(this, params);
+        } catch (Exception e) {
+            throw new ReflectionException(e);
+        }
     }
 
     public MBeanInfo getMBeanInfo() {
@@ -152,14 +159,16 @@ public abstract class HazelcastMBean<T> implements DynamicMBean {
     }
 
     private String quote(String text){
-        return text.matches("[:\",=*?]") ? ObjectName.quote(text) : text;
+        return Pattern.compile("[:\",=*?]")
+                .matcher(text)
+                .find() ? ObjectName.quote(text) : text;
     }
 
     private class BeanInfo {
 
         final String name;
         final String description;
-        final Method method;
+        transient Method method;
 
         public BeanInfo(String name, String description, Method method){
             this.name = name;
@@ -178,5 +187,23 @@ public abstract class HazelcastMBean<T> implements DynamicMBean {
         public MBeanOperationInfo getOperationInfo(){
             return new MBeanOperationInfo(description, method);
         }
+    }
+
+    public ObjectName preRegister(MBeanServer server, ObjectName name) throws Exception {
+        try {
+            scan();
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+        return objectName;
+    }
+
+    public void postRegister(Boolean registrationDone) {
+    }
+
+    public void preDeregister() throws Exception {
+    }
+
+    public void postDeregister() {
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,169 +16,157 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * MBean for Map
- *
- * @author Marco Ferrante, DISI - University of Genova
+ * @ali 2/11/13
  */
-@SuppressWarnings("unchecked")
-@JMXDescription("A distributed Map")
-public class MapMBean extends AbstractMBean<IMap> {
+@ManagedDescription("IMap")
+public class MapMBean extends HazelcastMBean<IMap> {
 
-    protected EntryListener listener;
+    private long totalAddedEntryCount;
 
-    public MapMBean(IMap managedObject, ManagementService managementService) {
-        super(managedObject, managementService);
-    }
+    private long totalRemovedEntryCount;
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("Map", getName());
-    }
+    private long totalUpdatedEntryCount;
 
-    @Override
-    public void postRegister(Boolean registrationDone) {
-        super.postRegister(registrationDone);
-        if (!registrationDone) {
-            return;
-        }
-        if (managementService.showDetails()) {
-            listener = new EntryListener() {
+    private long totalEvictedEntryCount;
 
-                public void entryAdded(EntryEvent event) {
-                    addEntry(event.getKey());
-                }
+    private final EntryListener entryListener;
 
-                public void entryRemoved(EntryEvent event) {
-                    removeEntry(event.getKey());
-                }
-
-                public void entryUpdated(EntryEvent event) {
-                    // Nothing to do
-                }
-
-                public void entryEvicted(EntryEvent event) {
-                    entryRemoved(event);
-                }
-            };
-            getManagedObject().addEntryListener(listener, false);
-            // Add existing entries
-            for (Object key : getManagedObject().keySet()) {
-                addEntry(key);
+    protected MapMBean(IMap managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = createObjectName("Map", managedObject.getName());
+        entryListener = new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+                totalAddedEntryCount++;
             }
-        }
+
+            public void entryRemoved(EntryEvent event) {
+                totalRemovedEntryCount++;
+            }
+
+            public void entryUpdated(EntryEvent event) {
+                totalUpdatedEntryCount++;
+            }
+
+            public void entryEvicted(EntryEvent event) {
+                totalEvictedEntryCount++;
+            }
+        };
+        managedObject.addEntryListener(entryListener, false);
     }
 
-    @Override
     public void preDeregister() throws Exception {
-        if (listener != null) {
-            getManagedObject().removeEntryListener(listener);
-            listener = null;
-            // Remove all entries
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            Set<ObjectName> entries = mbs.queryNames(MapEntryMBean.buildObjectNameFilter(getObjectName()), null);
-            for (ObjectName name : entries) {
-                if (getObjectName().equals(name)) {
-                    // Do not deregister itself
-                    continue;
-                }
-                mbs.unregisterMBean(name);
-            }
+        super.preDeregister();
+        managedObject.removeEntryListener(entryListener);
+    }
+
+    @ManagedAnnotation(value = "clear", operation = true)
+    @ManagedDescription("Clear Map")
+    public void clear(){
+        managedObject.clear();
+    }
+
+    @ManagedAnnotation("name")
+    @ManagedDescription("name of the map")
+    public String getName(){
+        return managedObject.getName();
+    }
+
+    @ManagedAnnotation("size")
+    @ManagedDescription("size of the map")
+    public int getSize(){
+        return managedObject.size();
+    }
+
+    @ManagedAnnotation("config")
+    @ManagedDescription("MapConfig")
+    public String getConfig(){
+        return service.instance.getConfig().getMapConfig(managedObject.getName()).toString();
+    }
+
+    @ManagedAnnotation("totalAddedEntryCount")
+    public long getTotalAddedEntryCount(){
+        return totalAddedEntryCount;
+    }
+
+    @ManagedAnnotation("totalRemovedEntryCount")
+    public long getTotalRemovedEntryCount() {
+        return totalRemovedEntryCount;
+    }
+
+    @ManagedAnnotation("totalUpdatedEntryCount")
+    public long getTotalUpdatedEntryCount() {
+        return totalUpdatedEntryCount;
+    }
+
+    @ManagedAnnotation("totalEvictedEntryCount")
+    public long getTotalEvictedEntryCount() {
+        return totalEvictedEntryCount;
+    }
+
+    @ManagedAnnotation(value = "values", operation = true)
+    public String values(String query){
+        Collection coll;
+        if (query != null && !query.isEmpty()){
+            Predicate predicate = new SqlPredicate(query);
+            coll = managedObject.values(predicate);
         }
-    }
-
-    @JMXOperation("clear")
-    @JMXDescription("Clear map")
-    public void clear() {
-        getManagedObject().clear();
-    }
-
-    @JMXOperation("values")
-    @JMXDescription("Values")
-    public String values(final String query) {
-        final Predicate predicate = query != null && query.trim().length() > 0 ?
-                new SqlPredicate(query) : null;
-        final Collection values = predicate != null ?
-                getManagedObject().values(predicate) :
-                getManagedObject().values();
-        final List list = new ArrayList(values);
-        return list.toString();
-    }
-
-    @JMXOperation("entrySet")
-    @JMXDescription("EntrySet")
-    public String entrySet(final String query) {
-        final Predicate predicate = query != null && query.trim().length() > 0 ?
-                new SqlPredicate(query) : null;
-        final Collection<Map.Entry> values = predicate != null ?
-                getManagedObject().entrySet(predicate) :
-                getManagedObject().entrySet();
-        final StringBuilder sb = new StringBuilder().append("{");
-        for (final Iterator<Map.Entry> it = values.iterator(); it.hasNext(); ) {
-            final Map.Entry next = it.next();
-            // workaround due to bug with hasNext
-            if (sb.length() > 1) {
-                sb.append(", ");
-            }
-            sb.append("key:").append(next.getKey()).append(", value:").append(next.getValue());
+        else {
+            coll = managedObject.values();
         }
-        return sb.append("}").toString();
-    }
-
-    @JMXAttribute("Config")
-    @JMXDescription("Map configuration")
-    public String getConfig() {
-        final MapConfig config = managementService.getInstance().getConfig().getMapConfig(getName());
-        return config.toString();
-    }
-
-    protected void addEntry(Object key) {
-        try {
-            ObjectName entryName = MapEntryMBean.buildObjectName(getObjectName(), key);
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            if (!mbs.isRegistered(entryName)) {
-                MapEntryMBean mbean = new MapEntryMBean(getManagedObject(), key);
-                mbs.registerMBean(mbean, entryName);
-            }
-        } catch (Exception e) {
-            logger.log(Level.FINE, "Unable to register MapEntry MBeans", e);
+        StringBuilder buf = new StringBuilder();
+        if (coll.size() == 0){
+            buf.append("Empty");
         }
-    }
-
-    protected void removeEntry(Object key) {
-        try {
-            ObjectName entryName = MapEntryMBean.buildObjectName(getObjectName(), key);
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            if (mbs.isRegistered(entryName)) {
-                mbs.unregisterMBean(entryName);
+        else {
+            buf.append("[");
+            for (Object obj: coll){
+                buf.append(obj);
+                buf.append(", ");
             }
-        } catch (Exception e) {
-            logger.log(Level.FINE, "Unable to unregister MapEntry MBeans", e);
+            buf.replace(buf.length()-1, buf.length(), "]");
         }
+        return buf.toString();
     }
 
-    @JMXAttribute("Name")
-    @JMXDescription("Registration name of the map")
-    public String getName() {
-        return getManagedObject().getName();
+    @ManagedAnnotation(value = "entrySet", operation = true)
+    public String entrySet(String query){
+        Set<Map.Entry> entrySet;
+        if (query != null && !query.isEmpty()){
+            Predicate predicate = new SqlPredicate(query);
+            entrySet = managedObject.entrySet(predicate);
+        }
+        else {
+            entrySet = managedObject.entrySet();
+        }
+
+        StringBuilder buf = new StringBuilder();
+        if (entrySet.size() == 0){
+            buf.append("Empty");
+        }
+        else {
+            buf.append("[");
+            for (Map.Entry entry: entrySet){
+                buf.append("{key:");
+                buf.append(entry.getKey());
+                buf.append(", value:");
+                buf.append(entry.getValue());
+                buf.append("}, ");
+            }
+            buf.replace(buf.length()-1, buf.length(), "]");
+        }
+        return buf.toString();
     }
 
-    @JMXAttribute("Size")
-    @JMXDescription("Current size")
-    public int getSize() {
-        return getManagedObject().size();
-    }
+
 }

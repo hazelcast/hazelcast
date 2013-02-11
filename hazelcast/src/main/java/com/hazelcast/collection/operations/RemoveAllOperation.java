@@ -44,7 +44,7 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-        if (response != null) {
+        if (coll != null) {
             for (CollectionRecord record : coll) {
                 publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
             }

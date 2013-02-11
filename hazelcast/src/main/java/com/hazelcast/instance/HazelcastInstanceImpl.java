@@ -27,7 +27,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.idgen.IdGeneratorProxy;
-import com.hazelcast.jmxlocal.ManagementService;
+import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
