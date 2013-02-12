@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -112,12 +111,12 @@ public class ConfigXmlGenerator {
         xml.append("<tcp-ip enabled=\"").append(tcpCfg.isEnabled()).append("\">");
         final List<String> members = tcpCfg.getMembers();
         for (String m : members) {
-            xml.append("<interface>").append(m).append("</interface>");
+            xml.append("<member>").append(m).append("</member>");
         }
-        final List<Address> addresses = tcpCfg.getAddresses();
-        for (Address a : addresses) {
-            xml.append("<address>").append(a.getHost()).append(":").append(a.getPort()).append("</address>");
-        }
+//        final List<Address> addresses = tcpCfg.getAddresses();
+//        for (Address a : addresses) {
+//            xml.append("<address>").append(a.getHost()).append(":").append(a.getPort()).append("</address>");
+//        }
         if (tcpCfg.getRequiredMember() != null) {
             xml.append("<required-member>").append(tcpCfg.getRequiredMember()).append("</required-member>");
         }
@@ -183,7 +182,7 @@ public class ConfigXmlGenerator {
         for (ExecutorConfig ex : exCfgs) {
             xml.append("<executor-service name=\"").append(ex.getName()).append("\">");
 //            xml.append("<core-pool-size>").append(ex.getCorePoolSize()).append("</core-pool-size>");
-            xml.append("<max-pool-size>").append(ex.getMaxPoolSize()).append("</max-pool-size>");
+            xml.append("<max-pool-size>").append(ex.getPoolSize()).append("</max-pool-size>");
 //            xml.append("<keep-alive-seconds>").append(ex.getKeepAliveSeconds()).append("</keep-alive-seconds>");
             xml.append("</executor-service>");
         }
@@ -215,7 +214,7 @@ public class ConfigXmlGenerator {
             xml.append("<eviction-policy>").append(m.getEvictionPolicy()).append("</eviction-policy>");
             xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy()).append("\">").append(m.getMaxSizeConfig().getSize()).append("</max-size>");
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
-            xml.append("<merge-policy>").append(m.getMergePolicy()).append("</merge-policy>");
+            xml.append("<merge-policy>").append(m.getMergePolicyConfig()).append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData()).append("</read-backup-data>");
             if (m.getMapStoreConfig() != null) {
                 final MapStoreConfig s = m.getMapStoreConfig();
@@ -314,14 +313,14 @@ public class ConfigXmlGenerator {
 //            xml.append("</semaphore-factory>");
             xml.append("</semaphore>");
         }
-        final Collection<MergePolicyConfig> merges = config.getMergePolicyConfigs().values();
-        xml.append("<merge-policies>");
-        for (MergePolicyConfig mp : merges) {
-            xml.append("<map-merge-policy name=\"").append(mp.getName()).append("\">");
-            final String clazz = mp.getImplementation() != null ? mp.getImplementation().getClass().getName() : mp.getClassName();
-            xml.append("<class-name>").append(clazz).append("</class-name>");
-            xml.append("</map-merge-policy>");
-        }
+//        final Collection<MapMergePolicyConfig> merges = config.getMergePolicyConfigs().values();
+//        xml.append("<merge-policies>");
+//        for (MapMergePolicyConfig mp : merges) {
+//            xml.append("<map-merge-policy name=\"").append(mp.getName()).append("\">");
+//            final String clazz = mp.getImplementation() != null ? mp.getImplementation().getClass().getName() : mp.getClassName();
+//            xml.append("<class-name>").append(clazz).append("</class-name>");
+//            xml.append("</map-merge-policy>");
+//        }
         xml.append("</merge-policies>");
         if (!config.getListenerConfigs().isEmpty()) {
             xml.append("<listeners>");

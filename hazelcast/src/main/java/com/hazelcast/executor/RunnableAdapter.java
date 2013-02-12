@@ -61,7 +61,7 @@ public class RunnableAdapter<V> implements DataSerializable, Callable<V>, Hazelc
         return result;
     }
 
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+    public final void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         if (task instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) task).setHazelcastInstance(hazelcastInstance);
         }

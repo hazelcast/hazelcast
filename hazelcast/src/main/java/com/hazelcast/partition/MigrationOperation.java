@@ -96,7 +96,7 @@ public class MigrationOperation extends BaseMigrationOperation {
 
         for (Operation op : tasks) {
             try {
-                op.setNodeEngine(nodeEngine).setCaller(migrationInfo.getFromAddress())
+                op.setNodeEngine(nodeEngine).setCallerAddress(migrationInfo.getFromAddress())
                         .setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
                 op.setResponseHandler(ERROR_RESPONSE_HANDLER);
                 MigrationAwareService service = op.getService();

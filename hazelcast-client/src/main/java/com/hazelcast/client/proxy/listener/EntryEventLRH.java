@@ -17,7 +17,7 @@
 
 package com.hazelcast.client.proxy.listener;
 
-import com.hazelcast.client.impl.DataAwareEntryEvent;
+import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.client.proxy.MapClientProxy;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryEvent;
@@ -55,7 +55,7 @@ public class EntryEventLRH<K, V> implements ListenerResponseHandler {
         final Data value = response.buffers.length > 1 ? response.buffers[1] : null;
         final Data oldValue = response.buffers.length > 2 ? response.buffers[2] : null;
         EntryEvent event = new DataAwareEntryEvent(source, entryEventType.getType(), name,
-                response.buffers[0], value, oldValue, false, ss);
+                response.buffers[0], value, oldValue, ss);
         switch (entryEventType) {
             case ADDED:
                 listener.entryAdded(event);

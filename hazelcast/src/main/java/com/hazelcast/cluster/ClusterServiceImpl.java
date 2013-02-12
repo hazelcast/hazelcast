@@ -22,6 +22,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeType;
@@ -42,11 +43,15 @@ import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
+
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener>, ClientProtocolService {
@@ -84,6 +89,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
 
     private final AtomicInteger dataMemberCount = new AtomicInteger(); // excluding lite members
+
+    private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
 
     private boolean joinInProgress = false;
 
@@ -360,6 +367,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void doRemoveAddress(Address deadAddress, boolean destroyConnection) {
+        if (preparingToMerge.get()) {
+            logger.log(Level.WARNING, "Cluster-merge process is ongoing, won't process member removal: " + deadAddress);
+            return;
+        }
         logger.log(Level.INFO, "Removing Address " + deadAddress);
         if (!node.joined()) {
             node.failedConnection(deadAddress);
@@ -536,6 +547,55 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
             }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());
+        }
+    }
+
+    void prepareToMerge(final Address newTargetAddress) {
+        preparingToMerge.set(true);
+        node.getJoiner().setTargetAddress(newTargetAddress);
+        nodeEngine.getExecutionService().schedule(new Runnable() {
+            public void run() {
+                merge(newTargetAddress);
+            }
+        }, 10, TimeUnit.SECONDS);
+    }
+
+    void merge(Address newTargetAddress) {
+        if (preparingToMerge.compareAndSet(true, false)) {
+            node.getJoiner().setTargetAddress(newTargetAddress);
+            final LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
+            lifecycleService.runUnderLifecycleLock(new Runnable() {
+                public void run() {
+                    lifecycleService.fireLifecycleEvent(MERGING);
+                    final NodeEngineImpl nodeEngine = node.nodeEngine;
+                    final Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
+                    final Collection<Runnable> tasks = new LinkedList<Runnable>();
+                    for (SplitBrainHandlerService service : services) {
+                        final Runnable runnable = service.prepareMergeRunnable();
+                        if (runnable != null) {
+                            tasks.add(runnable);
+                        }
+                    }
+                    node.onRestart();
+                    node.connectionManager.restart();
+                    node.clusterService.onRestart();
+                    node.partitionService.onRestart();
+                    node.rejoin();
+                    final Collection<Future> futures = new LinkedList<Future>();
+                    for (Runnable task : tasks) {
+                        Future f = nodeEngine.getExecutionService().submit("hz:system", task);
+                        futures.add(f);
+                    }
+                    for (Future f : futures) {
+                        try {
+                            f.get();
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "While merging...", e);
+                        }
+                    }
+                    lifecycleService.fireLifecycleEvent(MERGED);
+                }
+            });
         }
     }
 
@@ -813,7 +873,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (address == null) {
             return null;
         }
-        return membersRef.get().get(address);
+        final Map<Address, MemberImpl> memberMap = membersRef.get();
+        return memberMap != null ? memberMap.get(address) : null;
     }
 
     private void setMembers(final Map<Address, MemberImpl> memberMap) {
@@ -827,7 +888,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public Collection<MemberImpl> getMemberList() {
         final Map<Address, MemberImpl> map = membersRef.get();
-        return map != null ? Collections.unmodifiableCollection(map.values()) : null;
+        return map != null ? Collections.unmodifiableCollection(map.values()) : Collections.<MemberImpl>emptySet();
     }
 
     public void reset() {
@@ -934,6 +995,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         commandHandlers.put(Command.TRXROLLBACK, new TransactionRollbackHandler(this));
         commandHandlers.put(Command.TRXSTATUS, new TransactionStatusHandler(this));
         return commandHandlers;
+    }
+
+    @Override
+    public void onClientDisconnect(String clientUuid) {
     }
 
     @Override

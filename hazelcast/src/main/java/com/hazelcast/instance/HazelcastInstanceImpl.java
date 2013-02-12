@@ -16,35 +16,35 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
+import com.hazelcast.concurrent.lock.ObjectLockProxy;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.idgen.IdGeneratorProxy;
 import com.hazelcast.jmx.ManagementService;
-import com.hazelcast.lock.ObjectLockProxy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.semaphore.SemaphoreService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.topic.TopicService;
 
 import java.util.Collection;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 /**
  * @mdogan 7/31/12
@@ -178,23 +178,15 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return node.loggingService;
     }
 
-    public LifecycleService getLifecycleService() {
+    public LifecycleServiceImpl getLifecycleService() {
         return lifecycleService;
     }
 
     public <S extends DistributedObject> S getDistributedObject(final Class<? extends RemoteService> serviceClass, Object id) {
-        checkActive();
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceClass, id);
     }
 
-    private void checkActive() {
-        if (!node.isActive()) {
-            throw new HazelcastInstanceNotActiveException();
-        }
-    }
-
     public <S extends DistributedObject> S getDistributedObject(final String serviceName, Object id) {
-        checkActive();
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
     }
 
@@ -207,19 +199,13 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        final ProxyServiceImpl proxyService = (ProxyServiceImpl) node.nodeEngine.getProxyService();
+        final ProxyService proxyService = node.nodeEngine.getProxyService();
         proxyService.addProxyListener(distributedObjectListener);
     }
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        final ProxyServiceImpl proxyService = (ProxyServiceImpl) node.nodeEngine.getProxyService();
+        final ProxyService proxyService = node.nodeEngine.getProxyService();
         proxyService.removeProxyListener(distributedObjectListener);
-    }
-
-    public void restartToMerge() {
-        lifecycleService.fireLifecycleEvent(MERGING);
-        lifecycleService.restart();
-        lifecycleService.fireLifecycleEvent(MERGED);
     }
 
     public ThreadGroup getThreadGroup() {

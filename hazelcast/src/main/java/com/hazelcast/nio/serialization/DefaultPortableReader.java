@@ -19,6 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.BufferObjectDataInput;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * @mdogan 12/28/12
@@ -26,15 +27,35 @@ import java.io.IOException;
 public class DefaultPortableReader implements PortableReader {
 
     final PortableSerializer serializer;
-    final ClassDefinitionImpl cd;
+    final ClassDefinition cd;
     final BufferObjectDataInput in;
     final int offset;
 
-    public DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinitionImpl cd) {
+    public DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
         this.offset = in.position();
+    }
+
+    public int getVersion() {
+        return cd.getVersion();
+    }
+
+    public boolean hasField(String fieldName) {
+        return cd.hasField(fieldName);
+    }
+
+    public Set<String> getFieldNames() {
+        return cd.getFieldNames();
+    }
+
+    public int getFieldTypeId(String fieldName) {
+        return cd.getFieldTypeId(fieldName);
+    }
+
+    public int getFieldClassId(String fieldName) {
+        return cd.getFieldClassId(fieldName);
     }
 
     public int readInt(String fieldName) throws IOException {
@@ -216,7 +237,7 @@ public class DefaultPortableReader implements PortableReader {
                     ctxIn.setDataClassId(fd.getClassId());
                     return serializer.read(in);
                 } finally {
-                    ctxIn.setDataClassId(cd.classId);
+                    ctxIn.setDataClassId(cd.getClassId());
                 }
             }
             return null;
@@ -252,7 +273,7 @@ public class DefaultPortableReader implements PortableReader {
                         portables[i] = serializer.read(in);
                     }
                 } finally {
-                    ctxIn.setDataClassId(cd.classId);
+                    ctxIn.setDataClassId(cd.getClassId());
                 }
             }
             return portables;

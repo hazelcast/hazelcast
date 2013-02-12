@@ -24,10 +24,15 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Connection;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,7 +45,8 @@ public abstract class AbstractJoiner implements Joiner {
     protected final Node node;
     protected final ILogger logger;
     protected final SystemLogService systemLogService;
-    protected Address targetAddress;
+
+    private volatile Address targetAddress;
 
     public AbstractJoiner(Node node) {
         this.node = node;
@@ -199,14 +205,43 @@ public abstract class AbstractJoiner implements Joiner {
         tryCount.set(0);
     }
 
-    protected void sendClusterMergeToOthers(final Address targetAddress) {
-        for (MemberImpl member : node.getClusterService().getMemberList()) {
+    protected void startClusterMerge(final Address targetAddress) {
+        // TODO: @mm - improve cluster merge process
+        final OperationService operationService = node.nodeEngine.getOperationService();
+        final Collection<MemberImpl> memberList = node.getClusterService().getMemberList();
+        final Collection<Future> calls = new ArrayList<Future>();
+        for (MemberImpl member : memberList) {
             if (!member.localMember()) {
-                node.nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                Future f = operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                        new PrepareMergeOperation(targetAddress), member.getAddress())
+                        .setTryCount(3).build().invoke();
+                calls.add(f);
+            }
+        }
+        for (Future f : calls) {
+            try {
+                f.get(1, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                logger.log(Level.FINEST, "While waiting merge response...", e);
+            }
+        }
+        final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);
+        prepareMergeOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
+                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+        operationService.runOperation(prepareMergeOperation);
+
+        for (MemberImpl member : memberList) {
+            if (!member.localMember()) {
+                operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                         new MergeClustersOperation(targetAddress), member.getAddress())
                         .setTryCount(1).build().invoke();
             }
         }
+
+        final MergeClustersOperation mergeClustersOperation = new MergeClustersOperation(targetAddress);
+        mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
+                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+        operationService.runOperation(mergeClustersOperation);
     }
 
     public final long getStartTime() {
@@ -215,5 +250,11 @@ public abstract class AbstractJoiner implements Joiner {
 
     public void setTargetAddress(Address targetAddress) {
         this.targetAddress = targetAddress;
+    }
+
+    public Address getTargetAddress() {
+        final Address target = targetAddress;
+        targetAddress = null;
+        return target;
     }
 }

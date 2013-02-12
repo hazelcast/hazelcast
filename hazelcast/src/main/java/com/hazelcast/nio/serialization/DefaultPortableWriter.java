@@ -26,17 +26,21 @@ import java.io.IOException;
 class DefaultPortableWriter implements PortableWriter {
 
     final PortableSerializer serializer;
-    final ClassDefinitionImpl cd;
+    final ClassDefinition cd;
     final BufferObjectDataOutput out;
     final int offset;
 //    int fieldIndex = 0;
 
-    DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinitionImpl cd) {
+    DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) {
         this.serializer = serializer;
         this.out = out;
         this.offset = out.position();
         this.cd = cd;
         this.out.position(offset + cd.getFieldCount() * 4);
+    }
+
+    public int getVersion() {
+        return cd.getVersion();
     }
 
     public void writeInt(String fieldName, int value) throws IOException {

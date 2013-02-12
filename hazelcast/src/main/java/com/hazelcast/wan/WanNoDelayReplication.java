@@ -19,7 +19,6 @@ package com.hazelcast.wan;
 import com.hazelcast.cluster.AuthorizationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.DataRecordEntry;
 import com.hazelcast.map.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -59,12 +58,12 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     }
 
     public void recordUpdated(Record record) {
-        DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
-        RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.toString()));
-        if (!q.offer(ru)) {
-            q.poll();
-            q.offer(ru);
-        }
+//        DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
+//        RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.toString()));
+//        if (!q.offer(ru)) {
+//            q.poll();
+//            q.offer(ru);
+//        }
     }
 
     public void shutdown() {
@@ -145,13 +144,13 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     }
 
     class RecordUpdate {
-        final DataRecordEntry dataRecordEntry;
-        final String name;
-
-        RecordUpdate(DataRecordEntry dataRecordEntry, String name) {
-            this.dataRecordEntry = dataRecordEntry;
-            this.name = name;
-        }
+//        final DataRecordEntry dataRecordEntry;
+//        final String name;
+//
+//        RecordUpdate(DataRecordEntry dataRecordEntry, String name) {
+//            this.dataRecordEntry = dataRecordEntry;
+//            this.name = name;
+//        }
 
         public Packet toNewPacket() {
             Packet packet = new Packet(null);

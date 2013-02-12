@@ -46,7 +46,7 @@ public class PartitionStateOperation extends AbstractOperation implements Runnab
     }
 
     public void run() {
-        partitionState.setEndpoint(getCaller());
+        partitionState.setEndpoint(getCallerAddress());
         PartitionServiceImpl partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);
     }

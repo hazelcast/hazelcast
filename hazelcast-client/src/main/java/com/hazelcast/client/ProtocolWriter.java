@@ -33,8 +33,8 @@ public class ProtocolWriter {
             final ObjectDataOutputStream dos = connection.getOutputStream();
             if (!connection.headersWritten) {
                 dos.write(HEADER);
-                dos.write('\n');
                 dos.write('\r');
+                dos.write('\n');
                 dos.flush();
                 connection.headersWritten = true;
             }

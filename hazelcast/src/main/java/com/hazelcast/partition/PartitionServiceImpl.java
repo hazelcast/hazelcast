@@ -277,7 +277,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             Address target = partition.getReplicaAddress(replicaIndex);
                             if (target != null && !target.equals(owner)) {
                                 if (getMember(target) != null) {
-                                    // TODO: we can reduce copied data size by only selecting diffs.
+                                    // TODO: @mm - we can reduce copied data size by only selecting diffs.
                                     immediateTasksQueue.offer(new Migrator(new MigrationInfo(partitionId, replicaIndex,
                                             MigrationType.COPY, owner, target)));
                                     diffCount++;
@@ -560,7 +560,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return getPartitionId(nodeEngine.toData(key));
     }
 
-    public int getPartitionCount() {
+    public final int getPartitionCount() {
         return partitionCount;
     }
 
@@ -568,6 +568,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.PARTITIONS, new PartitionsHandler(this));
         return commandHandlers;
+    }
+
+    @Override
+    public void onClientDisconnect(String clientUuid) {
     }
 
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
@@ -977,7 +981,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    public void reset() {
+    private void reset() {
         clearTaskQueues();
         lock.lock();
         try {

@@ -57,7 +57,6 @@ public class SocketProtocolReader implements SocketReader {
     private String flag = null;
     final ByteBuffer firstNewLineRead = ByteBuffer.allocate(2);
 
-    Pattern p = Pattern.compile("\\s+");
     Pattern numericPattern = Pattern.compile("([0-9]*)");
 
     public SocketProtocolReader(TcpIpConnection connection) {

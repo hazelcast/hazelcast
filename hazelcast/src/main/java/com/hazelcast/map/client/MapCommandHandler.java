@@ -19,18 +19,15 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
-import com.hazelcast.spi.NodeEngine;
 
 public abstract class MapCommandHandler extends ClientCommandHandler {
     final MapService mapService;
-    final NodeEngine nodeEngine;
 
     public MapCommandHandler(MapService mapService) {
         this.mapService = mapService;
-        this.nodeEngine = mapService.getNodeEngine();
     }
 
     protected final DataMapProxy getMapProxy(String name) {
-        return (DataMapProxy) nodeEngine.getProxyService().getDistributedObjectForClient(MapService.SERVICE_NAME, name);
+        return mapService.createDistributedObjectForClient(name);
     }
 }

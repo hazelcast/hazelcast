@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.TransactionImpl;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.QueryResultStream;
 
 import java.util.*;
@@ -69,8 +70,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future f = invocation.invoke();
             return f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -82,8 +83,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             return nodeEngine.getAsyncInvocationService().invoke(invocation);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -117,8 +118,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future f = invocation.invoke();
             return f.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -132,8 +133,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             return nodeEngine.getAsyncInvocationService().invoke(invocation);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -182,8 +183,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             return nodeEngine.getAsyncInvocationService().invoke(invocation);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -197,8 +198,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     partitionId).build();
             Future f = invocation.invoke();
             return (Boolean) nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
         }
     }
 
@@ -214,8 +215,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 total += size;
             }
             return total;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return (Integer) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -231,8 +232,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     return true;
             }
             return false;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return (Boolean) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -247,8 +248,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     return false;
             }
             return true;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return (Boolean) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -296,8 +297,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future future = invocation.invoke();
             future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -311,8 +312,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future future = invocation.invoke();
             future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -325,8 +326,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future future = invocation.invoke();
             return (Boolean) future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return (Boolean) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -340,8 +341,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future future = invocation.invoke();
             return (Boolean) future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return (Boolean) ExceptionUtil.rethrow(t);
         }
     }
 
@@ -357,8 +358,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 keySet.addAll(keys);
             }
             return keySet;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -374,8 +375,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 keySet.addAll(keys);
             }
             return keySet;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -385,8 +386,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             MapFlushOperation mapFlushOperation = new MapFlushOperation(name, flushAll);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, mapFlushOperation);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -401,8 +402,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 values.addAll(((MapValueCollection) nodeEngine.toObject(result)).getValues());
             }
             return values;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -413,8 +414,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             clearOperation.setServiceName(SERVICE_NAME);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, clearOperation);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -428,8 +429,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future future = invocation.invoke();
             future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
     }
 
@@ -446,8 +447,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 Invocation invocation = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
                 invocation.invoke().get();
-            } catch (Throwable throwable) {
-                throw new HazelcastException(throwable);
+            } catch (Throwable t) {
+                ExceptionUtil.rethrow(t);
             }
         }
     }
@@ -465,8 +466,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 MemberImpl memberImpl = (MemberImpl) member;
                 Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, memberImpl.getAddress()).build();
                 invocation.invoke().get();
-            } catch (Throwable throwable) {
-                throw new HazelcastException(throwable);
+            } catch (Throwable t) {
+                ExceptionUtil.rethrow(t);
             }
         }
     }
@@ -506,8 +507,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             Future f = invocation.invoke();
             Object o = nodeEngine.toObject(f.get());
             return (Map.Entry<Data, Data>) o;
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
         }
     }
 
@@ -524,8 +525,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     entrySet.addAll(entries);
             }
             return entrySet;
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -539,8 +540,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future future = invocation.invoke();
             return (Data) future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         }
     }
 
@@ -589,16 +590,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 try {
                     Future f = operationService.createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
                     futures.add(f);
-                } catch (Throwable throwable) {
-                    throw new HazelcastException(throwable);
+                } catch (Throwable t) {
+                    return ExceptionUtil.rethrow(t);
                 }
             }
             for (Future future : futures) {
                 QueryResult queryResult = (QueryResult) future.get();
                 result.addAll(queryResult.getResult());
             }
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            return ExceptionUtil.rethrow(t);
         } finally {
             result.end();
         }
@@ -616,8 +617,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             AddIndexOperation mapKeySetOperation = new AddIndexOperation(name, attribute, ordered);
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, mapKeySetOperation);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
     }
 

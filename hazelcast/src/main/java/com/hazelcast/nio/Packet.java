@@ -64,7 +64,7 @@ public final class Packet extends DataWriter implements SocketWritable {
     }
 
     public final boolean writeTo(ByteBuffer destination) {
-        // TODO: think about packet versions
+        // TODO: @mm - think about packet versions
         if (!isStatusSet(stHeader)) {
             if (!destination.hasRemaining()) {
                 return false;
@@ -76,7 +76,7 @@ public final class Packet extends DataWriter implements SocketWritable {
     }
 
     public final boolean readFrom(ByteBuffer source) {
-        // TODO: think about packet versions
+        // TODO: @mm - think about packet versions
         if (!isStatusSet(stHeader)) {
             if (!source.hasRemaining()) {
                 return false;

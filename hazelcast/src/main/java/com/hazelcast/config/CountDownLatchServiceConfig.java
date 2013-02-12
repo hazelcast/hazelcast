@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 
 /**
  * @mdogan 1/24/13

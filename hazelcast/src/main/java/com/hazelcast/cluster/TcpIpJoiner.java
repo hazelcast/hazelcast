@@ -90,12 +90,11 @@ public class TcpIpJoiner extends AbstractJoiner {
         public void run() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             Node node = nodeEngine.getNode();
-//            ResponseHandler responseHandler = getResponseHandler();
             Joiner joiner = node.getJoiner();
             final ILogger logger = node.getLogger(getClass().getName());
             if (joiner instanceof TcpIpJoiner) {
                 TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
-                final Address endpoint = getCaller();
+                final Address endpoint = getCallerAddress();
                 final Address masterAddress = node.getMasterAddress();
                 approvedAsMaster = !tcpIpJoiner.claimingMaster && !node.isMaster()
                                    && (masterAddress == null || masterAddress.equals(endpoint));
@@ -103,8 +102,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 approvedAsMaster = false;
                 logger.log(Level.WARNING, "This node requires MulticastJoin strategy!");
             }
-            logger.log(Level.FINEST, "Sending '" + approvedAsMaster + "' for master claim of node: " + getCaller());
-//            responseHandler.sendResponse(approvedAsMaster);
+            logger.log(Level.FINEST, "Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
         }
 
         @Override
@@ -292,13 +290,10 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     public void doJoin(AtomicBoolean joined) {
+        final Address targetAddress = getTargetAddress();
         if (targetAddress != null) {
-            try {
-                long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000;
-                joinViaTargetMember(joined, targetAddress, maxJoinMergeTargetMillis);
-            } finally {
-                targetAddress = null;
-            }
+            long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000;
+            joinViaTargetMember(joined, targetAddress, maxJoinMergeTargetMillis);
             if (!joined.get()) {
                 joinViaPossibleMembers(joined);
             }
@@ -364,7 +359,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
-        possibleAddresses.addAll(networkConfig.getJoin().getTcpIpConfig().getAddresses());
+//        possibleAddresses.addAll(networkConfig.getJoin().getTcpIpConfig().getAddresses());
         return possibleAddresses;
     }
 
@@ -432,9 +427,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                 final JoinRequest response = node.clusterService.checkJoinInfo(possibleAddress);
                 if (response != null && shouldMerge(response)) {
                     logger.log(Level.WARNING, node.getThisAddress() + " is merging [tcp/ip] to " + possibleAddress);
-                    targetAddress = possibleAddress;
-                    sendClusterMergeToOthers(targetAddress);
-                    splitBrainHandler.restart();
+                    setTargetAddress(possibleAddress);
+                    startClusterMerge(possibleAddress);
                     return;
                 }
             }

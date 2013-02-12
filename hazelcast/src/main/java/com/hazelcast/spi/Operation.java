@@ -30,7 +30,7 @@ import java.io.IOException;
 
 public abstract class Operation implements DataSerializable {
 
-    //serialized
+    // serialized
     private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
@@ -38,11 +38,12 @@ public abstract class Operation implements DataSerializable {
     private boolean validateTarget = true;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
+    private String callerUuid;
 
     // injected
     private transient NodeEngine nodeEngine;
     private transient Object service;
-    private transient Address caller;
+    private transient Address callerAddress;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
     private transient long startTime;
@@ -133,12 +134,12 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public final Address getCaller() {
-        return caller;
+    public final Address getCallerAddress() {
+        return callerAddress;
     }
 
-    public final Operation setCaller(Address caller) {
-        this.caller = caller;
+    public final Operation setCallerAddress(Address callerAddress) {
+        this.callerAddress = callerAddress;
         return this;
     }
 
@@ -192,6 +193,14 @@ public abstract class Operation implements DataSerializable {
                 ? InvocationAction.RETRY_INVOCATION : InvocationAction.THROW_EXCEPTION;
     }
 
+    public String getCallerUuid() {
+        return callerUuid;
+    }
+
+    public void setCallerUuid(String callerUuid) {
+        this.callerUuid = callerUuid;
+    }
+
     public final void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeNullableString(out, serviceName);
         out.writeInt(partitionId);
@@ -200,6 +209,7 @@ public abstract class Operation implements DataSerializable {
         out.writeBoolean(validateTarget);
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
+        IOUtil.writeNullableString(out, callerUuid);
         writeInternal(out);
     }
 
@@ -211,6 +221,7 @@ public abstract class Operation implements DataSerializable {
         validateTarget = in.readBoolean();
         invocationTime = in.readLong();
         callTimeout = in.readLong();
+        callerUuid = IOUtil.readNullableString(in);
         readInternal(in);
     }
 

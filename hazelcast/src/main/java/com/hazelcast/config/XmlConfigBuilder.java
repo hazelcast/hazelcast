@@ -196,8 +196,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleTopic(node);
             } else if ("semaphore".equals(nodeName)) {
                 handleSemaphore(node);
-            } else if ("merge-policies".equals(nodeName)) {
-                handleMergePolicies(node);
+//            } else if ("merge-policies".equals(nodeName)) {
+//                handleMergePolicies(node);
             } else if ("listeners".equals(nodeName)) {
                 handleListeners(node);
             } else if ("partition-group".equals(nodeName)) {
@@ -561,8 +561,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         final NodeList nodelist = node.getChildNodes();
-        final Set<String> memberTags = new HashSet<String>(Arrays.asList(
-                "hostname", "address", "interface", "member", "members"));
+        final Set<String> memberTags = new HashSet<String>(Arrays.asList("interface", "member", "members"));
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
@@ -720,7 +719,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("near-cache".equals(nodeName)) {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
-                mapConfig.setMergePolicy(value);
+                mapConfig.getMergePolicyConfig().setClassName(value);
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
@@ -872,14 +871,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.addSemaphoreConfig(sConfig);
     }
 
-    private void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
-            if (nodeName.equals("map-merge-policy")) {
-                handleViaReflection(n, config, new MergePolicyConfig());
-            }
-        }
-    }
+//    private void handleMergePolicies(final org.w3c.dom.Node node) throws Exception {
+//        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+//            final String nodeName = cleanNodeName(n.getNodeName());
+//            if (nodeName.equals("map-merge-policy")) {
+//                handleViaReflection(n, config, new MapMergePolicyConfig());
+//            }
+//        }
+//    }
 
     private void handleListeners(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
@@ -927,23 +926,23 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 String value = getTextContent(child);
                 serializationConfig.setPortableFactoryClass(value);
             } else if ("serializers".equals(name)) {
-                handleSerializers(child);
+                handleSerializers(child, serializationConfig);
             }
         }
     }
 
-    private void handleSerializers(final Node node) {
+    private void handleSerializers(final Node node, SerializationConfig serializationConfig) {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             if ("type-serializer".equals(cleanNodeName(child))) {
                 TypeSerializerConfig typeSerializerConfig = new TypeSerializerConfig();
                 typeSerializerConfig.setClassName(getValue(node));
-
-                final NamedNodeMap atts = node.getAttributes();
-                final Node globalNode = atts.getNamedItem("global");
-                typeSerializerConfig.setGlobal(checkTrue(getValue(globalNode)));
-                final Node typeNode = atts.getNamedItem("type-class");
-                final String typeClassName = getValue(typeNode);
+                final String typeClassName = getAttribute(node, "type-class");
                 typeSerializerConfig.setTypeClassName(typeClassName);
+                serializationConfig.addTypeSerializer(typeSerializerConfig);
+            } else if ("global-serializer".equals(cleanNodeName(child))) {
+                GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+                globalSerializerConfig.setClassName(getValue(node));
+                serializationConfig.setGlobalSerializer(globalSerializerConfig);
             }
         }
     }

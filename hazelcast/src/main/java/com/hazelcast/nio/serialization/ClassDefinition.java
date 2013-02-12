@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import java.util.Set;
+
 /**
  * @mdogan 1/1/13
  */
@@ -24,6 +26,14 @@ public interface ClassDefinition extends DataSerializable {
     FieldDefinition get(String name);
 
     FieldDefinition get(int fieldIndex);
+
+    boolean hasField(String fieldName);
+
+    Set<String> getFieldNames();
+
+    int getFieldTypeId(String fieldName);
+
+    int getFieldClassId(String fieldName);
 
     int getFieldCount();
 

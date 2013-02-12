@@ -16,13 +16,21 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
+import java.io.IOException;
+
 public class UnlockBackupOperation extends AbstractMapOperation implements BackupOperation {
 
-    public UnlockBackupOperation(String name, Data dataKey) {
+    private String originalCaller;
+
+    public UnlockBackupOperation(String name, Data dataKey, String caller, int threadId) {
         super(name, dataKey);
+        setThreadId(threadId);
+        originalCaller = caller;
     }
 
     public UnlockBackupOperation() {
@@ -32,12 +40,24 @@ public class UnlockBackupOperation extends AbstractMapOperation implements Backu
         MapService mapService = (MapService) getService();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        recordStore.unlock(getKey(), getCaller(), threadId);
+        recordStore.unlock(getKey(), originalCaller, threadId);
     }
 
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(originalCaller);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        originalCaller = in.readUTF();
     }
 
 }

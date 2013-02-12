@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,12 +34,12 @@ public class LockBackupOperation extends CollectionKeyBasedOperation implements 
 
     int threadId;
 
-    Address firstCaller;
+    String firstCaller;
 
     public LockBackupOperation() {
     }
 
-    public LockBackupOperation(CollectionProxyId proxyId, Data dataKey, long ttl, int threadId, Address firstCaller) {
+    public LockBackupOperation(CollectionProxyId proxyId, Data dataKey, long ttl, int threadId, String firstCaller) {
         super(proxyId, dataKey);
         this.ttl = ttl;
         this.threadId = threadId;
@@ -54,16 +53,15 @@ public class LockBackupOperation extends CollectionKeyBasedOperation implements 
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(ttl);
+        out.writeUTF(firstCaller);
         out.writeInt(threadId);
-        firstCaller.writeData(out);
+        out.writeLong(ttl);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ttl = in.readLong();
+        firstCaller = in.readUTF();
         threadId = in.readInt();
-        firstCaller = new Address();
-        firstCaller.readData(in);
+        ttl = in.readLong();
     }
 }

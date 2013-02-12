@@ -29,15 +29,13 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
     int index;
     String fieldName;
     byte type;
-    int classId = -1;
+    int classId;
 
     FieldDefinitionImpl() {
     }
 
     FieldDefinitionImpl(int index, String fieldName, byte type) {
-        this.index = index;
-        this.fieldName = fieldName;
-        this.type = type;
+        this(index, fieldName, type, Data.NO_CLASS_ID);
     }
 
     FieldDefinitionImpl(int index, String fieldName, byte type, int classId) {

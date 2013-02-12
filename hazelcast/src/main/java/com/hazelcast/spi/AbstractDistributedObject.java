@@ -32,8 +32,6 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         this.service = service;
     }
 
-    protected abstract String getServiceName();
-
     public final void destroy() {
         final NodeEngine engine = getNodeEngine();
         engine.getProxyService().destroyDistributedObject(getServiceName(), getId());
@@ -41,10 +39,14 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     public final NodeEngine getNodeEngine() {
         final NodeEngine engine = nodeEngine;
-        if (engine == null) {
+        lifecycleCheck(engine);
+        return engine;
+    }
+
+    private void lifecycleCheck(final NodeEngine engine) {
+        if (engine == null || !engine.isActive()) {
             throw new HazelcastInstanceNotActiveException();
         }
-        return engine;
     }
 
     public final S getService() {
@@ -54,6 +56,8 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         }
         return s;
     }
+
+    public abstract String getServiceName();
 
     void onShutdown() {
         nodeEngine = null;

@@ -52,7 +52,7 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
     }
 
     public void run() {
-        locked = recordStore.lock(getKey(), getCaller(), threadId, ttl);
+        locked = recordStore.lock(getKey(), getCallerUuid(), threadId, ttl);
     }
 
     public boolean shouldBackup() {
@@ -82,7 +82,7 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
     }
 
     public Operation getBackupOperation() {
-        return new LockBackupOperation(name, dataKey, null, ttl);
+        return new LockBackupOperation(name, dataKey, getCallerUuid(), getThreadId(), ttl);
     }
 
     @Override

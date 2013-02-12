@@ -29,6 +29,7 @@ import com.hazelcast.util.PoolExecutorThreadFactory;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -36,7 +37,7 @@ import java.util.logging.Level;
  */
 public final class ExecutionServiceImpl implements ExecutionService {
 
-    public static final int DEFAULT_THREAD_SIZE = ExecutorConfig.DEFAULT_MAX_POOL_SIZE;
+    public static final int DEFAULT_THREAD_SIZE = ExecutorConfig.DEFAULT_POOL_SIZE;
 
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
@@ -70,19 +71,19 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         final Collection<ExecutorConfig> executorConfigs = nodeEngine.getConfig().getExecutorConfigs();
         for (ExecutorConfig executorConfig : executorConfigs) {
-            register(executorConfig.getName(), executorConfig.getMaxPoolSize());
+            register(executorConfig.getName(), executorConfig.getPoolSize());
         }
     }
 
     private void register(String name, int maxThreadSize) {
-        executors.put(name, new ManagedExecutorService(name, maxThreadSize, 1));
+        executors.put(name, new ManagedExecutorService(name, maxThreadSize));
     }
 
     private final ConcurrencyUtil.ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConcurrencyUtil.ConstructorFunction<String, ManagedExecutorService>() {
                 public ManagedExecutorService createNew(String name) {
-                    // TODO: configure using ExecutorService config!
-                    return new ManagedExecutorService(name, DEFAULT_THREAD_SIZE, 1);
+                    // TODO: @mm - configure using ExecutorService config!
+                    return new ManagedExecutorService(name, DEFAULT_THREAD_SIZE);
                 }
             };
 
@@ -153,11 +154,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         private final BlockingQueue<Object> controlQ;
 
-        private final int waitTime;
+        private final AtomicInteger overflow = new AtomicInteger(0);
 
-        private ManagedExecutorService(String name, int maxThreadSize, int waitTimeInSeconds) {
+        private ManagedExecutorService(String name, int maxThreadSize) {
             this.name = name;
-            this.waitTime = waitTimeInSeconds;
             this.controlQ = new ArrayBlockingQueue<Object>(maxThreadSize);
             for (int i = 0; i < maxThreadSize; i++) {
                 controlQ.offer(new Object());
@@ -165,23 +165,19 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
 
         public void execute(Runnable command) {
-            final Object key = leaseKey();
-            cachedExecutorService.execute(new ManagedRunnable(command, controlQ, key));
+            cachedExecutorService.execute(new ManagedRunnable(command, acquireLease()));
         }
 
         public <T> Future<T> submit(Callable<T> task) {
-            final Object key = leaseKey();
-            return cachedExecutorService.submit(new ManagedCallable<T>(task, controlQ, key));
+            return cachedExecutorService.submit(new ManagedCallable<T>(task, acquireLease()));
         }
 
         public <T> Future<T> submit(Runnable task, T result) {
-            final Object key = leaseKey();
-            return cachedExecutorService.submit(new ManagedRunnable(task, controlQ, key), result);
+            return cachedExecutorService.submit(new ManagedRunnable(task, acquireLease()), result);
         }
 
         public Future<?> submit(Runnable task) {
-            final Object key = leaseKey();
-            return cachedExecutorService.submit(new ManagedRunnable(task, controlQ, key));
+            return cachedExecutorService.submit(new ManagedRunnable(task, acquireLease()));
         }
 
         public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
@@ -200,18 +196,22 @@ public final class ExecutionServiceImpl implements ExecutionService {
             throw new UnsupportedOperationException();
         }
 
-        private Object leaseKey() {
+        private Lease acquireLease() {
             final Object key;
             try {
-                key = controlQ.poll(waitTime, TimeUnit.SECONDS);
-                if (key == null) {
-                    // TODO: improve logging...
+                final int waitMillis = (overflow.get() + 1) * 500;
+                key = controlQ.poll(waitMillis, TimeUnit.MILLISECONDS);
+                if (key != null) {
+                    return new KeyLease(controlQ, key);
+                } else {
+                    overflow.incrementAndGet();
+                    // TODO: @mm - improve logging...
                     logger.log(Level.WARNING, "Executor[" + name + "] is overloaded!");
+                    return new OverflowLease(overflow);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeInterruptedException();
             }
-            return key;
         }
 
         public void shutdown() {
@@ -239,31 +239,52 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
+    private interface Lease {
+        void release();
+    }
+
+    private class KeyLease implements Lease {
+        final BlockingQueue<Object> controlQ;
+        final Object key;
+
+        private KeyLease(BlockingQueue<Object> controlQ, Object key) {
+            this.controlQ = controlQ;
+            this.key = key;
+        }
+
+        public void release() {
+            controlQ.offer(key);
+        }
+    }
+
+    private class OverflowLease implements Lease {
+        final AtomicInteger overflow;
+
+        private OverflowLease(AtomicInteger overflow) {
+            this.overflow = overflow;
+        }
+
+        public void release() {
+            overflow.decrementAndGet();
+        }
+    }
+
     private class ManagedRunnable implements Runnable {
 
         private final Runnable runnable;
 
-        private final BlockingQueue<Object> q;
+        private final Lease lease;
 
-        private final Object key;
-
-        private ManagedRunnable(Runnable runnable, BlockingQueue<Object> q, Object key) {
+        private ManagedRunnable(Runnable runnable, Lease lease) {
             this.runnable = runnable;
-            this.q = q;
-            this.key = key;
+            this.lease = lease;
         }
 
         public void run() {
             try {
                 runnable.run();
             } finally {
-                releaseKey(key);
-            }
-        }
-
-        private void releaseKey(final Object key) {
-            if (key != null) {
-                q.offer(key);
+                lease.release();
             }
         }
     }
@@ -272,27 +293,18 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         private final Callable<V> callable;
 
-        private final BlockingQueue<Object> q;
+        private final Lease lease;
 
-        private final Object key;
-
-        private ManagedCallable(Callable<V> callable, BlockingQueue<Object> q, Object key) {
+        private ManagedCallable(Callable<V> callable, Lease lease) {
             this.callable = callable;
-            this.q = q;
-            this.key = key;
+            this.lease = lease;
         }
 
         public V call() throws Exception {
             try {
                 return callable.call();
             } finally {
-                releaseKey(key);
-            }
-        }
-
-        private void releaseKey(final Object key) {
-            if (key != null) {
-                q.offer(key);
+                lease.release();
             }
         }
     }

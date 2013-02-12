@@ -94,6 +94,9 @@ public class IndexTest extends TestUtil {
 
     private class TestPortableFactory implements PortableFactory {
 
+        public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
+        }
+
         public Portable create(int classId) {
             switch (classId) {
                 case 1:

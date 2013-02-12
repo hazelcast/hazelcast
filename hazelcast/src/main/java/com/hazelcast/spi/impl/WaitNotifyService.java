@@ -145,7 +145,7 @@ class WaitNotifyService {
                 }
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
-                    if (leftMember.equals(op.getCaller())) {
+                    if (leftMember.equals(op.getCallerAddress())) {
                         waitingOp.setValid(false);
                     }
                 }

@@ -101,8 +101,7 @@ final class OperationServiceImpl implements OperationService {
      * Executes operation in operation executor pool.
      * @param op
      */
-    @PrivateApi
-    void executeOperation(final Operation op) {
+    public void executeOperation(final Operation op) {
         executor.execute(new OperationExecutor(op));
     }
 
@@ -198,7 +197,7 @@ final class OperationServiceImpl implements OperationService {
     @PrivateApi
     void runOperationUnderExistingLock(Operation op) {
         final ThreadContext threadContext = ThreadContext.getOrCreate();
-        final Object parentOperation = threadContext.getCurrentOperation();
+        final Operation parentOperation = threadContext.getCurrentOperation();
         threadContext.setCurrentOperation(op);
         final CallKey callKey = beforeCallExecution(op);
         try {
@@ -212,7 +211,7 @@ final class OperationServiceImpl implements OperationService {
     private CallKey beforeCallExecution(Operation op) {
         CallKey callKey = null;
         if (op.getCallId() > -1 && op.returnsResponse()) {
-            callKey = new CallKey(op.getCaller(), op.getCallId());
+            callKey = new CallKey(op.getCallerAddress(), op.getCallId());
             if (!executingCalls.add(callKey)) {
                 logger.log(Level.SEVERE, "Duplicate Call record! -> " + callKey + " == " + op.getClass().getName());
             }
@@ -286,7 +285,7 @@ final class OperationServiceImpl implements OperationService {
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
-                            if (op.returnsResponse() && target.equals(op.getCaller())) {
+                            if (op.returnsResponse() && target.equals(op.getCallerAddress())) {
                                 // TODO: fix me! what if backup migrates after response is returned?
                                 backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
                                 backupResponse = backupOp;
@@ -611,7 +610,7 @@ final class OperationServiceImpl implements OperationService {
                 final Address caller = conn.getEndPoint();
                 final Data data = packet.getData();
                 final Operation op = (Operation) nodeEngine.toObject(data);
-                op.setNodeEngine(nodeEngine).setCaller(caller);
+                op.setNodeEngine(nodeEngine).setCallerAddress(caller);
                 op.setConnection(conn);
                 if (op instanceof ResponseOperation) {
                     processResponse(op);

@@ -38,7 +38,7 @@ public class EntryEvent<K, V> extends EventObject {
 
     public static final int TYPE_EVICTED = EntryEventType.EVICTED.getType();
 
-    protected EntryEventType entryEventType = EntryEventType.ADDED;
+    protected final EntryEventType entryEventType;
 
     protected K key;
 
@@ -46,11 +46,9 @@ public class EntryEvent<K, V> extends EventObject {
 
     protected V value;
 
-    protected Member member;
+    protected final Member member;
 
     protected final String name;
-
-    protected boolean collection;
 
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
@@ -123,10 +121,6 @@ public class EntryEvent<K, V> extends EventObject {
      */
     public String getName() {
         return name;
-    }
-
-    public EntryEvent cloneWithoutValues() {
-        return new EntryEvent<K,V>(getSource(), getMember(), entryEventType.getType(), getKey(), null, null);
     }
 
     @Override

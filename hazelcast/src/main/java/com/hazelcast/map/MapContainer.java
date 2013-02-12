@@ -25,7 +25,6 @@ import com.hazelcast.query.impl.IndexService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledFuture;
 
 public class MapContainer {
 
@@ -39,7 +38,6 @@ public class MapContainer {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-
 
     public MapContainer(String name, MapConfig mapConfig) {
         this.name = name;

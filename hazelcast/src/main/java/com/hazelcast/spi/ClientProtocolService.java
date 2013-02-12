@@ -22,5 +22,8 @@ import com.hazelcast.nio.protocol.Command;
 import java.util.Map;
 
 public interface ClientProtocolService {
+
     Map<Command, ClientCommandHandler> getCommandsAsMap();
+
+    void onClientDisconnect(String clientUuid);
 }

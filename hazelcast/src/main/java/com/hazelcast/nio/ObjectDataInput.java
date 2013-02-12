@@ -25,6 +25,8 @@ import java.io.IOException;
  */
 public interface ObjectDataInput extends DataInput, Closeable {
 
+    // TODO: @mm - add read array methods
+
     <T> T readObject() throws IOException;
 
 }

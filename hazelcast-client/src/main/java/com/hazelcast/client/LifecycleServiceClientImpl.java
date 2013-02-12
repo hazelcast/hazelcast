@@ -86,41 +86,41 @@ public class LifecycleServiceClientImpl implements LifecycleService {
         }
     }
 
-    public boolean resume() {
-        Callable<Boolean> callable = new Callable<Boolean>() {
-            public Boolean call() {
-                synchronized (lifecycleLock) {
-                    if (paused.get()) {
-                        fireLifecycleEvent(RESUMING);
-                    } else {
-                        return false;
-                    }
-                    paused.set(false);
-                    fireLifecycleEvent(RESUMED);
-                    return true;
-                }
-            }
-        };
-        return hazelcastClient.callAsyncAndWait(callable);
-    }
-
-    public boolean pause() {
-        Callable<Boolean> callable = new Callable<Boolean>() {
-            public Boolean call() {
-                synchronized (lifecycleLock) {
-                    if (!paused.get()) {
-                        fireLifecycleEvent(PAUSING);
-                    } else {
-                        return false;
-                    }
-                    paused.set(true);
-                    fireLifecycleEvent(PAUSED);
-                    return true;
-                }
-            }
-        };
-        return hazelcastClient.callAsyncAndWait(callable);
-    }
+//    public boolean resume() {
+//        Callable<Boolean> callable = new Callable<Boolean>() {
+//            public Boolean call() {
+//                synchronized (lifecycleLock) {
+//                    if (paused.get()) {
+//                        fireLifecycleEvent(RESUMING);
+//                    } else {
+//                        return false;
+//                    }
+//                    paused.set(false);
+//                    fireLifecycleEvent(RESUMED);
+//                    return true;
+//                }
+//            }
+//        };
+//        return hazelcastClient.callAsyncAndWait(callable);
+//    }
+//
+//    public boolean pause() {
+//        Callable<Boolean> callable = new Callable<Boolean>() {
+//            public Boolean call() {
+//                synchronized (lifecycleLock) {
+//                    if (!paused.get()) {
+//                        fireLifecycleEvent(PAUSING);
+//                    } else {
+//                        return false;
+//                    }
+//                    paused.set(true);
+//                    fireLifecycleEvent(PAUSED);
+//                    return true;
+//                }
+//            }
+//        };
+//        return hazelcastClient.callAsyncAndWait(callable);
+//    }
 
     public void shutdown() {
         Callable<Boolean> callable = new Callable<Boolean>() {
@@ -159,5 +159,9 @@ public class LifecycleServiceClientImpl implements LifecycleService {
 
     public boolean isRunning() {
         return running.get();
+    }
+
+    public boolean isPaused() {
+        return paused.get();
     }
 }

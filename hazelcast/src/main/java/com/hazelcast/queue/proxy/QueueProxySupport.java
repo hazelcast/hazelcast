@@ -22,6 +22,7 @@ import com.hazelcast.queue.*;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -122,7 +123,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -133,7 +134,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
             Future f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 

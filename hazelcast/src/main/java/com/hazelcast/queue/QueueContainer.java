@@ -369,7 +369,7 @@ public class QueueContainer implements DataSerializable {
             }
             Map<Long, Data> values = store.loadAll(keySet);
             if (values == null) {
-                // TODO: can loadAll return null map?
+                // TODO: @mm - can loadAll return null map?
                 return;
             }
             dataMap.putAll(values);

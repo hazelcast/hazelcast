@@ -46,8 +46,4 @@ public class SplitBrainHandler implements Runnable {
             joiner.searchForOtherClusters(this);
         }
     }
-
-    public void restart() {
-        node.hazelcastInstance.restartToMerge();
-    }
 }

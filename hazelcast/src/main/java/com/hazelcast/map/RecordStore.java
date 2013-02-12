@@ -16,8 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.lock.LockInfo;
-import com.hazelcast.nio.Address;
+import com.hazelcast.concurrent.lock.LockInfo;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -61,9 +60,9 @@ public interface RecordStore {
 
     boolean isLocked(Data key);
 
-    boolean lock(Data key, Address caller, int threadId, long ttl);
+    boolean lock(Data key, String caller, int threadId, long ttl);
 
-    boolean unlock(Data key, Address caller, int threadId);
+    boolean unlock(Data key, String caller, int threadId);
 
     Map<Data, LockInfo> getLocks();
 

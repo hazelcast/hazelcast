@@ -28,7 +28,7 @@ import java.util.logging.Level;
 public class MasterConfirmationOperation extends AbstractClusterOperation {
 
     public void run() {
-        final Address endpoint = getCaller();
+        final Address endpoint = getCallerAddress();
         if (endpoint == null) {
             return;
         }

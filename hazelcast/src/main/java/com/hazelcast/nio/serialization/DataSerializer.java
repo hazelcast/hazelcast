@@ -18,8 +18,8 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.util.Util;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -48,7 +48,7 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
                 map.putAll(hook.getFactories());
             }
         } catch (Exception e) {
-            Util.throwUncheckedException(e);
+            ExceptionUtil.rethrow(e);
         }
         factories = Collections.unmodifiableMap(map);
         factories.values();

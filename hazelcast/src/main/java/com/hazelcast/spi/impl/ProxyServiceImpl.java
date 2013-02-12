@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -82,11 +83,6 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             }
         }
         throw new IllegalArgumentException();
-    }
-
-    public DistributedObject getDistributedObjectForClient(String serviceName, Object objectId) {
-        ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
-        return registry.getClientProxy(objectId);
     }
 
     public void destroyDistributedObject(String serviceName, Object objectId) {
@@ -173,7 +169,6 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         final RemoteService service;
 
         final ConcurrentMap<Object, DistributedObject> proxies = new ConcurrentHashMap<Object, DistributedObject>();
-        final ConcurrentMap<Object, DistributedObject> clientProxies = new ConcurrentHashMap<Object, DistributedObject>();
 
         private ProxyRegistry(String serviceName) {
             this.service = nodeEngine.serviceManager.getService(serviceName);
@@ -185,6 +180,9 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         DistributedObject getProxy(Object objectId) {
             DistributedObject proxy = proxies.get(objectId);
             if (proxy == null) {
+                if (!nodeEngine.isActive()) {
+                    throw new HazelcastInstanceNotActiveException();
+                }
                 proxy = service.createDistributedObject(objectId);
                 DistributedObject current = proxies.putIfAbsent(objectId, proxy);
                 if (current == null) {
@@ -210,11 +208,6 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             }
         };
 
-        DistributedObject getClientProxy(Object objectId) {
-            // TODO: fire object created event if required!
-            return ConcurrencyUtil.getOrPutIfAbsent(clientProxies, objectId, clientProxyConstructor);
-        }
-
         void destroyProxy(Object objectId) {
             if (proxies.remove(objectId) != null) {
                 final DistributedObjectEvent event = createEvent(objectId, DESTROYED);
@@ -224,7 +217,6 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
 
         void removeProxy(Object objectId) {
             proxies.remove(objectId);
-            clientProxies.remove(objectId);
         }
 
         private void publish(DistributedObjectEvent event) {
@@ -249,13 +241,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                     DistributedObjectAccessor.onNodeShutdown((AbstractDistributedObject) distributedObject);
                 }
             }
-            for (DistributedObject distributedObject : clientProxies.values()) {
-                if (distributedObject instanceof AbstractDistributedObject) {
-                    DistributedObjectAccessor.onNodeShutdown((AbstractDistributedObject) distributedObject);
-                }
-            }
             proxies.clear();
-            clientProxies.clear();
         }
     }
 

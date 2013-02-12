@@ -24,16 +24,15 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
 public class LifecycleServiceImpl implements LifecycleService {
-    final HazelcastInstanceImpl instance;
-    final AtomicBoolean paused = new AtomicBoolean(false);
-    final List<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
-    final Object lifecycleLock = new Object();
+    private final HazelcastInstanceImpl instance;
+    private final List<LifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
+    private final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -44,11 +43,11 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {
-        lsLifecycleListeners.add(lifecycleListener);
+        lifecycleListeners.add(lifecycleListener);
     }
 
     public void removeLifecycleListener(LifecycleListener lifecycleListener) {
-        lsLifecycleListeners.remove(lifecycleListener);
+        lifecycleListeners.remove(lifecycleListener);
     }
 
     public void fireLifecycleEvent(LifecycleState lifecycleState) {
@@ -57,34 +56,8 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
         getLogger().log(Level.INFO, instance.node.getThisAddress() + " is " + lifecycleEvent.getState());
-        for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
+        for (LifecycleListener lifecycleListener : lifecycleListeners) {
             lifecycleListener.stateChanged(lifecycleEvent);
-        }
-    }
-
-    public boolean pause() {
-        synchronized (lifecycleLock) {
-            if (!paused.get()) {
-                fireLifecycleEvent(PAUSING);
-            } else {
-                return false;
-            }
-            paused.set(true);
-            fireLifecycleEvent(PAUSED);
-            return true;
-        }
-    }
-
-    public boolean resume() {
-        synchronized (lifecycleLock) {
-            if (paused.get()) {
-                fireLifecycleEvent(RESUMING);
-            } else {
-                return false;
-            }
-            paused.set(false);
-            fireLifecycleEvent(RESUMED);
-            return true;
         }
     }
 
@@ -114,19 +87,9 @@ public class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    public void restart() {
+    public void runUnderLifecycleLock(final Runnable runnable) {
         synchronized (lifecycleLock) {
-            fireLifecycleEvent(RESTARTING);
-            paused.set(true);
-            final Node node = instance.node;
-            node.onRestart();
-//            node.clientHandlerService.restart();
-            node.connectionManager.onRestart();
-            node.clusterService.onRestart();
-            node.partitionService.onRestart();
-            node.rejoin();
-            paused.set(false);
-            fireLifecycleEvent(RESTARTED);
+            runnable.run();
         }
     }
 }

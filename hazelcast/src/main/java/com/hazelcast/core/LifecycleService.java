@@ -17,24 +17,19 @@
 package com.hazelcast.core;
 
 /**
- * LifecycleService allows you to shutdown, restart, pause and resume an HazelcastInstance.
+ * LifecycleService allows you to shutdown, kill an HazelcastInstance.
  * LifecycleListeners also can be added to listen for lifecycle state changes.
  */
 public interface LifecycleService {
 
-    void kill();
+    boolean isRunning();
 
     void shutdown();
 
-    boolean pause();
-
-    boolean resume();
-
-    void restart();
+    void kill();
 
     void addLifecycleListener(LifecycleListener lifecycleListener);
 
     void removeLifecycleListener(LifecycleListener lifecycleListener);
 
-    boolean isRunning();
 }

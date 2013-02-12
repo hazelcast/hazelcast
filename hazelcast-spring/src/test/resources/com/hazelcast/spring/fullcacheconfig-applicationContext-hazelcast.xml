@@ -132,7 +132,6 @@
                     max-size="0"
                     eviction-percentage="30"
                     read-backup-data="true"
-                    cache-value="true"
                     eviction-policy="NONE"
                     merge-policy="hz.ADD_NEW_ENTRY"
                     storage-type="HEAP">
@@ -151,7 +150,6 @@
                     max-size-policy="PER_JVM"
                     eviction-percentage="30"
                     read-backup-data="true"
-                    cache-value="true"
                     eviction-policy="NONE"
                     merge-policy="hz.ADD_NEW_ENTRY">
                 <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"/>
@@ -169,7 +167,6 @@
                     max-size-policy="map_size_per_jvm"
                     eviction-percentage="30"
                     read-backup-data="true"
-                    cache-value="true"
                     eviction-policy="NONE"
                     merge-policy="hz.ADD_NEW_ENTRY">
                 <hz:map-store enabled="true" factory-class-name="com.hazelcast.spring.DummyStoreFactory"
@@ -185,7 +182,6 @@
                     max-size="0"
                     eviction-percentage="30"
                     read-backup-data="true"
-                    cache-value="true"
                     eviction-policy="NONE"
                     merge-policy="hz.ADD_NEW_ENTRY">
                 <hz:map-store enabled="true" factory-implementation="dummyMapStoreFactory" write-delay-seconds="0"/>
@@ -245,7 +241,7 @@
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
-    <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMergePolicy"/>
+    <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMapMergePolicy"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
     <bean id="dummySSLContextFactory" class="com.hazelcast.spring.DummySSLContextFactory"/>

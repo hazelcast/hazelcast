@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.TypeSerializerConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -64,22 +65,25 @@ public final class SerializationServiceImpl implements SerializationService {
 
     public SerializationServiceImpl(SerializationConfig config, ManagedContext managedContext) throws Exception {
         this(config.getPortableVersion(), createPortableFactory(config), managedContext);
-
+        if (config.getGlobalSerializer() != null) {
+            GlobalSerializerConfig globalSerializerConfig = config.getGlobalSerializer();
+            TypeSerializer serializer = globalSerializerConfig.getImplementation();
+            if (serializer == null) {
+                serializer = (TypeSerializer) ClassLoaderUtil.newInstance(globalSerializerConfig.getClassName());
+            }
+            registerFallback(serializer);
+        }
         final Collection<TypeSerializerConfig> typeSerializers = config.getTypeSerializers();
         for (TypeSerializerConfig typeSerializerConfig : typeSerializers) {
             TypeSerializer serializer = typeSerializerConfig.getImplementation();
             if (serializer == null) {
                 serializer = (TypeSerializer) ClassLoaderUtil.newInstance(typeSerializerConfig.getClassName());
             }
-            if (typeSerializerConfig.isGlobal()) {
-                registerFallback(serializer);
-            } else {
-                Class typeClass = typeSerializerConfig.getTypeClass();
-                if (typeClass == null) {
-                    typeClass = ClassLoaderUtil.loadClass(typeSerializerConfig.getTypeClassName());
-                }
-                register(serializer, typeClass);
+            Class typeClass = typeSerializerConfig.getTypeClass();
+            if (typeClass == null) {
+                typeClass = ClassLoaderUtil.loadClass(typeSerializerConfig.getTypeClassName());
             }
+            register(serializer, typeClass);
         }
     }
 
@@ -140,7 +144,7 @@ public final class SerializationServiceImpl implements SerializationService {
             final TypeSerializer serializer = serializerFor(obj.getClass());
             if (serializer == null) {
                 if (active) {
-                    throw new NotSerializableException("There is no suitable serializer for " + obj.getClass());
+                    throw new HazelcastSerializationException("There is no suitable serializer for " + obj.getClass());
                 }
                 throw new HazelcastInstanceNotActiveException();
             }
@@ -157,16 +161,11 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             return data;
         } catch (Throwable e) {
-            if (e instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
-            }
-            if (e instanceof HazelcastSerializationException) {
-                throw (HazelcastSerializationException) e;
-            }
-            throw new HazelcastSerializationException(e);
+            handleException(e);
         } finally {
             push(out);
         }
+        return null;
     }
 
     private ContextAwareDataOutput pop() {
@@ -192,7 +191,7 @@ public final class SerializationServiceImpl implements SerializationService {
             final TypeSerializer serializer = serializerFor(typeId);
             if (serializer == null) {
                 if (active) {
-                    throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
+                    throw new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId);
                 }
                 throw new HazelcastInstanceNotActiveException();
             }
@@ -206,16 +205,11 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             return obj;
         } catch (Throwable e) {
-            if (e instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
-            }
-            if (e instanceof HazelcastSerializationException) {
-                throw (HazelcastSerializationException) e;
-            }
-            throw new HazelcastSerializationException(e);
+            handleException(e);
         } finally {
             IOUtil.closeResource(in);
         }
+        return null;
     }
 
     public void writeObject(final ObjectDataOutput out, final Object obj) {
@@ -225,42 +219,48 @@ public final class SerializationServiceImpl implements SerializationService {
         try {
             final TypeSerializer serializer = serializerFor(obj.getClass());
             if (serializer == null) {
-                throw new NotSerializableException("There is no suitable serializer for " + obj.getClass());
+                if (active) {
+                    throw new HazelcastSerializationException("There is no suitable serializer for " + obj.getClass());
+                }
+                throw new HazelcastInstanceNotActiveException();
             }
             out.writeInt(serializer.getTypeId());
             serializer.write(out, obj);
         } catch (Throwable e) {
-            if (e instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
-            }
-            if (e instanceof HazelcastSerializationException) {
-                throw (HazelcastSerializationException) e;
-            }
-            throw new HazelcastSerializationException(e);
+            handleException(e);
         }
     }
 
     public Object readObject(final ObjectDataInput in) {
         try {
-            int typeId = in.readInt();
+            final int typeId = in.readInt();
             final TypeSerializer serializer = serializerFor(typeId);
             if (serializer == null) {
-                throw new IllegalArgumentException("There is no suitable de-serializer for type " + typeId);
+                if (active) {
+                    throw new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
             }
-            Object obj = serializer.read(in);
+            final Object obj = serializer.read(in);
             if (managedContext != null) {
                 managedContext.initialize(obj);
             }
             return obj;
         } catch (Throwable e) {
-            if (e instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
-            }
-            if (e instanceof HazelcastSerializationException) {
-                throw (HazelcastSerializationException) e;
-            }
-            throw new HazelcastSerializationException(e);
+            handleException(e);
         }
+        return null;
+    }
+
+    private void handleException(Throwable e) {
+        if (e instanceof OutOfMemoryError) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+            return;
+        }
+        if (e instanceof HazelcastSerializationException) {
+            throw (HazelcastSerializationException) e;
+        }
+        throw new HazelcastSerializationException(e);
     }
 
     public ObjectDataInput createObjectDataInput(byte[] data) {
@@ -446,7 +446,7 @@ public final class SerializationServiceImpl implements SerializationService {
             }
         }
 
-        private void registerNestedDefinitions(ClassDefinitionImpl cd) throws IOException {
+        private void registerNestedDefinitions(ClassDefinitionImpl cd) {
             Collection<ClassDefinition> nestedDefinitions = cd.getNestedClassDefinitions();
             for (ClassDefinition classDefinition : nestedDefinitions) {
                 final ClassDefinitionImpl nestedCD = (ClassDefinitionImpl) classDefinition;
@@ -455,11 +455,12 @@ public final class SerializationServiceImpl implements SerializationService {
             }
         }
 
-        public void registerClassDefinition(ClassDefinition cd) throws IOException {
-            if (cd == null) return;
+        public ClassDefinition registerClassDefinition(final ClassDefinition cd) {
+            if (cd == null) return null;
+            final long versionedClassId = combineToLong(cd.getClassId(), cd.getVersion());
             final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
-            final long versionedClassId = combineToLong(cdImpl.getClassId(), cdImpl.getVersion());
-            if (versionedDefinitions.putIfAbsent(versionedClassId, cdImpl) == null) {
+            final ClassDefinitionImpl currentClassDef = versionedDefinitions.putIfAbsent(versionedClassId, cdImpl);
+            if (currentClassDef == null) {
                 if (cdImpl.getBinary() == null) {
                     final ContextAwareDataOutput out = pop();
                     try {
@@ -468,11 +469,15 @@ public final class SerializationServiceImpl implements SerializationService {
                         out.reset();
                         compress(binary, out);
                         cdImpl.setBinary(out.toByteArray());
+                    } catch (IOException e) {
+                        throw new HazelcastSerializationException(e);
                     } finally {
                         push(out);
                     }
                 }
+                return cd;
             }
+            return currentClassDef;
         }
 
         private void compress(byte[] input, OutputStream out) throws IOException {

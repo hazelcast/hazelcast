@@ -83,7 +83,7 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
         for (int i = 0; i < len; i++) {
             final Operation op = (Operation) nodeEngine.toObject(operationData[i]);
             op.setNodeEngine(nodeEngine)
-                    .setCaller(getCaller())
+                    .setCallerAddress(getCallerAddress())
                     .setConnection(getConnection())
                     .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
             if (op instanceof Response) {

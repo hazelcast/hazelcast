@@ -18,10 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.merge.AddNewEntryMergePolicy;
-import com.hazelcast.merge.HigherHitsMergePolicy;
-import com.hazelcast.merge.LatestUpdateMergePolicy;
-import com.hazelcast.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -68,8 +64,6 @@ public class Config implements DataSerializable {
 
     private Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
-    private Map<String, MergePolicyConfig> mergePolicyConfigs = new ConcurrentHashMap<String, MergePolicyConfig>();
-
     private Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
     private ServicesConfig servicesConfigConfig = new ServicesConfig();
@@ -93,23 +87,6 @@ public class Config implements DataSerializable {
         if ("true".equalsIgnoreCase(liteMemberProp)) {
             liteMember = true;
         }
-        addMergePolicyConfig(new MergePolicyConfig(AddNewEntryMergePolicy.NAME, new AddNewEntryMergePolicy()));
-        addMergePolicyConfig(new MergePolicyConfig(HigherHitsMergePolicy.NAME, new HigherHitsMergePolicy()));
-        addMergePolicyConfig(new MergePolicyConfig(LatestUpdateMergePolicy.NAME, new LatestUpdateMergePolicy()));
-        addMergePolicyConfig(new MergePolicyConfig(PassThroughMergePolicy.NAME, new PassThroughMergePolicy()));
-    }
-
-    public Config addMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-        mergePolicyConfigs.put(mergePolicyConfig.getName(), mergePolicyConfig);
-        return this;
-    }
-
-    public MergePolicyConfig getMergePolicyConfig(String name) {
-        return mergePolicyConfigs.get(name);
-    }
-
-    public Map<String, MergePolicyConfig> getMergePolicyConfigs() {
-        return mergePolicyConfigs;
     }
 
     public WanReplicationConfig getWanReplicationConfig(String name) {
@@ -283,10 +260,10 @@ public class Config implements DataSerializable {
         if (defaultConfig != null) {
 //            ec = new ExecutorConfig(name,
 //                    defaultConfig.getCorePoolSize(),
-//                    defaultConfig.getMaxPoolSize(),
+//                    defaultConfig.getPoolSize(),
 //                    defaultConfig.getKeepAliveSeconds());
             ec = new ExecutorConfig(name,
-                    defaultConfig.getMaxPoolSize());
+                    defaultConfig.getPoolSize());
         }
         if (ec == null) {
             ec = new ExecutorConfig(name);
@@ -543,12 +520,11 @@ public class Config implements DataSerializable {
         liteMember = b1[1];
         boolean[] b2 = ByteUtil.fromByte(in.readByte());
         boolean hasMapConfigs = b2[0];
-        boolean hasMapExecutors = b2[1];
-        boolean hasMapTopicConfigs = b2[2];
-        boolean hasMapQueueConfigs = b2[3];
-        boolean hasMapMergePolicyConfigs = b2[4];
-        boolean hasMapSemaphoreConfigs = b2[5];
-        boolean hasProperties = b2[6];
+        boolean hasExecutors = b2[1];
+        boolean hasTopicConfigs = b2[2];
+        boolean hasQueueConfigs = b2[3];
+        boolean hasSemaphoreConfigs = b2[4];
+        boolean hasProperties = b2[5];
         networkConfig = new NetworkConfig();
         networkConfig.readData(in);
         if (hasMapConfigs) {
@@ -560,7 +536,7 @@ public class Config implements DataSerializable {
                 mapConfigs.put(mapConfig.getName(), mapConfig);
             }
         }
-        if (hasMapExecutors) {
+        if (hasExecutors) {
             int size = in.readInt();
             executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>(size);
             for (int i = 0; i < size; i++) {
@@ -569,16 +545,7 @@ public class Config implements DataSerializable {
                 executorConfigs.put(executorConfig.getName(), executorConfig);
             }
         }
-        if (hasMapSemaphoreConfigs) {
-            int size = in.readInt();
-            semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>(size);
-            for (int i = 0; i < size; i++) {
-                final SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
-                semaphoreConfig.readData(in);
-                semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
-            }
-        }
-        if (hasMapTopicConfigs) {
+        if (hasTopicConfigs) {
             int size = in.readInt();
             topicConfigs = new ConcurrentHashMap<String, TopicConfig>(size);
             for (int i = 0; i < size; i++) {
@@ -587,7 +554,7 @@ public class Config implements DataSerializable {
                 topicConfigs.put(topicConfig.getName(), topicConfig);
             }
         }
-        if (hasMapQueueConfigs) {
+        if (hasQueueConfigs) {
             int size = in.readInt();
             queueConfigs = new ConcurrentHashMap<String, QueueConfig>(size);
             for (int i = 0; i < size; i++) {
@@ -596,8 +563,14 @@ public class Config implements DataSerializable {
                 queueConfigs.put(queueConfig.getName(), queueConfig);
             }
         }
-        if (hasMapMergePolicyConfigs) {
-            // TODO: Map<String, MergePolicyConfig> mergePolicyConfigs
+        if (hasSemaphoreConfigs) {
+            int size = in.readInt();
+            semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>(size);
+            for (int i = 0; i < size; i++) {
+                final SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
+                semaphoreConfig.readData(in);
+                semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
+            }
         }
         if (hasProperties) {
             int size = in.readInt();
@@ -613,20 +586,18 @@ public class Config implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         getGroupConfig().writeData(out);
         boolean hasMapConfigs = mapConfigs != null && !mapConfigs.isEmpty();
-        boolean hasMapExecutors = executorConfigs != null && !executorConfigs.isEmpty();
-        boolean hasMapTopicConfigs = topicConfigs != null && !topicConfigs.isEmpty();
-        boolean hasMapQueueConfigs = queueConfigs != null && !queueConfigs.isEmpty();
-        boolean hasMapMergePolicyConfigs = mergePolicyConfigs != null && !mergePolicyConfigs.isEmpty();
-        boolean hasMapSemaphoreConfigs = semaphoreConfigs != null && !semaphoreConfigs.isEmpty();
+        boolean hasExecutors = executorConfigs != null && !executorConfigs.isEmpty();
+        boolean hasTopicConfigs = topicConfigs != null && !topicConfigs.isEmpty();
+        boolean hasQueueConfigs = queueConfigs != null && !queueConfigs.isEmpty();
+        boolean hasSemaphoreConfigs = semaphoreConfigs != null && !semaphoreConfigs.isEmpty();
         boolean hasProperties = properties != null && !properties.isEmpty();
         out.writeByte(ByteUtil.toByte(checkCompatibility, liteMember));
         out.writeByte(ByteUtil.toByte(
                 hasMapConfigs,
-                hasMapExecutors,
-                hasMapTopicConfigs,
-                hasMapQueueConfigs,
-                hasMapMergePolicyConfigs,
-                hasMapSemaphoreConfigs,
+                hasExecutors,
+                hasTopicConfigs,
+                hasQueueConfigs,
+                hasSemaphoreConfigs,
                 hasProperties));
         networkConfig.writeData(out);
         if (hasMapConfigs) {
@@ -638,7 +609,7 @@ public class Config implements DataSerializable {
                 mapConfig.writeData(out);
             }
         }
-        if (hasMapExecutors) {
+        if (hasExecutors) {
             out.writeInt(executorConfigs.size());
             for (final Entry<String, ExecutorConfig> entry : executorConfigs.entrySet()) {
                 final String name = entry.getKey();
@@ -647,25 +618,7 @@ public class Config implements DataSerializable {
                 executorConfig.writeData(out);
             }
         }
-        if (hasMapSemaphoreConfigs) {
-            out.writeInt(semaphoreConfigs.size());
-            for (final Entry<String, SemaphoreConfig> entry : semaphoreConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final SemaphoreConfig semaphoreConfig = entry.getValue();
-                semaphoreConfig.setName(name);
-                semaphoreConfig.writeData(out);
-            }
-        }
-        if (hasMapTopicConfigs) {
-            out.writeInt(topicConfigs.size());
-            for (final Entry<String, TopicConfig> entry : topicConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final TopicConfig topicConfig = entry.getValue();
-                topicConfig.setName(name);
-                topicConfig.writeData(out);
-            }
-        }
-        if (hasMapQueueConfigs) {
+        if (hasQueueConfigs) {
             out.writeInt(queueConfigs.size());
             for (final Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
                 final String name = entry.getKey();
@@ -674,8 +627,14 @@ public class Config implements DataSerializable {
                 queueConfig.writeData(out);
             }
         }
-        if (hasMapMergePolicyConfigs) {
-            // TODO: Map<String, MergePolicyConfig> mergePolicyConfigs
+        if (hasTopicConfigs) {
+            out.writeInt(topicConfigs.size());
+            for (final Entry<String, TopicConfig> entry : topicConfigs.entrySet()) {
+                final String name = entry.getKey();
+                final TopicConfig topicConfig = entry.getValue();
+                topicConfig.setName(name);
+                topicConfig.writeData(out);
+            }
         }
         if (hasProperties) {
             out.writeInt(properties.size());
@@ -729,7 +688,6 @@ public class Config implements DataSerializable {
         sb.append(", multiMapConfigs=").append(multiMapConfigs);
         sb.append(", executorConfigs=").append(executorConfigs);
         sb.append(", semaphoreConfigs=").append(semaphoreConfigs);
-        sb.append(", mergePolicyConfigs=").append(mergePolicyConfigs);
         sb.append(", wanReplicationConfigs=").append(wanReplicationConfigs);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", partitionGroupConfig=").append(partitionGroupConfig);

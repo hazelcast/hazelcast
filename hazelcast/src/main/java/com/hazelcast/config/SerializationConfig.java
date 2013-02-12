@@ -29,10 +29,20 @@ public class SerializationConfig {
 
     private PortableFactory portableFactory;
 
+    private GlobalSerializerConfig globalSerializer;
+
     private Collection<TypeSerializerConfig> typeSerializers;
 
     public SerializationConfig() {
         super();
+    }
+
+    public GlobalSerializerConfig getGlobalSerializer() {
+        return globalSerializer;
+    }
+
+    public void setGlobalSerializer(GlobalSerializerConfig globalSerializer) {
+        this.globalSerializer = globalSerializer;
     }
 
     public Collection<TypeSerializerConfig> getTypeSerializers() {

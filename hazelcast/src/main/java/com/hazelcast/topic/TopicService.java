@@ -83,4 +83,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         map.put(Command.TLISTEN, new TopicListenHandler(this));
         return map;
     }
+
+    @Override
+    public void onClientDisconnect(String clientUuid) {
+    }
 }

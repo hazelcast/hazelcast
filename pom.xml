@@ -41,22 +41,22 @@
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jdk.version>1.5</jdk.version>
+        <jdk.version>1.6</jdk.version>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
 
-        <maven.compiler.plugin.version>2.3.2</maven.compiler.plugin.version>
-        <maven.jar.plugin.version>2.3.2</maven.jar.plugin.version>
-        <maven.source.plugin.version>2.1.2</maven.source.plugin.version>
+        <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
+        <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
+        <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
-        <maven.surefire.plugin.version>2.11</maven.surefire.plugin.version>
-        <maven.assembly.plugin.version>2.2.2</maven.assembly.plugin.version>
+        <maven.surefire.plugin.version>2.13</maven.surefire.plugin.version>
+        <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
-        <maven.javadoc.plugin.version>2.8</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>2.3.6</maven.bundle.plugin.version>
-        <findbugs.maven.plugin.version>2.0.1</findbugs.maven.plugin.version>
+        <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
+        <findbugs.maven.plugin.version>2.5.2</findbugs.maven.plugin.version>
 
         <junit.version>4.10</junit.version>
         <mockito.all.version>1.8.2</mockito.all.version>
@@ -145,7 +145,6 @@
                 <version>${findbugs.maven.plugin.version}</version>
                 <configuration>
                     <findbugsXmlOutput>true</findbugsXmlOutput>
-                    <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
                     <xmlOutput>true</xmlOutput>
                 </configuration>
             </plugin>

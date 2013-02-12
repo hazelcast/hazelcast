@@ -185,6 +185,10 @@ public class QueueService implements ManagedService, MigrationAwareService,
         return commandHandlers;
     }
 
+    @Override
+    public void onClientDisconnect(String clientUuid) {
+    }
+
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }

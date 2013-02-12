@@ -263,8 +263,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             return;
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
-        } else if ("restart".equals(first)) {
-            hazelcast.getLifecycleService().restart();
         } else if ("shutdown".equals(first)) {
             hazelcast.getLifecycleService().shutdown();
         } else if ("echo".equals(first)) {
