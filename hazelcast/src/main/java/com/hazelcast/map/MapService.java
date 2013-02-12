@@ -58,6 +58,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -331,16 +332,16 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             throw new IllegalArgumentException("Should not happen!");
         }
         if (ttl <= 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
-            record.getState().updateTtlExpireTime(mapContainer.getMapConfig().getTimeToLiveSeconds());
-            scheduleOperation(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds());
+            record.getState().updateTtlExpireTime(mapContainer.getMapConfig().getTimeToLiveSeconds()*1000);
+            scheduleOperation(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds()*1000);
         }
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
             scheduleOperation(name, record.getKey(), ttl);
         }
         if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
-            record.getState().updateIdleExpireTime(mapContainer.getMapConfig().getMaxIdleSeconds());
-            scheduleOperation(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds());
+            record.getState().updateIdleExpireTime(mapContainer.getMapConfig().getMaxIdleSeconds()*1000);
+            scheduleOperation(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds()*1000);
         }
         return record;
     }
@@ -810,7 +811,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     }
                 }
                 if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_JVM)
-                    return totalSize > maxSizeConfig.getSize();
+                    return totalSize >= maxSizeConfig.getSize();
                 else
                     return false;
             }

@@ -144,7 +144,7 @@ public class HazelcastInstanceFactory {
             proxy.original = null;
         }
         INSTANCE_MAP.clear();
-        ManagementService.shutdown();
+        ManagementService.shutdownAll();
         ThreadContext.shutdownAll();
     }
 
@@ -154,7 +154,7 @@ public class HazelcastInstanceFactory {
             proxy.original = null;
         }
         if (INSTANCE_MAP.size() == 0) {
-            ManagementService.shutdown();
+            ManagementService.shutdownAll();
         }
     }
 }

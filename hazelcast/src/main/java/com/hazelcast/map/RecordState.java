@@ -31,8 +31,8 @@ public class RecordState implements DataSerializable {
 
 
     public boolean isExpired() {
-        return (ttlExpireTime > 0 && ttlExpireTime < Clock.currentTimeMillis())
-                || (idleExpireTime > 0 && idleExpireTime < Clock.currentTimeMillis());
+        return (ttlExpireTime > 0 && ttlExpireTime <= Clock.currentTimeMillis())
+                || (idleExpireTime > 0 && idleExpireTime <= Clock.currentTimeMillis());
     }
 
     public boolean isDirty() {

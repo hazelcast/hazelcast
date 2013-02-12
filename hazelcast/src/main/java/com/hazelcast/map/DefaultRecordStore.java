@@ -222,9 +222,10 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public boolean evict(Data dataKey) {
-        Record record = records.remove(dataKey);
+        Record record = records.get(dataKey);
         if (record != null) {
             mapService.intercept(name, MapOperationType.EVICT, dataKey, record.getValue(), record.getValue());
+            records.remove(dataKey);
             removeIndex(dataKey);
             return true;
         }
@@ -425,8 +426,8 @@ public class DefaultRecordStore implements RecordStore {
         record.access();
         int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
-            record.getState().updateIdleExpireTime(maxIdleSeconds);
-            mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds);
+            record.getState().updateIdleExpireTime(maxIdleSeconds*1000);
+            mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds*1000);
         }
     }
 

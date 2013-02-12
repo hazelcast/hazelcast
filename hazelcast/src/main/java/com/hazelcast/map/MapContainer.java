@@ -25,6 +25,7 @@ import com.hazelcast.query.impl.IndexService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledFuture;
 
 public class MapContainer {
 
@@ -32,11 +33,13 @@ public class MapContainer {
     private final MapConfig mapConfig;
     private final MapStore store;
     // TODO: do we really need to store interceptors in 3 separate collections?
+    // TODO: at first pahse you can remove the ability to removeInterceptor
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
+
 
     public MapContainer(String name, MapConfig mapConfig) {
         this.name = name;
