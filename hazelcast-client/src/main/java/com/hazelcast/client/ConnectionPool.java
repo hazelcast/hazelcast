@@ -38,12 +38,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConnectionPool {
     static private final int POOL_SIZE = 2;
     private Map<Address, BlockingQueue<Connection>> mPool;
-    //    private Connection initialConnection;
     private BlockingQueue<Connection> singlePool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
     private final ConnectionManager connectionManager;
     private final SerializationService serializationService;
-    private volatile Map<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
-    private final AtomicInteger partitionCount = new AtomicInteger(0);
+    public volatile Map<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
+    public final AtomicInteger partitionCount = new AtomicInteger(0);
 
     public ConnectionPool(ClientConfig config, final ConnectionManager connectionManager, final SerializationService serializationService) {
         this.connectionManager = connectionManager;
@@ -126,21 +125,15 @@ public class ConnectionPool {
         }
     }
 
-    public Connection takeConnection(Data key) throws InterruptedException, UnknownHostException {
-        if (key == null) return singlePool.take();
-        if (partitionCount.get() == 0) {
-            return mPool.values().iterator().next().take();
-        }
-        int id = key.getPartitionHash() % partitionCount.get();
-        Member member = partitionTable.get(id);
+    public Connection takeConnection(Member member) throws InterruptedException {
         if (member == null) {
             return singlePool.take();
         }
         return mPool.get(member.getInetSocketAddress()).take();
     }
 
-    public void releaseConnection(Connection connection, Data key) {
-        if (key == null) {
+    public void releaseConnection(Connection connection, Member member) {
+        if (member == null) {
             singlePool.offer(connection);
             return;
         }

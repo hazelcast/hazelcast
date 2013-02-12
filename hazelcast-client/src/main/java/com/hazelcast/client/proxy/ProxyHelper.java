@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.*;
 import com.hazelcast.client.proxy.listener.ListenerResponseHandler;
 import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -30,7 +31,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -117,7 +117,7 @@ public class ProxyHelper {
         return ss.toObject(data);
     }
 
-    private Object getSingleObjectFromResponse(Protocol response) {
+    public Object getSingleObjectFromResponse(Protocol response) {
         if (response != null && response.buffers != null && response.hasBuffer()) {
             return ss.toObject(response.buffers[0]);
         } else return null;
@@ -127,7 +127,7 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
-            Connection connection = cp.takeConnection(null);
+            Connection connection = cp.takeConnection((Member) null);
             writer.write(connection, protocol);
             cp.releaseConnection(connection, null);
         } catch (IOException e) {
@@ -143,25 +143,42 @@ public class ProxyHelper {
         return thread;
     }
 
+    public Member key2Member(Object object) {
+        if (object == null) return null;
+        if (cp.partitionCount.get() == 0) {
+            return null;
+        }
+        Data key = toData(object);
+        int id = key.getPartitionHash() % cp.partitionCount.get();
+        Member member = cp.partitionTable.get(id);
+        return member;
+    }
+
     public Protocol doCommand(Data key, Command command, String[] args, Data... data) {
-        Protocol protocol = createProtocol(command, args, data);
+        Member member = key2Member(key);
+        return doCommand(member, command, args, data);
+    }
+
+    public Protocol doCommand(Member member, Command command, String[] args, Data... data) {
         try {
+            Protocol protocol = createProtocol(command, args, data);
             protocol.onEnqueue();
             Context context = Context.get();
             Connection connection = context == null ? null : context.getConnection();
-            if (connection == null)
-                connection = cp.takeConnection(key);
+            if (connection == null) {
+                connection = cp.takeConnection(member);
+            }
             writer.write(connection, protocol);
             writer.flush(connection);
             Protocol response = reader.read(connection);
-            cp.releaseConnection(connection, key);
+            cp.releaseConnection(connection, member);
             if (Command.OK.equals(response.command))
                 return response;
             else {
                 throw new RuntimeException(response.command + ": " + Arrays.asList(response.args));
             }
         } catch (EOFException e) {
-            return doCommand(key, command, args, data);
+            return doCommand(member, command, args, data);
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -181,7 +198,7 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command, args, data);
         protocol.onEnqueue();
         try {
-            final Connection connection = cp.takeConnection(null);
+            final Connection connection = cp.takeConnection((Member) null);
             writer.write(connection, protocol);
             writer.flush(connection);
             return new Future<V>() {
@@ -235,9 +252,9 @@ public class ProxyHelper {
      */
     public boolean doCommand(Data key, Command command, String arg, Data... data) {
         String[] args;
-        if(arg == null)
+        if (arg == null)
             args = new String[]{};
-        else 
+        else
             args = new String[]{arg};
         Protocol response = doCommand(key, command, args, data);
         return response.command.equals(Command.OK);
@@ -299,11 +316,10 @@ public class ProxyHelper {
         Context context = Context.getOrCreate();
         if (context.getConnection() == null) {
             try {
-                Connection connection = cp.takeConnection(key);
+                Member member = key2Member(key);
+                Connection connection = cp.takeConnection(member);
                 context.setConnection(connection);
             } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
         }
@@ -318,7 +334,8 @@ public class ProxyHelper {
         Protocol response = doCommand(key, command, args, data);
         if (context.decrementAndGet(name, key.hashCode()) == 0 && context.noMoreLocks()) {
             Connection connection = context.getConnection();
-            cp.releaseConnection(connection, key);
+            Member member = key2Member(key);
+            cp.releaseConnection(connection, member);
             Context.remove();
         }
         return response;
