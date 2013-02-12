@@ -37,9 +37,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class DynamicClusterTest extends BaseTest {
 
-    static {
-        instanceCount = 5;
-    }
 
     @Test
     public void testMapSizeWhileRandomDeaths() throws InterruptedException {
@@ -56,12 +53,29 @@ public class DynamicClusterTest extends BaseTest {
             assertEquals(map.size(), size);
             System.out.println("trial:"+i+" instance count:"+instanceCount);
             if((rand.nextInt(10)%2 == 0 && instanceCount > 2) || instanceCount > 6) {
+                System.out.println("remove...");
+                System.out.println("remove...");
+                System.out.println("remove...");
                 removeInstance();
+                System.out.println("removed!!!");
+                System.out.println("removed!!!");
+                System.out.println("removed!!!");
             }
             else {
+                System.out.println("new instance...");
+                System.out.println("new instance...");
+                System.out.println("new instance...");
                 newInstance();
+                System.out.println("instance is up!!!");
+                System.out.println("instance is up!!!");
+                System.out.println("instance is up!!!");
             }
-            Thread.sleep(5000);
+            Thread.sleep(10000);
+            int realSize = getInstance(0).getCluster().getMembers().size();
+            System.out.println("Instance count Real:" + realSize + " Expected:"+ instanceCount );
+            System.out.println("Instance count Real:" + realSize + " Expected:"+ instanceCount );
+            System.out.println("Instance count Real:" + realSize + " Expected:"+ instanceCount );
+            instanceCount = realSize;
         }
 
 
