@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.cyclicbarrier;
+package com.hazelcast.monitor.impl;
 
-/**
- * @mdogan 2/8/13
- */
-public class CyclicBarrierProxy {
+import com.hazelcast.monitor.LocalAtomicLongOperationStats;
+import com.hazelcast.monitor.LocalAtomicLongStats;
+
+public class LocalAtomicLongStatsImpl extends LocalInstanceStatsSupport<LocalAtomicLongOperationStats>
+        implements LocalAtomicLongStats {
+
+    @Override
+    LocalAtomicLongOperationStats newOperationStatsInstance() {
+        return new LocalAtomicLongOperationStatsImpl();
+    }
 }

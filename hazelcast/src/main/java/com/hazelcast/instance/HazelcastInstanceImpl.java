@@ -21,7 +21,7 @@ import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
 import com.hazelcast.concurrent.lock.SharedLockService;
@@ -141,8 +141,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return new IdGeneratorProxy(this, name);
     }
 
-    public AtomicNumber getAtomicNumber(final String name) {
-        return getDistributedObject(AtomicNumberService.SERVICE_NAME, name);
+    public IAtomicLong getAtomicLong(final String name) {
+        return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {

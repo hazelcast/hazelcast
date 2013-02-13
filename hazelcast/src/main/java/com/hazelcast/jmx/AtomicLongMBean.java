@@ -16,17 +16,17 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.core.AtomicNumber;
+import com.hazelcast.core.IAtomicLong;
 
 /**
  * @ali 2/7/13
  */
-@ManagedDescription("AtomicNumber")
-public class AtomicNumberMBean extends HazelcastMBean<AtomicNumber> {
+@ManagedDescription("IAtomicLong")
+public class AtomicLongMBean extends HazelcastMBean<IAtomicLong> {
 
-    public AtomicNumberMBean(AtomicNumber managedObject, ManagementService service) {
+    public AtomicLongMBean(IAtomicLong managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("AtomicNumber",managedObject.getName());
+        objectName = createObjectName("IAtomicLong",managedObject.getName());
     }
 
     @ManagedAnnotation("name")

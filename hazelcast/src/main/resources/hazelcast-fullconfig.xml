@@ -350,7 +350,7 @@
         <queue-service />
         <topic-service />
         <collection-service />
-        <atomicnumber-service />
+        <atomiclong-service />
         <countdownlatch-service />
         <semaphore-service />
         <service enabled="true">

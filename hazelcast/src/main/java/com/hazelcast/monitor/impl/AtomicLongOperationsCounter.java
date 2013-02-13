@@ -16,20 +16,20 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
+import com.hazelcast.monitor.LocalAtomicLongOperationStats;
 
-public class AtomicNumberOperationsCounter extends OperationsCounterSupport<LocalAtomicNumberOperationStats> {
+public class AtomicLongOperationsCounter extends OperationsCounterSupport<LocalAtomicLongOperationStats> {
 
-    final private static LocalAtomicNumberOperationStats empty = new LocalAtomicNumberOperationStatsImpl();
+    final private static LocalAtomicLongOperationStats empty = new LocalAtomicLongOperationStatsImpl();
 
     private OperationCounter modified = new OperationCounter();
     private OperationCounter nonModified = new OperationCounter();
 
-    public AtomicNumberOperationsCounter() {
+    public AtomicLongOperationsCounter() {
         super();
     }
 
-    public AtomicNumberOperationsCounter(long interval) {
+    public AtomicLongOperationsCounter(long interval) {
         super(interval);
     }
 
@@ -43,11 +43,11 @@ public class AtomicNumberOperationsCounter extends OperationsCounterSupport<Loca
         publishSubResult();
     }
 
-    LocalAtomicNumberOperationStats aggregateSubCounterStats() {
-        LocalAtomicNumberOperationStatsImpl stats = new LocalAtomicNumberOperationStatsImpl();
-        stats.periodStart = ((AtomicNumberOperationsCounter) listOfSubCounters.get(0)).startTime;
+    LocalAtomicLongOperationStats aggregateSubCounterStats() {
+        LocalAtomicLongOperationStatsImpl stats = new LocalAtomicLongOperationStatsImpl();
+        stats.periodStart = ((AtomicLongOperationsCounter) listOfSubCounters.get(0)).startTime;
         for (Object obj : listOfSubCounters) {
-            AtomicNumberOperationsCounter sub = (AtomicNumberOperationsCounter) obj;
+            AtomicLongOperationsCounter sub = (AtomicLongOperationsCounter) obj;
             stats.modified.add(sub.modified.count.get(), sub.modified.totalLatency.get());
             stats.nonModified.add(sub.nonModified.count.get(), sub.nonModified.totalLatency.get());
             stats.periodEnd = sub.endTime;
@@ -55,8 +55,8 @@ public class AtomicNumberOperationsCounter extends OperationsCounterSupport<Loca
         return stats;
     }
 
-    AtomicNumberOperationsCounter getAndReset() {
-        AtomicNumberOperationsCounter newOne = new AtomicNumberOperationsCounter();
+    AtomicLongOperationsCounter getAndReset() {
+        AtomicLongOperationsCounter newOne = new AtomicLongOperationsCounter();
         newOne.modified.set(modified.copyAndReset());
         newOne.nonModified.set(nonModified.copyAndReset());
         newOne.startTime = this.startTime;
@@ -65,8 +65,8 @@ public class AtomicNumberOperationsCounter extends OperationsCounterSupport<Loca
         return newOne;
     }
 
-    LocalAtomicNumberOperationStats getThis() {
-        LocalAtomicNumberOperationStatsImpl stats = new LocalAtomicNumberOperationStatsImpl();
+    LocalAtomicLongOperationStats getThis() {
+        LocalAtomicLongOperationStatsImpl stats = new LocalAtomicLongOperationStatsImpl();
         stats.periodStart = this.startTime;
         stats.modified = stats.new OperationStat(this.modified.count.get(), this.modified.totalLatency.get());
         stats.nonModified = stats.new OperationStat(this.nonModified.count.get(), this.nonModified.totalLatency.get());
@@ -74,7 +74,7 @@ public class AtomicNumberOperationsCounter extends OperationsCounterSupport<Loca
         return stats;
     }
 
-    LocalAtomicNumberOperationStats getEmpty() {
+    LocalAtomicLongOperationStats getEmpty() {
         return empty;
     }
 }

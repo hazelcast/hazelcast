@@ -63,7 +63,7 @@ abstract class BaseLockOperation extends AbstractOperation {
         this.timeout = timeout;
     }
 
-    public final Object getResponse() {
+    public Object getResponse() {
         return response;
     }
 

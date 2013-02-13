@@ -994,7 +994,7 @@
                 <xs:element ref="queue-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="topic-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="collection-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="atomicnumber-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="atomiclong-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="countdownlatch-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="semaphore-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="service" minOccurs="0" maxOccurs="unbounded"/>
@@ -1016,7 +1016,7 @@
     <xs:element name="queue-service" />
     <xs:element name="topic-service" />
     <xs:element name="collection-service" />
-    <xs:element name="atomicnumber-service" />
+    <xs:element name="atomiclong-service" />
     <xs:element name="countdownlatch-service" />
     <xs:element name="semaphore-service" />
 

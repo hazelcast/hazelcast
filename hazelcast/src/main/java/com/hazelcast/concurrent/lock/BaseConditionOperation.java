@@ -14,60 +14,42 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicnumber;
+package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-// author: sancar - 24.12.2012
-public class GetAndSetOperation extends AtomicNumberBackupAwareOperation {
+public abstract class BaseConditionOperation extends BaseLockOperation {
 
-    private long newValue;
+    protected transient boolean isLockOwner;
 
-    private long returnValue;
-
-    public GetAndSetOperation() {
-        super();
+    public BaseConditionOperation() {
     }
 
-    public GetAndSetOperation(String name, long newValue) {
-        super(name);
-        this.newValue = newValue;
+    public BaseConditionOperation(ILockNamespace namespace, Data key, int threadId) {
+        super(namespace, key, threadId);
     }
 
-    @Override
-    public void run() throws Exception {
-
-        returnValue = getNumber();
-        setNumber(newValue);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return returnValue;
+    public void beforeRun() throws Exception {
+        final LockStore lockStore = getLockStore();
+        isLockOwner = lockStore.isLocked(key) && lockStore.canAcquireLock(key, getCallerUuid(), threadId);
+        if (!isLockOwner) {
+            getResponseHandler().sendResponse(new IllegalMonitorStateException());
+        }
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(newValue);
+        out.writeLong(timeout);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        newValue = in.readLong();
-    }
-
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, newValue);
+        timeout = in.readLong();
     }
 }

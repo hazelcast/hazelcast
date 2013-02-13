@@ -16,14 +16,14 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
+import com.hazelcast.monitor.LocalAtomicLongOperationStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class LocalAtomicNumberOperationStatsImpl extends LocalOperationStatsSupport
-        implements LocalAtomicNumberOperationStats {
+public class LocalAtomicLongOperationStatsImpl extends LocalOperationStatsSupport
+        implements LocalAtomicLongOperationStats {
 
     OperationStat modified = new OperationStat(0, 0);
     OperationStat nonModified = new OperationStat(0, 0);

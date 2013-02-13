@@ -204,7 +204,7 @@ public class HazelcastTest extends BaseTest {
 
     @Test
     public void testAtomicLong() {
-        AtomicNumber an = getInstance().getAtomicNumber("testAtomicLong");
+        IAtomicLong an = getInstance().getAtomicLong("testAtomicLong");
         assertEquals(0, an.get());
         assertEquals(-1, an.decrementAndGet());
         assertEquals(0, an.incrementAndGet());

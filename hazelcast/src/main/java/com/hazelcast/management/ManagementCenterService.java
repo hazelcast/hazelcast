@@ -421,9 +421,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 ////                            count++;
 ////                        }
 ////                    } else if (type.isAtomicNumber()) {
-////                        AtomicNumberProxy atomicLongProxy = (AtomicNumberProxy) proxyObject;
+////                        AtomicLongProxy atomicLongProxy = (AtomicLongProxy) proxyObject;
 ////                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
-////                            memberState.putLocalAtomicNumberStats(atomicLongProxy.getName(), (LocalAtomicNumberStatsImpl) atomicLongProxy.getLocalAtomicNumberStats());
+////                            memberState.putLocalAtomicNumberStats(atomicLongProxy.getName(), (LocalAtomicLongStatsImpl) atomicLongProxy.getLocalAtomicNumberStats());
 ////                            count++;
 ////                        }
 ////                    } else if (type.isCountDownLatch()) {
@@ -493,7 +493,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 ////                            count++;
 ////                        }
 ////                    } else if (type.isAtomicNumber()) {
-////                        AtomicNumberProxy atomicLongProxy = (AtomicNumberProxy) proxyObject;
+////                        AtomicLongProxy atomicLongProxy = (AtomicLongProxy) proxyObject;
 ////                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
 ////                            setLongInstanceNames.add(atomicLongProxy.getLongName());
 ////                            count++;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicnumber;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
@@ -30,15 +30,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 // author: sancar - 21.12.2012
-public class AtomicNumberService implements ManagedService, RemoteService, MigrationAwareService {
+public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
 
-    public static final String SERVICE_NAME = "hz:impl:atomicNumberService";
+    public static final String SERVICE_NAME = "hz:impl:atomicLongService";
 
     private NodeEngine nodeEngine;
 
     private final ConcurrentMap<String, Long> numbers = new ConcurrentHashMap<String, Long>();
 
-    public AtomicNumberService() {
+    public AtomicLongService() {
     }
 
     public long getNumber(String name) {
@@ -71,7 +71,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
-        return new AtomicNumberProxy(String.valueOf(objectId), nodeEngine);
+        return new AtomicLongProxy(String.valueOf(objectId), nodeEngine, this);
     }
 
     public DistributedObject createDistributedObjectForClient(Object objectId) {
@@ -96,7 +96,7 @@ public class AtomicNumberService implements ManagedService, RemoteService, Migra
                 data.put(name, numbers.get(name));
             }
         }
-        return data.isEmpty() ? null : new AtomicNumberMigrationOperation(data);
+        return data.isEmpty() ? null : new AtomicLongMigrationOperation(data);
     }
 
     public void commitMigration(MigrationServiceEvent migrationServiceEvent) {

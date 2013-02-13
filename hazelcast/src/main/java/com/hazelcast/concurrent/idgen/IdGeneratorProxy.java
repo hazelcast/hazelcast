@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.idgen;
 
-import com.hazelcast.core.AtomicNumber;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
 
@@ -36,7 +36,7 @@ public class IdGeneratorProxy implements IdGenerator {
 
     final String name;
 
-    final AtomicNumber atomicNumber;
+    final IAtomicLong atomicNumber;
 
     AtomicInteger residue;
 
@@ -47,7 +47,7 @@ public class IdGeneratorProxy implements IdGenerator {
     public IdGeneratorProxy(HazelcastInstance ins, String name) {
         this.ins = ins;
         this.name = name;
-        this.atomicNumber = ins.getAtomicNumber(IdGeneratorProxy.ATOMIC_NUMBER_NAME+name);
+        this.atomicNumber = ins.getAtomicLong(IdGeneratorProxy.ATOMIC_NUMBER_NAME + name);
         residue = new AtomicInteger(BLOCK_SIZE);
         local = new AtomicLong(-1);
     }

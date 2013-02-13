@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicnumber;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -23,33 +23,27 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 // author: sancar - 24.12.2012
-public class CompareAndSetOperation extends AtomicNumberBackupAwareOperation {
+public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
 
-    private long expect;
-    private long update;
+    private long newValue;
 
-    private boolean returnValue = false;
+    private long returnValue;
 
-    public CompareAndSetOperation() {
+    public GetAndSetOperation() {
         super();
     }
 
-    public CompareAndSetOperation(String name, long expect, long update) {
+    public GetAndSetOperation(String name, long newValue) {
         super(name);
-        this.expect = expect;
-        this.update = update;
+        this.newValue = newValue;
     }
 
     @Override
     public void run() throws Exception {
-        if (getNumber() == expect) {
-            setNumber(update);
-            returnValue = true;
-        } else {
-            shouldBackup = false;
-        }
-    }
 
+        returnValue = getNumber();
+        setNumber(newValue);
+    }
 
     @Override
     public boolean returnsResponse() {
@@ -64,18 +58,16 @@ public class CompareAndSetOperation extends AtomicNumberBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(expect);
-        out.writeLong(update);
+        out.writeLong(newValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        expect = in.readLong();
-        update = in.readLong();
+        newValue = in.readLong();
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, update);
+        return new SetBackupOperation(name, newValue);
     }
 }

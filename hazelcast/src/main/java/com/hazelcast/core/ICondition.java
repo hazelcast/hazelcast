@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor.impl;
+package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalAtomicNumberOperationStats;
-import com.hazelcast.monitor.LocalAtomicNumberStats;
+import java.util.concurrent.locks.Condition;
 
-public class LocalAtomicNumberStatsImpl extends LocalInstanceStatsSupport<LocalAtomicNumberOperationStats>
-        implements LocalAtomicNumberStats {
+public interface ICondition extends Condition {
 
-    @Override
-    LocalAtomicNumberOperationStats newOperationStatsInstance() {
-        return new LocalAtomicNumberOperationStatsImpl();
-    }
 }

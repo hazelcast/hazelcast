@@ -14,35 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicnumber;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-// author: sancar - 24.12.2012
-public class GetAndAddOperation extends AtomicNumberBackupAwareOperation {
+// author: sancar - 25.12.2012
+public class SetBackupOperation extends AtomicLongBaseOperation implements BackupOperation {
 
-    private long delta;
-    private long returnValue;
+    private long newValue;
 
-
-    public GetAndAddOperation() {
+    public SetBackupOperation() {
         super();
     }
 
-    public GetAndAddOperation(String name, long delta) {
+    public SetBackupOperation(String name, long newValue) {
         super(name);
-        this.delta = delta;
+        this.newValue = newValue;
     }
 
     @Override
     public void run() throws Exception {
-        returnValue = getNumber();
-        setNumber(returnValue + delta);
-
+        setNumber(newValue);
     }
 
     @Override
@@ -50,24 +46,19 @@ public class GetAndAddOperation extends AtomicNumberBackupAwareOperation {
         return true;
     }
 
-    @Override
     public Object getResponse() {
-        return returnValue;
+        return newValue;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(delta);
+        out.writeLong(newValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        delta = in.readLong();
-    }
-
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, returnValue + delta);
+        newValue = in.readLong();
     }
 }

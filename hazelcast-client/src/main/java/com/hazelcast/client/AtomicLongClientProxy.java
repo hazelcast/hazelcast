@@ -17,16 +17,16 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.proxy.ProxyHelper;
-import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
-import com.hazelcast.core.AtomicNumber;
-import com.hazelcast.monitor.LocalAtomicNumberStats;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.monitor.LocalAtomicLongStats;
 import com.hazelcast.nio.protocol.Command;
 
-public class AtomicNumberClientProxy implements AtomicNumber {
+public class AtomicLongClientProxy implements IAtomicLong {
     private final String name;
     private final ProxyHelper proxyHelper;
 
-    public AtomicNumberClientProxy(HazelcastClient hazelcastClient, String name) {
+    public AtomicLongClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
         this.proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
     }
@@ -73,7 +73,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{AtomicNumberService.SERVICE_NAME, getName()}, null);
+        proxyHelper.doCommand(null, Command.DESTROY, new String[]{AtomicLongService.SERVICE_NAME, getName()}, null);
     }
 
     public Object getId() {
@@ -94,7 +94,7 @@ public class AtomicNumberClientProxy implements AtomicNumber {
         set(newValue);
     }
 
-    public LocalAtomicNumberStats getLocalAtomicNumberStats() {
+    public LocalAtomicLongStats getLocalAtomicLongStats() {
         throw new UnsupportedOperationException();
     }
 }

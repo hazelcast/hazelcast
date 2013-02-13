@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.monitor.LocalLockStats;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-import java.util.concurrent.locks.Lock;
+// author: sancar - 24.12.2012
+public abstract class AtomicLongBaseOperation extends AbstractNamedOperation {
 
-public interface ILock extends Lock, DistributedObject {
+    public AtomicLongBaseOperation() {
+        super();
+    }
 
-    /**
-     * Returns the lock object, the key for this lock instance.
-     *
-     * @return lock object.
-     */
-    Object getLockObject();
+    public AtomicLongBaseOperation(String name) {
+        super(name);
+    }
 
-    LocalLockStats getLocalLockStats();
+    public long getNumber() {
+        return ((AtomicLongService) getService()).getNumber(name);
+    }
 
-    boolean isLocked();
+    public void setNumber(long value) {
+        ((AtomicLongService) getService()).setNumber(name, value);
+    }
 
-    /**
-     * Releases the lock regardless of the lock owner.
-     * It always successfully unlocks, never blocks  and returns immediately.
-     */
-    void forceUnlock();
-
-    ICondition newCondition();
 }

@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -79,7 +79,7 @@ class ServiceManager {
                 registerService(TopicService.SERVICE_NAME, new TopicService());
                 registerService(CollectionService.SERVICE_NAME, new CollectionService(nodeEngine));
                 registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
-                registerService(AtomicNumberService.SERVICE_NAME, new AtomicNumberService());
+                registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
             }

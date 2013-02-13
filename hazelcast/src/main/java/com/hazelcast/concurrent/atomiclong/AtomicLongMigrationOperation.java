@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicnumber;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,30 +29,30 @@ import java.util.Map;
  * Date: 12/28/12
  * Time: 2:26 PM
  */
-public class AtomicNumberMigrationOperation extends AbstractOperation {
+public class AtomicLongMigrationOperation extends AbstractOperation {
 
     private Map<String, Long> migrationData;
 
-    public AtomicNumberMigrationOperation() {
+    public AtomicLongMigrationOperation() {
         super();
     }
 
-    public AtomicNumberMigrationOperation(Map<String, Long> migrationData) {
+    public AtomicLongMigrationOperation(Map<String, Long> migrationData) {
         this.migrationData = migrationData;
     }
 
     @Override
     public void run() throws Exception {
 
-        AtomicNumberService atomicNumberService = getService();
+        AtomicLongService atomicLongService = getService();
         for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
-            atomicNumberService.setNumber(longEntry.getKey(), longEntry.getValue());
+            atomicLongService.setNumber(longEntry.getKey(), longEntry.getValue());
         }
 
     }
 
     public String getServiceName() {
-        return AtomicNumberService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 
 

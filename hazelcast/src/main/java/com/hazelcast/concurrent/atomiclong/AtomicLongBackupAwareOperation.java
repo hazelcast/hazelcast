@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicnumber;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.KeyBasedOperation;
 
 // author: sancar - 25.12.2012
-public abstract class AtomicNumberBackupAwareOperation extends AtomicNumberBaseOperation implements BackupAwareOperation, KeyBasedOperation {
+public abstract class AtomicLongBackupAwareOperation extends AtomicLongBaseOperation implements BackupAwareOperation, KeyBasedOperation {
 
     protected boolean shouldBackup = true;
 
-    public AtomicNumberBackupAwareOperation() {
+    public AtomicLongBackupAwareOperation() {
         super();
     }
 
-    public AtomicNumberBackupAwareOperation(String name) {
+    public AtomicLongBackupAwareOperation(String name) {
         super(name);
     }
 
@@ -45,7 +45,7 @@ public abstract class AtomicNumberBackupAwareOperation extends AtomicNumberBaseO
     }
 
     public int getKeyHash() {
-        String key = AtomicNumberService.SERVICE_NAME + getName();
+        String key = AtomicLongService.SERVICE_NAME + getName();
         return key.hashCode();
     }
 }

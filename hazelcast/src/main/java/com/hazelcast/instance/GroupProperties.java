@@ -74,7 +74,7 @@ public class GroupProperties {
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
-    public static final String PROP_MC_ATOMIC_NUMBER_EXCLUDES = "hazelcast.mc.atomicnumber.excludes";
+    public static final String PROP_MC_ATOMIC_NUMBER_EXCLUDES = "hazelcast.mc.atomiclong.excludes";
     public static final String PROP_MC_COUNT_DOWN_LATCH_EXCLUDES = "hazelcast.mc.countdownlatch.excludes";
     public static final String PROP_MC_MAP_EXCLUDES = "hazelcast.mc.map.excludes";
     public static final String PROP_MC_QUEUE_EXCLUDES = "hazelcast.mc.queue.excludes";

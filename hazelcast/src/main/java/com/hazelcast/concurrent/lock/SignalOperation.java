@@ -14,8 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
+package com.hazelcast.concurrent.lock;
 
-public interface LocalAtomicNumberStats extends LocalInstanceStats<LocalAtomicNumberOperationStats> {
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.WaitNotifyKey;
+
+/**
+ * @mdogan 2/13/13
+ */
+public class SignalOperation extends BaseConditionOperation implements Notifier {
+
+    public void run() throws Exception {
+    }
+
+    public boolean shouldNotify() {
+        return true;
+    }
+
+    public WaitNotifyKey getNotifiedKey() {
+        return new ConditionWaitNotifyKey(key);
+    }
 
 }

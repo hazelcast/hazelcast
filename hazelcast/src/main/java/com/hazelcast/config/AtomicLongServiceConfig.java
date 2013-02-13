@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
+package com.hazelcast.config;
 
-public interface LocalAtomicNumberOperationStats extends LocalInstanceOperationStats {
-    /**
-     * Returns the number of operations that modified the stored atomic value.
-     *
-     * @return number of modified operations
-     */
-    public long getNumberOfModifyOps();
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 
-    /**
-     * Returns the number of operations that did not modify the stored atomic value.
-     *
-     * @return number of non-modified operations
-     */
-    public long getNumberOfNonModifyOps();
+/**
+ * @mdogan 1/24/13
+ */
+public class AtomicLongServiceConfig extends DefaultServiceConfig {
+
+    public AtomicLongServiceConfig() {
+    }
+
+    @Override
+    public String getName() {
+        return AtomicLongService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getClassName() {
+        return AtomicLongService.class.getName();
+    }
 }

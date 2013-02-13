@@ -249,8 +249,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 servicesConfig.addServiceConfig(new TopicServiceConfig().setEnabled(true));
             } else if ("collection-service".equals(nodeName)) {
                 servicesConfig.addServiceConfig(new CollectionServiceConfig().setEnabled(true));
-            } else if ("atomicnumber-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new AtomicNumberServiceConfig().setEnabled(true));
+            } else if ("atomiclong-service".equals(nodeName)) {
+                servicesConfig.addServiceConfig(new AtomicLongServiceConfig().setEnabled(true));
             } else if ("semaphore-service".equals(nodeName)) {
                 servicesConfig.addServiceConfig(new SemaphoreServiceConfig().setEnabled(true));
             } else if ("countdownlatch-service".equals(nodeName)) {

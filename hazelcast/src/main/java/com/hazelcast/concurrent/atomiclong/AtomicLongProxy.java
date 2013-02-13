@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicnumber;
+package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.core.AtomicNumber;
-import com.hazelcast.monitor.LocalAtomicNumberStats;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.monitor.LocalAtomicLongStats;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -26,13 +26,13 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.Future;
 
 // author: sancar - 21.12.2012
-public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberService> implements AtomicNumber {
+public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements IAtomicLong {
 
     private final String name;
     private final int partitionId;
 
-    public AtomicNumberProxy(String name, NodeEngine nodeEngine) {
-        super(nodeEngine, null);
+    public AtomicLongProxy(String name, NodeEngine nodeEngine, AtomicLongService service) {
+        super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
     }
@@ -45,7 +45,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             AddAndGetOperation operation = new AddAndGetOperation(name, delta);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
@@ -57,7 +57,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             CompareAndSetOperation operation = new CompareAndSetOperation(name, expect, update);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Boolean) f.get();
         } catch (Throwable throwable) {
@@ -85,7 +85,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             GetAndAddOperation operation = new GetAndAddOperation(name, delta);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
@@ -97,7 +97,7 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             GetAndSetOperation operation = new GetAndSetOperation(name, newValue);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
@@ -109,14 +109,14 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             SetOperation operation = new SetOperation(name, newValue);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicNumberService.SERVICE_NAME, operation, partitionId).build();
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
             inv.invoke();
         } catch (Throwable throwable) {
             ExceptionUtil.rethrow(throwable);
         }
     }
 
-    public LocalAtomicNumberStats getLocalAtomicNumberStats() {
+    public LocalAtomicLongStats getLocalAtomicLongStats() {
         return null;
     }
 
@@ -129,6 +129,6 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
     }
 
     public String getServiceName() {
-        return AtomicNumberService.SERVICE_NAME;
+        return AtomicLongService.SERVICE_NAME;
     }
 }

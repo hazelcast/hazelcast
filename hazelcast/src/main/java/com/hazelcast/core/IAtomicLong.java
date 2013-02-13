@@ -16,13 +16,13 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalAtomicNumberStats;
+import com.hazelcast.monitor.LocalAtomicLongStats;
 
 /**
- * AtomicNumber is a backed-up distributed implementation of
+ * IAtomicLong is a backed-up distributed implementation of
  * {@link java.util.concurrent.atomic.AtomicLong java.util.concurrent.atomic.AtomicLong}.
  */
-public interface AtomicNumber extends DistributedObject {
+public interface IAtomicLong extends DistributedObject {
     /**
      * Returns the name of this IAtomicLong instance.
      *
@@ -101,5 +101,5 @@ public interface AtomicNumber extends DistributedObject {
     public void set(long newValue);
 
 
-    LocalAtomicNumberStats getLocalAtomicNumberStats();
+    LocalAtomicLongStats getLocalAtomicLongStats();
 }
