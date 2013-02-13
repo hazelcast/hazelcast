@@ -57,17 +57,7 @@ public interface RecordStore {
 
     int size();
 
-    boolean forceUnlock(Data key);
-
     boolean isLocked(Data key);
-
-    boolean lock(Data key, String caller, int threadId, long ttl);
-
-    boolean unlock(Data key, String caller, int threadId);
-
-    Map<Data, LockInfo> getLocks();
-
-    void putLock(Data key, LockInfo lock);
 
     boolean containsValue(Object testValue);
 

@@ -22,12 +22,9 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.list.client.*;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.multimap.client.*;
-import com.hazelcast.collection.operations.ForceUnlockOperation;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
-import com.hazelcast.concurrent.lock.LockInfo;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +32,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
  * @ali 1/1/13
  */
 public class CollectionService implements ManagedService, RemoteService, MembershipAwareService,
-        EventPublishingService<CollectionEvent, EventListener>, ClientProtocolService {
+        MigrationAwareService, EventPublishingService<CollectionEvent, EventListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
 
@@ -182,14 +178,14 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public Operation prepareMigrationOperation(MigrationServiceEvent event) {
         int replicaIndex = event.getReplicaIndex();
         CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
-        Map<CollectionProxyId, Map[]> map = new HashMap<CollectionProxyId, Map[]>(partitionContainer.containerMap.size());
+        Map<CollectionProxyId, Map> map = new HashMap<CollectionProxyId, Map>(partitionContainer.containerMap.size());
         for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
             CollectionProxyId proxyId = entry.getKey();
             CollectionContainer container = entry.getValue();
             if (container.config.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(proxyId, new Map[]{container.collections, container.lockStore.getLocks()});
+            map.put(proxyId, container.collections);
         }
         if (map.isEmpty()) {
             return null;
@@ -197,16 +193,12 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return new CollectionMigrationOperation(map);
     }
 
-    public void insertMigratedData(int partitionId, Map<CollectionProxyId, Map[]> map) {
-        for (Map.Entry<CollectionProxyId, Map[]> entry : map.entrySet()) {
+    public void insertMigratedData(int partitionId, Map<CollectionProxyId, Map> map) {
+        for (Map.Entry<CollectionProxyId, Map> entry : map.entrySet()) {
             CollectionProxyId proxyId = entry.getKey();
             CollectionContainer container = getOrCreateCollectionContainer(partitionId, proxyId);
-            Map<Data, Collection<CollectionRecord>> collections = entry.getValue()[0];
+            Map<Data, Collection<CollectionRecord>> collections = entry.getValue();
             container.collections.putAll(collections);
-            Map<Data, LockInfo> locks = entry.getValue()[1];
-            for (Map.Entry<Data, LockInfo> lockEntry : locks.entrySet()) {
-                container.lockStore.putLock(lockEntry.getKey(), lockEntry.getValue());
-            }
         }
     }
 
@@ -219,7 +211,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         for (CollectionContainer container : partitionContainer.containerMap.values()) {
             int totalBackupCount = container.config.getTotalBackupCount();
             if (totalBackupCount < copyBackReplicaIndex) {
-                container.clear();
+                container.destroy();
             }
         }
     }
@@ -266,26 +258,8 @@ public class CollectionService implements ManagedService, RemoteService, Members
 
     public void memberRemoved(MembershipServiceEvent event) {
         // TODO: when a member dies;
-        // ++++ DONE release locks
         // * rollback transaction
         // * do not know ?
-        Address caller = event.getMember().getAddress();
-        for (CollectionPartitionContainer partitionContainer : partitionContainers) {
-            for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
-                CollectionProxyId proxyId = entry.getKey();
-                CollectionContainer container = entry.getValue();
-                for (Map.Entry<Data, LockInfo> lockEntry : container.lockStore.getLocks().entrySet()) {
-                    Data key = lockEntry.getKey();
-                    LockInfo lock = lockEntry.getValue();
-                    if (lock.getLockOwner().equals(caller)) {
-                        Operation op = new ForceUnlockOperation(proxyId, key).setPartitionId(partitionContainer.partitionId)
-                                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
-                                .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
-                        nodeEngine.getOperationService().runOperation(op);
-                    }
-                }
-            }
-        }
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
@@ -335,8 +309,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return map;
     }
 
-    @Override
     public void onClientDisconnect(String clientUuid) {
-        // TODO: @mm - release locks owned by this client.
     }
 }

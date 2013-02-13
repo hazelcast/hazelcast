@@ -20,17 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionLevelOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, DataSerializable {
@@ -59,7 +53,7 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
             return;
         }
         for (Data key : keys) {
-            if (!recordStore.getLocks().containsKey(key))
+            if (!recordStore.isLocked(key))
                 recordStore.remove(key);
         }
     }

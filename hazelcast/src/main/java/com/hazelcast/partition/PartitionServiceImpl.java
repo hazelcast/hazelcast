@@ -17,7 +17,6 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -69,14 +68,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final SystemLogService systemLogService;
 
-//    private final List<PartitionListener> lsPartitionListeners = new CopyOnWriteArrayList<PartitionListener>();
-
     // updates will be done under lock, but reads will be multithreaded.
     private volatile boolean initialized = false;
 
     // updates will be done under lock, but reads will be multithreaded.
-    private final ConcurrentMap<Integer, MigrationInfo> activeMigrations
-                = new ConcurrentHashMap<Integer, MigrationInfo>(3, 0.75f, 1);
+    private final ConcurrentMap<Integer, MigrationInfo> activeMigrations = new ConcurrentHashMap<Integer, MigrationInfo>(3, 0.75f, 1);
 
     // used on only master node!
     // both reads and updates will be done under lock!
@@ -86,7 +82,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         this.node = node;
         this.nodeEngine = node.nodeEngine;
-        this.logger = this.node.getLogger(PartitionServiceImpl.class.getName());
+        this.logger = this.node.getLogger(PartitionService.class.getName());
         this.partitions = new PartitionInfo[partitionCount];
         this.systemLogService = node.getSystemLogService();
         for (int i = 0; i < partitionCount; i++) {
@@ -167,7 +163,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public void firstArrangement() {
-        if (!node.isMaster() || !node.isActive() || !hasStorageMember()) {
+        if (!node.isMaster() || !node.isActive()) {
             return;
         }
         if (!initialized) {
@@ -211,50 +207,45 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
             return;
         }
-        if (!hasStorageMember()) {
-            reset();
-        }
-        if (!member.isLiteMember()) {
-            clearTaskQueues();
-            lock.lock();
-            try {
-                // inactivate migration and sending of PartitionRuntimeState (@see #sendPartitionRuntimeState)
-                // let all members notice the dead and fix their own records and indexes.
-                // otherwise new master may take action fast and send new partition state
-                // before other members realize the dead one and fix their records.
-                final boolean migrationStatus = migrationActive.getAndSet(false);
-                // list of partitions those have dead member in their replicas
-                // !! this should be calculated before dead member is removed from partition table !!
-                int[] indexesOfDead = new int[partitions.length];
-                for (PartitionInfo partition : partitions) {
-                    final int replicaIndexOfDead = partition.getReplicaIndexOf(deadAddress);
-                    indexesOfDead[partition.getPartitionId()] = replicaIndexOfDead;
-                    // shift partition table up.
-                    // safe removal of dead address from partition table.
-                    // there might be duplicate dead address in partition table
-                    // during migration tasks' execution (when there are multiple backups and
-                    // copy backup tasks; see MigrationRequestOperation selfCopyReplica.)
-                    // or because of a bug.
-                    while (partition.onDeadAddress(deadAddress));
-                }
-                fixPartitionsForDead(member, indexesOfDead);
-                // activate migration back after connectionDropTime x 10 milliseconds,
-                // thinking optimistically that all nodes notice the dead one in this period.
-                final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
-                        * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
-                nodeEngine.getExecutionService().schedule(new Runnable() {
-                    public void run() {
-                        migrationActive.compareAndSet(false, migrationStatus);
-                    }
-                }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
-            } finally {
-                lock.unlock();
+        clearTaskQueues();
+        lock.lock();
+        try {
+            // inactivate migration and sending of PartitionRuntimeState (@see #sendPartitionRuntimeState)
+            // let all members notice the dead and fix their own records and indexes.
+            // otherwise new master may take action fast and send new partition state
+            // before other members realize the dead one and fix their records.
+            final boolean migrationStatus = migrationActive.getAndSet(false);
+            // list of partitions those have dead member in their replicas
+            // !! this should be calculated before dead member is removed from partition table !!
+            int[] indexesOfDead = new int[partitions.length];
+            for (PartitionInfo partition : partitions) {
+                final int replicaIndexOfDead = partition.getReplicaIndexOf(deadAddress);
+                indexesOfDead[partition.getPartitionId()] = replicaIndexOfDead;
+                // shift partition table up.
+                // safe removal of dead address from partition table.
+                // there might be duplicate dead address in partition table
+                // during migration tasks' execution (when there are multiple backups and
+                // copy backup tasks; see MigrationRequestOperation selfCopyReplica.)
+                // or because of a bug.
+                while (partition.onDeadAddress(deadAddress)) ;
             }
+            fixPartitionsForDead(member, indexesOfDead);
+            // activate migration back after connectionDropTime x 10 milliseconds,
+            // thinking optimistically that all nodes notice the dead one in this period.
+            final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
+                    * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
+            nodeEngine.getExecutionService().schedule(new Runnable() {
+                public void run() {
+                    migrationActive.compareAndSet(false, migrationStatus);
+                }
+            }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
+        } finally {
+            lock.unlock();
         }
     }
 
     private void fixPartitionsForDead(final MemberImpl deadMember, final int[] indexesOfDead) {
-        if (!deadMember.isLiteMember() && node.isMaster() && node.isActive()) {
+        if (node.isMaster() && node.isActive()) {
             lock.lock();
             try {
                 sendingDiffs.set(true);
@@ -488,15 +479,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 node.getConfig().getPartitionGroupConfig());
     }
 
-    private boolean hasStorageMember() {
-        for (Member member : node.getClusterService().getMembers()) {
-            if (!member.isLiteMember()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public PartitionInfo[] getPartitions() {
         return partitions;
     }
@@ -525,7 +507,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
-        if (node.isLiteMember()) return false;
         int maxBackupCount = getMaxBackupCount();
         if (maxBackupCount == 0) return false;
         MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(

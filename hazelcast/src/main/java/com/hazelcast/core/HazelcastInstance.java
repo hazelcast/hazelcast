@@ -284,9 +284,9 @@ public interface HazelcastInstance {
     LifecycleService getLifecycleService();
 
 
-    <S extends DistributedObject> S getDistributedObject(Class<? extends RemoteService> serviceClass, Object id);
+    <T extends DistributedObject> T getDistributedObject(Class<? extends RemoteService> serviceClass, Object id);
 
-    <S extends DistributedObject> S getDistributedObject(String serviceName, Object id);
+    <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
 
 
     void registerSerializer(final TypeSerializer serializer, Class type);

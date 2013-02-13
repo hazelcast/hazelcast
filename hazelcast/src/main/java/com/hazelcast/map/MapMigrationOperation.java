@@ -35,7 +35,6 @@ import java.util.Map.Entry;
 public class MapMigrationOperation extends AbstractOperation {
 
     private Map<String, Map<Data, Record>> data;
-    private Map<String, Map<Data, LockInfo>> locks;
 
     public MapMigrationOperation() {
     }
@@ -43,7 +42,6 @@ public class MapMigrationOperation extends AbstractOperation {
     public MapMigrationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Map<Data, Record>>(container.maps.size());
-        locks = new HashMap<String, Map<Data, LockInfo>>(container.maps.size());
         for (Entry<String, PartitionRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
             final MapConfig mapConfig = entry.getValue().getMapContainer().getMapConfig();
@@ -56,11 +54,6 @@ public class MapMigrationOperation extends AbstractOperation {
                 map.put(recordEntry.getKey(), recordEntry.getValue());
             }
             data.put(name, map);
-            Map<Data, LockInfo> lockmap = new HashMap<Data, LockInfo>();
-            for (Entry<Data, LockInfo> lockEntry : recordStore.getLocks().entrySet()) {
-                lockmap.put(lockEntry.getKey(), lockEntry.getValue());
-            }
-            locks.put(name, lockmap);
         }
     }
 
@@ -77,15 +70,6 @@ public class MapMigrationOperation extends AbstractOperation {
                     record.setState(recordEntry.getState());
                     record.setStats(recordEntry.getStats());
                     recordStore.getRecords().put(entry.getKey(), record);
-                }
-            }
-        }
-        if (locks != null) {
-            for (Entry<String, Map<Data, LockInfo>> entry : locks.entrySet()) {
-                String mapName = entry.getKey();
-                RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
-                for (Entry<Data, LockInfo> lockEntry : entry.getValue().entrySet()) {
-                    recordStore.putLock(lockEntry.getKey(), lockEntry.getValue());
                 }
             }
         }
@@ -110,20 +94,6 @@ public class MapMigrationOperation extends AbstractOperation {
             }
             data.put(name, map);
         }
-        int lsize = in.readInt();
-        locks = new HashMap<String, Map<Data, LockInfo>>(lsize);
-        for (int i = 0; i < lsize; i++) {
-            String name = in.readUTF();
-            int mapSize = in.readInt();
-            Map<Data, LockInfo> map = new HashMap<Data, LockInfo>(lsize);
-            for (int j = 0; j < mapSize; j++) {
-                Data key = new Data();
-                key.readData(in);
-                LockInfo lockInfo = IOUtil.readNullableObject(in);
-                map.put(key, lockInfo);
-            }
-            locks.put(name, map);
-        }
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
@@ -137,19 +107,9 @@ public class MapMigrationOperation extends AbstractOperation {
                 out.writeObject(entry.getValue());
             }
         }
-        out.writeInt(locks.size());
-        for (Entry<String, Map<Data, LockInfo>> mapEntry : locks.entrySet()) {
-            out.writeUTF(mapEntry.getKey());
-            Map<Data, LockInfo> map = mapEntry.getValue();
-            out.writeInt(map.size());
-            for (Entry<Data, LockInfo> entry : map.entrySet()) {
-                entry.getKey().writeData(out);
-                IOUtil.writeNullableObject(out, entry.getValue());
-            }
-        }
     }
 
     public boolean isEmpty() {
-        return (data == null || data.isEmpty()) && (locks == null || locks.isEmpty());
+        return data == null || data.isEmpty();
     }
 }

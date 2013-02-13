@@ -27,7 +27,6 @@
                 <xs:extension base="hazelcast-bean">
                     <xs:sequence>
                         <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="lite-member" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>

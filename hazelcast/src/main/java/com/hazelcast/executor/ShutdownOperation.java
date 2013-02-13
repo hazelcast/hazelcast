@@ -14,30 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.executor;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class ForceUnlockBackupOperation extends AbstractMapOperation implements BackupOperation {
+/**
+ * @mdogan 2/13/13
+ */
+public final class ShutdownOperation extends AbstractNamedOperation {
 
-    public ForceUnlockBackupOperation(String name, Data dataKey) {
-        super(name, dataKey);
+    public ShutdownOperation() {
+        super();
     }
 
-    public ForceUnlockBackupOperation() {
+    public ShutdownOperation(String name) {
+        super(name);
     }
 
-    public void run() {
-        MapService mapService = (MapService) getService();
-        int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        recordStore.forceUnlock(dataKey);
+    public void run() throws Exception {
+        DistributedExecutorService service = getService();
+        service.shutdownExecutor(getName());
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }
-
 }

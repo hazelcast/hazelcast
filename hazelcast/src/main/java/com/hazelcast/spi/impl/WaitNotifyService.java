@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -208,6 +209,19 @@ class WaitNotifyService {
     void shutdown() {
         logger.log(Level.FINEST, "Stopping tasks...");
         expirationTask.cancel(true);
+        for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+            for (WaitingOp waitingOp : q) {
+                if (waitingOp.isValid()) {
+                    final Operation op = waitingOp.getOperation();
+                    // only for local invocations, remote ones will be expired via #onMemberLeft()
+                    if (op.getCallId() < 0) {
+                        op.getResponseHandler().sendResponse(new HazelcastInstanceNotActiveException());
+                    }
+                }
+            }
+            q.clear();
+        }
+        mapWaitingOps.clear();
     }
 
     static class KeyBasedWaitingOp extends WaitingOp implements KeyBasedOperation {

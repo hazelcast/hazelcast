@@ -23,7 +23,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
@@ -37,7 +37,6 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
 
     private final Properties props = new Properties();
-    private boolean useLiteMember = false;
     private String instanceName = null;
     private HazelcastInstance instance;
     private Config config = null;
@@ -54,18 +53,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
         }
         String configResourcePath = null;
         instanceName = CacheEnvironment.getInstanceName(props);
-        useLiteMember = CacheEnvironment.isLiteMember(props);
-        if (!useLiteMember && props.contains(CacheEnvironment.USE_SUPER_CLIENT)) {
-            useLiteMember = CacheEnvironment.isSuperClient(props);
-            logger.log(Level.WARNING, "'" + CacheEnvironment.USE_SUPER_CLIENT + "' property is deprecated!" +
-                    " Please use '" + CacheEnvironment.USE_LITE_MEMBER + "' instead...");
-        }
         configResourcePath = CacheEnvironment.getConfigFilePath(props);
-        if (useLiteMember) {
-            logger.log(Level.WARNING,
-                    "Creating Hazelcast node as Lite-Member. "
-                            + "Make sure this node has access to an already running cluster...");
-        }
         if (!isEmpty(configResourcePath)) {
             try {
                 config = ConfigLoader.load(configResourcePath);
@@ -96,7 +84,6 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
             config = new XmlConfigBuilder().build();
         }
         config.setInstanceName(instanceName);
-        config.setLiteMember(useLiteMember);
         instance = Hazelcast.newHazelcastInstance(config);
     }
 

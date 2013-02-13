@@ -65,8 +65,6 @@ public class SimpleMapTest {
         Config cfg = new XmlConfigBuilder().build();
         cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.DATA);
         cfg.getSerializationConfig().setPortableFactory(new PortableFactory() {
-            public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
-            }
             public Portable create(int classId) {
                 return new PortableByteArray();
             }

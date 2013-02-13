@@ -16,8 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.atomicnumber.AtomicNumberService;
 import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
 import com.hazelcast.core.AtomicNumber;
 import com.hazelcast.monitor.LocalAtomicNumberStats;
 import com.hazelcast.nio.protocol.Command;

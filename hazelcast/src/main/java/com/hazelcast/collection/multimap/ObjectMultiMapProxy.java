@@ -21,7 +21,6 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.concurrent.lock.LockInfo;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -165,13 +164,13 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public boolean tryLock(K key, long time, TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        return lockInternal(dataKey, timeunit.toMillis(time));
+        return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit);
     }
 
     public void unlock(K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        unlockInternal(dataKey);
+        lockSupport.unlock(nodeEngine, dataKey);
     }
 
     public LocalMapStats getLocalMultiMapStats() {
@@ -194,12 +193,12 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
                         System.out.println("\t\t\tval: " + nodeEngine.toObject(o.getObject()) + ", id: " + o.getRecordId());
                     }
                 }
-                Map<Data, LockInfo> locks = container.getLocks();
-                System.out.println("\t\t\t\t\t-------------");
-                for (Data key : locks.keySet()) {
-                    System.out.println("\t\t\t\t\t\tkey: " + nodeEngine.toObject(key));
-                }
-                System.out.println("\t\t\t\t\t-------------");
+//                Map<Data, LockInfo> locks = container.getLocks();
+//                System.out.println("\t\t\t\t\t-------------");
+//                for (Data key : locks.keySet()) {
+//                    System.out.println("\t\t\t\t\t\tkey: " + nodeEngine.toObject(key));
+//                }
+//                System.out.println("\t\t\t\t\t-------------");
             }
 
         }

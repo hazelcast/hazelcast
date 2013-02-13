@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.exception;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.SharedService;
 
 /**
- * @mdogan 1/15/13
+ * @mdogan 2/12/13
  */
-public class DistributedObjectDestroyedException extends HazelcastException {
+public interface SharedLockService extends SharedService {
 
-    public DistributedObjectDestroyedException(String service, Object objectId) {
-        super("DistributedObject[" + service + " -> " + objectId + "] has been destroyed!");
-    }
+    final static String SERVICE_NAME = "hz:impl:lockService";
+
+    LockStoreView createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount);
+
+    void destroyLockStore(int partitionId, ILockNamespace namespace);
 }

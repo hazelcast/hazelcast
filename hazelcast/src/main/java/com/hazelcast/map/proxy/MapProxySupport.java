@@ -16,7 +16,10 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.core.*;
+import com.hazelcast.concurrent.lock.*;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.Transaction;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
@@ -40,10 +43,12 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected final String name;
+    protected final LockProxySupport lockSupport ;
 
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
         super(nodeEngine, mapService);
         this.name = name;
+        lockSupport = new LockProxySupport(new LockNamespace(MapService.SERVICE_NAME, name));
     }
 
     protected Data getInternal(Data key) {
@@ -285,65 +290,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    protected void lockInternal(final Data key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        LockOperation operation = new LockOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
-            future.get();
-        } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected void unlockInternal(final Data key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        UnlockOperation operation = new UnlockOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
-            future.get();
-        } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected boolean isLockedInternal(final Data key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        IsLockedOperation operation = new IsLockedOperation(name, key);
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
-            return (Boolean) future.get();
-        } catch (Throwable t) {
-            return (Boolean) ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected boolean tryLockInternal(final Data key, final long timeout, final TimeUnit timeunit) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        TryLockOperation operation = new TryLockOperation(name, key, getTimeInMillis(timeout, timeunit));
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
-            return (Boolean) future.get();
-        } catch (Throwable t) {
-            return (Boolean) ExceptionUtil.rethrow(t);
-        }
-    }
-
     protected Set<Data> keySetInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
@@ -412,21 +358,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             clearOperation.setServiceName(SERVICE_NAME);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, clearOperation);
-        } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected void forceUnlockInternal(final Data key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        ForceUnlockOperation operation = new ForceUnlockOperation(name, key);
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
-            future.get();
         } catch (Throwable t) {
             ExceptionUtil.rethrow(t);
         }

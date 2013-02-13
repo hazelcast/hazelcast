@@ -27,7 +27,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.concurrent.lock.LockInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -43,7 +42,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
@@ -92,8 +90,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void init(final NodeEngine nodeEngine, Properties properties) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            PartitionInfo partition = nodeEngine.getPartitionService().getPartitionInfo(i);
-            partitionContainers[i] = new PartitionContainer(this, partition);
+            partitionContainers[i] = new PartitionContainer(this, i);
         }
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 3, 1, TimeUnit.SECONDS);
     }
@@ -271,7 +268,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     final MapContainer mapContainer = getMapContainer(mapPartition.name);
                     final MapConfig mapConfig = mapContainer.getMapConfig();
                     if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
-                        mapPartition.clear();
+                        mapPartition.destroy();
                     }
                 }
             }
@@ -320,7 +317,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
         for (PartitionRecordStore mapPartition : container.maps.values()) {
-            mapPartition.clear();
+            mapPartition.destroy();
         }
         container.maps.clear();
         container.transactions.clear(); // TODO: not sure?
@@ -394,7 +391,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
         public NearCache createNew(String mapName) {
-            return new NearCache(mapName, nodeEngine);
+            return new NearCache(mapName, MapService.this);
         }
     };
 
@@ -468,32 +465,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void memberRemoved(final MembershipServiceEvent membershipEvent) {
         MemberImpl member = membershipEvent.getMember();
-        releaseMemberLocks(member);
+//        releaseMemberLocks(member);
         // TODO: @mm - when a member dies;
         // * release locks
         // * rollback transaction
         // * do not know ?
     }
-
-    private void releaseMemberLocks(MemberImpl member) {
-        for (PartitionContainer container : partitionContainers) {
-            for (PartitionRecordStore recordStore : container.maps.values()) {
-                Map<Data, LockInfo> locks = recordStore.getLocks();
-                for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
-                    if (entry.getValue().getLockOwner().equals(member.getAddress())) {
-                        ForceUnlockOperation forceUnlockOperation = new ForceUnlockOperation(recordStore.name, entry.getKey());
-                        forceUnlockOperation.setNodeEngine(nodeEngine);
-                        forceUnlockOperation.setServiceName(SERVICE_NAME);
-                        forceUnlockOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                        forceUnlockOperation.setPartitionId(container.partitionInfo.getPartitionId());
-                        nodeEngine.getOperationService().runOperation(forceUnlockOperation);
-                        recordStore.forceUnlock(entry.getKey());
-                    }
-                }
-            }
-        }
-    }
-
 
     public void shutdown() {
         final PartitionContainer[] containers = partitionContainers;
@@ -871,6 +848,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 result.add(new QueryResultEntryImpl(key, key, queryEntry.getValueData()));
             }
         }
+    }
+
+    public static String getNamespace(String name) {
+        return MapService.SERVICE_NAME + '/' + name;
     }
 
 

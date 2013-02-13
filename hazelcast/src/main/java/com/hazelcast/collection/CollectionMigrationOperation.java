@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.concurrent.lock.LockInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,12 +32,12 @@ import java.util.Map;
  */
 public class CollectionMigrationOperation extends AbstractOperation {
 
-    Map<CollectionProxyId, Map[]> map;
+    Map<CollectionProxyId, Map> map;
 
     public CollectionMigrationOperation() {
     }
 
-    public CollectionMigrationOperation(Map<CollectionProxyId, Map[]> map) {
+    public CollectionMigrationOperation(Map<CollectionProxyId, Map> map) {
         this.map = map;
     }
 
@@ -49,11 +48,11 @@ public class CollectionMigrationOperation extends AbstractOperation {
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
-        for (Map.Entry<CollectionProxyId, Map[]> entry : map.entrySet()) {
+        for (Map.Entry<CollectionProxyId, Map> entry : map.entrySet()) {
             CollectionProxyId proxyId = entry.getKey();
             proxyId.writeData(out);
 
-            Map<Data, Collection<CollectionRecord>> collections = entry.getValue()[0];
+            Map<Data, Collection<CollectionRecord>> collections = entry.getValue();
             out.writeInt(collections.size());
             for (Map.Entry<Data, Collection<CollectionRecord>> collectionEntry : collections.entrySet()) {
                 Data key = collectionEntry.getKey();
@@ -65,21 +64,12 @@ public class CollectionMigrationOperation extends AbstractOperation {
                     out.writeObject(record.getObject());
                 }
             }
-
-            Map<Data, LockInfo> locks = entry.getValue()[1];
-            out.writeInt(locks.size());
-            for (Map.Entry<Data, LockInfo> lockEntry : locks.entrySet()) {
-                Data key = lockEntry.getKey();
-                key.writeData(out);
-                LockInfo lockInfo = lockEntry.getValue();
-                lockInfo.writeData(out);
-            }
         }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        map = new HashMap<CollectionProxyId, Map[]>(mapSize);
+        map = new HashMap<CollectionProxyId, Map>(mapSize);
         for (int i = 0; i < mapSize; i++) {
             CollectionProxyId proxyId = new CollectionProxyId();
             proxyId.readData(in);
@@ -89,7 +79,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                 Data key = new Data();
                 key.readData(in);
                 int collSize = in.readInt();
-                Collection<CollectionRecord> coll = new ArrayList(collSize);
+                Collection<CollectionRecord> coll = new ArrayList<CollectionRecord>(collSize);
                 for (int k = 0; k < collSize; k++) {
                     long recordId = in.readLong();
                     Object obj = in.readObject();
@@ -98,16 +88,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                 collections.put(key, coll);
 
             }
-            int lockSize = in.readInt();
-            Map<Data, LockInfo> locks = new HashMap<Data, LockInfo>(lockSize);
-            for (int j = 0; j < lockSize; j++) {
-                Data key = new Data();
-                key.readData(in);
-                LockInfo lockInfo = new LockInfo();
-                lockInfo.readData(in);
-                locks.put(key, lockInfo);
-            }
-            map.put(proxyId, new Map[]{collections, locks});
+            map.put(proxyId, collections);
         }
     }
 

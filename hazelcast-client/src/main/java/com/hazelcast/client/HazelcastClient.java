@@ -19,7 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.*;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
-import com.hazelcast.concurrent.lock.ObjectLockProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
@@ -249,8 +248,9 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public ILock getLock(Object obj) {
-        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
-        return new ObjectLockProxy(obj, map);
+//        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
+//        return new ObjectLockProxy(obj, map);
+        return null;
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {

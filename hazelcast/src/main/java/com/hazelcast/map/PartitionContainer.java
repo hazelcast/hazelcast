@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,13 +25,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PartitionContainer {
     private final MapService mapService;
-    final PartitionInfo partitionInfo;
-    final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
+    final int partitionId;
+    final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, DefaultRecordStore>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
 
-    public PartitionContainer(final MapService mapService, final PartitionInfo partitionInfo) {
+    public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
-        this.partitionInfo = partitionInfo;
+        this.partitionId = partitionId;
     }
 
     void onDeadAddress(Address deadAddress) {
@@ -109,7 +108,7 @@ public class PartitionContainer {
 
     void destroy() {
         for (PartitionRecordStore store : maps.values()) {
-            store.clear();
+            store.destroy();
         }
         maps.clear();
         transactions.clear();

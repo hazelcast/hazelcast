@@ -31,7 +31,7 @@ import java.util.Random;
 
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class BaseTest {
+public abstract class BaseTest {
 
     protected static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
     protected static int instanceCount = 3;

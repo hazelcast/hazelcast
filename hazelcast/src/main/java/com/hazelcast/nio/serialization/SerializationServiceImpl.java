@@ -105,24 +105,24 @@ public final class SerializationServiceImpl implements SerializationService {
     public SerializationServiceImpl(int version, PortableFactory portableFactory, ManagedContext managedContext) {
         this.managedContext = managedContext;
         serializationContext = new SerializationContextImpl(portableFactory, version);
-        registerDefault(DataSerializable.class, dataSerializer = new DataSerializer());
-        registerDefault(Portable.class, portableSerializer = new PortableSerializer(serializationContext));
-        registerDefault(Byte.class, new ByteSerializer());
-        registerDefault(Boolean.class, new BooleanSerializer());
-        registerDefault(Character.class, new CharSerializer());
-        registerDefault(Short.class, new ShortSerializer());
-        registerDefault(Integer.class, new IntegerSerializer());
-        registerDefault(Long.class, new LongSerializer());
-        registerDefault(Float.class, new FloatSerializer());
-        registerDefault(Double.class, new DoubleSerializer());
-        registerDefault(byte[].class, new ByteArraySerializer());
-        registerDefault(char[].class, new CharArraySerializer());
-        registerDefault(short[].class, new ShortArraySerializer());
-        registerDefault(int[].class, new IntegerArraySerializer());
-        registerDefault(long[].class, new LongArraySerializer());
-        registerDefault(float[].class, new FloatArraySerializer());
-        registerDefault(double[].class, new DoubleArraySerializer());
-        registerDefault(String.class, new StringSerializer());
+        registerConstant(DataSerializable.class, dataSerializer = new DataSerializer());
+        registerConstant(Portable.class, portableSerializer = new PortableSerializer(serializationContext));
+        registerConstant(Byte.class, new ByteSerializer());
+        registerConstant(Boolean.class, new BooleanSerializer());
+        registerConstant(Character.class, new CharSerializer());
+        registerConstant(Short.class, new ShortSerializer());
+        registerConstant(Integer.class, new IntegerSerializer());
+        registerConstant(Long.class, new LongSerializer());
+        registerConstant(Float.class, new FloatSerializer());
+        registerConstant(Double.class, new DoubleSerializer());
+        registerConstant(byte[].class, new ByteArraySerializer());
+        registerConstant(char[].class, new CharArraySerializer());
+        registerConstant(short[].class, new ShortArraySerializer());
+        registerConstant(int[].class, new IntegerArraySerializer());
+        registerConstant(long[].class, new LongArraySerializer());
+        registerConstant(float[].class, new FloatArraySerializer());
+        registerConstant(double[].class, new DoubleArraySerializer());
+        registerConstant(String.class, new StringSerializer());
         safeRegister(Date.class, new DateSerializer());
         safeRegister(BigInteger.class, new BigIntegerSerializer());
         safeRegister(BigDecimal.class, new BigDecimalSerializer());
@@ -201,7 +201,7 @@ public final class SerializationServiceImpl implements SerializationService {
             in = new ContextAwareDataInput(data, this);
             Object obj = serializer.read(in);
             if (managedContext != null) {
-                managedContext.initialize(obj);
+                obj = managedContext.initialize(obj);
             }
             return obj;
         } catch (Throwable e) {
@@ -346,7 +346,7 @@ public final class SerializationServiceImpl implements SerializationService {
         return serializer;
     }
 
-    private void registerDefault(Class type, TypeSerializer serializer) {
+    private void registerConstant(Class type, TypeSerializer serializer) {
         constantTypesMap.put(type, serializer);
         constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
     }

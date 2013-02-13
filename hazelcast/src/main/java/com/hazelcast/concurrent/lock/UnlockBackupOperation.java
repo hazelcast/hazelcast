@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.operations;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,38 +23,37 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @ali 1/16/13
- */
-public class UnlockBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class UnlockBackupOperation extends BaseLockOperation implements BackupOperation {
 
-    int threadId;
-
-    String firstCaller;
+    private boolean force = false;
+    private String originalCallerUuid;
 
     public UnlockBackupOperation() {
     }
 
-    public UnlockBackupOperation(CollectionProxyId proxyId, Data dataKey, int threadId, String firstCaller) {
-        super(proxyId, dataKey);
-        this.threadId = threadId;
-        this.firstCaller = firstCaller;
+    public UnlockBackupOperation(ILockNamespace namespace, Data key, int threadId, String originalCallerUuid, boolean force) {
+        super(namespace, key, threadId);
+        this.force = force;
+        this.originalCallerUuid = originalCallerUuid;
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
-        response = container.unlock(dataKey, firstCaller, threadId);
+        if (force) {
+            response = getLockStore().forceUnlock(key);
+        } else {
+            response = getLockStore().unlock(key, originalCallerUuid, threadId);
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(firstCaller);
-        out.writeInt(threadId);
+        out.writeUTF(originalCallerUuid);
+        out.writeBoolean(force);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        firstCaller = in.readUTF();
-        threadId = in.readInt();
+        originalCallerUuid = in.readUTF();
+        force = in.readBoolean();
     }
 }
