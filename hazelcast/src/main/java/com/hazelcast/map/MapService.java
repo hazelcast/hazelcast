@@ -586,7 +586,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     oldValue = oldValue != null ? oldValue : toObject(dataOldValue);
                     testValue = oldValue;
                 } else {
-                    value = value != null ? value : toObject(value);
+                    value = value != null ? value : toObject(dataValue);
                     testValue = value;
                 }
                 key = key != null ? key : toObject(key);
