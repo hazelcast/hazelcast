@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 public class PartitionContainer {
     private final MapService mapService;
     final int partitionId;
-    final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, DefaultRecordStore>(1000);
+    final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
@@ -103,7 +103,7 @@ public class PartitionContainer {
     void destroyMap(String name) {
         PartitionRecordStore recordStore = maps.remove(name);
         if (recordStore != null)
-            recordStore.clear();
+            recordStore.destroy();
     }
 
     void destroy() {

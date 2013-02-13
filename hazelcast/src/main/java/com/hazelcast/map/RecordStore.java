@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.concurrent.lock.LockInfo;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.serialization.Data;
 

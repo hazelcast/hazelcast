@@ -18,6 +18,7 @@ package com.hazelcast.map.proxy;
 
 import com.hazelcast.concurrent.lock.*;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.instance.MemberImpl;
