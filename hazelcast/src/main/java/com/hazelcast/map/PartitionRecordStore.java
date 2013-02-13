@@ -29,11 +29,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class DefaultRecordStore implements RecordStore {
+public class PartitionRecordStore implements RecordStore {
     final String name;
     final PartitionInfo partitionInfo;
     final PartitionContainer partitionContainer;
-
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     // todo remove this. do not forget to migrate if decide not to remove
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
@@ -41,7 +40,7 @@ public class DefaultRecordStore implements RecordStore {
     final MapService mapService;
     final LockStore lockStore;
 
-    public DefaultRecordStore(String name, PartitionContainer partitionContainer) {
+    public PartitionRecordStore(String name, PartitionContainer partitionContainer) {
         this.name = name;
         this.partitionInfo = partitionContainer.partitionInfo;
         this.partitionContainer = partitionContainer;
@@ -52,7 +51,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public void flush(boolean flushAllRecords) {
         for (Record record : records.values()) {
-            if (flushAllRecords || record.getState().isDirty())
+            if (flushAllRecords || record.getState().shouldStored())
                 mapStoreWrite(record, true);
         }
     }
@@ -74,10 +73,8 @@ public class DefaultRecordStore implements RecordStore {
         return records.size();
     }
 
-    public boolean containsValue(Object dataValue) {
+    public boolean containsValue(Object value) {
         for (Record record : records.values()) {
-            // TODO: @mm - do we actually need to de-serialize to object?
-            Object value = mapService.toObject(dataValue);
             Object recordValue = mapService.toObject(record.getValue());
             if (recordValue.equals(value))
                 return true;
@@ -423,7 +420,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void accessRecord(Record record) {
-        record.access();
+        record.onAccess();
         int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
             record.getState().updateIdleExpireTime(maxIdleSeconds*1000);
@@ -441,6 +438,7 @@ public class DefaultRecordStore implements RecordStore {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis <= 0 || flush) {
                 mapContainer.getStore().store(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
+                record.onStore();
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
@@ -456,6 +454,7 @@ public class DefaultRecordStore implements RecordStore {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
                 mapContainer.getStore().delete(mapService.toObject(record.getKey()));
+                record.onStore();
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
@@ -475,6 +474,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public void setRecordValue(Record record, Object value) {
         accessRecord(record);
+        record.onUpdate();
         if (record instanceof DataRecord)
             ((DataRecord) record).setValue(mapService.toData(value));
         else if (record instanceof ObjectRecord)

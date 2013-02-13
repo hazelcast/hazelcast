@@ -44,7 +44,7 @@ public class MapMigrationOperation extends AbstractOperation {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Map<Data, Record>>(container.maps.size());
         locks = new HashMap<String, Map<Data, LockInfo>>(container.maps.size());
-        for (Entry<String, DefaultRecordStore> entry : container.maps.entrySet()) {
+        for (Entry<String, PartitionRecordStore> entry : container.maps.entrySet()) {
             String name = entry.getKey();
             final MapConfig mapConfig = entry.getValue().getMapContainer().getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {

@@ -53,6 +53,7 @@ public class TryLockOperation extends LockAwareOperation implements BackupAwareO
 
     public void run() {
         locked = recordStore.lock(getKey(), getCallerUuid(), threadId, ttl);
+        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
     }
 
     public boolean shouldBackup() {

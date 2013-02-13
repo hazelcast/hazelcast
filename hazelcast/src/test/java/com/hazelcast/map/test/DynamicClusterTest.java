@@ -16,19 +16,9 @@
 
 package com.hazelcast.map.test;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.util.Clock;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -53,28 +43,13 @@ public class DynamicClusterTest extends BaseTest {
             assertEquals(map.size(), size);
             System.out.println("trial:"+i+" instance count:"+instanceCount);
             if((rand.nextInt(10)%2 == 0 && instanceCount > 2) || instanceCount > 6) {
-                System.out.println("remove...");
-                System.out.println("remove...");
-                System.out.println("remove...");
                 removeInstance();
-                System.out.println("removed!!!");
-                System.out.println("removed!!!");
-                System.out.println("removed!!!");
             }
             else {
-                System.out.println("new instance...");
-                System.out.println("new instance...");
-                System.out.println("new instance...");
                 newInstance();
-                System.out.println("instance is up!!!");
-                System.out.println("instance is up!!!");
-                System.out.println("instance is up!!!");
             }
             Thread.sleep(10000);
             int realSize = getInstance(0).getCluster().getMembers().size();
-            System.out.println("Instance count Real:" + realSize + " Expected:"+ instanceCount );
-            System.out.println("Instance count Real:" + realSize + " Expected:"+ instanceCount );
-            System.out.println("Instance count Real:" + realSize + " Expected:"+ instanceCount );
             instanceCount = realSize;
         }
 

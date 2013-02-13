@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 public class PartitionContainer {
     private final MapService mapService;
     final PartitionInfo partitionInfo;
-    final ConcurrentMap<String, DefaultRecordStore> maps = new ConcurrentHashMap<String, DefaultRecordStore>(1000);
+    final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
 
     public PartitionContainer(final MapService mapService, final PartitionInfo partitionInfo) {
@@ -45,10 +45,10 @@ public class PartitionContainer {
         return mapService;
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<String, DefaultRecordStore> recordStoreConstructor
-            = new ConcurrencyUtil.ConstructorFunction<String, DefaultRecordStore>() {
-        public DefaultRecordStore createNew(String name) {
-            return new DefaultRecordStore(name, PartitionContainer.this);
+    private final ConcurrencyUtil.ConstructorFunction<String, PartitionRecordStore> recordStoreConstructor
+            = new ConcurrencyUtil.ConstructorFunction<String, PartitionRecordStore>() {
+        public PartitionRecordStore createNew(String name) {
+            return new PartitionRecordStore(name, PartitionContainer.this);
         }
     };
 
@@ -94,7 +94,7 @@ public class PartitionContainer {
 
     public int getMaxBackupCount() {
         int max = 1;
-        for (DefaultRecordStore mapPartition : maps.values()) {
+        for (PartitionRecordStore mapPartition : maps.values()) {
             // TODO: get max map backup count!
 //        777    max = Math.max(max, mapPartition.get);
         }
@@ -102,12 +102,13 @@ public class PartitionContainer {
     }
 
     void destroyMap(String name) {
-        DefaultRecordStore recordStore = maps.remove(name);
-        recordStore.clear();
+        PartitionRecordStore recordStore = maps.remove(name);
+        if (recordStore != null)
+            recordStore.clear();
     }
 
     void destroy() {
-        for (DefaultRecordStore store : maps.values()) {
+        for (PartitionRecordStore store : maps.values()) {
             store.clear();
         }
         maps.clear();

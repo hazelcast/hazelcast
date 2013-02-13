@@ -44,6 +44,7 @@ public class LockOperation extends LockAwareOperation implements BackupAwareOper
         mapService = getService();
         PartitionContainer pc = mapService.getPartitionContainer(getPartitionId());
         recordStore = pc.getRecordStore(name);
+        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
     }
 
     public void run() {

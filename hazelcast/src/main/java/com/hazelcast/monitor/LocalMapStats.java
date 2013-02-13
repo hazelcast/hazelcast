@@ -22,10 +22,6 @@ package com.hazelcast.monitor;
  * entries of a distributed map. Each member also holds backup entries
  * of another member. LocalMapStats tells you the count of owned and backup
  * entries besides their size in memory.
- * <p/>
- * When an entry is removed, it is not erased from the map immediately.
- * Hazelcast will mark it as removed and erase it couple of seconds later for
- * correct versioning of backups.
  */
 public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats> {
 
@@ -44,17 +40,6 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
     long getBackupEntryCount();
 
     /**
-     * Returns the number of marked as removed entries in this member.
-     * <p/>
-     * When an entry is removed, it is not erased from the map immediately.
-     * Hazelcast will mark it as removed and erase it couple of seconds later for
-     * correct versioning of backups.
-     *
-     * @return number of entries marked as removed.
-     */
-    long getMarkedAsRemovedEntryCount();
-
-    /**
      * Returns memory cost (number of bytes) of owned entries in this member.
      *
      * @return memory cost (number of bytes) of owned entries in this member.
@@ -67,14 +52,6 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
      * @return memory cost (number of bytes) of backup entries in this member.
      */
     long getBackupEntryMemoryCost();
-
-    /**
-     * Returns memory cost (number of bytes) of marked as
-     * removed entries in this member.
-     *
-     * @return memory cost (number of bytes) of marked as removed entries.
-     */
-    long getMarkedAsRemovedMemoryCost();
 
     /**
      * Returns the creation time of this map on this member.
@@ -98,13 +75,6 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
     long getLastUpdateTime();
 
     /**
-     * Returns the last eviction time of the locally owned entries.
-     *
-     * @return last eviction time.
-     */
-    long getLastEvictionTime();
-
-    /**
      * Returns the number of hits (reads) of the locally owned entries.
      *
      * @return number of hits (reads).
@@ -117,14 +87,6 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
      * @return number of locked entries.
      */
     long getLockedEntryCount();
-
-    /**
-     * Returns the number of cluster-wide threads waiting
-     * to acquire locks for the locally owned keys.
-     *
-     * @return number of threads waiting for locks.
-     */
-    long getLockWaitCount();
 
     /**
      * Returns the number of entries that the member owns and are dirty (updated but not persisted yet).

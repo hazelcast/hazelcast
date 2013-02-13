@@ -637,7 +637,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
     void removeEntryListener(EntryListener<K, V> listener, K key);
 
     /**
-     * Returns the <tt>MapEntry</tt> for the specified key.
+     * Returns the <tt>EntryView</tt> for the specified key.
      * <p/>
      * <p><b>Warning:</b></p>
      * <p>
@@ -651,10 +651,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * defined in <tt>key</tt>'s class.
      *
      * @param key key of the entry
-     * @return <tt>MapEntry</tt> of the specified key
-     * @see MapEntry
+     * @return <tt>EntryView</tt> of the specified key
+     * @see EntryView
      */
-    Map.Entry<K, V> getMapEntry(K key);
+    EntryView<V> getEntryView(K key);
 
     /**
      * Evicts the specified key from this map. If

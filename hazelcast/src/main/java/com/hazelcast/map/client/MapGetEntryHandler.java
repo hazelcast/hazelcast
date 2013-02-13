@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
@@ -37,7 +36,7 @@ public class MapGetEntryHandler extends MapCommandHandler {
         Data key = protocol.buffers[0];
         DataMapProxy dataMapProxy = getMapProxy(name);
         
-        Map.Entry<Data, Data> mapEntry = dataMapProxy.getMapEntry(key);
+        EntryView<Data> mapEntry = dataMapProxy.getEntryView(key);
 
         if (mapEntry == null)
             return protocol.success();

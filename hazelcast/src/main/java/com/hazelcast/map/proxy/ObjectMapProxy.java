@@ -17,10 +17,8 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.ObjectFuture;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
@@ -207,9 +205,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         forceUnlockInternal(k);
     }
 
-    public void addLocalEntryListener(final EntryListener<K, V> listener) {
-    }
-
     public void addInterceptor(MapInterceptor interceptor) {
         addMapInterceptorInternal(interceptor);
     }
@@ -241,10 +236,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         removeEntryListenerInternal(listener, nodeEngine.toData(key));
     }
 
-    public Map.Entry<K, V> getMapEntry(final K key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Map.Entry<Data, Data> entry = getMapEntryInternal(nodeEngine.toData(key));
-        return new AbstractMap.SimpleImmutableEntry<K, V>((K) nodeEngine.toObject(entry.getKey()), (V) nodeEngine.toObject(entry.getValue()));
+    @Override
+    public EntryView getEntryView(K key) {
+        SimpleEntryView entryViewInternal = (SimpleEntryView) getEntryViewInternal(getNodeEngine().toData(key));
+        Data value = (Data) entryViewInternal.getValue();
+        entryViewInternal.setValue(getNodeEngine().toObject(value));
+        return entryViewInternal;
     }
 
     public boolean evict(final Object key) {

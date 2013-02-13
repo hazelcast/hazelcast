@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.merge;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.EntryView;
 
 public interface MapMergePolicy {
 
@@ -30,5 +30,5 @@ public interface MapMergePolicy {
      * @param existingEntry existing entry in the destination cluster
      * @return final value of the entry. If returns null then no change on the entry.
      */
-    Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry);
+    Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
 }

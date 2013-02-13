@@ -25,7 +25,7 @@ import java.io.IOException;
 public class TryRemoveOperation extends BaseRemoveOperation {
 
     private long timeout;
-    private transient boolean successful;
+    private transient boolean successful = false;
 
     public TryRemoveOperation(String name, Data dataKey, String txnId, long timeout) {
         super(name, dataKey, txnId);
@@ -36,10 +36,16 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void run() {
+        super.run();
         if (prepareTransaction()) {
             return;
         }
         successful = recordStore.tryRemove(dataKey);
+    }
+
+    public void afterRun() {
+        if (successful)
+            super.afterRun();
     }
 
     @Override

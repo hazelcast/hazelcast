@@ -16,14 +16,12 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.*;
@@ -472,7 +470,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    protected void addLocalEntryListenerInternal(final EntryListener<Data, Data> listener) {
+    public void addLocalEntryListener(final EntryListener listener) {
+        final MapService mapService = getService();
+        mapService.addLocalEventListener(listener, name);
     }
 
     protected void removeEntryListenerInternal(final EntryListener listener) {
@@ -496,17 +496,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         mapService.removeEventListener(listener, name, key);
     }
 
-    protected Map.Entry<Data, Data> getMapEntryInternal(final Data key) {
+    protected EntryView getEntryViewInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        GetMapEntryOperation getMapEntryOperation = new GetMapEntryOperation(name, key);
-        getMapEntryOperation.setServiceName(SERVICE_NAME);
+        GetEntryViewOperation getEntryViewOperation = new GetEntryViewOperation(name, key);
+        getEntryViewOperation.setServiceName(SERVICE_NAME);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, getMapEntryOperation,
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, getEntryViewOperation,
                     partitionId).build();
             Future f = invocation.invoke();
             Object o = nodeEngine.toObject(f.get());
-            return (Map.Entry<Data, Data>) o;
+            return (EntryView) o;
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
@@ -623,7 +623,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     }
 
     public LocalMapStats getLocalMapStats() {
-        return null;
+        return getService().createLocalMapStats(name);
     }
 
     /**

@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class PutIfAbsentOperation extends BasePutOperation {
 
+    private transient boolean successful;
 
     public PutIfAbsentOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, txnId, ttl);
@@ -29,10 +30,17 @@ public class PutIfAbsentOperation extends BasePutOperation {
     }
 
     public void run() {
+        super.run();
         if (prepareTransaction()) {
             return;
         }
         dataOldValue = mapService.toData(recordStore.putIfAbsent(dataKey, dataValue, ttl));
+        successful = dataOldValue == null;
+    }
+
+    public void afterRun() {
+        if (successful)
+            super.afterRun();
     }
 
     @Override
@@ -41,15 +49,8 @@ public class PutIfAbsentOperation extends BasePutOperation {
     }
 
     public boolean shouldBackup() {
-        return true;
+        return successful;
     }
-
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
 
     @Override
     public String toString() {

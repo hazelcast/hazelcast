@@ -16,9 +16,9 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -153,7 +153,7 @@ public class TestUtil {
     }
 
     @Ignore
-    public static class EmptyMapEntry implements MapEntry {
+    public static class EmptyEntryView implements EntryView {
         private long cost;
         private long creationTime;
         private long expirationTime;
@@ -167,7 +167,7 @@ public class TestUtil {
         private Object value;
         private long id;
 
-        public EmptyMapEntry(long id) {
+        public EmptyEntryView(long id) {
             this.id = id;
         }
 
@@ -183,7 +183,7 @@ public class TestUtil {
             return expirationTime;
         }
 
-        public int getHits() {
+        public long getHits() {
             return hits;
         }
 
@@ -207,8 +207,8 @@ public class TestUtil {
             return valid;
         }
 
-        public Object getKey() {
-            return key;
+        public Data getKey() {
+            return toData(key);
         }
 
         public Object getValue() {
@@ -265,7 +265,7 @@ public class TestUtil {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            EmptyMapEntry that = (EmptyMapEntry) o;
+            EmptyEntryView that = (EmptyEntryView) o;
             if (id != that.id) return false;
             return true;
         }

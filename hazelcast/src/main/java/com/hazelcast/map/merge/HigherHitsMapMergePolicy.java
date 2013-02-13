@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.merge;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.EntryView;
 
 public class HigherHitsMapMergePolicy implements MapMergePolicy {
 
     public static final String NAME = "hz.HIGHER_HITS";
 
-    public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
+    public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         return null;
     }
 }

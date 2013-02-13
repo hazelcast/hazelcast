@@ -19,8 +19,12 @@ package com.hazelcast.map;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.MapOperationsCounter;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,12 +36,14 @@ public class MapContainer {
     private final MapConfig mapConfig;
     private final MapStore store;
     // TODO: do we really need to store interceptors in 3 separate collections?
-    // TODO: at first pahse you can remove the ability to removeInterceptor
+    // TODO: at first phase you can remove the ability to removeInterceptor
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
+    private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
+    private final long creationTime;
 
     public MapContainer(String name, MapConfig mapConfig) {
         this.name = name;
@@ -60,10 +66,15 @@ public class MapContainer {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
+        creationTime = Clock.currentTimeMillis();
     }
 
     public IndexService getIndexService() {
         return indexService;
+    }
+
+    public MapOperationsCounter getMapOperationCounter() {
+        return mapOperationCounter;
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
@@ -97,12 +108,17 @@ public class MapContainer {
         interceptors.remove(interceptor);
     }
 
+
     public String getName() {
         return name;
     }
 
     public boolean isNearCacheEnabled() {
         return nearCacheEnabled;
+    }
+
+    public int getTotalBackupCount() {
+        return getBackupCount() + getAsyncBackupCount();
     }
 
     public int getBackupCount() {
@@ -125,6 +141,7 @@ public class MapContainer {
         return store;
     }
 
-
-
+    public long getCreationTime() {
+        return creationTime;
+    }
 }

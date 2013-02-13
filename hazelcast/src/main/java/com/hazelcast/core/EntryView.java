@@ -16,11 +16,27 @@
 
 package com.hazelcast.core;
 
-import java.util.Map;
+import com.hazelcast.nio.serialization.Data;
 
-public interface MapEntry<K, V> extends Map.Entry<K, V> {
+public interface EntryView<V> {
+
+    Data getKey();
+
+    V getValue();
+
+    long getCost();
 
     long getCreationTime();
 
+    long getExpirationTime();
+
+    long getHits();
+
     long getLastAccessTime();
+
+    long getLastStoredTime();
+
+    long getLastUpdateTime();
+
+    long getVersion();
 }

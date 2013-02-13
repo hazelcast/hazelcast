@@ -29,7 +29,7 @@
         call. Here is
         an example:
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.EntryView;
 
 Config cfg = new Config();
 HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);

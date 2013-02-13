@@ -16,27 +16,16 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.nio.serialization.Data;
 
 import java.util.AbstractMap;
 import java.util.Map;
 
-// todo replace MapEntry with Map.Entry then this class will implement Map.Entry
-public class SimpleMapEntry implements MapEntry {
+public class SimpleMapEntry implements Map.Entry {
 
     Map.Entry entry;
 
     public SimpleMapEntry(Object key, Object value) {
         entry = new AbstractMap.SimpleEntry(key, value);
-    }
-
-    public long getCreationTime() {
-        return 0;
-    }
-
-    public long getLastAccessTime() {
-        return 0;
     }
 
     public Object getKey() {

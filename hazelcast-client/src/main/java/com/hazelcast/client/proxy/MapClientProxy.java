@@ -22,7 +22,7 @@ import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -152,7 +152,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         return evicted;
     }
 
-    public MapEntry<K, V> getMapEntry(final K key) {
+    public EntryView<K, V> getMapEntry(final K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
         Protocol protocol = proxyHelper.doCommand(dKey, Command.MGETENTRY, new String[]{getName()}, dKey);
@@ -169,7 +169,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         final long version = Long.valueOf(protocol.args[7]);
         final boolean valid = Boolean.valueOf(protocol.args[7]);
         final V v = (V) proxyHelper.toObject(protocol.buffers[0]);
-        return new MapEntry<K, V>() {
+        return new EntryView<K, V>() {
             public long getCreationTime() {
                 return creationTime;
             }

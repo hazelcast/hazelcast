@@ -38,6 +38,10 @@ public class Util {
         }
     }
 
+    public static long zeroOrPositive(long value) {
+        return (value > 0) ? value : 0;
+    }
+
     public static int hashCode(final byte[] data) {
         if (data == null) return Integer.MIN_VALUE;
         // FNV (Fowler/Noll/Vo) Hash "1a"

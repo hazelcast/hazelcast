@@ -546,7 +546,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     protected void handleMapGetMapEntry(String[] args) {
-        println(getMap().getMapEntry(args[1]));
+        println(getMap().getEntryView(args[1]));
     }
 
     protected void handleMapRemove(String[] args) {

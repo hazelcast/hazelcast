@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
+import java.util.Map;
 
-public interface QueryableEntry extends MapEntry, QueryResultEntry {
+public interface QueryableEntry extends Map.Entry, QueryResultEntry {
 
     Object getValue();
 

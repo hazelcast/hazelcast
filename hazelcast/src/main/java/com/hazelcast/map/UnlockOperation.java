@@ -44,6 +44,7 @@ public class UnlockOperation extends AbstractMapOperation implements BackupAware
 
     public void run() {
         unlocked = recordStore.unlock(dataKey, getCallerUuid(), threadId);
+        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
     }
 
     @Override
