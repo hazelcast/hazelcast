@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -23,41 +23,29 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-public class UnlockBackupOperation extends AbstractMapOperation implements BackupOperation {
+public class LockBackupOperation extends BaseLockOperation implements BackupOperation {
 
-    private String originalCaller;
+    private String originalCallerUuid;
 
-    public UnlockBackupOperation(String name, Data dataKey, String caller, int threadId) {
-        super(name, dataKey);
-        setThreadId(threadId);
-        originalCaller = caller;
+    public LockBackupOperation() {
     }
 
-    public UnlockBackupOperation() {
+    public LockBackupOperation(ILockNamespace namespace, Data key, int threadId, String originalCallerUuid) {
+        super(namespace, key, threadId);
+        this.originalCallerUuid = originalCallerUuid;
     }
 
-    public void run() {
-        MapService mapService = (MapService) getService();
-        int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        recordStore.unlock(getKey(), originalCaller, threadId);
+    public void run() throws Exception {
+        response = getLockStore().lock(key, originalCallerUuid, threadId, ttl);
     }
 
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(originalCaller);
+        out.writeUTF(originalCallerUuid);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        originalCaller = in.readUTF();
+        originalCallerUuid = in.readUTF();
     }
-
 }

@@ -21,6 +21,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -34,8 +36,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     private final Random random = new Random();
     private final int partitionCount;
 
-    public ExecutorServiceProxy(String name, NodeEngine nodeEngine) {
-        super(nodeEngine, null);
+    public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
+        super(nodeEngine, service);
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
     }
@@ -77,6 +79,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId) {
+        if (isShutdown()) {
+            throw new RejectedExecutionException(getRejectionMessage());
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new CallableTaskOperation<T>(name, task), partitionId).build();
@@ -105,6 +110,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
+        if (isShutdown()) {
+            throw new RejectedExecutionException(getRejectionMessage());
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress()).build();
@@ -150,6 +158,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     private <T> void submitToPartitionOwner(Callable<T> task, ExecutionCallback<T> callback, int partitionId) {
+        if (isShutdown()) {
+            throw new RejectedExecutionException(getRejectionMessage());
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new CallableTaskOperation<T>(name, task), partitionId).build();
@@ -167,10 +178,18 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback) {
+        if (isShutdown()) {
+            throw new RejectedExecutionException(getRejectionMessage());
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress()).build();
         nodeEngine.getAsyncInvocationService().invoke(inv, callback);
+    }
+
+    private String getRejectionMessage() {
+        return "ExecutorService[" + name + "] is shutdown! In order to create a new ExecutorService with name '" +
+                name + "', you need to destroy current ExecutorService first!";
     }
 
     public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
@@ -204,11 +223,11 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public boolean isShutdown() {
-        return false;
+        return getService().isShutdown(name);
     }
 
     public boolean isTerminated() {
-        return false;
+        return isShutdown();
     }
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
@@ -216,11 +235,32 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public void shutdown() {
-        destroy();
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        final OperationService operationService = nodeEngine.getOperationService();
+        final Collection<Future> calls = new LinkedList<Future>();
+        for (MemberImpl member : members) {
+            if (member.localMember()) {
+                final ShutdownOperation op = new ShutdownOperation(name);
+                op.setServiceName(getServiceName()).setNodeEngine(nodeEngine)
+                        .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                operationService.runOperation(op);
+            } else {
+                Future f = operationService.createInvocationBuilder(getServiceName(), new ShutdownOperation(name),
+                        member.getAddress()).build().invoke();
+                calls.add(f);
+            }
+        }
+        for (Future f : calls) {
+            try {
+                f.get(1, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     public List<Runnable> shutdownNow() {
-        destroy();
+        shutdown();
         return null;
     }
 

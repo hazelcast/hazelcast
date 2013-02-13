@@ -68,17 +68,11 @@ public class Node {
 
     private volatile boolean active = false;
 
-    private volatile boolean outOfMemory = false;
-
     private volatile boolean completelyShutdown = false;
 
     private final Set<Address> failedConnections = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
-
-    private final boolean liteMember;
-
-    private final NodeType localNodeType;
 
     public final SerializationServiceImpl serializationService;
 
@@ -131,8 +125,6 @@ public class Node {
         this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
-        this.liteMember = config.isLiteMember();
-        this.localNodeType = (liteMember) ? NodeType.LITE_MEMBER : NodeType.MEMBER;
         SerializationServiceImpl ss = null;
         try {
             ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
@@ -149,7 +141,7 @@ public class Node {
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
-        localMember = new MemberImpl(address, true, localNodeType, UuidUtil.createMemberUuid(address));
+        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address));
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
         logger = loggingService.getLogger(Node.class.getName());
@@ -184,10 +176,14 @@ public class Node {
                 // bind to receive interface
                 multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
                 multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
-                // set the send interface
                 try {
+                    // set the send interface
                     final Address bindAddress = addressPicker.getBindAddress();
-                    multicastSocket.setInterface(bindAddress.getInetAddress());
+                    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
+                    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
+                    if (!bindAddress.getInetAddress().isLoopbackAddress()) {
+                        multicastSocket.setInterface(bindAddress.getInetAddress());
+                    }
                 } catch (Exception e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
                 }
@@ -264,10 +260,6 @@ public class Node {
         return partitionService;
     }
 
-    public final NodeType getLocalNodeType() {
-        return localNodeType;
-    }
-
     public Address getMasterAddress() {
         return masterAddress;
     }
@@ -300,10 +292,6 @@ public class Node {
         if (!isActive()) {
             throw new IllegalStateException("Hazelcast Instance is not active!");
         }
-    }
-
-    public final boolean isLiteMember() {
-        return liteMember;
     }
 
     public boolean joined() {
@@ -509,7 +497,7 @@ public class Node {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
         return new JoinRequest(Packet.PACKET_VERSION, buildNumber, address,
-                localMember.getUuid(), config, localNodeType, credentials, clusterService.getSize(), 0);
+                localMember.getUuid(), config, credentials, clusterService.getSize(), 0);
     }
 
     public void rejoin() {
@@ -591,10 +579,6 @@ public class Node {
      */
     public boolean isActive() {
         return active;
-    }
-
-    public boolean isOutOfMemory() {
-        return outOfMemory;
     }
 
     public String toString() {

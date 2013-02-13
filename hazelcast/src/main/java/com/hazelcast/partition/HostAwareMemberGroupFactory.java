@@ -27,15 +27,13 @@ public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
     protected Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) {
         final Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (Member member : allMembers) {
-            if (!member.isLiteMember()) {
-                Address address = ((MemberImpl) member).getAddress();
-                MemberGroup group = groups.get(address.getHost());
-                if (group == null) {
-                    group = new DefaultMemberGroup();
-                    groups.put(address.getHost(), group);
-                }
-                group.addMember(member);
+            Address address = ((MemberImpl) member).getAddress();
+            MemberGroup group = groups.get(address.getHost());
+            if (group == null) {
+                group = new DefaultMemberGroup();
+                groups.put(address.getHost(), group);
             }
+            group.addMember(member);
         }
         return new HashSet<MemberGroup>(groups.values());
     }

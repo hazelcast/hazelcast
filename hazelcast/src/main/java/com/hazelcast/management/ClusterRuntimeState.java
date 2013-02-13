@@ -57,7 +57,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         int memberIndex = 0;
         for (Member member : members) {
             MemberImpl memberImpl = (MemberImpl) member;
-            addMemberInfo(new MemberInfo(memberImpl.getAddress(), memberImpl.getNodeType(), member.getUuid()),
+            addMemberInfo(new MemberInfo(memberImpl.getAddress(), member.getUuid()),
                     addressIndexes, memberIndex);
             if (!member.localMember()) {
                 final Connection conn = connections.get(memberImpl.getAddress());

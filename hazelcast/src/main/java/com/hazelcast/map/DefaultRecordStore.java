@@ -16,11 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.concurrent.lock.LockInfo;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.concurrent.lock.LockStoreView;
+import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultRecordStore implements RecordStore {
     final String name;
-    final PartitionInfo partitionInfo;
     final PartitionContainer partitionContainer;
 
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
@@ -39,15 +38,18 @@ public class DefaultRecordStore implements RecordStore {
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapContainer mapContainer;
     final MapService mapService;
-    final LockStore lockStore;
+
+    final LockStoreView lockStore;
 
     public DefaultRecordStore(String name, PartitionContainer partitionContainer) {
         this.name = name;
-        this.partitionInfo = partitionContainer.partitionInfo;
         this.partitionContainer = partitionContainer;
         this.mapService = partitionContainer.getMapService();
         this.mapContainer = mapService.getMapContainer(name);
-        this.lockStore = new LockStore();
+        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        this.lockStore = lockService == null ? null :
+                lockService.createLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name),
+                    mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
     }
 
     public void flush(boolean flushAllRecords) {
@@ -65,9 +67,13 @@ public class DefaultRecordStore implements RecordStore {
         return records;
     }
 
-    void clear() {
+    void destroy() {
+        final SharedLockService lockService = mapService.getNodeEngine()
+                .getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        if (lockService != null) {
+            lockService.destroyLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
+        }
         records.clear();
-        lockStore.clear();
     }
 
     public int size() {
@@ -85,33 +91,13 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
-    public boolean lock(Data dataKey, String caller, int threadId, long ttl) {
-        return lockStore.lock(dataKey, caller, threadId, ttl);
-    }
-
     public boolean isLocked(Data dataKey) {
-        return lockStore.isLocked(dataKey);
+        return lockStore != null && lockStore.isLocked(dataKey);
     }
 
     public boolean canRun(LockAwareOperation lockAwareOperation) {
-        return lockStore.canAcquireLock(lockAwareOperation.getKey(),
+        return lockStore == null || lockStore.canAcquireLock(lockAwareOperation.getKey(),
                 lockAwareOperation.getCallerUuid(), lockAwareOperation.getThreadId());
-    }
-
-    public boolean unlock(Data dataKey, String caller, int threadId) {
-        return lockStore.unlock(dataKey, caller, threadId);
-    }
-
-    public boolean forceUnlock(Data dataKey) {
-        return lockStore.forceUnlock(dataKey);
-    }
-
-    public Map<Data, LockInfo> getLocks() {
-        return lockStore.getLocks();
-    }
-
-    public void putLock(Data key, LockInfo lock) {
-        lockStore.putLock(key, lock);
     }
 
     public boolean tryRemove(Data dataKey) {
@@ -186,10 +172,10 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public void removeAll() {
-        Map<Data, LockInfo> locks = lockStore.getLocks();
+        final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
         final ConcurrentMap<Data, Record> temp = new ConcurrentHashMap<Data, Record>(locks.size());
-        // keys with locks will be re-inserted
-        for (Data key : locks.keySet()) {
+//        keys with locks will be re-inserted
+        for (Data key : locks) {
             temp.put(key, records.get(key));
         }
         records.clear();

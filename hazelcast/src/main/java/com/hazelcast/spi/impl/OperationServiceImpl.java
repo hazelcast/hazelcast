@@ -53,8 +53,8 @@ final class OperationServiceImpl implements OperationService {
     private final ILogger logger;
     private final AtomicLong localIdGen = new AtomicLong();
     private final ConcurrentMap<Long, Call> mapCalls = new ConcurrentHashMap<Long, Call>(1000);
-    private final Lock[] ownerLocks = new Lock[100000];
-    private final Lock[] backupLocks = new Lock[1000];
+    private final Lock[] ownerLocks;
+    private final Lock[] backupLocks;
     private final SpinReadWriteLock[] partitionLocks;
     private final FastExecutor executor;
     private final long defaultCallTimeout;
@@ -70,9 +70,12 @@ final class OperationServiceImpl implements OperationService {
         executor = new FastExecutor(coreSize, poolNamePrefix,
                 new PoolExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
                         poolNamePrefix, node.getConfig().getClassLoader()));
+
+        ownerLocks = new Lock[100000];
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
         }
+        backupLocks = new Lock[50000];
         for (int i = 0; i < backupLocks.length; i++) {
             backupLocks[i] = new ReentrantLock();
         }

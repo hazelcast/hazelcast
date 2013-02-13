@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.exception;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.Data;
+
+import java.util.Set;
 
 /**
- * @mdogan 1/15/13
+ * @mdogan 2/12/13
  */
-public class DistributedObjectDestroyedException extends HazelcastException {
+public interface LockStoreView {
 
-    public DistributedObjectDestroyedException(String service, Object objectId) {
-        super("DistributedObject[" + service + " -> " + objectId + "] has been destroyed!");
-    }
+    boolean isLocked(Data key);
+
+    boolean canAcquireLock(Data key, String caller, int threadId);
+
+    Set<Data> getLockedKeys();
+
 }

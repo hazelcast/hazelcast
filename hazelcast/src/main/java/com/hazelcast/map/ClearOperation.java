@@ -60,7 +60,7 @@ public class ClearOperation extends AbstractNamedOperation implements PartitionL
             return;
         }
         for (Data key : keys) {
-            if (!recordStore.getLocks().containsKey(key)) {
+            if (!recordStore.isLocked(key)) {
                 recordStore.remove(key);
             }
         }

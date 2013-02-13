@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.operations;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.serialization.Data;
 
-/**
- * @ali 1/30/13
- */
-public class ForceUnlockBackupOperation extends UnlockBackupOperation {
+public class IsLockedOperation extends BaseLockOperation {
 
-    public ForceUnlockBackupOperation() {
+    public IsLockedOperation() {
     }
 
-    public ForceUnlockBackupOperation(CollectionProxyId proxyId, Data dataKey) {
-        super(proxyId, dataKey, -1, null);
+    public IsLockedOperation(ILockNamespace namespace, Data key) {
+        super(namespace, key, -1);
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
-        response = container.forceUnlock(dataKey);
+        response = getLockStore().isLocked(key);
     }
 }

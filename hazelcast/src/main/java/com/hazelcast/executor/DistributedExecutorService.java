@@ -23,8 +23,11 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.ExecutionServiceImpl;
 
+import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /**
@@ -34,6 +37,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
+    private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private NodeEngine nodeEngine;
     private ExecutionServiceImpl executionService;
 
@@ -59,12 +63,22 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         });
     }
 
+    public void shutdownExecutor(String name) {
+        executionService.destroyExecutor(name);
+        shutdownExecutors.add(name);
+    }
+
+    public boolean isShutdown(String name) {
+        return shutdownExecutors.contains(name);
+    }
+
     public String getServiceName() {
         return SERVICE_NAME;
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
-        return new ExecutorServiceProxy(String.valueOf(objectId), nodeEngine);
+        final String name = String.valueOf(objectId);
+        return new ExecutorServiceProxy(name, nodeEngine, this);
     }
 
     public DistributedObject createDistributedObjectForClient(Object objectId) {
@@ -72,10 +86,12 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public void destroyDistributedObject(Object objectId) {
-        executionService.destroyExecutor(String.valueOf(objectId));
+        final String name = String.valueOf(objectId);
+        shutdownExecutors.remove(name);
+        executionService.destroyExecutor(name);
     }
 
     public void shutdown() {
-
+        shutdownExecutors.clear();
     }
 }

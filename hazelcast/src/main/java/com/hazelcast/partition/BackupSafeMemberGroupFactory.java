@@ -20,13 +20,11 @@ import com.hazelcast.core.Member;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Set;
 
 abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
-    public final Collection<MemberGroup> createMemberGroups(final Collection<Member> allMembers) {
-        final Collection<Member> members = removeLiteMembers(allMembers);
+    public final Collection<MemberGroup> createMemberGroups(final Collection<Member> members) {
         final Collection<MemberGroup> groups = createInternalMemberGroups(members);
         if (groups.size() == 1 && members.size() > 1) {
             // If there are more than one members and just one group
@@ -46,15 +44,5 @@ abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
     }
 
     protected abstract Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) ;
-
-    private Collection<Member> removeLiteMembers(Collection<Member> members) {
-        final Collection<Member> result = new LinkedList<Member>();
-        for (Member member : members) {
-            if (!member.isLiteMember()) {
-                result.add(member);
-            }
-        }
-        return result;
-    }
 
 }

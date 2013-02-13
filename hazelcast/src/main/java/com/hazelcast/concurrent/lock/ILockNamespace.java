@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.concurrent.lock;
+
+import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * @mdogan 1/18/13
+ * @mdogan 2/13/13
  */
-public class SafeCallableTaskOperation<V> extends CallableTaskOperation<V> {
+public interface ILockNamespace extends DataSerializable {
 
+    String getServiceName();
+
+    Object getObjectId();
 
 }

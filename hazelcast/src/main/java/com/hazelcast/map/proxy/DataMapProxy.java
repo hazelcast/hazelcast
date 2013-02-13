@@ -134,27 +134,27 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public void lock(final Data key) {
-        lockInternal(key);
+        lockSupport.lock(getNodeEngine(), key);
     }
 
     public boolean isLocked(final Data key) {
-        return isLockedInternal(key);
+        return lockSupport.isLocked(getNodeEngine(), key);
     }
 
     public boolean tryLock(final Data key) {
-        return tryLock(key, 0, TimeUnit.MILLISECONDS);
+        return lockSupport.tryLock(getNodeEngine(), key);
     }
 
     public boolean tryLock(final Data key, final long time, final TimeUnit timeunit) {
-        return tryLockInternal(key, time, timeunit);
+        return lockSupport.tryLock(getNodeEngine(), key, time, timeunit);
     }
 
     public void unlock(final Data key) {
-        unlockInternal(key);
+        lockSupport.unlock(getNodeEngine(), key);
     }
 
     public void forceUnlock(final Data key) {
-        forceUnlockInternal(key);
+        lockSupport.forceUnlock(getNodeEngine(), key);
     }
 
     public Set<Data> keySet() {

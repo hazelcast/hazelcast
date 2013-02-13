@@ -57,16 +57,6 @@ public class HazelcastInstanceFactory {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
-        return newHazelcastInstance(config, config.isLiteMember());
-    }
-
-    public static HazelcastInstance newHazelcastInstance(Config config, Boolean liteMember) {
-        if (config == null) {
-            config = new XmlConfigBuilder().build();
-        }
-        if (liteMember != null) {
-            config.setLiteMember(liteMember);
-        }
         String name = config.getInstanceName();
         if (name == null || name.trim().length() == 0) {
             name = createInstanceName(config);

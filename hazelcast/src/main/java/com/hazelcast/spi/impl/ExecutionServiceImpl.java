@@ -37,8 +37,7 @@ import java.util.logging.Level;
  */
 public final class ExecutionServiceImpl implements ExecutionService {
 
-    public static final int DEFAULT_THREAD_SIZE = ExecutorConfig.DEFAULT_POOL_SIZE;
-
+    private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
     private final ILogger logger;
@@ -46,6 +45,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<String, ManagedExecutorService>();
 
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
         Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
         final ClassLoader classLoader = node.getConfig().getClassLoader();
@@ -68,11 +68,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
         register("hz:client", 40);
         register("hz:scheduled", 10);
         register("hz:async-service", 20);
-
-        final Collection<ExecutorConfig> executorConfigs = nodeEngine.getConfig().getExecutorConfigs();
-        for (ExecutorConfig executorConfig : executorConfigs) {
-            register(executorConfig.getName(), executorConfig.getPoolSize());
-        }
     }
 
     private void register(String name, int maxThreadSize) {
@@ -82,8 +77,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ConcurrencyUtil.ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConcurrencyUtil.ConstructorFunction<String, ManagedExecutorService>() {
                 public ManagedExecutorService createNew(String name) {
-                    // TODO: @mm - configure using ExecutorService config!
-                    return new ManagedExecutorService(name, DEFAULT_THREAD_SIZE);
+                    final ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfig(name);
+                    return new ManagedExecutorService(name, cfg.getPoolSize());
                 }
             };
 
@@ -126,14 +121,17 @@ public final class ExecutionServiceImpl implements ExecutionService {
             logger.log(Level.FINEST, e.getMessage(), e);
         }
         for (ManagedExecutorService executorService : executors.values()) {
-            executorService.destroy();
+            executorService.shutdown();
         }
         executors.clear();
     }
 
     @PrivateApi
     public void destroyExecutor(String name) {
-        executors.remove(name);
+        final ManagedExecutorService ex = executors.remove(name);
+        if (ex != null) {
+            ex.shutdown();
+        }
     }
 
     private class ScheduledRunner implements Runnable {
@@ -214,12 +212,19 @@ public final class ExecutionServiceImpl implements ExecutionService {
             }
         }
 
+//        private void checkActive() {
+//            if (!active) {
+//                throw new RejectedExecutionException("ExecutorService is shutdown!");
+//            }
+//        }
+
         public void shutdown() {
-            throw new UnsupportedOperationException();
+            controlQ.clear();
         }
 
         public List<Runnable> shutdownNow() {
-            throw new UnsupportedOperationException();
+            shutdown();
+            return null;
         }
 
         public boolean isShutdown() {
@@ -232,10 +237,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
             return cachedExecutorService.awaitTermination(timeout, unit);
-        }
-
-        void destroy() {
-            controlQ.clear();
         }
     }
 

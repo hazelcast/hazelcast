@@ -137,13 +137,13 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public void lock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
-        lockInternal(k);
+        lockSupport.lock(nodeEngine, k);
     }
 
     public void unlock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
-        unlockInternal(k);
+        lockSupport.unlock(nodeEngine, k);
     }
 
     public Object tryRemove(final K key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
@@ -161,7 +161,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public boolean isLocked(final K k) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
-        return isLockedInternal(key);
+        return lockSupport.isLocked(nodeEngine, key);
     }
 
     public Future putAsync(final K key, final V value) {
@@ -193,18 +193,18 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public boolean tryLock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
-        return tryLockInternal(nodeEngine.toData(key), 0, null);
+        return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key));
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
-        return tryLockInternal(nodeEngine.toData(key), time, timeunit);
+        return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key), time, timeunit);
     }
 
     public void forceUnlock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
-        forceUnlockInternal(k);
+        lockSupport.forceUnlock(nodeEngine, k);
     }
 
     public void addLocalEntryListener(final EntryListener<K, V> listener) {
