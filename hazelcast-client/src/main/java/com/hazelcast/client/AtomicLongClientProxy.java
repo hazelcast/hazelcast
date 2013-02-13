@@ -84,16 +84,6 @@ public class AtomicLongClientProxy implements IAtomicLong {
         return name;
     }
 
-    @Deprecated
-    public boolean weakCompareAndSet(long expect, long update) {
-        return compareAndSet(expect, update);
-    }
-
-    @Deprecated
-    public void lazySet(long newValue) {
-        set(newValue);
-    }
-
     public LocalAtomicLongStats getLocalAtomicLongStats() {
         throw new UnsupportedOperationException();
     }

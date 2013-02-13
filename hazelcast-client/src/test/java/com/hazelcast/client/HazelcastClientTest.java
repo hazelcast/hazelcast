@@ -712,31 +712,31 @@ public class HazelcastClientTest extends HazelcastClientTestBase {
         lock.unlock();
     }
 
-    @Test
-    public void testGetMapEntryHits() {
-        IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryHits");
-        map.put("Hello", "World");
-        Map.Entry<String, String> me = map.getMapEntry("Hello");
-//        assertEquals(0, ((DataRecordEntry)me).getHits());
-        map.get("Hello");
-        map.get("Hello");
-        map.get("Hello");
-        me = map.getMapEntry("Hello");
-//        assertEquals(3, ((DataRecordEntry)me).getHits());
-    }
-
-    @Test
-    public void testGetMapEntryVersion() {
-        IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryVersion");
-        map.put("Hello", "World");
-        Map.Entry<String, String> me = map.getMapEntry("Hello");
-//        assertEquals(0, ((DataRecordEntry)me).getVersion());
-        map.put("Hello", "1");
-        map.put("Hello", "2");
-        map.put("Hello", "3");
-        me = map.getMapEntry("Hello");
-//        assertEquals(3, ((DataRecordEntry)me).getVersion());
-    }
+//    @Test
+//    public void testGetMapEntryHits() {
+//        IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryHits");
+//        map.put("Hello", "World");
+//        Map.Entry<String, String> me = map.getMapEntry("Hello");
+////        assertEquals(0, ((DataRecordEntry)me).getHits());
+//        map.get("Hello");
+//        map.get("Hello");
+//        map.get("Hello");
+//        me = map.getMapEntry("Hello");
+////        assertEquals(3, ((DataRecordEntry)me).getHits());
+//    }
+//
+//    @Test
+//    public void testGetMapEntryVersion() {
+//        IMap<String, String> map = getHazelcastClient().getMap("testGetMapEntryVersion");
+//        map.put("Hello", "World");
+//        Map.Entry<String, String> me = map.getMapEntry("Hello");
+////        assertEquals(0, ((DataRecordEntry)me).getVersion());
+//        map.put("Hello", "1");
+//        map.put("Hello", "2");
+//        map.put("Hello", "3");
+//        me = map.getMapEntry("Hello");
+////        assertEquals(3, ((DataRecordEntry)me).getVersion());
+//    }
 
     @Test
     public void testMapInstanceDestroy() throws Exception {

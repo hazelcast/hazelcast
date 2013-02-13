@@ -236,7 +236,6 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         removeEntryListenerInternal(listener, nodeEngine.toData(key));
     }
 
-    @Override
     public EntryView getEntryView(K key) {
         SimpleEntryView entryViewInternal = (SimpleEntryView) getEntryViewInternal(getNodeEngine().toData(key));
         Data value = (Data) entryViewInternal.getValue();

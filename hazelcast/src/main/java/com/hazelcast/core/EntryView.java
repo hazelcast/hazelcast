@@ -20,6 +20,9 @@ import com.hazelcast.nio.serialization.Data;
 
 public interface EntryView<V> {
 
+    // TODO: @mm - we cannot use Data in end-user API!
+    // Return type should be K.
+    // K getKey();
     Data getKey();
 
     V getValue();

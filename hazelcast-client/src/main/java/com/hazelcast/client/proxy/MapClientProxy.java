@@ -152,44 +152,49 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         return evicted;
     }
 
-    public EntryView<K, V> getMapEntry(final K key) {
-        check(key);
-        Data dKey = proxyHelper.toData(key);
-        Protocol protocol = proxyHelper.doCommand(dKey, Command.MGETENTRY, new String[]{getName()}, dKey);
-        if (!protocol.hasBuffer()) {
-            return null;
-        }
-        final long cost = Long.valueOf(protocol.args[0]);
-        final long creationTime = Long.valueOf(protocol.args[1]);
-        final long expTime = Long.valueOf(protocol.args[2]);
-        final int hits = Integer.valueOf(protocol.args[3]);
-        final long lastAccessTime = Long.valueOf(protocol.args[4]);
-        final long lastStoredTime = Long.valueOf(protocol.args[5]);
-        final long lastUpdateTime = Long.valueOf(protocol.args[6]);
-        final long version = Long.valueOf(protocol.args[7]);
-        final boolean valid = Boolean.valueOf(protocol.args[7]);
-        final V v = (V) proxyHelper.toObject(protocol.buffers[0]);
-        return new EntryView<K, V>() {
-            public long getCreationTime() {
-                return creationTime;
-            }
+//    public EntryView<K, V> getMapEntry(final K key) {
+//        check(key);
+//        Data dKey = proxyHelper.toData(key);
+//        Protocol protocol = proxyHelper.doCommand(dKey, Command.MGETENTRY, new String[]{getName()}, dKey);
+//        if (!protocol.hasBuffer()) {
+//            return null;
+//        }
+//        final long cost = Long.valueOf(protocol.args[0]);
+//        final long creationTime = Long.valueOf(protocol.args[1]);
+//        final long expTime = Long.valueOf(protocol.args[2]);
+//        final int hits = Integer.valueOf(protocol.args[3]);
+//        final long lastAccessTime = Long.valueOf(protocol.args[4]);
+//        final long lastStoredTime = Long.valueOf(protocol.args[5]);
+//        final long lastUpdateTime = Long.valueOf(protocol.args[6]);
+//        final long version = Long.valueOf(protocol.args[7]);
+//        final boolean valid = Boolean.valueOf(protocol.args[7]);
+//        final V v = (V) proxyHelper.toObject(protocol.buffers[0]);
+//        return new EntryView<K, V>() {
+//            public long getCreationTime() {
+//                return creationTime;
+//            }
+//
+//            public long getLastAccessTime() {
+//                return lastAccessTime;
+//            }
+//
+//            public K getKey() {
+//                return key;
+//            }
+//
+//            public V getValue() {
+//                return v;
+//            }
+//
+//            public V setValue(V value) {
+//                return MapClientProxy.this.put(key, value);
+//            }
+//        };
+//    }
 
-            public long getLastAccessTime() {
-                return lastAccessTime;
-            }
 
-            public K getKey() {
-                return key;
-            }
-
-            public V getValue() {
-                return v;
-            }
-
-            public V setValue(V value) {
-                return MapClientProxy.this.put(key, value);
-            }
-        };
+    public EntryView<V> getEntryView(K key) {
+        return null;
     }
 
     public Set<K> keySet(Predicate predicate) {

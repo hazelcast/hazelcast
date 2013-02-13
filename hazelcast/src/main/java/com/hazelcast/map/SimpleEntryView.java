@@ -53,6 +53,9 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
     public SimpleEntryView() {
     }
 
+    // TODO: @mm - we cannot use Data in end-user API!
+    // Return type should be K.
+    // K getKey();
     public Data getKey() {
         return key;
     }

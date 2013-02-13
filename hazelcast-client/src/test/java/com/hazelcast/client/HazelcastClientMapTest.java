@@ -404,23 +404,23 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     //TODO
-    @Test
-    public void getMapEntry() {
-        HazelcastClient hClient = getHazelcastClient();
-        IMap map = hClient.getMap("getMapEntry");
-        assertNull(map.put("a", "b"));
-        map.get("a");
-        map.get("a");
-        Map.Entry<String, String> entry = map.getMapEntry("a");
-        assertEquals("a", entry.getKey());
-        assertEquals("b", entry.getValue());
-//        assertEquals(2, ((DataRecordEntry)entry).getHits());
-        assertEquals("b", entry.getValue());
-        assertEquals("b", entry.setValue("c"));
-        assertEquals("c", map.get("a"));
-        entry = map.getMapEntry("a");
-        assertEquals("c", entry.getValue());
-    }
+//    @Test
+//    public void getMapEntry() {
+//        HazelcastClient hClient = getHazelcastClient();
+//        IMap map = hClient.getMap("getMapEntry");
+//        assertNull(map.put("a", "b"));
+//        map.get("a");
+//        map.get("a");
+//        Map.Entry<String, String> entry = map.getMapEntry("a");
+//        assertEquals("a", entry.getKey());
+//        assertEquals("b", entry.getValue());
+////        assertEquals(2, ((DataRecordEntry)entry).getHits());
+//        assertEquals("b", entry.getValue());
+//        assertEquals("b", entry.setValue("c"));
+//        assertEquals("c", map.get("a"));
+//        entry = map.getMapEntry("a");
+//        assertEquals("c", entry.getValue());
+//    }
 
     @Test
     public void iterateOverMapKeys() {
@@ -866,14 +866,14 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         doFunctionalQueryTest(imap);
     }
     //TODO
-    @Test
-    public void testGetNullMapEntry() {
-        HazelcastClient hClient = getHazelcastClient();
-        final IMap imap = hClient.getMap("testGetNullMapEntry");
-        String key = "key";
-        Map.Entry mapEntry = imap.getMapEntry(key);
-        assertNull(mapEntry);
-    }
+//    @Test
+//    public void testGetNullMapEntry() {
+//        HazelcastClient hClient = getHazelcastClient();
+//        final IMap imap = hClient.getMap("testGetNullMapEntry");
+//        String key = "key";
+//        Map.Entry mapEntry = imap.getMapEntry(key);
+//        assertNull(mapEntry);
+//    }
 
     public void doFunctionalQueryTest(IMap imap) {
         Employee em = new Employee("joe", 33, false, 14.56);

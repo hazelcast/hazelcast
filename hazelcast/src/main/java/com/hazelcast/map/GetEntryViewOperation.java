@@ -19,8 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Map;
-
 public class GetEntryViewOperation extends AbstractMapOperation {
 
     private transient EntryView<Data> result;
