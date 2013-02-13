@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.spi;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+/**
+ * @mdogan 2/12/13
+ */
+public interface SharedService {
 
-public class ForceUnlockOperation extends UnlockOperation implements BackupAwareOperation, Notifier {
-
-    public ForceUnlockOperation(String name, Data dataKey) {
-        super(name, dataKey);
-    }
-
-    public ForceUnlockOperation() {
-    }
-
-    public ForceUnlockBackupOperation getBackupOperation() {
-        return new ForceUnlockBackupOperation(name, dataKey);
-    }
-
-    public void run() {
-        unlocked = recordStore.forceUnlock(dataKey);
-    }
 }

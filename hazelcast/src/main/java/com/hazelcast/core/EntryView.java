@@ -14,12 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.core;
 
-/**
- * @mdogan 1/18/13
- */
-public class SafeCallableTaskOperation<V> extends CallableTaskOperation<V> {
+import com.hazelcast.nio.serialization.Data;
 
+public interface EntryView<V> {
 
+    Data getKey();
+
+    V getValue();
+
+    long getCost();
+
+    long getCreationTime();
+
+    long getExpirationTime();
+
+    long getHits();
+
+    long getLastAccessTime();
+
+    long getLastStoredTime();
+
+    long getLastUpdateTime();
+
+    long getVersion();
 }

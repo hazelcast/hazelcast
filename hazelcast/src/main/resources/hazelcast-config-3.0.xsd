@@ -275,7 +275,7 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="password" default="drowssap">
+    <xs:element name="password" default="dev-pass">
         <xs:annotation>
             <xs:documentation>
                 The pass phrase to use when generating the secret key.
@@ -527,8 +527,8 @@
     <xs:element name="group">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="name"/>
-                <xs:element ref="password"/>
+                <xs:element ref="name" maxOccurs="1"/>
+                <xs:element ref="password" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>

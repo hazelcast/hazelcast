@@ -27,17 +27,17 @@ public class RecordStats implements DataSerializable {
 
     protected volatile int hits = 0;
     protected volatile int version = 0;
-    protected volatile long writeTime = -1;
-    protected volatile long removeTime = 0;
     protected volatile long lastStoredTime = 0;
-    protected volatile long expirationTime = Long.MAX_VALUE;
     protected volatile long lastUpdateTime = 0;
     protected volatile long lastAccessTime = 0;
+    protected volatile long creationTime = 0;
+    protected volatile long cost = 0;
 
     public RecordStats() {
         long now = Clock.currentTimeMillis();
         lastAccessTime = now;
         lastUpdateTime = now;
+        creationTime = now;
     }
 
     public int getHits() {
@@ -48,8 +48,34 @@ public class RecordStats implements DataSerializable {
         this.hits = hits;
     }
 
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    public long getCost() {
+        return cost;
+    }
+
+    public void setCost(long cost) {
+        this.cost = cost;
+    }
+
     public void access() {
         lastAccessTime = Clock.currentTimeMillis();
+        hits ++;
+    }
+
+    public void update() {
+        lastUpdateTime = Clock.currentTimeMillis();
+        version ++;
+    }
+
+    public void store() {
+        lastStoredTime = Clock.currentTimeMillis();
     }
 
     public Long getLastAccessTime() {
@@ -64,36 +90,12 @@ public class RecordStats implements DataSerializable {
         this.version = version;
     }
 
-    public long getWriteTime() {
-        return writeTime;
-    }
-
-    public void setWriteTime(long writeTime) {
-        this.writeTime = writeTime;
-    }
-
-    public long getRemoveTime() {
-        return removeTime;
-    }
-
-    public void setRemoveTime(long removeTime) {
-        this.removeTime = removeTime;
-    }
-
     public long getLastStoredTime() {
         return lastStoredTime;
     }
 
     public void setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = lastStoredTime;
-    }
-
-    public long getExpirationTime() {
-        return expirationTime;
-    }
-
-    public void setExpirationTime(long expirationTime) {
-        this.expirationTime = expirationTime;
     }
 
     public long getLastUpdateTime() {
@@ -107,23 +109,19 @@ public class RecordStats implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(hits);
         out.writeInt(version);
-        out.writeLong(writeTime);
-        out.writeLong(removeTime);
         out.writeLong(lastStoredTime);
-        out.writeLong(expirationTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(lastAccessTime);
+        out.writeLong(cost);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         hits = in.readInt();
         version = in.readInt();
-        writeTime = in.readLong();
-        removeTime = in.readLong();
         lastStoredTime = in.readLong();
-        expirationTime = in.readLong();
         lastUpdateTime = in.readLong();
         lastAccessTime = in.readLong();
+        cost = in.readLong();
     }
 
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryException;
@@ -28,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Map;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -234,7 +234,7 @@ public class PredicatesTest extends TestUtil {
         }
     }
 
-    static MapEntry createEntry(final Object key, final Object value) {
+    static Map.Entry createEntry(final Object key, final Object value) {
         return new QueryEntry(null, toData(key), key, value);
     }
 }

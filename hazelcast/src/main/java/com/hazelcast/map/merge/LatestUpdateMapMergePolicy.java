@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.merge;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.EntryView;
 
 public class LatestUpdateMapMergePolicy implements MapMergePolicy {
     public static final String NAME = "hz.LATEST_UPDATE";
 
-    public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
+    public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         return null;
     }
 }

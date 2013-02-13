@@ -25,34 +25,15 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 
 
-public class LockInfo implements DataSerializable {
-    private String lockOwner = null;
-    private int lockThreadId = -1;
+class LockInfo implements DataSerializable {
+
+    private String owner = null;
+    private int threadId = -1;
     private int lockCount;
     private long expirationTime = -1;
-    private long lockAcquireTime = -1L;
+    private long acquireTime = -1L;
 
     public LockInfo() {
-    }
-
-    public LockInfo(LockInfo copy) {
-        this(copy.lockOwner, copy.lockThreadId, copy.lockCount, copy.lockAcquireTime);
-    }
-
-    public LockInfo(String owner, int threadId) {
-        this(owner, threadId, 1);
-    }
-
-    public LockInfo(String lockOwner, int lockThreadId, int lockCount) {
-        this(lockOwner, lockThreadId, lockCount, Clock.currentTimeMillis());
-    }
-
-    private LockInfo(final String lockOwner, final int lockThreadId,
-                     final int lockCount, final long lockAcquireTime) {
-        this.lockAcquireTime = lockAcquireTime;
-        this.lockOwner = lockOwner;
-        this.lockCount = lockCount;
-        this.lockThreadId = lockThreadId;
     }
 
     public boolean isLocked() {
@@ -62,7 +43,7 @@ public class LockInfo implements DataSerializable {
 
     public boolean isLockedBy(String owner, int threadId) {
         checkTTL();
-        return (lockThreadId == threadId && owner != null && owner.equals(lockOwner));
+        return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
     void checkTTL() {
@@ -74,15 +55,15 @@ public class LockInfo implements DataSerializable {
     public boolean lock(String owner, int threadId, long ttl) {
         checkTTL();
         if (lockCount == 0) {
-            lockOwner = owner;
-            lockThreadId = threadId;
+            this.owner = owner;
+            this.threadId = threadId;
             lockCount++;
-            lockAcquireTime = Clock.currentTimeMillis();
-            expirationTime = System.currentTimeMillis() + ttl;
+            acquireTime = Clock.currentTimeMillis();
+            expirationTime = Clock.currentTimeMillis() + ttl;
             return true;
         } else if (isLockedBy(owner, threadId)) {
             lockCount++;
-            expirationTime = System.currentTimeMillis() + ttl;
+            expirationTime = Clock.currentTimeMillis() + ttl;
             return true;
         }
         return false;
@@ -106,23 +87,23 @@ public class LockInfo implements DataSerializable {
 
     public boolean canAcquireLock(String owner, int threadId) {
         checkTTL();
-        return lockCount == 0 || getLockThreadId() == threadId && getLockOwner().equals(owner);
+        return lockCount == 0 || getThreadId() == threadId && getOwner().equals(owner);
     }
 
     public void clear() {
-        lockThreadId = -1;
+        threadId = -1;
         lockCount = 0;
-        lockOwner = null;
+        owner = null;
         expirationTime = 0;
-        lockAcquireTime = -1L;
+        acquireTime = -1L;
     }
 
-    public String getLockOwner() {
-        return lockOwner;
+    public String getOwner() {
+        return owner;
     }
 
-    public int getLockThreadId() {
-        return lockThreadId;
+    public int getThreadId() {
+        return threadId;
     }
 
     public int getLockCount() {
@@ -130,7 +111,7 @@ public class LockInfo implements DataSerializable {
     }
 
     public long getAcquireTime() {
-        return lockAcquireTime;
+        return acquireTime;
     }
 
     public long getRemainingTTL() {
@@ -145,41 +126,41 @@ public class LockInfo implements DataSerializable {
         if (o == null || getClass() != o.getClass()) return false;
         LockInfo that = (LockInfo) o;
         if (lockCount != that.lockCount) return false;
-        if (lockThreadId != that.lockThreadId) return false;
-        if (lockOwner != null ? !lockOwner.equals(that.lockOwner) : that.lockOwner != null) return false;
+        if (threadId != that.threadId) return false;
+        if (owner != null ? !owner.equals(that.owner) : that.owner != null) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = lockOwner != null ? lockOwner.hashCode() : 0;
-        result = 31 * result + lockThreadId;
+        int result = owner != null ? owner.hashCode() : 0;
+        result = 31 * result + threadId;
         result = 31 * result + lockCount;
         return result;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        IOUtil.writeNullableString(out, owner);
+        out.writeInt(threadId);
+        out.writeInt(lockCount);
+        out.writeLong(expirationTime);
+        out.writeLong(acquireTime);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        owner = IOUtil.readNullableString(in);
+        threadId = in.readInt();
+        lockCount = in.readInt();
+        expirationTime = in.readLong();
+        acquireTime = in.readLong();
     }
 
     @Override
     public String toString() {
         return "Lock{" +
-                "lockString=" + lockOwner +
-                ", lockThreadId=" + lockThreadId +
+                "lockString=" + owner +
+                ", lockThreadId=" + threadId +
                 ", lockCount=" + lockCount +
                 '}';
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        IOUtil.writeNullableString(out, lockOwner);
-        out.writeInt(lockThreadId);
-        out.writeInt(lockCount);
-        out.writeLong(expirationTime);
-        out.writeLong(lockAcquireTime);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        lockOwner = IOUtil.readNullableString(in);
-        lockThreadId = in.readInt();
-        lockCount = in.readInt();
-        expirationTime = in.readLong();
-        lockAcquireTime = in.readLong();
     }
 }

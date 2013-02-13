@@ -16,15 +16,13 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 public abstract class LockAwareOperation extends AbstractMapOperation implements WaitSupport {
-
-    public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
-
-    private transient Object keyObject;
 
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -56,9 +54,6 @@ public abstract class LockAwareOperation extends AbstractMapOperation implements
     public abstract void onWaitExpire();
 
     public final WaitNotifyKey getWaitKey() {
-        if (keyObject == null) {
-            keyObject = getNodeEngine().toObject(dataKey);
-        }
-        return new MapWaitKey(getName(), keyObject, "lock");
+        return new LockWaitNotifyKey(new LockNamespace(MapService.SERVICE_NAME, name), dataKey);
     }
 }

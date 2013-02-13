@@ -16,7 +16,6 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,10 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.*;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,7 +42,7 @@ public final class Predicates {
             this.to = to;
         }
 
-        public boolean apply(MapEntry entry) {
+        public boolean apply(Map.Entry entry) {
             Comparable firstValue = readAttribute(entry);
             if (firstValue == null) {
                 return false;
@@ -88,7 +84,7 @@ public final class Predicates {
         public NotPredicate() {
         }
 
-        public boolean apply(MapEntry mapEntry) {
+        public boolean apply(Map.Entry mapEntry) {
             return !predicate.apply(mapEntry);
         }
 
@@ -118,7 +114,7 @@ public final class Predicates {
             this.values = values;
         }
 
-        private void checkInValues(MapEntry entry) {
+        private void checkInValues(Map.Entry entry) {
             if (convertedInValues == null) {
                 convertedInValues = new HashSet(values.length);
                 for (Comparable value : values) {
@@ -127,7 +123,7 @@ public final class Predicates {
             }
         }
 
-        public boolean apply(MapEntry entry) {
+        public boolean apply(Map.Entry entry) {
             checkInValues(entry);
             Comparable entryValue = readAttribute(entry);
             return entryValue != null && in(entryValue, convertedInValues);
@@ -190,7 +186,7 @@ public final class Predicates {
             this.regex = regex;
         }
 
-        public boolean apply(MapEntry entry) {
+        public boolean apply(Map.Entry entry) {
             String firstVal = (String) readAttribute(entry, attribute);
             if (firstVal == null) {
                 return (regex == null);
@@ -234,7 +230,7 @@ public final class Predicates {
             this.second = second;
         }
 
-        public boolean apply(MapEntry entry) {
+        public boolean apply(Map.Entry entry) {
             String firstVal = (String) readAttribute(entry, attribute);
             if (firstVal == null) {
                 return (second == null);
@@ -324,7 +320,7 @@ public final class Predicates {
             return false;
         }
 
-        public boolean apply(MapEntry mapEntry) {
+        public boolean apply(Map.Entry mapEntry) {
             for (Predicate predicate : predicates) {
                 if (!predicate.apply(mapEntry)) return false;
             }
@@ -383,7 +379,7 @@ public final class Predicates {
             return true;
         }
 
-        public boolean apply(MapEntry mapEntry) {
+        public boolean apply(Map.Entry mapEntry) {
             for (Predicate predicate : predicates) {
                 if (predicate.apply(mapEntry)) return true;
             }
@@ -419,7 +415,7 @@ public final class Predicates {
             this.less = less;
         }
 
-        public boolean apply(MapEntry mapEntry) {
+        public boolean apply(Map.Entry mapEntry) {
             final int result = readAttribute(mapEntry).compareTo(convert(mapEntry, value));
             return equal && result == 0 || (less ? (result < 0) : (result > 0));
         }
@@ -468,7 +464,7 @@ public final class Predicates {
             super(attribute, value);
         }
 
-        public boolean apply(MapEntry entry) {
+        public boolean apply(Map.Entry entry) {
             return !super.apply(entry);
         }
 
@@ -503,7 +499,7 @@ public final class Predicates {
             return index.getRecords(value);
         }
 
-        public boolean apply(MapEntry mapEntry) {
+        public boolean apply(Map.Entry mapEntry) {
             Comparable entryValue = readAttribute(mapEntry);
             if (entryValue == null) {
                 return value == null || value == IndexImpl.NULL;
@@ -540,7 +536,7 @@ public final class Predicates {
             this.attribute = attribute;
         }
 
-        protected Comparable convert(MapEntry mapEntry, Comparable comparable) {
+        protected Comparable convert(Map.Entry mapEntry, Comparable comparable) {
             if (comparable == null) return null;
             if (attributeType == null) {
                 QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
@@ -560,7 +556,7 @@ public final class Predicates {
             return queryContext.getIndex(attribute);
         }
 
-        protected Comparable readAttribute(MapEntry entry) {
+        protected Comparable readAttribute(Map.Entry entry) {
             QueryableEntry queryableEntry = (QueryableEntry) entry;
             Comparable attValue = queryableEntry.getAttribute(attribute);
             return convert(entry, attValue);
@@ -575,7 +571,7 @@ public final class Predicates {
         }
     }
 
-    private static Comparable readAttribute(MapEntry entry, String attribute) {
+    private static Comparable readAttribute(Map.Entry entry, String attribute) {
         QueryableEntry queryableEntry = (QueryableEntry) entry;
         Comparable value = queryableEntry.getAttribute(attribute);
         if (value == null) return IndexImpl.NULL;

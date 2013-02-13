@@ -92,9 +92,7 @@
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">
-        <!--<core-pool-size>16</core-pool-size>-->
-        <max-pool-size>16</max-pool-size>
-        <!--<keep-alive-seconds>60</keep-alive-seconds>-->
+        <pool-size>16</pool-size>
     </executor-service>
     <queue name="default">
         <!--

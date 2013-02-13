@@ -16,7 +16,7 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 
 // TODO: implement hibernate version aware merge policy!
@@ -24,7 +24,7 @@ public class VersionAwareMapMergePolicy implements MapMergePolicy {
     public static final String NAME = "hz.HIBERNATE_VERSION_AWARE";
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry) {
+    public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
 //        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
 //        if (!mergingDataEntry.isValid()) {
 //            return REMOVE_EXISTING;

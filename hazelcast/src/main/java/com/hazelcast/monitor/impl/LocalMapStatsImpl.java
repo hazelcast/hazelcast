@@ -29,15 +29,11 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     private final AtomicLong hits = new AtomicLong();
     private long ownedEntryCount;
     private long backupEntryCount;
-    private long markedAsRemovedEntryCount;
     private long ownedEntryMemoryCost;
     private long backupEntryMemoryCost;
-    private long markedAsRemovedMemoryCost;
     private long creationTime;
     private long lastUpdateTime;
-    private long lastEvictionTime;
     private long lockedEntryCount;
-    private long lockWaitCount;
     private long dirtyEntryCount;
 
     enum Op {
@@ -59,15 +55,11 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         out.writeLong(hits.get());
         out.writeLong(ownedEntryCount);
         out.writeLong(backupEntryCount);
-        out.writeLong(markedAsRemovedEntryCount);
         out.writeLong(ownedEntryMemoryCost);
         out.writeLong(backupEntryMemoryCost);
-        out.writeLong(markedAsRemovedMemoryCost);
         out.writeLong(creationTime);
         out.writeLong(lastUpdateTime);
-        out.writeLong(lastEvictionTime);
         out.writeLong(lockedEntryCount);
-        out.writeLong(lockWaitCount);
         out.writeLong(dirtyEntryCount);
     }
 
@@ -76,15 +68,11 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         hits.set(in.readLong());
         ownedEntryCount = in.readLong();
         backupEntryCount = in.readLong();
-        markedAsRemovedEntryCount = in.readLong();
         ownedEntryMemoryCost = in.readLong();
         backupEntryMemoryCost = in.readLong();
-        markedAsRemovedMemoryCost = in.readLong();
         creationTime = in.readLong();
         lastUpdateTime = in.readLong();
-        lastEvictionTime = in.readLong();
         lockedEntryCount = in.readLong();
-        lockWaitCount = in.readLong();
         dirtyEntryCount = in.readLong();
     }
 
@@ -109,14 +97,6 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         this.backupEntryCount = backupEntryCount;
     }
 
-    public long getMarkedAsRemovedEntryCount() {
-        return markedAsRemovedEntryCount;
-    }
-
-    public void setMarkedAsRemovedEntryCount(long markedAsRemovedEntryCount) {
-        this.markedAsRemovedEntryCount = markedAsRemovedEntryCount;
-    }
-
     public long getOwnedEntryMemoryCost() {
         return ownedEntryMemoryCost;
     }
@@ -131,14 +111,6 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
 
     public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
         this.backupEntryMemoryCost = backupEntryMemoryCost;
-    }
-
-    public long getMarkedAsRemovedMemoryCost() {
-        return markedAsRemovedMemoryCost;
-    }
-
-    public void setMarkedAsRemovedMemoryCost(long markedAsRemovedMemoryCost) {
-        this.markedAsRemovedMemoryCost = markedAsRemovedMemoryCost;
     }
 
     public long getCreationTime() {
@@ -165,14 +137,6 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         this.lastUpdateTime = Math.max(this.lastUpdateTime, lastUpdateTime);
     }
 
-    public long getLastEvictionTime() {
-        return lastEvictionTime;
-    }
-
-    public void setLastEvictionTime(long lastEvictionTime) {
-        this.lastEvictionTime = lastEvictionTime;
-    }
-
     public long getHits() {
         return hits.get();
     }
@@ -189,14 +153,6 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         this.lockedEntryCount = lockedEntryCount;
     }
 
-    public long getLockWaitCount() {
-        return lockWaitCount;
-    }
-
-    public void setLockWaitCount(long lockWaitCount) {
-        this.lockWaitCount = lockWaitCount;
-    }
-
     public long getDirtyEntryCount() {
         return dirtyEntryCount;
     }
@@ -210,17 +166,13 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         return "LocalMapStatsImpl{" +
                 "ownedEntryCount=" + ownedEntryCount +
                 ", backupEntryCount=" + backupEntryCount +
-                ", markedAsRemovedEntryCount=" + markedAsRemovedEntryCount +
                 ", ownedEntryMemoryCost=" + ownedEntryMemoryCost +
                 ", backupEntryMemoryCost=" + backupEntryMemoryCost +
-                ", markedAsRemovedMemoryCost=" + markedAsRemovedMemoryCost +
                 ", creationTime=" + creationTime +
                 ", lastAccessTime=" + lastAccessTime.get() +
                 ", lastUpdateTime=" + lastUpdateTime +
-                ", lastEvictionTime=" + lastEvictionTime +
                 ", hits=" + hits.get() +
                 ", lockedEntryCount=" + lockedEntryCount +
-                ", lockWaitCount=" + lockWaitCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +
                 ", " + operationStats +
                 '}';

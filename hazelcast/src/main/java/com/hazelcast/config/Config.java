@@ -46,8 +46,6 @@ public class Config implements DataSerializable {
 
     private GroupConfig groupConfig = new GroupConfig();
 
-    private boolean liteMember = false;
-
     private boolean checkCompatibility = true;
 
     private NetworkConfig networkConfig = new NetworkConfig();
@@ -83,10 +81,6 @@ public class Config implements DataSerializable {
     private String licenseKey;
 
     public Config() {
-        final String liteMemberProp = System.getProperty("hazelcast.lite.member");
-        if ("true".equalsIgnoreCase(liteMemberProp)) {
-            liteMember = true;
-        }
     }
 
     public WanReplicationConfig getWanReplicationConfig(String name) {
@@ -258,10 +252,6 @@ public class Config implements DataSerializable {
 
         ExecutorConfig defaultConfig = executorConfigs.get("default");
         if (defaultConfig != null) {
-//            ec = new ExecutorConfig(name,
-//                    defaultConfig.getCorePoolSize(),
-//                    defaultConfig.getPoolSize(),
-//                    defaultConfig.getKeepAliveSeconds());
             ec = new ExecutorConfig(name,
                     defaultConfig.getPoolSize());
         }
@@ -407,15 +397,6 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    public boolean isLiteMember() {
-        return liteMember;
-    }
-
-    public Config setLiteMember(boolean liteMember) {
-        this.liteMember = liteMember;
-        return this;
-    }
-
     public SecurityConfig getSecurityConfig() {
         return securityConfig;
     }
@@ -517,7 +498,6 @@ public class Config implements DataSerializable {
         groupConfig.readData(in);
         boolean[] b1 = ByteUtil.fromByte(in.readByte());
         checkCompatibility = b1[0];
-        liteMember = b1[1];
         boolean[] b2 = ByteUtil.fromByte(in.readByte());
         boolean hasMapConfigs = b2[0];
         boolean hasExecutors = b2[1];
@@ -591,7 +571,7 @@ public class Config implements DataSerializable {
         boolean hasQueueConfigs = queueConfigs != null && !queueConfigs.isEmpty();
         boolean hasSemaphoreConfigs = semaphoreConfigs != null && !semaphoreConfigs.isEmpty();
         boolean hasProperties = properties != null && !properties.isEmpty();
-        out.writeByte(ByteUtil.toByte(checkCompatibility, liteMember));
+        out.writeByte(ByteUtil.toByte(checkCompatibility));
         out.writeByte(ByteUtil.toByte(
                 hasMapConfigs,
                 hasExecutors,
@@ -678,7 +658,6 @@ public class Config implements DataSerializable {
         final StringBuilder sb = new StringBuilder();
         sb.append("Config");
         sb.append("{groupConfig=").append(groupConfig);
-        sb.append(", liteMember=").append(liteMember);
         sb.append(", checkCompatibility=").append(checkCompatibility);
         sb.append(", properties=").append(properties);
         sb.append(", networkConfig=").append(networkConfig);

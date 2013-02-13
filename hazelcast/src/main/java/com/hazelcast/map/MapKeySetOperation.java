@@ -36,6 +36,7 @@ public class MapKeySetOperation extends AbstractNamedOperation implements Partit
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         keySet = recordStore.keySet();
+        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
     }
 
     @Override

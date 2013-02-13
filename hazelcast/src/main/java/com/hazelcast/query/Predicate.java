@@ -16,10 +16,9 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
-
 import java.io.Serializable;
+import java.util.Map;
 
 public interface Predicate<K, V> extends Serializable {
-    boolean apply(MapEntry<K, V> mapEntry);
+    boolean apply(Map.Entry<K, V> mapEntry);
 }

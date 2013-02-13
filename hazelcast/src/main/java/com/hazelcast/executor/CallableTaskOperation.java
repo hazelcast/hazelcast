@@ -56,7 +56,7 @@ public class CallableTaskOperation<V> extends AbstractNamedOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public final boolean returnsResponse() {
         return false;
     }
 

@@ -339,7 +339,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private void createMemberState(MemberStateImpl memberState) {
         final Node node = instance.node;
         memberState.setAddress(node.getThisAddress());
-        memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
+//        memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
         memberState.getMemberHealthStats().setActive(node.isActive());
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();

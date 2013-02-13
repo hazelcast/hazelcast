@@ -28,11 +28,6 @@ public final class CacheEnvironment {
 
     public static final String CONFIG_FILE_PATH = "hibernate.cache.hazelcast.configuration_file_path";
 
-    @Deprecated
-    public static final String USE_SUPER_CLIENT = "hibernate.cache.hazelcast.use_super_client";
-
-    public static final String USE_LITE_MEMBER = "hibernate.cache.hazelcast.use_lite_member";
-
     public static final String USE_NATIVE_CLIENT = "hibernate.cache.hazelcast.use_native_client";
 
     @Deprecated
@@ -45,9 +40,6 @@ public final class CacheEnvironment {
     public static final String NATIVE_CLIENT_PASSWORD = "hibernate.cache.hazelcast.native_client_password";
 
     public static final String SHUTDOWN_ON_STOP = "hibernate.cache.hazelcast.shutdown_on_session_factory_close";
-
-    @Deprecated
-    public static final String LOCK_TIMEOUT_SECONDS = "hibernate.cache.hazelcast.lock_timeout_in_seconds";
 
     public static final String LOCK_TIMEOUT = "hibernate.cache.hazelcast.lock_timeout";
 
@@ -75,15 +67,6 @@ public final class CacheEnvironment {
         return PropertiesHelper.getBoolean(CacheEnvironment.USE_NATIVE_CLIENT, props, false);
     }
 
-    public static boolean isLiteMember(Properties props) {
-        return PropertiesHelper.getBoolean(CacheEnvironment.USE_LITE_MEMBER, props, false);
-    }
-
-    @Deprecated
-    public static boolean isSuperClient(Properties props) {
-        return PropertiesHelper.getBoolean(CacheEnvironment.USE_SUPER_CLIENT, props, false);
-    }
-
     public static int getDefaultCacheTimeoutInMillis() {
         return DEFAULT_CACHE_TIMEOUT;
     }
@@ -93,12 +76,6 @@ public final class CacheEnvironment {
         try {
             timeout = PropertiesHelper.getInt(LOCK_TIMEOUT, props, -1);
         } catch (Exception ignored) {
-        }
-        if (timeout < 0) {
-            try {
-                timeout = PropertiesHelper.getInt(LOCK_TIMEOUT_SECONDS, props, -1) * 1000;
-            } catch (Exception ignored) {
-            }
         }
         if (timeout < 0) {
             timeout = MAXIMUM_LOCK_TIMEOUT;

@@ -29,15 +29,11 @@ public class PutOperation extends BasePutOperation implements IdentifiedDataSeri
     }
 
     public void run() {
+        super.run();
         if (prepareTransaction()) {
             return;
         }
         dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, ttl));
-    }
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
     }
 
     @Override

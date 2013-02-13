@@ -16,8 +16,9 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.concurrent.lock.LockInfo;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.concurrent.lock.LockStoreView;
+import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -42,40 +43,29 @@ public class CollectionContainer {
 
     final ConcurrentMap<Data, Collection<CollectionRecord>> collections = new ConcurrentHashMap<Data, Collection<CollectionRecord>>(1000);
 
-    final LockStore lockStore = new LockStore();
+    final LockNamespace lockNamespace;
+
+    final LockStoreView lockStore;
+
+    final int partitionId;
 
     final AtomicLong idGen = new AtomicLong();
 
-    public CollectionContainer(CollectionProxyId proxyId, CollectionService service) {
+    public CollectionContainer(CollectionProxyId proxyId, CollectionService service, int partitionId) {
         this.proxyId = proxyId;
         this.service = service;
         this.nodeEngine = service.getNodeEngine();
+        this.partitionId = partitionId;
         this.config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(proxyId.name));
-    }
 
-    public LockInfo getOrCreateLock(Data key) {
-        return lockStore.getOrCreateLock(key);
-    }
-
-    public boolean lock(Data dataKey, String caller, int threadId, long ttl) {
-        LockInfo lock = getOrCreateLock(dataKey);
-        return lock.lock(caller, threadId, ttl);
+        this.lockNamespace = new LockNamespace(CollectionService.SERVICE_NAME, proxyId);
+        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        this.lockStore = lockService == null ? null :
+                lockService.createLockStore(partitionId, lockNamespace, config.getSyncBackupCount(), config.getAsyncBackupCount());
     }
 
     public boolean isLocked(Data dataKey) {
-        return lockStore.isLocked(dataKey);
-    }
-
-    public boolean canAcquireLock(Data key, int threadId, String caller) {
-        return lockStore.canAcquireLock(key, caller, threadId);
-    }
-
-    public boolean unlock(Data dataKey, String caller, int threadId) {
-        return lockStore.unlock(dataKey, caller, threadId);
-    }
-
-    public boolean forceUnlock(Data dataKey) {
-        return lockStore.forceUnlock(dataKey);
+        return lockStore != null && lockStore.isLocked(dataKey);
     }
 
     public long nextId() {
@@ -161,9 +151,9 @@ public class CollectionContainer {
     }
 
     public void clearCollections() {
-        final Map<Data, LockInfo> locks = lockStore.getLocks();
+        final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
         Map<Data, Collection<CollectionRecord>> temp = new HashMap<Data, Collection<CollectionRecord>>(locks.size());
-        for (Data key : locks.keySet()) {
+        for (Data key : locks) {
             temp.put(key, collections.get(key));
         }
         collections.clear();
@@ -182,13 +172,12 @@ public class CollectionContainer {
         return collections; //TODO for testing only
     }
 
-    public Map<Data, LockInfo> getLocks() {
-        return lockStore.getLocks();   //TODO for testing only
-    }
-
-    public void clear() {
+    public void destroy() {
+        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        if (lockService != null) {
+            lockService.destroyLockStore(partitionId, lockNamespace);
+        }
         collections.clear();
-        lockStore.clear();
     }
 
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,22 +36,16 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     public void run() {
+        super.run();
         if (prepareTransaction()) {
             return;
         }
         successful = recordStore.tryPut(dataKey, dataValue, ttl);
     }
 
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(timeout);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        timeout = in.readLong();
+    public void afterRun() {
+        if (successful)
+            super.afterRun();
     }
 
     public long getWaitTimeoutMillis() {
@@ -67,6 +62,19 @@ public class TryPutOperation extends BasePutOperation {
 
     public Object getResponse() {
         return successful;
+    }
+
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(timeout);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        timeout = in.readLong();
     }
 
     @Override

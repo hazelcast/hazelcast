@@ -16,15 +16,11 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
-import java.util.AbstractSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final Set<QueryableEntry> setSmallest;
@@ -68,7 +64,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
         }
         if (lsNoIndexPredicates != null) {
             for (Predicate noIndexPredicate : lsNoIndexPredicates) {
-                if (!noIndexPredicate.apply((MapEntry) o)) return false;
+                if (!noIndexPredicate.apply((Map.Entry) o)) return false;
             }
         }
         return true;

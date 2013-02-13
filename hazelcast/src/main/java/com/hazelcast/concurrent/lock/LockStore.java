@@ -16,15 +16,20 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ConcurrencyUtil;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class LockStore {
+class LockStore implements DataSerializable, LockStoreView {
 
     private final ConcurrencyUtil.ConstructorFunction<Data, LockInfo> lockConstructor
             = new ConcurrencyUtil.ConstructorFunction<Data, LockInfo>() {
@@ -33,8 +38,19 @@ public class LockStore {
         }
     };
 
-
     private final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>();
+    private ILockNamespace namespace;
+    private int backupCount;
+    private int asyncBackupCount;
+
+    public LockStore() {
+    }
+
+    public LockStore(ILockNamespace name, int backupCount, int asyncBackupCount) {
+        this.namespace = name;
+        this.backupCount = backupCount;
+        this.asyncBackupCount = asyncBackupCount;
+    }
 
     public LockInfo getLock(Data key) {
         return locks.get(key);
@@ -42,10 +58,6 @@ public class LockStore {
 
     public LockInfo getOrCreateLock(Data key) {
         return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
-    }
-
-    public void putLock(Data key, LockInfo lock) {
-        locks.put(key, lock);
     }
 
     public boolean lock(Data key, String caller, int threadId) {
@@ -96,7 +108,57 @@ public class LockStore {
         return Collections.unmodifiableMap(locks);
     }
 
+    public Set<Data> getLockedKeys() {
+        return Collections.unmodifiableSet(locks.keySet());
+    }
+
     public void clear() {
         locks.clear();
+    }
+
+    public ILockNamespace getNamespace() {
+        return namespace;
+    }
+
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(namespace);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+        int len = locks.size();
+        out.writeInt(len);
+        if (len > 0) {
+            for (Map.Entry<Data, LockInfo> e : locks.entrySet()) {
+                e.getKey().writeData(out);
+                e.getValue().writeData(out);
+            }
+        }
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        namespace = in.readObject();
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
+        int len = in.readInt();
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                Data key = new Data();
+                key.readData(in);
+                LockInfo lock = new LockInfo();
+                lock.readData(in);
+                locks.put(key, lock);
+            }
+        }
     }
 }

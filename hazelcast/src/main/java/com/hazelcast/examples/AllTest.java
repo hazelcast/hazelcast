@@ -355,7 +355,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.getMapEntry(random.nextInt(size));
+                map.getEntryView(random.nextInt(size));
             }
         }, 2);
         addOperation(operations, new Runnable() {

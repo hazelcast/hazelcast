@@ -16,7 +16,6 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.IndexImpl;
@@ -40,7 +39,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     public SqlPredicate() {
     }
 
-    public boolean apply(MapEntry mapEntry) {
+    public boolean apply(Map.Entry mapEntry) {
         return predicate.apply(mapEntry);
     }
 

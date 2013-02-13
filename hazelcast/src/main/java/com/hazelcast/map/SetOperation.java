@@ -29,15 +29,11 @@ public class SetOperation extends BasePutOperation {
 
     @Override
     public void run() {
+        super.run();
         if (prepareTransaction()) {
             return;
         }
         recordStore.set(dataKey, dataValue, ttl);
-    }
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
     }
 
     @Override

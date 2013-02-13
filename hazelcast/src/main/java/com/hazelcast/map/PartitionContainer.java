@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,13 +25,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PartitionContainer {
     private final MapService mapService;
-    final PartitionInfo partitionInfo;
-    final ConcurrentMap<String, DefaultRecordStore> maps = new ConcurrentHashMap<String, DefaultRecordStore>(1000);
+    final int partitionId;
+    final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
     final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
 
-    public PartitionContainer(final MapService mapService, final PartitionInfo partitionInfo) {
+    public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
-        this.partitionInfo = partitionInfo;
+        this.partitionId = partitionId;
     }
 
     void onDeadAddress(Address deadAddress) {
@@ -45,10 +44,10 @@ public class PartitionContainer {
         return mapService;
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<String, DefaultRecordStore> recordStoreConstructor
-            = new ConcurrencyUtil.ConstructorFunction<String, DefaultRecordStore>() {
-        public DefaultRecordStore createNew(String name) {
-            return new DefaultRecordStore(name, PartitionContainer.this);
+    private final ConcurrencyUtil.ConstructorFunction<String, PartitionRecordStore> recordStoreConstructor
+            = new ConcurrencyUtil.ConstructorFunction<String, PartitionRecordStore>() {
+        public PartitionRecordStore createNew(String name) {
+            return new PartitionRecordStore(name, PartitionContainer.this);
         }
     };
 
@@ -94,7 +93,7 @@ public class PartitionContainer {
 
     public int getMaxBackupCount() {
         int max = 1;
-        for (DefaultRecordStore mapPartition : maps.values()) {
+        for (PartitionRecordStore mapPartition : maps.values()) {
             // TODO: get max map backup count!
 //        777    max = Math.max(max, mapPartition.get);
         }
@@ -102,13 +101,14 @@ public class PartitionContainer {
     }
 
     void destroyMap(String name) {
-        DefaultRecordStore recordStore = maps.remove(name);
-        recordStore.clear();
+        PartitionRecordStore recordStore = maps.remove(name);
+        if (recordStore != null)
+            recordStore.destroy();
     }
 
     void destroy() {
-        for (DefaultRecordStore store : maps.values()) {
-            store.clear();
+        for (PartitionRecordStore store : maps.values()) {
+            store.destroy();
         }
         maps.clear();
         transactions.clear();

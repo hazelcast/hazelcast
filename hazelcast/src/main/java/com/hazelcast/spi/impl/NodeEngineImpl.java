@@ -213,8 +213,21 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
+    @PrivateApi
     public <T> T getService(String serviceName) {
         return serviceManager.getService(serviceName);
+    }
+
+    public <T extends SharedService> T getSharedService(Class<T> serviceClass, String serviceName) {
+        final Object service = serviceManager.getService(serviceName);
+        if (service == null) {
+            return null;
+        }
+        if (serviceClass.isAssignableFrom(service.getClass())) {
+            return serviceClass.cast(service);
+        } else {
+            throw new IllegalArgumentException();
+        }
     }
 
     /**

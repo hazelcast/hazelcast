@@ -418,12 +418,6 @@ public class TestFullApplicationContext {
     }
 
     @Test
-    public void testLiteMember() {
-        assertNotNull(liteConfig);
-        assertTrue(liteConfig.isLiteMember());
-    }
-
-    @Test
     public void testPartitionGroupConfig() {
         PartitionGroupConfig pgc = config.getPartitionGroupConfig();
         assertTrue(pgc.isEnabled());

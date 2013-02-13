@@ -65,4 +65,6 @@ public interface NodeEngine {
     boolean isActive();
 
     HazelcastInstance getHazelcastInstance();
+
+    <T extends SharedService> T getSharedService(Class<T> serviceClass, String serviceName);
 }

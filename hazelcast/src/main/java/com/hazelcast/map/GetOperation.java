@@ -18,11 +18,13 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.Clock;
 
 public class GetOperation extends AbstractMapOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
     private transient MapService mapService;
+    private transient long startTime;
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -32,6 +34,7 @@ public class GetOperation extends AbstractMapOperation implements IdentifiedData
     }
 
     public void run() {
+        startTime = Clock.currentTimeMillis();
         mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         if (getTxnId() != null) {
@@ -51,6 +54,7 @@ public class GetOperation extends AbstractMapOperation implements IdentifiedData
 
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.GET, dataKey, result, result);
+        mapService.getMapContainer(name).getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - startTime);
     }
 
     @Override
@@ -60,8 +64,7 @@ public class GetOperation extends AbstractMapOperation implements IdentifiedData
 
     @Override
     public String toString() {
-        return "GetOperation{" +
-                '}';
+        return "GetOperation{}";
     }
 
     public int getId() {

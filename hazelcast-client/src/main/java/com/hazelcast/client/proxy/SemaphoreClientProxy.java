@@ -18,10 +18,10 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.ProxyHelper;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.semaphore.SemaphoreService;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;

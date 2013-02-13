@@ -17,10 +17,10 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.countdownlatch.CountDownLatchService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
 import com.hazelcast.nio.Address;

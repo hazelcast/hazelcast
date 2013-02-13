@@ -61,13 +61,31 @@ public abstract class AbstractRecord implements DataSerializable {
         this.stats = stats;
     }
 
-    public Long getLastAccessTime() {
-        return stats == null ? 0 : stats.getLastAccessTime();
+    public Integer getHits() {
+        return stats == null ? -1 : stats.getHits();
     }
 
-    public void access() {
+    public Long getLastAccessTime() {
+        return stats == null ? -1 : stats.getLastAccessTime();
+    }
+
+    public long getCost() {
+        return 0;
+    }
+
+    public void onAccess() {
         if(stats != null)
             stats.access();
+    }
+
+    public void onStore() {
+        if(stats != null)
+            stats.store();
+    }
+
+    public void onUpdate() {
+        if(stats != null)
+            stats.update();
     }
 
     public Record clone() {
@@ -133,7 +151,4 @@ public abstract class AbstractRecord implements DataSerializable {
                 '}';
     }
 
-    public Integer getHits() {
-        return stats == null ? 0 : stats.getHits();
-    }
 }

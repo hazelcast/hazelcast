@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.Clock;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
@@ -27,6 +28,8 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     protected transient Data dataOldValue;
     protected transient RecordStore recordStore;
     protected transient MapService mapService;
+    protected transient MapContainer mapContainer;
+    private transient long startTime;
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId) {
         super(name, dataKey, value, -1);
@@ -49,17 +52,23 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return false;
     }
 
-    public final void beforeRun() {
+    public void beforeRun() {
         mapService = getService();
         pc = mapService.getPartitionContainer(getPartitionId());
         recordStore = pc.getRecordStore(name);
+        mapContainer = mapService.getMapContainer(name);
     }
 
-    public final void afterRun() {
+    public void run() {
+        startTime = Clock.currentTimeMillis();
+    }
+
+    public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.PUT, dataKey, dataValue, dataOldValue);
         int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
+        mapContainer.getMapOperationCounter().incrementPuts(Clock.currentTimeMillis() - startTime);
     }
 
     public final Operation getBackupOperation() {
@@ -67,11 +76,16 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public final int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
+        return mapContainer.getAsyncBackupCount();
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
     }
 
     public final int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+        return mapContainer.getBackupCount();
     }
 
     @Override

@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.concurrent.lock;
 
-import java.util.Map;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface MapEntry<K, V> extends Map.Entry<K, V> {
+/**
+ * @mdogan 2/13/13
+ */
+public interface ILockNamespace extends DataSerializable {
 
-    long getCreationTime();
+    String getServiceName();
 
-    long getLastAccessTime();
+    Object getObjectId();
+
 }

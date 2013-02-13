@@ -16,25 +16,27 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
 
-public class GetMapEntryOperation extends AbstractMapOperation {
+public class GetEntryViewOperation extends AbstractMapOperation {
 
-    private transient Map.Entry<Data,Data> result;
+    private transient EntryView<Data> result;
 
-    public GetMapEntryOperation(String name, Data dataKey) {
+    public GetEntryViewOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public GetMapEntryOperation() {
+    public GetEntryViewOperation() {
     }
 
     public void run() {
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        result = recordStore.getMapEntryData(dataKey);
+        Record record = recordStore.getRecords().get(dataKey);
+        result = new SimpleEntryView(getNodeEngine().toData(record.getValue()), record);
     }
 
     @Override
@@ -44,7 +46,7 @@ public class GetMapEntryOperation extends AbstractMapOperation {
 
     @Override
     public String toString() {
-        return "GetMapEntryOperation{" +
+        return "GetEntryViewOperation{" +
                '}';
     }
 

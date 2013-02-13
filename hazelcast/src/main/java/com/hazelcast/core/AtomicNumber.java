@@ -100,17 +100,6 @@ public interface AtomicNumber extends DistributedObject {
      */
     public void set(long newValue);
 
-    /**
-     * Not implemented. Use compareAndSet().
-     */
-    @Deprecated
-    boolean weakCompareAndSet(long expect, long update);
-
-    @Deprecated
-    /**
-     * Not implemented. Use set().
-     */
-    void lazySet(long newValue);
 
     LocalAtomicNumberStats getLocalAtomicNumberStats();
 }

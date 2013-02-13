@@ -116,16 +116,6 @@ public class AtomicNumberProxy extends AbstractDistributedObject<AtomicNumberSer
         }
     }
 
-    @Deprecated
-    public boolean weakCompareAndSet(long expect, long update) {
-        throw new UnsupportedOperationException("Not implemented. Use compareAndSet().");
-    }
-
-    @Deprecated
-    public void lazySet(long newValue) {
-        throw new UnsupportedOperationException("Not implemented. Use set().");
-    }
-
     public LocalAtomicNumberStats getLocalAtomicNumberStats() {
         return null;
     }

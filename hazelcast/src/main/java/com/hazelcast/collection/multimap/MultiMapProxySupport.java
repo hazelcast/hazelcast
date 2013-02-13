@@ -19,13 +19,16 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.*;
+import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -37,12 +40,14 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
 
     protected final MultiMapConfig config;
     protected final CollectionProxyId proxyId;
+    protected final LockProxySupport lockSupport;
 
     protected MultiMapProxySupport(CollectionService service, NodeEngine nodeEngine,
                                    MultiMapConfig config, CollectionProxyId proxyId) {
         super(nodeEngine, service);
         this.config = new MultiMapConfig(config);
         this.proxyId = proxyId;
+        lockSupport = new LockProxySupport(new LockNamespace(CollectionService.SERVICE_NAME, proxyId));
     }
 
     public <V> Collection<V> createNew() {
@@ -59,7 +64,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             PutOperation operation = new PutOperation(proxyId, dataKey, getThreadId(), dataValue, index);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -68,7 +73,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             GetAllOperation operation = new GetAllOperation(proxyId, dataKey);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -77,7 +82,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             RemoveOperation operation = new RemoveOperation(proxyId, dataKey, getThreadId(), dataValue);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -86,7 +91,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             RemoveAllOperation operation = new RemoveAllOperation(proxyId, dataKey, getThreadId());
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -109,7 +114,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             }
             return keySet;
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -120,7 +125,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
             return results;
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -132,7 +137,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
             return results;
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -152,7 +157,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             }
             return false;
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return (Boolean) ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -171,7 +176,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             }
             return size;
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return (Integer) ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -181,7 +186,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             ClearOperation operation = new ClearOperation(proxyId);
             nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -190,25 +195,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             CountOperation operation = new CountOperation(proxyId, dataKey);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
-    }
-
-    protected Boolean lockInternal(Data dataKey, long timeout) {
-        try {
-            LockOperation operation = new LockOperation(proxyId, dataKey, getThreadId(), timeout);
-            return invoke(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
-        }
-    }
-
-    protected Boolean unlockInternal(Data dataKey) {
-        try {
-            UnlockOperation operation = new UnlockOperation(proxyId, dataKey, getThreadId());
-            return invoke(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -217,7 +204,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             GetOperation operation = new GetOperation(proxyId, dataKey, index);
             return invokeData(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -226,7 +213,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             ContainsOperation operation = new ContainsOperation(proxyId, dataKey, dataValue);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -235,7 +222,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             ContainsAllOperation operation = new ContainsAllOperation(proxyId, dataKey, dataSet);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -244,7 +231,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             SetOperation operation = new SetOperation(proxyId, dataKey, getThreadId(), index, dataValue);
             return invokeData(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -253,7 +240,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             RemoveIndexOperation operation = new RemoveIndexOperation(proxyId, dataKey, getThreadId(), index);
             return invokeData(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -262,7 +249,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             IndexOfOperation operation = new IndexOfOperation(proxyId, dataKey, value, last);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -271,7 +258,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             AddAllOperation operation = new AddAllOperation(proxyId, dataKey, getThreadId(), dataList, index);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -280,7 +267,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             CompareAndRemoveOperation operation = new CompareAndRemoveOperation(proxyId, dataKey, getThreadId(), dataList, retain);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -296,7 +283,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         return CollectionService.SERVICE_NAME;
     }
 
-    private <T> T invoke(CollectionOperation operation, Data dataKey) {
+    private <T> T invoke(Operation operation, Data dataKey) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
@@ -304,7 +291,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -316,7 +303,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Future f = inv.invoke();
             return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            return ExceptionUtil.rethrow(throwable);
         }
     }
 

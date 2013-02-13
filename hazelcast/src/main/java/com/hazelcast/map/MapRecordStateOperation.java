@@ -23,6 +23,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
+// todo store future and cancel when a new task is added
 public class MapRecordStateOperation extends LockAwareOperation implements BackupAwareOperation {
 
     private transient RecordStore recordStore;
@@ -47,11 +48,12 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     public void run() {
         Record record = recordStore.getRecords().get(dataKey);
         if (record != null) {
-            if (record.getState().isDirty()) {
+            if (record.getState().shouldStored()) {
                 MapStore store = recordStore.getMapContainer().getStore();
                 if (store != null) {
                     Object value = record.getValue();
                     store.store(mapService.toObject(dataKey), mapService.toObject(value));
+                    record.onStore();
                 }
                 record.getState().resetStoreTime();
             }
@@ -79,7 +81,6 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
     @Override
     public void onWaitExpire() {
     }
-
 
     public void afterRun() {
         if (evicted) {

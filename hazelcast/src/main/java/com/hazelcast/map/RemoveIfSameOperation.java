@@ -26,7 +26,7 @@ import java.io.IOException;
 public class RemoveIfSameOperation extends BaseRemoveOperation {
 
     private Data testValue;
-    private transient boolean removed = false;
+    private transient boolean successful = false;
 
     public RemoveIfSameOperation(String name, Data dataKey, Data oldValue, String txnId) {
         super(name, dataKey, txnId);
@@ -37,10 +37,16 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public void run() {
+        super.run();
         if (prepareTransaction()) {
             return;
         }
-       removed = recordStore.remove(dataKey, testValue);
+       successful = recordStore.remove(dataKey, testValue);
+    }
+
+    public void afterRun() {
+        if (successful)
+            super.afterRun();
     }
 
     @Override
@@ -56,19 +62,17 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public Object getResponse() {
-        return removed;
+        return successful;
     }
 
     public boolean shouldBackup() {
-        return removed;
+        return successful;
     }
-
 
     @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
     }
-
 
     @Override
     public String toString() {

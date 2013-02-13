@@ -36,7 +36,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     private boolean localMember;
     private Address address;
-    private NodeType nodeType;
     private String uuid;
 
     private transient volatile long lastRead = 0;
@@ -48,12 +47,11 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     }
 
     public MemberImpl(Address address, boolean localMember) {
-        this(address, localMember, NodeType.MEMBER, null);
+        this(address, localMember, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, NodeType nodeType, String uuid) {
+    public MemberImpl(Address address, boolean localMember, String uuid) {
         this();
-        this.nodeType = nodeType;
         this.localMember = localMember;
         this.address = address;
         this.lastRead = Clock.currentTimeMillis();
@@ -66,10 +64,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     public int getPort() {
         return address.getPort();
-    }
-
-    public NodeType getNodeType() {
-        return nodeType;
     }
 
     public InetAddress getInetAddress() {
@@ -121,16 +115,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public long getLastWrite() {
         return lastWrite;
     }
-
-    @Deprecated
-    public boolean isSuperClient() {
-        return isLiteMember();
-    }
-
-    public boolean isLiteMember() {
-        return (nodeType == NodeType.LITE_MEMBER);
-    }
-
     void setUuid(String uuid) {
         this.uuid = uuid;
     }
@@ -145,18 +129,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         logger = instance.node.getLogger(this.getClass().getName());
     }
 
-//    private void writeObject(ObjectOutputStream out) throws IOException {
-//        writeData(out);
-//    }
-//
-//    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-//        readData(in);
-//    }
-
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        nodeType = NodeType.create(in.readInt());
         lastRead = Clock.currentTimeMillis();
         if (in.readBoolean()) {
             uuid = in.readUTF();
@@ -165,7 +140,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
-        out.writeInt(nodeType.getValue());
         boolean hasUuid = uuid != null;
         out.writeBoolean(hasUuid);
         if (hasUuid) {
@@ -182,9 +156,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         sb.append(address.getPort());
         if (localMember) {
             sb.append(" this");
-        }
-        if (nodeType == NodeType.LITE_MEMBER) {
-            sb.append(" lite");
         }
         return sb.toString();
     }
