@@ -88,8 +88,9 @@ public final class QueueConfig implements DataSerializable {
         return queueStoreConfig;
     }
 
-    public void setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
+    public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
         this.queueStoreConfig = queueStoreConfig;
+        return this;
     }
 
     /**
