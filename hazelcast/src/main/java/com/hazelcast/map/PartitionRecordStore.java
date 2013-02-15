@@ -39,7 +39,6 @@ public class PartitionRecordStore implements RecordStore {
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapContainer mapContainer;
     final MapService mapService;
-
     final LockStoreView lockStore;
 
     public PartitionRecordStore(String name, PartitionContainer partitionContainer) {
