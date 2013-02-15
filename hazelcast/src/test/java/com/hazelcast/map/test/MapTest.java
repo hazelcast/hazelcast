@@ -17,6 +17,8 @@
 package com.hazelcast.map.test;
 
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.*;
 import com.hazelcast.query.Predicate;

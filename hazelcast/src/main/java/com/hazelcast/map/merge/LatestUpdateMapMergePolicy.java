@@ -17,12 +17,25 @@
 package com.hazelcast.map.merge;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class LatestUpdateMapMergePolicy implements MapMergePolicy {
-    public static final String NAME = "hz.LATEST_UPDATE";
+import java.io.IOException;
+
+public class LatestUpdateMapMergePolicy implements MapMergePolicy, DataSerializable {
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
+        if(mergingEntry.getLastUpdateTime() > existingEntry.getLastUpdateTime())
+            return mergingEntry.getValue();
         return null;
     }
-}
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+    }
+}

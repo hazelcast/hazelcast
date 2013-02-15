@@ -46,6 +46,7 @@ public abstract class BaseTest {
 
     @BeforeClass
     public static void init() throws Exception {
+//        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         startInstances();
     }
 
@@ -95,7 +96,6 @@ public abstract class BaseTest {
     protected static void startInstances() {
         Hazelcast.shutdownAll();
         instances.clear();
-        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         for (int i = 0; i < instanceCount; i++) {
             instances.add(Hazelcast.newHazelcastInstance(cfg));
         }

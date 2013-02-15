@@ -198,7 +198,7 @@
     </queue>
     <map name="default">
         <!--
-           Data type that will be used for storing records.
+           Data type that will be used for storing recordMap.
            Possible values:
            DATA (default): keys and values will be stored as binary data
            OBJECT : values will be stored in their object forms
