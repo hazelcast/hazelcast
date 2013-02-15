@@ -288,12 +288,17 @@ public final class SerializationServiceImpl implements SerializationService {
             throw new IllegalArgumentException("Class type information is required!");
         }
         if (serializer.getTypeId() <= 0) {
-            throw new IllegalArgumentException("Type id must be positive! Current: " + serializer.getTypeId());
+            throw new IllegalArgumentException("Type id must be positive! Current: "
+                    + serializer.getTypeId() + ", Serializer: " + serializer);
         }
         safeRegister(type, serializer);
     }
 
     public void registerFallback(final TypeSerializer serializer) {
+        if (serializer.getTypeId() <= 0) {
+            throw new IllegalArgumentException("Type id must be positive! Current: "
+                    + serializer.getTypeId() + ", Serializer: " + serializer);
+        }
         if (!fallback.compareAndSet(null, serializer)) {
             throw new IllegalStateException("Fallback serializer is already registered!");
         }

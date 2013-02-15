@@ -981,7 +981,6 @@
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:string">
-                    <xs:attribute name="global" type="xs:boolean" />
                     <xs:attribute name="type-class" type="xs:string" />
                 </xs:extension>
             </xs:simpleContent>
