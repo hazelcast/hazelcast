@@ -29,13 +29,13 @@ import java.io.IOException;
 public abstract class AbstractRecord implements DataSerializable {
 
     protected volatile RecordState state;
-    protected volatile RecordStats stats;
+    protected volatile RecordStatistics stats;
     protected volatile Data key;
 
     public AbstractRecord(Data key) {
         this.key = key;
         state = new RecordState();
-        stats = new RecordStats();
+        stats = new RecordStatistics();
     }
 
     public AbstractRecord() {
@@ -53,11 +53,11 @@ public abstract class AbstractRecord implements DataSerializable {
         this.state = state;
     }
 
-    public RecordStats getStats() {
+    public RecordStatistics getStatistics() {
         return stats;
     }
 
-    public void setStats(RecordStats stats) {
+    public void setStatistics(RecordStatistics stats) {
         this.stats = stats;
     }
 
@@ -122,7 +122,7 @@ public abstract class AbstractRecord implements DataSerializable {
         }
         boolean statsEnabled = in.readBoolean();
         if(statsEnabled) {
-            stats = new RecordStats();
+            stats = new RecordStatistics();
             stats.readData(in);
         }
     }

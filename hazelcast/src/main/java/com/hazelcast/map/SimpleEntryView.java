@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
@@ -40,14 +39,15 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
     public SimpleEntryView(K key, V value, Record record) {
         this.key = key;
         this.value = value;
-        cost = record.getStats() == null ? -1 : record.getStats().getCost();
-        creationTime = record.getStats() == null ? -1 : record.getStats().getCreationTime();
+        final RecordStatistics statistics = record.getStatistics();
+        cost = statistics == null ? -1 : statistics.getCost();
+        creationTime = statistics == null ? -1 : statistics.getCreationTime();
         expirationTime = record.getState() == null ? -1 : record.getState().getExpirationTime();
-        hits = record.getStats() == null ? -1 : record.getStats().getHits();
-        lastAccessTime = record.getStats() == null ? -1 : record.getStats().getLastAccessTime();
-        lastStoredTime = record.getStats() == null ? -1 : record.getStats().getLastStoredTime();
-        lastUpdateTime = record.getStats() == null ? -1 : record.getStats().getLastUpdateTime();
-        version = record.getStats() == null ? -1 : record.getStats().getVersion();
+        hits = statistics == null ? -1 : statistics.getHits();
+        lastAccessTime = statistics == null ? -1 : statistics.getLastAccessTime();
+        lastStoredTime = statistics == null ? -1 : statistics.getLastStoredTime();
+        lastUpdateTime = statistics == null ? -1 : statistics.getLastUpdateTime();
+        version = statistics == null ? -1 : statistics.getVersion();
     }
 
     public SimpleEntryView() {

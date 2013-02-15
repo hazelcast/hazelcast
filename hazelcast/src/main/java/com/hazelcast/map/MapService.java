@@ -879,7 +879,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                 ConcurrentMap<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
-                    RecordStats stats = record.getStats();
+                    RecordStatistics stats = record.getStatistics();
                     RecordState state = record.getState();
                     // there is map store and the record is dirty (waits to be stored)
                     if (mapContainer.getStore() != null && state.isDirty()) {

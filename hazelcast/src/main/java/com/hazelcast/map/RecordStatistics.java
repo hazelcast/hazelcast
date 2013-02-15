@@ -23,7 +23,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public class RecordStats implements DataSerializable {
+public class RecordStatistics implements DataSerializable {
 
     protected volatile int hits = 0;
     protected volatile int version = 0;
@@ -33,7 +33,7 @@ public class RecordStats implements DataSerializable {
     protected volatile long creationTime = 0;
     protected volatile long cost = 0;
 
-    public RecordStats() {
+    public RecordStatistics() {
         long now = Clock.currentTimeMillis();
         lastAccessTime = now;
         lastUpdateTime = now;

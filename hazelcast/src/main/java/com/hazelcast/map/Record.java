@@ -31,9 +31,9 @@ public interface Record<V> extends IdentifiedDataSerializable, Map.Entry<Data,V>
 
     void setState(RecordState state);
 
-    RecordStats getStats();
+    RecordStatistics getStatistics();
 
-    void setStats(RecordStats stats);
+    void setStatistics(RecordStatistics stats);
 
     void onAccess();
 

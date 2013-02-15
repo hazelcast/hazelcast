@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -83,12 +82,12 @@ public class CountDownLatchInfo implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(count);
-        IOUtil.writeNullableString(out, owner);
+        out.writeUTF(owner);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         count = in.readInt();
-        owner = IOUtil.readNullableString(in);
+        owner = in.readUTF();
     }
 }

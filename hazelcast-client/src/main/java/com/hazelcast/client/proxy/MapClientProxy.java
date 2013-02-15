@@ -192,8 +192,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
 //        };
 //    }
 
-
-    public EntryView<V> getEntryView(K key) {
+    public EntryView<K, V> getEntryView(K key) {
         return null;
     }
 

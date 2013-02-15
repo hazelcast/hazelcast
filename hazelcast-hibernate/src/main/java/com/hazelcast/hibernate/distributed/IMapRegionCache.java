@@ -95,6 +95,7 @@ public class IMapRegionCache implements RegionCache {
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
                 map.set(key, value, 0, TimeUnit.MILLISECONDS);
+                return true;
             }
             return false;
         } else {

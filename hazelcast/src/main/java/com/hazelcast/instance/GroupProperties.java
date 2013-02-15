@@ -22,7 +22,6 @@ public class GroupProperties {
 
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
-    public static final String PROP_PARTITION_THREAD_COUNT = "hazelcast.partition.thread.count";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
     public static final String PROP_CONNECT_ALL_WAIT_SECONDS = "hazelcast.connect.all.wait.seconds";
     public static final String PROP_TOPIC_FLOW_CONTROL_ENABLED = "hazelcast.topic.flow.control.enabled";
@@ -30,9 +29,6 @@ public class GroupProperties {
     public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
     public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
     public static final String PROP_MAP_LOAD_THREAD_COUNT = "hazelcast.map.load.thread.count";
-    public static final String PROP_IN_THREAD_PRIORITY = "hazelcast.in.thread.priority";
-    public static final String PROP_OUT_THREAD_PRIORITY = "hazelcast.out.thread.priority";
-    public static final String PROP_PARTITION_THREAD_PRIORITY = "hazelcast.service.thread.priority";
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
@@ -62,14 +58,9 @@ public class GroupProperties {
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
-    public static final String PROP_RESTART_ON_MAX_IDLE = "hazelcast.restart.on.max.idle";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
-    public static final String PROP_REMOVE_DELAY_SECONDS = "hazelcast.map.remove.delay.seconds";
-    public static final String PROP_CLEANUP_DELAY_SECONDS = "hazelcast.map.cleanup.delay.seconds";
     public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
-    public static final String PROP_EXECUTOR_EVENT_THREAD_COUNT = "hazelcast.executor.event.thread.count";
     public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
-    public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
@@ -89,7 +80,6 @@ public class GroupProperties {
     public static final String PROP_IMMEDIATE_BACKUP_INTERVAL = "hazelcast.immediate.backup.interval";
     public static final String PROP_PARTITION_TABLE_SEND_INTERVAL = "hazelcast.partition.table.send.interval";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
-    public static final String PROP_FORCE_THROW_INTERRUPTED_EXCEPTION = "hazelcast.force.throw.interrupted.exception";
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
@@ -102,8 +92,6 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "8");
-
-    public final GroupProperty PARTITION_THREAD_COUNT;
 
     public final GroupProperty IO_THREAD_COUNT;
 
@@ -118,12 +106,6 @@ public class GroupProperties {
     public final GroupProperty MEMCACHE_ENABLED;
 
     public final GroupProperty REST_ENABLED;
-
-    public final GroupProperty IN_THREAD_PRIORITY;
-
-    public final GroupProperty OUT_THREAD_PRIORITY;
-
-    public final GroupProperty PARTITION_THREAD_PRIORITY;
 
     public final GroupProperty MAP_LOAD_CHUNK_SIZE;
 
@@ -179,21 +161,11 @@ public class GroupProperties {
 
     public final GroupProperty INITIAL_MIN_CLUSTER_SIZE;
 
-    public final GroupProperty RESTART_ON_MAX_IDLE;
-
     public final GroupProperty PARTITION_COUNT;
-
-    public final GroupProperty REMOVE_DELAY_SECONDS;
-
-    public final GroupProperty CLEANUP_DELAY_SECONDS;
 
     public final GroupProperty EXECUTOR_QUERY_THREAD_COUNT;
 
-    public final GroupProperty EXECUTOR_EVENT_THREAD_COUNT;
-
     public final GroupProperty EXECUTOR_CLIENT_THREAD_COUNT;
-
-    public final GroupProperty EXECUTOR_STORE_THREAD_COUNT;
 
     public final GroupProperty LOG_STATE;
 
@@ -233,8 +205,6 @@ public class GroupProperties {
 
     public final GroupProperty GRACEFUL_SHUTDOWN_MAX_WAIT;
 
-    public final GroupProperty FORCE_THROW_INTERRUPTED_EXCEPTION;
-
     public final GroupProperty SYSTEM_LOG_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
@@ -250,7 +220,6 @@ public class GroupProperties {
     public GroupProperties(Config config) {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
-        PARTITION_THREAD_COUNT = new GroupProperty(config, PROP_PARTITION_THREAD_COUNT, "-1");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
         TOPIC_FLOW_CONTROL_ENABLED = new GroupProperty(config, PROP_TOPIC_FLOW_CONTROL_ENABLED, "true");
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
@@ -258,9 +227,6 @@ public class GroupProperties {
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
         MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");
         MAP_LOAD_THREAD_COUNT = new GroupProperty(config, PROP_MAP_LOAD_THREAD_COUNT, "40");
-        IN_THREAD_PRIORITY = new GroupProperty(config, PROP_IN_THREAD_PRIORITY, "7");
-        OUT_THREAD_PRIORITY = new GroupProperty(config, PROP_OUT_THREAD_PRIORITY, "7");
-        PARTITION_THREAD_PRIORITY = new GroupProperty(config, PROP_PARTITION_THREAD_PRIORITY, "8");
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
@@ -287,14 +253,9 @@ public class GroupProperties {
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
-        RESTART_ON_MAX_IDLE = new GroupProperty(config, PROP_RESTART_ON_MAX_IDLE, "false");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
-        REMOVE_DELAY_SECONDS = new GroupProperty(config, PROP_REMOVE_DELAY_SECONDS, "5");
-        CLEANUP_DELAY_SECONDS = new GroupProperty(config, PROP_CLEANUP_DELAY_SECONDS, "10");
         EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "8");
-        EXECUTOR_EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_EVENT_THREAD_COUNT, "16");
         EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "40");
-        EXECUTOR_STORE_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_STORE_THREAD_COUNT, "16");
         LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
@@ -314,7 +275,6 @@ public class GroupProperties {
         IMMEDIATE_BACKUP_INTERVAL = new GroupProperty(config, PROP_IMMEDIATE_BACKUP_INTERVAL, "0");
         PARTITION_TABLE_SEND_INTERVAL = new GroupProperty(config, PROP_PARTITION_TABLE_SEND_INTERVAL, "15");
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");
-        FORCE_THROW_INTERRUPTED_EXCEPTION = new GroupProperty(config, PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "false");
         SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
