@@ -69,7 +69,7 @@ public class LockProxy extends AbstractDistributedObject<LockService> implements
     }
 
     public ICondition newCondition() {
-        throw new UnsupportedOperationException();
+        return new ConditionImpl(this);
     }
 
     public Object getId() {

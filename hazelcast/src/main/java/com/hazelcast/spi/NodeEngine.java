@@ -48,6 +48,8 @@ public interface NodeEngine {
 
     AsyncInvocationService getAsyncInvocationService();
 
+    WaitNotifyService getWaitNotifyService();
+
     Address getThisAddress();
 
     Config getConfig();

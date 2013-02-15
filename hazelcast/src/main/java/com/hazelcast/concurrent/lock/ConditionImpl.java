@@ -24,6 +24,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Date;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +35,7 @@ public class ConditionImpl implements ICondition {
 
     private final LockProxy lockProxy;
     private final int partitionId;
+    private final String conditionId = UUID.randomUUID().toString();
 
     public ConditionImpl(LockProxy lockProxy) {
         this.lockProxy = lockProxy;
@@ -62,10 +64,12 @@ public class ConditionImpl implements ICondition {
     public boolean await(long time, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
         final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
-                new AwaitOperation(lockProxy.namespace, lockProxy.key, ThreadContext.getThreadId()), partitionId).build();
+                new AwaitOperation(lockProxy.namespace, lockProxy.key,
+                        ThreadContext.getThreadId(), unit.toMillis(time), conditionId), partitionId).build();
         Future f = inv.invoke();
         try {
-            return (Boolean) f.get(time, unit);
+            final Object result = f.get();
+            return Boolean.TRUE.equals(result);
         } catch (Throwable t) {
             return (Boolean) ExceptionUtil.rethrow(t);
         }
@@ -77,10 +81,23 @@ public class ConditionImpl implements ICondition {
     }
 
     public void signal() {
+        signal(false);
+    }
 
+    private void signal(boolean all) {
+        final NodeEngine nodeEngine = lockProxy.getNodeEngine();
+        final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
+                new SignalOperation(lockProxy.namespace, lockProxy.key,
+                        ThreadContext.getThreadId(), conditionId, all), partitionId).build();
+        Future f = inv.invoke();
+        try {
+            f.get();
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
+        }
     }
 
     public void signalAll() {
-
+        signal(true);
     }
 }

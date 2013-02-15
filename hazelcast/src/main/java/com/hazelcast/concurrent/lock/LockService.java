@@ -69,6 +69,10 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return containers[partitionId];
     }
 
+    public LockStore getLockStore(int partitionId, ILockNamespace namespace) {
+        return getLockContainer(partitionId).getLockStore(namespace);
+    }
+
     public void memberAdded(MembershipServiceEvent event) {
     }
 
@@ -164,9 +168,5 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     public void onClientDisconnect(String clientUuid) {
         releaseLocksOf(clientUuid);
-    }
-
-    public LockStore getLockStore(int partitionId, ILockNamespace namespace) {
-        return getLockContainer(partitionId).getLockStore(namespace);
     }
 }

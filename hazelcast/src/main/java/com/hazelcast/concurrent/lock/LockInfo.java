@@ -16,24 +16,37 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-
+import java.util.*;
 
 class LockInfo implements DataSerializable {
 
+    private Data key;
     private String owner = null;
     private int threadId = -1;
     private int lockCount;
     private long expirationTime = -1;
     private long acquireTime = -1L;
 
+    private Map<String, ConditionInfo> conditions;
+    private List<ConditionKey> signalKeys;
+    private List<AwaitOperation> expiredAwaitOps;
+
     public LockInfo() {
+    }
+
+    public LockInfo(Data key) {
+        this.key = key;
+    }
+
+    public Data getKey() {
+        return key;
     }
 
     public boolean isLocked() {
@@ -47,7 +60,7 @@ class LockInfo implements DataSerializable {
     }
 
     void checkTTL() {
-        if (lockCount > 0 && System.currentTimeMillis() >= expirationTime) {
+        if (lockCount > 0 && Clock.currentTimeMillis() >= expirationTime) {
             clear();
         }
     }
@@ -59,14 +72,21 @@ class LockInfo implements DataSerializable {
             this.threadId = threadId;
             lockCount++;
             acquireTime = Clock.currentTimeMillis();
-            expirationTime = Clock.currentTimeMillis() + ttl;
+            setExpirationTime(ttl);
             return true;
         } else if (isLockedBy(owner, threadId)) {
             lockCount++;
-            expirationTime = Clock.currentTimeMillis() + ttl;
+            setExpirationTime(ttl);
             return true;
         }
         return false;
+    }
+
+    private void setExpirationTime(long ttl) {
+        expirationTime = Clock.currentTimeMillis() + ttl;
+        if (expirationTime < 0) {
+            expirationTime = Long.MAX_VALUE;
+        }
     }
 
     public boolean unlock(String owner, int threadId) {
@@ -90,12 +110,98 @@ class LockInfo implements DataSerializable {
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(owner);
     }
 
+    boolean addAwait(String conditionId, String caller, int threadId) {
+        if (conditions == null) {
+            conditions = new HashMap<String, ConditionInfo>(2);
+        }
+        ConditionInfo condition = conditions.get(conditionId);
+        if (condition == null) {
+            condition = new ConditionInfo(conditionId);
+            conditions.put(conditionId, condition);
+        }
+        return condition.addWaiter(caller, threadId);
+    }
+
+    boolean removeAwait(String conditionId, String caller, int threadId) {
+        if (conditions != null) {
+            final ConditionInfo condition = conditions.get(conditionId);
+            if (condition != null) {
+                final boolean ok = condition.removeWaiter(caller, threadId);
+                if (condition.getAwaitCount() == 0) {
+                    conditions.remove(conditionId);
+                }
+                return ok;
+            }
+        }
+        return false;
+    }
+
+    boolean isAwaiting(String conditionId, String caller, int threadId) {
+        if (conditions != null) {
+            final ConditionInfo condition = conditions.get(conditionId);
+            if (condition != null) {
+                return condition.containsWaiter(caller, threadId);
+            }
+        }
+        return false;
+    }
+
+    int getAwaitCount(String conditionId) {
+        if (conditions != null) {
+            final ConditionInfo condition = conditions.get(conditionId);
+            return condition != null ? condition.getAwaitCount() : 0;
+        }
+        return 0;
+    }
+
+    void registerSignalKey(ConditionKey conditionKey) {
+        if (signalKeys == null) {
+            signalKeys = new LinkedList<ConditionKey>();
+        }
+        signalKeys.add(conditionKey);
+    }
+
+    ConditionKey getSignalKey() {
+        final List<ConditionKey> keys = signalKeys;
+        return keys != null && !keys.isEmpty() ? keys.iterator().next() : null;
+    }
+
+    void removeSignalKey(ConditionKey conditionKey) {
+        if (signalKeys != null) {
+            signalKeys.remove(conditionKey);
+        }
+    }
+
+    void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
+        if (expiredAwaitOps == null) {
+            expiredAwaitOps = new LinkedList<AwaitOperation>();
+        }
+        expiredAwaitOps.add(awaitResponse);
+    }
+
+    AwaitOperation pollExpiredAwaitOp() {
+        final List<AwaitOperation> ops = expiredAwaitOps;
+        if (ops != null && !ops.isEmpty()) {
+            Iterator<AwaitOperation> iter = ops.iterator();
+            AwaitOperation awaitResponse = iter.next();
+            iter.remove();
+            return awaitResponse;
+        }
+        return null;
+    }
+
     public void clear() {
         threadId = -1;
         lockCount = 0;
         owner = null;
         expirationTime = 0;
         acquireTime = -1L;
+    }
+
+    public boolean isEvictable() {
+        return !isLocked()
+                && (conditions == null || conditions.isEmpty())
+                && (expiredAwaitOps == null || expiredAwaitOps.isEmpty());
     }
 
     public String getOwner() {
@@ -115,7 +221,7 @@ class LockInfo implements DataSerializable {
     }
 
     public long getRemainingTTL() {
-        long now = System.currentTimeMillis();
+        long now = Clock.currentTimeMillis();
         if (now >= expirationTime) return 0;
         return expirationTime - now;
     }
@@ -140,27 +246,85 @@ class LockInfo implements DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        IOUtil.writeNullableString(out, owner);
+        key.writeData(out);
+        out.writeUTF(owner);
         out.writeInt(threadId);
         out.writeInt(lockCount);
         out.writeLong(expirationTime);
         out.writeLong(acquireTime);
+
+        int len = conditions == null ? 0 : conditions.size();
+        out.writeInt(len);
+        if (len > 0) {
+            for (ConditionInfo condition : conditions.values()) {
+                condition.writeData(out);
+            }
+        }
+        len = signalKeys == null ? 0 : signalKeys.size();
+        out.writeInt(len);
+        if (len > 0) {
+            for (ConditionKey key : signalKeys) {
+                out.writeUTF(key.getConditionId());
+            }
+        }
+        len = expiredAwaitOps == null ? 0 : expiredAwaitOps.size();
+        out.writeInt(len);
+        if (len > 0) {
+            for (AwaitOperation op : expiredAwaitOps) {
+                op.writeData(out);
+            }
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        owner = IOUtil.readNullableString(in);
+        key = new Data();
+        key.readData(in);
+        owner = in.readUTF();
         threadId = in.readInt();
         lockCount = in.readInt();
         expirationTime = in.readLong();
         acquireTime = in.readLong();
+
+        int len = in.readInt();
+        if (len > 0) {
+            conditions = new HashMap<String, ConditionInfo>(len);
+            for (int i = 0; i < len; i++) {
+                ConditionInfo condition = new ConditionInfo();
+                condition.readData(in);
+                conditions.put(condition.getConditionId(), condition);
+            }
+        }
+
+        len = in.readInt();
+        if (len > 0) {
+            signalKeys = new ArrayList<ConditionKey>(len);
+            for (int i = 0; i < len; i++) {
+                signalKeys.add(new ConditionKey(key, in.readUTF()));
+            }
+        }
+
+        len = in.readInt();
+        if (len > 0) {
+            expiredAwaitOps = new ArrayList<AwaitOperation>(len);
+            for (int i = 0; i < len; i++) {
+                AwaitOperation op = new AwaitOperation();
+                op.readData(in);
+                expiredAwaitOps.add(op);
+            }
+        }
     }
+
 
     @Override
     public String toString() {
-        return "Lock{" +
-                "lockString=" + owner +
-                ", lockThreadId=" + threadId +
-                ", lockCount=" + lockCount +
-                '}';
+        final StringBuilder sb = new StringBuilder();
+        sb.append("LockInfo");
+        sb.append("{owner='").append(owner).append('\'');
+        sb.append(", threadId=").append(threadId);
+        sb.append(", lockCount=").append(lockCount);
+        sb.append(", acquireTime=").append(acquireTime);
+        sb.append(", expirationTime=").append(expirationTime);
+        sb.append('}');
+        return sb.toString();
     }
 }

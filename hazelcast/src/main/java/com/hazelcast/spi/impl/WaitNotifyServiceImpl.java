@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
@@ -34,8 +33,8 @@ import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
-@PrivateApi
-class WaitNotifyService {
+class WaitNotifyServiceImpl implements WaitNotifyService {
+
     private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final Future expirationTask;
@@ -43,7 +42,7 @@ class WaitNotifyService {
     private final NodeEngine nodeEngine;
     private final ILogger logger;
 
-    public WaitNotifyService(final NodeEngineImpl nodeEngine, final WaitingOpProcessor waitingOpProcessor) {
+    public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine, final WaitingOpProcessor waitingOpProcessor) {
         this.nodeEngine = nodeEngine;
         this.waitingOpProcessor = waitingOpProcessor;
         final Node node = nodeEngine.getNode();
@@ -101,11 +100,11 @@ class WaitNotifyService {
     };
 
     // runs after queue lock
-    public void wait(WaitSupport so) {
-        final WaitNotifyKey key = so.getWaitKey();
+    public void await(WaitSupport waitSupport) {
+        final WaitNotifyKey key = waitSupport.getWaitKey();
         final Queue<WaitingOp> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
-        long timeout = so.getWaitTimeoutMillis();
-        WaitingOp waitingOp = (so instanceof KeyBasedOperation) ? new KeyBasedWaitingOp(q, so) : new WaitingOp(q, so);
+        long timeout = waitSupport.getWaitTimeoutMillis();
+        WaitingOp waitingOp = (waitSupport instanceof KeyBasedOperation) ? new KeyBasedWaitingOp(q, waitSupport) : new WaitingOp(q, waitSupport);
         waitingOp.setNodeEngine(nodeEngine);
         if (timeout > -1 && timeout < 1500) {
             delayQueue.offer(waitingOp);
@@ -268,7 +267,7 @@ class WaitNotifyService {
         }
 
         public boolean isExpired() {
-            return expirationTime != -1 && Clock.currentTimeMillis() >= expirationTime;
+            return expirationTime > 0 && Clock.currentTimeMillis() >= expirationTime;
         }
 
         public boolean isCancelled() {
@@ -344,7 +343,7 @@ class WaitNotifyService {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("SchedulingService{");
+        StringBuilder sb = new StringBuilder("WaitNotifyService{");
         sb.append("delayQueue=" + delayQueue.size());
         sb.append(" \n[");
         for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {

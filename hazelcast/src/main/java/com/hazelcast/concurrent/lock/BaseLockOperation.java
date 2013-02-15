@@ -20,12 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.KeyBasedOperation;
 
 import java.io.IOException;
 
-abstract class BaseLockOperation extends AbstractOperation {
+abstract class BaseLockOperation extends AbstractOperation implements KeyBasedOperation {
 
-    public static final long DEFAULT_LOCK_TTL = 5 * 60 * 1000;
+    public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
 
     protected ILockNamespace namespace;
 
@@ -63,7 +64,7 @@ abstract class BaseLockOperation extends AbstractOperation {
         this.timeout = timeout;
     }
 
-    public Object getResponse() {
+    public final Object getResponse() {
         return response;
     }
 
@@ -83,6 +84,14 @@ abstract class BaseLockOperation extends AbstractOperation {
     @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
+    }
+
+    public final int getKeyHash() {
+        return key.getPartitionHash();
+    }
+
+    public final Data getKey() {
+        return key;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

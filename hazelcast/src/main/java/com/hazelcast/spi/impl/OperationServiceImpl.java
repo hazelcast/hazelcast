@@ -197,8 +197,7 @@ final class OperationServiceImpl implements OperationService {
         return false;
     }
 
-    @PrivateApi
-    void runOperationUnderExistingLock(Operation op) {
+    public void runOperationUnderExistingLock(Operation op) {
         final ThreadContext threadContext = ThreadContext.getOrCreate();
         final Operation parentOperation = threadContext.getCurrentOperation();
         threadContext.setCurrentOperation(op);
@@ -237,7 +236,7 @@ final class OperationServiceImpl implements OperationService {
             if (op instanceof WaitSupport) {
                 WaitSupport so = (WaitSupport) op;
                 if (so.shouldWait()) {
-                    nodeEngine.waitNotifyService.wait(so);
+                    nodeEngine.waitNotifyService.await(so);
                     return;
                 }
             }

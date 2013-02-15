@@ -22,12 +22,15 @@ import com.hazelcast.spi.WaitNotifyKey;
 /**
  * @mdogan 2/13/13
  */
-public final class ConditionWaitNotifyKey implements WaitNotifyKey {
+public final class ConditionKey implements WaitNotifyKey {
 
     private final Data key;
 
-    public ConditionWaitNotifyKey(Data key) {
+    private final String conditionId;
+
+    public ConditionKey(Data key, String conditionId) {
         this.key = key;
+        this.conditionId = conditionId;
     }
 
     public String getServiceName() {
@@ -38,20 +41,31 @@ public final class ConditionWaitNotifyKey implements WaitNotifyKey {
         return key;
     }
 
+    public Data getKey() {
+        return key;
+    }
+
+    public String getConditionId() {
+        return conditionId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ConditionWaitNotifyKey that = (ConditionWaitNotifyKey) o;
+        ConditionKey that = (ConditionKey) o;
 
-        if (!key.equals(that.key)) return false;
+        if (key != null ? !key.equals(that.key) : that.key != null) return false;
+        if (conditionId != null ? !conditionId.equals(that.conditionId) : that.conditionId != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return key.hashCode();
+        int result = key != null ? key.hashCode() : 0;
+        result = 31 * result + (conditionId != null ? conditionId.hashCode() : 0);
+        return result;
     }
 }
