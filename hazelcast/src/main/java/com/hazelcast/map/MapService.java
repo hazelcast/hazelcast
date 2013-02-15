@@ -285,7 +285,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public MapContainer getMapContainer(String mapName) {
-        return ConcurrencyUtil.getOrPutIfAbsent(mapContainers, mapName, mapConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
