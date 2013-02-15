@@ -933,15 +933,17 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void handleSerializers(final Node node, SerializationConfig serializationConfig) {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
-            if ("type-serializer".equals(cleanNodeName(child))) {
+            final String name = cleanNodeName(child);
+            final String value = getValue(child);
+            if ("type-serializer".equals(name)) {
                 TypeSerializerConfig typeSerializerConfig = new TypeSerializerConfig();
-                typeSerializerConfig.setClassName(getValue(node));
-                final String typeClassName = getAttribute(node, "type-class");
+                typeSerializerConfig.setClassName(value);
+                final String typeClassName = getAttribute(child, "type-class");
                 typeSerializerConfig.setTypeClassName(typeClassName);
                 serializationConfig.addTypeSerializer(typeSerializerConfig);
-            } else if ("global-serializer".equals(cleanNodeName(child))) {
+            } else if ("global-serializer".equals(name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-                globalSerializerConfig.setClassName(getValue(node));
+                globalSerializerConfig.setClassName(value);
                 serializationConfig.setGlobalSerializer(globalSerializerConfig);
             }
         }
