@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class GetEntryViewOperation extends AbstractMapOperation {
 
-    private transient EntryView<Data> result;
+    private transient EntryView<Data, Data> result;
 
     public GetEntryViewOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -34,7 +34,7 @@ public class GetEntryViewOperation extends AbstractMapOperation {
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Record record = recordStore.getRecords().get(dataKey);
-        result = new SimpleEntryView(getNodeEngine().toData(record.getValue()), record);
+        result = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
     }
 
     @Override

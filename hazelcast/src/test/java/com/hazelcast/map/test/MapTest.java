@@ -207,16 +207,16 @@ public class MapTest extends BaseTest {
 
     @Test
     public void testMapContainsValue() {
-        IMap<String, String> map = getInstance().getMap("testMapContainsValue");
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
-        assertTrue(map.containsValue("value1"));
-        assertFalse(map.containsValue("value5"));
-        map.remove("key1");
-        assertFalse(map.containsValue("value1"));
-        assertTrue(map.containsValue("value2"));
-        assertFalse(map.containsValue("value5"));
+        IMap map = getInstance().getMap("testMapContainsValue");
+        map.put(1,1);
+        map.put(2,2);
+        map.put(3,3);
+        assertTrue(map.containsValue(1));
+        assertFalse(map.containsValue(5));
+        map.remove(1);
+        assertFalse(map.containsValue(1));
+        assertTrue(map.containsValue(2));
+        assertFalse(map.containsValue(5));
     }
 
     @Test
@@ -348,7 +348,7 @@ public class MapTest extends BaseTest {
 
     @Test
     public void testEntryView() {
-        final IMap<Object, Integer> map = getInstance().getMap("testEntryView");
+        final IMap<Integer, Integer> map = getInstance().getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
         map.put(2, 2);
@@ -359,9 +359,18 @@ public class MapTest extends BaseTest {
         long time3 = Clock.currentTimeMillis();
         map.put(2, 22);
 
-        EntryView<Integer> entryView1 = map.getEntryView(1);
-        EntryView<Integer> entryView2 = map.getEntryView(2);
-        EntryView<Integer> entryView3 = map.getEntryView(3);
+        EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
+        EntryView<Integer, Integer> entryView2 = map.getEntryView(2);
+        EntryView<Integer, Integer> entryView3 = map.getEntryView(3);
+
+
+        assertEquals((Integer) 1, entryView1.getKey());
+        assertEquals((Integer) 2, entryView2.getKey());
+        assertEquals((Integer) 3, entryView3.getKey());
+
+        assertEquals((Integer) 1, entryView1.getValue());
+        assertEquals((Integer) 22, entryView2.getValue());
+        assertEquals((Integer) 3, entryView3.getValue());
 
         assertEquals(0, entryView1.getHits());
         assertEquals(1, entryView2.getHits());

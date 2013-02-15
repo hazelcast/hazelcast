@@ -654,7 +654,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * @return <tt>EntryView</tt> of the specified key
      * @see EntryView
      */
-    EntryView<V> getEntryView(K key);
+    EntryView<K,V> getEntryView(K key);
 
     /**
      * Evicts the specified key from this map. If

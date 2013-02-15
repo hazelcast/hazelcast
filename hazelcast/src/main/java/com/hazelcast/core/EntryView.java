@@ -18,12 +18,9 @@ package com.hazelcast.core;
 
 import com.hazelcast.nio.serialization.Data;
 
-public interface EntryView<V> {
+public interface EntryView<K,V> {
 
-    // TODO: @mm - we cannot use Data in end-user API!
-    // Return type should be K.
-    // K getKey();
-    Data getKey();
+    K getKey();
 
     V getValue();
 

@@ -24,9 +24,9 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
+public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
 
-    private Data key;
+    private K key;
     private V value;
     private long cost;
     private long creationTime;
@@ -37,9 +37,9 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
     private long lastUpdateTime;
     private long version;
 
-    public SimpleEntryView(V value, Record record) {
+    public SimpleEntryView(K key, V value, Record record) {
+        this.key = key;
         this.value = value;
-        key = record.getKey();
         cost = record.getStats() == null ? -1 : record.getStats().getCost();
         creationTime = record.getStats() == null ? -1 : record.getStats().getCreationTime();
         expirationTime = record.getState() == null ? -1 : record.getState().getExpirationTime();
@@ -53,14 +53,11 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
     public SimpleEntryView() {
     }
 
-    // TODO: @mm - we cannot use Data in end-user API!
-    // Return type should be K.
-    // K getKey();
-    public Data getKey() {
+    public K getKey() {
         return key;
     }
 
-    public void setKey(Data key) {
+    public void setKey(K key) {
         this.key = key;
     }
 
@@ -138,7 +135,7 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        key.writeData(out);
+        out.writeObject(key);
         out.writeObject(value);
         out.writeLong(cost);
         out.writeLong(creationTime);
@@ -152,8 +149,7 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = new Data();
-        key.readData(in);
+        key = in.readObject();
         value = in.readObject();
         cost = in.readLong();
         creationTime = in.readLong();
