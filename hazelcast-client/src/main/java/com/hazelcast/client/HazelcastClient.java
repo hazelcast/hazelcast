@@ -118,6 +118,10 @@ public class HazelcastClient implements HazelcastInstance {
         throw new UnsupportedOperationException();
     }
 
+    public ConcurrentMap<String, Object> getUserContext() {
+        throw new UnsupportedOperationException();
+    }
+
     public PartitionService getPartitionService() {
         return partitionClientProxy;
     }

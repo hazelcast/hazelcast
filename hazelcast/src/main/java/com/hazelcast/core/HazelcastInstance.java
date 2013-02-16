@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Hazelcast instance. Each Hazelcast instance is a member.
@@ -294,4 +295,16 @@ public interface HazelcastInstance {
 
     void registerFallbackSerializer(final TypeSerializer serializer);
 
+    /**
+     * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used
+     * for example to store dependencies that otherwise are hard to obtain. The HazelcastInstance can often easily
+     * be obtained by making use of the HazelcastInstanceAware functionality, but non Hazelcast dependencies are without
+     * this user-context hard to obtain. By storing the dependencies in the user-context, they can be retrieved as soon
+     * as you have a reference to the HazelcastInstance.
+     *
+     * This structure is purely local and Hazelcast remains agnostic abouts its content.
+     *
+     * @return  the user context.
+     */
+    ConcurrentMap<String,Object> getUserContext();
 }
