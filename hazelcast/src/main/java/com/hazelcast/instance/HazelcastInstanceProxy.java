@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @mdogan 1/31/13
@@ -141,6 +142,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         getOriginal().removeDistributedObjectListener(distributedObjectListener);
+    }
+
+    public ConcurrentMap<String, Object> getUserContext() {
+        return getOriginal().getUserContext();
     }
 
     private HazelcastInstanceImpl getOriginal() {

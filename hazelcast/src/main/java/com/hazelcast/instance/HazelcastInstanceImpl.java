@@ -43,6 +43,8 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
@@ -71,6 +73,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     final ThreadGroup threadGroup;
 
     final NodeEngine nodeEngine;
+
+    final ConcurrentMap<String,Object> userContext= new ConcurrentHashMap<String, Object>();
 
     HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
         this.name = name;
@@ -163,6 +167,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public Config getConfig() {
         return node.getConfig();
+    }
+
+    @Override
+    public ConcurrentMap<String, Object> getUserContext() {
+        return userContext;
     }
 
     public PartitionService getPartitionService() {
