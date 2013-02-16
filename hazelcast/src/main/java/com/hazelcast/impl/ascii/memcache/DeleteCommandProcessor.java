@@ -37,12 +37,14 @@ public class DeleteCommandProcessor extends AbstractTextCommandProcessor<DeleteC
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(format("failed to decode key [%s] using UTF-8",command.getKey()));
         }
+
         String mapName = "default";
         int index = key.indexOf(':');
         if (index != -1) {
             mapName = key.substring(0, index);
             key = key.substring(index + 1);
         }
+
         command.setResponse(DELETED);
         if (command.shouldReply()) {
             textCommandService.sendResponse(command);
