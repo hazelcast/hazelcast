@@ -399,13 +399,13 @@ public class WebFilter implements Filter {
 
         final WebFilter webFilter;
 
-        private final AtomicNumber timestamp;
+        private final IAtomicLong timestamp;
 
         public HazelcastHttpSession(WebFilter webFilter, final String sessionId, HttpSession originalSession) {
             this.webFilter = webFilter;
             this.id = sessionId;
             this.originalSession = originalSession;
-            timestamp = hazelcastInstance.getAtomicNumber(clusterMapName + "_" + id);
+            timestamp = hazelcastInstance.getAtomicLong(clusterMapName + "_" + id);
         }
 
         public Object getAttribute(final String name) {

@@ -19,14 +19,13 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
+public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
 
-    private Data key;
+    private K key;
     private V value;
     private long cost;
     private long creationTime;
@@ -37,27 +36,28 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
     private long lastUpdateTime;
     private long version;
 
-    public SimpleEntryView(V value, Record record) {
+    public SimpleEntryView(K key, V value, Record record) {
+        this.key = key;
         this.value = value;
-        key = record.getKey();
-        cost = record.getStats() == null ? -1 : record.getStats().getCost();
-        creationTime = record.getStats() == null ? -1 : record.getStats().getCreationTime();
+        final RecordStatistics statistics = record.getStatistics();
+        cost = statistics == null ? -1 : statistics.getCost();
+        creationTime = statistics == null ? -1 : statistics.getCreationTime();
         expirationTime = record.getState() == null ? -1 : record.getState().getExpirationTime();
-        hits = record.getStats() == null ? -1 : record.getStats().getHits();
-        lastAccessTime = record.getStats() == null ? -1 : record.getStats().getLastAccessTime();
-        lastStoredTime = record.getStats() == null ? -1 : record.getStats().getLastStoredTime();
-        lastUpdateTime = record.getStats() == null ? -1 : record.getStats().getLastUpdateTime();
-        version = record.getStats() == null ? -1 : record.getStats().getVersion();
+        hits = statistics == null ? -1 : statistics.getHits();
+        lastAccessTime = statistics == null ? -1 : statistics.getLastAccessTime();
+        lastStoredTime = statistics == null ? -1 : statistics.getLastStoredTime();
+        lastUpdateTime = statistics == null ? -1 : statistics.getLastUpdateTime();
+        version = statistics == null ? -1 : statistics.getVersion();
     }
 
     public SimpleEntryView() {
     }
 
-    public Data getKey() {
+    public K getKey() {
         return key;
     }
 
-    public void setKey(Data key) {
+    public void setKey(K key) {
         this.key = key;
     }
 
@@ -135,7 +135,7 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        key.writeData(out);
+        out.writeObject(key);
         out.writeObject(value);
         out.writeLong(cost);
         out.writeLong(creationTime);
@@ -149,8 +149,7 @@ public class SimpleEntryView<V> implements EntryView<V>, DataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = new Data();
-        key.readData(in);
+        key = in.readObject();
         value = in.readObject();
         cost = in.readLong();
         creationTime = in.readLong();

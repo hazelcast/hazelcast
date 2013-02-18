@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -49,6 +50,8 @@ public interface RecordStore {
     boolean tryPut(Data dataKey, Object value, long ttl);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
+
+    boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
     ConcurrentMap<Data, Record> getRecords();
 
@@ -85,4 +88,6 @@ public interface RecordStore {
     void flush(boolean flushAllRecords);
 
     void removeAll();
+
+    void reset();
 }

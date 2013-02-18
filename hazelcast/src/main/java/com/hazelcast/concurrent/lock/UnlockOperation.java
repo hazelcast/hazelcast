@@ -29,6 +29,7 @@ import java.io.IOException;
 public class UnlockOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
 
     private boolean force = false;
+    private transient boolean shouldNotify;
 
     public UnlockOperation() {
     }
@@ -46,8 +47,18 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         if (force) {
             response = getLockStore().forceUnlock(key);
         } else {
-            response = getLockStore().unlock(key, getCallerUuid(), threadId);
+            if (!(response = getLockStore().unlock(key, getCallerUuid(), threadId))) {
+                throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
+            }
         }
+    }
+
+    public void afterRun() throws Exception {
+        final AwaitOperation awaitResponse = getLockStore().pollExpiredAwaitOp(key);
+        if (awaitResponse != null) {
+            getNodeEngine().getOperationService().runOperationUnderExistingLock(awaitResponse);
+        }
+        shouldNotify = awaitResponse == null;
     }
 
     public Operation getBackupOperation() {
@@ -59,11 +70,12 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
     }
 
     public boolean shouldNotify() {
-        return response;
+        return shouldNotify;
     }
 
     public final WaitNotifyKey getNotifiedKey() {
-        return new LockWaitNotifyKey(namespace, key);
+        final ConditionKey conditionKey = getLockStore().getSignalKey(key);
+        return conditionKey != null ? conditionKey : new LockWaitNotifyKey(namespace, key);
     }
 
     @Override

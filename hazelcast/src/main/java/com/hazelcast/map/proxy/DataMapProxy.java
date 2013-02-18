@@ -200,7 +200,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     @Override
-    public EntryView<Data> getEntryView(Data key) {
+    public EntryView<Data,Data> getEntryView(Data key) {
         return getEntryViewInternal(getNodeEngine().toData(key));
     }
 

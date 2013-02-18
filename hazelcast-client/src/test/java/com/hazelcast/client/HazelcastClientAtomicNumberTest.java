@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.AtomicNumber;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.After;
@@ -44,7 +44,7 @@ public class HazelcastClientAtomicNumberTest {
     public void testAtomicLong() {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastClient client = newHazelcastClient(h1);
-        AtomicNumber an = client.getAtomicNumber("testAtomicLong");
+        IAtomicLong an = client.getAtomicLong("testAtomicLong");
         assertEquals(0, an.get());
         assertEquals(-1, an.decrementAndGet());
         assertEquals(0, an.incrementAndGet());
@@ -66,8 +66,8 @@ public class HazelcastClientAtomicNumberTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastClient client = newHazelcastClient(h1);
         final String name = "simple";
-        final AtomicNumber nodeAtomicLong = h1.getAtomicNumber(name);
-        final AtomicNumber clientAtomicLong = client.getAtomicNumber(name);
+        final IAtomicLong nodeAtomicLong = h1.getAtomicLong(name);
+        final IAtomicLong clientAtomicLong = client.getAtomicLong(name);
         check(nodeAtomicLong, clientAtomicLong, 0L);
         assertEquals(1L, clientAtomicLong.incrementAndGet());
         check(nodeAtomicLong, clientAtomicLong, 1L);
@@ -85,8 +85,8 @@ public class HazelcastClientAtomicNumberTest {
         check(nodeAtomicLong, clientAtomicLong, 1L);
     }
 
-    private void check(final AtomicNumber nodeAtomicLong,
-                       final AtomicNumber clientAtomicLong, final long expectedValue) {
+    private void check(final IAtomicLong nodeAtomicLong,
+                       final IAtomicLong clientAtomicLong, final long expectedValue) {
         assertEquals(expectedValue, nodeAtomicLong.get());
         assertEquals(expectedValue, clientAtomicLong.get());
     }

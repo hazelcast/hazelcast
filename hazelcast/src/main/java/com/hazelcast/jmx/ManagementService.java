@@ -137,8 +137,8 @@ public class ManagementService implements DistributedObjectListener {
         if (distributedObject instanceof IList){
             return new ListMBean((IList)distributedObject, this);
         }
-        if (distributedObject instanceof AtomicNumber){
-            return new AtomicNumberMBean((AtomicNumber)distributedObject, this);
+        if (distributedObject instanceof IAtomicLong){
+            return new AtomicLongMBean((IAtomicLong)distributedObject, this);
         }
         if (distributedObject instanceof ICountDownLatch){
             return new CountDownLatchMBean((ICountDownLatch)distributedObject, this);

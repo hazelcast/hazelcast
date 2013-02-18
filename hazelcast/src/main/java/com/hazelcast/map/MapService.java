@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -29,10 +30,12 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.protocol.Command;
@@ -55,6 +58,7 @@ import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Util;
 
 import java.io.IOException;
@@ -111,8 +115,67 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Runnable prepareMergeRunnable() {
-        // TODO: @mm - create merge runnable according to map merge policies.
-        return null;
+        Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer, Collection<Record>>(mapContainers.size());
+        for (MapContainer mapContainer : mapContainers.values()) {
+            for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                RecordStore recordStore = getPartitionContainer(i).getRecordStore(mapContainer.getName());
+                // add your owned entries to the map so they will be merged
+                if (nodeEngine.getPartitionService().getPartitionOwner(i).equals(nodeEngine.getClusterService().getThisAddress())) {
+                    if (!recordMap.containsKey(mapContainer)) {
+                        recordMap.put(mapContainer, new ArrayList<Record>());
+                    }
+                    recordMap.get(mapContainer).addAll(recordStore.getRecords().values());
+                }
+                // clear all records either owned or backup
+                recordStore.reset();
+            }
+        }
+        return new Merger(recordMap);
+    }
+
+    public class Merger implements Runnable {
+
+        Map<MapContainer, Collection<Record>> recordMap;
+
+        public Merger(Map<MapContainer, Collection<Record>> recordMap) {
+            this.recordMap = recordMap;
+        }
+
+        @Override
+        public void run() {
+            for (MapContainer mapContainer : recordMap.keySet()) {
+
+                MapMergePolicy mergePolicy = null;
+                MapMergePolicyConfig mergePolicyConfig = mapContainer.getMapConfig().getMergePolicyConfig();
+                if (mergePolicyConfig != null) {
+                    mergePolicy = mergePolicyConfig.getImplementation();
+                    if (mergePolicy == null) {
+                        String mergeClassName = mergePolicyConfig.getClassName();
+                        try {
+                            mergePolicy = ClassLoaderUtil.newInstance(mergeClassName);
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, e.getMessage(), e);
+                        }
+                    }
+                }
+
+                Collection<Record> recordList = recordMap.get(mapContainer);
+
+                for (Record record : recordList) {
+                    SimpleEntryView entryView = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
+                    MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, mergePolicy);
+                    try {
+
+                        int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
+                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
+                        invocation.invoke().get();
+                    } catch (Throwable t) {
+                        ExceptionUtil.rethrow(t);
+                    }
+                }
+            }
+        }
+
     }
 
     public static class PostJoinMapOperation extends AbstractOperation implements JoinOperation {
@@ -225,7 +288,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public MapContainer getMapContainer(String mapName) {
-        return ConcurrencyUtil.getOrPutIfAbsent(mapContainers, mapName, mapConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -879,7 +942,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                 ConcurrentMap<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
-                    RecordStats stats = record.getStats();
+                    RecordStatistics stats = record.getStatistics();
                     RecordState state = record.getState();
                     // there is map store and the record is dirty (waits to be stored)
                     if (mapContainer.getStore() != null && state.isDirty()) {

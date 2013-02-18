@@ -19,6 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.concurrent.lock.LockStoreView;
 import com.hazelcast.concurrent.lock.SharedLockService;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
@@ -37,7 +39,6 @@ public class PartitionRecordStore implements RecordStore {
     final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapContainer mapContainer;
     final MapService mapService;
-
     final LockStoreView lockStore;
 
     public PartitionRecordStore(String name, PartitionContainer partitionContainer) {
@@ -48,7 +49,7 @@ public class PartitionRecordStore implements RecordStore {
         final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name),
-                    mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
+                        mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
     }
 
     public void flush(boolean flushAllRecords) {
@@ -81,8 +82,14 @@ public class PartitionRecordStore implements RecordStore {
 
     public boolean containsValue(Object value) {
         for (Record record : records.values()) {
-            Object recordValue = mapService.toObject(record.getValue());
-            if (recordValue.equals(value))
+            Object testValue;
+            if (record instanceof DataRecord) {
+                testValue = mapService.toData(value);
+            } else {
+                testValue = mapService.toObject(value);
+            }
+
+            if (record.getValue().equals(testValue))
                 return true;
         }
         return false;
@@ -177,6 +184,11 @@ public class PartitionRecordStore implements RecordStore {
         }
         records.clear();
         records.putAll(temp);
+    }
+
+    public void reset() {
+        records.clear();
+        removedDelayedKeys.clear();
     }
 
     public Object remove(Data dataKey) {
@@ -295,6 +307,30 @@ public class PartitionRecordStore implements RecordStore {
         return oldValue;
     }
 
+    public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
+        Record record = records.get(dataKey);
+        Object newValue = null;
+        if(record == null) {
+            newValue = mergingEntry.getValue();
+            record = mapService.createRecord(name, dataKey, newValue, -1);
+            records.put(dataKey, record);
+        }
+        else {
+            EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()), record);
+            newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
+            if(newValue == null) { // existing entry will stay
+                return false;
+            }
+            if (record instanceof DataRecord)
+                ((DataRecord) record).setValue(mapService.toData(newValue));
+            else if (record instanceof ObjectRecord)
+                ((ObjectRecord) record).setValue(mapService.toObject(newValue));
+        }
+
+        mapStoreWrite(record);
+        return newValue != null;
+    }
+
     private void saveIndex(Record record) {
         Data dataKey = record.getKey();
         final IndexService indexService = mapContainer.getIndexService();
@@ -409,8 +445,8 @@ public class PartitionRecordStore implements RecordStore {
         record.onAccess();
         int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
-            record.getState().updateIdleExpireTime(maxIdleSeconds*1000);
-            mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds*1000);
+            record.getState().updateIdleExpireTime(maxIdleSeconds * 1000);
+            mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds * 1000);
         }
     }
 

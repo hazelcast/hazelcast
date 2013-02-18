@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -67,7 +66,7 @@ public class MapMigrationOperation extends AbstractOperation {
                     final Record recordEntry = entry.getValue();
                     Record record = mapService.createRecord(mapName, recordEntry.getKey(), recordEntry.getValue(), -1);
                     record.setState(recordEntry.getState());
-                    record.setStats(recordEntry.getStats());
+                    record.setStatistics(recordEntry.getStatistics());
                     recordStore.getRecords().put(entry.getKey(), record);
                 }
             }

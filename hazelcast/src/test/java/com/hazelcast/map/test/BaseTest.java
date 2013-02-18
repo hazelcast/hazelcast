@@ -34,7 +34,7 @@ import java.util.Random;
 public abstract class BaseTest {
 
     protected static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
-    protected static int instanceCount = 3;
+    protected static int instanceCount = 5;
     protected Random rand = new Random(Clock.currentTimeMillis());
     protected static Config cfg = new Config();
 
@@ -46,6 +46,7 @@ public abstract class BaseTest {
 
     @BeforeClass
     public static void init() throws Exception {
+//        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         startInstances();
     }
 
@@ -95,7 +96,6 @@ public abstract class BaseTest {
     protected static void startInstances() {
         Hazelcast.shutdownAll();
         instances.clear();
-        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         for (int i = 0; i < instanceCount; i++) {
             instances.add(Hazelcast.newHazelcastInstance(cfg));
         }

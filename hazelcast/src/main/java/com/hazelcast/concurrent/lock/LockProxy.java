@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.serialization.Data;
@@ -23,20 +24,20 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 
 /**
  * @mdogan 2/12/13
  */
 public class LockProxy extends AbstractDistributedObject<LockService> implements ILock {
 
-    private final Data key;
+    final Data key;
+    final InternalLockNamespace namespace = new InternalLockNamespace();
     private final LockProxySupport lockSupport;
 
     protected LockProxy(NodeEngine nodeEngine, LockService lockService, Data key) {
         super(nodeEngine, lockService);
         this.key = key;
-        lockSupport = new LockProxySupport(new InternalLockNamespace());
+        lockSupport = new LockProxySupport(namespace);
     }
 
     public boolean isLocked() {
@@ -67,8 +68,8 @@ public class LockProxy extends AbstractDistributedObject<LockService> implements
         lockSupport.forceUnlock(getNodeEngine(), key);
     }
 
-    public Condition newCondition() {
-        throw new UnsupportedOperationException();
+    public ICondition newCondition() {
+        return new ConditionImpl(this);
     }
 
     public Object getId() {

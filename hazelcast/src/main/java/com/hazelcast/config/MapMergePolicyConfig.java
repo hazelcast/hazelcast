@@ -16,12 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.map.merge.AddNewEntryMapMergePolicy;
+import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.map.merge.MapMergePolicy;
 
 public class MapMergePolicyConfig {
 
-    public static final String DEFAULT_POLICY = AddNewEntryMapMergePolicy.class.getName();
+    public static final String DEFAULT_POLICY = PutIfAbsentMapMergePolicy.class.getName();
 
     String className = DEFAULT_POLICY;
     MapMergePolicy implementation;

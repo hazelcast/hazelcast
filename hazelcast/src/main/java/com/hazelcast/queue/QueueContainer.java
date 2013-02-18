@@ -52,8 +52,7 @@ public class QueueContainer implements DataSerializable {
 
     public QueueContainer(int partitionId, QueueConfig config, SerializationService serializationService, boolean fromBackup) throws Exception {
         this.partitionId = partitionId;
-        store = new QueueStoreWrapper(serializationService);
-        setConfig(config);
+        setConfig(config, serializationService);
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
@@ -350,7 +349,8 @@ public class QueueContainer implements DataSerializable {
         return store;
     }
 
-    public void setConfig(QueueConfig config) {
+    public void setConfig(QueueConfig config, SerializationService serializationService) {
+        store = new QueueStoreWrapper(serializationService);
         this.config = new QueueConfig(config);
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         store.setConfig(storeConfig);

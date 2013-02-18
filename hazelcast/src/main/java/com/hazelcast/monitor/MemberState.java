@@ -44,7 +44,7 @@ public interface MemberState extends DataSerializable {
 
     List<Integer> getPartitions();
 
-    LocalAtomicNumberStats getLocalAtomicNumberStats(String queueName);
+    LocalAtomicLongStats getLocalAtomicNumberStats(String queueName);
 
     LocalCountDownLatchStats getLocalCountDownLatchStats(String queueName);
 

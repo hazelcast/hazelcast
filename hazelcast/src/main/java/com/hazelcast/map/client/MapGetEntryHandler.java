@@ -36,7 +36,7 @@ public class MapGetEntryHandler extends MapCommandHandler {
         Data key = protocol.buffers[0];
         DataMapProxy dataMapProxy = getMapProxy(name);
         
-        EntryView<Data> mapEntry = dataMapProxy.getEntryView(key);
+        EntryView<Data,Data> mapEntry = dataMapProxy.getEntryView(key);
 
         if (mapEntry == null)
             return protocol.success();

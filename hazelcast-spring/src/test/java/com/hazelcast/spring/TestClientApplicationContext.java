@@ -73,7 +73,7 @@ public class TestClientApplicationContext {
     private IdGenerator idGenerator;
 
     @Resource(name = "atomicNumber")
-    private AtomicNumber atomicLong;
+    private IAtomicLong atomicLong;
 
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;

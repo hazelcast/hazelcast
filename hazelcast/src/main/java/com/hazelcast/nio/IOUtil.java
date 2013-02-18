@@ -61,22 +61,6 @@ public final class IOUtil {
         return null;
     }
 
-    public static void writeNullableString(ObjectDataOutput out, String obj) throws IOException {
-        boolean NULL = obj == null;
-        out.writeBoolean(NULL);
-        if (!NULL) {
-            out.writeUTF(obj);
-        }
-    }
-
-    public static String readNullableString(ObjectDataInput in) throws IOException {
-        boolean NULL = in.readBoolean();
-        if (!NULL) {
-            return in.readUTF();
-        }
-        return null;
-    }
-
     public static void writeNullableData(ObjectDataOutput out, Data data) throws IOException {
         if (data != null) {
             out.writeBoolean(true);

@@ -189,13 +189,13 @@ public interface HazelcastInstance {
     IdGenerator getIdGenerator(String name);
 
     /**
-     * Creates cluster-wide atomic long. Hazelcast AtomicNumber is distributed
+     * Creates cluster-wide atomic long. Hazelcast IAtomicLong is distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
      *
-     * @param name name of the AtomicNumber proxy
-     * @return AtomicNumber proxy for the given name
+     * @param name name of the IAtomicLong proxy
+     * @return IAtomicLong proxy for the given name
      */
-    AtomicNumber getAtomicNumber(String name);
+    IAtomicLong getAtomicLong(String name);
 
     /**
      * Creates cluster-wide CountDownLatch. Hazelcast ICountDownLatch is distributed

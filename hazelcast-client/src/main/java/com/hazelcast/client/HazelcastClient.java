@@ -207,13 +207,13 @@ public class HazelcastClient implements HazelcastInstance {
 //        return (IdGenerator) proxy;
 //    }
 
-    public AtomicNumber getAtomicNumber(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("AtomicNumber");
+    public IAtomicLong getAtomicLong(String name) {
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IAtomicLong");
         DistributedObject proxy = innerProxyMap.get(name);
         if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new AtomicNumberClientProxy(this, name));
+            proxy = putAndReturnProxy(name, innerProxyMap, new AtomicLongClientProxy(this, name));
         }
-        return (AtomicNumber) proxy;
+        return (IAtomicLong) proxy;
     }
 
     public ICountDownLatch getCountDownLatch(String name) {

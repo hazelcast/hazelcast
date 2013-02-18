@@ -63,7 +63,10 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         }
         this.storeConfig = storeConfig;
         try {
-            store = ClassLoaderUtil.newInstance(storeConfig.getClassName());
+            store = storeConfig.getStoreImplementation();
+            if (store == null){
+                store = ClassLoaderUtil.newInstance(storeConfig.getClassName());
+            }
             enabled = storeConfig.isEnabled();
             binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));
             memoryLimit = parseInt("memory-limit", DEFAULT_MEMORY_LIMIT);
