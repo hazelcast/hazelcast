@@ -36,6 +36,7 @@ public class MapValuesOperation extends AbstractNamedOperation implements Partit
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         values = recordStore.valuesData();
+        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
     }
 
     @Override

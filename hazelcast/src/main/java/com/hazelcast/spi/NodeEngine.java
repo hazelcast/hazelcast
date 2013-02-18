@@ -48,6 +48,8 @@ public interface NodeEngine {
 
     AsyncInvocationService getAsyncInvocationService();
 
+    WaitNotifyService getWaitNotifyService();
+
     Address getThisAddress();
 
     Config getConfig();
@@ -65,4 +67,6 @@ public interface NodeEngine {
     boolean isActive();
 
     HazelcastInstance getHazelcastInstance();
+
+    <T extends SharedService> T getSharedService(Class<T> serviceClass, String serviceName);
 }

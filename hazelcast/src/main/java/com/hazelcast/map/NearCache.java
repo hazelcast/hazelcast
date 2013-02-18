@@ -21,7 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
 import java.util.*;
@@ -43,16 +42,15 @@ public class NearCache {
     final MapConfig.RecordType recordType;
     final String mapName;
     final MapService mapService;
-    final NodeEngineImpl nodeEngine;
+    final NodeEngine nodeEngine;
     final AtomicBoolean canCleanUp;
     final AtomicBoolean canEvict;
     final ConcurrentMap<Data, CacheRecord> cache;
 
-    public NearCache(String mapName, NodeEngine nodeEngine) {
+    public NearCache(String mapName, MapService mapService) {
         this.mapName = mapName;
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
-        this.mapService = this.nodeEngine.getService(MapService.SERVICE_NAME);
-
+        this.mapService = mapService;
+        this.nodeEngine = mapService.getNodeEngine();
         Config config = nodeEngine.getConfig();
         recordType = config.getMapConfig(mapName).getRecordType();
         NearCacheConfig nearCacheConfig = config.getMapConfig(mapName).getNearCacheConfig();

@@ -21,13 +21,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.util.Clock;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
 
     private transient PartitionContainer pc;
-    transient Data dataOldValue;
-    transient RecordStore recordStore;
-    transient MapService mapService;
+    protected transient Data dataOldValue;
+    protected transient RecordStore recordStore;
+    protected transient MapService mapService;
+    private transient long startTime;
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
@@ -53,6 +55,18 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         recordStore = pc.getRecordStore(name);
     }
 
+    public void run() {
+        startTime = Clock.currentTimeMillis();
+    }
+
+    public void afterRun() {
+        mapService.interceptAfterProcess(name, MapOperationType.REMOVE, dataKey, dataValue, dataOldValue);
+        int eventType = EntryEvent.TYPE_REMOVED;
+        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
+        invalidateNearCaches();
+        mapService.getMapContainer(name).getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - startTime);
+    }
+
     @Override
     public Object getResponse() {
         return dataOldValue;
@@ -72,13 +86,6 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     public boolean shouldBackup() {
         return true;
-    }
-
-    public void afterRun() {
-        mapService.interceptAfterProcess(name, MapOperationType.REMOVE, dataKey, dataValue, dataOldValue);
-        int eventType = EntryEvent.TYPE_REMOVED;
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
-        invalidateNearCaches();
     }
 
     @Override

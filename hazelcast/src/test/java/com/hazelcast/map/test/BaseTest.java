@@ -31,7 +31,7 @@ import java.util.Random;
 
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class BaseTest {
+public abstract class BaseTest {
 
     protected static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
     protected static int instanceCount = 5;
@@ -46,6 +46,7 @@ public class BaseTest {
 
     @BeforeClass
     public static void init() throws Exception {
+//        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         startInstances();
     }
 
@@ -95,7 +96,6 @@ public class BaseTest {
     protected static void startInstances() {
         Hazelcast.shutdownAll();
         instances.clear();
-        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         for (int i = 0; i < instanceCount; i++) {
             instances.add(Hazelcast.newHazelcastInstance(cfg));
         }

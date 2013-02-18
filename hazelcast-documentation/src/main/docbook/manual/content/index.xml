@@ -148,7 +148,7 @@
         <xi:include href="client/ListCommands.xml"/>
         <xi:include href="client/MultiMapCommands.xml"/>
         <xi:include href="client/TopicCommands.xml"/>
-        <xi:include href="client/AtomicNumberCommands.xml"/>
+        <xi:include href="client/AtomicLongCommands.xml"/>
         <xi:include href="client/IdGeneratorCommands.xml"/>
         <xi:include href="client/CountDownLatchCommands.xml"/>
         <xi:include href="client/LockCommands.xml"/>

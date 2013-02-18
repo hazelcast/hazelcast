@@ -35,8 +35,12 @@ public class RecordState implements DataSerializable {
                 || (idleExpireTime > 0 && idleExpireTime <= Clock.currentTimeMillis());
     }
 
-    public boolean isDirty() {
+    public boolean shouldStored() {
         return storeTime > 0 && storeTime < Clock.currentTimeMillis();
+    }
+
+    public boolean isDirty() {
+        return storeTime > 0;
     }
 
     public long getTtlExpireTime() {
@@ -83,5 +87,9 @@ public class RecordState implements DataSerializable {
         ttlExpireTime = in.readLong();
         idleExpireTime = in.readLong();
         storeTime = in.readLong();
+    }
+
+    public long getExpirationTime() {
+        return ttlExpireTime;
     }
 }

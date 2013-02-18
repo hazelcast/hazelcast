@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,7 +44,7 @@ public class QueryEventFilter extends EntryEventFilter  {
     }
 
     public boolean eval(Object arg) {
-        return (key == null || key.equals(arg)) && predicate.apply((MapEntry)arg);
+        return (key == null || key.equals(arg)) && predicate.apply((Map.Entry)arg);
     }
 
     @Override

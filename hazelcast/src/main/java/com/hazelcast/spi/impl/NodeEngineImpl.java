@@ -51,7 +51,7 @@ public class NodeEngineImpl implements NodeEngine {
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final AsyncInvocationServiceImpl asyncInvocationService;
-    final WaitNotifyService waitNotifyService;
+    final WaitNotifyServiceImpl waitNotifyService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -62,7 +62,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
         asyncInvocationService = new AsyncInvocationServiceImpl(this);
-        waitNotifyService = new WaitNotifyService(this, new WaitingOpProcessorImpl());
+        waitNotifyService = new WaitNotifyServiceImpl(this, new WaitingOpProcessorImpl());
     }
 
     @PrivateApi
@@ -117,6 +117,10 @@ public class NodeEngineImpl implements NodeEngine {
 
     public AsyncInvocationService getAsyncInvocationService() {
         return asyncInvocationService;
+    }
+
+    public WaitNotifyService getWaitNotifyService() {
+        return waitNotifyService;
     }
 
     public Data toData(final Object object) {
@@ -213,8 +217,21 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
+    @PrivateApi
     public <T> T getService(String serviceName) {
         return serviceManager.getService(serviceName);
+    }
+
+    public <T extends SharedService> T getSharedService(Class<T> serviceClass, String serviceName) {
+        final Object service = serviceManager.getService(serviceName);
+        if (service == null) {
+            return null;
+        }
+        if (serviceClass.isAssignableFrom(service.getClass())) {
+            return serviceClass.cast(service);
+        } else {
+            throw new IllegalArgumentException();
+        }
     }
 
     /**
@@ -295,9 +312,9 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.shutdown();
     }
 
-    private class WaitingOpProcessorImpl implements WaitNotifyService.WaitingOpProcessor {
+    private class WaitingOpProcessorImpl implements WaitNotifyServiceImpl.WaitingOpProcessor {
 
-        public void invalidate(final WaitNotifyService.WaitingOp so) throws Exception {
+        public void invalidate(final WaitNotifyServiceImpl.WaitingOp so) throws Exception {
             operationService.executeOperation(so);
         }
 

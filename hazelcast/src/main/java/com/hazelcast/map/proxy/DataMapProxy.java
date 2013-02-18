@@ -17,9 +17,11 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.NodeEngine;
@@ -134,27 +136,27 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public void lock(final Data key) {
-        lockInternal(key);
+        lockSupport.lock(getNodeEngine(), key);
     }
 
     public boolean isLocked(final Data key) {
-        return isLockedInternal(key);
+        return lockSupport.isLocked(getNodeEngine(), key);
     }
 
     public boolean tryLock(final Data key) {
-        return tryLock(key, 0, TimeUnit.MILLISECONDS);
+        return lockSupport.tryLock(getNodeEngine(), key);
     }
 
     public boolean tryLock(final Data key, final long time, final TimeUnit timeunit) {
-        return tryLockInternal(key, time, timeunit);
+        return lockSupport.tryLock(getNodeEngine(), key, time, timeunit);
     }
 
     public void unlock(final Data key) {
-        unlockInternal(key);
+        lockSupport.unlock(getNodeEngine(), key);
     }
 
     public void forceUnlock(final Data key) {
-        forceUnlockInternal(key);
+        lockSupport.forceUnlock(getNodeEngine(), key);
     }
 
     public Set<Data> keySet() {
@@ -167,10 +169,6 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     public Set<Entry<Data, Data>> entrySet() {
         return entrySetInternal();
-    }
-
-    public void addLocalEntryListener(final EntryListener<Data, Data> listener) {
-        addLocalEntryListenerInternal(listener);
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -201,8 +199,9 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         removeEntryListenerInternal(listener, key);
     }
 
-    public Map.Entry<Data, Data> getMapEntry(final Data key) {
-        return getMapEntryInternal(key);
+    @Override
+    public EntryView<Data,Data> getEntryView(Data key) {
+        return getEntryViewInternal(getNodeEngine().toData(key));
     }
 
     public boolean evict(final Data key) {

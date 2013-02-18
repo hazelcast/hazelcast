@@ -21,10 +21,10 @@ import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.concurrent.atomicnumber.AtomicNumberService;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
-import com.hazelcast.concurrent.lock.ObjectLockProxy;
+import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -126,8 +126,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ILock getLock(Object key) {
-        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
-        return new ObjectLockProxy(key, map);
+        return getDistributedObject(SharedLockService.SERVICE_NAME, node.getSerializationService().toData(key));
     }
 
     public IExecutorService getExecutorService(final String name) {
@@ -142,8 +141,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return new IdGeneratorProxy(this, name);
     }
 
-    public AtomicNumber getAtomicNumber(final String name) {
-        return getDistributedObject(AtomicNumberService.SERVICE_NAME, name);
+    public IAtomicLong getAtomicLong(final String name) {
+        return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {

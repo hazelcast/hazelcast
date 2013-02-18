@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.Map;
@@ -26,15 +25,21 @@ public interface Record<V> extends IdentifiedDataSerializable, Map.Entry<Data,V>
 
     Data getKey();
 
-    Record clone();
+    Record clone() throws CloneNotSupportedException;
 
     RecordState getState();
 
     void setState(RecordState state);
 
-    RecordStats getStats();
+    RecordStatistics getStatistics();
 
-    void setStats(RecordStats stats);
+    void setStatistics(RecordStatistics stats);
 
-    void access();
+    void onAccess();
+
+    void onUpdate();
+
+    void onStore();
+
+    long getCost();
 }

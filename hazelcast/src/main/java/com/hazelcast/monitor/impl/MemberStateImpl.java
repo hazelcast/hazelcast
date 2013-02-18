@@ -41,7 +41,7 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalMapStatsImpl> multiMapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
-    Map<String, LocalAtomicNumberStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicNumberStatsImpl>();
+    Map<String, LocalAtomicLongStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicLongStatsImpl>();
     Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
     Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
     List<Integer> lsPartitions = new ArrayList<Integer>(271);
@@ -72,7 +72,7 @@ public class MemberStateImpl implements MemberState {
             entry.getValue().writeData(out);
         }
         out.writeInt(atomicNumberStats.size());
-        for (Map.Entry<String, LocalAtomicNumberStatsImpl> entry : atomicNumberStats.entrySet()) {
+        for (Map.Entry<String, LocalAtomicLongStatsImpl> entry : atomicNumberStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
@@ -134,8 +134,8 @@ public class MemberStateImpl implements MemberState {
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
-            (impl = new LocalAtomicNumberStatsImpl()).readData(in);
-            atomicNumberStats.put(name, (LocalAtomicNumberStatsImpl) impl);
+            (impl = new LocalAtomicLongStatsImpl()).readData(in);
+            atomicNumberStats.put(name, (LocalAtomicLongStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
@@ -205,7 +205,7 @@ public class MemberStateImpl implements MemberState {
         return runtimeProps;
     }
 
-    public LocalAtomicNumberStats getLocalAtomicNumberStats(String atomicLongName) {
+    public LocalAtomicLongStats getLocalAtomicNumberStats(String atomicLongName) {
         return atomicNumberStats.get(atomicLongName);
     }
 
@@ -249,7 +249,7 @@ public class MemberStateImpl implements MemberState {
         this.address = address;
     }
 
-    public void putLocalAtomicNumberStats(String name, LocalAtomicNumberStatsImpl localAtomicLongStats) {
+    public void putLocalAtomicNumberStats(String name, LocalAtomicLongStatsImpl localAtomicLongStats) {
         atomicNumberStats.put(name, localAtomicLongStats);
     }
 

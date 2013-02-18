@@ -36,7 +36,7 @@ public class CollectionPartitionContainer {
     private final ConstructorFunction<CollectionProxyId, CollectionContainer> collectionConstructor
             = new ConstructorFunction<CollectionProxyId, CollectionContainer>() {
         public CollectionContainer createNew(CollectionProxyId proxyId) {
-            return new CollectionContainer(proxyId, service);
+            return new CollectionContainer(proxyId, service, partitionId);
         }
     };
 
@@ -65,13 +65,13 @@ public class CollectionPartitionContainer {
     void destroyCollection(CollectionProxyId collectionProxyId) {
         final CollectionContainer container = containerMap.remove(collectionProxyId);
         if (container != null) {
-            container.clear();
+            container.destroy();
         }
     }
 
     void destroy() {
         for (CollectionContainer container : containerMap.values()) {
-            container.clear();
+            container.destroy();
         }
         containerMap.clear();
     }

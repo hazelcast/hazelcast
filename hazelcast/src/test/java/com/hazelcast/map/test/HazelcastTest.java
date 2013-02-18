@@ -196,7 +196,7 @@ public class HazelcastTest extends BaseTest {
         assertEquals("World", value);
         assertEquals("New World", map.get("Hello"));
         assertEquals(1, map.size());
-        Map.Entry entry = map.getMapEntry("Hello");
+        EntryView entry = map.getEntryView("Hello");
         assertEquals("Hello", entry.getKey());
         assertEquals("New World", entry.getValue());
         map.set("1", "value", 1, TimeUnit.SECONDS);
@@ -204,7 +204,7 @@ public class HazelcastTest extends BaseTest {
 
     @Test
     public void testAtomicLong() {
-        AtomicNumber an = getInstance().getAtomicNumber("testAtomicLong");
+        IAtomicLong an = getInstance().getAtomicLong("testAtomicLong");
         assertEquals(0, an.get());
         assertEquals(-1, an.decrementAndGet());
         assertEquals(0, an.incrementAndGet());
@@ -1168,7 +1168,7 @@ public class HazelcastTest extends BaseTest {
 //    public void testGetMapEntryHits() {
 //        IMap<String, String> map = getInstance().getMap("testGetMapEntryHits");
 //        map.put("Hello", "World");
-//        MapEntry me = map.getMapEntry("Hello");
+//        EntryView me = map.getMapEntry("Hello");
 //        assertEquals(0, me.getHits());
 //        map.get("Hello");
 //        map.get("Hello");
@@ -1181,7 +1181,7 @@ public class HazelcastTest extends BaseTest {
 //    public void testGetMapEntryVersion() {
 //        IMap<String, String> map = getInstance().getMap("testGetMapEntryVersion");
 //        map.put("Hello", "World");
-//        MapEntry me = map.getMapEntry("Hello");
+//        EntryView me = map.getMapEntry("Hello");
 //        assertEquals(0, me.getVersion());
 //        map.put("Hello", "1");
 //        map.put("Hello", "2");

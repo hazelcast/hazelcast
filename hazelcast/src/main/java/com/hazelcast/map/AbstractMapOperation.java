@@ -126,7 +126,7 @@ public abstract class AbstractMapOperation extends Operation implements KeyBased
         out.writeInt(threadId);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
-        IOUtil.writeNullableString(out, txnId);
+        out.writeUTF(txnId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
@@ -136,6 +136,6 @@ public abstract class AbstractMapOperation extends Operation implements KeyBased
         threadId = in.readInt();
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
-        txnId = IOUtil.readNullableString(in);
+        txnId = in.readUTF();
     }
 }

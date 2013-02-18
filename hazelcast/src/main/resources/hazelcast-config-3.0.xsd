@@ -275,7 +275,7 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="password" default="drowssap">
+    <xs:element name="password" default="dev-pass">
         <xs:annotation>
             <xs:documentation>
                 The pass phrase to use when generating the secret key.
@@ -527,8 +527,8 @@
     <xs:element name="group">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="name"/>
-                <xs:element ref="password"/>
+                <xs:element ref="name" maxOccurs="1"/>
+                <xs:element ref="password" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -981,7 +981,6 @@
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:string">
-                    <xs:attribute name="global" type="xs:boolean" />
                     <xs:attribute name="type-class" type="xs:string" />
                 </xs:extension>
             </xs:simpleContent>
@@ -994,7 +993,7 @@
                 <xs:element ref="queue-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="topic-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="collection-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="atomicnumber-service" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="atomiclong-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="countdownlatch-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="semaphore-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="service" minOccurs="0" maxOccurs="unbounded"/>
@@ -1016,7 +1015,7 @@
     <xs:element name="queue-service" />
     <xs:element name="topic-service" />
     <xs:element name="collection-service" />
-    <xs:element name="atomicnumber-service" />
+    <xs:element name="atomiclong-service" />
     <xs:element name="countdownlatch-service" />
     <xs:element name="semaphore-service" />
 

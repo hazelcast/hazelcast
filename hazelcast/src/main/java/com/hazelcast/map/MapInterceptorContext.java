@@ -20,43 +20,14 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
 
-public class MapInterceptorContext {
+public interface MapInterceptorContext {
+    String getMapName();
 
-    private String mapName;
-    private MapOperationType operationType;
-    private Data key;
-    private Object newValue;
-    private Map.Entry existingEntry;
+    MapOperationType getOperationType();
 
-    public MapInterceptorContext(String mapName, MapOperationType operationType, Data key, Object newValue, Map.Entry existingEntry) {
-        this.mapName = mapName;
-        this.operationType = operationType;
-        this.key = key;
-        this.newValue = newValue;
-        this.existingEntry = existingEntry;
-    }
+    Data getKey();
 
-    public String getMapName() {
-        return mapName;
-    }
+    Object getNewValue();
 
-    public void setNewValue(Object newValue) {
-        this.newValue = newValue;
-    }
-
-    public MapOperationType getOperationType() {
-        return operationType;
-    }
-
-    public Data getKey() {
-        return key;
-    }
-
-    public Object getNewValue() {
-        return newValue;
-    }
-
-    public Map.Entry getExistingEntry() {
-        return existingEntry;
-    }
+    Map.Entry getExistingEntry();
 }

@@ -45,7 +45,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private IList<Object> list = null;
 
-    private AtomicNumber atomicNumber;
+    private IAtomicLong atomicNumber;
 
     private String namespace = "default";
 
@@ -84,8 +84,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         return map;
     }
 
-    public AtomicNumber getAtomicNumber() {
-        atomicNumber = hazelcast.getAtomicNumber(namespace);
+    public IAtomicLong getAtomicNumber() {
+        atomicNumber = hazelcast.getAtomicLong(namespace);
         return atomicNumber;
     }
 
@@ -546,7 +546,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     protected void handleMapGetMapEntry(String[] args) {
-        println(getMap().getMapEntry(args[1]));
+        println(getMap().getEntryView(args[1]));
     }
 
     protected void handleMapRemove(String[] args) {
@@ -1267,7 +1267,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("l.size");
         println("l.clear");
         print("");
-        println("-- AtomicNumber commands:");
+        println("-- IAtomicLong commands:");
         println("a.get");
         println("a.set <long>");
         println("a.inc");

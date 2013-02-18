@@ -38,4 +38,6 @@ public interface ILock extends Lock, DistributedObject {
      * It always successfully unlocks, never blocks  and returns immediately.
      */
     void forceUnlock();
+
+    ICondition newCondition();
 }

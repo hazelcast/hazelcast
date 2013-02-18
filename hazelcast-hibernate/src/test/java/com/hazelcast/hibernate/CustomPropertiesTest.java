@@ -69,19 +69,6 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     }
 
     @Test
-    public void testLiteMember() throws Exception {
-        HazelcastInstance main = Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
-        Properties props = getDefaultProperties();
-        props.setProperty(CacheEnvironment.USE_LITE_MEMBER, "true");
-        SessionFactory sf = createSessionFactory(props);
-        HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
-        assertTrue(hz.getCluster().getLocalMember().isLiteMember());
-        assertEquals(2, main.getCluster().getMembers().size());
-        sf.close();
-        main.getLifecycleService().shutdown();
-    }
-
-    @Test
     public void testNativeClient() throws Exception {
         HazelcastInstance main = Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         Properties props = getDefaultProperties();
@@ -135,7 +122,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     public void testTimeout() throws InterruptedException {
         Properties props = getDefaultProperties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
-        props.put(CacheEnvironment.LOCK_TIMEOUT_SECONDS, "3");
+        props.put(CacheEnvironment.LOCK_TIMEOUT, "3000");
         final SessionFactory sf = createSessionFactory(props);
         assertEquals(3000, CacheEnvironment.getLockTimeoutInMillis(props));
         final HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);

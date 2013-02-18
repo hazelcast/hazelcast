@@ -76,7 +76,7 @@ public class TestFullApplicationContext {
     private IdGenerator idGenerator;
 
     @Resource(name = "atomicNumber")
-    private AtomicNumber atomicLong;
+    private IAtomicLong atomicLong;
 
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
@@ -415,12 +415,6 @@ public class TestFullApplicationContext {
                 assertEquals(membershipListener, lc.getImplementation());
             }
         }
-    }
-
-    @Test
-    public void testLiteMember() {
-        assertNotNull(liteConfig);
-        assertTrue(liteConfig.isLiteMember());
     }
 
     @Test

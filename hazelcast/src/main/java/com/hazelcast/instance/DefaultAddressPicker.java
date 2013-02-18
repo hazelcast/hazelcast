@@ -119,7 +119,6 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private Address createAddress(final AddressDefinition addressDef, final int port) throws UnknownHostException {
-//        return new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);
         return addressDef.host != null ? new Address(addressDef.host, port)
                 : new Address(addressDef.inetAddress, port);
     }
@@ -184,7 +183,7 @@ class DefaultAddressPicker implements AddressPicker {
                 }
             }
         } else {
-            addressDomainMap = Collections.EMPTY_MAP;
+            addressDomainMap = Collections.emptyMap();
         }
         final Collection<InterfaceDefinition> interfaces = new HashSet<InterfaceDefinition>();
         if (networkConfig.getInterfaces().isEnabled()) {
@@ -235,8 +234,6 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private AddressDefinition getPublicAddress(Config config) throws UnknownHostException {
-        // first; the system prop
-        // second; config value
         String address = config.getProperty("hazelcast.local.publicAddress");
         if (address == null) {
             address = config.getNetworkConfig().getPublicAddress();
@@ -252,15 +249,7 @@ class DefaultAddressPicker implements AddressPicker {
         return null;
     }
 
-    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
     private AddressDefinition pickLoopbackAddress() throws UnknownHostException {
-        if (System.getProperty("java.net.preferIPv6Addresses") == null
-                && System.getProperty("java.net.preferIPv4Stack") == null) {
-            // When using loopback address and multicast join, leaving IPv6 enabled causes join issues.
-            log(Level.WARNING,
-                    "Picking loopback address [127.0.0.1]; setting 'java.net.preferIPv4Stack' to true.");
-            System.setProperty("java.net.preferIPv4Stack", "true");
-        }
         return new AddressDefinition(InetAddress.getByName("127.0.0.1"));
     }
 

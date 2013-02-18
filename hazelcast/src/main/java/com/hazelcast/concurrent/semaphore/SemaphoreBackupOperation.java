@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -40,7 +39,7 @@ public abstract class SemaphoreBackupOperation extends SemaphoreOperation implem
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableString(out, firstCaller);
+        out.writeUTF(firstCaller);
     }
 
     public void readInternal(ObjectDataInput in) throws IOException {

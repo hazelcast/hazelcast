@@ -19,7 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.*;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
-import com.hazelcast.concurrent.lock.ObjectLockProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
@@ -208,13 +207,13 @@ public class HazelcastClient implements HazelcastInstance {
 //        return (IdGenerator) proxy;
 //    }
 
-    public AtomicNumber getAtomicNumber(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("AtomicNumber");
+    public IAtomicLong getAtomicLong(String name) {
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IAtomicLong");
         DistributedObject proxy = innerProxyMap.get(name);
         if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new AtomicNumberClientProxy(this, name));
+            proxy = putAndReturnProxy(name, innerProxyMap, new AtomicLongClientProxy(this, name));
         }
-        return (AtomicNumber) proxy;
+        return (IAtomicLong) proxy;
     }
 
     public ICountDownLatch getCountDownLatch(String name) {
@@ -249,8 +248,9 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public ILock getLock(Object obj) {
-        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
-        return new ObjectLockProxy(obj, map);
+//        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
+//        return new ObjectLockProxy(obj, map);
+        return null;
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {

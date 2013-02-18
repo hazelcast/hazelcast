@@ -29,13 +29,13 @@ import java.io.IOException;
 public abstract class AbstractRecord implements DataSerializable {
 
     protected volatile RecordState state;
-    protected volatile RecordStats stats;
+    protected volatile RecordStatistics stats;
     protected volatile Data key;
 
     public AbstractRecord(Data key) {
         this.key = key;
         state = new RecordState();
-        stats = new RecordStats();
+        stats = new RecordStatistics();
     }
 
     public AbstractRecord() {
@@ -53,21 +53,39 @@ public abstract class AbstractRecord implements DataSerializable {
         this.state = state;
     }
 
-    public RecordStats getStats() {
+    public RecordStatistics getStatistics() {
         return stats;
     }
 
-    public void setStats(RecordStats stats) {
+    public void setStatistics(RecordStatistics stats) {
         this.stats = stats;
     }
 
-    public Long getLastAccessTime() {
-        return stats == null ? 0 : stats.getLastAccessTime();
+    public Integer getHits() {
+        return stats == null ? -1 : stats.getHits();
     }
 
-    public void access() {
+    public Long getLastAccessTime() {
+        return stats == null ? -1 : stats.getLastAccessTime();
+    }
+
+    public long getCost() {
+        return 0;
+    }
+
+    public void onAccess() {
         if(stats != null)
             stats.access();
+    }
+
+    public void onStore() {
+        if(stats != null)
+            stats.store();
+    }
+
+    public void onUpdate() {
+        if(stats != null)
+            stats.update();
     }
 
     public Record clone() {
@@ -104,7 +122,7 @@ public abstract class AbstractRecord implements DataSerializable {
         }
         boolean statsEnabled = in.readBoolean();
         if(statsEnabled) {
-            stats = new RecordStats();
+            stats = new RecordStatistics();
             stats.readData(in);
         }
     }
@@ -133,7 +151,4 @@ public abstract class AbstractRecord implements DataSerializable {
                 '}';
     }
 
-    public Integer getHits() {
-        return stats == null ? 0 : stats.getHits();
-    }
 }

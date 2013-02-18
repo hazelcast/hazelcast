@@ -17,9 +17,12 @@
 package com.hazelcast.map.test;
 
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.*;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -28,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -205,16 +209,16 @@ public class MapTest extends BaseTest {
 
     @Test
     public void testMapContainsValue() {
-        IMap<String, String> map = getInstance().getMap("testMapContainsValue");
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
-        assertTrue(map.containsValue("value1"));
-        assertFalse(map.containsValue("value5"));
-        map.remove("key1");
-        assertFalse(map.containsValue("value1"));
-        assertTrue(map.containsValue("value2"));
-        assertFalse(map.containsValue("value5"));
+        IMap map = getInstance().getMap("testMapContainsValue");
+        map.put(1,1);
+        map.put(2,2);
+        map.put(3,3);
+        assertTrue(map.containsValue(1));
+        assertFalse(map.containsValue(5));
+        map.remove(1);
+        assertFalse(map.containsValue(1));
+        assertTrue(map.containsValue(2));
+        assertFalse(map.containsValue(5));
     }
 
     @Test
@@ -270,12 +274,14 @@ public class MapTest extends BaseTest {
         map.lock("key2");
         map.lock("key3");
         map.lock("key0");
+        final AtomicBoolean check1 = new AtomicBoolean(false);
+        final AtomicBoolean check2 = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(3);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    assertFalse(map.tryLock("key0"));
-                    assertTrue(map.tryLock("key0", 1500, TimeUnit.MILLISECONDS));
+                    check1.set(map.tryLock("key0"));
+                    check2.set(map.tryLock("key0", 1500, TimeUnit.MILLISECONDS));
                     map.put("key1", "value1");
                     latch.countDown();
                     map.put("key2", "value2");
@@ -299,6 +305,9 @@ public class MapTest extends BaseTest {
         assertEquals(1, latch.getCount());
         map.unlock("key3");
         assertTrue(latch.await(3, TimeUnit.SECONDS));
+
+        assertFalse(check1.get());
+        assertTrue(check2.get());
     }
 
     @Test
@@ -340,14 +349,51 @@ public class MapTest extends BaseTest {
     }
 
     @Test
-    public void testGetMapEntry() {
-        final IMap<Object, Object> map = getInstance().getMap("testGetMapEntry");
+    public void testEntryView() {
+        final IMap<Integer, Integer> map = getInstance().getMap("testEntryView");
+        long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
         map.put(2, 2);
         map.put(3, 3);
-        assertEquals(new AbstractMap.SimpleImmutableEntry(1, 1), map.getMapEntry(1));
-        assertEquals(new AbstractMap.SimpleImmutableEntry(2, 2), map.getMapEntry(2));
-        assertEquals(new AbstractMap.SimpleImmutableEntry(3, 3), map.getMapEntry(3));
+        long time2 = Clock.currentTimeMillis();
+        map.get(3);
+        map.get(3);
+        long time3 = Clock.currentTimeMillis();
+        map.put(2, 22);
+
+        EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
+        EntryView<Integer, Integer> entryView2 = map.getEntryView(2);
+        EntryView<Integer, Integer> entryView3 = map.getEntryView(3);
+
+
+        assertEquals((Integer) 1, entryView1.getKey());
+        assertEquals((Integer) 2, entryView2.getKey());
+        assertEquals((Integer) 3, entryView3.getKey());
+
+        assertEquals((Integer) 1, entryView1.getValue());
+        assertEquals((Integer) 22, entryView2.getValue());
+        assertEquals((Integer) 3, entryView3.getValue());
+
+        assertEquals(0, entryView1.getHits());
+        assertEquals(1, entryView2.getHits());
+        assertEquals(2, entryView3.getHits());
+
+        assertEquals(0, entryView1.getVersion());
+        assertEquals(1, entryView2.getVersion());
+        assertEquals(0, entryView3.getVersion());
+
+        assertTrue(entryView1.getCreationTime() >= time1 && entryView1.getCreationTime() <= time2);
+        assertTrue(entryView2.getCreationTime() >= time1 && entryView2.getCreationTime() <= time2);
+        assertTrue(entryView3.getCreationTime() >= time1 && entryView3.getCreationTime() <= time2);
+
+        assertTrue(entryView1.getLastAccessTime() >= time1 && entryView1.getLastAccessTime() <= time2);
+        assertTrue(entryView2.getLastAccessTime() >= time3 );
+        assertTrue(entryView3.getLastAccessTime() >= time2 && entryView3.getLastAccessTime() <= time3);
+
+        assertTrue(entryView1.getLastUpdateTime() >= time1 && entryView1.getLastUpdateTime() <= time2);
+        assertTrue(entryView2.getLastUpdateTime() >= time3 );
+        assertTrue(entryView3.getLastUpdateTime() >= time1 && entryView3.getLastUpdateTime() <= time2);
+
     }
 
     @Test
@@ -517,7 +563,7 @@ public class MapTest extends BaseTest {
             this.pref = pref;
         }
 
-        public boolean apply(MapEntry<Object, Object> mapEntry) {
+        public boolean apply(Map.Entry<Object, Object> mapEntry) {
             String val = (String) mapEntry.getValue();
             if (val == null)
                 return false;
@@ -728,36 +774,6 @@ public class MapTest extends BaseTest {
         public void processBackup(Map.Entry entry) {
             entry.setValue((Integer) entry.getValue() + 1);
         }
-    }
-
-    @Test
-    public void testGetPutAndSizeWhileStartShutdown() {
-//        IMap<String, String> map = getInstance().getMap("testGetPutAndSizeWhileStartShutdown");
-//        try {
-//            for (int i = 1; i < 10000; i++) {
-//                map.put("key" + i, "value" + i);
-//                if (i == 100) {
-//                    new Thread(new Runnable() {
-//                        public void run() {
-//                            newInstanceMany(2);
-//                        }
-//                    }).start();
-//                }
-//
-//                if (i == 600) {
-//                    new Thread(new Runnable() {
-//                        public void run() {
-//                            removeInstance();
-//                        }
-//                    }).start();
-//                }
-//                Thread.sleep(5);
-//            }
-//            Thread.sleep(3000);
-//            assertEquals(map.size(), 10000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//        }
     }
 
 

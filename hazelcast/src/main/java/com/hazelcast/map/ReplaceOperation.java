@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ReplaceOperation extends BasePutOperation {
 
-    private transient boolean shouldBackup = false;
+    private transient boolean successful = false;
 
     public ReplaceOperation(String name, Data dataKey, Data value, String txnId) {
         super(name, dataKey, value, txnId);
@@ -30,21 +30,22 @@ public class ReplaceOperation extends BasePutOperation {
     }
 
     public void run() {
+        super.run();
         if (prepareTransaction()) {
             return;
         }
         final Object oldValue = recordStore.replace(dataKey, dataValue);
         dataOldValue = mapService.toData(oldValue);
-        shouldBackup = oldValue != null;
-    }
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        successful = oldValue != null;
     }
 
     public boolean shouldBackup() {
-        return shouldBackup;
+        return successful;
+    }
+
+    public void afterRun() {
+        if (successful)
+            super.afterRun();
     }
 
     @Override

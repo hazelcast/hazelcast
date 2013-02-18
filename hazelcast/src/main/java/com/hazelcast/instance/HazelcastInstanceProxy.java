@@ -79,8 +79,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getIdGenerator(name);
     }
 
-    public AtomicNumber getAtomicNumber(String name) {
-        return getOriginal().getAtomicNumber(name);
+    public IAtomicLong getAtomicLong(String name) {
+        return getOriginal().getAtomicLong(name);
     }
 
     public ICountDownLatch getCountDownLatch(String name) {

@@ -42,6 +42,7 @@ public class ContainsValueOperation extends AbstractNamedOperation implements Pa
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         contains = recordStore.containsValue(testValue);
+        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
     }
 
     @Override

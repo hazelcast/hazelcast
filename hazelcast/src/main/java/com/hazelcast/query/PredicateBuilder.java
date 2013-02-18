@@ -16,19 +16,19 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class PredicateBuilder implements IndexAwarePredicate {
     public String attribute = null;
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
-    public boolean apply(MapEntry mapEntry) {
+    public boolean apply(Map.Entry mapEntry) {
         return lsPredicates.get(0).apply(mapEntry);
     }
 

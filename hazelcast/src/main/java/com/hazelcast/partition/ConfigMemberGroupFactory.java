@@ -40,9 +40,6 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
     protected Set<MemberGroup> createInternalMemberGroups(Collection<Member> members) {
         final Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
         for (Member member : members) {
-            if (member.isLiteMember()) {
-                continue;
-            }
             for (Entry<Integer, MemberGroupConfig> groupConfigEntry : memberGroupConfigMap.entrySet()) {
                 if (AddressUtil.matchAnyInterface(((MemberImpl) member).getAddress().getHost(),
                         groupConfigEntry.getValue().getInterfaces())) {

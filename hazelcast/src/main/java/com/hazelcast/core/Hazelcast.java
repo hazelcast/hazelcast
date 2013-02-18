@@ -90,35 +90,6 @@ public final class Hazelcast {
     }
 
     /**
-     * Creates a new HazelcastInstance Lite Member (a new node in a cluster).
-     * This method allows you to create and run multiple instances
-     * of Hazelcast cluster members on the same JVM.
-     * <p/>
-     * To shutdown all running HazelcastInstances (all members on this JVM)
-     * call {@link #shutdownAll()}.
-     *
-     * Hazelcast will look into two places for the configuration file:
-      * <ol>
-      *     <li>
-      *         System property: Hazelcast will first check if "hazelcast.config" system property is set to a file path.
-     *         Example: -Dhazelcast.config=C:/myhazelcast.xml.
-      *     </li>
-      *     <li>
-      *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
-      *     </li>
-      * </ol>
-     * If Hazelcast doesn't find any config file, it will happily start with default configuration (hazelcast-default.xml)
-     * located in hazelcast.jar.
-     *
-     * @return new HazelcastInstance
-     * @see #shutdownAll()
-     * @see #getHazelcastInstanceByName(String)
-     */
-    public static HazelcastInstance newLiteMemberHazelcastInstance() {
-        return HazelcastInstanceFactory.newHazelcastInstance(null, Boolean.TRUE);
-    }
-
-    /**
      * Returns an existing HazelcastInstance with instanceName.
      * <p/>
      * To shutdown all running HazelcastInstances (all members on this JVM)

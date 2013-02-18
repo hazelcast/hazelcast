@@ -18,7 +18,6 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -166,8 +165,9 @@ public abstract class Operation implements DataSerializable {
     }
 
     // Accessed using OperationAccessor
-    final void setStartTime(long startTime) {
+    final Operation setStartTime(long startTime) {
         this.startTime = startTime;
+        return this;
     }
 
     public final long getInvocationTime() {
@@ -175,8 +175,9 @@ public abstract class Operation implements DataSerializable {
     }
 
     // Accessed using OperationAccessor
-    final void setInvocationTime(long invocationTime) {
+    final Operation setInvocationTime(long invocationTime) {
         this.invocationTime = invocationTime;
+        return this;
     }
 
     public final long getCallTimeout() {
@@ -184,8 +185,9 @@ public abstract class Operation implements DataSerializable {
     }
 
     // Accessed using OperationAccessor
-    final void setCallTimeout(long callTimeout) {
+    final Operation setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
+        return this;
     }
 
     public InvocationAction onException(Throwable throwable) {
@@ -197,31 +199,32 @@ public abstract class Operation implements DataSerializable {
         return callerUuid;
     }
 
-    public void setCallerUuid(String callerUuid) {
+    public Operation setCallerUuid(String callerUuid) {
         this.callerUuid = callerUuid;
+        return this;
     }
 
     public final void writeData(ObjectDataOutput out) throws IOException {
-        IOUtil.writeNullableString(out, serviceName);
+        out.writeUTF(serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
         out.writeLong(callId);
         out.writeBoolean(validateTarget);
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
-        IOUtil.writeNullableString(out, callerUuid);
+        out.writeUTF(callerUuid);
         writeInternal(out);
     }
 
     public final void readData(ObjectDataInput in) throws IOException {
-        serviceName = IOUtil.readNullableString(in);
+        serviceName = in.readUTF();
         partitionId = in.readInt();
         replicaIndex = in.readInt();
         callId = in.readLong();
         validateTarget = in.readBoolean();
         invocationTime = in.readLong();
         callTimeout = in.readLong();
-        callerUuid = IOUtil.readNullableString(in);
+        callerUuid = in.readUTF();
         readInternal(in);
     }
 

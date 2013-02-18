@@ -28,22 +28,19 @@ import java.io.IOException;
 public class EventData implements DataSerializable {
 
     protected String source;
-
+    protected String mapName;
     protected Address caller;
-
     protected Data dataKey;
-
     protected Data dataNewValue;
-
     protected Data dataOldValue;
-
     protected int eventType;
 
     public EventData() {
     }
 
-    public EventData(String source, Address caller, Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
+    public EventData(String source, String mapName, Address caller, Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
         this.source = source;
+        this.mapName = mapName;
         this.caller = caller;
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
@@ -53,6 +50,10 @@ public class EventData implements DataSerializable {
 
     public String getSource() {
         return source;
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 
     public Address getCaller() {
@@ -77,6 +78,7 @@ public class EventData implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(source);
+        out.writeUTF(mapName);
         out.writeObject(caller);
         dataKey.writeData(out);
         IOUtil.writeNullableData(out, dataNewValue);
@@ -86,6 +88,7 @@ public class EventData implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         source = in.readUTF();
+        mapName = in.readUTF();
         caller = in.readObject();
         dataKey = IOUtil.readData(in);
         dataNewValue = IOUtil.readNullableData(in);
@@ -94,6 +97,6 @@ public class EventData implements DataSerializable {
     }
 
     public Object cloneWithoutValues() {
-        return new EventData( source,  caller,  dataKey, null, null,  eventType);
+        return new EventData(source, mapName, caller, dataKey, null, null, eventType);
     }
 }

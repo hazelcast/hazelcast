@@ -16,7 +16,8 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.concurrent.lock.LockInfo;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -50,23 +51,15 @@ public interface RecordStore {
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
 
+    boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
+
     ConcurrentMap<Data, Record> getRecords();
 
     Set<Data> keySet();
 
     int size();
 
-    boolean forceUnlock(Data key);
-
     boolean isLocked(Data key);
-
-    boolean lock(Data key, String caller, int threadId, long ttl);
-
-    boolean unlock(Data key, String caller, int threadId);
-
-    Map<Data, LockInfo> getLocks();
-
-    void putLock(Data key, LockInfo lock);
 
     boolean containsValue(Object testValue);
 
@@ -95,4 +88,6 @@ public interface RecordStore {
     void flush(boolean flushAllRecords);
 
     void removeAll();
+
+    void reset();
 }

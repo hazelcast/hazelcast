@@ -19,7 +19,6 @@ package com.hazelcast.map.test;
 import com.hazelcast.core.IMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -60,15 +59,13 @@ public class DynamicClusterTest extends BaseTest {
                 System.out.println("new instance...");
                 System.out.println("new instance...");
                 newInstance();
-                System.out.println("instance is up!!!");
-                System.out.println("instance is up!!!");
-                System.out.println("instance is up!!!");
             }
             Thread.sleep(10000);
             int realSize = getInstance(0).getCluster().getMembers().size();
             System.out.println("Instance count Real:" + realSize + " Expected:" + instanceCount);
             System.out.println("Instance count Real:" + realSize + " Expected:" + instanceCount);
             System.out.println("Instance count Real:" + realSize + " Expected:" + instanceCount);
+
             instanceCount = realSize;
         }
 

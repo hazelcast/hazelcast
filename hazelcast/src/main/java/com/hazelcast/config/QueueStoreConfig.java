@@ -23,6 +23,7 @@ import java.util.Properties;
 /**
  * @ali 12/14/12
  */
+// TODO: @mm - Add QueueStoreConfig to hazelcast-config-3.0.xsd and XmlConfigBuilder/
 public class QueueStoreConfig {
 
     public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;

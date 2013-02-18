@@ -17,7 +17,6 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.NodeType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,7 +28,6 @@ import java.io.IOException;
 
 public class JoinRequest extends JoinMessage implements DataSerializable {
 
-    private NodeType nodeType;
     private Credentials credentials;
     private int tryCount = 0;
 
@@ -38,15 +36,10 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, Config config,
-                       NodeType nodeType, Credentials credentials, int memberCount, int tryCount) {
+                       Credentials credentials, int memberCount, int tryCount) {
         super(packetVersion, buildNumber, address, uuid, config, memberCount);
-        this.nodeType = nodeType;
         this.credentials = credentials;
         this.tryCount = tryCount;
-    }
-
-    public NodeType getNodeType() {
-        return nodeType;
     }
 
     public Credentials getCredentials() {
@@ -63,7 +56,6 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        nodeType = NodeType.create(in.readInt());
         credentials = IOUtil.readNullableObject(in);
         if (credentials != null) {
             credentials.setEndpoint(getAddress().getHost());
@@ -73,7 +65,6 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeInt(nodeType.getValue());
         IOUtil.writeNullableObject(out, credentials);
         out.writeInt(tryCount);
     }
@@ -86,7 +77,6 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         sb.append(", buildNumber=").append(buildNumber);
         sb.append(", address=").append(address);
         sb.append(", uuid='").append(uuid).append('\'');
-        sb.append(", nodeType=").append(nodeType);
         sb.append(", credentials=").append(credentials);
         sb.append(", memberCount=").append(memberCount);
         sb.append(", tryCount=").append(tryCount);

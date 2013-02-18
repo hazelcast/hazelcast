@@ -95,6 +95,7 @@ public class IMapRegionCache implements RegionCache {
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
                 map.set(key, value, 0, TimeUnit.MILLISECONDS);
+                return true;
             }
             return false;
         } else {
@@ -137,7 +138,7 @@ public class IMapRegionCache implements RegionCache {
     public long getSizeInMemory() {
         long size = 0;
 //        for (final Object key : map.keySet()) {
-//            final MapEntry entry = map.getMapEntry(key);
+//            final EntryView entry = map.getMapEntry(key);
 //            if (entry != null) {
 //                size += entry.getCost();
 //            }

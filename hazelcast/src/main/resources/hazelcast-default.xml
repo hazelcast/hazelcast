@@ -92,9 +92,7 @@
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">
-        <!--<core-pool-size>16</core-pool-size>-->
-        <max-pool-size>16</max-pool-size>
-        <!--<keep-alive-seconds>60</keep-alive-seconds>-->
+        <pool-size>16</pool-size>
     </executor-service>
     <queue name="default">
         <!--
@@ -118,7 +116,7 @@
     </queue>
     <map name="default">
         <!--
-           Data type that will be used for storing records.
+           Data type that will be used for storing recordMap.
            Possible values:
            DATA (default): keys and values will be stored as binary data
            OBJECT : values will be stored in their object forms

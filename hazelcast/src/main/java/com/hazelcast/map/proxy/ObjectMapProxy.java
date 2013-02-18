@@ -17,10 +17,8 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.ObjectFuture;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
@@ -137,13 +135,13 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public void lock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
-        lockInternal(k);
+        lockSupport.lock(nodeEngine, k);
     }
 
     public void unlock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
-        unlockInternal(k);
+        lockSupport.unlock(nodeEngine, k);
     }
 
     public Object tryRemove(final K key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
@@ -161,7 +159,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public boolean isLocked(final K k) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
-        return isLockedInternal(key);
+        return lockSupport.isLocked(nodeEngine, key);
     }
 
     public Future putAsync(final K key, final V value) {
@@ -193,21 +191,18 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public boolean tryLock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
-        return tryLockInternal(nodeEngine.toData(key), 0, null);
+        return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key));
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
-        return tryLockInternal(nodeEngine.toData(key), time, timeunit);
+        return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key), time, timeunit);
     }
 
     public void forceUnlock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
-        forceUnlockInternal(k);
-    }
-
-    public void addLocalEntryListener(final EntryListener<K, V> listener) {
+        lockSupport.forceUnlock(nodeEngine, k);
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -241,10 +236,13 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         removeEntryListenerInternal(listener, nodeEngine.toData(key));
     }
 
-    public Map.Entry<K, V> getMapEntry(final K key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Map.Entry<Data, Data> entry = getMapEntryInternal(nodeEngine.toData(key));
-        return new AbstractMap.SimpleImmutableEntry<K, V>((K) nodeEngine.toObject(entry.getKey()), (V) nodeEngine.toObject(entry.getValue()));
+    @Override
+    public EntryView<K,V> getEntryView(K key) {
+        SimpleEntryView<K,V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getNodeEngine().toData(key));
+        Data value = (Data) entryViewInternal.getValue();
+        entryViewInternal.setKey(key);
+        entryViewInternal.setValue((V)getNodeEngine().toObject(value));
+        return entryViewInternal;
     }
 
     public boolean evict(final Object key) {
