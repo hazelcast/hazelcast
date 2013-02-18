@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.QueueStore;
+
 import java.util.Properties;
 
 /**
@@ -29,6 +31,28 @@ public class QueueStoreConfig {
     private String className = null;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
     private Properties properties = new Properties();
+    private QueueStore storeImplementation;
+
+    public QueueStoreConfig() {
+    }
+
+    public QueueStoreConfig(String className, boolean enabled) {
+        this.className = className;
+        this.enabled = enabled;
+    }
+
+    public QueueStoreConfig(QueueStore storeImplementation) {
+        this.storeImplementation = storeImplementation;
+    }
+
+    public QueueStore getStoreImplementation() {
+        return storeImplementation;
+    }
+
+    public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
+        this.storeImplementation = storeImplementation;
+        return this;
+    }
 
     public boolean isEnabled() {
         return enabled;

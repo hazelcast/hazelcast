@@ -135,6 +135,7 @@ public final class QueueConfig implements DataSerializable {
         out.writeInt(syncBackupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
+        //TODO store and listener configs
     }
 
     public void readData(ObjectDataInput in) throws IOException {
