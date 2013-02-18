@@ -217,9 +217,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
     }
 
     public void commitMigration(MigrationServiceEvent event) {
-        if (event.getMigrationType() == MigrationType.MOVE) {
-            System.err.println("move");
-        }
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             if (event.getMigrationType() == MigrationType.MOVE) {
                 clearMigrationData(event.getPartitionId(), -1);

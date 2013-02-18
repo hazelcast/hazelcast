@@ -72,13 +72,12 @@ public class DynamicClusterTest extends BaseTest {
 
     }
 
-    //TODO ali, recurrent
     @Test
     public void testMapSize() throws Exception {
 
         log("starting");
         final IMap map = getInstance(0).getMap("testMapSize");
-        final int putSize = 50000;
+        final int putSize = 10*1000;
         final CountDownLatch latch = new CountDownLatch(2);
 
         new Thread() {
@@ -97,7 +96,7 @@ public class DynamicClusterTest extends BaseTest {
         new Thread() {
 
             public void run() {
-                for (int i = 0; i < putSize*2; i++) {
+                for (int i = 0; i < putSize*100; i++) {
                     Random ran = new Random(System.currentTimeMillis());
                     Object o = map.remove("key" + ran.nextInt(putSize));
                     if (o != null) {
@@ -109,28 +108,39 @@ public class DynamicClusterTest extends BaseTest {
 
         }.start();
 
-        Thread.sleep(5000);
-        log("remove instance");
-        removeInstance(1);
+        Thread.sleep(500);
 
-        Thread.sleep(5000);
-        log("new instance");
-        newInstance();
+        for (int i=0; i<4; i++){
+            log("remove instance");
+            removeInstance(2);
+            Thread.sleep(2000);
 
-        Thread.sleep(5000);
-        log("remove instance");
-        removeInstance(2);
+            log("new instance");
+            newInstance();
+            Thread.sleep(2000);
+            boolean done = latch.await(100, TimeUnit.MILLISECONDS);
+            if (done){
+                log("done i: " + i);
+            }
+        }
 
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
-        assertEquals(map.size(), putSize - removed.get());
+
+        assertTrue(latch.await(200, TimeUnit.SECONDS));
+        assertEquals(putSize - removed.get(), map.size());
 
         log("size: " + (putSize - removed.get()));
 
     }
 
+
+    @Test
+    public void testQueueSize() throws Exception {
+
+    }
+
     private void log(String s){
         for (int k=0; k<8; k++){
-            System.out.println("---------------------------- "+s+" ----------------------------");
+            System.out.println("---------------------------- " + s + " ----------------------------");
         }
     }
 
