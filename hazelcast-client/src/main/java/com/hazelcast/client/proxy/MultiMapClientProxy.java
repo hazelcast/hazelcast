@@ -25,6 +25,7 @@ import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Protocol;
@@ -133,25 +134,29 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
     public boolean put(K key, V value) {
         check(key);
         check(value);
-        Data[] datas = new Data[]{proxyHelper.toData(key), proxyHelper.toData(value)};
-        return proxyHelper.doCommandAsBoolean(null, Command.MMPUT, new String[]{getName()}, datas);
+        Data dKey = proxyHelper.toData(key);
+        Data[] datas = new Data[]{dKey, proxyHelper.toData(value)};
+        return proxyHelper.doCommandAsBoolean(dKey, Command.MMPUT, new String[]{getName()}, datas);
     }
 
     public Collection get(Object key) {
         check(key);
-        return proxyHelper.doCommandAsList(null, Command.MMGET, new String[]{getName()}, proxyHelper.toData(key));
+        Data dKey = proxyHelper.toData(key);
+        return proxyHelper.doCommandAsList(dKey, Command.MMGET, new String[]{getName()}, dKey);
     }
 
     public boolean remove(Object key, Object value) {
         check(key);
         check(value);
-        Data[] datas = new Data[]{proxyHelper.toData(key), proxyHelper.toData(value)};
-        return proxyHelper.doCommandAsBoolean(null, Command.MMREMOVE, new String[]{getName()}, datas);
+        Data dKey = proxyHelper.toData(key);
+        Data[] datas = new Data[]{dKey, proxyHelper.toData(value)};
+        return proxyHelper.doCommandAsBoolean(dKey, Command.MMREMOVE, new String[]{getName()}, datas);
     }
 
     public Collection remove(Object key) {
         check(key);
-        return proxyHelper.doCommandAsList(null, Command.MMREMOVE, new String[]{getName()}, proxyHelper.toData(key));
+        Data dKey = proxyHelper.toData(key);
+        return proxyHelper.doCommandAsList(dKey, Command.MMREMOVE, new String[]{getName()}, dKey);
     }
 
     public Set<K> localKeySet() {
@@ -159,7 +164,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
     }
 
     public Set keySet() {
-        List<Data> list =  proxyHelper.doCommandAsList(null, Command.MMKEYS, new String[]{getName()}, null);
+        List<Data> list =  proxyHelper.doCommandAsList(Command.MMKEYS, new String[]{getName()});
         return new HashSet(list);
     }
 
@@ -176,25 +181,27 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
     public boolean containsKey(Object key) {
         check(key);
         String[] args = new String[]{getName()};
-        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSKEY, args, proxyHelper.toData(key));
+        Data dKey = proxyHelper.toData(key);
+        return proxyHelper.doCommandAsBoolean(dKey, Command.MMCONTAINSKEY, args, dKey);
     }
 
     public boolean containsValue(Object value) {
         check(value);
         String[] args = new String[]{getName()};
-        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSVALUE, args, proxyHelper.toData(value));
+        return proxyHelper.doCommandAsBoolean(Command.MMCONTAINSVALUE, args, proxyHelper.toData(value));
     }
 
     public boolean containsEntry(Object key, Object value) {
         check(key);
         check(value);
         String[] args = new String[]{getName()};
-        Data[] datas = new Data[]{proxyHelper.toData(key), proxyHelper.toData(value)};
-        return proxyHelper.doCommandAsBoolean(null, Command.MMCONTAINSENTRY, args, datas);
+        Data dKey = proxyHelper.toData(key);
+        Data[] datas = new Data[]{dKey, proxyHelper.toData(value)};
+        return proxyHelper.doCommandAsBoolean(dKey, Command.MMCONTAINSENTRY, args, datas);
     }
 
     public int size() {
-        return proxyHelper.doCommandAsInt(null, Command.MMSIZE, new String[]{getName()}, null);
+        return proxyHelper.doCommandAsInt(Command.MMSIZE, new String[]{getName()});
     }
 
     public void clear() {
@@ -206,11 +213,12 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
 
     public int valueCount(Object key) {
         check(key);
-        return proxyHelper.doCommandAsInt(null, Command.MMVALUECOUNT, new String[]{getName()}, proxyHelper.toData(key));
+        Data dKey = proxyHelper.toData(key);
+        return proxyHelper.doCommandAsInt(dKey, Command.MMVALUECOUNT, new String[]{getName()}, dKey);
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{"multimap", getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{"multimap", getName()});
     }
 
     public Object getId() {

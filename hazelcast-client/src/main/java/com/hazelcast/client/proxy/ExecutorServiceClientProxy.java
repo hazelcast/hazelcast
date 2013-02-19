@@ -24,6 +24,7 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.RunnableAdapter;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -72,8 +73,9 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     public <T> Future<T> submitToKeyOwner(final Callable<T> task, final Object key) {
         return executorService.submit(new Callable<T>() {
             public T call() throws Exception {
-                return (T) proxyHelper.doCommandAsObject(proxyHelper.toData(key), Command.EXECUTE,
-                        new String[]{}, proxyHelper.toData(task), proxyHelper.toData(key));
+                Data dKey = proxyHelper.toData(key);
+                return (T) proxyHelper.doCommandAsObject(dKey, Command.EXECUTE,
+                        new String[]{}, proxyHelper.toData(task), dKey);
             }
         });
     }

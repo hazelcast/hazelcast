@@ -123,13 +123,20 @@ public class ProxyHelper {
         } else return null;
     }
 
+    public Protocol createProtocol(Command command, String[] args, Data[] data) {
+        if (args == null) args = new String[]{};
+        long id = newCallId();
+        Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, data);
+        return protocol;
+    }
+
     public void doFireNForget(Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
             Connection connection = cp.takeConnection((Member) null);
             writer.write(connection, protocol);
-            cp.releaseConnection(connection, null);
+            cp.releaseConnection(connection);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -159,6 +166,70 @@ public class ProxyHelper {
         return doCommand(member, command, args, data);
     }
 
+    public Protocol doCommand(Command command, String[] args, Data... data) {
+        return doCommand((Member)null, command, args, data);
+    }
+
+    /**
+     * Expects one binary data on response and returns the deserialized version of that binary data.
+     *
+     * @param command
+     * @param args
+     * @param data
+     * @return
+     */
+    public Object doCommandAsObject(Data key, Command command, String[] args, Data... data) {
+        Protocol response = doCommand(key, command, args, data);
+        return getSingleObjectFromResponse(response);
+    }
+
+    /**
+     * Expects one binary data on response and returns the deserialized version of that binary data.
+     *
+     * @param command
+     * @param args
+     * @param data
+     * @return
+     */
+    public Object doCommandAsObject(Command command, String[] args, Data... data) {
+        return doCommandAsObject(null, command, args, data);
+    }
+
+    public boolean doCommandAsBoolean(Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(command, args, datas);
+        return Boolean.valueOf(protocol.args[0]);
+    }
+
+    public boolean doCommandAsBoolean(Data key, Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(key, command, args, datas);
+        return Boolean.valueOf(protocol.args[0]);
+    }
+
+    public int doCommandAsInt(Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(command, args, datas);
+        return Integer.valueOf(protocol.args[0]);
+    }
+
+    public int doCommandAsInt(Data key, Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(key, command, args, datas);
+        return Integer.valueOf(protocol.args[0]);
+    }
+
+    public <E> List<E> doCommandAsList(Command command, String[] args, Data... datas) {
+        return doCommandAsList(null, command, args, datas);
+    }
+
+    public <E> List<E> doCommandAsList(Data key, Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(key, command, args, datas);
+        List<E> list = new ArrayList<E>();
+        if (protocol.hasBuffer()) {
+            for (Data bb : protocol.buffers) {
+                list.add((E) ss.toObject(bb));
+            }
+        }
+        return list;
+    }
+
     public Protocol doCommand(Member member, Command command, String[] args, Data... data) {
         try {
             Protocol protocol = createProtocol(command, args, data);
@@ -171,7 +242,7 @@ public class ProxyHelper {
             writer.write(connection, protocol);
             writer.flush(connection);
             Protocol response = reader.read(connection);
-            cp.releaseConnection(connection, member);
+            cp.releaseConnection(connection);
             if (Command.OK.equals(response.command))
                 return response;
             else {
@@ -187,18 +258,11 @@ public class ProxyHelper {
         }
     }
 
-    public Protocol createProtocol(Command command, String[] args, Data[] data) {
-        if (args == null) args = new String[]{};
-        long id = newCallId();
-        Protocol protocol = new Protocol(null, command, String.valueOf(id), getCurrentThreadId(), false, args, data);
-        return protocol;
-    }
-
     <V> Future<V> doAsync(final Command command, String[] args, Data... data) {
         Protocol protocol = createProtocol(command, args, data);
         protocol.onEnqueue();
         try {
-            final Connection connection = cp.takeConnection((Member) null);
+            final Connection connection = cp.takeConnection(null);
             writer.write(connection, protocol);
             writer.flush(connection);
             return new Future<V>() {
@@ -242,69 +306,7 @@ public class ProxyHelper {
         }
     }
 
-    /**
-     * Returns true if the response is OK, otherwise returns false.
-     *
-     * @param command
-     * @param arg
-     * @param data
-     * @return
-     */
-    public boolean doCommand(Data key, Command command, String arg, Data... data) {
-        String[] args;
-        if (arg == null)
-            args = new String[]{};
-        else
-            args = new String[]{arg};
-        Protocol response = doCommand(key, command, args, data);
-        return response.command.equals(Command.OK);
-    }
 
-    /**
-     * Expects one binary data on response and returns the deserialized version of that binary data.
-     *
-     * @param command
-     * @param arg
-     * @param data
-     * @return
-     */
-    public Object doCommandAsObject(Data key, Command command, String[] arg, Data... data) {
-        Protocol response = doCommand(key, command, arg, data);
-        return getSingleObjectFromResponse(response);
-    }
-
-    /**
-     * Expects one binary data on response and returns the deserialized version of that binary data.
-     *
-     * @param command
-     * @param arg
-     * @param data
-     * @return
-     */
-    public Object doCommandAsObject(Data key, Command command, String arg, Data... data) {
-        return doCommandAsObject(key, command, new String[]{arg}, data);
-    }
-
-    public boolean doCommandAsBoolean(Data key, Command command, String[] args, Data... datas) {
-        Protocol protocol = doCommand(key, command, args, datas);
-        return Boolean.valueOf(protocol.args[0]);
-    }
-
-    public int doCommandAsInt(Data key, Command command, String[] args, Data... datas) {
-        Protocol protocol = doCommand(key, command, args, datas);
-        return Integer.valueOf(protocol.args[0]);
-    }
-
-    public <E> List<E> doCommandAsList(Data key, Command command, String[] args, Data... datas) {
-        Protocol protocol = doCommand(key, command, args, datas);
-        List<E> list = new ArrayList<E>();
-        if (protocol.hasBuffer()) {
-            for (Data bb : protocol.buffers) {
-                list.add((E) ss.toObject(bb));
-            }
-        }
-        return list;
-    }
 
     protected Protocol lock(String name, Data key, Command command, String[] args, Data data) {
         Context context = ensureContextHasConnection(key);
@@ -334,8 +336,7 @@ public class ProxyHelper {
         Protocol response = doCommand(key, command, args, data);
         if (context.decrementAndGet(name, key.hashCode()) == 0 && context.noMoreLocks()) {
             Connection connection = context.getConnection();
-            Member member = key2Member(key);
-            cp.releaseConnection(connection, member);
+            cp.releaseConnection(connection);
             Context.remove();
         }
         return response;

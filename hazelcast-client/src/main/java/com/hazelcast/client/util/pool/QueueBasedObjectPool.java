@@ -17,42 +17,44 @@
 
 package com.hazelcast.client.util.pool;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class QueueBasedObjectPool<E> extends ObjectPool<E> {
     final BlockingQueue<E> queue;
+    final Factory<E> factory;
 
-
-    public QueueBasedObjectPool() {
-        this.queue = new LinkedBlockingDeque<E>();
+    public QueueBasedObjectPool(int capacity, Factory<E> factory) {
+        this.queue = new LinkedBlockingQueue<E>(capacity);
+        this.factory = factory;
     }
 
-    public QueueBasedObjectPool(int capacity) {
-        this.queue = new LinkedBlockingDeque<E>(capacity);
-    }
-
-    public void add(E e){
+    public void add(E e) {
         this.queue.add(e);
     }
 
-    public void addAll(Collection<E> c){
+    public void addAll(Collection<E> c) {
         this.queue.addAll(c);
-    }
-    
-    
-    @Override
-    public E take() {
-        try {
-            return queue.take();
-        } catch (InterruptedException e) {
-            return null;
-        }
     }
 
     @Override
-    public void release(E e){
+    public E take() {
+        E e = queue.poll();
+        if (e == null) {
+            try {
+                e = factory.create();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                return take();
+            }
+        }
+        return e;
+    }
+
+    @Override
+    public void release(E e) {
         queue.offer(e);
     }
 
@@ -61,3 +63,4 @@ public class QueueBasedObjectPool<E> extends ObjectPool<E> {
         return queue.size();
     }
 }
+

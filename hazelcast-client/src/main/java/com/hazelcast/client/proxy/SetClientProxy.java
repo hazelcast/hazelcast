@@ -23,6 +23,7 @@ import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 
@@ -43,24 +44,24 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
     @Override
     public boolean add(E o) {
         check(o);
-        return proxyHelper.doCommandAsBoolean(null, Command.SADD, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.SADD, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public boolean remove(Object o) {
         check(o);
-        return proxyHelper.doCommandAsBoolean(null, Command.SREMOVE, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.SREMOVE, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public int size() {
-        return proxyHelper.doCommandAsInt(null, Command.SSIZE, new String[]{getName()});
+        return proxyHelper.doCommandAsInt(Command.SSIZE, new String[]{getName()});
     }
 
     @Override
     public boolean contains(Object o) {
         check(o);
-        return proxyHelper.doCommandAsBoolean(null, Command.SCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.SCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
@@ -74,7 +75,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
 
     @Override
     protected Collection<E> getTheCollection() {
-        return proxyHelper.doCommandAsList(null, Command.SGETALL, new String[]{getName()});
+        return proxyHelper.doCommandAsList(Command.SGETALL, new String[]{getName()});
     }
 
     public String getName() {
@@ -82,7 +83,7 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{ObjectSetProxy.COLLECTION_SET_NAME, getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{ObjectSetProxy.COLLECTION_SET_NAME, getName()});
     }
 
     public void addItemListener(ItemListener<E> listener, boolean includeValue) {

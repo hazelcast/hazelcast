@@ -77,7 +77,7 @@ public class HazelcastClient implements HazelcastInstance {
         connectionPool = new ConnectionPool(config, connectionManager, serializationService);
         partitionClientProxy = new PartitionClientProxy(this);
         clusterClientProxy = new ClusterClientProxy(this);
-        connectionPool.init(getCluster(), getPartitionService());
+        connectionPool.init(this, getPartitionService());
 //        try {
 //            final Connection c = connectionManager.getInitConnection();
 //            if (c == null) {
