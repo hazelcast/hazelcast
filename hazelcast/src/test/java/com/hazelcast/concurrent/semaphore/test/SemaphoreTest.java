@@ -37,7 +37,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * Time: 5:12 PM
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-
 public class SemaphoreTest {
 
     @Test
@@ -127,12 +126,14 @@ public class SemaphoreTest {
         final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(k);
 
+        instances[0].getSemaphore("test").init(1);
+
         for (int i = 0; i < k; i++) {
             final ISemaphore semaphore = instances[i].getSemaphore("test");
-            semaphore.init(1);
+//            semaphore.init(1);
             new Thread() {
                 public void run() {
-                    for (int j = 0; j < 1000; j++) {
+                    for (int j = 0; j < 10000; j++) {
                         try {
                             semaphore.acquire();
                         } catch (InterruptedException e) {
