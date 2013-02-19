@@ -17,6 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.nio.protocol.Command;
 
@@ -29,13 +30,13 @@ public class TransactionClientProxy implements Transaction {
 
     public void begin() throws IllegalStateException {
         proxyHelper.ensureContextHasConnection(null);
-        proxyHelper.doCommand(null, Command.TRXBEGIN, new String[]{}, null);
+        proxyHelper.doCommand(Command.TRXBEGIN, new String[]{});
     }
 
     public void commit() throws IllegalStateException {
         Context context = Context.get();
         checkNull(context);
-        proxyHelper.doCommand(null, Command.TRXCOMMIT, new String[]{}, null);
+        proxyHelper.doCommand(Command.TRXCOMMIT, new String[]{});
         release(context);
     }
 
@@ -47,19 +48,19 @@ public class TransactionClientProxy implements Transaction {
 
     private void release(Context context) {
         if (context.noMoreLocks()) {
-            proxyHelper.cp.releaseConnection(context.getConnection(), null);
+            proxyHelper.cp.releaseConnection(context.getConnection());
             Context.remove();
         }
     }
 
     public int getStatus() {
-        return proxyHelper.doCommandAsInt(null, Command.TRXSTATUS, new String[]{}, null);
+        return proxyHelper.doCommandAsInt(Command.TRXSTATUS, new String[]{});
     }
 
     public void rollback() throws IllegalStateException {
         Context context = Context.get();
         checkNull(context);
-        proxyHelper.doCommand(null, Command.TRXROLLBACK, new String[]{}, null);
+        proxyHelper.doCommand(Command.TRXROLLBACK, new String[]{});
         release(context);
     }
 }

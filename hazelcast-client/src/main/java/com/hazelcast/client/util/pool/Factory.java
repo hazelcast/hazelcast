@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,23 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.hazelcast.client.util.pool;
 
-import java.util.Collection;
+import java.io.IOException;
 
-public abstract class ObjectPool<E> {
-
-    abstract public E take();
-
-    abstract public void release(E e);
-
-    abstract public void add(E e);
-
-    abstract public void addAll(Collection<E> c);
-
-    public abstract int size();
+public interface Factory<E> {
+    E create() throws IOException;
 }
-
-

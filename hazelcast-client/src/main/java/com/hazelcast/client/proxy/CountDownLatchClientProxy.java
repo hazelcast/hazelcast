@@ -47,7 +47,7 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
 
     public boolean await(long timeout, TimeUnit unit) throws MemberLeftException, InterruptedException {
         String[] args = new String[]{getName(), String.valueOf(unit.toMillis(timeout))};
-        Protocol response = proxyHelper.doCommand(null, Command.CDLAWAIT, args, null);
+        Protocol response = proxyHelper.doCommand(Command.CDLAWAIT, args);
         if ("member.left.exception".equalsIgnoreCase(response.args[0])) {
             String hostname = response.args[1];
             String port = response.args[2];
@@ -63,20 +63,20 @@ public class CountDownLatchClientProxy implements ICountDownLatch {
     }
 
     public void countDown() {
-        proxyHelper.doCommand(null, Command.CDLCOUNTDOWN, getName(), null);
+        proxyHelper.doCommand(Command.CDLCOUNTDOWN, new String[]{getName()});
     }
 
     public int getCount() {
-        return proxyHelper.doCommandAsInt(null, Command.CDLGETCOUNT, new String[]{getName()}, null);
+        return proxyHelper.doCommandAsInt(Command.CDLGETCOUNT, new String[]{getName()});
     }
 
     public boolean trySetCount(int count) {
         String[] args = new String[]{getName(), String.valueOf(count)};
-        return proxyHelper.doCommandAsBoolean(null, Command.CDLSETCOUNT, args, null);
+        return proxyHelper.doCommandAsBoolean(Command.CDLSETCOUNT, args);
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{CountDownLatchService.SERVICE_NAME, getName()}, null);
+        proxyHelper.doCommand( Command.DESTROY, new String[]{CountDownLatchService.SERVICE_NAME, getName()});
     }
 
     public Object getId() {
