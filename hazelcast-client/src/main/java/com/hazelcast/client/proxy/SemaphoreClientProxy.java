@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 import com.hazelcast.nio.protocol.Command;
 
@@ -164,7 +165,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{SemaphoreService.SERVICE_NAME, getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{SemaphoreService.SERVICE_NAME, getName()});
     }
 
     public Object getId() {

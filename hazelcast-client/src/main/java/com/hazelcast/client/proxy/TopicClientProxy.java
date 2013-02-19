@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.MessageListenerManager;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.proxy.listener.MessageLRH;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.Protocol;
@@ -72,7 +73,7 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{TopicService.SERVICE_NAME, getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{TopicService.SERVICE_NAME, getName()});
     }
 
     public Object getId() {

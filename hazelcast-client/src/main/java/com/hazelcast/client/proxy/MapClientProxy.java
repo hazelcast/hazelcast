@@ -23,6 +23,7 @@ import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -53,7 +54,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     }
 
     public void flush(boolean flushAllEntries) {
-        proxyHelper.doCommand(null, Command.MFLUSH, new String[]{getName(), String.valueOf(flushAllEntries)}, null);
+        proxyHelper.doCommand(Command.MFLUSH, new String[]{getName(), String.valueOf(flushAllEntries)});
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -131,9 +132,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     private Map<K, V> getCopyOfTheMap(Predicate predicate) {
         Protocol protocol;
         if (predicate == null)
-            protocol = proxyHelper.doCommand(null, Command.MENTRYSET, new String[]{getName()}, null);
+            protocol = proxyHelper.doCommand(Command.MENTRYSET, new String[]{getName()});
         else
-            protocol = proxyHelper.doCommand(null, Command.MENTRYSET, new String[]{getName()}, proxyHelper.toData(predicate));
+            protocol = proxyHelper.doCommand(Command.MENTRYSET, new String[]{getName()}, proxyHelper.toData(predicate));
         int size = protocol.buffers == null ? 0 : protocol.buffers.length;
         Map<K, V> map = new HashMap<K, V>();
         for (int i = 0; i < size; ) {
@@ -199,9 +200,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     public Set<K> keySet(Predicate predicate) {
         Protocol protocol;
         if (predicate == null)
-            protocol = proxyHelper.doCommand(null, Command.KEYSET, new String[]{"map", getName()}, null);
+            protocol = proxyHelper.doCommand(Command.KEYSET, new String[]{"map", getName()});
         else
-            protocol = proxyHelper.doCommand(null, Command.KEYSET, new String[]{"map", getName()}, proxyHelper.toData(predicate));
+            protocol = proxyHelper.doCommand(Command.KEYSET, new String[]{"map", getName()}, proxyHelper.toData(predicate));
         if (!protocol.hasBuffer()) return Collections.emptySet();
         Set<K> set = new HashSet<K>(protocol.buffers.length);
         for (Data b : protocol.buffers) {
@@ -244,7 +245,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     public void forceUnlock(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        proxyHelper.doCommand(dKey, Command.MFORCEUNLOCK, getName(), dKey);
+        proxyHelper.doCommand(dKey, Command.MFORCEUNLOCK, new String[]{getName()}, dKey);
     }
 
     public Collection<V> values(Predicate predicate) {
@@ -276,7 +277,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         check(key);
         check(value);
         Data dKey = proxyHelper.toData(key);
-        return (V) proxyHelper.doCommandAsObject(dKey, Command.MREPLACEIFNOTNULL, getName(), dKey, proxyHelper.toData(value));
+        return (V) proxyHelper.doCommandAsObject(dKey, Command.MREPLACEIFNOTNULL, new String[]{getName()}, dKey, proxyHelper.toData(value));
     }
 
     public boolean replace(K key, V oldValue, V newValue) {
@@ -304,7 +305,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
 
     public boolean containsValue(Object arg0) {
         check(arg0);
-        Protocol protocol = proxyHelper.doCommand(null, Command.MCONTAINSVALUE, new String[]{getName()}, proxyHelper.toData(arg0));
+        Protocol protocol = proxyHelper.doCommand(Command.MCONTAINSVALUE, new String[]{getName()}, proxyHelper.toData(arg0));
         return Boolean.valueOf(protocol.args[0]);
     }
 
@@ -315,7 +316,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     public V get(Object key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        return (V) proxyHelper.doCommandAsObject(dKey, Command.MGET, getName(), dKey);
+        return (V) proxyHelper.doCommandAsObject(dKey, Command.MGET, new String[]{getName()}, dKey);
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {
@@ -325,7 +326,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
             dataList.add(proxyHelper.toData(key));
         }
         Map<K, V> map = new HashMap<K, V>(setKeys.size());
-        Protocol protocol = proxyHelper.doCommand(null, Command.MGETALL, new String[]{getName()}, dataList.toArray(new Data[]{}));
+        Protocol protocol = proxyHelper.doCommand(Command.MGETALL, new String[]{getName()}, dataList.toArray(new Data[]{}));
         if (protocol.hasBuffer()) {
             int i = 0;
             while (i < protocol.buffers.length) {
@@ -386,7 +387,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         check(key);
         check(value);
         Data dKey = proxyHelper.toData(key);
-        return (V) proxyHelper.doCommandAsObject(dKey, Command.MPUT, getName(), dKey, proxyHelper.toData(value));
+        return (V) proxyHelper.doCommandAsObject(dKey, Command.MPUT, new String[]{getName()}, dKey, proxyHelper.toData(value));
     }
 
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
@@ -429,13 +430,13 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
                 }
             }
         }
-        proxyHelper.doCommand(null, Command.MPUTALL, getName(), dataList.toArray(new Data[]{}));
+        proxyHelper.doCommand(Command.MPUTALL, new String[]{getName()}, dataList.toArray(new Data[]{}));
     }
 
     public V remove(Object key) {
         check(key);
         Data dKey = proxyHelper.toData(key);
-        return (V) proxyHelper.doCommandAsObject(dKey, Command.MREMOVE, getName(), dKey);
+        return (V) proxyHelper.doCommandAsObject(dKey, Command.MREMOVE, new String[]{getName()}, dKey);
     }
 
     public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
@@ -451,7 +452,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     }
 
     public int size() {
-        Protocol protocol = proxyHelper.doCommand(null, Command.MSIZE, new String[]{getName()}, null);
+        Protocol protocol = proxyHelper.doCommand(Command.MSIZE, new String[]{getName()});
         return Integer.valueOf(protocol.args[0]);
     }
 
@@ -464,7 +465,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     }
 
     public void addIndex(String attribute, boolean ordered) {
-        proxyHelper.doCommand(null, Command.MADDINDEX, new String[]{getName(), attribute, String.valueOf(ordered)}, null);
+        proxyHelper.doCommand(Command.MADDINDEX, new String[]{getName(), attribute, String.valueOf(ordered)});
     }
 
     public String getName() {
@@ -472,7 +473,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{MapService.SERVICE_NAME, getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{MapService.SERVICE_NAME, getName()});
     }
 
     @Override

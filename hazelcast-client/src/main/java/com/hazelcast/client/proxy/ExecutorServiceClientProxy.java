@@ -17,21 +17,19 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.RunnableAdapter;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ExecutorServiceClientProxy implements IExecutorService {
 
@@ -59,7 +57,7 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     }
 
     public void executeOnMembers(Runnable command, Collection<Member> members) {
-        for(Member member: members){
+        for (Member member : members) {
             executeOnMember(command, member);
         }
     }
@@ -75,8 +73,9 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     public <T> Future<T> submitToKeyOwner(final Callable<T> task, final Object key) {
         return executorService.submit(new Callable<T>() {
             public T call() throws Exception {
-                return (T) proxyHelper.doCommandAsObject(proxyHelper.toData(key), Command.EXECUTE,
-                        new String[]{}, proxyHelper.toData(task), proxyHelper.toData(key));
+                Data dKey = proxyHelper.toData(key);
+                return (T) proxyHelper.doCommandAsObject(dKey, Command.EXECUTE,
+                        new String[]{}, proxyHelper.toData(task), dKey);
             }
         });
     }
@@ -85,18 +84,26 @@ public class ExecutorServiceClientProxy implements IExecutorService {
         return executorService.submit(new Callable<T>() {
             public T call() throws Exception {
                 InetSocketAddress address = member.getInetSocketAddress();
-                return (T) proxyHelper.doCommandAsObject(proxyHelper.toData(member), Command.EXECUTE,
-                        new String[]{address.getHostName(), String.valueOf(address.getPort())}, proxyHelper.toData(task));
+                String[] args = new String[]{address.getHostName(), String.valueOf(address.getPort())};
+                Protocol response = proxyHelper.doCommand(member, Command.EXECUTE, args, proxyHelper.toData(task));
+                return (T) proxyHelper.getSingleObjectFromResponse(response);
             }
         });
     }
 
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
-        return null;
+        if (members == null || task == null) return null;
+        Map<Member, Future<T>> map = new HashMap<Member, Future<T>>(members.size());
+        for (Member member : members) {
+            Future<T> future = submitToMember(task, member);
+            map.put(member, future);
+        }
+        return map;
     }
 
     public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
-        return null;
+        Collection<Member> members = client.getCluster().getMembers();
+        return submitToMembers(task, members);
     }
 
     public void submit(final Runnable task, final ExecutionCallback callback) {
@@ -164,10 +171,36 @@ public class ExecutorServiceClientProxy implements IExecutorService {
         });
     }
 
-    public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
+    public <T> void submitToMembers(Callable<T> task, final Collection<Member> members, final MultiExecutionCallback callback) {
+        final Map<Member, Object> results = new ConcurrentHashMap<Member, Object>(members.size());
+        final AtomicBoolean done = new AtomicBoolean(false);
+        for (final Member member : members) {
+            submitToMember(task, member, new ExecutionCallback<T>() {
+                public void onResponse(T response) {
+                    done(response);
+                }
+
+                public void onFailure(Throwable t) {
+                    done(t);
+                }
+
+                private void done(Object response) {
+                    results.put(member, response);
+                    try {
+                        callback.onResponse(member, response);
+                    } catch (Throwable e) {
+                        results.put(member, e);
+                    }
+                    if (results.size() == members.size() && !done.compareAndSet(false, true)) {
+                        callback.onComplete(results);
+                    }
+                }
+            });
+        }
     }
 
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
+        submitToMembers(task, client.getCluster().getMembers(), callback);
     }
 
     public Object getId() {
@@ -209,7 +242,12 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        return null;
+        List<Future<T>> list = new ArrayList<Future<T>>(tasks.size());
+        for (Callable<T> task : tasks) {
+            Future<T> future = submit(task);
+            list.add(future);
+        }
+        return list;
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {

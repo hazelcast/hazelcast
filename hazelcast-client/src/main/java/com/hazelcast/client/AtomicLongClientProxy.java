@@ -73,7 +73,7 @@ public class AtomicLongClientProxy implements IAtomicLong {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{AtomicLongService.SERVICE_NAME, getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{AtomicLongService.SERVICE_NAME, getName()});
     }
 
     public Object getId() {
