@@ -102,7 +102,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName));
+            return new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName), MapService.this);
         }
     };
 
@@ -133,6 +133,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return new Merger(recordMap);
     }
 
+
     public class Merger implements Runnable {
 
         Map<MapContainer, Collection<Record>> recordMap;
@@ -143,7 +144,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
         @Override
         public void run() {
-            for (MapContainer mapContainer : recordMap.keySet()) {
+            for (final MapContainer mapContainer : recordMap.keySet()) {
 
                 MapMergePolicy mergePolicy = null;
                 MapMergePolicyConfig mergePolicyConfig = mapContainer.getMapConfig().getMergePolicyConfig();
@@ -161,17 +162,24 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
                 Collection<Record> recordList = recordMap.get(mapContainer);
 
-                for (Record record : recordList) {
-                    SimpleEntryView entryView = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
-                    MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, mergePolicy);
-                    try {
-
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
-                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
-                        invocation.invoke().get();
-                    } catch (Throwable t) {
-                        ExceptionUtil.rethrow(t);
-                    }
+                // todo number of records may be high. below can be optimized a many records can be send in single invocation
+                for (final Record record : recordList) {
+                    final MapMergePolicy finalMergePolicy = mergePolicy;
+                    // todo too many submission. should submit them in subgroups
+                    nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
+                        @Override
+                        public void run() {
+                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
+                            MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
+                            try {
+                                int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
+                                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
+                                invocation.invoke().get();
+                            } catch (Throwable t) {
+                                ExceptionUtil.rethrow(t);
+                            }
+                        }
+                    });
                 }
             }
         }

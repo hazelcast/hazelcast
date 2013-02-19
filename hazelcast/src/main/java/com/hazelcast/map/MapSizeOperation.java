@@ -16,8 +16,11 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+
+import java.util.concurrent.ConcurrentMap;
 
 public class MapSizeOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 

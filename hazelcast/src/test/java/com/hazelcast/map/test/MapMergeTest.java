@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.merge;
+package com.hazelcast.map.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -24,7 +24,7 @@ import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import java.util.Map;
 import java.util.Set;
 
-public class MergeTest {
+public class MapMergeTest {
 
     public static void main(String[] args) throws InterruptedException {
         Config cfg1 = new Config();

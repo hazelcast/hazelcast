@@ -46,7 +46,7 @@ public abstract class BaseTest {
 
     @BeforeClass
     public static void init() throws Exception {
-//        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
+        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
         startInstances();
     }
 
