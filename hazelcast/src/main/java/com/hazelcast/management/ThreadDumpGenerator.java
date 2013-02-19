@@ -27,11 +27,11 @@ public class ThreadDumpGenerator {
 
     protected static final ILogger logger = Logger.getLogger(ThreadDumpGenerator.class.getName());
 
-    public static ThreadDumpGenerator newInstance() throws Exception {
+    public static ThreadDumpGenerator newInstance() {
         return newInstance(ManagementFactory.getThreadMXBean());
     }
 
-    public static ThreadDumpGenerator newInstance(ThreadMXBean bean) throws Exception {
+    public static ThreadDumpGenerator newInstance(ThreadMXBean bean) {
         return new ThreadDumpGenerator(bean);
     }
 

@@ -60,7 +60,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         try {
             return (Boolean) nodeEngine.toObject(inv.invoke().get());
         } catch (ExecutionException e) {
-            return (Boolean) ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -71,7 +71,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         try {
             inv.invoke().get();
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -82,7 +82,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         try {
             return (Integer) nodeEngine.toObject(inv.invoke().get());
         } catch (Exception e) {
-            return (Integer) ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -93,7 +93,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         try {
             return (Boolean) nodeEngine.toObject(inv.invoke().get());
         } catch (Exception e) {
-            return (Boolean) ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 

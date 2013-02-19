@@ -100,9 +100,38 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 3, 1, TimeUnit.SECONDS);
     }
 
+    public void reset() {
+        final PartitionContainer[] containers = partitionContainers;
+        for (PartitionContainer container : containers) {
+            if (container != null) {
+                container.clear();
+            }
+        }
+        for (NearCache nearCache : nearCacheMap.values()) {
+            nearCache.clear();
+        }
+    }
+
+    public void shutdown() {
+        final PartitionContainer[] containers = partitionContainers;
+        for (int i = 0; i < containers.length; i++) {
+            PartitionContainer container = containers[i];
+            if (container != null) {
+                container.clear();
+            }
+            containers[i] = null;
+        }
+        for (NearCache nearCache : nearCacheMap.values()) {
+            nearCache.clear();
+        }
+        nearCacheMap.clear();
+        mapContainers.clear();
+        eventRegistrations.clear();
+    }
+
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName));
+            return new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName), MapService.this);
         }
     };
 
@@ -143,7 +172,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
         @Override
         public void run() {
-            for (MapContainer mapContainer : recordMap.keySet()) {
+            for (final MapContainer mapContainer : recordMap.keySet()) {
 
                 MapMergePolicy mergePolicy = null;
                 MapMergePolicyConfig mergePolicyConfig = mapContainer.getMapConfig().getMergePolicyConfig();
@@ -161,17 +190,24 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
                 Collection<Record> recordList = recordMap.get(mapContainer);
 
-                for (Record record : recordList) {
-                    SimpleEntryView entryView = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
-                    MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, mergePolicy);
-                    try {
-
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
-                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
-                        invocation.invoke().get();
-                    } catch (Throwable t) {
-                        ExceptionUtil.rethrow(t);
-                    }
+                // todo number of records may be high. below can be optimized a many records can be send in single invocation
+                for (final Record record : recordList) {
+                    final MapMergePolicy finalMergePolicy = mergePolicy;
+                    // todo too many submission. should submit them in subgroups
+                    nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
+                        @Override
+                        public void run() {
+                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
+                            MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
+                            try {
+                                int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
+                                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
+                                invocation.invoke().get();
+                            } catch (Throwable t) {
+                                ExceptionUtil.rethrow(t);
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -332,7 +368,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     final MapContainer mapContainer = getMapContainer(mapPartition.name);
                     final MapConfig mapConfig = mapContainer.getMapConfig();
                     if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
-                        mapPartition.destroy();
+                        mapPartition.clear();
                     }
                 }
             }
@@ -381,7 +417,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
         for (PartitionRecordStore mapPartition : container.maps.values()) {
-            mapPartition.destroy();
+            mapPartition.clear();
         }
         container.maps.clear();
         container.transactions.clear(); // TODO: not sure?
@@ -536,23 +572,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         // * do not know ?
     }
 
-    public void shutdown() {
-        final PartitionContainer[] containers = partitionContainers;
-        for (int i = 0; i < containers.length; i++) {
-            PartitionContainer container = containers[i];
-            if (container != null) {
-                container.destroy();
-            }
-            containers[i] = null;
-        }
-        for (NearCache nearCache : nearCacheMap.values()) {
-            nearCache.destroy();
-        }
-        nearCacheMap.clear();
-        mapContainers.clear();
-        eventRegistrations.clear();
-    }
-
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.MGET, new MapGetHandler(this));
@@ -586,7 +605,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     @Override
-    public void onClientDisconnect(String clientUuid) {
+    public void clientDisconnected(String clientUuid) {
         // TODO: @mm - release locks owned by this client.
     }
 

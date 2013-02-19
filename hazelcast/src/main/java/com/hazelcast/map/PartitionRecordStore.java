@@ -67,7 +67,7 @@ public class PartitionRecordStore implements RecordStore {
         return records;
     }
 
-    void destroy() {
+    void clear() {
         final SharedLockService lockService = mapService.getNodeEngine()
                 .getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
         if (lockService != null) {

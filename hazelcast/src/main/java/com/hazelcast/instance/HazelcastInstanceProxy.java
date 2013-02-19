@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @mdogan 1/31/13
@@ -131,8 +132,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         getOriginal().registerSerializer(serializer, type);
     }
 
-    public void registerFallbackSerializer(TypeSerializer serializer) {
-        getOriginal().registerFallbackSerializer(serializer);
+    public void registerGlobalSerializer(TypeSerializer serializer) {
+        getOriginal().registerGlobalSerializer(serializer);
     }
 
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
@@ -141,6 +142,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         getOriginal().removeDistributedObjectListener(distributedObjectListener);
+    }
+
+    public ConcurrentMap<String, Object> getUserContext() {
+        return getOriginal().getUserContext();
     }
 
     private HazelcastInstanceImpl getOriginal() {

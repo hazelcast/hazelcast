@@ -234,7 +234,7 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        return submit(new RunnableAdapter<T>(task, result));
+        return submit(new RunnableAdapter<T>(task));
     }
 
     public Future<?> submit(Runnable task) {

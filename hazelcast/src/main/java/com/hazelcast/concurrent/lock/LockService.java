@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.Map;
 import java.util.Properties;
@@ -47,6 +46,14 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
+    }
+
+    public void reset() {
+        for (LockStoreContainer container : containers) {
+            for (LockStore lockStore : container.getLockStores()) {
+                lockStore.clear();
+            }
+        }
     }
 
     public void shutdown() {
@@ -83,21 +90,21 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         releaseLocksOf(uuid);
     }
 
-    private void releaseLocksOf(String uuid) {
+    private void releaseLocksOf(final String uuid) {
         for (LockStoreContainer container : containers) {
             for (LockStore lockStore : container.getLockStores()) {
                 Map<Data, LockInfo> locks = lockStore.getLocks();
                 for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
                     final LockInfo lock = entry.getValue();
-                    if (lock.getOwner().equals(uuid)) {
-                        UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
-                        op.setNodeEngine(nodeEngine);
-                        op.setServiceName(SERVICE_NAME);
-                        op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                        op.setPartitionId(container.getPartitionId());
-                        nodeEngine.getOperationService().runOperation(op);
-                    }
+//                    if (uuid.equals(lock.getOwner())) {
+//                        UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
+//                        op.setNodeEngine(nodeEngine);
+//                        op.setServiceName(SERVICE_NAME);
+//                        op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+//                        op.setPartitionId(container.getPartitionId());
+//                        nodeEngine.getOperationService().runOperation(op);
+//                    }
                 }
             }
         }
@@ -166,7 +173,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return null;
     }
 
-    public void onClientDisconnect(String clientUuid) {
+    public void clientDisconnected(String clientUuid) {
         releaseLocksOf(clientUuid);
     }
 }

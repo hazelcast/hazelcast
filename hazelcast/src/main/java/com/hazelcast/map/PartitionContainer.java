@@ -103,12 +103,12 @@ public class PartitionContainer {
     void destroyMap(String name) {
         PartitionRecordStore recordStore = maps.remove(name);
         if (recordStore != null)
-            recordStore.destroy();
+            recordStore.clear();
     }
 
-    void destroy() {
+    void clear() {
         for (PartitionRecordStore store : maps.values()) {
-            store.destroy();
+            store.clear();
         }
         maps.clear();
         transactions.clear();

@@ -34,7 +34,6 @@
                 <xs:element ref="multimap" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="semaphore" minOccurs="0" maxOccurs="unbounded"/>
-                <!--<xs:element ref="merge-policies" minOccurs="0" maxOccurs="1"/>-->
                 <xs:element ref="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="services" minOccurs="0" maxOccurs="1"/>
@@ -391,31 +390,6 @@
             <xs:restriction base="xs:string" />
         </xs:simpleType>
     </xs:element>
-    <!--<xs:element name="merge-policies">-->
-        <!--<xs:annotation>-->
-            <!--<xs:documentation>-->
-                <!--Can be used to custom map merge policy implementations.-->
-            <!--</xs:documentation>-->
-        <!--</xs:annotation>-->
-        <!--<xs:complexType>-->
-            <!--<xs:sequence>-->
-                <!--<xs:element ref="map-merge-policy" minOccurs="0" maxOccurs="unbounded"/>-->
-            <!--</xs:sequence>-->
-        <!--</xs:complexType>-->
-    <!--</xs:element>-->
-    <!--<xs:element name="map-merge-policy">-->
-        <!--<xs:annotation>-->
-            <!--<xs:documentation>-->
-                <!--Custom defined merge policy.-->
-            <!--</xs:documentation>-->
-        <!--</xs:annotation>-->
-        <!--<xs:complexType>-->
-            <!--<xs:sequence>-->
-                <!--<xs:element ref="class-name" minOccurs="1" maxOccurs="1"/>-->
-            <!--</xs:sequence>-->
-            <!--<xs:attribute name="name" type="xs:string" use="required"/>-->
-        <!--</xs:complexType>-->
-    <!--</xs:element>-->
     <xs:element name="class-name">
         <xs:annotation>
             <xs:documentation>
@@ -449,6 +423,18 @@
         </xs:annotation>
         <xs:simpleType>
             <xs:restriction base="xs:short">
+                <xs:minInclusive value="0"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="queue-capacity" default="0">
+        <xs:annotation>
+            <xs:documentation>
+                Executor's task queue capacity. 0 means Integer.MAX_VALUE.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
                 <xs:minInclusive value="0"/>
             </xs:restriction>
         </xs:simpleType>
@@ -590,9 +576,8 @@
     <xs:element name="executor-service">
         <xs:complexType>
             <xs:sequence>
-                <!--<xs:element ref="core-pool-size"/>-->
                 <xs:element ref="pool-size"/>
-                <!--<xs:element ref="keep-alive-seconds"/>-->
+                <xs:element ref="queue-capacity"/>
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
                 <xs:simpleType>

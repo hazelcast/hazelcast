@@ -129,7 +129,7 @@ public class Node {
         try {
             ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         serializationService = ss;
         systemLogService = new SystemLogService(this);
@@ -137,7 +137,7 @@ public class Node {
         try {
             addressPicker.pickAddress();
         } catch (Throwable e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
@@ -153,7 +153,7 @@ public class Node {
                 serverSocketChannel.close();
             } catch (Throwable ignored) {
             }
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeEngine = new NodeEngineImpl(this);

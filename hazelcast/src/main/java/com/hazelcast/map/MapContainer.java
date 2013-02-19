@@ -19,21 +19,31 @@ package com.hazelcast.map;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.MapOperationsCounter;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
 
 public class MapContainer {
 
     private final String name;
     private final MapConfig mapConfig;
+    private final MapService mapService;
     private final MapStore store;
     // TODO: do we really need to store interceptors in 3 separate collections?
     // TODO: at first phase you can remove the ability to removeInterceptor
@@ -45,22 +55,37 @@ public class MapContainer {
     private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
     private final long creationTime;
 
-    public MapContainer(String name, MapConfig mapConfig) {
+    public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
+        MapStore storeTemp = null;
         this.name = name;
         this.mapConfig = mapConfig;
+        this.mapService = mapService;
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        if (mapStoreConfig != null && mapStoreConfig.getClassName() != null) {
-            MapStore tmp;
+
+        if (mapStoreConfig != null) {
             try {
-                tmp = (MapStore) ClassLoaderUtil.newInstance(mapStoreConfig.getClassName());
+                MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
+                if (factory == null) {
+                    String factoryClassName = mapStoreConfig.getFactoryClassName();
+                    if (factoryClassName != null && !"".equals(factoryClassName)) {
+                        factory = (MapStoreFactory) ClassLoaderUtil.newInstance(factoryClassName);
+                    }
+                }
+                storeTemp = (MapStore) (factory == null ? mapStoreConfig.getImplementation() :
+                        factory.newMapStore(name, mapStoreConfig.getProperties()));
+                if (storeTemp == null) {
+                    String mapStoreClassName = mapStoreConfig.getClassName();
+                    storeTemp = ClassLoaderUtil.newInstance(mapStoreClassName);
+                }
             } catch (Exception e) {
-                tmp = null;
-                e.printStackTrace();
+                ExceptionUtil.rethrow(e);
+                storeTemp = null;
             }
-            store = tmp;
         }
-        else {
-            store = null;
+
+        store = storeTemp;
+        if (store != null) {
+            loadMapFromStore();
         }
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
@@ -68,6 +93,60 @@ public class MapContainer {
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
         creationTime = Clock.currentTimeMillis();
     }
+
+    private void loadMapFromStore() {
+        NodeEngine nodeEngine = mapService.getNodeEngine();
+        int chunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
+        Set keys = store.loadAllKeys();
+        if (keys == null || keys.isEmpty())
+            return;
+        Map<Data, Object> chunk = new HashMap<Data, Object>();
+        for (Object key : keys) {
+            Data dataKey = mapService.toData(key);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
+            if (nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
+                chunk.put(dataKey, key);
+                if (chunk.size() >= chunkSize) {
+                    nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(chunk));
+                    chunk = new HashMap<Data, Object>();
+                }
+            }
+        }
+        if (chunk.size() > 0) {
+            try {
+                nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(chunk));
+            } catch (Throwable t) {
+                ExceptionUtil.rethrow(t);
+            }
+        }
+    }
+
+    private class MapLoadAllTask implements Runnable {
+        private Map<Data, Object> keys;
+
+        private MapLoadAllTask(Map<Data, Object> keys) {
+            this.keys = keys;
+        }
+
+        @Override
+        public void run() {
+            NodeEngine nodeEngine = mapService.getNodeEngine();
+            Map values = store.loadAll(keys.values());
+            for (Data dataKey : keys.keySet()) {
+                Object key = keys.get(dataKey);
+                Data dataValue = mapService.toData(values.get(key));
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
+                PutTransientOperation operation = new PutTransientOperation(name, dataKey, dataValue, null, -1);
+                try {
+                    Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(mapService.getServiceName(), operation, partitionId).build();
+                    invocation.invoke().get();
+                } catch (Throwable t) {
+                    ExceptionUtil.rethrow(t);
+                }
+            }
+        }
+    }
+
 
     public IndexService getIndexService() {
         return indexService;

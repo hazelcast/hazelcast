@@ -17,6 +17,7 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.InvocationAction;
 
 import java.util.concurrent.Callable;
@@ -24,7 +25,7 @@ import java.util.concurrent.Callable;
 /**
  * @mdogan 1/18/13
  */
-public class MemberCallableTaskOperation<V> extends CallableTaskOperation<V> {
+public class MemberCallableTaskOperation<V> extends CallableTaskOperation<V> implements IdentifiedDataSerializable {
 
 
     public MemberCallableTaskOperation() {
@@ -40,5 +41,9 @@ public class MemberCallableTaskOperation<V> extends CallableTaskOperation<V> {
             return InvocationAction.THROW_EXCEPTION;
         }
         return super.onException(throwable);
+    }
+
+    public int getId() {
+        return DataSerializerExecutorHook.MEMBER_CALLABLE_TASK;
     }
 }

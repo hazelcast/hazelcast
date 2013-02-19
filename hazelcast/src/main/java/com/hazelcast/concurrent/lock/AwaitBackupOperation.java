@@ -14,53 +14,49 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.MembershipAwareService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.Collection;
 
-/**
- * @mdogan 2/11/13
- */
-public class ClientDisconnectionOperation extends AbstractOperation {
+public class AwaitBackupOperation extends BaseLockOperation implements BackupOperation {
 
-    private String clientUuid;
+    private String originalCaller;
+    private String conditionId;
 
-    public ClientDisconnectionOperation() {
+    public AwaitBackupOperation() {
     }
 
-    public ClientDisconnectionOperation(String clientUuid) {
-        this.clientUuid = clientUuid;
+    public AwaitBackupOperation(ILockNamespace namespace, Data key, int threadId,
+                                String conditionId, String originalCaller) {
+        super(namespace, key, threadId);
+        this.conditionId = conditionId;
+        this.originalCaller = originalCaller;
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final Collection<MembershipAwareService> services = nodeEngine.getServices(MembershipAwareService.class);
-        for (MembershipAwareService service : services) {
-            service.clientDisconnected(clientUuid);
-        }
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
+        final LockStore lockStore = getLockStore();
+        lockStore.lock(key, originalCaller, threadId);
+        lockStore.removeSignalKey(new ConditionKey(key, conditionId));
+        lockStore.removeAwait(key, conditionId, originalCaller, threadId);
+        response = true;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(clientUuid);
+        out.writeUTF(originalCaller);
+        out.writeUTF(conditionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        clientUuid = in.readUTF();
+        originalCaller = in.readUTF();
+        conditionId = in.readUTF();
     }
 }

@@ -20,12 +20,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class RunnableAdapter<V> implements DataSerializable, Callable<V>, HazelcastInstanceAware {
+public class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>, HazelcastInstanceAware {
 
     private Runnable task;
 
@@ -82,5 +82,9 @@ public class RunnableAdapter<V> implements DataSerializable, Callable<V>, Hazelc
         sb.append("{task=").append(task);
         sb.append('}');
         return sb.toString();
+    }
+
+    public int getId() {
+        return DataSerializerExecutorHook.RUNNABLE_ADAPTER;
     }
 }
