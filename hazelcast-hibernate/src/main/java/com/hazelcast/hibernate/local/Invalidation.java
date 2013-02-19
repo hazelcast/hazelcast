@@ -16,7 +16,6 @@
 
 package com.hazelcast.hibernate.local;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -48,13 +47,13 @@ public class Invalidation implements DataSerializable {
     }
 
     public void writeData(final ObjectDataOutput out) throws IOException {
-        IOUtil.writeNullableObject(out, key);
-        IOUtil.writeNullableObject(out, version);
+        out.writeObject(key);
+        out.writeObject(version);
     }
 
     public void readData(final ObjectDataInput in) throws IOException {
-        key = IOUtil.readNullableObject(in);
-        version = IOUtil.readNullableObject(in);
+        key = in.readObject();
+        version = in.readObject();
     }
 
     @Override

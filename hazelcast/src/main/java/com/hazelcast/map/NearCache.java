@@ -136,7 +136,7 @@ public class NearCache {
         cache.remove(key);
     }
 
-    void destroy() {
+    void clear() {
         cache.clear();
     }
 

@@ -47,7 +47,7 @@ public final class LockProxySupport {
             Future future = invocation.invoke();
             return (Boolean) future.get();
         } catch (Throwable t) {
-            return (Boolean) ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -60,7 +60,7 @@ public final class LockProxySupport {
             Future future = invocation.invoke();
             future.get();
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -78,7 +78,7 @@ public final class LockProxySupport {
             Future future = invocation.invoke();
             return (Boolean) future.get();
         } catch (Throwable t) {
-            return (Boolean) ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -95,7 +95,7 @@ public final class LockProxySupport {
             Future future = invocation.invoke();
             future.get();
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -108,7 +108,7 @@ public final class LockProxySupport {
             Future future = invocation.invoke();
             future.get();
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -510,12 +509,12 @@ public final class Predicates {
 
         public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
-            IOUtil.writeNullableObject(out, value);
+            out.writeObject(value);
         }
 
         public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
-            value = IOUtil.readNullableObject(in);
+            value = in.readObject();
         }
 
         @Override

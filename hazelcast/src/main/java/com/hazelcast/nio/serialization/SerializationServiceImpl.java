@@ -182,7 +182,7 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public Object toObject(final Data data) {
-        if ((data == null) || (data.buffer == null) || (data.buffer.length == 0)) {
+        if (data == null || data.bufferSize() == 0) {
             return null;
         }
         ContextAwareDataInput in = null;
@@ -213,10 +213,12 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public void writeObject(final ObjectDataOutput out, final Object obj) {
-        if (obj == null) {
-            throw new NullPointerException("Object is required!");
-        }
+        final boolean isNull = obj == null;
         try {
+            out.writeBoolean(isNull);
+            if (isNull) {
+                return;
+            }
             final TypeSerializer serializer = serializerFor(obj.getClass());
             if (serializer == null) {
                 if (active) {
@@ -233,6 +235,10 @@ public final class SerializationServiceImpl implements SerializationService {
 
     public Object readObject(final ObjectDataInput in) {
         try {
+            final boolean isNull = in.readBoolean();
+            if (isNull) {
+                return null;
+            }
             final int typeId = in.readInt();
             final TypeSerializer serializer = serializerFor(typeId);
             if (serializer == null) {
@@ -295,10 +301,6 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public void registerFallback(final TypeSerializer serializer) {
-        if (serializer.getTypeId() <= 0) {
-            throw new IllegalArgumentException("Type id must be positive! Current: "
-                    + serializer.getTypeId() + ", Serializer: " + serializer);
-        }
         if (!fallback.compareAndSet(null, serializer)) {
             throw new IllegalStateException("Fallback serializer is already registered!");
         }
@@ -427,7 +429,11 @@ public final class SerializationServiceImpl implements SerializationService {
         }
 
         public Portable createPortable(int classId) {
-            return portableFactory.create(classId);
+            final Portable portable = portableFactory.create(classId);
+            if (portable == null) {
+                throw new HazelcastSerializationException("Could not create Portable for class-id: " + classId);
+            }
+            return portable;
         }
 
         public ClassDefinitionImpl createClassDefinition(final byte[] compressedBinary) throws IOException {

@@ -14,27 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.concurrent.lock;
 
-public interface EntryView<K,V> {
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
 
-    K getKey();
+/**
+ * @mdogan 2/13/13
+ */
+public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
 
-    V getValue();
+    public SignalBackupOperation() {
+    }
 
-    long getCost();
-
-    long getCreationTime();
-
-    long getExpirationTime();
-
-    long getHits();
-
-    long getLastAccessTime();
-
-    long getLastStoredTime();
-
-    long getLastUpdateTime();
-
-    long getVersion();
+    public SignalBackupOperation(ILockNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
+        super(namespace, key, threadId, conditionId, all);
+    }
 }

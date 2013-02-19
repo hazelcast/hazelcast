@@ -68,8 +68,7 @@ final class OperationServiceImpl implements OperationService {
         final int coreSize = Runtime.getRuntime().availableProcessors();
         final String poolNamePrefix = node.getThreadPoolNamePrefix("operation");
         executor = new FastExecutor(coreSize, poolNamePrefix,
-                new PoolExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        poolNamePrefix, node.getConfig().getClassLoader()));
+                new PoolExecutorThreadFactory(node.threadGroup, poolNamePrefix, node.getConfig().getClassLoader()));
 
         ownerLocks = new Lock[100000];
         for (int i = 0; i < ownerLocks.length; i++) {
@@ -292,6 +291,7 @@ final class OperationServiceImpl implements OperationService {
                                 backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
                                 backupResponse = backupOp;
                             } else {
+                                // TODO: what if cluster size falls down below backup count! Handle exception!
                                 final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
                                         .setReplicaIndex(replicaIndex).setTryCount(20).build().invoke();
                                 if (returnsResponse) {
@@ -351,7 +351,8 @@ final class OperationServiceImpl implements OperationService {
             final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
             logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
         } else {
-            logger.log(Level.SEVERE, "While executing op: " + op + " -> " + e.getMessage(), e);
+            final Level level = nodeEngine.isActive() ? Level.SEVERE: Level.FINEST;
+            logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
         sendResponse(op, e);
     }
@@ -524,6 +525,7 @@ final class OperationServiceImpl implements OperationService {
         return mapCalls.remove(id);
     }
 
+    // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
     @PrivateApi
     void notifyCall(long callId, Object response) {
         Call call = deregisterRemoteCall(callId);
@@ -544,13 +546,13 @@ final class OperationServiceImpl implements OperationService {
         return executingCalls.contains(new CallKey(caller, operationCallId));
     }
 
-    void onMemberDisconnect(Address disconnectedAddress) {
-        for (Call call : mapCalls.values()) {
-            call.onDisconnect(disconnectedAddress);
-        }
-    }
+//    void onMemberDisconnect(Address disconnectedAddress) {
+//        for (Call call : mapCalls.values()) {
+//            call.onDisconnect(disconnectedAddress);
+//        }
+//    }
 
-    void onMemberLeft(MemberImpl member) {
+    void onMemberLeft(final MemberImpl member) {
         for (Call call : mapCalls.values()) {
             call.onMemberLeft(member);
         }

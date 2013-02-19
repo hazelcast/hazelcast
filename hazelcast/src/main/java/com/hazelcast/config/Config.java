@@ -598,15 +598,6 @@ public class Config implements DataSerializable {
                 executorConfig.writeData(out);
             }
         }
-        if (hasQueueConfigs) {
-            out.writeInt(queueConfigs.size());
-            for (final Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final QueueConfig queueConfig = entry.getValue();
-                queueConfig.setName(name);
-                queueConfig.writeData(out);
-            }
-        }
         if (hasTopicConfigs) {
             out.writeInt(topicConfigs.size());
             for (final Entry<String, TopicConfig> entry : topicConfigs.entrySet()) {
@@ -614,6 +605,15 @@ public class Config implements DataSerializable {
                 final TopicConfig topicConfig = entry.getValue();
                 topicConfig.setName(name);
                 topicConfig.writeData(out);
+            }
+        }
+        if (hasQueueConfigs) {
+            out.writeInt(queueConfigs.size());
+            for (final Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
+                final String name = entry.getKey();
+                final QueueConfig queueConfig = entry.getValue();
+                queueConfig.setName(name);
+                queueConfig.writeData(out);
             }
         }
         if (hasProperties) {

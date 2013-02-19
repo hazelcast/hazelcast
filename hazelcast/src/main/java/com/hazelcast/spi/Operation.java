@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -47,10 +48,13 @@ public abstract class Operation implements DataSerializable {
     private transient ResponseHandler responseHandler;
     private transient long startTime;
 
+    // runs before wait-support
     public abstract void beforeRun() throws Exception;
 
+    // runs after wait-support, supposed to do actual operation
     public abstract void run() throws Exception;
 
+    // runs after backups, before wait-notify
     public abstract void afterRun() throws Exception;
 
     public abstract boolean returnsResponse();
@@ -122,7 +126,11 @@ public abstract class Operation implements DataSerializable {
             final String name = serviceName != null ? serviceName : getServiceName();
             service = ((NodeEngineImpl) nodeEngine).getService(name);
             if (service == null) {
-                throw new HazelcastException("Service with name '" + name + "' not found!");
+                if (nodeEngine.isActive()) {
+                    throw new HazelcastException("Service with name '" + name + "' not found!");
+                } else {
+                    throw new HazelcastInstanceNotActiveException();
+                }
             }
         }
         return (T) service;

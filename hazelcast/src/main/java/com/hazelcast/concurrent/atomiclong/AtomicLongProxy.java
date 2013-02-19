@@ -49,7 +49,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
-            return (Long) ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -61,7 +61,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
             Future f = inv.invoke();
             return (Boolean) f.get();
         } catch (Throwable throwable) {
-            return (Boolean) ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -89,7 +89,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
-            return (Long) ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -101,7 +101,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
             Future f = inv.invoke();
             return (Long) f.get();
         } catch (Throwable throwable) {
-            return (Long) ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -112,7 +112,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
             inv.invoke();
         } catch (Throwable throwable) {
-            ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 

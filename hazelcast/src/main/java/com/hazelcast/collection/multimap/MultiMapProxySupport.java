@@ -64,7 +64,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             PutOperation operation = new PutOperation(proxyId, dataKey, getThreadId(), dataValue, index);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -73,7 +73,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             GetAllOperation operation = new GetAllOperation(proxyId, dataKey);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -82,7 +82,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             RemoveOperation operation = new RemoveOperation(proxyId, dataKey, getThreadId(), dataValue);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -91,7 +91,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             RemoveAllOperation operation = new RemoveAllOperation(proxyId, dataKey, getThreadId());
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -114,7 +114,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             }
             return keySet;
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -125,7 +125,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
             return results;
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -137,7 +137,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
             return results;
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -157,7 +157,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             }
             return false;
         } catch (Throwable throwable) {
-            return (Boolean) ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -176,7 +176,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             }
             return size;
         } catch (Throwable throwable) {
-            return (Integer) ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -186,7 +186,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             ClearOperation operation = new ClearOperation(proxyId);
             nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
         } catch (Throwable throwable) {
-            ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -195,7 +195,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             CountOperation operation = new CountOperation(proxyId, dataKey);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -204,7 +204,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             GetOperation operation = new GetOperation(proxyId, dataKey, index);
             return invokeData(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -213,7 +213,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             ContainsOperation operation = new ContainsOperation(proxyId, dataKey, dataValue);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -222,7 +222,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             ContainsAllOperation operation = new ContainsAllOperation(proxyId, dataKey, dataSet);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -231,7 +231,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             SetOperation operation = new SetOperation(proxyId, dataKey, getThreadId(), index, dataValue);
             return invokeData(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -240,7 +240,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             RemoveIndexOperation operation = new RemoveIndexOperation(proxyId, dataKey, getThreadId(), index);
             return invokeData(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -249,7 +249,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             IndexOfOperation operation = new IndexOfOperation(proxyId, dataKey, value, last);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -258,7 +258,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             AddAllOperation operation = new AddAllOperation(proxyId, dataKey, getThreadId(), dataList, index);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -267,7 +267,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             CompareAndRemoveOperation operation = new CompareAndRemoveOperation(proxyId, dataKey, getThreadId(), dataList, retain);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -291,7 +291,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -303,7 +303,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Future f = inv.invoke();
             return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 

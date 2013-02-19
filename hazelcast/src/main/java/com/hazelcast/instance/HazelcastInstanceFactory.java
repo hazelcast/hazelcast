@@ -122,7 +122,7 @@ public class HazelcastInstanceFactory {
             }
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
         return proxy;
     }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
-
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -26,15 +26,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class PoolExecutorThreadFactory extends ExecutorThreadFactory {
 
     private final String threadNamePrefix;
-    private final AtomicInteger id = new AtomicInteger(0);
+    private final AtomicInteger idGen = new AtomicInteger(0);
+    private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000); // to reuse previous thread IDs
 
-    public PoolExecutorThreadFactory(ThreadGroup threadGroup, HazelcastInstanceImpl hazelcastInstance,
-                                     String threadNamePrefix, ClassLoader classLoader) {
-        super(threadGroup, hazelcastInstance, classLoader);
+    public PoolExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
+        super(threadGroup, classLoader);
         this.threadNamePrefix = threadNamePrefix;
     }
 
     protected String newThreadName() {
-        return threadNamePrefix + id.incrementAndGet();
+        throw new UnsupportedOperationException();
+    }
+
+    protected Thread createThread(Runnable r) {
+        Integer id = idQ.poll();
+        if (id == null) {
+            id = idGen.incrementAndGet();
+        }
+        String name = threadNamePrefix + id;
+        return new ManagedThread(r, name, id);
+    }
+
+    protected void afterThreadExit(ManagedThread t) {
+        super.afterThreadExit(t);
+        idQ.offer(t.id);
     }
 }
