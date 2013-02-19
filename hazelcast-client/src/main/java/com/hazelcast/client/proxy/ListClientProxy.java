@@ -23,6 +23,7 @@ import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
@@ -42,24 +43,24 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     @Override
     public boolean add(E o) {
         check(o);
-        return proxyHelper.doCommandAsBoolean(null, Command.LADD, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.LADD, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public boolean remove(Object o) {
         check(o);
-        return proxyHelper.doCommandAsBoolean(null, Command.LREMOVE, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.LREMOVE, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public int size() {
-        return proxyHelper.doCommandAsInt(null, Command.LSIZE, new String[]{getName()});
+        return proxyHelper.doCommandAsInt(Command.LSIZE, new String[]{getName()});
     }
 
     @Override
     public boolean contains(Object o) {
         check(o);
-        return proxyHelper.doCommandAsBoolean(null, Command.LCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.LCONTAINS, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
@@ -73,7 +74,7 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
 
     @Override
     protected List<E> getTheCollection() {
-        return proxyHelper.doCommandAsList(null, Command.LGETALL, new String[]{getName()});
+        return proxyHelper.doCommandAsList(Command.LGETALL, new String[]{getName()});
     }
 
     public String getName() {
@@ -81,12 +82,12 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{ObjectListProxy.COLLECTION_LIST_NAME, getName()}, null);
+        proxyHelper.doCommand(Command.DESTROY, new String[]{ObjectListProxy.COLLECTION_LIST_NAME, getName()});
     }
 
     public void add(int index, E element) {
         String[] args = new String[]{getName(), String.valueOf(index)};
-        proxyHelper.doCommand(null, Command.LADD, args, proxyHelper.toData(element));
+        proxyHelper.doCommand(Command.LADD, args, proxyHelper.toData(element));
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
@@ -95,21 +96,21 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
         for(E e: c){
             list.add(proxyHelper.toData(e));
         }
-        return proxyHelper.doCommandAsBoolean(null, Command.LCONTAINS, args, list.toArray(new Data[]{}));
+        return proxyHelper.doCommandAsBoolean(Command.LCONTAINS, args, list.toArray(new Data[]{}));
     }
 
     public E get(int index) {
-        return (E)proxyHelper.doCommandAsObject(null, Command.LGET, new String[]{getName(), String.valueOf(index)});
+        return (E)proxyHelper.doCommandAsObject(Command.LGET, new String[]{getName(), String.valueOf(index)});
     }
 
     public int indexOf(Object o) {
         check(o);
-        return proxyHelper.doCommandAsInt(null, Command.LINDEXOF, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsInt(Command.LINDEXOF, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     public int lastIndexOf(Object o) {
         check(o);
-        return proxyHelper.doCommandAsInt(null, Command.LLASTINDEXOF, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsInt(Command.LLASTINDEXOF, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     public ListIterator<E> listIterator() {
@@ -121,12 +122,12 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
     }
 
     public E remove(int index) {
-        return (E) proxyHelper.doCommandAsObject(null, Command.LREMOVE, new String[]{getName(), String.valueOf(index)});
+        return (E) proxyHelper.doCommandAsObject(Command.LREMOVE, new String[]{getName(), String.valueOf(index)});
     }
 
     public E set(int index, E element) {
         String[] args = new String[]{getName(), String.valueOf(index)};
-        return (E) proxyHelper.doCommandAsObject(null, Command.LSET, args, proxyHelper.toData(element));
+        return (E) proxyHelper.doCommandAsObject(Command.LSET, args, proxyHelper.toData(element));
     }
 
     public List<E> subList(int fromIndex, int toIndex) {

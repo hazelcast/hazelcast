@@ -22,6 +22,7 @@ import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.QueueItemIterator;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -53,7 +54,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
     }
 
     public void destroy() {
-        proxyHelper.doCommand(null, Command.DESTROY, new String[]{QueueService.SERVICE_NAME, getName()});
+        proxyHelper.doCommand(Command.DESTROY, new String[]{QueueService.SERVICE_NAME, getName()});
     }
 
     public Object getId() {
@@ -78,16 +79,16 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     public boolean offer(E e) {
         check(e);
-        return proxyHelper.doCommandAsBoolean(null, Command.QOFFER, new String[]{getName()},
+        return proxyHelper.doCommandAsBoolean(Command.QOFFER, new String[]{getName()},
                 proxyHelper.toData(e));
     }
 
     public E poll() {
-        return (E) proxyHelper.doCommandAsObject(null, Command.QPOLL, getName(), null);
+        return (E) proxyHelper.doCommandAsObject(Command.QPOLL, new String[]{getName()});
     }
 
     public E peek() {
-        return (E) proxyHelper.doCommandAsObject(null, Command.QPEEK, getName(), null);
+        return (E) proxyHelper.doCommandAsObject(Command.QPEEK, new String[]{getName()});
     }
 
     public boolean offer(E e, long l, TimeUnit timeUnit) throws InterruptedException {
@@ -97,28 +98,28 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         if (e == null) {
             throw new NullPointerException();
         }
-        return proxyHelper.doCommandAsBoolean(null, Command.QOFFER, new String[]{getName(),
-                String.valueOf(timeUnit.toMillis(l))}, proxyHelper.toData(e));
+        String[] args = new String[]{getName(), String.valueOf(timeUnit.toMillis(l))};
+        return proxyHelper.doCommandAsBoolean(Command.QOFFER, args, proxyHelper.toData(e));
     }
 
     public E poll(long l, TimeUnit timeUnit) throws InterruptedException {
         checkTime(l, timeUnit);
         l = (l < 0) ? 0 : l;
-        return (E) proxyHelper.doCommandAsObject(null, Command.QPOLL, new String[]{getName(),
-                String.valueOf(timeUnit.toMillis(l))}, null);
+        String[] args = new String[]{getName(), String.valueOf(timeUnit.toMillis(l))};
+        return (E) proxyHelper.doCommandAsObject(Command.QPOLL, args);
     }
 
     public E take() throws InterruptedException {
-        return (E) proxyHelper.doCommandAsObject(null, Command.QTAKE, getName(), null);
+        return (E) proxyHelper.doCommandAsObject(Command.QTAKE, new String[]{getName()});
     }
 
     public void put(E e) throws InterruptedException {
         check(e);
-        proxyHelper.doCommand(null, Command.QPUT, getName(), proxyHelper.toData(e));
+        proxyHelper.doCommand(Command.QPUT, new String[]{getName()}, proxyHelper.toData(e));
     }
 
     public int remainingCapacity() {
-        return proxyHelper.doCommandAsInt(null, Command.QREMCAPACITY, new String[]{getName()}, null);
+        return proxyHelper.doCommandAsInt(Command.QREMCAPACITY, new String[]{getName()});
     }
 
     public int drainTo(Collection<? super E> objects) {
@@ -145,7 +146,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     @Override
     public int size() {
-        return proxyHelper.doCommandAsInt(null, Command.QSIZE, new String[]{getName()}, null);
+        return proxyHelper.doCommandAsInt(Command.QSIZE, new String[]{getName()});
     }
 
     @Override
@@ -159,12 +160,12 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
 
     @Override
     public boolean remove(Object o) {
-        return proxyHelper.doCommandAsBoolean(null, Command.QREMOVE, new String[]{getName()}, proxyHelper.toData(o));
+        return proxyHelper.doCommandAsBoolean(Command.QREMOVE, new String[]{getName()}, proxyHelper.toData(o));
     }
 
     @Override
     public java.util.Iterator<E> iterator() {
-        Protocol protocol = proxyHelper.doCommand(null, Command.QENTRIES, new String[]{getName()}, null);
+        Protocol protocol = proxyHelper.doCommand(Command.QENTRIES, new String[]{getName()});
         List<E> list = new ArrayList<E>();
         if (protocol.hasBuffer()) {
             for (Data bb : protocol.buffers) {

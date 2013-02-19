@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.Router;
+import com.hazelcast.client.impl.RandomRouter;
+import com.hazelcast.client.impl.RoundRobinRouter;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.nio.SocketInterceptor;
@@ -38,6 +41,7 @@ public class ClientConfig {
     private boolean updateAutomatic = true;
     private SocketInterceptor socketInterceptor = null;
     private final Collection<EventListener> listeners = new HashSet<EventListener>();
+    private Router router = new RoundRobinRouter();
 
     public SocketInterceptor getSocketInterceptor() {
         return socketInterceptor;
@@ -167,5 +171,13 @@ public class ClientConfig {
     public ClientConfig addListener(EventListener listener) {
         listeners.add(listener);
         return this;
+    }
+
+    public Router getRouter() {
+        return router;
+    }
+
+    public void setRouter(Router router) {
+        this.router = router;
     }
 }

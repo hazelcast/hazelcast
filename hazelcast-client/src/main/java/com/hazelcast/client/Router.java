@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,23 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.hazelcast.client.util.pool;
+package com.hazelcast.client;
 
-import java.util.Collection;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 
-public abstract class ObjectPool<E> {
+public interface Router {
+    public void init(HazelcastInstance h);
 
-    abstract public E take();
-
-    abstract public void release(E e);
-
-    abstract public void add(E e);
-
-    abstract public void addAll(Collection<E> c);
-
-    public abstract int size();
+    public Member next();
 }
-
-

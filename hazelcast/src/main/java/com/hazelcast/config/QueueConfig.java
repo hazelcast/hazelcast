@@ -88,8 +88,9 @@ public final class QueueConfig implements DataSerializable {
         return queueStoreConfig;
     }
 
-    public void setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
+    public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
         this.queueStoreConfig = queueStoreConfig;
+        return this;
     }
 
     /**
@@ -134,6 +135,7 @@ public final class QueueConfig implements DataSerializable {
         out.writeInt(syncBackupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
+        //TODO store and listener configs
     }
 
     public void readData(ObjectDataInput in) throws IOException {
