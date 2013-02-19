@@ -19,23 +19,26 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.BufferObjectDataOutput;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @mdogan 12/26/12
  */
-class DefaultPortableWriter implements PortableWriter {
+public class DefaultPortableWriter implements PortableWriter {
 
-    final PortableSerializer serializer;
-    final ClassDefinition cd;
-    final BufferObjectDataOutput out;
-    final int offset;
-//    int fieldIndex = 0;
+    private final PortableSerializer serializer;
+    private final ClassDefinition cd;
+    private final BufferObjectDataOutput out;
+    private final int offset;
+    private final Set<String> writtenFields;
 
-    DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) {
+    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) {
         this.serializer = serializer;
         this.out = out;
         this.offset = out.position();
         this.cd = cd;
+        this.writtenFields = new HashSet<String>(cd.getFieldCount());
         this.out.position(offset + cd.getFieldCount() * 4);
     }
 
@@ -95,6 +98,10 @@ class DefaultPortableWriter implements PortableWriter {
         if (!NULL) {
             serializer.write(out, portable);
         }
+    }
+
+    public void writeNullPortable(String fieldName) throws IOException {
+        writePortable(fieldName, null);
     }
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {
@@ -195,9 +202,12 @@ class DefaultPortableWriter implements PortableWriter {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
                     + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
         }
-        int pos = out.position();
-        int index = fd.getIndex();
-        // index = fieldIndex++; // if class versions are the same.
-        out.writeInt(offset + index * 4, pos);
+        if (writtenFields.add(fieldName)) {
+            int pos = out.position();
+            int index = fd.getIndex();
+            out.writeInt(offset + index * 4, pos);
+        } else {
+            throw new HazelcastSerializationException("Field '" + fieldName + "' has already been written!");
+        }
     }
 }

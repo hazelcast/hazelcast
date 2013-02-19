@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -54,7 +53,7 @@ public class RemoveInterceptorOperation extends AbstractOperation {
         super.readInternal(in);
         mapName = in.readUTF();
         id = in.readUTF();
-        mapInterceptor = IOUtil.readNullableObject(in);
+        mapInterceptor = in.readObject();
     }
 
     @Override
@@ -62,7 +61,7 @@ public class RemoveInterceptorOperation extends AbstractOperation {
         super.writeInternal(out);
         out.writeUTF(mapName);
         out.writeUTF(id);
-        IOUtil.writeNullableObject(out, mapInterceptor);
+        out.writeObject(mapInterceptor);
     }
 
     @Override

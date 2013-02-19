@@ -57,6 +57,15 @@ public class QueueService implements ManagedService, MigrationAwareService,
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
+    public void reset() {
+        containerMap.clear();
+        eventRegistrations.clear();
+    }
+
+    public void shutdown() {
+        reset();
+    }
+
     public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
@@ -185,16 +194,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         return commandHandlers;
     }
 
-    @Override
-    public void onClientDisconnect(String clientUuid) {
-    }
-
     public NodeEngine getNodeEngine() {
         return nodeEngine;
-    }
-
-    public void shutdown() {
-        containerMap.clear();
-        eventRegistrations.clear();
     }
 }

@@ -55,6 +55,7 @@ abstract class InvocationImpl implements Future, Invocation {
     private volatile int invokeCount = 0;
     private volatile boolean done = false;
 
+    private boolean remote = false;
     private Callback<InvocationImpl> callback;  // TODO: @mm - do we need volatile?
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
@@ -113,7 +114,7 @@ abstract class InvocationImpl implements Future, Invocation {
             if (e instanceof RetryableException) {
                 setResult(e);
             } else {
-                ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e);
             }
         }
         return this;
@@ -138,9 +139,11 @@ abstract class InvocationImpl implements Future, Invocation {
             OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
             final OperationServiceImpl operationService = nodeEngine.operationService;
             if (thisAddress.equals(target)) {
+                remote = false;
                 ResponseHandlerFactory.setLocalResponseHandler(this);
                 operationService.runOperation(op);
             } else {
+                remote = true;
                 Call call = new Call(target, this);
                 final long callId = operationService.registerCall(call);
                 OperationAccessor.setCallId(op, callId);
@@ -156,7 +159,7 @@ abstract class InvocationImpl implements Future, Invocation {
         return nodeEngine.getNode().isActive();
     }
 
-    final void setResult(Object obj) {
+    private void setResult(Object obj) {
         if (obj == null) {
             obj = NULL_RESPONSE;
         }
@@ -222,12 +225,15 @@ abstract class InvocationImpl implements Future, Invocation {
                     timeout = decrementTimeout(timeout, tryPauseMillis);
                     // TODO: @mm - improve logging (see SystemLogService)
                     if (localInvokeCount > 5 && localInvokeCount % 10 == 0) {
-                        logger.log(Level.WARNING, "Still invoking: " + toString());
+                        logger.log(Level.WARNING, "Retrying invocation: " + toString());
                     }
                     doInvoke();
                 } else if (action == InvocationAction.CONTINUE_WAIT) {
                     // continue;
                 } else {
+                    if (remote) {
+                        ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+                    }
                     return response;
                 }
             } else if (response != null) {
@@ -277,9 +283,6 @@ abstract class InvocationImpl implements Future, Invocation {
     static Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
         if (response instanceof Throwable) {
             // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
-//            if (response instanceof RuntimeException) {
-//                throw (RuntimeException) response;
-//            }
             if (response instanceof ExecutionException) {
                 throw (ExecutionException) response;
             }

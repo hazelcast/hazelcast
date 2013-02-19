@@ -172,6 +172,11 @@ public class PortableSerializer implements TypeSerializer<Portable> {
             addNestedField(portable, nestedBuilder);
         }
 
+        public void writeNullPortable(String fieldName) throws IOException {
+            throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
+                        "registering class definition!");
+        }
+
         public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
             if (portables == null || portables.length == 0) {
                 throw new HazelcastSerializationException("Cannot write null portable array without explicitly " +

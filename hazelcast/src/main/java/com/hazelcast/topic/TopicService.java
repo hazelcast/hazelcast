@@ -46,6 +46,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         this.nodeEngine = nodeEngine;
     }
 
+    public void reset() {
+    }
+
     public void shutdown() {
     }
 
@@ -84,7 +87,4 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return map;
     }
 
-    @Override
-    public void onClientDisconnect(String clientUuid) {
-    }
 }

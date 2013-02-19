@@ -251,15 +251,16 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void onMemberLeft(MemberImpl member) {
-        operationService.onMemberLeft(member);
         waitNotifyService.onMemberLeft(member.getAddress());
+        operationService.onMemberLeft(member);
         eventService.onMemberLeft(member);
     }
 
-    @PrivateApi
-    public void onMemberDisconnect(Address disconnectedAddress) {
-        operationService.onMemberDisconnect(disconnectedAddress);
-    }
+    // @mm - I guess we dont need to take any action on disconnect.
+//    @PrivateApi
+//    public void onMemberDisconnect(Address disconnectedAddress) {
+//        operationService.onMemberDisconnect(disconnectedAddress);
+//    }
 
     @PrivateApi
     public void onPartitionMigrate(MigrationInfo migrationInfo) {

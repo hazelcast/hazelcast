@@ -62,6 +62,22 @@ public class CollectionService implements ManagedService, RemoteService, Members
         }
     }
 
+    public void reset() {
+        for (CollectionPartitionContainer container : partitionContainers) {
+            if (container != null) {
+                container.destroy();
+            }
+        }
+    }
+
+    public void shutdown() {
+        reset();
+        for (int i = 0; i < partitionContainers.length; i++) {
+            partitionContainers[i] = null;
+        }
+        eventRegistrations.clear();
+    }
+
     public CollectionContainer getOrCreateCollectionContainer(int partitionId, CollectionProxyId proxyId) {
         return partitionContainers[partitionId].getOrCreateCollectionContainer(proxyId);
     }
@@ -242,17 +258,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return max;
     }
 
-    public void shutdown() {
-        for (int i = 0; i < partitionContainers.length; i++) {
-            CollectionPartitionContainer container = partitionContainers[i];
-            if (container != null) {
-                container.destroy();
-            }
-            partitionContainers[i] = null;
-        }
-        eventRegistrations.clear();
-    }
-
     public void memberAdded(MembershipServiceEvent event) {
     }
 
@@ -309,6 +314,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return map;
     }
 
-    public void onClientDisconnect(String clientUuid) {
+    public void clientDisconnected(String clientUuid) {
     }
 }

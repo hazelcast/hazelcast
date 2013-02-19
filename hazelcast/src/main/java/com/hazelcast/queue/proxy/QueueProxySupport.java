@@ -123,7 +123,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
             Future f = inv.invoke();
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
@@ -134,7 +134,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
             Future f = inv.invoke();
             return f.get();
         } catch (Throwable throwable) {
-            return ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 

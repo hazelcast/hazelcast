@@ -136,11 +136,11 @@ class LockInfo implements DataSerializable {
         return false;
     }
 
-    boolean isAwaiting(String conditionId, String caller, int threadId) {
+    boolean startAwaiting(String conditionId, String caller, int threadId) {
         if (conditions != null) {
             final ConditionInfo condition = conditions.get(conditionId);
             if (condition != null) {
-                return condition.containsWaiter(caller, threadId);
+                return condition.startWaiter(caller, threadId);
             }
         }
         return false;

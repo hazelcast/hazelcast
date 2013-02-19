@@ -58,8 +58,12 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         this.nodeEngine = nodeEngine;
     }
 
-    public void shutdown() {
+    public void reset() {
         numbers.clear();
+    }
+
+    public void shutdown() {
+        reset();
     }
 
     public Config getConfig() {

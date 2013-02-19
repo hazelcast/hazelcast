@@ -46,21 +46,39 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         this.executionService = (ExecutionServiceImpl) nodeEngine.getExecutionService();
     }
 
+    public void reset() {
+        shutdownExecutors.clear();
+    }
+
+    public void shutdown() {
+        reset();
+    }
+
     public void execute(String name, final Callable callable, final ResponseHandler responseHandler) {
-        executionService.execute(name, new Runnable() {
-            public void run() {
-                Object result = null;
-                try {
-                    result = callable.call();
-                } catch (Exception e) {
-                    nodeEngine.getLogger(DistributedExecutorService.class.getName())
-                            .log(Level.FINEST, "While executing callable: " + callable, e);
-                    result = e;
-                } finally {
-                    responseHandler.sendResponse(result);
-                }
+        executionService.execute(name, new CallableProcessor(callable, responseHandler));
+    }
+
+    private class CallableProcessor implements Runnable {
+        final Callable callable;
+        final ResponseHandler responseHandler;
+
+        private CallableProcessor(Callable callable, ResponseHandler responseHandler) {
+            this.callable = callable;
+            this.responseHandler = responseHandler;
+        }
+
+        public void run() {
+            Object result = null;
+            try {
+                result = callable.call();
+            } catch (Exception e) {
+                nodeEngine.getLogger(DistributedExecutorService.class.getName())
+                        .log(Level.FINEST, "While executing callable: " + callable, e);
+                result = e;
+            } finally {
+                responseHandler.sendResponse(result);
             }
-        });
+        }
     }
 
     public void shutdownExecutor(String name) {
@@ -89,9 +107,5 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         final String name = String.valueOf(objectId);
         shutdownExecutors.remove(name);
         executionService.destroyExecutor(name);
-    }
-
-    public void shutdown() {
-        shutdownExecutors.clear();
     }
 }

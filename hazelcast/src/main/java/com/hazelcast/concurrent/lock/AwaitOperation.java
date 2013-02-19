@@ -1,35 +1,34 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-public class AwaitOperation extends BaseLockOperation implements WaitSupport, Notifier {
+public class AwaitOperation extends BaseLockOperation implements WaitSupport, BackupAwareOperation {
 
     private String conditionId;
-    private transient boolean isLockOwner;
-    private transient boolean awaiting = false;
+    private transient boolean firstRun = false;
     private transient boolean expired = false;
 
     public AwaitOperation() {
@@ -42,46 +41,21 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, No
 
     public void beforeRun() throws Exception {
         final LockStore lockStore = getLockStore();
-        awaiting = lockStore.isAwaiting(key, conditionId, getCallerUuid(), threadId);
-
-        if (!awaiting) {
-            isLockOwner = lockStore.isLocked(key) && lockStore.canAcquireLock(key, getCallerUuid(), threadId);
-            if (!isLockOwner) {
-                throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
-            }
-        }
+        firstRun = lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
     }
 
     public void run() throws Exception {
         final LockStore lockStore = getLockStore();
-        if (!awaiting) {
-            lockStore.addAwait(key, conditionId, getCallerUuid(), threadId);
-            lockStore.unlock(key, getCallerUuid(), threadId);
-            getNodeEngine().getWaitNotifyService().await(this);
-        } else {
-            if (!lockStore.lock(key, getCallerUuid(), threadId)) {
-                throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
-            }
-            if (!expired) {
-                lockStore.removeSignalKey(getWaitKey());
-                lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
-                response = true;
-            } else {
-                response = false;
-            }
+        if (!lockStore.lock(key, getCallerUuid(), threadId)) {
+            throw new IllegalMonitorStateException("Current thread can not acquire the lock!");
         }
-    }
-
-    public boolean returnsResponse() {
-        return awaiting || !isLockOwner;
-    }
-
-    public boolean shouldNotify() {
-        return !awaiting;
-    }
-
-    public WaitNotifyKey getNotifiedKey() {
-        return new LockWaitNotifyKey(namespace, key);
+        if (!expired) {
+            lockStore.removeSignalKey(getWaitKey());
+            lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
+            response = true;
+        } else {
+            response = false;
+        }
     }
 
     public ConditionKey getWaitKey() {
@@ -89,18 +63,27 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, No
     }
 
     public boolean shouldWait() {
-        return awaiting && !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+        final boolean shouldWait = firstRun || !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+        firstRun = false;
+        return shouldWait;
     }
 
     public long getWaitTimeoutMillis() {
         return timeout;
     }
 
+    public boolean shouldBackup() {
+        return true;
+    }
+
+    public Operation getBackupOperation() {
+        return new AwaitBackupOperation(namespace, key, threadId, conditionId, getCallerUuid());
+    }
+
     public void onWaitExpire() {
         expired = true;
-        final ConditionKey waitKey = getWaitKey();
         final LockStore lockStore = getLockStore();
-        lockStore.removeSignalKey(waitKey);
+        lockStore.removeSignalKey(getWaitKey());
         lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
 
         if (lockStore.lock(key, getCallerUuid(), threadId)) {

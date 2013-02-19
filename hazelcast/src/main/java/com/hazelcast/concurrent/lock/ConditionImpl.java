@@ -63,15 +63,25 @@ public class ConditionImpl implements ICondition {
 
     public boolean await(long time, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
-        final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
-                new AwaitOperation(lockProxy.namespace, lockProxy.key,
-                        ThreadContext.getThreadId(), unit.toMillis(time), conditionId), partitionId).build();
-        Future f = inv.invoke();
+        final int threadId = ThreadContext.getThreadId();
+
+        final Invocation inv1 = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
+                new BeforeAwaitOperation(lockProxy.namespace, lockProxy.key,
+                        threadId, conditionId), partitionId).build();
         try {
-            final Object result = f.get();
-            return Boolean.TRUE.equals(result);
+            Future f = inv1.invoke();
+            f.get();
         } catch (Throwable t) {
-            return (Boolean) ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
+        }
+        final Invocation inv2 = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
+                new AwaitOperation(lockProxy.namespace, lockProxy.key,
+                        threadId, unit.toMillis(time), conditionId), partitionId).build();
+        try {
+            Future f = inv2.invoke();
+            return Boolean.TRUE.equals(f.get());
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -93,7 +103,7 @@ public class ConditionImpl implements ICondition {
         try {
             f.get();
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 

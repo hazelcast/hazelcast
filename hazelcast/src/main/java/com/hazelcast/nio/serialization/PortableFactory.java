@@ -19,6 +19,9 @@ package com.hazelcast.nio.serialization;
 /**
  * @mdogan 12/26/12
  */
+
+// TODO: return null if type id isn't known by factory
+
 public interface PortableFactory {
 
     Portable create(int classId);

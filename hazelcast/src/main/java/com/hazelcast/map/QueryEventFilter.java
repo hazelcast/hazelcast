@@ -16,14 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Map;
 
 public class QueryEventFilter extends EntryEventFilter  {
@@ -50,12 +47,12 @@ public class QueryEventFilter extends EntryEventFilter  {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        IOUtil.writeNullableObject(out, predicate);
+        out.writeObject(predicate);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        predicate = IOUtil.readNullableObject(in);
+        predicate = in.readObject();
     }
 }

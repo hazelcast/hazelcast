@@ -16,27 +16,20 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
-import java.io.IOException;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
 
 /**
  * @mdogan 2/13/13
  */
-public class SignalOperation extends BaseLockOperation {
-
-    private boolean all;
-    private String conditionId;
+public class SignalOperation extends BaseSignalOperation implements BackupAwareOperation {
 
     public SignalOperation() {
     }
 
     public SignalOperation(ILockNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
-        super(namespace, key, threadId);
-        this.conditionId = conditionId;
-        this.all = all;
+        super(namespace, key, threadId, conditionId, all);
     }
 
     public void beforeRun() throws Exception {
@@ -47,34 +40,11 @@ public class SignalOperation extends BaseLockOperation {
         }
     }
 
-    public void run() throws Exception {
-        LockStore lockStore = getLockStore();
-        int signalCount = 1;
-        final ConditionKey notifiedKey = getNotifiedKey();
-        if (all) {
-            signalCount = lockStore.getAwaitCount(key, conditionId);
-        }
-        for (int i = 0; i < signalCount; i++) {
-            lockStore.registerSignalKey(notifiedKey);
-        }
-        response = true;
+    public boolean shouldBackup() {
+        return awaitCount > 0;
     }
 
-    public ConditionKey getNotifiedKey() {
-        return new ConditionKey(key, conditionId);
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeBoolean(all);
-        out.writeUTF(conditionId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        all = in.readBoolean();
-        conditionId = in.readUTF();
+    public Operation getBackupOperation() {
+        return new SignalBackupOperation(namespace, key, threadId, conditionId, all);
     }
 }
