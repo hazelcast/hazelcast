@@ -18,9 +18,11 @@ package com.hazelcast.map.test;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.MultiMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -221,6 +223,87 @@ public class DynamicClusterTest extends BaseTest {
         }
         assertEquals(offered.get()-polled.get(), queue.size());
         log("offered: " + offered.get() + "  polled: " + polled.get());
+
+    }
+
+    @Test
+    public void testMultiMapSize() throws Exception {
+
+        log("starting");
+        final MultiMap multiMap = getInstance(0).getMultiMap("testMultiMapSize");
+        final int putSize = 100*1000;
+        final int removeSize = putSize*8;
+        final AtomicInteger putCount = new AtomicInteger(putSize);
+        final AtomicBoolean putException = new AtomicBoolean(false);
+        final AtomicBoolean removeException = new AtomicBoolean(false);
+
+        new Thread() {
+
+            public void run() {
+                try {
+                    for (int i = 0; i < putSize; i++) {
+                        multiMap.put("key" + i, "value" + i);
+                        putCount.decrementAndGet();
+                    }
+                }
+                catch (Exception e){
+                    putException.set(true);
+                    log("exexex");
+                    log(e.getMessage());
+                }
+            }
+
+        }.start();
+
+        final AtomicInteger removed = new AtomicInteger();
+        final AtomicInteger removeCount = new AtomicInteger(removeSize);
+        new Thread() {
+
+            public void run() {
+                try {
+                    for (int i = 0; i < removeSize; i++) {
+                        Random ran = new Random(System.currentTimeMillis());
+                        Collection coll = multiMap.remove("key" + ran.nextInt(putSize));
+                        if (!coll.isEmpty()) {
+                            removed.incrementAndGet();
+                        }
+                        removeCount.decrementAndGet();
+                    }
+                }
+                catch (Exception e){
+                    removeException.set(true);
+                    log("exexex");
+                    log(e.getMessage());
+                }
+            }
+
+        }.start();
+
+        Thread.sleep(1000);
+
+        for (int i=0; i<3; i++){
+            log("remove instance");
+            removeInstance(2);
+            Thread.sleep(8000);
+
+            log("new instance");
+            newInstance();
+            Thread.sleep(4000);
+            log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
+            Thread.sleep(4000);
+
+        }
+
+        while (putCount.get() != 0 || removeCount.get() != 0){
+            Thread.sleep(1000);
+            log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
+            assertFalse(putException.get());
+            assertFalse(removeException.get());
+        }
+
+        assertEquals(putSize - removed.get(), multiMap.size());
+
+        log("size: " + (putSize - removed.get()));
 
     }
 
