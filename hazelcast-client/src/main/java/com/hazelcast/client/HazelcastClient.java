@@ -370,7 +370,7 @@ public class HazelcastClient implements HazelcastInstance {
         return config;
     }
 
-    public void registerFallbackSerializer(final TypeSerializer serializer) {
+    public void registerGlobalSerializer(final TypeSerializer serializer) {
         serializationService.registerFallback(serializer);
     }
 

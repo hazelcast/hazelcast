@@ -293,7 +293,7 @@ public interface HazelcastInstance {
     void registerSerializer(final TypeSerializer serializer, Class type);
 
 
-    void registerFallbackSerializer(final TypeSerializer serializer);
+    void registerGlobalSerializer(final TypeSerializer serializer);
 
     /**
      * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used
@@ -306,5 +306,5 @@ public interface HazelcastInstance {
      *
      * @return  the user context.
      */
-    ConcurrentMap<String,Object> getUserContext();
+    ConcurrentMap<String, Object> getUserContext();
 }

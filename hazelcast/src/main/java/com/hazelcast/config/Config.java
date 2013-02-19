@@ -29,16 +29,17 @@ import java.net.URL;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static java.text.MessageFormat.format;
 
 public class Config implements DataSerializable {
 
-    private URL configurationUrl;
+    private transient URL configurationUrl;
 
-    private File configurationFile;
+    private transient File configurationFile;
 
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private transient ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Properties properties = new Properties();
 
@@ -46,7 +47,7 @@ public class Config implements DataSerializable {
 
     private GroupConfig groupConfig = new GroupConfig();
 
-    private boolean checkCompatibility = true;
+    private transient boolean checkCompatibility = true;
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
@@ -76,9 +77,11 @@ public class Config implements DataSerializable {
 
     private SerializationConfig serializationConfig = new SerializationConfig();
 
-    private ManagedContext managedContext;
+    private transient ManagedContext managedContext;
 
-    private String licenseKey;
+    private transient ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
+
+    private transient String licenseKey;
 
     public Config() {
     }
@@ -424,6 +427,15 @@ public class Config implements DataSerializable {
 
     public Config setManagedContext(final ManagedContext managedContext) {
         this.managedContext = managedContext;
+        return this;
+    }
+
+    public ConcurrentMap<String, Object> getUserContext() {
+        return userContext;
+    }
+
+    public Config setUserContext(ConcurrentMap<String, Object> userContext) {
+        this.userContext = userContext;
         return this;
     }
 

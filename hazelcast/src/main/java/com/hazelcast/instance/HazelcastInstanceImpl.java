@@ -74,7 +74,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final NodeEngine nodeEngine;
 
-    final ConcurrentMap<String,Object> userContext= new ConcurrentHashMap<String, Object>();
+    final ConcurrentMap<String, Object> userContext;
 
     HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
         this.name = name;
@@ -82,6 +82,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
+        final ConcurrentMap<String, Object> cfgUserContext = config.getUserContext();
+        userContext = cfgUserContext != null ? cfgUserContext : new ConcurrentHashMap<String, Object>();
         node = new Node(this, config, nodeContext);
         nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
@@ -169,7 +171,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return node.getConfig();
     }
 
-    @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return userContext;
     }
@@ -202,7 +203,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         node.serializationService.register(serializer, type);
     }
 
-    public void registerFallbackSerializer(final TypeSerializer serializer) {
+    public void registerGlobalSerializer(final TypeSerializer serializer) {
         node.serializationService.registerFallback(serializer);
     }
 
