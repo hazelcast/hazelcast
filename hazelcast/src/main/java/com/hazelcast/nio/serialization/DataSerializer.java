@@ -45,10 +45,20 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
             final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID);
             while (hooks.hasNext()) {
                 DataSerializerHook hook = hooks.next();
-                map.putAll(hook.getFactories());
+                final Map<Integer, DataSerializableFactory> f = hook.getFactories();
+                if (f != null) {
+                    for (Map.Entry<Integer, DataSerializableFactory> entry : f.entrySet()) {
+                        final DataSerializableFactory current = map.get(entry.getKey());
+                        if (current != null) {
+                            throw new IllegalArgumentException("DataSerializable ID[" + entry.getKey()
+                                + "] is already registered for " + current);
+                        }
+                        map.put(entry.getKey(), entry.getValue());
+                    }
+                }
             }
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         factories = Collections.unmodifiableMap(map);
         factories.values();

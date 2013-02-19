@@ -45,22 +45,6 @@ public final class IOUtil {
         }
     }
 
-    public static void writeNullableObject(ObjectDataOutput out, Object obj) throws IOException {
-        boolean NULL = obj == null;
-        out.writeBoolean(NULL);
-        if (!NULL) {
-            out.writeObject(obj);
-        }
-    }
-
-    public static <T> T readNullableObject(ObjectDataInput in) throws IOException {
-        boolean NULL = in.readBoolean();
-        if (!NULL) {
-            return in.readObject();
-        }
-        return null;
-    }
-
     public static void writeNullableData(ObjectDataOutput out, Data data) throws IOException {
         if (data != null) {
             out.writeBoolean(true);

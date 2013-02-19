@@ -186,13 +186,14 @@ public class NodeIOService implements IOService {
     }
 
     public void onDisconnect(final Address endpoint) {
-        if (endpoint != null) {
-            nodeEngine.getExecutionService().execute("hz:io", new Runnable() {
-                public void run() {
-                    nodeEngine.onMemberDisconnect(endpoint);
-                }
-            });
-        }
+        // @mm - I guess we dont need to take any action on disconnect.
+//        if (endpoint != null) {
+//            nodeEngine.getExecutionService().execute("hz:io", new Runnable() {
+//                public void run() {
+//                    nodeEngine.onMemberDisconnect(endpoint);
+//                }
+//            });
+//        }
     }
 
     public boolean isClient() {

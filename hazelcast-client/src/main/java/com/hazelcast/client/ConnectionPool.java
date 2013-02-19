@@ -17,42 +17,48 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.client.util.pool.ObjectPool;
+import com.hazelcast.client.util.pool.QueueBasedObjectPool;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.*;
-import java.util.concurrent.BlockingQueue;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionPool {
     static private final int POOL_SIZE = 2;
-    private Map<Address, BlockingQueue<Connection>> mPool;
-    //    private Connection initialConnection;
-    private BlockingQueue<Connection> singlePool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
+
     private final ConnectionManager connectionManager;
     private final SerializationService serializationService;
-    private volatile Map<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
-    private final AtomicInteger partitionCount = new AtomicInteger(0);
+
+    public final ConcurrentHashMap<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
+    public final AtomicInteger partitionCount = new AtomicInteger(0);
+    private final Router router;
+    private final ConcurrentMap<Address, ObjectPool<Connection>> mPool = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final Connection initialConnection;
 
     public ConnectionPool(ClientConfig config, final ConnectionManager connectionManager, final SerializationService serializationService) {
         this.connectionManager = connectionManager;
         this.serializationService = serializationService;
-        initialConnection(config);
+        initialConnection = initialConnection(config);
+        router = config.getRouter();
     }
 
-    public void init(Cluster cluster, final PartitionService partitionService) {
-        addMembershipListener(cluster);
+    public void init(HazelcastInstance hazelcast, final PartitionService partitionService) {
+        router.init(hazelcast);
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -61,11 +67,7 @@ public class ConnectionPool {
             }
         }, 0, 1000);
         partitionCount.set(partitionTable.size());
-        Set<Member> members = cluster.getMembers();
-        mPool = new ConcurrentHashMap<Address, BlockingQueue<Connection>>(members.size());
-        for (Member _member : members) {
-            createPoolForTheMember((MemberImpl) _member);
-        }
+        initialized.set(true);
     }
 
     private void createPartitionTable(PartitionService partitionService) {
@@ -76,74 +78,58 @@ public class ConnectionPool {
         }
     }
 
-
-    private void addMembershipListener(final Cluster cluster) {
-        cluster.addMembershipListener(new MembershipListener() {
-            public void memberAdded(MembershipEvent membershipEvent) {
-                createPoolForTheMember((MemberImpl) membershipEvent.getMember());
-            }
-
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                mPool.remove(member.getAddress());
-            }
-        });
-    }
-
-    private void initialConnection(ClientConfig config) {
-        Connection initialConnection = null;
+    private Connection initialConnection(ClientConfig config) {
+        Connection initialConnection;
         for (InetSocketAddress isa : config.getAddressList()) {
             try {
-                int i = 0;
-                while (i++ < POOL_SIZE) {
-                    initialConnection = new Connection(new Address(isa), 0, this.serializationService);
-                    System.out.println("Intial connection " + initialConnection);
-                    this.connectionManager.bindConnection(initialConnection);
-                    singlePool.offer(initialConnection);
-                }
-                break;
+                Address address = new Address(isa);
+                initialConnection = new Connection(address, 0, this.serializationService);
+                this.connectionManager.bindConnection(initialConnection);
+                return initialConnection;
             } catch (IOException e) {
                 continue;
             }
         }
-        if (initialConnection == null) {
-            throw new RuntimeException("Couldn't connect to any address in the config");
-        }
+        throw new RuntimeException("Couldn't connect to any address in the config");
     }
 
-    private void createPoolForTheMember(MemberImpl member) {
-        try {
-            Address address = member.getAddress();
-            BlockingQueue<Connection> pool = new LinkedBlockingQueue<Connection>(POOL_SIZE);
-            mPool.put(address, pool);
-            while (pool.size() < POOL_SIZE) {
+    private ObjectPool<Connection> createPoolForTheMember(MemberImpl member) {
+        final Address address = member.getAddress();
+        ObjectPool<Connection> pool = new QueueBasedObjectPool<Connection>(POOL_SIZE, new com.hazelcast.client.util.pool.Factory<Connection>() {
+            @Override
+            public Connection create() throws IOException {
                 Connection connection = new Connection(address, 0, serializationService);
                 connectionManager.bindConnection(connection);
-                pool.offer(connection);
+                return connection;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        });
+        if (mPool.putIfAbsent(address, pool) != null) {
+            return mPool.get(address);
         }
+        if (address.equals(initialConnection.getAddress()))
+            pool.add(initialConnection);
+        return pool;
     }
 
-    public Connection takeConnection(Data key) throws InterruptedException, UnknownHostException {
-        if (key == null) return singlePool.take();
-        if (partitionCount.get() == 0) {
-            return mPool.values().iterator().next().take();
-        }
-        int id = key.getPartitionHash() % partitionCount.get();
-        Member member = partitionTable.get(id);
+    public Connection takeConnection(Member member) throws InterruptedException {
+        if (!initialized.get())
+            return initialConnection;
         if (member == null) {
-            return singlePool.take();
+            member = router.next();
+            if (member == null) {
+                throw new RuntimeException("Router shouldn't return null member");
+            }
         }
-        return mPool.get(member.getInetSocketAddress()).take();
+        ObjectPool<Connection> pool = mPool.get(member.getInetSocketAddress());
+        if (pool == null) {
+            pool = createPoolForTheMember((MemberImpl) member);
+        }
+        return pool.take();
     }
 
-    public void releaseConnection(Connection connection, Data key) {
-        if (key == null) {
-            singlePool.offer(connection);
-            return;
-        }
-        mPool.get(connection.getAddress()).offer(connection);
+    public void releaseConnection(Connection connection) {
+        ObjectPool<Connection> pool = mPool.get(connection.getAddress());
+        if (pool != null)
+            pool.release(connection);
     }
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -123,7 +122,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             if (len > 0) {
                 for (Map.Entry<Integer, Object> entry : results.entrySet()) {
                     out.writeInt(entry.getKey());
-                    IOUtil.writeNullableObject(out, entry.getValue());
+                    out.writeObject(entry.getValue());
                 }
             }
         }
@@ -134,7 +133,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 results = new HashMap<Integer, Object>(len);
                 for (int i = 0; i < len; i++) {
                     int pid = in.readInt();
-                    Object value = IOUtil.readNullableObject(in);
+                    Object value = in.readObject();
                     results.put(pid, value);
                 }
             } else {

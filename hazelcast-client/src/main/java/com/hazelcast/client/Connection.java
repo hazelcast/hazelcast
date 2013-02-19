@@ -45,17 +45,6 @@ public class Connection {
     boolean headersWritten = false;
     boolean headerRead = false;
 
-    /**
-     * Creates the Socket to the given host and port
-     *
-     * @param host ip address of the host
-     * @param port port of the host
-     * @throws UnknownHostException
-     * @throws IOException
-     */
-    public Connection(String host, int port, int id, SerializationService serializationService) {
-        this(new Address(new InetSocketAddress(host, port)), id, serializationService);
-    }
 
     public Connection(Address address, int id, SerializationService serializationService) {
         this.id = id;

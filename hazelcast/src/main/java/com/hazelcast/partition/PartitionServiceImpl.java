@@ -551,10 +551,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return commandHandlers;
     }
 
-    @Override
-    public void onClientDisconnect(String clientUuid) {
-    }
-
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
         final int members = node.getClusterService().getSize();
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
@@ -962,7 +958,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    private void reset() {
+    public void reset() {
         clearTaskQueues();
         lock.lock();
         try {
@@ -978,10 +974,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         } finally {
             lock.unlock();
         }
-    }
-
-    public void onRestart() {
-        reset();
     }
 
     public void shutdown() {

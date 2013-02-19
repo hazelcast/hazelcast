@@ -26,10 +26,10 @@ import java.util.Set;
  */
 public class DefaultPortableReader implements PortableReader {
 
-    final PortableSerializer serializer;
-    final ClassDefinition cd;
-    final BufferObjectDataInput in;
-    final int offset;
+    protected final ClassDefinition cd;
+    private final PortableSerializer serializer;
+    private final BufferObjectDataInput in;
+    private final int offset;
 
     public DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;

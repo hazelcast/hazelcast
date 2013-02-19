@@ -16,7 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 
@@ -25,30 +24,14 @@ import java.util.concurrent.ThreadFactory;
 public abstract class ExecutorThreadFactory implements ThreadFactory {
     private final ClassLoader classLoader;
     private final ThreadGroup threadGroup;
-    private final HazelcastInstanceImpl hazelcastInstance;
 
-    public ExecutorThreadFactory(ThreadGroup threadGroup, HazelcastInstanceImpl hazelcastInstance, ClassLoader classLoader) {
+    public ExecutorThreadFactory(ThreadGroup threadGroup, ClassLoader classLoader) {
         this.threadGroup = threadGroup;
-        this.hazelcastInstance = hazelcastInstance;
         this.classLoader = classLoader;
     }
 
-    public Thread newThread(Runnable r) {
-        final Thread t = new Thread(threadGroup, r, newThreadName(), 0) {
-            public void run() {
-                try {
-                    super.run();
-                } catch (OutOfMemoryError e) {
-                    OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-                } finally {
-                    try {
-                        ThreadContext.shutdown(this);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
+    public final Thread newThread(Runnable r) {
+        final Thread t = createThread(r);
         t.setContextClassLoader(classLoader);
         if (t.isDaemon()) {
             t.setDaemon(false);
@@ -59,5 +42,37 @@ public abstract class ExecutorThreadFactory implements ThreadFactory {
         return t;
     }
 
+    protected Thread createThread(Runnable r) {
+        return new ManagedThread(r, newThreadName(), 0);
+    }
+
     protected abstract String newThreadName();
+
+    protected void afterThreadExit(ManagedThread t) {
+        ThreadContext.shutdown(t);
+    }
+
+    protected final class ManagedThread extends Thread {
+
+        protected final int id;
+
+        public ManagedThread(Runnable target, String name, int id) {
+            super(threadGroup, target, name);
+            this.id = id;
+        }
+
+        public void run() {
+            try {
+                super.run();
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } finally {
+                try {
+                    afterThreadExit(this);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }

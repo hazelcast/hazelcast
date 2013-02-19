@@ -38,11 +38,13 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
     }
 
     public void run() throws Exception {
+        final LockStore lockStore = getLockStore();
         if (force) {
-            response = getLockStore().forceUnlock(key);
+            response = lockStore.forceUnlock(key);
         } else {
-            response = getLockStore().unlock(key, originalCallerUuid, threadId);
+            response = lockStore.unlock(key, originalCallerUuid, threadId);
         }
+        lockStore.pollExpiredAwaitOp(key);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

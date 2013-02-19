@@ -16,15 +16,19 @@
 
 package com.hazelcast.client.util.pool;
 
+import java.util.Collection;
+
 public abstract class ObjectPool<E> {
 
-    abstract public E take() throws Exception;
+    abstract public E take();
 
-    abstract public E take(Object hint) throws Exception;
+    abstract public void release(E e);
 
-    abstract public void release(E e) throws Exception;
+    abstract public void add(E e);
 
-    abstract public void release(E e, Object hint) throws Exception;
+    abstract public void addAll(Collection<E> c);
+
+    public abstract int size();
 }
 
 

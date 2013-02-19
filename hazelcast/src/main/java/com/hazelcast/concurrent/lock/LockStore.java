@@ -140,8 +140,8 @@ class LockStore implements DataSerializable, LockStoreView {
         return getLock(key).removeAwait(conditionId, caller, threadId);
     }
 
-    boolean isAwaiting(Data key, String conditionId, String caller, int threadId) {
-        return getLock(key).isAwaiting(conditionId, caller, threadId);
+    boolean startAwaiting(Data key, String conditionId, String caller, int threadId) {
+        return getLock(key).startAwaiting(conditionId, caller, threadId);
     }
 
     int getAwaitCount(Data key, String conditionId) {
