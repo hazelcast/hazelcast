@@ -557,7 +557,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 container.destroyMap(name);
             }
         }
-        nodeEngine.getEventService().deregisterListeners(SERVICE_NAME, name);
+        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
     public void memberAdded(final MembershipServiceEvent membershipEvent) {
@@ -565,9 +565,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public void memberRemoved(final MembershipServiceEvent membershipEvent) {
         MemberImpl member = membershipEvent.getMember();
-//        releaseMemberLocks(member);
         // TODO: @mm - when a member dies;
-        // * release locks
         // * rollback transaction
         // * do not know ?
     }

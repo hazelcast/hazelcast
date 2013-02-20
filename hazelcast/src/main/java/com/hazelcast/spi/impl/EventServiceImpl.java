@@ -108,18 +108,20 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         return segment.addRegistration(reg.topic, reg);
     }
 
-    public void deregisterListener(String serviceName, String topic, String id) {
+    public boolean deregisterListener(String serviceName, String topic, Object id) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
-            final Registration reg = segment.removeRegistration(topic, id);
+            final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
             if (reg != null && !reg.isLocalOnly()) {
-                final DeregistrationOperation op = new DeregistrationOperation(topic, id);
+                final DeregistrationOperation op = new DeregistrationOperation(topic, String.valueOf(id));
                 invokeOnOtherNodes(serviceName, op);
             }
+            return reg != null;
         }
+        return false;
     }
 
-    public void deregisterListeners(String serviceName, String topic) {
+    public void deregisterAllListeners(String serviceName, String topic) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
@@ -155,7 +157,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     private String createId(String serviceName) {
-        return serviceName + ":" + UUID.randomUUID().toString();
+        return serviceName + "[" + UUID.randomUUID().toString() + "]";
     }
 
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
