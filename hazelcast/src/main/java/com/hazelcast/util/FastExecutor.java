@@ -16,6 +16,8 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.HazelcastException;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.*;
@@ -30,25 +32,34 @@ public class FastExecutor implements Executor {
     private final ThreadFactory threadFactory;
     private final int maxSize;
     private final long backlogInterval;
+    private final NewThreadInterceptor interceptor = null;
     private volatile boolean live = true;
 
     public FastExecutor(int coreSize, String namePrefix, ThreadFactory threadFactory) {
-        this(coreSize, coreSize * 100, Math.max(Integer.MAX_VALUE, coreSize * (1 << 16)),
-                500L, namePrefix, threadFactory);
+        this(coreSize, coreSize * 20, Math.max(Integer.MAX_VALUE, coreSize * (1 << 16)),
+                500L, namePrefix, threadFactory, true);
     }
 
-    public FastExecutor(int coreSize, int maxSize, int queueCapacity, long backlogIntervalInMillis,
-                        String namePrefix, ThreadFactory threadFactory) {
+    public FastExecutor(int coreSize, int maxSize, int queueCapacity,
+                        long backlogIntervalInMillis, String namePrefix, ThreadFactory threadFactory) {
+        this(coreSize, maxSize, queueCapacity, backlogIntervalInMillis, namePrefix, threadFactory, true);
+    }
+
+    public FastExecutor(int coreSize, int maxSize, int queueCapacity,
+                        long backlogIntervalInMillis, String namePrefix, ThreadFactory threadFactory, boolean start) {
         this.threadFactory = threadFactory;
-        backlogInterval = backlogIntervalInMillis;
+        this.backlogInterval = backlogIntervalInMillis;
+        this.maxSize = maxSize;
         this.queue = new LinkedBlockingQueue<Task>(queueCapacity);
+
         Thread t = new Thread(new BacklogDetector(coreSize), namePrefix + "backlog");
         threads.add(t);
-        t.start();
-        for (int i = 0; i < coreSize; i++) {
-            addThread();
+        if (start) {
+            t.start();
         }
-        this.maxSize = maxSize;
+        for (int i = 0; i < coreSize; i++) {
+            addThread(start);
+        }
     }
 
     public void execute(Runnable command) {
@@ -62,6 +73,14 @@ public class FastExecutor implements Executor {
         }
     }
 
+    public void start() {
+        for (Thread thread : threads) {
+            if (thread.getState() == Thread.State.NEW) {
+                thread.start();
+            }
+        }
+    }
+
     public void shutdown() {
         live = false;
         for (Thread thread : threads) {
@@ -71,11 +90,13 @@ public class FastExecutor implements Executor {
         threads.clear();
     }
 
-    private void addThread() {
+    private void addThread(boolean start) {
         final Worker worker = new Worker();
         final Thread thread = threadFactory.newThread(worker);
+        if (start) {
+            thread.start();
+        }
         threads.add(thread);
-        thread.start();
     }
 
     private class Worker implements Runnable {
@@ -83,8 +104,10 @@ public class FastExecutor implements Executor {
             final Thread thread = Thread.currentThread();
             while (!thread.isInterrupted() && live) {
                 try {
-                    Task task = queue.take();
-                    task.run();
+                    final Task task = queue.take();
+                    if (task != null) {
+                        task.run();
+                    }
                 } catch (InterruptedException e) {
                     break;
                 }
@@ -100,20 +123,32 @@ public class FastExecutor implements Executor {
         }
 
         public void run() {
+            final NewThreadInterceptor threadInterceptor = interceptor;
+            long currentBacklogInterval = backlogInterval;
             final Thread thread = Thread.currentThread();
             while (!thread.isInterrupted() && live) {
                 final Task task = queue.peek();
                 if (task != null) {
-                    if (task.creationTime + backlogInterval < System.currentTimeMillis()) {
-                        addThread();
-                        if (++threadSize == maxSize) {
+                    if (task.creationTime + currentBacklogInterval < Clock.currentTimeMillis()) {
+                        if (++threadSize > maxSize) {
                             // thread pool size reached max-size
-                            return;
+                            if (threadInterceptor != null) {
+                                threadInterceptor.onPoolExhaust();
+                            } else {
+                                throw new HazelcastException("FastExecutor thread pool reached max-size: " + maxSize
+                                    + "! Cannot create additional threads!");
+                            }
                         }
+                        if (threadInterceptor != null) {
+                            threadInterceptor.beforeNewThread();
+                        }
+                        addThread(true);
+                        // increase backlog check interval on each thread creation
+                        currentBacklogInterval += backlogInterval;
                     }
                 }
                 try {
-                    Thread.sleep(5);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     return;
                 }
@@ -122,7 +157,7 @@ public class FastExecutor implements Executor {
     }
 
     private class Task implements Runnable {
-        final long creationTime = System.currentTimeMillis();
+        final long creationTime = Clock.currentTimeMillis();
         final Runnable task;
 
         private Task(Runnable task) {
@@ -132,5 +167,10 @@ public class FastExecutor implements Executor {
         public void run() {
             task.run();
         }
+    }
+
+    public interface NewThreadInterceptor {
+        boolean beforeNewThread();
+        void onPoolExhaust();
     }
 }

@@ -188,7 +188,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                 if (current == null) {
                     final DistributedObjectEvent event = createEvent(objectId, CREATED);
                     publish(event);
-                    nodeEngine.getEventService().executeEvent(new Runnable() {
+                    nodeEngine.eventService.executeEvent(new Runnable() {
                         public void run() {
                             for (DistributedObjectListener listener : listeners) {
                                 listener.distributedObjectCreated(event);

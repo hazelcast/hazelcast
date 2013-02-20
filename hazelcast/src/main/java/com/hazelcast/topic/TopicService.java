@@ -30,6 +30,8 @@ import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * User: sancar
@@ -40,16 +42,25 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
 
+    private final Lock[] orderingLocks = new Lock[1000];
+
     private NodeEngine nodeEngine;
 
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
+        for (int i = 0; i < orderingLocks.length; i++) {
+            orderingLocks[i] = new ReentrantLock();
+        }
     }
 
     public void reset() {
     }
 
     public void shutdown() {
+    }
+
+    public Lock getOrderLock(String key) {
+        return orderingLocks[Math.abs(key.hashCode()) % orderingLocks.length];
     }
 
     public String getServiceName() {

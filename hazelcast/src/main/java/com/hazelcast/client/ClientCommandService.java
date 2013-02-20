@@ -28,12 +28,13 @@ import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.Connection;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.FastExecutor;
+import com.hazelcast.util.PoolExecutorThreadFactory;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
 public class ClientCommandService implements ConnectionListener {
@@ -42,14 +43,17 @@ public class ClientCommandService implements ConnectionListener {
     private final ILogger logger;
     private final Map<TcpIpConnection, ClientEndpoint> mapClientEndpoints = new ConcurrentHashMap<TcpIpConnection, ClientEndpoint>();
     private final ConcurrentHashMap<Command, ClientCommandHandler> services;
-    private final Executor executor;
     private final ClientCommandHandler unknownCommandHandler;
+    private final FastExecutor executor;
+    private volatile boolean started = false;
 
     public ClientCommandService(Node node) {
         this.node = node;
         logger = node.getLogger(ClientCommandService.class.getName());
+        final String poolNamePrefix = node.getThreadPoolNamePrefix("client");
+        executor = new FastExecutor(3, 100, 1 << 16, 250L, poolNamePrefix,
+                new PoolExecutorThreadFactory(node.threadGroup, poolNamePrefix, node.getConfig().getClassLoader()), false);
         node.getConnectionManager().addConnectionListener(this);
-        executor = node.nodeEngine.getExecutionService().getExecutor("hz:client");
         services = new ConcurrentHashMap<Command, ClientCommandHandler>();
         unknownCommandHandler = new ClientCommandHandler() {
             @Override
@@ -59,10 +63,9 @@ public class ClientCommandService implements ConnectionListener {
         };
     }
 
-    //Always called by an io-thread.
+    // Always called by an io-thread.
     public void handle(final Protocol protocol) {
-        ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
-//        CallContext callContext = clientEndpoint.getCallContext(protocol.threadId != -1 ? protocol.threadId : clientEndpoint.hashCode());
+        final ClientEndpoint clientEndpoint = getClientEndpoint(protocol.conn);
         if (!clientEndpoint.isAuthenticated() && !Command.AUTH.equals(protocol.command)) {
             checkAuth(protocol.conn);
             return;
@@ -76,6 +79,10 @@ public class ClientCommandService implements ConnectionListener {
         if (clientEndpoint == null) {
             clientEndpoint = new ClientEndpoint(node, conn, UuidUtil.createClientUuid(conn.getEndPoint()));
             mapClientEndpoints.put(conn, clientEndpoint);
+            if (!started) {
+                executor.start(); // calling multiple times has no effect.
+                started = true;
+            }
         }
         return clientEndpoint;
     }
@@ -104,6 +111,7 @@ public class ClientCommandService implements ConnectionListener {
     }
 
     public void shutdown() {
+        executor.shutdown();
         mapClientEndpoints.clear();
         services.clear();
     }

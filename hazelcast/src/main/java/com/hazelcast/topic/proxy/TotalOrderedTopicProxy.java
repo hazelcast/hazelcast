@@ -20,6 +20,7 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.PublishOperation;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
@@ -46,7 +47,7 @@ public class TotalOrderedTopicProxy extends TopicProxy{
             Future f = inv.invoke();
             f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 

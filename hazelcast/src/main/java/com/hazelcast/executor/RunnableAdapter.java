@@ -29,23 +29,11 @@ public class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<
 
     private Runnable task;
 
-    private V result;
-
     public RunnableAdapter() {
     }
 
     public RunnableAdapter(Runnable task) {
         this.task = task;
-    }
-
-    public RunnableAdapter(Runnable task, V result) {
-        super();
-        this.task = task;
-        this.result = result;
-    }
-
-    public V getResult() {
-        return result;
     }
 
     public Runnable getRunnable() {
@@ -58,7 +46,7 @@ public class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<
 
     public V call() throws Exception {
         task.run();
-        return result;
+        return null;
     }
 
     public final void setHazelcastInstance(HazelcastInstance hazelcastInstance) {

@@ -62,13 +62,13 @@ public final class ExecutionServiceImpl implements ExecutionService {
                         node.getThreadPoolNamePrefix("scheduled"), classLoader));
 
         // default executors
-        register("hz:system", 30, 0);
-        register("hz:client", 40, 0);
-        register("hz:scheduled", 10, 0);
+        register("hz:system", 30, Integer.MAX_VALUE);
+        register("hz:scheduled", 10, Integer.MAX_VALUE);
     }
 
     ExecutorService register(String name, int maxThreadSize, int queueSize) {
-        final ManagedExecutorService executor = new ManagedExecutorService(name, cachedExecutorService, maxThreadSize, queueSize);
+        final ManagedExecutorService executor = new ManagedExecutorService(name, cachedExecutorService,
+                maxThreadSize, queueSize);
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException();
         }
@@ -79,7 +79,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
             new ConcurrencyUtil.ConstructorFunction<String, ExecutorService>() {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfig(name);
-                    return new ManagedExecutorService(name, cachedExecutorService, cfg.getPoolSize(), cfg.getQueueCapacity());
+                    final int queueCapacity = cfg.getQueueCapacity() == 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
+                    return new ManagedExecutorService(name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
                 }
             };
 
@@ -143,7 +144,11 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
 
         public void run() {
-            execute("hz:scheduled", runnable);
+            try {
+                execute("hz:scheduled", runnable);
+            } catch (Throwable t) {
+                logger.log(Level.SEVERE, t.getMessage(), t);
+            }
         }
     }
 

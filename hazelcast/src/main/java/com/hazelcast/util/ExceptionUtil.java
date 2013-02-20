@@ -41,9 +41,10 @@ public final class ExceptionUtil {
             } else {
                 throw new HazelcastException(t);
             }
-        } else if(t instanceof InterruptedException){
-            Thread.currentThread().interrupt();
-            throw new HazelcastException(t);
+            // TODO: handle remote and local interruptions separately!
+//        } else if (t instanceof InterruptedException){
+//            Thread.currentThread().interrupt();
+//            throw new HazelcastException(t);
         } else {
             throw new HazelcastException(t);
         }

@@ -99,19 +99,19 @@ public class StaticNodeRegistry {
                 return getConnection(address);
             }
 
-            public void connectAndSend(Address address, Packet packet) {
-                getConnection(address).write(packet);
-            }
-
             public void shutdown() {
-                for (final NodeEngineImpl nodeEngine : nodes.values()) {
-                    if (nodeEngine.getNode().isActive()) {
-                        nodeEngine.getExecutionService().execute("default", new Runnable() {
+                for (Address address : addresses) {
+                    if (address.equals(thisAddress)) continue;
+
+                    final NodeEngineImpl nodeEngine = nodes.get(address);
+                    if (nodeEngine != null && nodeEngine.isActive()) {
+                        nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
                             public void run() {
                                 final ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
                                 clusterService.removeAddress(thisAddress);
                             }
                         });
+                        break;
                     }
                 }
             }
