@@ -100,8 +100,17 @@ public class DefaultPortableWriter implements PortableWriter {
         }
     }
 
-    public void writeNullPortable(String fieldName) throws IOException {
-        writePortable(fieldName, null);
+    public void writePortable(String fieldName, int classId, Portable portable) throws IOException {
+        setPosition(fieldName);
+        final boolean NULL = portable == null;
+        out.writeBoolean(NULL);
+        if (!NULL) {
+            serializer.write(out, portable, classId);
+        }
+    }
+
+    public void writeNullPortable(String fieldName, int classId) throws IOException {
+        writePortable(fieldName, classId, null);
     }
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {

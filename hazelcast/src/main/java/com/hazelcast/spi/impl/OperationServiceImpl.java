@@ -74,7 +74,7 @@ final class OperationServiceImpl implements OperationService {
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
         }
-        backupLocks = new Lock[50000];
+        backupLocks = new Lock[10000];
         for (int i = 0; i < backupLocks.length; i++) {
             backupLocks[i] = new ReentrantLock();
         }
@@ -268,8 +268,8 @@ final class OperationServiceImpl implements OperationService {
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
         final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
                 ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
-        Collection<Future> syncBackups = null;
-        Collection<Future> asyncBackups = null;
+        Collection<BackupFuture> syncBackups = null;
+        Collection<BackupFuture> asyncBackups = null;
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
         final Operation backupOp;
@@ -279,7 +279,7 @@ final class OperationServiceImpl implements OperationService {
             final int partitionId = op.getPartitionId();
             final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             if (syncBackupCount > 0) {
-                syncBackups = new ArrayList<Future>(syncBackupCount);
+                syncBackups = new ArrayList<BackupFuture>(syncBackupCount);
                 for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
                     if (target != null) {
@@ -295,7 +295,7 @@ final class OperationServiceImpl implements OperationService {
                                 final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
                                         .setReplicaIndex(replicaIndex).setTryCount(20).build().invoke();
                                 if (returnsResponse) {
-                                    syncBackups.add(f);
+                                    syncBackups.add(new BackupFuture(f, partitionId, replicaIndex));
                                 }
                             }
                         }
@@ -303,7 +303,7 @@ final class OperationServiceImpl implements OperationService {
                 }
             }
             if (asyncBackupCount > 0) {
-                asyncBackups = new ArrayList<Future>(asyncBackupCount);
+                asyncBackups = new ArrayList<BackupFuture>(asyncBackupCount);
                 for (int replicaIndex = syncBackupCount + 1; replicaIndex <= asyncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
                     if (target != null) {
@@ -313,7 +313,7 @@ final class OperationServiceImpl implements OperationService {
                             final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
                                     .setReplicaIndex(replicaIndex).setTryCount(10).build().invoke();
                             if (returnsResponse) {
-                                asyncBackups.add(f);
+                                asyncBackups.add(new BackupFuture(f, partitionId, replicaIndex));
                             }
                         }
                     }
@@ -328,15 +328,39 @@ final class OperationServiceImpl implements OperationService {
         waitFutureResponses(asyncBackups);
     }
 
-    private void waitFutureResponses(final Collection<Future> futures) throws ExecutionException {
+    private class BackupFuture {
+        final Future future;
+        final int partitionId;
+        final int replicaIndex;
+
+        BackupFuture(Future future, int partitionId, int replicaIndex) {
+            this.future = future;
+            this.partitionId = partitionId;
+            this.replicaIndex = replicaIndex;
+        }
+
+        public boolean isDone() {
+            return future.isDone();
+        }
+
+        public Object get(int timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return future.get(timeout, unit);
+        }
+    }
+
+    private void waitFutureResponses(final Collection<BackupFuture> futures) throws ExecutionException {
         int size = futures != null ? futures.size() : 0;
         while (size > 0) {
-            for (Future f : futures) {
+            for (BackupFuture f : futures) {
                 if (!f.isDone()) {
                     try {
                         f.get(1, TimeUnit.SECONDS);
                     } catch (InterruptedException ignored) {
                     } catch (TimeoutException ignored) {
+                    } catch (ExecutionException e) {
+                        if (nodeEngine.getClusterService().getSize() > f.replicaIndex) {
+                            throw e;
+                        }
                     }
                     if (f.isDone()) {
                         size--;
@@ -349,10 +373,10 @@ final class OperationServiceImpl implements OperationService {
     private void handleOperationError(Operation op, Throwable e) {
         if (e instanceof RetryableException) {
             final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
-            logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
+//            logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
         } else {
             final Level level = nodeEngine.isActive() ? Level.SEVERE: Level.FINEST;
-            logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
+//            logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
         sendResponse(op, e);
     }
@@ -562,6 +586,12 @@ final class OperationServiceImpl implements OperationService {
         logger.log(Level.FINEST, "Stopping operation threads...");
         executor.shutdown();
         mapCalls.clear();
+        for (int i = 0; i < ownerLocks.length; i++) {
+            ownerLocks[i] = null;
+        }
+        for (int i = 0; i < backupLocks.length; i++) {
+            backupLocks[i] = null;
+        }
     }
 
     private class OperationExecutor implements Runnable {

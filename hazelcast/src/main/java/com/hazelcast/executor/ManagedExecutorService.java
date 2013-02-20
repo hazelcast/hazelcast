@@ -39,10 +39,15 @@ public class ManagedExecutorService implements ExecutorService {
     }
 
     public ManagedExecutorService(String name, ExecutorService cachedExecutor, int maxPoolSize, int queueCapacity) {
+        if (maxPoolSize <= 0) {
+            throw new IllegalArgumentException("Max pool size must be positive!");
+        }
+        if (queueCapacity <= 0) {
+            throw new IllegalArgumentException("Queue capacity must be positive!");
+        }
         this.name = name;
         this.maxPoolSize = maxPoolSize;
         this.cachedExecutor = cachedExecutor;
-        queueCapacity = queueCapacity == 0 ? Integer.MAX_VALUE : queueCapacity;
         this.taskQ = new LinkedBlockingQueue<Runnable>(queueCapacity);
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -27,46 +28,30 @@ import java.util.concurrent.TimeoutException;
 /**
  * @mdogan 1/18/13
  */
-public final class FutureProxy<V> implements Future<V> {
+public final class FakeFuture<V> implements Future<V> {
 
-    private final Future future;
     private final SerializationService serializationService;
-    private final V value;
-    private final boolean hasValue;
+    private final Object value;
     private volatile boolean done = false;
 
-    public FutureProxy(Future future, SerializationService serializationService) {
-        this.future = future;
+    public FakeFuture(SerializationService serializationService, Object value) {
         this.serializationService = serializationService;
-        this.value = null;
-        this.hasValue = false;
-    }
-
-    public FutureProxy(Future future, SerializationService serializationService, V value) {
-        this.future = future;
         this.value = value;
-        this.serializationService = serializationService;
-        this.hasValue = true;
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        final Object object = future.get();
-        return getResult(object);
-    }
-
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final Object object = future.get(timeout, unit);
-        return getResult(object);
-    }
-
-    private V getResult(Object object) {
-        if (hasValue) {
-            return value;
-        }
+        Object object = value;
         if (object instanceof Data) {
             object = serializationService.toObject((Data) object);
         }
+        if (object instanceof Throwable) {
+            ExceptionUtil.sneakyThrow((Throwable) object);
+        }
         return (V) object;
+    }
+
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return get();
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {

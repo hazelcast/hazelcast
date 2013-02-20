@@ -23,9 +23,11 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @mdogan 1/17/13
@@ -35,6 +37,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     private final String name;
     private final Random random = new Random();
     private final int partitionCount;
+
+    private final AtomicInteger consecutiveSubmits = new AtomicInteger();
+    private volatile long lastSubmitTime = 0L;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
         super(nodeEngine, service);
@@ -73,9 +78,13 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        // TODO: Future should return given result!
-        Callable<T> callable = new RunnableAdapter<T>(task, result);
-        return submit(callable);
+        Callable<T> callable = new RunnableAdapter<T>(task);
+        return new FutureProxy<T>(submit(callable), getNodeEngine().getSerializationService(), result);
+    }
+
+    public <T> Future<T> submit(Callable<T> task) {
+        final int partitionId = getTaskPartitionId(task);
+        return submitToPartitionOwner(task, partitionId);
     }
 
     private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId) {
@@ -85,12 +94,36 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new CallableTaskOperation<T>(name, task), partitionId).build();
-        return new FutureProxy<T>(inv.invoke(), nodeEngine);
+        return invoke(inv);
     }
 
-    public <T> Future<T> submit(Callable<T> task) {
-        final int partitionId = getTaskPartitionId(task);
-        return submitToPartitionOwner(task, partitionId);
+    private <T> Future<T> invoke(Invocation inv) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final boolean sync = checkSync();
+        final Future future = inv.invoke();
+        if (sync) {
+            Object response;
+            try {
+                response = future.get();
+            } catch (Exception e) {
+                response = e;
+            }
+            return new FakeFuture<T>(nodeEngine.getSerializationService(), response);
+        }
+        return new FutureProxy<T>(future, nodeEngine.getSerializationService());
+    }
+
+    private boolean checkSync() {
+        boolean sync = false;
+        final long last = lastSubmitTime;
+        final long now = Clock.currentTimeMillis();
+        if (last + 10 < now) {
+            consecutiveSubmits.set(0);
+        } else if (consecutiveSubmits.incrementAndGet() % 100 == 0) {
+            sync = true;
+        }
+        lastSubmitTime = now;
+        return sync;
     }
 
     private <T> int getTaskPartitionId(Callable<T> task) {
@@ -116,7 +149,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
                 new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress()).build();
-        return new FutureProxy<T>(inv.invoke(), nodeEngine);
+        return invoke(inv);
     }
 
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {

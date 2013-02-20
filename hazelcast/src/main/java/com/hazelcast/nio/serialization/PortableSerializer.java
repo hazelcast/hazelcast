@@ -36,19 +36,25 @@ public class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
-        if (!(out instanceof BufferObjectDataOutput)) {
-            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
-        }
         if (p.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        ClassDefinition cd = getClassDefinition(p);
+        write(out, p, p.getClassId());
+    }
+
+    void write(ObjectDataOutput out, Portable p, int classId) throws IOException {
+        if (!(out instanceof BufferObjectDataOutput)) {
+            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
+        }
+        if (classId == 0) {
+            throw new IllegalArgumentException("Portable class id cannot be zero!");
+        }
+        ClassDefinition cd = getClassDefinition(p, classId);
         DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);
     }
 
-    public ClassDefinition getClassDefinition(Portable p) throws IOException {
-        final int classId = p.getClassId();
+    private ClassDefinition getClassDefinition(Portable p, int classId) throws IOException {
         ClassDefinition cd = context.lookup(classId);
         if (cd == null) {
             ClassDefinitionWriter classDefinitionWriter = new ClassDefinitionWriter(classId);
@@ -167,14 +173,19 @@ public class PortableSerializer implements TypeSerializer<Portable> {
                 throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
                         "registering class definition!");
             }
-            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
-                    .createPortableFieldBuilder(fieldName, portable.getClassId());
-            addNestedField(portable, nestedBuilder);
+            writePortable(fieldName, portable.getClassId(), portable);
         }
 
-        public void writeNullPortable(String fieldName) throws IOException {
-            throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
-                        "registering class definition!");
+        public void writePortable(String fieldName, int classId, Portable portable) throws IOException {
+            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
+                    .createPortableFieldBuilder(fieldName, classId);
+            if (portable != null) {
+                addNestedField(portable, nestedBuilder);
+            }
+        }
+
+        public void writeNullPortable(String fieldName, int classId) throws IOException {
+            writePortable(fieldName, classId, null);
         }
 
         public void writePortableArray(String fieldName, Portable[] portables) throws IOException {

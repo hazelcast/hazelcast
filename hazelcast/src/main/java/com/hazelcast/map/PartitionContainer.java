@@ -93,9 +93,9 @@ public class PartitionContainer {
 
     public int getMaxBackupCount() {
         int max = 1;
-        for (PartitionRecordStore mapPartition : maps.values()) {
+        for (PartitionRecordStore recordStore : maps.values()) {
             // TODO: get max map backup count!
-//        777    max = Math.max(max, mapPartition.get);
+            max = Math.max(max, recordStore.getMapContainer().getTotalBackupCount());
         }
         return max;
     }

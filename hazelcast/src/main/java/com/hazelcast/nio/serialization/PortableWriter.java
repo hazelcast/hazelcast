@@ -43,9 +43,11 @@ public interface PortableWriter {
 
     void writeShort(String fieldName, final short value) throws IOException;
 
-    void writePortable (String fieldName, Portable portable) throws IOException;
+    void writePortable(String fieldName, Portable portable) throws IOException;
 
-    void writeNullPortable (String fieldName) throws IOException;
+    void writePortable(String fieldName, int classId, Portable portable) throws IOException;
+
+    void writeNullPortable(String fieldName, int classId) throws IOException;
 
     void writeByteArray(String fieldName, byte[] bytes) throws IOException;
 

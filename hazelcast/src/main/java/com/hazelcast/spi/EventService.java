@@ -42,6 +42,4 @@ public interface EventService {
     void publishEvent(String serviceName, EventRegistration registration, Object event);
 
     void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event);
-
-    void executeEvent(Runnable eventRunnable);
 }
