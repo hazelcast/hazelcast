@@ -156,7 +156,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
     public void destroyDistributedObject(Object objectId) {
         final String name = String.valueOf(objectId);
         containerMap.remove(name);
-        nodeEngine.getEventService().deregisterListeners(SERVICE_NAME, name);
+        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
     public void addItemListener(String name, ItemListener listener, boolean includeValue) {
