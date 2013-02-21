@@ -132,7 +132,7 @@ public class DynamicClusterTest extends BaseTest {
         Thread.sleep(500);
 
         for (int i=0; i<3; i++){
-            while (getInstance().getPartitionService().hasOngoingMigration()) {
+            while (getInstance(0).getPartitionService().hasOngoingMigration()) {
                 Thread.sleep(100);
             }
             log("remove instance");
