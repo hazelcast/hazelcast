@@ -23,11 +23,11 @@ import com.hazelcast.core.HazelcastException;
  */
 public class RetryableHazelcastException extends HazelcastException implements RetryableException {
 
-    protected RetryableHazelcastException() {
+    public RetryableHazelcastException() {
         super();
     }
 
-    protected RetryableHazelcastException(String message) {
+    public RetryableHazelcastException(String message) {
         super(message);
     }
 

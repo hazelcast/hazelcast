@@ -16,33 +16,23 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-import java.util.Map;
-import java.util.Set;
+public class MapInitialLoadOperation extends AbstractMapOperation {
 
-public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
-    Set<Map.Entry<Data,Data>> entrySet;
-
-    public MapEntrySetOperation(String name) {
+    public MapInitialLoadOperation(String name) {
         super(name);
     }
 
-    public MapEntrySetOperation() {
+    public MapInitialLoadOperation() {
     }
 
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        entrySet = recordStore.entrySetData();
-        mapContainer.getMapOperationCounter().incrementOtherOperations();
+        mapContainer.loadMapFromStore(false);
     }
 
     @Override
-    public Object getResponse() {
-        return new MapEntrySet(entrySet);
+    public boolean returnsResponse() {
+        return false;
     }
-
-
 }

@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 
-public class PutBackupOperation extends AbstractMapOperation implements BackupOperation, IdentifiedDataSerializable {
+public class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name, dataKey, dataValue, ttl);

@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
-public class ContainsValueOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
     private boolean contains = false;
     private Data testValue;
@@ -48,11 +48,6 @@ public class ContainsValueOperation extends AbstractNamedOperation implements Pa
     @Override
     public Object getResponse() {
         return contains;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

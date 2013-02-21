@@ -20,7 +20,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.Address;
@@ -29,15 +31,18 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class MapContainer {
 
@@ -53,7 +58,9 @@ public class MapContainer {
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
     private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
+    private volatile boolean mapReady = false;
     private final long creationTime;
+    private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         MapStore storeTemp = null;
@@ -84,8 +91,31 @@ public class MapContainer {
         }
 
         store = storeTemp;
+
         if (store != null) {
-            loadMapFromStore();
+            NodeEngine nodeEngine = mapService.getNodeEngine();
+            // only master can initiate the loadAll. master will send other members to loadAll.
+            // the members join later will not load from mapstore.
+            if (nodeEngine.getClusterService().isMaster() && initialLoaded.compareAndSet(false, true)) {
+                loadMapFromStore(true);
+                Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+                Operation operation = new MapInitialLoadOperation(name);
+                for (Member member : members) {
+                    try {
+                        if (member.localMember())
+                            continue;
+                        MemberImpl memberImpl = (MemberImpl) member;
+                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                        invocation.invoke();
+                    } catch (Throwable t) {
+                        throw ExceptionUtil.rethrow(t);
+                    }
+                }
+            } else {
+                mapReady = true;
+            }
+        } else {
+            mapReady = true;
         }
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
@@ -94,38 +124,59 @@ public class MapContainer {
         creationTime = Clock.currentTimeMillis();
     }
 
-    private void loadMapFromStore() {
-        NodeEngine nodeEngine = mapService.getNodeEngine();
-        int chunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
-        Set keys = store.loadAllKeys();
-        if (keys == null || keys.isEmpty())
-            return;
-        Map<Data, Object> chunk = new HashMap<Data, Object>();
-        for (Object key : keys) {
-            Data dataKey = mapService.toData(key);
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-            if (nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
-                chunk.put(dataKey, key);
-                if (chunk.size() >= chunkSize) {
-                    nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(chunk));
-                    chunk = new HashMap<Data, Object>();
+    public boolean isMapReady() {
+        // map ready states whether the map load operation has been finished. if not retry exception is sent.
+        return mapReady;
+    }
+
+    public void loadMapFromStore(boolean force) {
+        if (force || initialLoaded.compareAndSet(false, true)) {
+            mapReady = false;
+            NodeEngine nodeEngine = mapService.getNodeEngine();
+            int chunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
+            Set keys = store.loadAllKeys();
+            if (keys == null || keys.isEmpty()) {
+                mapReady = true;
+                return;
+            }
+            Map<Data, Object> chunk = new HashMap<Data, Object>();
+
+
+            List<Map<Data,Object>> chunkList = new ArrayList<Map<Data, Object>>();
+            for (Object key : keys) {
+                Data dataKey = mapService.toData(key);
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
+                if (nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
+                    chunk.put(dataKey, key);
+                    if (chunk.size() >= chunkSize) {
+                        chunkList.add(chunk);
+                        chunk = new HashMap<Data, Object>();
+                    }
                 }
             }
-        }
-        if (chunk.size() > 0) {
-            try {
-                nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(chunk));
-            } catch (Throwable t) {
-                ExceptionUtil.rethrow(t);
+            if (chunk.size() > 0) {
+                chunkList.add(chunk);
             }
+            int numberOfChunks = chunkList.size();
+            AtomicInteger counter = new AtomicInteger(numberOfChunks);
+            for (Map<Data, Object> currentChunk : chunkList) {
+                try {
+                nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(currentChunk, counter));
+                } catch (Throwable t) {
+                    ExceptionUtil.rethrow(t);
+                }
+            }
+
         }
     }
 
     private class MapLoadAllTask implements Runnable {
         private Map<Data, Object> keys;
+        private AtomicInteger counter;
 
-        private MapLoadAllTask(Map<Data, Object> keys) {
+        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger counter) {
             this.keys = keys;
+            this.counter = counter;
         }
 
         @Override
@@ -136,13 +187,20 @@ public class MapContainer {
                 Object key = keys.get(dataKey);
                 Data dataValue = mapService.toData(values.get(key));
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                PutTransientOperation operation = new PutTransientOperation(name, dataKey, dataValue, null, -1);
+                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, null, -1);
+                operation.setNodeEngine(nodeEngine);
+                operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                operation.setPartitionId(partitionId);
+                operation.setServiceName(MapService.SERVICE_NAME);
                 try {
-                    Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(mapService.getServiceName(), operation, partitionId).build();
-                    invocation.invoke().get();
+                    nodeEngine.getOperationService().runOperation(operation);
                 } catch (Throwable t) {
                     ExceptionUtil.rethrow(t);
                 }
+            }
+
+            if (counter.decrementAndGet() <= 0) {
+                mapReady = true;
             }
         }
     }

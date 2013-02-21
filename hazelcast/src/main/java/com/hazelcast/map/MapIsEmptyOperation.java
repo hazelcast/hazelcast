@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class MapIsEmptyOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class MapIsEmptyOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
     private transient boolean empty;
 
@@ -31,10 +31,9 @@ public class MapIsEmptyOperation extends AbstractNamedOperation implements Parti
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
-        RecordStore mapPartition = mapService.getRecordStore(getPartitionId(), name);
-        empty = mapPartition.getRecords().isEmpty();
-        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        empty = recordStore.getRecords().isEmpty();
+        mapContainer.getMapOperationCounter().incrementOtherOperations();
     }
 
     @Override
@@ -42,8 +41,4 @@ public class MapIsEmptyOperation extends AbstractNamedOperation implements Parti
         return empty;
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
 }

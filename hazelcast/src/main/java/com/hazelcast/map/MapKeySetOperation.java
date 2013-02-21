@@ -22,7 +22,7 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.Set;
 
-public class MapKeySetOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class MapKeySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
     Set<Data> keySet;
 
     public MapKeySetOperation(String name) {
@@ -42,10 +42,5 @@ public class MapKeySetOperation extends AbstractNamedOperation implements Partit
     @Override
     public Object getResponse() {
         return new MapKeySet(keySet);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 }

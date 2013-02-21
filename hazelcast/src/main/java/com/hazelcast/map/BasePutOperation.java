@@ -24,11 +24,8 @@ import com.hazelcast.util.Clock;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    private transient PartitionContainer pc;
     protected transient Data dataOldValue;
-    protected transient RecordStore recordStore;
-    protected transient MapService mapService;
-    protected transient MapContainer mapContainer;
+
     private transient long startTime;
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId) {
@@ -46,17 +43,10 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     protected final boolean prepareTransaction() {
         if (txnId != null) {
-            pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
+            partitionContainer.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
             return true;
         }
         return false;
-    }
-
-    public void beforeRun() {
-        mapService = getService();
-        pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getRecordStore(name);
-        mapContainer = mapService.getMapContainer(name);
     }
 
     public void run() {

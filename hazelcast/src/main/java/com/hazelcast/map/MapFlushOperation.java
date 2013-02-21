@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
-public class MapFlushOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation {
     boolean flushAll;
 
     public MapFlushOperation(String name, boolean flushAll) {
@@ -38,7 +38,6 @@ public class MapFlushOperation extends AbstractNamedOperation implements Partiti
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         recordStore.flush(flushAll);
     }
@@ -57,11 +56,6 @@ public class MapFlushOperation extends AbstractNamedOperation implements Partiti
 
     @Override
     public Object getResponse() {
-        return true;
-    }
-
-    @Override
-    public boolean returnsResponse() {
         return true;
     }
 }

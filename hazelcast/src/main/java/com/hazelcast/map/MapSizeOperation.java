@@ -16,13 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-import java.util.concurrent.ConcurrentMap;
-
-public class MapSizeOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class MapSizeOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
     private transient int size;
 
@@ -34,7 +30,6 @@ public class MapSizeOperation extends AbstractNamedOperation implements Partitio
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         size = recordStore.size();
         mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
@@ -45,8 +40,4 @@ public class MapSizeOperation extends AbstractNamedOperation implements Partitio
         return size;
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
 }

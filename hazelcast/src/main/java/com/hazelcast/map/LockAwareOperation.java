@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
-public abstract class LockAwareOperation extends AbstractMapOperation implements WaitSupport {
+public abstract class LockAwareOperation extends KeyBasedMapOperation implements WaitSupport {
 
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);

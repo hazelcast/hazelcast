@@ -25,11 +25,8 @@ import com.hazelcast.util.Clock;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    private transient PartitionContainer pc;
-    protected transient Data dataOldValue;
-    protected transient RecordStore recordStore;
-    protected transient MapService mapService;
     private transient long startTime;
+    protected transient Data dataOldValue;
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
@@ -41,18 +38,12 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     protected final boolean prepareTransaction() {
         if (txnId != null) {
-            pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
+            partitionContainer.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
             ResponseHandler responseHandler = getResponseHandler();
             responseHandler.sendResponse(null);
             return true;
         }
         return false;
-    }
-
-    public void beforeRun() {
-        mapService = getService();
-        pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getRecordStore(name);
     }
 
     public void run() {

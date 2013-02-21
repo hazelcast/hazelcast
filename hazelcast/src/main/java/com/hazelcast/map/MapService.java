@@ -100,6 +100,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 3, 1, TimeUnit.SECONDS);
     }
 
+    public void initMap(String mapName) {
+        getMapContainer(mapName);
+    }
+
     public void reset() {
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {

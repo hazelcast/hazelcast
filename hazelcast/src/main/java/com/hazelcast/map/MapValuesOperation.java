@@ -18,11 +18,10 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.Collection;
 
-public class MapValuesOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class MapValuesOperation extends AbstractMapOperation implements PartitionAwareOperation {
     Collection<Data> values;
 
     public MapValuesOperation(String name) {
@@ -33,7 +32,6 @@ public class MapValuesOperation extends AbstractNamedOperation implements Partit
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         values = recordStore.valuesData();
         mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
@@ -42,10 +40,5 @@ public class MapValuesOperation extends AbstractNamedOperation implements Partit
     @Override
     public Object getResponse() {
         return new MapValueCollection(values);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 }

@@ -20,10 +20,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
-public class GetOperation extends AbstractMapOperation implements IdentifiedDataSerializable {
+public class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
-    private transient MapService mapService;
     private transient long startTime;
 
     public GetOperation(String name, Data dataKey) {
@@ -35,7 +34,6 @@ public class GetOperation extends AbstractMapOperation implements IdentifiedData
 
     public void run() {
         startTime = Clock.currentTimeMillis();
-        mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         if (getTxnId() != null) {
             String txnId = getTxnId();

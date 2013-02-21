@@ -17,35 +17,41 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
 
-public class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
+public class PutFromLoadOperation extends BasePutOperation {
 
-
-    public RemoveBackupOperation(String name, Data dataKey) {
-        super(name, dataKey);
+    public PutFromLoadOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
+        super(name, dataKey, value, txnId, ttl);
     }
 
-    public RemoveBackupOperation() {
+    public PutFromLoadOperation() {
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
-        int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        Record record = recordStore.getRecords().get(dataKey);
-        if (record != null) {
-            recordStore.getRecords().remove(dataKey);
+        super.run();
+        if (prepareTransaction()) {
+            return;
         }
+        recordStore.putTransient(dataKey, dataValue, ttl);
     }
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return null;
     }
 
-    public int getId() {
-        return DataSerializerMapHook.REMOVE_BACKUP;
+    public boolean shouldBackup() {
+        return true;
     }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
+    }
+
+    @Override
+    public String toString() {
+        return "PutFromLoadOperation{" + name + "}";
+    }
+
 }

@@ -48,6 +48,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
         super(nodeEngine, mapService);
+        mapService.initMap(name);
         this.name = name;
         lockSupport = new LockProxySupport(new LockNamespace(MapService.SERVICE_NAME, name));
     }
@@ -64,7 +65,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return (Data) doTxnAwareOperation(key, operation);
     }
 
-    private Object doTxnAwareOperation(Data key, AbstractMapOperation operation) {
+    private Object doTxnAwareOperation(Data key, KeyBasedMapOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operation.setTxnId(getCurrentTransactionId());
@@ -112,7 +113,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         doTxnalOperation(key, operation);
     }
 
-    private Object doTxnalOperation(Data key, AbstractMapOperation operation) {
+    private Object doTxnalOperation(Data key, KeyBasedMapOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operation.setTxnId(attachTxnParticipant(partitionId));

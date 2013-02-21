@@ -217,10 +217,12 @@ abstract class InvocationImpl implements Future, Invocation {
                 final InvocationAction action = op.onException((Throwable) response);
                 final int localInvokeCount = invokeCount;
                 if (action == InvocationAction.RETRY_INVOCATION && localInvokeCount < tryCount && timeout > 0) {
-                    try {
-                        Thread.sleep(tryPauseMillis);
-                    } catch (InterruptedException e) {
-                        return e;
+                    if (localInvokeCount > 3) {
+                        try {
+                            Thread.sleep(tryPauseMillis);
+                        } catch (InterruptedException e) {
+                            return e;
+                        }
                     }
                     timeout = decrementTimeout(timeout, tryPauseMillis);
                     // TODO: @mm - improve logging (see SystemLogService)

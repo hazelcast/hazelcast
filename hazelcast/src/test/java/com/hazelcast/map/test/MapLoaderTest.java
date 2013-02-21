@@ -43,15 +43,21 @@ public class MapLoaderTest {
         cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("testMapInitialLoad");
-        map.get(0);
-        Thread.sleep(1000);
+
+
         assertEquals(size, map.size());
 
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
-        System.out.println(map.size());
+
+        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(cfg);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
+        }
 
         Hazelcast.shutdownAll();
     }
