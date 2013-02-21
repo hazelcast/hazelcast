@@ -628,6 +628,15 @@ public class Config implements DataSerializable {
                 queueConfig.writeData(out);
             }
         }
+        if (hasSemaphoreConfigs) {
+            out.writeInt(semaphoreConfigs.size());
+            for (final Entry<String, SemaphoreConfig> entry : semaphoreConfigs.entrySet()) {
+                final String name = entry.getKey();
+                final SemaphoreConfig semaphoreConfig = entry.getValue();
+                semaphoreConfig.setName(name);
+                semaphoreConfig.writeData(out);
+            }
+        }
         if (hasProperties) {
             out.writeInt(properties.size());
             for (final Entry<Object, Object> entry : properties.entrySet()) {

@@ -130,7 +130,6 @@ public class SemaphoreTest {
 
         for (int i = 0; i < k; i++) {
             final ISemaphore semaphore = instances[i].getSemaphore("test");
-//            semaphore.init(1);
             new Thread() {
                 public void run() {
                     for (int j = 0; j < 10000; j++) {
@@ -142,7 +141,7 @@ public class SemaphoreTest {
                         synchronized (sync) {
                             Assert.assertEquals(atomicBoolean.compareAndSet(false, true), true);
                         }
-                         //CRITICAL SECTION
+                        //CRITICAL SECTION
                         synchronized (sync) {
                             semaphore.release();
                             atomicBoolean.set(false);
@@ -193,5 +192,73 @@ public class SemaphoreTest {
         }
     }
 
+    @Test
+    public void testSemaphoreWithFailures() throws InterruptedException {
+        final int k = 4;
+        final Config config = new Config();
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k + 1);
 
+        final ISemaphore semaphore = instances[k].getSemaphore("test");
+        int initialPermits = 20;
+        semaphore.init(initialPermits);
+        for (int i = 0; i < k; i++) {
+
+            int rand = (int) (Math.random() * 5) + 1;
+            semaphore.acquire(rand);
+            initialPermits -= rand;
+            Assert.assertEquals(initialPermits, semaphore.availablePermits());
+            semaphore.release(rand);
+            initialPermits += rand;
+            Assert.assertEquals(initialPermits, semaphore.availablePermits());
+
+            instances[i].getLifecycleService().shutdown();
+
+            semaphore.acquire(rand);
+            initialPermits -= rand;
+            Assert.assertEquals(initialPermits, semaphore.availablePermits());
+            semaphore.release(rand);
+            initialPermits += rand;
+            Assert.assertEquals(initialPermits, semaphore.availablePermits());
+
+        }
+
+    }
+
+    @Test
+    public void testSemaphoreWithFailuresAndJoin() {
+
+        final Config config = new Config();
+        final StaticNodeFactory staticNodeFactory = new StaticNodeFactory(3);
+
+        final HazelcastInstance instance1 = staticNodeFactory.newInstance(config);
+        final HazelcastInstance instance2 = staticNodeFactory.newInstance(config);
+        final ISemaphore semaphore = instance1.getSemaphore("test");
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        semaphore.init(0);
+        new Thread() {
+            public void run() {
+                for (int i = 0; i < 2; i++) {
+                    try {
+                        semaphore.acquire();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                countDownLatch.countDown();
+            }
+        }.start();
+
+        instance2.getLifecycleService().shutdown();
+        semaphore.release();
+        HazelcastInstance instance3 = staticNodeFactory.newInstance(config);
+
+        ISemaphore semaphore1 = instance3.getSemaphore("test");
+        semaphore1.release();
+        try {
+            countDownLatch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Assert.assertTrue("FAIL", true);
+            e.printStackTrace();
+        }
+    }
 }
