@@ -391,7 +391,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             MemberImpl deadMember = getMember(deadAddress);
             if (deadMember != null) {
                 removeMember(deadMember);
-                nodeEngine.onMemberLeft(deadMember);
                 logger.log(Level.INFO, membersString());
             }
         } finally {
@@ -795,6 +794,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 masterConfirmationTimes.remove(deadMember);
                 setMembers(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
+                nodeEngine.onMemberLeft(deadMember);
                 sendMembershipEventNotifications(deadMember, false); // async events
                 if (node.isMaster()) {
                     logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");

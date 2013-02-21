@@ -17,13 +17,13 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -129,7 +129,8 @@ public abstract class Operation implements DataSerializable {
                 if (nodeEngine.isActive()) {
                     throw new HazelcastException("Service with name '" + name + "' not found!");
                 } else {
-                    throw new HazelcastInstanceNotActiveException();
+                    throw new RetryableHazelcastException("HazelcastInstance[" + nodeEngine.getThisAddress()
+                        + "] is not active!");
                 }
             }
         }

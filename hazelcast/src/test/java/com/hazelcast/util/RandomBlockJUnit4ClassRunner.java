@@ -24,12 +24,10 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.LogManager;
 
 /**
  * Run the tests randomly and log the running test.
@@ -37,13 +35,14 @@ import java.util.logging.LogManager;
 public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
-        try {
-            InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("logging.properties");
-            LogManager.getLogManager().readConfiguration(in);
-            in.close();
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+//        try {
+//            InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("logging.properties");
+//            LogManager.getLogManager().readConfiguration(in);
+//            in.close();
+//        } catch (Throwable t) {
+//            t.printStackTrace();
+//        }
+        System.setProperty("hazelcast.logging.type", "log4j");
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");

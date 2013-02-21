@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -96,7 +95,13 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
-        executor.execute(new RemoteOperationProcessor(packet));
+        try {
+            executor.execute(new RemoteOperationProcessor(packet));
+        } catch (RejectedExecutionException e) {
+            if (nodeEngine.isActive()) {
+                throw e;
+            }
+        }
     }
 
     /**
@@ -263,6 +268,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private void handleBackupAndSendResponse(BackupAwareOperation backupAwareOp) throws Exception {
+        final int maxRetryCount = 50;
         final int maxBackups = node.getClusterService().getSize() - 1;
         final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
@@ -291,11 +297,10 @@ final class OperationServiceImpl implements OperationService {
                                 backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
                                 backupResponse = backupOp;
                             } else {
-                                // TODO: what if cluster size falls down below backup count! Handle exception!
                                 final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                        .setReplicaIndex(replicaIndex).setTryCount(20).build().invoke();
+                                        .setReplicaIndex(replicaIndex).setTryCount(maxRetryCount).build().invoke();
                                 if (returnsResponse) {
-                                    syncBackups.add(new BackupFuture(f, partitionId, replicaIndex));
+                                    syncBackups.add(new BackupFuture(f, partitionId, replicaIndex, maxRetryCount));
                                 }
                             }
                         }
@@ -311,9 +316,9 @@ final class OperationServiceImpl implements OperationService {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
                             final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                    .setReplicaIndex(replicaIndex).setTryCount(10).build().invoke();
+                                    .setReplicaIndex(replicaIndex).setTryCount(maxRetryCount).build().invoke();
                             if (returnsResponse) {
-                                asyncBackups.add(new BackupFuture(f, partitionId, replicaIndex));
+                                asyncBackups.add(new BackupFuture(f, partitionId, replicaIndex, maxRetryCount));
                             }
                         }
                     }
@@ -323,47 +328,53 @@ final class OperationServiceImpl implements OperationService {
         final Object response = op.returnsResponse()
                 ? (backupResponse == null ? op.getResponse() :
                 new MultiResponse(nodeEngine.getSerializationService(), backupResponse, op.getResponse())) : null;
-        waitFutureResponses(syncBackups);
+        waitBackupResponses(syncBackups);
         sendResponse(op, response);
-        waitFutureResponses(asyncBackups);
+        waitBackupResponses(asyncBackups);
     }
 
     private class BackupFuture {
         final Future future;
         final int partitionId;
         final int replicaIndex;
+        final int retryCount;
+        int retries;
 
-        BackupFuture(Future future, int partitionId, int replicaIndex) {
+        BackupFuture(Future future, int partitionId, int replicaIndex, int retryCount) {
             this.future = future;
             this.partitionId = partitionId;
             this.replicaIndex = replicaIndex;
+            this.retryCount = retryCount;
         }
 
-        public boolean isDone() {
-            return future.isDone();
-        }
-
-        public Object get(int timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        Object get(int timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return future.get(timeout, unit);
+        }
+
+        boolean canRetry() {
+            return retries++ < retryCount;
         }
     }
 
-    private void waitFutureResponses(final Collection<BackupFuture> futures) throws ExecutionException {
-        int size = futures != null ? futures.size() : 0;
-        while (size > 0) {
-            for (BackupFuture f : futures) {
-                if (!f.isDone()) {
-                    try {
-                        f.get(1, TimeUnit.SECONDS);
-                    } catch (InterruptedException ignored) {
-                    } catch (TimeoutException ignored) {
-                    } catch (ExecutionException e) {
-                        if (nodeEngine.getClusterService().getSize() > f.replicaIndex) {
-                            throw e;
-                        }
+    private void waitBackupResponses(final Collection<BackupFuture> futures) throws ExecutionException {
+        while (futures != null && !futures.isEmpty()) {
+            final Iterator<BackupFuture> iter = futures.iterator();
+            while (iter.hasNext()) {
+                final BackupFuture f = iter.next();
+                try {
+                    if (f.canRetry()) {
+                        f.get(250, TimeUnit.MILLISECONDS);
                     }
-                    if (f.isDone()) {
-                        size--;
+                    iter.remove();
+                } catch (InterruptedException ignored) {
+                } catch (TimeoutException ignored) {
+                } catch (ExecutionException e) {
+                    if (!ExceptionUtil.isRetryableException(e)) {
+                        throw e;
+                    } else if (nodeEngine.getClusterService().getSize() <= f.replicaIndex) {
+                        iter.remove();
+                    } else if (f.retries > 10) {
+                        logger.log(Level.WARNING, "----LOGGING BACKUP EXCEPTION HERE----\n", new HazelcastException(e));
                     }
                 }
             }
@@ -654,7 +665,7 @@ final class OperationServiceImpl implements OperationService {
                 }
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-                send(new ErrorResponse(node.getThisAddress(), e), conn);
+//                send(new ErrorResponse(node.getThisAddress(), e), conn);
             }
         }
 
@@ -710,11 +721,6 @@ final class OperationServiceImpl implements OperationService {
 
     private static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation
-                && op.getClass().getClassLoader() == thisClassLoader;
-    }
-
-    private static boolean isJoinOperation(Operation op) {
-        return op instanceof JoinOperation
                 && op.getClass().getClassLoader() == thisClassLoader;
     }
 

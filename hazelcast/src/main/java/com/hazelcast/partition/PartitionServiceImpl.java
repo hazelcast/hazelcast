@@ -208,6 +208,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             return;
         }
         clearTaskQueues();
+        migrationService.onMemberRemove(deadAddress);
         lock.lock();
         try {
             // inactivate migration and sending of PartitionRuntimeState (@see #sendPartitionRuntimeState)
@@ -433,22 +434,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     void addActiveMigration(MigrationInfo migrationInfo) {
-//        lock.lock();
-//        try {
         activeMigrations.put(migrationInfo.getPartitionId(), migrationInfo);
-//        } finally {
-//            lock.unlock();
-//        }
     }
 
     MigrationInfo removeActiveMigration(int partitionId) {
-//        lock.lock();
-//        try {
         return activeMigrations.remove(partitionId);
-
-//        } finally {
-//            lock.unlock();
-//        }
     }
 
     private void addCompletedMigration(MigrationInfo migrationInfo) {
@@ -720,10 +710,17 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private class Migrator implements Runnable {
         final MigrationRequestOperation migrationRequestOp;
         final MigrationInfo migrationInfo;
+        volatile boolean valid = true;
 
         Migrator(MigrationInfo migrationInfo) {
             this.migrationInfo = migrationInfo;
             this.migrationRequestOp = new MigrationRequestOperation(migrationInfo);
+        }
+
+        void onMemberRemove(Address address) {
+            if (address.equals(migrationInfo.getFromAddress()) || address.equals(migrationInfo.getToAddress())) {
+                valid = false;
+            }
         }
 
         public void run() {
@@ -760,7 +757,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         try {
                             result = (Boolean) nodeEngine.toObject(future.get(partitionMigrationTimeout, TimeUnit.SECONDS));
                         } catch (Throwable e) {
-                            final Level level = node.isActive() ? Level.WARNING : Level.FINEST;
+                            final Level level = node.isActive() && valid ? Level.WARNING : Level.FINEST;
                             logger.log(level, "Failed migrating from " + fromMember, e);
                         }
                     } else {
@@ -773,12 +770,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         processMigrationResult();
                     } else {
                         // remove active partition migration
-                        logger.log(Level.WARNING, "Migration task has failed => " + migrationRequestOp);
+                        final Level level = valid ? Level.WARNING : Level.FINEST;
+                        logger.log(level, "Migration task has failed => " + migrationRequestOp);
                         migrationTaskFailed();
                     }
                 }
             } catch (Throwable t) {
-                logger.log(Level.WARNING, "Error [" + t.getClass() + ": " + t.getMessage() + "] " +
+                final Level level = valid ? Level.WARNING : Level.FINEST;
+                logger.log(level, "Error [" + t.getClass() + ": " + t.getMessage() + "] " +
                         "while executing " + migrationRequestOp);
                 logger.log(Level.FINEST, t.getMessage(), t);
                 migrationTaskFailed();
@@ -854,14 +853,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private class MigrationService implements Runnable {
         private final Thread thread;
         private boolean running = true;
-        private boolean runningTask = false;
+        private boolean migrating = false;
+        private volatile Runnable activeTask;
 
         MigrationService(Node node) {
             thread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("MigrationThread"));
         }
 
         public void run() {
-//            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
             try {
                 while (running) {
                     Runnable r = null;
@@ -886,8 +885,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                     final boolean hasNoTasks = hasNoTasks();
                     if (!migrationActive.get() || hasNoTasks) {
-                        if (hasNoTasks && runningTask) {
-                            runningTask = false;
+                        if (hasNoTasks && migrating) {
+                            migrating = false;
                             logger.log(Level.INFO, "All migration tasks has been completed, queues are empty.");
                         }
                         evictCompletedMigrations();
@@ -903,51 +902,46 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             }
         }
 
-        private boolean hasNoTasks() {
+        boolean hasNoTasks() {
             return (immediateTasksQueue.isEmpty() && scheduledTasksQueue.isEmpty());
         }
 
-        private boolean isActive() {
+        boolean isActive() {
             return running && !thread.isInterrupted() && migrationActive.get();
         }
 
-        private boolean safeRun(final Runnable r) {
+        boolean safeRun(final Runnable r) {
             if (r == null || !running) return false;
             try {
-                runningTask = true;
+                migrating = (r instanceof Migrator);
+                activeTask = r;
                 r.run();
             } catch (Throwable t) {
                 logger.log(Level.WARNING, t.getMessage(), t);
+            } finally {
+                activeTask = null;
             }
             return true;
         }
 
-        private void safeRunImmediate(final Runnable r) throws InterruptedException {
+        void safeRunImmediate(final Runnable r) throws InterruptedException {
             if (safeRun(r) && immediateBackupInterval > 0) {
                 Thread.sleep(immediateBackupInterval);
             }
         }
 
-        private void start() {
-            thread.start();
-        }
-
-        private void stop() {
-            clearTaskQueues();
-            try {
-                final CountDownLatch stopLatch = new CountDownLatch(1);
-                immediateTasksQueue.offer(new Runnable() {
-                    public void run() {
-                        running = false;
-                        stopLatch.countDown();
-                    }
-                });
-                stopLatch.await(1, TimeUnit.SECONDS);
-            } catch (Throwable ignore) {
+        void onMemberRemove(Address address) {
+            final Runnable r = activeTask;
+            if (r != null && r instanceof Migrator) {
+                ((Migrator) r).onMemberRemove(address);
             }
         }
 
-        private void stopNow() {
+        void start() {
+            thread.start();
+        }
+
+        void stopNow() {
             clearTaskQueues();
             immediateTasksQueue.offer(new Runnable() {
                 public void run() {

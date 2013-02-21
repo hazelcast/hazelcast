@@ -19,6 +19,7 @@ package com.hazelcast.map.test;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -26,9 +27,9 @@ import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -232,10 +233,10 @@ public class DynamicClusterTest extends BaseTest {
         log("starting");
         final MultiMap multiMap = getInstance(0).getMultiMap("testMultiMapSize");
         final int putSize = 100*1000;
-        final int removeSize = putSize*8;
+        final int removeSize = putSize*4;
         final AtomicInteger putCount = new AtomicInteger(putSize);
-        final AtomicBoolean putException = new AtomicBoolean(false);
-        final AtomicBoolean removeException = new AtomicBoolean(false);
+        final AtomicReference<Throwable> putException = new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> removeException = new AtomicReference<Throwable>();
 
         new Thread() {
 
@@ -247,7 +248,7 @@ public class DynamicClusterTest extends BaseTest {
                     }
                 }
                 catch (Exception e){
-                    putException.set(true);
+                    putException.set(e);
                     log("exexex");
                     log(e.getMessage());
                 }
@@ -271,7 +272,7 @@ public class DynamicClusterTest extends BaseTest {
                     }
                 }
                 catch (Exception e){
-                    removeException.set(true);
+                    removeException.set(e);
                     log("exexex");
                     log(e.getMessage());
                 }
@@ -297,8 +298,14 @@ public class DynamicClusterTest extends BaseTest {
         while (putCount.get() != 0 || removeCount.get() != 0){
             Thread.sleep(1000);
             log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
-            assertFalse(putException.get());
-            assertFalse(removeException.get());
+            final Throwable putError = putException.get();
+            if (putError != null) {
+                ExceptionUtil.sneakyThrow(putError);
+            }
+            final Throwable remError = removeException.get();
+            if (remError != null) {
+                ExceptionUtil.sneakyThrow(remError);
+            }
         }
 
         assertEquals(putSize - removed.get(), multiMap.size());
