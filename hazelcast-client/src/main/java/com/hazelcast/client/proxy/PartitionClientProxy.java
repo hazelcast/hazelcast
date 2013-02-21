@@ -18,16 +18,15 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.ListenerThread;
-import com.hazelcast.client.proxy.listener.MembershipLRH;
 import com.hazelcast.client.proxy.listener.MigrationEventLRH;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.core.PartitionService;
 
 import java.net.UnknownHostException;
 import java.util.LinkedHashSet;
@@ -62,7 +61,7 @@ public class PartitionClientProxy implements PartitionService {
 
     private Partition partition(final int partitionId, String hostname, int port) {
         Address address = null;
-        if(hostname!="null"){
+        if(hostname!="null"){   //TODO: Do you mean (hostname != null) OR (!hostname.equals("null"))
            
             try {
                 address = new Address(hostname, port);

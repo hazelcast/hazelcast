@@ -373,10 +373,10 @@ final class OperationServiceImpl implements OperationService {
     private void handleOperationError(Operation op, Throwable e) {
         if (e instanceof RetryableException) {
             final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
-//            logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
+            logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
         } else {
             final Level level = nodeEngine.isActive() ? Level.SEVERE: Level.FINEST;
-//            logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
+            logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
         sendResponse(op, e);
     }

@@ -24,7 +24,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Date;
-import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -35,11 +34,12 @@ public class ConditionImpl implements ICondition {
 
     private final LockProxy lockProxy;
     private final int partitionId;
-    private final String conditionId = UUID.randomUUID().toString();
+    private final String conditionId;
 
-    public ConditionImpl(LockProxy lockProxy) {
+    public ConditionImpl(LockProxy lockProxy, String id) {
         this.lockProxy = lockProxy;
         this.partitionId = lockProxy.getNodeEngine().getPartitionService().getPartitionId(lockProxy.key);
+        this.conditionId = id;
     }
 
     public void await() throws InterruptedException {

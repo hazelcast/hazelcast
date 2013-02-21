@@ -39,5 +39,5 @@ public interface ILock extends Lock, DistributedObject {
      */
     void forceUnlock();
 
-    ICondition newCondition();
+    ICondition newCondition(String name);
 }
