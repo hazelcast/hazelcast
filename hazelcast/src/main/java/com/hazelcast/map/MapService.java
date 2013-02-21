@@ -218,10 +218,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     }
 
-    public static class PostJoinMapOperation extends AbstractOperation implements JoinOperation {
+    public static class PostJoinMapOperation extends AbstractOperation {
         private List<MapIndexInfo> lsMapIndexes = new LinkedList<MapIndexInfo>();
 
-        @Override
         public String getServiceName() {
             return SERVICE_NAME;
         }

@@ -149,7 +149,7 @@ abstract class InvocationImpl implements Future, Invocation {
                 OperationAccessor.setCallId(op, callId);
                 boolean sent = operationService.send(op, target);
                 if (!sent) {
-                    setResult(new RetryableIOException("Packet not sent!"));
+                    setResult(new RetryableIOException("Packet not sent to -> " + target));
                 }
             }
         }

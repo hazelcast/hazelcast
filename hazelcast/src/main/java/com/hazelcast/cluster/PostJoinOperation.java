@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * @mdogan 12/24/12
  */
-public class PostJoinOperation extends AbstractOperation implements JoinOperation {
+public class PostJoinOperation extends AbstractOperation {
 
     private transient Operation[] operations;
 

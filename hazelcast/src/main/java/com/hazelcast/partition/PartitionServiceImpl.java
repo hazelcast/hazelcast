@@ -495,6 +495,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return p;
     }
 
+    public boolean hasOnGoingMigrationTask() {
+        return !immediateTasksQueue.isEmpty() || !scheduledTasksQueue.isEmpty()
+                || !activeMigrations.isEmpty() || hasActiveBackupTask();
+    }
+
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
         int maxBackupCount = getMaxBackupCount();
@@ -506,12 +511,12 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (size == 0) {
             for (PartitionInfo partition : partitions) {
                 if (partition.getReplicaAddress(1) == null) {
-                    logger.log(Level.WARNING, "Waiting for safe-backup of partition: " + partition.getPartitionId());
+                    logger.log(Level.WARNING, "Should take immediate backup of partition: " + partition.getPartitionId());
                     return true;
                 }
             }
         } else {
-            logger.log(Level.WARNING, "Waiting for ongoing immediate migration tasks: " + size);
+            logger.log(Level.WARNING, "Should complete ongoing total of " + size + " immediate migration tasks!");
             return true;
         }
         return false;

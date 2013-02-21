@@ -100,4 +100,8 @@ public class PartitionClientProxy implements PartitionService {
             thread.stopListening();
         }
     }
+
+    public boolean hasOngoingMigration() {
+        return false;
+    }
 }

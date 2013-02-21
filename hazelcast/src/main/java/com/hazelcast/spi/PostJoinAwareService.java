@@ -27,9 +27,6 @@ public interface PostJoinAwareService {
      *
      * Post join operations should return response, at least a null response.
      *
-     * Also making post-join operation a JoinOperation will help a lot.
-     *
-     * @see com.hazelcast.cluster.JoinOperation
      */
     Operation getPostJoinOperation();
 

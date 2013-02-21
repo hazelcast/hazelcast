@@ -30,4 +30,7 @@ public interface PartitionService {
     void addMigrationListener(MigrationListener migrationListener);
 
     void removeMigrationListener(MigrationListener migrationListener);
+
+    // TODO: @mm - method name and/or signature can change!
+    boolean hasOngoingMigration();
 }
