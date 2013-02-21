@@ -20,7 +20,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.TestUtil;
+import com.hazelcast.instance.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

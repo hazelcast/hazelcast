@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.instance;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
@@ -41,6 +41,16 @@ public class TestUtil {
 
     public static Object toObject(Data data) {
         return serializationService.toObject(data);
+    }
+
+    public static Node getNode(HazelcastInstance hz) {
+        HazelcastInstanceImpl impl = null;
+        if (hz instanceof HazelcastInstanceProxy) {
+            impl = ((HazelcastInstanceProxy) hz).original;
+        } else if (hz instanceof HazelcastInstanceImpl) {
+            impl = (HazelcastInstanceImpl) hz;
+        }
+        return impl != null ? impl.node : null;
     }
 
     @Ignore

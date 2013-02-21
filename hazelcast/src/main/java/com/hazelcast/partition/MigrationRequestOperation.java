@@ -123,7 +123,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         if (e instanceof ExecutionException) {
             e = e.getCause();
         }
-        if (e instanceof MemberLeftException || e instanceof IllegalStateException) {
+        if (e instanceof MemberLeftException || e instanceof InterruptedException) {
             level = Level.FINEST;
         }
         getLogger().log(level, e.getMessage(), e);

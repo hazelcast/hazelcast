@@ -23,7 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.TestUtil;
+import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
