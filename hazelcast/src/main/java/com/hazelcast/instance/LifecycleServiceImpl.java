@@ -39,7 +39,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     private ILogger getLogger() {
-        return instance.node.getLogger(LifecycleServiceImpl.class.getName());
+        return instance.node.getLogger(LifecycleService.class.getName());
     }
 
     public void addLifecycleListener(LifecycleListener lifecycleListener) {

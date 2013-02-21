@@ -265,7 +265,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             continue;
                         }
                         // send replica diffs to new replica owners after partition table shift.
-                        for (int replicaIndex = indexOfDead; replicaIndex < maxBackupCount; replicaIndex++) {
+                        for (int replicaIndex = indexOfDead; replicaIndex <= maxBackupCount; replicaIndex++) {
                             Address target = partition.getReplicaAddress(replicaIndex);
                             if (target != null && !target.equals(owner)) {
                                 if (getMember(target) != null) {
@@ -280,9 +280,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             }
                         }
                         // if index of dead member is equal to or less than maxBackupCount
-                        // clear indexes of equal to and greater than maxBackupCount of partition.
+                        // clear indexes greater than maxBackupCount of partition.
                         if (indexOfDead <= maxBackupCount) {
-                            for (int index = maxBackupCount; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
+                            for (int index = maxBackupCount + 1; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
                                 partition.setReplicaAddress(index, null);
                             }
                         }

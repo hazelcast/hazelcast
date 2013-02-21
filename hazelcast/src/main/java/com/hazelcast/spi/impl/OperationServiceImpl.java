@@ -293,7 +293,7 @@ final class OperationServiceImpl implements OperationService {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
                             if (op.returnsResponse() && target.equals(op.getCallerAddress())) {
-                                // TODO: fix me! what if backup migrates after response is returned?
+//                                TODO: fix me! what if backup migrates after response is returned?
                                 backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
                                 backupResponse = backupOp;
                             } else {
@@ -359,13 +359,18 @@ final class OperationServiceImpl implements OperationService {
     private void waitBackupResponses(final Collection<BackupFuture> futures) throws ExecutionException {
         while (futures != null && !futures.isEmpty()) {
             final Iterator<BackupFuture> iter = futures.iterator();
+            ExecutionException lastError = null;
             while (iter.hasNext()) {
                 final BackupFuture f = iter.next();
                 try {
                     if (f.canRetry()) {
-                        f.get(250, TimeUnit.MILLISECONDS);
+                        f.get(500, TimeUnit.MILLISECONDS);
+                        lastError = null;
                     }
                     iter.remove();
+                    if (lastError != null) {
+                        logger.log(Level.WARNING, "While backing up -> " + lastError.getMessage(), lastError);
+                    }
                 } catch (InterruptedException ignored) {
                 } catch (TimeoutException ignored) {
                 } catch (ExecutionException e) {
@@ -373,8 +378,8 @@ final class OperationServiceImpl implements OperationService {
                         throw e;
                     } else if (nodeEngine.getClusterService().getSize() <= f.replicaIndex) {
                         iter.remove();
-                    } else if (f.retries > 10) {
-                        logger.log(Level.WARNING, "----LOGGING BACKUP EXCEPTION HERE----\n", new HazelcastException(e));
+                    } else {
+                        lastError = e;
                     }
                 }
             }
@@ -389,7 +394,9 @@ final class OperationServiceImpl implements OperationService {
             final Level level = nodeEngine.isActive() ? Level.SEVERE: Level.FINEST;
             logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
-        sendResponse(op, e);
+        if (node.isActive()) {
+            sendResponse(op, e);
+        }
     }
 
     private void sendResponse(Operation op, Object response) {
