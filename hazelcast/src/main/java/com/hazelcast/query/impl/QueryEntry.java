@@ -69,7 +69,7 @@ public class QueryEntry implements QueryableEntry {
     public Comparable getAttribute(String attributeName) throws QueryException {
         if (valueData != null && valueData.isPortable()) {
             PortableReader reader = getOrCreatePortableReader();
-            return extractor.extract(reader, attributeName, valueData.cd.get(attributeName).getType());
+            return extractor.extract(reader, attributeName, valueData.getClassDefinition().get(attributeName).getType().getId());
         }
         return extractViaReflection(attributeName);
     }
@@ -87,9 +87,9 @@ public class QueryEntry implements QueryableEntry {
 
     public AttributeType getAttributeType(String attributeName) {
         if (valueData != null && valueData.isPortable()) {
-            FieldDefinition fd = valueData.cd.get(attributeName);
+            FieldDefinition fd = valueData.getClassDefinition().get(attributeName);
             if (fd == null) throw new QueryException("Unknown Attribute: " + attributeName);
-            return AttributeType.getAttributeType(fd.getType());
+            return AttributeType.getAttributeType(fd.getType().getId());
         }
         return getAttributeTypeViaReflection(attributeName);
     }
@@ -151,26 +151,26 @@ public class QueryEntry implements QueryableEntry {
 
     PortableReader getOrCreatePortableReader() {
         if (reader != null) return reader;
-        ClassDefinitionImpl cd = (ClassDefinitionImpl) valueData.cd;
+        ClassDefinitionImpl cd = (ClassDefinitionImpl) valueData.getClassDefinition();
         PortableSerializer portableSerializer = ((SerializationServiceImpl) serializationService).getPortableSerializer();
-        BufferObjectDataInput in = (BufferObjectDataInput) serializationService.createObjectDataInput(valueData.buffer);
+        BufferObjectDataInput in = (BufferObjectDataInput) serializationService.createObjectDataInput(valueData);
         reader = new DefaultPortableReader(portableSerializer, in, cd);
         return reader;
     }
 
     static class PortableExtractor {
-        PortableFieldExtractor[] extractors = new PortableFieldExtractor[FieldDefinition.TYPE_DOUBLE_ARRAY];
+        PortableFieldExtractor[] extractors = new PortableFieldExtractor[FieldType.values().length];
 
         PortableExtractor() {
-            extractors[FieldDefinition.TYPE_BYTE] = new PortableByteFieldExtractor();
-            extractors[FieldDefinition.TYPE_BOOLEAN] = new PortableBooleanFieldExtractor();
-            extractors[FieldDefinition.TYPE_LONG] = new PortableLongFieldExtractor();
-            extractors[FieldDefinition.TYPE_INT] = new PortableIntegerFieldExtractor();
-            extractors[FieldDefinition.TYPE_CHAR] = new PortableCharFieldExtractor();
-            extractors[FieldDefinition.TYPE_DOUBLE] = new PortableDoubleFieldExtractor();
-            extractors[FieldDefinition.TYPE_SHORT] = new PortableShortFieldExtractor();
-            extractors[FieldDefinition.TYPE_FLOAT] = new PortableFloatFieldExtractor();
-            extractors[FieldDefinition.TYPE_UTF] = new PortableUtfFieldExtractor();
+            extractors[FieldType.BYTE.getId()] = new PortableByteFieldExtractor();
+            extractors[FieldType.BOOLEAN.getId()] = new PortableBooleanFieldExtractor();
+            extractors[FieldType.LONG.getId()] = new PortableLongFieldExtractor();
+            extractors[FieldType.INT.getId()] = new PortableIntegerFieldExtractor();
+            extractors[FieldType.CHAR.getId()] = new PortableCharFieldExtractor();
+            extractors[FieldType.DOUBLE.getId()] = new PortableDoubleFieldExtractor();
+            extractors[FieldType.SHORT.getId()] = new PortableShortFieldExtractor();
+            extractors[FieldType.FLOAT.getId()] = new PortableFloatFieldExtractor();
+            extractors[FieldType.UTF.getId()] = new PortableUtfFieldExtractor();
         }
 
         public Comparable extract(PortableReader reader, String fieldName, byte fieldType) throws QueryException {

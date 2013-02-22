@@ -947,7 +947,13 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-    <xs:element name="portable-version" type="xs:integer" />
+    <xs:element name="portable-version">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="0" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
     <xs:element name="portable-factory-class" type="xs:string" />
     <xs:element name="serializers">
         <xs:complexType>

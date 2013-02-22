@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.ClassDefinitionBinaryProxy;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
@@ -64,7 +61,7 @@ public class DataWriter {
     /**
      * WARNING:
      *
-     * Should be in sync with {@link Data#writeData(ObjectDataOutput)}
+     * Should be in sync with {@link Data#writeData(com.hazelcast.nio.ObjectDataOutput)}
      */
     public boolean writeTo(ByteBuffer destination) {
         if (!isStatusSet(stType)) {
@@ -78,7 +75,7 @@ public class DataWriter {
             if (destination.remaining() < 4) {
                 return false;
             }
-            final int classId = data.cd == null ? Data.NO_CLASS_ID : data.cd.getClassId();
+            final int classId = data.classDefinition == null ? Data.NO_CLASS_ID : data.classDefinition.getClassId();
             destination.putInt(classId);
             if (classId == Data.NO_CLASS_ID) {
                 setStatus(stVersion);
@@ -91,7 +88,7 @@ public class DataWriter {
             if (destination.remaining() < 4) {
                 return false;
             }
-            final int version = data.cd.getVersion();
+            final int version = data.classDefinition.getVersion();
             destination.putInt(version);
             setStatus(stVersion);
         }
@@ -99,7 +96,8 @@ public class DataWriter {
             if (destination.remaining() < 4) {
                 return false;
             }
-            final byte[] binary = data.cd.getBinary();
+            final BinaryClassDefinition cd = (BinaryClassDefinition) data.classDefinition;
+            final byte[] binary = cd.getBinary();
             classDefSize = binary == null ? 0 : binary.length;
             destination.putInt(classDefSize);
             setStatus(stClassDefSize);
@@ -150,7 +148,7 @@ public class DataWriter {
     /**
      * WARNING:
      *
-     * Should be in sync with {@link Data#readData(ObjectDataInput)}
+     * Should be in sync with {@link Data#readData(com.hazelcast.nio.ObjectDataInput)}
      */
     public boolean readFrom(ByteBuffer source) {
         if (data == null) {
@@ -185,7 +183,7 @@ public class DataWriter {
         if (!isStatusSet(stClassDef)) {
             ClassDefinition cd;
             if ((cd = context.lookup(classId, version)) != null) {
-                data.cd = cd;
+                data.classDefinition = cd;
                 setStatus(stClassDefSize);
                 setStatus(stClassDef);
             } else {
@@ -202,7 +200,7 @@ public class DataWriter {
                     }
                     final byte[] binary = new byte[classDefSize];
                     source.get(binary);
-                    data.cd = new ClassDefinitionBinaryProxy(classId, version, binary);
+                    data.classDefinition = new BinaryClassDefinitionProxy(classId, version, binary);
                     setStatus(stClassDef);
                 }
             }

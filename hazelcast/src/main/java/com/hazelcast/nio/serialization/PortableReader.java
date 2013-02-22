@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.ObjectDataInput;
+
 import java.io.IOException;
 import java.util.Set;
 
@@ -30,7 +32,7 @@ public interface PortableReader {
 
     Set<String> getFieldNames();
 
-    int getFieldTypeId(String fieldName);
+    FieldType getFieldType(String fieldName);
 
     int getFieldClassId(String fieldName);
 
@@ -69,4 +71,6 @@ public interface PortableReader {
     short[] readShortArray(String fieldName) throws IOException;
 
     Portable[] readPortableArray(String fieldName) throws IOException;
+
+    ObjectDataInput getRawDataInput() throws IOException;
 }

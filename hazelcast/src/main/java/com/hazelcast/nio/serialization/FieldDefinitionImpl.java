@@ -28,24 +28,24 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
 
     int index;
     String fieldName;
-    byte type;
+    FieldType type;
     int classId;
 
     FieldDefinitionImpl() {
     }
 
-    FieldDefinitionImpl(int index, String fieldName, byte type) {
+    FieldDefinitionImpl(int index, String fieldName, FieldType type) {
         this(index, fieldName, type, Data.NO_CLASS_ID);
     }
 
-    FieldDefinitionImpl(int index, String fieldName, byte type, int classId) {
+    FieldDefinitionImpl(int index, String fieldName, FieldType type, int classId) {
         this.classId = classId;
         this.type = type;
         this.fieldName = fieldName;
         this.index = index;
     }
 
-    public byte getType() {
+    public FieldType getType() {
         return type;
     }
 
@@ -64,14 +64,14 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(index);
         out.writeUTF(fieldName);
-        out.writeByte(type);
+        out.writeByte(type.getId());
         out.writeInt(classId);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         index = in.readInt();
         fieldName = in.readUTF();
-        type = in.readByte();
+        type = FieldType.get(in.readByte());
         classId = in.readInt();
     }
 
@@ -94,7 +94,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
     public int hashCode() {
         int result = index;
         result = 31 * result + (fieldName != null ? fieldName.hashCode() : 0);
-        result = 31 * result + (int) type;
+        result = 31 * result + type.getId();
         result = 31 * result + classId;
         return result;
     }

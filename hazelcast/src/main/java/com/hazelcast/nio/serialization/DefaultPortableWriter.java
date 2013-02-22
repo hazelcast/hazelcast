@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ public class DefaultPortableWriter implements PortableWriter {
     private final BufferObjectDataOutput out;
     private final int offset;
     private final Set<String> writtenFields;
+    private boolean raw = false;
 
     public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) {
         this.serializer = serializer;
@@ -39,7 +41,8 @@ public class DefaultPortableWriter implements PortableWriter {
         this.offset = out.position();
         this.cd = cd;
         this.writtenFields = new HashSet<String>(cd.getFieldCount());
-        this.out.position(offset + cd.getFieldCount() * 4);
+        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4; // one additional int for raw data
+        this.out.position(offset + fieldIndexesLength);
     }
 
     public int getVersion() {
@@ -206,6 +209,9 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     private void setPosition(String fieldName) throws IOException {
+        if (raw) {
+            throw new HazelcastSerializationException("Can write Portable fields after getRawDataOutput() is called!");
+        }
         FieldDefinition fd = cd.get(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
@@ -218,5 +224,15 @@ public class DefaultPortableWriter implements PortableWriter {
         } else {
             throw new HazelcastSerializationException("Field '" + fieldName + "' has already been written!");
         }
+    }
+
+    public ObjectDataOutput getRawDataOutput() throws IOException {
+        if (!raw) {
+            int pos = out.position();
+            int index = cd.getFieldCount(); // last index
+            out.writeInt(offset + index * 4, pos);
+        }
+        raw = true;
+        return out;
     }
 }

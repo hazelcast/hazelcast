@@ -17,15 +17,44 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 1/1/13
+ * @mdogan 2/22/13
  */
-public interface FieldDefinition extends DataSerializable {
 
-    FieldType getType();
+public enum FieldType {
 
-    String getName();
+    PORTABLE(0),
+    BYTE(1),
+    BOOLEAN(2),
+    CHAR(3),
+    SHORT(4),
+    INT(5),
+    LONG(6),
+    FLOAT(7),
+    DOUBLE(8),
+    UTF(9),
+    PORTABLE_ARRAY(10),
+    BYTE_ARRAY(11),
+    CHAR_ARRAY(12),
+    SHORT_ARRAY(13),
+    INT_ARRAY(14),
+    LONG_ARRAY(15),
+    FLOAT_ARRAY(16),
+    DOUBLE_ARRAY(17);
 
-    int getIndex();
+    private final byte type;
 
-    int getClassId();
+    private FieldType(int type) {
+        this.type = (byte) type;
+    }
+
+    public byte getId() {
+        return type;
+    }
+
+    private static final FieldType[] all = FieldType.values();
+
+    public static FieldType get(byte type) {
+        return all[type];
+    }
+
 }

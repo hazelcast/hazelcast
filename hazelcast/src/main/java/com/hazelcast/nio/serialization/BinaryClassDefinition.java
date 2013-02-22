@@ -17,15 +17,33 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 1/1/13
+ * @mdogan 1/3/13
  */
-public interface FieldDefinition extends DataSerializable {
+public abstract class BinaryClassDefinition implements ClassDefinition {
 
-    FieldType getType();
+    protected int classId;
+    protected int version = -1;
 
-    String getName();
+    protected transient byte[] binary;
 
-    int getIndex();
+    public BinaryClassDefinition() {
+    }
 
-    int getClassId();
+    public BinaryClassDefinition(int classId, int version, byte[] binary) {
+        this.classId = classId;
+        this.version = version;
+        this.binary = binary;
+    }
+
+    public int getClassId() {
+        return classId;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public byte[] getBinary() {
+        return binary;
+    }
 }
