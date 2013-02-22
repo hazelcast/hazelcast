@@ -156,8 +156,7 @@ final class OperationServiceImpl implements OperationService {
                     final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     final boolean validatesTarget = op.validatesTarget();
                     if (validatesTarget && !node.getThisAddress().equals(owner)) {
-                        throw new WrongTargetException(node.getThisAddress(), owner, partitionId,
-                                op.getClass().getName(), op.getServiceName());
+                        throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getClass().getName(), op.getServiceName());
                     }
                     if (op instanceof KeyBasedOperation) {
                         final int hash = ((KeyBasedOperation) op).getKeyHash();
@@ -278,9 +277,8 @@ final class OperationServiceImpl implements OperationService {
         Collection<BackupFuture> asyncBackups = null;
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
-        final Operation backupOp;
         Operation backupResponse = null;
-        if ((syncBackupCount + asyncBackupCount > 0) && (backupOp = backupAwareOp.getBackupOperation()) != null) {
+        if (syncBackupCount + asyncBackupCount > 0) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
@@ -288,6 +286,10 @@ final class OperationServiceImpl implements OperationService {
                 syncBackups = new ArrayList<BackupFuture>(syncBackupCount);
                 for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+                    final Operation backupOp = backupAwareOp.getBackupOperation();
+                    if (backupOp == null) {
+                        throw new IllegalArgumentException("Backup operation should not be null!");
+                    }
                     if (target != null) {
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
@@ -311,6 +313,10 @@ final class OperationServiceImpl implements OperationService {
                 asyncBackups = new ArrayList<BackupFuture>(asyncBackupCount);
                 for (int replicaIndex = syncBackupCount + 1; replicaIndex <= asyncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+                    final Operation backupOp = backupAwareOp.getBackupOperation();
+                    if (backupOp == null) {
+                        throw new IllegalArgumentException("Backup operation should not be null!");
+                    }
                     if (target != null) {
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
