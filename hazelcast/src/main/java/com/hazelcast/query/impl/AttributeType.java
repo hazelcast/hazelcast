@@ -16,18 +16,18 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
 
 public enum AttributeType {
-    DOUBLE(FieldDefinition.TYPE_DOUBLE, TypeConverters.DOUBLE_CONVERTER),
-    LONG(FieldDefinition.TYPE_LONG, TypeConverters.LONG_CONVERTER),
-    SHORT(FieldDefinition.TYPE_SHORT, TypeConverters.SHORT_CONVERTER),
-    BOOLEAN(FieldDefinition.TYPE_BOOLEAN, TypeConverters.BOOLEAN_CONVERTER),
-    BYTE(FieldDefinition.TYPE_BYTE, TypeConverters.BYTE_CONVERTER),
-    STRING(FieldDefinition.TYPE_UTF, TypeConverters.STRING_CONVERTER),
-    FLOAT(FieldDefinition.TYPE_FLOAT, TypeConverters.FLOAT_CONVERTER),
-    CHAR(FieldDefinition.TYPE_CHAR, TypeConverters.CHAR_CONVERTER),
-    INTEGER(FieldDefinition.TYPE_INT, TypeConverters.INTEGER_CONVERTER),
+    DOUBLE(FieldType.DOUBLE.getId(), TypeConverters.DOUBLE_CONVERTER),
+    LONG(FieldType.LONG.getId(), TypeConverters.LONG_CONVERTER),
+    SHORT(FieldType.SHORT.getId(), TypeConverters.SHORT_CONVERTER),
+    BOOLEAN(FieldType.BOOLEAN.getId(), TypeConverters.BOOLEAN_CONVERTER),
+    BYTE(FieldType.BYTE.getId(), TypeConverters.BYTE_CONVERTER),
+    STRING(FieldType.UTF.getId(), TypeConverters.STRING_CONVERTER),
+    FLOAT(FieldType.FLOAT.getId(), TypeConverters.FLOAT_CONVERTER),
+    CHAR(FieldType.CHAR.getId(), TypeConverters.CHAR_CONVERTER),
+    INTEGER(FieldType.INT.getId(), TypeConverters.INTEGER_CONVERTER),
     ENUM(44, TypeConverters.ENUM_CONVERTER),
     BIG_INTEGER(45, TypeConverters.BIG_INTEGER_CONVERTER),
     BIG_DECIMAL(46, TypeConverters.BIG_DECIMAL_CONVERTER),
@@ -59,7 +59,7 @@ public enum AttributeType {
         return converter;
     }
 
-    public final static AttributeType getAttributeType(int id) {
+    public static AttributeType getAttributeType(int id) {
         return types[id];
     }
 }

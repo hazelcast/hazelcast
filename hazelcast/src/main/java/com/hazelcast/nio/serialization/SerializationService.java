@@ -37,6 +37,8 @@ public interface SerializationService {
 
     ObjectDataInput createObjectDataInput(byte[] data);
 
+    ObjectDataInput createObjectDataInput(Data data);
+
     ObjectDataOutput createObjectDataOutput(int size);
 
     ObjectDataOutputStream createObjectDataOutputStream(OutputStream out);

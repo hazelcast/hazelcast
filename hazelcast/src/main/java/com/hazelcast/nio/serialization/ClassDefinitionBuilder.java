@@ -19,44 +19,147 @@ package com.hazelcast.nio.serialization;
 /**
  * @mdogan 2/6/13
  */
-public interface ClassDefinitionBuilder {
+public final class ClassDefinitionBuilder {
 
-    void addIntField(String fieldName);
+    private final ClassDefinitionImpl cd = new ClassDefinitionImpl();
+    private int index = 0;
+    private boolean done = false;
 
-    void addLongField(String fieldName);
+    public ClassDefinitionBuilder(int classId) {
+        cd.classId = classId;
+    }
 
-    void addUTFField(String fieldName);
+    ClassDefinitionBuilder(int classId, int version) {
+        cd.classId = classId;
+        cd.version = version;
+    }
 
-    void addBooleanField(String fieldName);
+    public ClassDefinitionBuilder addIntField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT));
+        return this;
+    }
 
-    void addByteField(String fieldName);
+    public ClassDefinitionBuilder addLongField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG));
+        return this;
+    }
 
-    void addCharField(String fieldName);
+    public ClassDefinitionBuilder addUTFField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF));
+        return this;
+    }
 
-    void addDoubleField(String fieldName);
+    public ClassDefinitionBuilder addBooleanField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN));
+        return this;
+    }
 
-    void addFloatField(String fieldName);
+    public ClassDefinitionBuilder addByteField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE));
+        return this;
+    }
 
-    void addShortField(String fieldName);
+    public ClassDefinitionBuilder addCharField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR));
+        return this;
+    }
 
-    void addByteArrayField(String fieldName);
+    public ClassDefinitionBuilder addDoubleField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE));
+        return this;
+    }
 
-    void addCharArrayField(String fieldName);
+    public ClassDefinitionBuilder addFloatField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT));
+        return this;
+    }
 
-    void addIntArrayField(String fieldName);
+    public ClassDefinitionBuilder addShortField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT));
+        return this;
+    }
 
-    void addLongArrayField(String fieldName);
+    public ClassDefinitionBuilder addByteArrayField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY));
+        return this;
+    }
 
-    void addDoubleArrayField(String fieldName);
+    public ClassDefinitionBuilder addCharArrayField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR_ARRAY));
+        return this;
+    }
 
-    void addFloatArrayField(String fieldName);
+    public ClassDefinitionBuilder addIntArrayField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT_ARRAY));
+        return this;
+    }
 
-    void addShortArrayField(String fieldName);
+    public ClassDefinitionBuilder addLongArrayField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG_ARRAY));
+        return this;
+    }
 
-    ClassDefinitionBuilder createPortableFieldBuilder(String fieldName, int classId);
+    public ClassDefinitionBuilder addDoubleArrayField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE_ARRAY));
+        return this;
+    }
 
-    ClassDefinitionBuilder createPortableArrayFieldBuilder(String fieldName, int classId);
+    public ClassDefinitionBuilder addFloatArrayField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT_ARRAY));
+        return this;
+    }
 
-    void buildAndRegister();
+    public ClassDefinitionBuilder addShortArrayField(String fieldName) {
+        check();
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY));
+        return this;
+    }
 
+    public ClassDefinitionBuilder addPortableField(String fieldName, int classId) {
+        check();
+        if (classId == Data.NO_CLASS_ID) {
+            throw new IllegalArgumentException("Portable class id cannot be zero!");
+        }
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE, classId));
+        return this;
+    }
+
+    public ClassDefinitionBuilder addPortableArrayField(String fieldName, int classId) {
+        check();
+        if (classId == Data.NO_CLASS_ID) {
+            throw new IllegalArgumentException("Portable class id cannot be zero!");
+        }
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY, classId));
+        return this;
+    }
+
+    public ClassDefinition build() {
+        done = true;
+        return cd;
+    }
+
+    private void check() {
+        if (done) {
+            throw new HazelcastSerializationException("ClassDefinition is already built for " + cd.getClassId());
+        }
+    }
+
+    ClassDefinitionImpl getCd() {
+        return cd;
+    }
 }

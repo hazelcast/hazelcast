@@ -205,7 +205,6 @@ public class MapContainer {
         }
     }
 
-
     public IndexService getIndexService() {
         return indexService;
     }

@@ -50,7 +50,7 @@ public class PortableSerializer implements TypeSerializer<Portable> {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
         ClassDefinition cd = getClassDefinition(p, classId);
-        DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
+        PortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);
     }
 
@@ -59,7 +59,7 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         if (cd == null) {
             ClassDefinitionWriter classDefinitionWriter = new ClassDefinitionWriter(classId);
             p.writePortable(classDefinitionWriter);
-            cd = classDefinitionWriter.register();
+            cd = classDefinitionWriter.registerAndGet();
         }
         return cd;
     }
@@ -90,13 +90,13 @@ public class PortableSerializer implements TypeSerializer<Portable> {
 
     private class ClassDefinitionWriter implements PortableWriter {
 
-        final ClassDefinitionBuilderImpl builder;
+        final ClassDefinitionBuilder builder;
 
         ClassDefinitionWriter(int classId) {
-            builder = new ClassDefinitionBuilderImpl(context, classId);
+            builder = new ClassDefinitionBuilder(classId);
         }
 
-        private ClassDefinitionWriter(ClassDefinitionBuilderImpl builder) {
+        private ClassDefinitionWriter(ClassDefinitionBuilder builder) {
             this.builder = builder;
         }
 
@@ -177,10 +177,12 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         }
 
         public void writePortable(String fieldName, int classId, Portable portable) throws IOException {
-            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
-                    .createPortableFieldBuilder(fieldName, classId);
+            builder.addPortableField(fieldName, classId);
             if (portable != null) {
-                addNestedField(portable, nestedBuilder);
+                addNestedField(portable, new ClassDefinitionBuilder(classId));
+            } else if (context.lookup(classId) == null) {
+                throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
+                        "registering class definition!");
             }
         }
 
@@ -200,20 +202,25 @@ public class PortableSerializer implements TypeSerializer<Portable> {
                     throw new IllegalArgumentException("Detected different class-ids in portable array!");
                 }
             }
-            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
-                    .createPortableArrayFieldBuilder(fieldName, classId);
-            addNestedField(p, nestedBuilder);
+            builder.addPortableArrayField(fieldName, classId);
+            addNestedField(p, new ClassDefinitionBuilder(classId));
         }
 
-        private void addNestedField(Portable portable, ClassDefinitionBuilderImpl nestedBuilder) throws IOException {
+        public ObjectDataOutput getRawDataOutput() {
+            return new EmptyObjectDataOutput();
+        }
+
+        private void addNestedField(Portable portable, ClassDefinitionBuilder nestedBuilder) throws IOException {
             ClassDefinitionWriter nestedWriter = new ClassDefinitionWriter(nestedBuilder);
             portable.writePortable(nestedWriter);
-            nestedBuilder.buildAndRegister();
+            ClassDefinition cd = nestedBuilder.build();
+            context.registerClassDefinition(cd);
         }
 
-        ClassDefinitionImpl register() {
-            builder.buildAndRegister();
-            return builder.getCd();
+        ClassDefinition registerAndGet() {
+            final ClassDefinition cd = builder.build();
+            context.registerClassDefinition(cd);
+            return cd;
         }
     }
 }

@@ -941,7 +941,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
-        long now = Clock.currentTimeMillis();
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long dirtyCount = 0;
@@ -978,8 +977,22 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     }
                 }
             } else {
-                for (int j = 1; j < backupCount; j++) {
-                    if (partitionInfo.getReplicaAddress(i).equals(thisAddress)) {
+                for (int j = 1; j <= backupCount; j++) {
+                    Address replicaAddress = partitionInfo.getReplicaAddress(j);
+                    int memberSize = nodeEngine.getClusterService().getMembers().size();
+
+                    int tryCount = 3;
+                    // wait if the partition table is not updated yet
+                    while(memberSize > backupCount && replicaAddress == null && tryCount-- > 0) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            ExceptionUtil.rethrow(e);
+                        }
+                        replicaAddress = partitionInfo.getReplicaAddress(j);
+                    }
+
+                    if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                         PartitionContainer partitionContainer = getPartitionContainer(i);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                         ConcurrentMap<Data, Record> records = recordStore.getRecords();
