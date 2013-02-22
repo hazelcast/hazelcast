@@ -351,7 +351,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     void processPartitionRuntimeState(PartitionRuntimeState partitionState) {
         lock.lock();
         try {
-            final Address thisAddress = nodeEngine.getThisAddress();
             final Address sender = partitionState.getEndpoint();
             if (node.isMaster()) {
                 logger.log(Level.WARNING, "This is the master node and received a PartitionRuntimeState from "
@@ -372,18 +371,33 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 }
             }
 
+            final Set<Address> unknownAddresses = new HashSet<Address>();
             PartitionInfo[] newPartitions = partitionState.getPartitions();
             for (PartitionInfo newPartition : newPartitions) {
                 PartitionInfo currentPartition = partitions[newPartition.getPartitionId()];
                 for (int index = 0; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
                     Address address = newPartition.getReplicaAddress(index);
                     if (address != null && getMember(address) == null) {
-                        logger.log(Level.WARNING,
-                                "Unknown " + address + " is found in received partition table from master "
-                                        + sender + ". Probably it is dead. Partition: " + newPartition);
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST,
+                                    "Unknown " + address + " is found in partition table sent from master "
+                                            + sender + ". Probably it's already left the cluster. Partition: " + newPartition);
+                        }
+                        unknownAddresses.add(address);
                     }
                 }
                 currentPartition.setPartitionInfo(newPartition);
+            }
+            if (!unknownAddresses.isEmpty()) {
+                StringBuilder s = new StringBuilder("Following unknown addresses are found in partition table")
+                        .append(" sent from master[").append(sender).append("].")
+                        .append(" (Probably they have already left the cluster.)")
+                        .append(" {");
+                for (Address address : unknownAddresses) {
+                    s.append("\n\t").append(address);
+                }
+                s.append("\n}");
+                logger.log(Level.WARNING, s.toString());
             }
 
             Collection<MigrationInfo> completedMigrations = partitionState.getCompletedMigrations();
@@ -495,6 +509,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return p;
     }
 
+    public boolean hasOnGoingMigrationTask() {
+        return !immediateTasksQueue.isEmpty() || !scheduledTasksQueue.isEmpty()
+                || !activeMigrations.isEmpty() || hasActiveBackupTask();
+    }
+
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
         int maxBackupCount = getMaxBackupCount();
@@ -506,12 +525,12 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (size == 0) {
             for (PartitionInfo partition : partitions) {
                 if (partition.getReplicaAddress(1) == null) {
-                    logger.log(Level.WARNING, "Waiting for safe-backup of partition: " + partition.getPartitionId());
+                    logger.log(Level.WARNING, "Should take immediate backup of partition: " + partition.getPartitionId());
                     return true;
                 }
             }
         } else {
-            logger.log(Level.WARNING, "Waiting for ongoing immediate migration tasks: " + size);
+            logger.log(Level.WARNING, "Should complete ongoing total of " + size + " immediate migration tasks!");
             return true;
         }
         return false;

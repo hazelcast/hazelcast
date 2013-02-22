@@ -82,7 +82,7 @@ public class DynamicClusterTest extends BaseTest {
         log("starting");
         final IMap map = getInstance(0).getMap("testMapSize");
         final int putSize = 80*1000;
-        final int removeSize = putSize * 25;
+        final int removeSize = putSize * 5;
         final AtomicInteger putCount = new AtomicInteger(putSize);
         final AtomicBoolean putException = new AtomicBoolean(false);
         final AtomicBoolean removeException = new AtomicBoolean(false);
@@ -132,15 +132,18 @@ public class DynamicClusterTest extends BaseTest {
         Thread.sleep(500);
 
         for (int i=0; i<3; i++){
+            while (getInstance(0).getPartitionService().hasOngoingMigration()) {
+                Thread.sleep(100);
+            }
             log("remove instance");
             removeInstance(2);
-            Thread.sleep(4000);
+            Thread.sleep(2000);
 
             log("new instance");
             newInstance();
-            Thread.sleep(2000);
+            Thread.sleep(1000);
             log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
-            Thread.sleep(2000);
+            Thread.sleep(1000);
 
         }
 
@@ -207,6 +210,9 @@ public class DynamicClusterTest extends BaseTest {
         Thread.sleep(500);
 
         for (int i=0; i<4; i++){
+            while (getInstance(0).getPartitionService().hasOngoingMigration()) {
+                Thread.sleep(100);
+            }
             log("remove instance");
             removeInstance(1);
             Thread.sleep(2000);
@@ -283,6 +289,9 @@ public class DynamicClusterTest extends BaseTest {
         Thread.sleep(1000);
 
         for (int i=0; i<3; i++){
+            while (getInstance(0).getPartitionService().hasOngoingMigration()) {
+                Thread.sleep(100);
+            }
             log("remove instance");
             removeInstance(2);
             Thread.sleep(8000);

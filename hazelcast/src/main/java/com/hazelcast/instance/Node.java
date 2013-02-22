@@ -440,6 +440,10 @@ public class Node {
         return loggingService.getLogger(name);
     }
 
+    public ILogger getLogger(Class clazz) {
+        return loggingService.getLogger(clazz);
+    }
+
     public GroupProperties getGroupProperties() {
         return groupProperties;
     }

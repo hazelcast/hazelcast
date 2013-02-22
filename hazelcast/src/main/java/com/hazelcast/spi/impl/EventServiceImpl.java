@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -708,7 +707,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
-    public static class PostJoinRegistrationOperation extends AbstractOperation implements JoinOperation {
+    public static class PostJoinRegistrationOperation extends AbstractOperation {
 
         private Collection<Registration> registrations;
 
