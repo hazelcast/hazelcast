@@ -19,7 +19,7 @@ package com.hazelcast.map.test;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.util.ExceptionUtil;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -27,9 +27,9 @@ import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -81,15 +81,15 @@ public class DynamicClusterTest extends BaseTest {
 
         log("starting");
         final IMap map = getInstance(0).getMap("testMapSize");
-        final int putSize = 80*1000;
-        final int removeSize = putSize * 5;
+        final int putSize = 20*1000;
+        final int removeSize = 1;
         final AtomicInteger putCount = new AtomicInteger(putSize);
         final AtomicBoolean putException = new AtomicBoolean(false);
         final AtomicBoolean removeException = new AtomicBoolean(false);
 
-        new Thread() {
-
-            public void run() {
+//        new Thread() {
+//
+//            public void run() {
                 try {
                     for (int i = 0; i < putSize; i++) {
                         map.put("key" + i, "value" + i);
@@ -101,15 +101,15 @@ public class DynamicClusterTest extends BaseTest {
                     log("exexex");
                     log(e.getMessage());
                 }
-            }
-
-        }.start();
+//            }
+//
+//        }.start();
 
         final AtomicInteger removed = new AtomicInteger();
         final AtomicInteger removeCount = new AtomicInteger(removeSize);
-        new Thread() {
-
-            public void run() {
+//        new Thread() {
+//
+//            public void run() {
                 try {
                     for (int i = 0; i < removeSize; i++) {
                         Random ran = new Random(System.currentTimeMillis());
@@ -125,27 +125,29 @@ public class DynamicClusterTest extends BaseTest {
                     log("exexex");
                     log(e.getMessage());
                 }
-            }
+//            }
+//
+//        }.start();
 
-        }.start();
-
-        Thread.sleep(500);
-
-        for (int i=0; i<3; i++){
-            while (getInstance(0).getPartitionService().hasOngoingMigration()) {
-                Thread.sleep(100);
-            }
-            log("remove instance");
-            removeInstance(2);
-            Thread.sleep(2000);
-
-            log("new instance");
-            newInstance();
-            Thread.sleep(1000);
-            log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
-            Thread.sleep(1000);
-
-        }
+        Thread.sleep(1000);
+//
+//        for (int i=0; i<1; i++){
+//            while (getInstance(0).getPartitionService().hasOngoingMigration()) {
+//                log("slow_down i:" + i);
+//                Thread.sleep(100);
+//            }
+//            log("remove instance");
+////            removeInstance(1);
+            removeInstance(1);
+//            Thread.sleep(2000);
+//
+//            log("new instance");
+////            newInstance();
+//            Thread.sleep(1000);
+//            log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
+//            Thread.sleep(1000);
+//
+//        }
 
         while (putCount.get() != 0 || removeCount.get() != 0){
             Thread.sleep(1000);
@@ -237,84 +239,47 @@ public class DynamicClusterTest extends BaseTest {
     public void testMultiMapSize() throws Exception {
 
         log("starting");
-        final MultiMap multiMap = getInstance(0).getMultiMap("testMultiMapSize");
-        final int putSize = 100*1000;
-        final int removeSize = putSize*4;
-        final AtomicInteger putCount = new AtomicInteger(putSize);
-        final AtomicReference<Throwable> putException = new AtomicReference<Throwable>();
-        final AtomicReference<Throwable> removeException = new AtomicReference<Throwable>();
-
-        new Thread() {
-
-            public void run() {
-                try {
-                    for (int i = 0; i < putSize; i++) {
-                        multiMap.put("key" + i, "value" + i);
-                        putCount.decrementAndGet();
-                    }
-                }
-                catch (Exception e){
-                    putException.set(e);
-                    log("exexex");
-                    log(e.getMessage());
-                }
-            }
-
-        }.start();
-
-        final AtomicInteger removed = new AtomicInteger();
-        final AtomicInteger removeCount = new AtomicInteger(removeSize);
-        new Thread() {
-
-            public void run() {
-                try {
-                    for (int i = 0; i < removeSize; i++) {
-                        Random ran = new Random(System.currentTimeMillis());
-                        Collection coll = multiMap.remove("key" + ran.nextInt(putSize));
-                        if (!coll.isEmpty()) {
-                            removed.incrementAndGet();
-                        }
-                        removeCount.decrementAndGet();
-                    }
-                }
-                catch (Exception e){
-                    removeException.set(e);
-                    log("exexex");
-                    log(e.getMessage());
-                }
-            }
-
-        }.start();
-
         Thread.sleep(1000);
+        final String name = "testMultiMapSize";
+        final MultiMap multiMap = getInstance(0).getMultiMap(name);
+        final int putSize = 12;
+        final int removeSize = 0;
+        final AtomicInteger removed = new AtomicInteger();
 
-        for (int i=0; i<3; i++){
-            while (getInstance(0).getPartitionService().hasOngoingMigration()) {
-                Thread.sleep(100);
+        try {
+            for (int i = 0; i < putSize; i++) {
+                multiMap.put("key" + i, "value" + i);
             }
-            log("remove instance");
-            removeInstance(2);
-            Thread.sleep(8000);
-
-            log("new instance");
-            newInstance();
-            Thread.sleep(4000);
-            log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
-            Thread.sleep(4000);
-
+        }
+        catch (Exception e){
+            Assert.fail(e.getMessage());
         }
 
-        while (putCount.get() != 0 || removeCount.get() != 0){
-            Thread.sleep(1000);
-            log("putCount: " + putCount.get() + "  removeCount: " + removeCount.get());
-            final Throwable putError = putException.get();
-            if (putError != null) {
-                ExceptionUtil.sneakyThrow(putError);
+        try {
+            for (int i = 0; i < removeSize; i++) {
+                Random ran = new Random(System.currentTimeMillis());
+                Collection coll = multiMap.remove("key" + ran.nextInt(putSize));
+                if (!coll.isEmpty()) {
+                    removed.incrementAndGet();
+                }
             }
-            final Throwable remError = removeException.get();
-            if (remError != null) {
-                ExceptionUtil.sneakyThrow(remError);
-            }
+        }
+        catch (Exception e){
+            Assert.fail(e.getMessage());
+        }
+
+        for (int i=0; i<instanceCount; i++){
+            log("ins: " + i);
+            getInstance(i).getMultiMap(name).getLocalMultiMapStats();
+        }
+
+        Thread.sleep(100);
+        removeInstance(1);
+
+
+        for (int i=0; i<instanceCount; i++){
+            log("ins: " + i);
+            getInstance(i).getMultiMap(name).getLocalMultiMapStats();
         }
 
         assertEquals(putSize - removed.get(), multiMap.size());
