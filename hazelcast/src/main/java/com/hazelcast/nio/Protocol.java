@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataWriter;
 
 import java.io.*;
 import java.nio.ByteBuffer;

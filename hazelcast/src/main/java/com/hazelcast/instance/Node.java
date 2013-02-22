@@ -125,7 +125,7 @@ public class Node {
         this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
-        SerializationServiceImpl ss = null;
+        SerializationServiceImpl ss;
         try {
             ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
         } catch (Exception e) {

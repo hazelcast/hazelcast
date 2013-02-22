@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataWriter;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.spi.Connection;
 

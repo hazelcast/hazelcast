@@ -27,7 +27,5 @@ public interface ObjectDataOutput extends DataOutput, Closeable {
 
     void writeObject(Object object) throws IOException;
 
-    // TODO: @mm - add write array methods
-
     byte[] toByteArray();
 }

@@ -36,9 +36,6 @@ public class SerializationConcurrencyTest {
     @Test
     public void test() throws IOException, InterruptedException {
         final PortableFactory portableFactory = new PortableFactory() {
-            public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
-            }
-
             public Portable create(int classId) {
                 switch (classId) {
                     case 1:

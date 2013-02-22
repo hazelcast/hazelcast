@@ -25,15 +25,12 @@ import java.util.*;
 /**
  * @mdogan 12/26/12
  */
-public class ClassDefinitionImpl implements DataSerializable, ClassDefinition {
-    int classId;
-    int version;
+public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
+
     private List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
             FieldDefinition>();
     private Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
-
-    private byte[] binary;
 
     public void add(FieldDefinitionImpl fd) {
         fieldDefinitions.add(fd);
@@ -64,7 +61,7 @@ public class ClassDefinitionImpl implements DataSerializable, ClassDefinition {
         return new HashSet<String>(fieldDefinitionsMap.keySet());
     }
 
-    public int getFieldTypeId(String fieldName) {
+    public FieldType getFieldType(String fieldName) {
         final FieldDefinition fd = get(fieldName);
         if (fd != null) {
             return fd.getType();
@@ -112,10 +109,6 @@ public class ClassDefinitionImpl implements DataSerializable, ClassDefinition {
 
     public int getFieldCount() {
         return fieldDefinitions.size();
-    }
-
-    public byte[] getBinary() {
-        return binary;
     }
 
     public int getClassId() {
