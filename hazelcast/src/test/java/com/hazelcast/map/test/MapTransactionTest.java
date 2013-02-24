@@ -27,8 +27,7 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class MapTransactionTest {
 
@@ -46,6 +45,39 @@ public class MapTransactionTest {
     }
 
     @Test
+    public void testTxnTimeout() {
+        Config config = new Config();
+        StaticNodeFactory factory = new StaticNodeFactory(2);
+        HazelcastInstance h1 = factory.newInstance(config);
+        HazelcastInstance h2 = factory.newInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        Transaction txn = h1.getTransaction();
+        txn.setTransactionTimeout(1);
+        txn.begin();
+        try {
+            map1.put("1", "value");
+            Thread.sleep(1010);
+            map1.put("13", "value");
+            fail();
+        } catch (Throwable e) {
+        }
+        try {
+            txn.commit();
+            fail();
+        } catch (IllegalStateException e) {
+        }
+        map2.lock("1");
+        txn = h1.getTransaction();
+        txn.setTransactionTimeout(1);
+        txn.begin();
+        try {
+            map1.put("1", "value");
+        } catch (Exception e) {
+        }
+    }
+
+    @Test
     public void testTxnCommit() {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(2);
@@ -57,6 +89,7 @@ public class MapTransactionTest {
         txn.begin();
         map1.put("1", "value");
         map1.put("13", "value");
+        assertFalse(map2.tryPut("1", "value2", 0, null));
         assertEquals("value", map1.get("1"));
         assertEquals("value", map1.get("13"));
         assertNull(map2.get("1"));
@@ -90,38 +123,4 @@ public class MapTransactionTest {
         assertNull(map2.get("1"));
         assertNull(map2.get("13"));
     }
-//    @Test
-//    public void testRollbackAndCommit() {
-//        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-//        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-//        IMap map1 = h1.getMap("default");
-//        IMap map2 = h2.getMap("default");
-//        Transaction txn = h1.getTransaction();
-//        txn.begin();
-//        map1.put("1", "value");
-//        map1.put("13", "value");
-//        assertEquals("value", map1.get("1"));
-//        assertEquals("value", map1.get("13"));
-//        assertNull(map2.get("1"));
-//        assertNull(map2.get("13"));
-//        txn.rollback();
-//        assertNull(map1.get("1"));
-//        assertNull(map1.get("13"));
-//        assertNull(map2.get("1"));
-//        assertNull(map2.get("13"));
-//
-//        txn = h1.getTransaction();
-//        txn.begin();
-//        map1.put("1", "value");
-//        map1.put("13", "value");
-//        assertEquals("value", map1.get("1"));
-//        assertEquals("value", map1.get("13"));
-//        assertNull(map2.get("1"));
-//        assertNull(map2.get("13"));
-//        txn.commit();
-//        assertEquals("value", map1.get("1"));
-//        assertEquals("value", map1.get("13"));
-//        assertEquals("value", map2.get("1"));
-//        assertEquals("value", map2.get("13"));
-//    }
 }
