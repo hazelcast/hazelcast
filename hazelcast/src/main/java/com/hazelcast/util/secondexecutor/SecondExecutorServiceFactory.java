@@ -41,7 +41,7 @@ public class SecondExecutorServiceFactory {
      * @param stf bulk executor
      * @return SecondExecutorService
      */
-    public SecondExecutorService newSecondBulkExecutor(ScheduledExecutorService es, SecondBulkTaskFactory stf) {
+    public static SecondExecutorService newSecondBulkExecutor(ScheduledExecutorService es, SecondBulkTaskFactory stf) {
         return new SecondScheduler(es, stf);
     }
 
@@ -61,7 +61,7 @@ public class SecondExecutorServiceFactory {
      * @param stf entry executor
      * @return SecondExecutorService
      */
-    public SecondExecutorService newSecondEntryExecutor(ScheduledExecutorService es, SecondEntryTaskFactory stf) {
+    public static SecondExecutorService newSecondEntryExecutor(ScheduledExecutorService es, SecondEntryTaskFactory stf) {
         return new SecondScheduler(es, stf);
     }
 }
