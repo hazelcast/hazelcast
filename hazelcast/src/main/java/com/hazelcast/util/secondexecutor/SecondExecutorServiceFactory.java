@@ -38,16 +38,16 @@ public class SecondExecutorServiceFactory {
      * SecondExecutorService implementation is thread-safe.
      *
      * @param es  ScheduledExecutorService instance to execute the second
-     * @param sef bulk executor
+     * @param stf bulk executor
      * @return SecondExecutorService
      */
-    public SecondExecutorService newSecondBulkExecutor(ScheduledExecutorService es, SecondBulkExecutorFactory sef) {
-        return new KeyScheduler(es, sef);
+    public SecondExecutorService newSecondBulkExecutor(ScheduledExecutorService es, SecondBulkTaskFactory stf) {
+        return new SecondScheduler(es, stf);
     }
 
     /**
      * Creates a new SecondExecutorService that will execute each entry one by one.
-     * Imagine a map with entries with different idle-seconds.
+     * Imagine a map with entries with different max-idle-seconds.
      * Note that each key can be rescheduled and its execution can be postponed.
      * So two things to
      * remember:
@@ -58,10 +58,10 @@ public class SecondExecutorServiceFactory {
      * SecondExecutorService implementation is thread-safe.
      *
      * @param es  ScheduledExecutorService instance to execute the second
-     * @param sef entry executor
+     * @param stf entry executor
      * @return SecondExecutorService
      */
-    public SecondExecutorService newSecondEntryExecutor(ScheduledExecutorService es, SecondEntryExecutorFactory sef) {
-        return new KeyScheduler(es, sef);
+    public SecondExecutorService newSecondEntryExecutor(ScheduledExecutorService es, SecondEntryTaskFactory stf) {
+        return new SecondScheduler(es, stf);
     }
 }

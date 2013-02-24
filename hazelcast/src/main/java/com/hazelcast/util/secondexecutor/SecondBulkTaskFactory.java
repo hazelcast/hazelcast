@@ -16,6 +16,6 @@
 
 package com.hazelcast.util.secondexecutor;
 
-public interface SecondBulkExecutorFactory extends KeyScheduler.SecondExecutorFactory {
-    SecondBulkExecutor newSecondExecutor();
+public interface SecondBulkTaskFactory extends SecondScheduler.SecondTaskFactory {
+    SecondBulkTask newSecondTask();
 }

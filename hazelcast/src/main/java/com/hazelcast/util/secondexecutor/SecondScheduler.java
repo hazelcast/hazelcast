@@ -19,22 +19,22 @@ package com.hazelcast.util.secondexecutor;
 import java.util.Map;
 import java.util.concurrent.*;
 
-class KeyScheduler implements SecondExecutorService {
+class SecondScheduler implements SecondExecutorService {
     final ConcurrentMap<Object, Integer> keySeconds = new ConcurrentHashMap<Object, Integer>(1000);
     final ConcurrentMap<Integer, ConcurrentMap<Object, Object>> secondObjects = new ConcurrentHashMap<Integer, ConcurrentMap<Object, Object>>(1000);
     final ScheduledExecutorService ses;
     private static final long initialTimeMillis = System.currentTimeMillis();
-    final SecondExecutorFactory secondExecutorFactory;
+    final SecondTaskFactory secondTaskFactory;
     final boolean bulk;
 
-    public KeyScheduler(ScheduledExecutorService ses, SecondExecutorFactory secondExecutorFactory) {
+    public SecondScheduler(ScheduledExecutorService ses, SecondTaskFactory secondTaskFactory) {
         this.ses = ses;
-        this.secondExecutorFactory = secondExecutorFactory;
-        bulk = (secondExecutorFactory instanceof SecondBulkExecutorFactory);
+        this.secondTaskFactory = secondTaskFactory;
+        bulk = (secondTaskFactory instanceof SecondBulkTaskFactory);
     }
 
-    interface SecondExecutorFactory {
-        SecondExecutor newSecondExecutor();
+    interface SecondTaskFactory {
+        SecondTask newSecondTask();
     }
 
     public boolean schedule(long delayMillis, Object key, Object object) {
@@ -102,28 +102,30 @@ class KeyScheduler implements SecondExecutorService {
         ses.schedule(new Runnable() {
             public void run() {
                 final ConcurrentMap<Object, Object> scheduledKeys = secondObjects.remove(second);
-                final SecondExecutor secondExecutor = secondExecutorFactory.newSecondExecutor();
+                final SecondTask secondTask = secondTaskFactory.newSecondTask();
                 try {
-                    if (secondExecutor instanceof SecondEntryExecutor) {
-                        final SecondEntryExecutor see = (SecondEntryExecutor) secondExecutor;
+                    if (bulk) {
+                        final SecondBulkTask sbe = (SecondBulkTask) secondTask;
+                        for (Object o : scheduledKeys.keySet()) {
+                            keySeconds.remove(o);
+                        }
+                        sbe.executeAll(SecondScheduler.this, scheduledKeys, delaySecond);
+                    } else {
+                        final SecondEntryTask see = (SecondEntryTask) secondTask;
                         for (Map.Entry<Object, Object> object : scheduledKeys.entrySet()) {
                             final Object scheduleKey = object.getKey();
                             if (keySeconds.remove(scheduleKey, second)) {
                                 try {
-                                    see.executeEntry(object);
+                                    see.executeEntry(SecondScheduler.this, object, delaySecond);
                                 } catch (Exception ignored) {
                                 }
                             }
                         }
-                    } else {
-                        final SecondBulkExecutor sbe = (SecondBulkExecutor) secondExecutor;
-                        for (Object o : scheduledKeys.keySet()) {
-                            keySeconds.remove(o);
-                        }
-                        sbe.executeAll(scheduledKeys);
                     }
+                } catch (Throwable ignored) {
+                    ignored.printStackTrace();
                 } finally {
-                    secondExecutor.endSecond();
+                    secondTask.endSecond();
                 }
             }
         }, delaySecond, TimeUnit.SECONDS);
@@ -139,8 +141,8 @@ class KeyScheduler implements SecondExecutorService {
     }
 
     public static void main(String[] args) throws Exception {
-        SecondExecutorFactory secondExecutorFactory = new SecondExecutorFactory() {
-            public SecondExecutor newSecondExecutor() {
+        SecondTaskFactory secondTaskFactory = new SecondTaskFactory() {
+            public SecondTask newSecondTask() {
 //                return new SecondEntryExecutor() {
 //                    public void executeEntry(Map.Entry entry) {
 //                        System.out.println(entry.getValue());
@@ -149,8 +151,8 @@ class KeyScheduler implements SecondExecutorService {
 //                    public void endSecond() {
 //                    }
 //                };
-                return new SecondBulkExecutor() {
-                    public void executeAll(ConcurrentMap<Object, Object> entries) {
+                return new SecondBulkTask() {
+                    public void executeAll(SecondExecutorService ses, ConcurrentMap<Object, Object> entries, int delaySecond) {
                         for (Object o : entries.values()) {
                             System.out.println(o);
                         }
@@ -162,12 +164,12 @@ class KeyScheduler implements SecondExecutorService {
             }
         };
         final ScheduledExecutorService ses = Executors.newScheduledThreadPool(10);
-        final KeyScheduler keyScheduler = new KeyScheduler(ses, secondExecutorFactory);
+        final SecondScheduler secondScheduler = new SecondScheduler(ses, secondTaskFactory);
         new Thread() {
             @Override
             public synchronized void run() {
                 while (true) {
-                    System.out.println(keyScheduler);
+                    System.out.println(secondScheduler);
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -178,14 +180,14 @@ class KeyScheduler implements SecondExecutorService {
         }.start();
         while (true) {
             for (int i = 0; i < 10; i++) {
-                schedule(true, keyScheduler, i, 100);
+                schedule(true, secondScheduler, i, 100);
             }
         }
     }
 
     public static void main2(String[] args) throws Exception {
-        SecondExecutorFactory secondExecutorFactory = new SecondExecutorFactory() {
-            public SecondExecutor newSecondExecutor() {
+        SecondTaskFactory secondTaskFactory = new SecondTaskFactory() {
+            public SecondTask newSecondTask() {
 //                return new SecondEntryExecutor() {
 //                    public void executeEntry(Map.Entry entry) {
 //                        System.out.println(entry.getValue());
@@ -194,8 +196,8 @@ class KeyScheduler implements SecondExecutorService {
 //                    public void endSecond() {
 //                    }
 //                };
-                return new SecondBulkExecutor() {
-                    public void executeAll(ConcurrentMap<Object, Object> entries) {
+                return new SecondBulkTask() {
+                    public void executeAll(SecondExecutorService ses, ConcurrentMap<Object, Object> entries, int delaySecond) {
                         for (Object o : entries.values()) {
                             System.out.println(o);
                         }
@@ -207,16 +209,16 @@ class KeyScheduler implements SecondExecutorService {
             }
         };
         final ScheduledExecutorService ses = Executors.newScheduledThreadPool(1);
-        KeyScheduler keyScheduler = new KeyScheduler(ses, secondExecutorFactory);
+        SecondScheduler secondScheduler = new SecondScheduler(ses, secondTaskFactory);
         for (int i = 0; i < 10; i++) {
-            schedule(true, keyScheduler, i, 100);
-            schedule(true, keyScheduler, i, 100);
-            schedule(true, keyScheduler, i, 100);
+            schedule(true, secondScheduler, i, 100);
+            schedule(true, secondScheduler, i, 100);
+            schedule(true, secondScheduler, i, 100);
         }
         for (int i = 10; i < 20; i++) {
-            schedule(true, keyScheduler, i, 3330);
-            schedule(true, keyScheduler, i, 4330);
-            schedule(true, keyScheduler, i, 5330);
+            schedule(true, secondScheduler, i, 3330);
+            schedule(true, secondScheduler, i, 4330);
+            schedule(true, secondScheduler, i, 5330);
         }
         //        for (int i = 20; i < 30; i++) {
         //            schedule(false, keyScheduler, i, 5330);
@@ -225,16 +227,16 @@ class KeyScheduler implements SecondExecutorService {
         //
         //        }
         while (true) {
-            System.out.println(keyScheduler);
+            System.out.println(secondScheduler);
             Thread.sleep(1000);
         }
     }
 
-    private static void schedule(boolean update, KeyScheduler keyScheduler, final Object key, final long millis) {
+    private static void schedule(boolean update, SecondScheduler secondScheduler, final Object key, final long millis) {
         if (update) {
-            keyScheduler.schedule(millis, key, "Update-" + key);
+            secondScheduler.schedule(millis, key, "Update-" + key);
         } else {
-            keyScheduler.scheduleIfNew(millis, key, "IfNew-" + key);
+            secondScheduler.scheduleIfNew(millis, key, "IfNew-" + key);
         }
     }
 }

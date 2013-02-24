@@ -16,6 +16,18 @@
 
 package com.hazelcast.util.secondexecutor;
 
-public interface SecondEntryExecutorFactory extends KeyScheduler.SecondExecutorFactory {
-    SecondEntryExecutor newSecondExecutor();
+import java.util.Map;
+
+interface SecondEntryTask extends SecondTask {
+
+    /**
+     * Executes a single entry. All failures has to be handled by the implementation.
+     * Implementation can choose to ignore the failures or reschedules the entry for
+     * a future time.
+     *
+     * @param ses
+     * @param entry
+     * @param delaySeconds delaySeconds set for this entry
+     */
+    void executeEntry(SecondExecutorService ses, Map.Entry entry, int delaySeconds);
 }

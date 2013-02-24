@@ -16,8 +16,6 @@
 
 package com.hazelcast.util.secondexecutor;
 
-import java.util.concurrent.ConcurrentMap;
-
-interface SecondBulkExecutor extends SecondExecutor {
-    void executeAll(ConcurrentMap<Object, Object> entries);
+public interface SecondEntryTaskFactory extends SecondScheduler.SecondTaskFactory {
+    SecondEntryTask newSecondTask();
 }

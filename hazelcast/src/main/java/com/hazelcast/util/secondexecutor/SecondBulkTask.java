@@ -16,14 +16,18 @@
 
 package com.hazelcast.util.secondexecutor;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
-interface SecondEntryExecutor extends SecondExecutor {
-
+interface SecondBulkTask extends SecondTask {
     /**
-     * Executes a single entry.
+     * Executes all entries in one shot. Implementation has to
+     * handle the failures and can possibly reschedule it for a future time.
+     * Imagine you are implementing this for a dirty records. If mapStore.storeAll
+     * throws exception, you might want to reschedule the failed records.
      *
-     * @param entry key value pair passed in when SecondExecutorService.schedule is called.
+     * @param ses
+     * @param entries
+     * @param delaySecond delaySeconds set for this entry
      */
-    void executeEntry(Map.Entry entry);
+    void executeAll(SecondExecutorService ses, ConcurrentMap<Object, Object> entries, int delaySecond);
 }

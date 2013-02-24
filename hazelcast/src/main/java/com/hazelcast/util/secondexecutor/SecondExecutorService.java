@@ -19,10 +19,11 @@ package com.hazelcast.util.secondexecutor;
 /**
  * Schedule execution of an entry for seconds later.
  * This is kind of like a scheduled executor service but instead of scheduling
- * a execution with second proximity. If delayMillis is 600 ms for example,
+ * a execution for a specific millisecond, this service will
+ * schedule it with second proximity. If delayMillis is 600 ms for example,
  * then the entry will be scheduled to execute in 1 second. If delayMillis is 2400
  * this the entry will be scheduled to execute in 3 seconds. So delayMillis is
- * ceiled to the next second. It gives up from exact scheduling to gain
+ * ceil-ed to the next second. It gives up from exact time scheduling to gain
  * the power of
  * a) bulk execution of all operations within the same second
  * or
@@ -30,7 +31,7 @@ package com.hazelcast.util.secondexecutor;
  */
 public interface SecondExecutorService {
     /**
-     * Scheduled (or reschedules the execution of given entry. key parameter is
+     * Schedules (or reschedules) the execution of given entry. key parameter is
      * used to check whether there is an existing scheduling for this entry.
      *
      * @param delayMillis milliseconds to delay the execution.

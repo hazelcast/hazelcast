@@ -16,6 +16,6 @@
 
 package com.hazelcast.util.secondexecutor;
 
-public interface SecondExecutor {
+public interface SecondTask {
     void endSecond();
 }
