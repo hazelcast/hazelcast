@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
  * Date: 12/31/12
  * Time: 12:08 PM
  */
-public class TotalOrderedTopicProxy extends TopicProxy{
+public class TotalOrderedTopicProxy extends TopicProxy {
 
     private final int partitionId;
 
@@ -43,6 +43,7 @@ public class TotalOrderedTopicProxy extends TopicProxy{
         try {
             final NodeEngine nodeEngine = getNodeEngine();
             PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
+            getTopicOperationCounter().incrementPublishes();
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(TopicService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             f.get();

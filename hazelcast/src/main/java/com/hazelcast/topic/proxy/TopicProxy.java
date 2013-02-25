@@ -19,6 +19,8 @@ package com.hazelcast.topic.proxy;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.monitor.impl.TopicOperationsCounter;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -53,6 +55,7 @@ public class TopicProxy<E> extends AbstractDistributedObject<TopicService> imple
     public void publish(E message) {
         final NodeEngine nodeEngine = getNodeEngine();
         TopicEvent topicEvent = new TopicEvent(name, nodeEngine.toData(message));
+        getTopicOperationCounter().incrementPublishes();
         eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
     }
 
@@ -72,7 +75,13 @@ public class TopicProxy<E> extends AbstractDistributedObject<TopicService> imple
     }
 
     public LocalTopicStats getLocalTopicStats() {
-        return null;
+        LocalTopicStatsImpl localTopicStats = new LocalTopicStatsImpl();
+        localTopicStats.setOperationStats(getTopicOperationCounter().getPublishedStats());
+        return localTopicStats;
+    }
+
+    public TopicOperationsCounter getTopicOperationCounter() {
+        return getService().getOperationsCounter(name);
     }
 
     public Object getId() {

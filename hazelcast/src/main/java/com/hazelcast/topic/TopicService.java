@@ -20,16 +20,19 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.monitor.impl.TopicOperationsCounter;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.spi.*;
 import com.hazelcast.topic.client.TopicListenHandler;
 import com.hazelcast.topic.client.TopicPublishHandler;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -41,9 +44,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public class TopicService implements ManagedService, RemoteService, EventPublishingService, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
-
     private final Lock[] orderingLocks = new Lock[1000];
-
+    private final ConcurrentHashMap<String, TopicOperationsCounter> operationsCounterMap = new ConcurrentHashMap<String, TopicOperationsCounter>();
+    private final ConcurrencyUtil.ConstructorFunction<String, TopicOperationsCounter> topicCounterConstructor = new ConcurrencyUtil.ConstructorFunction<String, TopicOperationsCounter>() {
+        public TopicOperationsCounter createNew(String mapName) {
+            return new TopicOperationsCounter();
+        }
+    };
     private NodeEngine nodeEngine;
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -88,7 +95,12 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
         Message message = new Message(topicEvent.name, nodeEngine.toObject(topicEvent.data));
+        getOperationsCounter(topicEvent.name).incrementReceivedMessages();
         ((MessageListener) listener).onMessage(message);
+    }
+
+    public TopicOperationsCounter getOperationsCounter(String name) {
+        return ConcurrencyUtil.getOrPutSynchronized(operationsCounterMap, name, operationsCounterMap, topicCounterConstructor);
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
