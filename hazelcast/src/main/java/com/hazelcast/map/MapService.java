@@ -1013,6 +1013,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         localMapStats.setOwnedEntryMemoryCost(Util.zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(Util.zeroOrPositive(backupEntryMemoryCost));
         localMapStats.setCreationTime(Util.zeroOrPositive(clusterService.getClusterTimeFor(mapContainer.getCreationTime())));
+        localMapStats.setOperationStats(getMapContainer(mapName).getMapOperationCounter().getPublishedStats());
         return localMapStats;
     }
 
