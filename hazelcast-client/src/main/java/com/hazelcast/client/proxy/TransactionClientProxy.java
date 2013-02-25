@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.nio.protocol.Command;
 
@@ -41,7 +40,7 @@ public class TransactionClientProxy implements Transaction {
     }
 
     private void checkNull(Context context) {
-        if(context == null) {
+        if (context == null) {
             throw new IllegalStateException("Transaction is not active");
         }
     }
@@ -62,5 +61,8 @@ public class TransactionClientProxy implements Transaction {
         checkNull(context);
         proxyHelper.doCommand(Command.TRXROLLBACK, new String[]{});
         release(context);
+    }
+
+    public void setTransactionTimeout(int seconds) {
     }
 }

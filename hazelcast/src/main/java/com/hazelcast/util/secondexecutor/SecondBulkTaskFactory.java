@@ -14,21 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.util.secondexecutor;
 
-/**
- * @mdogan 2/6/13
- */
-public final class ClassDefinitionBuilderFactory {
-
-    private final SerializationContext context;
-
-    ClassDefinitionBuilderFactory(SerializationContext context) {
-        this.context = context;
-    }
-
-    public ClassDefinitionBuilder createClassDefinitionBuilder(int classId) {
-        return new ClassDefinitionBuilderImpl(context, classId);
-    }
-
+public interface SecondBulkTaskFactory extends SecondScheduler.SecondTaskFactory {
+    SecondBulkTask newSecondTask();
 }

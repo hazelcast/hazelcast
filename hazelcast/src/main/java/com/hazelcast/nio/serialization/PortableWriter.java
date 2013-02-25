@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 /**
@@ -65,4 +67,5 @@ public interface PortableWriter {
 
     void writePortableArray(String fieldName, Portable[] portables) throws IOException;
 
+    ObjectDataOutput getRawDataOutput() throws IOException;
 }

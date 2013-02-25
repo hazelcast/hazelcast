@@ -16,7 +16,10 @@
 
 package com.hazelcast.nio.serialization;
 
-import junit.framework.Assert;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -28,7 +31,7 @@ import java.util.Arrays;
 public class PortableTest {
 
     @Test
-    public void test() {
+    public void testBasics() {
         final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());
         final SerializationService serializationService2 = new SerializationServiceImpl(2, new TestPortableFactory());
         Data data;
@@ -62,17 +65,11 @@ public class PortableTest {
     @Test
     public void testDifferentVersions() {
         final SerializationService serializationService = new SerializationServiceImpl(1, new PortableFactory() {
-            public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
-            }
-
             public Portable create(int classId) {
                 return new NamedPortable();
             }
         });
         final SerializationService serializationService2 = new SerializationServiceImpl(2, new PortableFactory() {
-            public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
-            }
-
             public Portable create(int classId) {
                 return new NamedPortableV2();
             }
@@ -88,26 +85,125 @@ public class PortableTest {
         serializationService.toObject(data2);
     }
 
+    @Test
+    public void testRawData() {
+        final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());
+        RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
+                new NamedPortable("named portable", 34567),
+                9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getClassId());
+        builder.addLongField("l").addCharArrayField("c").addPortableField("p", NamedPortable.CLASS_ID);
+        serializationService.getSerializationContext().registerClassDefinition(builder.build());
+
+        final Data data = serializationService.toData(p);
+        Assert.assertEquals(p, serializationService.toObject(data));
+    }
+
+    @Test
+    public void testRawDataWithoutRegistering() {
+        final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());
+        RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
+                new NamedPortable("named portable", 34567),
+                9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));
+
+        final Data data = serializationService.toData(p);
+        Assert.assertEquals(p, serializationService.toObject(data));
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testRawDataInvalidWrite() {
+        final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());
+        RawDataPortable p = new InvalidRawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
+                new NamedPortable("named portable", 34567),
+                9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getClassId());
+        builder.addLongField("l").addCharArrayField("c").addPortableField("p", NamedPortable.CLASS_ID);
+        serializationService.getSerializationContext().registerClassDefinition(builder.build());
+
+        final Data data = serializationService.toData(p);
+        Assert.assertEquals(p, serializationService.toObject(data));
+    }
+
+    @Test(expected = HazelcastSerializationException.class)
+    public void testRawDataInvalidRead() {
+        final SerializationService serializationService = new SerializationServiceImpl(1, new TestPortableFactory());
+        RawDataPortable p = new InvalidRawDataPortable2(System.currentTimeMillis(), "test chars".toCharArray(),
+                new NamedPortable("named portable", 34567),
+                9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getClassId());
+        builder.addLongField("l").addCharArrayField("c").addPortableField("p", NamedPortable.CLASS_ID);
+        serializationService.getSerializationContext().registerClassDefinition(builder.build());
+
+        final Data data = serializationService.toData(p);
+        Assert.assertEquals(p, serializationService.toObject(data));
+    }
+
+    @Test
+    public void testClassDefinitionConfigWithErrors() throws Exception {
+        SerializationConfig serializationConfig = new SerializationConfig();
+        serializationConfig.setPortableFactory(new TestPortableFactory());
+        serializationConfig.setPortableVersion(1);
+        serializationConfig.addClassDefinition(
+                new ClassDefinitionBuilder(RawDataPortable.CLASS_ID)
+                        .addLongField("l").addCharArrayField("c").addPortableField("p", NamedPortable.CLASS_ID).build());
+
+        try {
+            new SerializationServiceImpl(serializationConfig, null);
+            Assert.fail("Should throw HazelcastSerializationException!");
+        } catch (HazelcastSerializationException e) {
+        }
+
+        serializationConfig.setCheckClassDefErrors(false);
+        new SerializationServiceImpl(serializationConfig, null);
+    }
+
+    @Test
+    public void testClassDefinitionConfig() throws Exception {
+        SerializationConfig serializationConfig = new SerializationConfig();
+        serializationConfig.setPortableFactory(new TestPortableFactory());
+        serializationConfig.setPortableVersion(1);
+        serializationConfig
+                .addClassDefinition(
+                    new ClassDefinitionBuilder(RawDataPortable.CLASS_ID)
+                        .addLongField("l").addCharArrayField("c").addPortableField("p", NamedPortable.CLASS_ID).build())
+                .addClassDefinition(
+                    new ClassDefinitionBuilder(NamedPortable.CLASS_ID)
+                        .addUTFField("name").addIntField("myint").build()
+                );
+
+        SerializationService serializationService = new SerializationServiceImpl(serializationConfig, null);
+        RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
+                new NamedPortable("named portable", 34567),
+                9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));
+
+        final Data data = serializationService.toData(p);
+        Assert.assertEquals(p, serializationService.toObject(data));
+    }
 
     private class TestPortableFactory implements PortableFactory {
 
-        public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
-        }
-
         public Portable create(int classId) {
             switch (classId) {
-                case 1:
+                case MainPortable.CLASS_ID:
                     return new MainPortable();
-                case 2:
+                case InnerPortable.CLASS_ID:
                     return new InnerPortable();
-                case 3:
+                case NamedPortable.CLASS_ID:
                     return new NamedPortable();
+                case RawDataPortable.CLASS_ID:
+                    return new RawDataPortable();
+                case InvalidRawDataPortable.CLASS_ID:
+                    return new InvalidRawDataPortable();
+                case InvalidRawDataPortable2.CLASS_ID:
+                    return new InvalidRawDataPortable2();
             }
             return null;
         }
     }
 
     private static class MainPortable implements Portable {
+
+        static final int CLASS_ID = 1;
 
         byte b;
         boolean bool;
@@ -138,7 +234,7 @@ public class PortableTest {
         }
 
         public int getClassId() {
-            return 1;
+            return CLASS_ID;
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
@@ -209,6 +305,8 @@ public class PortableTest {
 
     private static class InnerPortable implements Portable {
 
+        static final int CLASS_ID = 2;
+
         byte[] bb;
         char[] cc;
         short[] ss;
@@ -234,7 +332,7 @@ public class PortableTest {
         }
 
         public int getClassId() {
-            return 2;
+            return CLASS_ID;
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
@@ -295,6 +393,7 @@ public class PortableTest {
     }
 
     private static class NamedPortable implements Portable {
+        static final int CLASS_ID = 3;
 
         String name;
         int k;
@@ -308,7 +407,7 @@ public class PortableTest {
         }
 
         public int getClassId() {
-            return 3;
+            return CLASS_ID;
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
@@ -371,5 +470,168 @@ public class PortableTest {
         }
     }
 
+    private static class RawDataPortable implements Portable {
+        static final int CLASS_ID = 4;
+
+        long l;
+        char[] c;
+        NamedPortable p;
+        int k;
+        String s;
+        SimpleDataSerializable sds;
+
+        private RawDataPortable() {
+        }
+
+        private RawDataPortable(long l, char[] c, NamedPortable p, int k, String s, SimpleDataSerializable sds) {
+            this.l = l;
+            this.c = c;
+            this.p = p;
+            this.k = k;
+            this.s = s;
+            this.sds = sds;
+        }
+
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeLong("l", l);
+            writer.writeCharArray("c", c);
+            writer.writePortable("p", p);
+            final ObjectDataOutput output = writer.getRawDataOutput();
+            output.writeInt(k);
+            output.writeUTF(s);
+            output.writeObject(sds);
+        }
+
+        public void readPortable(PortableReader reader) throws IOException {
+            l = reader.readLong("l");
+            c = reader.readCharArray("c");
+            p = reader.readPortable("p");
+            final ObjectDataInput input = reader.getRawDataInput();
+            k = input.readInt();
+            s = input.readUTF();
+            sds = input.readObject();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            RawDataPortable that = (RawDataPortable) o;
+
+            if (k != that.k) return false;
+            if (l != that.l) return false;
+            if (!Arrays.equals(c, that.c)) return false;
+            if (p != null ? !p.equals(that.p) : that.p != null) return false;
+            if (s != null ? !s.equals(that.s) : that.s != null) return false;
+            if (sds != null ? !sds.equals(that.sds) : that.sds != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (l ^ (l >>> 32));
+            result = 31 * result + (c != null ? Arrays.hashCode(c) : 0);
+            result = 31 * result + (p != null ? p.hashCode() : 0);
+            result = 31 * result + k;
+            result = 31 * result + (s != null ? s.hashCode() : 0);
+            result = 31 * result + (sds != null ? sds.hashCode() : 0);
+            return result;
+        }
+    }
+
+    private static class InvalidRawDataPortable extends RawDataPortable {
+        static final int CLASS_ID = 5;
+
+        private InvalidRawDataPortable() {
+        }
+
+        private InvalidRawDataPortable(long l, char[] c, NamedPortable p, int k, String s, SimpleDataSerializable sds) {
+            super(l, c, p, k, s, sds);
+        }
+
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeLong("l", l);
+            final ObjectDataOutput output = writer.getRawDataOutput();
+            output.writeInt(k);
+            output.writeUTF(s);
+            writer.writeCharArray("c", c);
+            output.writeObject(sds);
+            writer.writePortable("p", p);
+        }
+    }
+
+    private static class InvalidRawDataPortable2 extends RawDataPortable {
+        static final int CLASS_ID = 6;
+
+        private InvalidRawDataPortable2() {
+        }
+
+        private InvalidRawDataPortable2(long l, char[] c, NamedPortable p, int k, String s, SimpleDataSerializable sds) {
+            super(l, c, p, k, s, sds);
+        }
+
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        public void readPortable(PortableReader reader) throws IOException {
+            c = reader.readCharArray("c");
+            final ObjectDataInput input = reader.getRawDataInput();
+            k = input.readInt();
+            l = reader.readLong("l");
+            s = input.readUTF();
+            p = reader.readPortable("p");
+            sds = input.readObject();
+        }
+    }
+
+    private static class SimpleDataSerializable implements DataSerializable {
+        private byte[] data;
+
+        private SimpleDataSerializable() {
+        }
+
+        private SimpleDataSerializable(byte[] data) {
+            this.data = data;
+        }
+
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(data.length);
+            out.write(data);
+        }
+
+        public void readData(ObjectDataInput in) throws IOException {
+            int len = in.readInt();
+            data = new byte[len];
+            in.readFully(data);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SimpleDataSerializable that = (SimpleDataSerializable) o;
+
+            if (!Arrays.equals(data, that.data)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return data != null ? Arrays.hashCode(data) : 0;
+        }
+    }
 
 }

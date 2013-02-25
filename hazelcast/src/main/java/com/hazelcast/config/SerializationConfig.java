@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.PortableFactory;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
 
 public class SerializationConfig {
 
@@ -32,6 +35,10 @@ public class SerializationConfig {
     private GlobalSerializerConfig globalSerializer;
 
     private Collection<TypeSerializerConfig> typeSerializers;
+
+    private boolean checkClassDefErrors = true;
+
+    private Set<ClassDefinition> classDefinitions;
 
     public SerializationConfig() {
         super();
@@ -67,6 +74,9 @@ public class SerializationConfig {
     }
 
     public SerializationConfig setPortableVersion(int portableVersion) {
+        if (portableVersion < 0) {
+            throw new IllegalArgumentException("Portable version cannot be negative!");
+        }
         this.portableVersion = portableVersion;
         return this;
     }
@@ -86,6 +96,35 @@ public class SerializationConfig {
 
     public SerializationConfig setPortableFactory(PortableFactory portableFactory) {
         this.portableFactory = portableFactory;
+        return this;
+    }
+
+    public Set<ClassDefinition> getClassDefinitions() {
+        if (classDefinitions == null) {
+            classDefinitions = new HashSet<ClassDefinition>();
+        }
+        return classDefinitions;
+    }
+
+    public SerializationConfig addClassDefinition(ClassDefinition classDefinition) {
+        if(!getClassDefinitions().add(classDefinition)) {
+            throw new IllegalArgumentException("ClassDefinition for class-id[" +classDefinition.getClassId()
+                    + "] already exists!");
+        }
+        return this;
+    }
+
+    public SerializationConfig setClassDefinitions(Set<ClassDefinition> classDefinitions) {
+        this.classDefinitions = classDefinitions;
+        return this;
+    }
+
+    public boolean isCheckClassDefErrors() {
+        return checkClassDefErrors;
+    }
+
+    public SerializationConfig setCheckClassDefErrors(boolean checkClassDefErrors) {
+        this.checkClassDefErrors = checkClassDefErrors;
         return this;
     }
 }

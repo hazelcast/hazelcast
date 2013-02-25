@@ -52,7 +52,7 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
 
     public ContextAwareDataInput(Data data, SerializationService service) {
         this(data.buffer, 0, service);
-        final ClassDefinition cd = data.cd;
+        final ClassDefinition cd = data.classDefinition;
         this.dataClassId = cd != null ? cd.getClassId() : -1;
         this.dataVersion = cd != null ? cd.getVersion() : -1;
     }

@@ -85,6 +85,7 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             register(serializer, typeClass);
         }
+        registerConfiguredClassDefinitions(config);
     }
 
     private static PortableFactory createPortableFactory(SerializationConfig config) throws Exception {
@@ -96,6 +97,38 @@ public final class SerializationServiceImpl implements SerializationService {
             return ClassLoaderUtil.newInstance(config.getPortableFactoryClass());
         }
         return portableFactory;
+    }
+
+    private void registerConfiguredClassDefinitions(SerializationConfig config) {
+        final Collection<ClassDefinition> classDefinitions = config.getClassDefinitions();
+        final Map<Integer, ClassDefinition> classDefMap = new HashMap<Integer, ClassDefinition>(classDefinitions.size());
+        for (ClassDefinition cd : classDefinitions) {
+            if (classDefMap.containsKey(cd.getClassId())) {
+                throw new HazelcastSerializationException("Duplicate registration found for class-id[" + cd.getClassId() + "]!");
+            }
+            classDefMap.put(cd.getClassId(), cd);
+        }
+        for (ClassDefinition classDefinition : classDefinitions) {
+            registerClassDefinition(classDefinition, classDefMap, config.isCheckClassDefErrors());
+        }
+    }
+
+    private void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap, boolean checkClassDefErrors) {
+        for (int i = 0; i < cd.getFieldCount(); i++) {
+            FieldDefinition fd = cd.get(i);
+            if (fd.getType() == FieldType.PORTABLE || fd.getType() == FieldType.PORTABLE_ARRAY) {
+                int classId = fd.getClassId();
+                ClassDefinition nestedCd = classDefMap.get(classId);
+                if (nestedCd != null) {
+                    ((ClassDefinitionImpl) cd).add((ClassDefinitionImpl) nestedCd);
+                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
+                    serializationContext.registerClassDefinition(nestedCd);
+                } else if (checkClassDefErrors) {
+                    throw new HazelcastSerializationException("Could not find registered ClassDefinition for class-id: " + classId);
+                }
+            }
+        }
+        serializationContext.registerClassDefinition(cd);
     }
 
     public SerializationServiceImpl(int version, PortableFactory portableFactory) {
@@ -151,7 +184,7 @@ public final class SerializationServiceImpl implements SerializationService {
             serializer.write(out, obj);
             final Data data = new Data(serializer.getTypeId(), out.toByteArray());
             if (obj instanceof Portable) {
-                data.cd = serializationContext.lookup(((Portable) obj).getClassId());
+                data.classDefinition = serializationContext.lookup(((Portable) obj).getClassId());
             }
             if (obj instanceof PartitionAware) {
                 final Object pk = ((PartitionAware) obj).getPartitionKey();
@@ -196,7 +229,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 throw new HazelcastInstanceNotActiveException();
             }
             if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
-                serializationContext.registerClassDefinition(data.cd);
+                serializationContext.registerClassDefinition(data.classDefinition);
             }
             in = new ContextAwareDataInput(data, this);
             Object obj = serializer.read(in);
@@ -271,6 +304,10 @@ public final class SerializationServiceImpl implements SerializationService {
 
     public ObjectDataInput createObjectDataInput(byte[] data) {
         return new ContextAwareDataInput(data, this);
+    }
+
+    public ObjectDataInput createObjectDataInput(Data data) {
+        return createObjectDataInput(data.buffer);
     }
 
     public ObjectDataOutput createObjectDataOutput(int size) {
@@ -468,8 +505,11 @@ public final class SerializationServiceImpl implements SerializationService {
 
         public ClassDefinition registerClassDefinition(final ClassDefinition cd) {
             if (cd == null) return null;
-            final long versionedClassId = combineToLong(cd.getClassId(), cd.getVersion());
             final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
+            if (cdImpl.getVersion() < 0) {
+                cdImpl.version = version;
+            }
+            final long versionedClassId = combineToLong(cdImpl.getClassId(), cdImpl.getVersion());
             final ClassDefinitionImpl currentClassDef = versionedDefinitions.putIfAbsent(versionedClassId, cdImpl);
             if (currentClassDef == null) {
                 if (cdImpl.getBinary() == null) {

@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.util.secondexecutor;
 
-/**
- * @mdogan 1/1/13
- */
-public interface FieldDefinition extends DataSerializable {
+import java.util.Map;
 
-    FieldType getType();
+interface SecondEntryTask extends SecondTask {
 
-    String getName();
-
-    int getIndex();
-
-    int getClassId();
+    /**
+     * Executes a single entry. All failures has to be handled by the implementation.
+     * Implementation can choose to ignore the failures or reschedules the entry for
+     * a future time.
+     *
+     * @param ses
+     * @param entry
+     * @param delaySeconds delaySeconds set for this entry
+     */
+    void executeEntry(SecondExecutorService ses, Map.Entry entry, int delaySeconds);
 }

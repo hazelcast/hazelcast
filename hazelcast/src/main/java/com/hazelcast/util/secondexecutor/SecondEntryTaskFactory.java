@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.util.secondexecutor;
 
-/**
- * @mdogan 1/1/13
- */
-public interface FieldDefinition extends DataSerializable {
-
-    FieldType getType();
-
-    String getName();
-
-    int getIndex();
-
-    int getClassId();
+public interface SecondEntryTaskFactory extends SecondScheduler.SecondTaskFactory {
+    SecondEntryTask newSecondTask();
 }

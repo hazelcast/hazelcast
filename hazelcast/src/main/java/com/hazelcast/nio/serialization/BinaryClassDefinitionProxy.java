@@ -25,16 +25,10 @@ import java.util.Set;
 /**
  * @mdogan 1/3/13
  */
-public class ClassDefinitionBinaryProxy implements ClassDefinition {
+public final class BinaryClassDefinitionProxy extends BinaryClassDefinition implements ClassDefinition {
 
-    private final int classId;
-    private final int version;
-    private final byte[] binary;
-
-    public ClassDefinitionBinaryProxy(int classId, int version, byte[] binary) {
-        this.classId = classId;
-        this.version = version;
-        this.binary = binary;
+    public BinaryClassDefinitionProxy(int classId, int version, byte[] binary) {
+        super(classId, version, binary);
     }
 
     public ClassDefinition toReal(SerializationContext context) throws IOException {
@@ -58,7 +52,7 @@ public class ClassDefinitionBinaryProxy implements ClassDefinition {
         throw new UnsupportedOperationException();
     }
 
-    public int getFieldTypeId(String fieldName) {
+    public FieldType getFieldType(String fieldName) {
         throw new UnsupportedOperationException();
     }
 
@@ -68,18 +62,6 @@ public class ClassDefinitionBinaryProxy implements ClassDefinition {
 
     public int getFieldCount() {
         throw new UnsupportedOperationException();
-    }
-
-    public int getClassId() {
-        throw new UnsupportedOperationException();
-    }
-
-    public int getVersion() {
-        throw new UnsupportedOperationException();
-    }
-
-    public byte[] getBinary() {
-        return new byte[0];
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

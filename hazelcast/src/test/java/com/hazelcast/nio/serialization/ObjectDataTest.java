@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.DataWriter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;

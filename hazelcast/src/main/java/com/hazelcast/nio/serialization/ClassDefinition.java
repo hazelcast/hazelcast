@@ -31,7 +31,7 @@ public interface ClassDefinition extends DataSerializable {
 
     Set<String> getFieldNames();
 
-    int getFieldTypeId(String fieldName);
+    FieldType getFieldType(String fieldName);
 
     int getFieldClassId(String fieldName);
 
@@ -41,5 +41,4 @@ public interface ClassDefinition extends DataSerializable {
 
     int getVersion();
 
-    byte[] getBinary();
 }

@@ -26,9 +26,9 @@ public final class Data implements IdentifiedDataSerializable {
     public static final int ID = 0;
     public static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
 
-    public int type = -1;
-    public ClassDefinition cd = null;
-    public byte[] buffer = null;
+    int type = -1;
+    ClassDefinition classDefinition = null;
+    byte[] buffer = null;
     int partitionHash = -1;
 
     public Data() {
@@ -40,9 +40,9 @@ public final class Data implements IdentifiedDataSerializable {
     }
 
     public void postConstruct(SerializationContext context) {
-        if (cd != null && cd instanceof ClassDefinitionBinaryProxy) {
+        if (classDefinition != null && classDefinition instanceof BinaryClassDefinitionProxy) {
             try {
-                cd = ((ClassDefinitionBinaryProxy) cd).toReal(context);
+                classDefinition = ((BinaryClassDefinitionProxy) classDefinition).toReal(context);
             } catch (IOException e) {
                 throw new HazelcastSerializationException(e);
             }
@@ -52,7 +52,7 @@ public final class Data implements IdentifiedDataSerializable {
     /**
      * WARNING:
      *
-     * Should be in sync with {@link com.hazelcast.nio.DataWriter#readFrom(java.nio.ByteBuffer)}
+     * Should be in sync with {@link DataWriter#readFrom(java.nio.ByteBuffer)}
      */
     public void readData(ObjectDataInput in) throws IOException {
         type = in.readInt();
@@ -60,14 +60,14 @@ public final class Data implements IdentifiedDataSerializable {
         if (classId != NO_CLASS_ID) {
             final int version = in.readInt();
             SerializationContext context = ((SerializationContextAware) in).getSerializationContext();
-            cd = context.lookup(classId, version);
+            classDefinition = context.lookup(classId, version);
             int classDefSize = in.readInt();
-            if (cd != null) {
+            if (classDefinition != null) {
                 in.skipBytes(classDefSize);
             } else {
                 byte[] classDefBytes = new byte[classDefSize];
                 in.readFully(classDefBytes);
-                cd = context.createClassDefinition(classDefBytes);
+                classDefinition = context.createClassDefinition(classDefBytes);
             }
         }
         int size = in.readInt();
@@ -81,16 +81,16 @@ public final class Data implements IdentifiedDataSerializable {
     /**
      * WARNING:
      *
-     * Should be in sync with {@link com.hazelcast.nio.DataWriter#writeTo(java.nio.ByteBuffer)}
+     * Should be in sync with {@link DataWriter#writeTo(java.nio.ByteBuffer)}
      *
      * {@link #totalSize()} should be updated whenever writeData method is changed.
      */
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(type);
-        if (cd != null) {
-            out.writeInt(cd.getClassId());
-            out.writeInt(cd.getVersion());
-            byte[] classDefBytes = cd.getBinary();
+        if (classDefinition != null) {
+            out.writeInt(classDefinition.getClassId());
+            out.writeInt(classDefinition.getVersion());
+            byte[] classDefBytes = ((BinaryClassDefinition) classDefinition).getBinary();
             out.writeInt(classDefBytes.length);
             out.write(classDefBytes);
         } else {
@@ -118,11 +118,11 @@ public final class Data implements IdentifiedDataSerializable {
     public int totalSize() {
         int total = 0;
         total += 4; // type
-        if (cd != null) {
-            total += 4; // cd-classId
-            total += 4; // cd-version
-            total += 4; // cd-binary-length
-            total += cd.getBinary().length; // cd-binary
+        if (classDefinition != null) {
+            total += 4; // classDefinition-classId
+            total += 4; // classDefinition-version
+            total += 4; // classDefinition-binary-length
+            total += ((BinaryClassDefinition) classDefinition).getBinary().length; // classDefinition-binary
         } else {
             total += 4; // no-classId
         }
@@ -156,6 +156,18 @@ public final class Data implements IdentifiedDataSerializable {
 
     public void setPartitionHash(int partitionHash) {
         this.partitionHash = partitionHash;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public ClassDefinition getClassDefinition() {
+        return classDefinition;
+    }
+
+    public byte[] getBuffer() {
+        return buffer;
     }
 
     @Override
