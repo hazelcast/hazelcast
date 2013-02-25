@@ -37,7 +37,7 @@ public class PollOperation extends QueueBackupAwareOperation implements WaitSupp
     }
 
     public void run() {
-        response = getContainer().poll();
+        response = getOrCreateContainer().poll();
     }
 
     public void afterRun() throws Exception {
@@ -67,7 +67,7 @@ public class PollOperation extends QueueBackupAwareOperation implements WaitSupp
     }
 
     public boolean shouldWait() {
-        return getWaitTimeoutMillis() != 0 && getContainer().size() == 0;
+        return getWaitTimeoutMillis() != 0 && getOrCreateContainer().size() == 0;
     }
 
     public void onWaitExpire() {

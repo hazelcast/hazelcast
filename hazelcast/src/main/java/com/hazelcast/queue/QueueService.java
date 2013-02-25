@@ -20,9 +20,13 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
@@ -66,7 +70,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         reset();
     }
 
-    public QueueContainer getContainer(final String name, boolean fromBackup) throws Exception {
+    public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
             container = new QueueContainer(nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
@@ -197,4 +201,26 @@ public class QueueService implements ManagedService, MigrationAwareService,
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
+
+    public LocalQueueStats createLocalQueueStats(String name, int partitionId){
+        LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
+        QueueContainer container = containerMap.get(name);
+        if (container == null){
+            return stats;
+        }
+
+        Address thisAddress = nodeEngine.getClusterService().getThisAddress();
+        PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
+        if (thisAddress.equals(info.getOwner())){
+            stats.setOwnedItemCount(container.size());
+        }
+        else{
+            stats.setBackupItemCount(container.size());
+        }
+        LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
+        return null;
+    }
+
+
+
 }

@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.*;
@@ -46,6 +47,14 @@ public class QueueContainer implements DataSerializable {
     private long idGen = 0;
 
     private QueueStoreWrapper store;
+
+    private long minAge;
+
+    private long maxAge;
+
+    private long aveAge;
+
+    private long totalAged;
 
     public QueueContainer() {
     }
@@ -109,12 +118,20 @@ public class QueueContainer implements DataSerializable {
                 throw new RetryableHazelcastException(e);
             }
         }
+        long current = Clock.currentTimeMillis();
+        for (QueueItem item : itemQueue) {
+            age(item, current); // For stats
+        }
         itemQueue.clear();
         dataMap.clear();
         return dataList;
     }
 
     public void clearBackup() {
+        long current = Clock.currentTimeMillis();
+        for (QueueItem item : itemQueue) {
+            age(item, current); // For stats
+        }
         itemQueue.clear();
         dataMap.clear();
     }
@@ -132,11 +149,13 @@ public class QueueContainer implements DataSerializable {
             }
         }
         itemQueue.poll();
+        age(item, Clock.currentTimeMillis());
         return item.getData();
     }
 
     public void pollBackup() {
-        itemQueue.poll();
+        QueueItem item = itemQueue.poll();
+        age(item, Clock.currentTimeMillis());//For Stats
     }
 
     /**
@@ -156,6 +175,7 @@ public class QueueContainer implements DataSerializable {
                     }
                 }
                 iter.remove();
+                age(item, Clock.currentTimeMillis()); //For Stats
                 return item.getItemId();
             }
         }
@@ -168,6 +188,7 @@ public class QueueContainer implements DataSerializable {
             QueueItem item = iter.next();
             if (item.getItemId() == itemId) {
                 iter.remove();
+                age(item, Clock.currentTimeMillis()); //For Stats
                 return;
             }
         }
@@ -241,8 +262,10 @@ public class QueueContainer implements DataSerializable {
                 throw new RetryableHazelcastException(e);
             }
         }
+        long current = Clock.currentTimeMillis();
         for (int i = 0; i < maxSize; i++) {
-            itemQueue.poll();
+            QueueItem item = itemQueue.poll();
+            age(item, current); //For Stats
         }
         return map.values();
     }
@@ -313,10 +336,12 @@ public class QueueContainer implements DataSerializable {
                 }
             }
             Iterator<QueueItem> iter = itemQueue.iterator();
+            long current = Clock.currentTimeMillis();
             while (iter.hasNext()) {
                 QueueItem item = iter.next();
                 if (map.containsKey(item.getItemId())) {
                     iter.remove();
+                    age(item, current);
                 }
             }
         }
@@ -325,10 +350,12 @@ public class QueueContainer implements DataSerializable {
 
     public void compareAndRemoveBackup(Set<Long> keySet) {
         Iterator<QueueItem> iter = itemQueue.iterator();
+        long current = Clock.currentTimeMillis();
         while (iter.hasNext()) {
             QueueItem item = iter.next();
             if (keySet.contains(item.getItemId())) {
                 iter.remove();
+                age(item, current);
             }
         }
     }
@@ -368,10 +395,6 @@ public class QueueContainer implements DataSerializable {
                 keySet.add(iter.next().getItemId());
             }
             Map<Long, Data> values = store.loadAll(keySet);
-            if (values == null) {
-                // TODO: @mm - can loadAll return null map?
-                return;
-            }
             dataMap.putAll(values);
             item.setData(getDataFromMap(item.getItemId()));
         }
@@ -408,6 +431,23 @@ public class QueueContainer implements DataSerializable {
             item.readData(in);
             itemQueue.offer(item);
             idGen++;
+        }
+    }
+
+    private void age(QueueItem item, long currentTime){
+        long elapsed = currentTime - item.getCreationTime();
+        if (elapsed <= 0){
+            return;//elapsed time can not be a negative value, a system clock problem maybe. ignored
+        }
+        totalAged++;
+        if (minAge == 0){
+            minAge = elapsed;
+            maxAge = elapsed;
+            aveAge = elapsed;
+        }
+        else {
+            minAge = Math.min(minAge, elapsed);
+            maxAge = Math.max(maxAge, elapsed);
         }
     }
 

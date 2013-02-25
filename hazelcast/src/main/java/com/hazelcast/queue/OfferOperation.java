@@ -49,7 +49,7 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
     }
 
     public void run() {
-        QueueContainer container = getContainer();
+        QueueContainer container = getOrCreateContainer();
         if (container.checkBound()) {
             item = container.offer(data);
             response = true;
@@ -85,7 +85,7 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
     }
 
     public boolean shouldWait() {
-        QueueContainer container = getContainer();
+        QueueContainer container = getOrCreateContainer();
         return getWaitTimeoutMillis() != 0 && !container.checkBound();
     }
 
