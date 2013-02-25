@@ -446,7 +446,6 @@ public class PartitionRecordStore implements RecordStore {
         int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
             record.getState().updateIdleExpireTime(maxIdleSeconds * 1000);
-            System.out.println("updated from:"+new Date()+" to:"+new Date(record.getState().getIdleExpireTime()));
             mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds * 1000);
         }
     }
