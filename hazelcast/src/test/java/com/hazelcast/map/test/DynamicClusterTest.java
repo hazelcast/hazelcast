@@ -242,7 +242,7 @@ public class DynamicClusterTest extends BaseTest {
         Thread.sleep(1000);
         final String name = "testMultiMapSize";
         final MultiMap multiMap = getInstance(0).getMultiMap(name);
-        final int putSize = 12;
+        final int putSize = 1000;
         final int removeSize = 0;
         final AtomicInteger removed = new AtomicInteger();
 
@@ -268,19 +268,9 @@ public class DynamicClusterTest extends BaseTest {
             Assert.fail(e.getMessage());
         }
 
-        for (int i=0; i<instanceCount; i++){
-            log("ins: " + i);
-            getInstance(i).getMultiMap(name).getLocalMultiMapStats();
-        }
-
         Thread.sleep(100);
         removeInstance(1);
 
-
-        for (int i=0; i<instanceCount; i++){
-            log("ins: " + i);
-            getInstance(i).getMultiMap(name).getLocalMultiMapStats();
-        }
 
         assertEquals(putSize - removed.get(), multiMap.size());
 
