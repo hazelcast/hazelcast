@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -35,8 +34,8 @@ import java.util.Random;
 public abstract class BaseTest {
 
     protected static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
-    protected static StaticNodeFactory factory ;
-    protected static int instanceCount = 5;
+//    protected static StaticNodeFactory factory ;
+    protected static int instanceCount = 3;
     protected Random rand = new Random(Clock.currentTimeMillis());
     protected static Config cfg;
 
@@ -50,9 +49,11 @@ public abstract class BaseTest {
     @BeforeClass
     public static void init() throws Exception {
         cfg = new Config();
-        factory = new StaticNodeFactory(20);
+//        factory = new StaticNodeFactory(20);
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setMulticastGroup("224.5.5.5");
         cfg.getMapConfig("testMapSize").setRecordType(MapConfig.RecordType.OBJECT);
+        cfg.getMapConfig("testMapSize").setBackupCount(2);
+        cfg.getMultiMapConfig("testMultiMapSize").setSyncBackupCount(2);
         startInstances();
     }
 
@@ -66,15 +67,15 @@ public abstract class BaseTest {
 
     protected void newInstance() {
         instanceCount++;
-        instances.add(factory.newInstance(cfg));
-//        instances.add(Hazelcast.newHazelcastInstance(cfg));
+//        instances.add(factory.newInstance(cfg));
+        instances.add(Hazelcast.newHazelcastInstance(cfg));
     }
 
     protected void newInstanceMany(int count) {
         for (int i = 0; i < count; i++) {
             instanceCount++;
-            instances.add(factory.newInstance(cfg));
-//            instances.add(Hazelcast.newHazelcastInstance(cfg));
+//            instances.add(factory.newInstance(cfg));
+            instances.add(Hazelcast.newHazelcastInstance(cfg));
         }
     }
 
@@ -105,8 +106,8 @@ public abstract class BaseTest {
         Hazelcast.shutdownAll();
         instances.clear();
         for (int i = 0; i < instanceCount; i++) {
-            instances.add(factory.newInstance(cfg));
-//            instances.add(Hazelcast.newHazelcastInstance(cfg));
+//            instances.add(factory.newInstance(cfg));
+            instances.add(Hazelcast.newHazelcastInstance(cfg));
         }
     }
 
