@@ -123,6 +123,113 @@ public class MapEvictionTest {
     }
 
     @Test
+    public void TestEvictionLRU() {
+        final int k = 1;
+        final int size = 2000;
+
+        final String mapName = "TestEvictionLRU";
+        Config cfg = new Config();
+        MapConfig mc = cfg.getMapConfig(mapName);
+        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        mc.setEvictionPercentage(25);
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setSize(size);
+        mc.setMaxSizeConfig(msc);
+
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+        IMap<Object, Object> map = instances[0].getMap(mapName);
+
+        for (int i = size / 2; i < size; i++) {
+            map.put(i, i);
+        }
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < size / 2; i++) {
+            map.put(i, i);
+        }
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        boolean isRecentlyUsedEvicted = false;
+        for (int i = 0; i < size / 2; i++) {
+            if (map.get(i) == null) {
+                isRecentlyUsedEvicted = true;
+                break;
+            }
+        }
+        if (isRecentlyUsedEvicted) {
+            for (int i = size / 2; i < size; i++) {
+                Assert.assertEquals(null, map.get(i));
+            }
+        }
+        instances[0].getLifecycleService().shutdown();
+
+    }
+
+    @Test
+    public void TestEvictionLFU() {
+        final int k = 1;
+        final int size = 2000;
+
+        final String mapName = "TestEvictionLFU";
+        Config cfg = new Config();
+        MapConfig mc = cfg.getMapConfig(mapName);
+        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
+        mc.setEvictionPercentage(25);
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setSize(size);
+        mc.setMaxSizeConfig(msc);
+
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+        IMap<Object, Object> map = instances[0].getMap(mapName);
+
+        for (int i = 0; i < size / 2; i++) {
+            map.put(i, i);
+            map.put(i, i + 1);
+        }
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (int i = size / 2; i < size; i++) {
+            map.put(i, i);
+        }
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(map.size());
+        Assert.assertFalse("No eviction!?!?!?", map.size() == size);
+        boolean isLeastFrequentlyUsedEvicted = false;
+        for (int i = size / 2; i < size; i++) {
+            if (map.get(i) == null) {
+                isLeastFrequentlyUsedEvicted = true;
+                break;
+            }
+        }
+        if (isLeastFrequentlyUsedEvicted) {
+            for (int i = 0; i < size / 2; i++) {
+                Assert.assertEquals(null, map.get(i));
+            }
+        }
+        instances[0].getLifecycleService().shutdown();
+
+    }
+
+    @Test
     public void testMapWideEviction() throws InterruptedException {
         int size = 10000;
 

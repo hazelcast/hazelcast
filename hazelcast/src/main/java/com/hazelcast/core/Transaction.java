@@ -62,4 +62,6 @@ public interface Transaction {
      * @return the status
      */
     int getStatus();
+
+    void setTransactionTimeout(int seconds);
 }

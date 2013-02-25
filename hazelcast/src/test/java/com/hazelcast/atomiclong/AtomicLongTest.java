@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.atomicnumber.test;
+package com.hazelcast.atomiclong;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
  * Time: 10:26 AM
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class AtomicNumberTest {
+public class AtomicLongTest {
 
     @Before
     @After
@@ -98,6 +98,70 @@ public class AtomicNumberTest {
             Assert.assertEquals(0, atomicLong.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testAtomicLongFailure() {
+        int k = 5;
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(k);
+        Config config = new Config();
+        HazelcastInstance instance = nodeFactory.newInstance(config);
+        String name = "testAtomicLongFailure";
+        IAtomicLong atomicLong = instance.getAtomicLong(name);
+
+        atomicLong.set(100);
+
+        for (int i = 0; i < k; i++) {
+            HazelcastInstance newInstance = nodeFactory.newInstance(config);
+            IAtomicLong newAtomicLong = newInstance.getAtomicLong(name);
+            Assert.assertEquals((long) 100 + i, newAtomicLong.get());
+            newAtomicLong.incrementAndGet();
+            instance.getLifecycleService().shutdown();
+            instance = newInstance;
+        }
+    }
+
+    @Test
+    public void testAtomicLongSpawnNodeInParallel() {
+        int total = 20;
+        int parallel = 4;
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(total + 1);
+        final Config config = new Config();
+        HazelcastInstance instance = nodeFactory.newInstance(config);
+        final String name = "testAtomicLongSpawnNodeInParallel";
+        IAtomicLong atomicLong = instance.getAtomicLong(name);
+
+        atomicLong.set(100);
+
+        for (int i = 0; i < total / parallel; i++) {
+            final HazelcastInstance[] instances = new HazelcastInstance[parallel];
+            final CountDownLatch countDownLatch = new CountDownLatch(parallel);
+            for (int j = 0; j < parallel; j++) {
+                final int id = j;
+                new Thread() {
+                    public void run() {
+                        instances[id] = nodeFactory.newInstance(config);
+                        instances[id].getAtomicLong(name).incrementAndGet();
+                        countDownLatch.countDown();
+                    }
+                }.start();
+
+            }
+            try {
+                countDownLatch.await(1, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            IAtomicLong newAtomicLong = instance.getAtomicLong(name);
+            Assert.assertEquals((long) 100 + (i + 1) * parallel, newAtomicLong.get());
+
+            instance.getLifecycleService().shutdown();
+            instance = instances[0];
+            for (int j = 1; j < parallel; j++) {
+                instances[j].getLifecycleService().shutdown();
+            }
         }
     }
 }

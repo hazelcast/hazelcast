@@ -36,6 +36,8 @@ public class TransactionImpl implements Transaction {
     private int status = TXN_STATUS_NO_TXN;
     private final ILogger logger;
     private final String txnId = UUID.randomUUID().toString();
+    private long transactionTimeoutSeconds = TimeUnit.MINUTES.toSeconds(5);
+    private long expirationMillis = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5);
 
     public TransactionImpl(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -45,6 +47,19 @@ public class TransactionImpl implements Transaction {
 
     public String getTxnId() {
         return txnId;
+    }
+
+    public void setTransactionTimeout(int seconds) {
+        expirationMillis = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds);
+        this.transactionTimeoutSeconds = seconds;
+    }
+
+    public long getTransactionTimeoutSeconds() {
+        return transactionTimeoutSeconds;
+    }
+
+    public long getMillisLeft() {
+        return expirationMillis - System.currentTimeMillis();
     }
 
     public void attachParticipant(String serviceName, int partitionId) {
@@ -117,8 +132,8 @@ public class TransactionImpl implements Transaction {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            finalizeTxn();
             status = TXN_STATUS_COMMITTED;
+            finalizeTxn();
         }
     }
 
@@ -142,8 +157,8 @@ public class TransactionImpl implements Transaction {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            finalizeTxn();
             status = TXN_STATUS_ROLLED_BACK;
+            finalizeTxn();
         }
     }
 
@@ -151,12 +166,7 @@ public class TransactionImpl implements Transaction {
         return status;
     }
 
-    @Override
-    public String toString() {
-        return "TransactionImpl [" + txnId + "] status: " + status;
-    }
-
-    private void finalizeTxn() {
+    public void finalizeTxn() {
         status = TXN_STATUS_NO_TXN;
         ThreadContext.finalizeTransaction(instance.getName());
     }
