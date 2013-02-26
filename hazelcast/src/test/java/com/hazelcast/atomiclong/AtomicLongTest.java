@@ -103,8 +103,8 @@ public class AtomicLongTest {
 
     @Test
     public void testAtomicLongFailure() {
-        int k = 5;
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(k);
+        int k = 4;
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(k + 1);
         Config config = new Config();
         HazelcastInstance instance = nodeFactory.newInstance(config);
         String name = "testAtomicLongFailure";
@@ -124,8 +124,8 @@ public class AtomicLongTest {
 
     @Test
     public void testAtomicLongSpawnNodeInParallel() {
-        int total = 20;
-        int parallel = 4;
+        int total = 6;
+        int parallel = 2;
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(total + 1);
         final Config config = new Config();
         HazelcastInstance instance = nodeFactory.newInstance(config);

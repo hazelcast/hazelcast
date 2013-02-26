@@ -38,7 +38,7 @@ public class SetBackupOperation extends AtomicLongBaseOperation implements Backu
 
     @Override
     public void run() throws Exception {
-        setNumber(newValue);
+        getNumber().set(newValue);
     }
 
     @Override

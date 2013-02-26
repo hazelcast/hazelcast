@@ -40,9 +40,7 @@ public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getNumber();
-        setNumber(returnValue + delta);
-
+        returnValue = getNumber().getAndAdd(delta);
     }
 
     @Override

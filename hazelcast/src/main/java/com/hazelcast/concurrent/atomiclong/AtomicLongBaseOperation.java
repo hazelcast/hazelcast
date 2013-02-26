@@ -18,6 +18,8 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 // author: sancar - 24.12.2012
 public abstract class AtomicLongBaseOperation extends AbstractNamedOperation {
 
@@ -29,12 +31,8 @@ public abstract class AtomicLongBaseOperation extends AbstractNamedOperation {
         super(name);
     }
 
-    public long getNumber() {
+    public AtomicLong getNumber() {
         return ((AtomicLongService) getService()).getNumber(name);
-    }
-
-    public void setNumber(long value) {
-        ((AtomicLongService) getService()).setNumber(name, value);
     }
 
 }

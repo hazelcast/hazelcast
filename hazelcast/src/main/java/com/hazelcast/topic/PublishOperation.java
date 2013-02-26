@@ -46,6 +46,11 @@ public class PublishOperation extends AbstractNamedOperation {
     }
 
     @Override
+    public void beforeRun() throws Exception {
+        ((TopicService) getService()).incrementPublishes(name);
+    }
+
+    @Override
     public void run() throws Exception {
         TopicService service = getService();
         TopicEvent topicEvent = new TopicEvent(name, message);

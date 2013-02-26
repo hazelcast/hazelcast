@@ -20,9 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.util.Clock;
 import junit.framework.Assert;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
@@ -54,7 +58,7 @@ public class TopicTest {
     public void testTopicTotalOrder() throws Exception {
         final Config config = new Config();
         TopicConfig topicConfig = new TopicConfig();
-        topicConfig.setGlobalOrderingEnabled(false);
+        topicConfig.setGlobalOrderingEnabled(true);
         topicConfig.setName("default");
         config.addTopicConfig(topicConfig);
 
@@ -65,7 +69,7 @@ public class TopicTest {
         final CountDownLatch mainLatch = new CountDownLatch(k);
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
 
-        Assert.assertEquals(false , instances[0].getConfig().getTopicConfig("default").isGlobalOrderingEnabled() );
+        Assert.assertEquals(true, instances[0].getConfig().getTopicConfig("default").isGlobalOrderingEnabled());
 
         for (int i = 0; i < k; i++) {
             final HazelcastInstance hazelcastInstance = instances[i];
@@ -243,6 +247,7 @@ public class TopicTest {
             }
         };
         MessageListener<String> messageListener2 = new
+
                 MessageListener<String>() {
                     public void onMessage(Message<String> msg) {
                         if (msg.getMessageObject().startsWith(message)) {
@@ -297,6 +302,41 @@ public class TopicTest {
             assertTrue(latch2.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
         }
+
+    }
+
+    @Test
+    public void testTopicStats() throws InterruptedException {
+        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newInstance(new Config());
+        ITopic<String> topic = hazelcastInstance.getTopic("testTopicStats");
+
+
+        final CountDownLatch latch1 = new CountDownLatch(1000);
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message msg) {
+                latch1.countDown();
+            }
+        });
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message msg) {
+                latch2.countDown();
+            }
+        });
+
+        for (int i = 0; i < 1000; i++) {
+            topic.publish("sancar");
+        }
+
+        latch1.await();
+        latch2.await();
+        LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
+        Assert.assertEquals(1000, stats.getTotalPublishes());
+        Assert.assertEquals(2000, stats.getTotalReceivedMessages());
+        Assert.assertTrue(stats.getCreationTime() < stats.getLastPublishTime());
+        Assert.assertEquals(1000, stats.getOperationStats().getNumberOfPublishes());
+        Assert.assertEquals(2000, stats.getOperationStats().getNumberOfReceivedMessages());
+
 
     }
 

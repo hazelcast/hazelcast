@@ -26,7 +26,6 @@ import java.io.IOException;
 public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
 
     private long newValue;
-
     private long returnValue;
 
     public GetAndSetOperation() {
@@ -40,9 +39,7 @@ public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-
-        returnValue = getNumber();
-        setNumber(newValue);
+        returnValue = getNumber().getAndSet(newValue);
     }
 
     @Override
