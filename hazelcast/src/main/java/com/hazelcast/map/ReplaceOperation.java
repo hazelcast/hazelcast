@@ -30,7 +30,6 @@ public class ReplaceOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

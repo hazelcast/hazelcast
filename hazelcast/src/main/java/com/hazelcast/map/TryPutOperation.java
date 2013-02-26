@@ -36,7 +36,6 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

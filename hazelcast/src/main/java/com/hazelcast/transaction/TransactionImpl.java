@@ -32,7 +32,7 @@ import static com.hazelcast.core.Transaction.State.*;
 public final class TransactionImpl implements Transaction {
 
     private final NodeEngine nodeEngine;
-    private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(3);
+    private final Map<Integer, Collection<String>> participants = new HashMap<Integer, Collection<String>>(3);
 
     private final String txnId = UUID.randomUUID().toString();
     private State state = NO_TXN;
@@ -51,35 +51,14 @@ public final class TransactionImpl implements Transaction {
     }
 
     public void attachParticipant(String serviceName, int partitionId) {
-        participants.add(new TxnParticipant(serviceName, partitionId));
+        Collection<String> services = participants.get(partitionId);
+        if (services == null) {
+            services = new HashSet<String>(3);
+            participants.put(partitionId, services);
+        }
+        services.add(serviceName);
     }
 
-    private class TxnParticipant {
-        final String serviceName;
-        final int partitionId;
-
-        TxnParticipant(String serviceName, int partitionId) {
-            this.serviceName = serviceName;
-            this.partitionId = partitionId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            TxnParticipant that = (TxnParticipant) o;
-            if (partitionId != that.partitionId) return false;
-            if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = serviceName != null ? serviceName.hashCode() : 0;
-            result = 31 * result + partitionId;
-            return result;
-        }
-    }
 
     public void begin() throws IllegalStateException {
         if (state == ACTIVE) {
@@ -97,7 +76,7 @@ public final class TransactionImpl implements Transaction {
             final List<Future> futures = new ArrayList<Future>(participants.size());
             final OperationService operationService = nodeEngine.getOperationService();
             for (TxnParticipant t : participants) {
-                Operation op = new PrepareOperation(txnId);
+                PrepareOperation op = new PrepareOperation(txnId);
                 futures.add(operationService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
                         .invoke());
             }

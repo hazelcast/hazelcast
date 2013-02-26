@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @see IMap
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface TransactionalMap<K, V> extends ConcurrentMap<K, V>, TransactionalObject {
+public interface TransactionalMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
 
     /**
      * {@inheritDoc}

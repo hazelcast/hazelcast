@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.transaction;
+
+import com.hazelcast.core.DistributedObject;
 
 public interface TransactionalObject extends DistributedObject {
+
+    void setTransaction(TransactionImpl transaction);
 
 }

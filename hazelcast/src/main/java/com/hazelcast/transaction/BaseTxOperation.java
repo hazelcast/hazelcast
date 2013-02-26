@@ -28,19 +28,21 @@ import java.io.IOException;
 abstract class BaseTxOperation extends Operation {
 
     protected String txnId;
+    protected String[] services;
     protected transient Object response;
 
     protected BaseTxOperation() {
     }
 
-    protected BaseTxOperation(String txnId) {
+    protected BaseTxOperation(String txnId, String[] services) {
         this.txnId = txnId;
+        this.services = services;
     }
 
-    public void beforeRun() throws Exception {
+    public final void beforeRun() throws Exception {
     }
 
-    public void afterRun() throws Exception {
+    public final void afterRun() throws Exception {
     }
 
     public final boolean returnsResponse() {

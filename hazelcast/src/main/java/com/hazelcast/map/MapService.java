@@ -22,13 +22,17 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.map.proxy.TransactionalMapProxy;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -48,9 +52,9 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -95,7 +99,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 3, 1, TimeUnit.SECONDS);
     }
 
-    public void initMap(String mapName) {
+    private void initMap(String mapName) {
         getMapContainer(mapName);
     }
 
@@ -486,8 +490,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
-    public <T extends TransactionalObject> T createTransactionalObject(Object id, Transaction transaction) {
-        return null;
+    @SuppressWarnings("unchecked")
+    public TransactionalMapProxy createTransactionalObject(Object id) {
+        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine);
     }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
@@ -541,11 +546,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public ObjectMapProxy createDistributedObject(Object objectId) {
-        return new ObjectMapProxy(String.valueOf(objectId), this, nodeEngine);
+        final String name = String.valueOf(objectId);
+        initMap(name);
+        return new ObjectMapProxy(name, this, nodeEngine);
     }
 
     public DataMapProxy createDistributedObjectForClient(Object objectId) {
-        return new DataMapProxy(String.valueOf(objectId), this, nodeEngine);
+        final String name = String.valueOf(objectId);
+        initMap(name);
+        return new DataMapProxy(name, this, nodeEngine);
     }
 
     public void destroyDistributedObject(Object objectId) {

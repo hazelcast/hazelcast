@@ -36,7 +36,6 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

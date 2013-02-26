@@ -16,10 +16,22 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
 /**
  * @mdogan 2/26/13
  */
-public class TransactionService {
+public class TransactionManagerService {
+
+    private final NodeEngineImpl nodeEngine;
 
 
+    public TransactionManagerService(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
+
+    public void onMemberLeft(MemberImpl member) {
+
+    }
 }

@@ -37,7 +37,6 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

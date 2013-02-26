@@ -28,7 +28,6 @@ public class PutTransientOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

@@ -46,7 +46,7 @@ public class PartitionRecordStore implements RecordStore {
         this.partitionContainer = partitionContainer;
         this.mapService = partitionContainer.getMapService();
         this.mapContainer = mapService.getMapContainer(name);
-        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name),
                         mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
@@ -68,8 +68,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     void clear() {
-        final SharedLockService lockService = mapService.getNodeEngine()
-                .getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.destroyLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
         }

@@ -18,11 +18,8 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.TransactionImpl;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -69,36 +66,36 @@ public final class ThreadContext {
         return (int) Thread.currentThread().getId();  // TODO: @mm - thread-id is truncated from native thread id
     }
 
-    public static TransactionImpl getTransaction(String name) {
-        ThreadContext ctx = get();
-        return ctx != null ? ctx.transactions.get(name) : null;
-    }
-
-    public static void setTransaction(String name, TransactionImpl transaction) {
-        ThreadContext ctx = getOrCreate();
-        final TransactionImpl current = ctx.transactions.get(name);
-        if (current != null && current != transaction) {
-            throw new IllegalStateException("Current thread has already an ongoing transaction!");
-        }
-        ctx.transactions.put(name, transaction);
-    }
-
-    public static TransactionImpl createOrGetTransaction(HazelcastInstanceImpl hazelcastInstance) {
-        ThreadContext ctx = getOrCreate();
-        TransactionImpl tx = ctx.transactions.get(hazelcastInstance.getName());
-        if (tx == null) {
-//            tx = new TransactionImpl(hazelcastInstance);
-            ctx.transactions.put(hazelcastInstance.getName(), tx);
-        }
-        return tx;
-    }
-
-    public static void finalizeTransaction(String name) {
-        ThreadContext ctx = get();
-        if (ctx != null) {
-            ctx.transactions.remove(name);
-        }
-    }
+//    public static TransactionImpl getTransaction(String name) {
+//        ThreadContext ctx = get();
+//        return ctx != null ? ctx.transactions.get(name) : null;
+//    }
+//
+//    public static void setTransaction(String name, TransactionImpl transaction) {
+//        ThreadContext ctx = getOrCreate();
+//        final TransactionImpl current = ctx.transactions.get(name);
+//        if (current != null && current != transaction) {
+//            throw new IllegalStateException("Current thread has already an ongoing transaction!");
+//        }
+//        ctx.transactions.put(name, transaction);
+//    }
+//
+//    public static TransactionImpl createOrGetTransaction(HazelcastInstanceImpl hazelcastInstance) {
+//        ThreadContext ctx = getOrCreate();
+//        TransactionImpl tx = ctx.transactions.get(hazelcastInstance.getName());
+//        if (tx == null) {
+////            tx = new TransactionImpl(hazelcastInstance);
+//            ctx.transactions.put(hazelcastInstance.getName(), tx);
+//        }
+//        return tx;
+//    }
+//
+//    public static void finalizeTransaction(String name) {
+//        ThreadContext ctx = get();
+//        if (ctx != null) {
+//            ctx.transactions.remove(name);
+//        }
+//    }
 
     public static void shutdownAll() {
         contexts.clear();
@@ -113,7 +110,7 @@ public final class ThreadContext {
 
     private final Thread thread;
 
-    private final Map<String, TransactionImpl> transactions = new HashMap<String, TransactionImpl>(2);
+//    private final Map<String, TransactionImpl> transactions = new HashMap<String, TransactionImpl>(2);
 
     private Operation currentOperation;
 
@@ -140,7 +137,7 @@ public final class ThreadContext {
     }
 
     private void destroy() {
-        transactions.clear();
+//        transactions.clear();
     }
 
     public Thread getThread() {

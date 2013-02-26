@@ -26,8 +26,6 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     protected transient Data dataOldValue;
 
-    private transient long startTime;
-
     public BasePutOperation(String name, Data dataKey, Data value, String txnId) {
         super(name, dataKey, value, -1);
         setTxnId(txnId);
@@ -49,16 +47,12 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return false;
     }
 
-    public void run() {
-        startTime = Clock.currentTimeMillis();
-    }
-
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.PUT, dataKey, dataValue, dataOldValue);
         int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
-        mapContainer.getMapOperationCounter().incrementPuts(Clock.currentTimeMillis() - startTime);
+        mapContainer.getMapOperationCounter().incrementPuts(Clock.currentTimeMillis() - getStartTime());
     }
 
     public final Operation getBackupOperation() {

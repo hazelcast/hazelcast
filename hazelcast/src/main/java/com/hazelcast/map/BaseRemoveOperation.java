@@ -25,7 +25,6 @@ import com.hazelcast.util.Clock;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    private transient long startTime;
     protected transient Data dataOldValue;
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
@@ -46,16 +45,12 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         return false;
     }
 
-    public void run() {
-        startTime = Clock.currentTimeMillis();
-    }
-
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.REMOVE, dataKey, dataValue, dataOldValue);
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
         invalidateNearCaches();
-        mapService.getMapContainer(name).getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - startTime);
+        mapService.getMapContainer(name).getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - getStartTime());
     }
 
     @Override

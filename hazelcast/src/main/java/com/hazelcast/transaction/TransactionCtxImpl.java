@@ -16,10 +16,10 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.core.TransactionContext;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalObject;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.map.MapService;
 import com.hazelcast.spi.TransactionalService;
@@ -58,15 +58,19 @@ public class TransactionCtxImpl implements TransactionContext {
         transaction.rollback();
     }
 
+    @SuppressWarnings("unchecked")
     public <K, V> TransactionalMap<K, V> getMap(String name) {
-        return getDistributedObject(MapService.SERVICE_NAME, name);
+        return (TransactionalMap<K, V>) getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
-    public <T extends TransactionalObject> T getDistributedObject(String serviceName, Object id) {
+    @SuppressWarnings("unchecked")
+    public DistributedObject getDistributedObject(String serviceName, Object id) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
         final TransactionalService service = nodeEngine.getService(serviceName);
-        return service.createTransactionalObject(id, transaction);
+        final TransactionalObject transactionalObject = service.createTransactionalObject(id);
+        transactionalObject.setTransaction(transaction);
+        return transactionalObject;
     }
 }

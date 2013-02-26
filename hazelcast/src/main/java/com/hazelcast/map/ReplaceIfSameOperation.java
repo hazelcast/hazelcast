@@ -38,7 +38,6 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

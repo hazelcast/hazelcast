@@ -67,12 +67,13 @@ public interface TransactionContext {
     /**
      * Returns the transactional distributed map instance with the specified name.
      *
+     *
      * @param name name of the distributed map
      * @return transactional distributed map instance with the specified name
      */
-    <K, V> TransactionalMap<K, V> getMap(String name);
+    <K, V> DistributedObject getMap(String name);
 
 
-    <T extends TransactionalObject> T getDistributedObject(String serviceName, Object id);
+    <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
 
 }

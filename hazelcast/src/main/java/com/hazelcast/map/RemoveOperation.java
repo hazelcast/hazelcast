@@ -31,7 +31,6 @@ public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDa
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }
