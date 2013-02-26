@@ -19,7 +19,6 @@ package com.hazelcast.transaction;
 import com.hazelcast.core.Transaction;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
@@ -34,14 +33,12 @@ public class TransactionImpl implements Transaction {
     private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(1);
 
     private int status = TXN_STATUS_NO_TXN;
-    private final ILogger logger;
     private final String txnId = UUID.randomUUID().toString();
     private long transactionTimeoutSeconds = TimeUnit.MINUTES.toSeconds(5);
     private long expirationMillis = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5);
 
     public TransactionImpl(HazelcastInstanceImpl instance) {
         this.instance = instance;
-        this.logger = instance.getLoggingService().getLogger(this.getClass().getName());
         this.nodeEngine = instance.node.nodeEngine;
     }
 

@@ -63,5 +63,9 @@ public interface Transaction {
      */
     int getStatus();
 
+    /**
+     *
+     * @param seconds
+     */
     void setTransactionTimeout(int seconds);
 }
