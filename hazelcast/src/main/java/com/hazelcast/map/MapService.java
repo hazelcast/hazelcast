@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
@@ -55,11 +54,9 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.Util;
 
 import java.io.IOException;
 import java.util.*;
@@ -69,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
+
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
@@ -1005,17 +1003,20 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
         }
 
-        localMapStats.setDirtyEntryCount(Util.zeroOrPositive(dirtyCount));
-        localMapStats.setLockedEntryCount(Util.zeroOrPositive(lockedEntryCount));
-        localMapStats.setHits(Util.zeroOrPositive(hits));
-        localMapStats.setOwnedEntryCount(Util.zeroOrPositive(ownedEntryCount));
-        localMapStats.setBackupEntryCount(Util.zeroOrPositive(backupEntryCount));
-        localMapStats.setOwnedEntryMemoryCost(Util.zeroOrPositive(ownedEntryMemoryCost));
-        localMapStats.setBackupEntryMemoryCost(Util.zeroOrPositive(backupEntryMemoryCost));
-        localMapStats.setCreationTime(Util.zeroOrPositive(clusterService.getClusterTimeFor(mapContainer.getCreationTime())));
+        localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));
+        localMapStats.setLockedEntryCount(zeroOrPositive(lockedEntryCount));
+        localMapStats.setHits(zeroOrPositive(hits));
+        localMapStats.setOwnedEntryCount(zeroOrPositive(ownedEntryCount));
+        localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
+        localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
+        localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
+        localMapStats.setCreationTime(zeroOrPositive(clusterService.getClusterTimeFor(mapContainer.getCreationTime())));
         localMapStats.setOperationStats(getMapContainer(mapName).getMapOperationCounter().getPublishedStats());
         return localMapStats;
     }
 
+    static long zeroOrPositive(long value) {
+        return (value > 0) ? value : 0;
+    }
 
 }

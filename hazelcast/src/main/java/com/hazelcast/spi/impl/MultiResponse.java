@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -86,8 +87,8 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
                         public void sendResponse(Object obj) {
                             if (obj instanceof Throwable) {
                                 final Throwable t = (Throwable) obj;
-                                nodeEngine.getLogger(op.getClass())
-                                        .log(Level.WARNING, "While executing as response: " + t.getMessage(), t);
+                                final ILogger logger = nodeEngine.getLogger(op.getClass());
+                                logger.log(Level.WARNING, "While executing operation within MultiResponse: " + t.getMessage(), t);
                             }
                         }
                     });

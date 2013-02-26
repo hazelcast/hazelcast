@@ -17,15 +17,17 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.executor.ManagedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ExecutorThreadFactory;
-import com.hazelcast.util.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.ExecutorThreadFactory;
+import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
@@ -43,7 +45,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        Node node = nodeEngine.getNode();
+        final Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
         final ClassLoader classLoader = node.getConfig().getClassLoader();
         final ExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(node.threadGroup,
@@ -57,13 +59,17 @@ public final class ExecutionServiceImpl implements ExecutionService {
             }
         });
 
-        scheduledExecutorService = Executors.newScheduledThreadPool(2,
-                new PoolExecutorThreadFactory(node.threadGroup,
-                        node.getThreadPoolNamePrefix("scheduled"), classLoader));
+        final String scheduledThreadName = node.getThreadNamePrefix("scheduled");
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
+                new ExecutorThreadFactory(node.threadGroup, classLoader) {
+                    protected String newThreadName() {
+                        return scheduledThreadName;
+                    }
+                });
 
         // default executors
         register("hz:system", 30, Integer.MAX_VALUE);
-        register("hz:scheduled", 10, Integer.MAX_VALUE);
+        register("hz:scheduled", 20, Integer.MAX_VALUE);
     }
 
     ExecutorService register(String name, int maxThreadSize, int queueSize) {
@@ -112,6 +118,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return scheduledExecutorService.scheduleWithFixedDelay(new ScheduledRunner(command), initialDelay, period, unit);
     }
 
+    public ScheduledExecutorService getScheduledExecutor() {
+        return new ScheduledExecutorServiceDelegate(scheduledExecutorService);
+    }
+
     @PrivateApi
     void shutdown() {
         logger.log(Level.FINEST, "Stopping executors...");
@@ -152,163 +162,82 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-//    private class ManagedExecutorService implements ExecutorService {
-//
-//        private final String name;
-//
-//        private final BlockingQueue<Object> controlQ;
-//
-//        private final AtomicInteger counter = new AtomicInteger(0);
-//
-//        private final int poolSize;
-//
-//        private ManagedExecutorService(String name, int maxThreadSize) {
-//            this.name = name;
-//            this.controlQ = new ArrayBlockingQueue<Object>(maxThreadSize);
-//            for (int i = 0; i < maxThreadSize; i++) {
-//                controlQ.offer(new Object());
-//            }
-//            this.poolSize = maxThreadSize;
-//        }
-//
-//        public void execute(Runnable command) {
-//            cachedExecutorService.execute(new ManagedRunnable(command, acquireLease()));
-//        }
-//
-//        public <T> Future<T> submit(Callable<T> task) {
-//            return cachedExecutorService.submit(new ManagedCallable<T>(task, acquireLease()));
-//        }
-//
-//        public <T> Future<T> submit(Runnable task, T result) {
-//            return cachedExecutorService.submit(new ManagedRunnable(task, acquireLease()), result);
-//        }
-//
-//        public Future<?> submit(Runnable task) {
-//            return cachedExecutorService.submit(new ManagedRunnable(task, acquireLease()));
-//        }
-//
-//        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-//            throw new UnsupportedOperationException();
-//        }
-//
-//        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-//            throw new UnsupportedOperationException();
-//        }
-//
-//        public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-//            throw new UnsupportedOperationException();
-//        }
-//
-//        public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-//            throw new UnsupportedOperationException();
-//        }
-//
-//        private Lease acquireLease() {
-//            final Object key;
-//            try {
-//                final int current = counter.incrementAndGet();
-//                final int waitMillis = Math.max(1, current - poolSize + 1) * 500;
-//                key = controlQ.poll(waitMillis, TimeUnit.MILLISECONDS);
-//                if (key != null) {
-//                    return new KeyLease(controlQ, counter, key);
-//                } else {
-//                    logger.log(Level.WARNING, "Executor[" + name + "] is overloaded! Pool-size: " + poolSize
-//                            + ", Current-size: " + current);
-//                    return new Lease(counter);
-//                }
-//            } catch (InterruptedException e) {
-//                throw new RuntimeInterruptedException();
-//            }
-//        }
-//
-//        public void shutdown() {
-//            controlQ.clear();
-//        }
-//
-//        public List<Runnable> shutdownNow() {
-//            shutdown();
-//            return null;
-//        }
-//
-//        public boolean isShutdown() {
-//            return cachedExecutorService.isShutdown();
-//        }
-//
-//        public boolean isTerminated() {
-//            return cachedExecutorService.isTerminated();
-//        }
-//
-//        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-//            return cachedExecutorService.awaitTermination(timeout, unit);
-//        }
-//    }
-//
-//    private class Lease {
-//        final AtomicInteger counter;
-//
-//        private Lease(AtomicInteger counter) {
-//            this.counter = counter;
-//        }
-//
-//        void release() {
-//            counter.decrementAndGet();
-//        }
-//    }
-//
-//    private class KeyLease extends Lease {
-//        final BlockingQueue<Object> controlQ;
-//        final Object key;
-//
-//        private KeyLease(BlockingQueue<Object> controlQ, AtomicInteger counter, Object key) {
-//            super(counter);
-//            this.controlQ = controlQ;
-//            this.key = key;
-//        }
-//
-//        public void release() {
-//            controlQ.offer(key);
-//            super.release();
-//        }
-//    }
-//
-//    private class ManagedRunnable implements Runnable {
-//
-//        private final Runnable runnable;
-//
-//        private final Lease lease;
-//
-//        private ManagedRunnable(Runnable runnable, Lease lease) {
-//            this.runnable = runnable;
-//            this.lease = lease;
-//        }
-//
-//        public void run() {
-//            try {
-//                runnable.run();
-//            } finally {
-//                lease.release();
-//            }
-//        }
-//    }
-//
-//    private class ManagedCallable<V> implements Callable<V> {
-//
-//        private final Callable<V> callable;
-//
-//        private final Lease lease;
-//
-//        private ManagedCallable(Callable<V> callable, Lease lease) {
-//            this.callable = callable;
-//            this.lease = lease;
-//        }
-//
-//        public V call() throws Exception {
-//            try {
-//                return callable.call();
-//            } finally {
-//                lease.release();
-//            }
-//        }
-//    }
+    private static class ScheduledExecutorServiceDelegate implements ScheduledExecutorService {
+
+        private final ScheduledExecutorService scheduledExecutorService;
+
+        private ScheduledExecutorServiceDelegate(ScheduledExecutorService scheduledExecutorService) {
+            this.scheduledExecutorService = scheduledExecutorService;
+        }
+
+        public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+            return scheduledExecutorService.schedule(command, delay, unit);
+        }
+
+        public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
+            return scheduledExecutorService.schedule(callable, delay, unit);
+        }
+
+        public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+            return scheduledExecutorService.scheduleAtFixedRate(command, initialDelay, period, unit);
+        }
+
+        public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+            return scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+        }
+
+        public void shutdown() {
+            throw new UnsupportedOperationException();
+        }
+
+        public List<Runnable> shutdownNow() {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean isShutdown() {
+            return false;
+        }
+
+        public boolean isTerminated() {
+            return false;
+        }
+
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        public <T> Future<T> submit(Callable<T> task) {
+            throw new UnsupportedOperationException();
+        }
+
+        public <T> Future<T> submit(Runnable task, T result) {
+            throw new UnsupportedOperationException();
+        }
+
+        public Future<?> submit(Runnable task) {
+            throw new UnsupportedOperationException();
+        }
+
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+            throw new UnsupportedOperationException();
+        }
+
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+            throw new UnsupportedOperationException();
+        }
+
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            throw new UnsupportedOperationException();
+        }
+
+        public void execute(Runnable command) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
 
 }

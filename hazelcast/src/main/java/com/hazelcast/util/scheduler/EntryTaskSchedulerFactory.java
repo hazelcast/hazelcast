@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.secondexecutor;
+package com.hazelcast.util.scheduler;
 
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Creates new thread-safe SecondExecutors.
+ * Factory for EntryTaskSchedulers.
  */
-public class SecondExecutorServiceFactory {
+public final class EntryTaskSchedulerFactory {
     /**
-     * Creates a new SecondExecutorService that will run all second operations in bulk.
+     * Creates a new EntryTaskScheduler that will run all second operations in bulk.
      * Imagine a write-behind map where dirty entries will be stored in bulk.
      * Note that each key can be only once; meaning you cannot delay the execution
      * Once an entry is marked as dirty for example, it will run in write-delay-seconds,
@@ -35,18 +35,18 @@ public class SecondExecutorServiceFactory {
      * SecondBulkExecutor implementation.
      * Once a key is executed, it can be re-scheduled for another execution.
      * <p/>
-     * SecondExecutorService implementation is thread-safe.
+     * EntryTaskScheduler implementation is thread-safe.
      *
-     * @param es  ScheduledExecutorService instance to execute the second
-     * @param stf bulk executor
-     * @return SecondExecutorService
+     * @param scheduledExecutorService  ScheduledExecutorService instance to execute the second
+     * @param entryProcessor bulk processor
+     * @return EntryTaskScheduler
      */
-    public static SecondExecutorService newSecondBulkExecutor(ScheduledExecutorService es, SecondBulkTaskFactory stf) {
-        return new SecondScheduler(es, stf);
+    public static <K, V> EntryTaskScheduler<K, V> newBulkScheduler(ScheduledExecutorService scheduledExecutorService, BulkScheduledEntryProcessor entryProcessor) {
+        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor);
     }
 
     /**
-     * Creates a new SecondExecutorService that will execute each entry one by one.
+     * Creates a new EntryTaskScheduler that will execute each entry one by one.
      * Imagine a map with entries with different max-idle-seconds.
      * Note that each key can be rescheduled and its execution can be postponed.
      * So two things to
@@ -55,13 +55,13 @@ public class SecondExecutorServiceFactory {
      * 2. each entry is executed individually.
      * Once a key is executed, it can be re-scheduled for another execution.
      * <p/>
-     * SecondExecutorService implementation is thread-safe.
+     * EntryTaskScheduler implementation is thread-safe.
      *
-     * @param es  ScheduledExecutorService instance to execute the second
-     * @param stf entry executor
-     * @return SecondExecutorService
+     * @param scheduledExecutorService  ScheduledExecutorService instance to execute the second
+     * @param entryProcessor entry processor
+     * @return EntryTaskScheduler
      */
-    public static SecondExecutorService newSecondEntryExecutor(ScheduledExecutorService es, SecondEntryTaskFactory stf) {
-        return new SecondScheduler(es, stf);
+    public static <K, V> EntryTaskScheduler<K, V> newSingleScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor) {
+        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor);
     }
 }

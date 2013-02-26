@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.util.executor;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;

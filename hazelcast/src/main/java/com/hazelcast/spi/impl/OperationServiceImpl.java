@@ -34,6 +34,8 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.*;
+import com.hazelcast.util.executor.FastExecutor;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -286,16 +288,16 @@ final class OperationServiceImpl implements OperationService {
                 syncBackups = new ArrayList<BackupFuture>(syncBackupCount);
                 for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
-                    final Operation backupOp = backupAwareOp.getBackupOperation();
-                    if (backupOp == null) {
-                        throw new IllegalArgumentException("Backup operation should not be null!");
-                    }
                     if (target != null) {
+                        final Operation backupOp = backupAwareOp.getBackupOperation();
+                        if (backupOp == null) {
+                            throw new IllegalArgumentException("Backup operation should not be null!");
+                        }
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
                             if (op.returnsResponse() && target.equals(op.getCallerAddress())) {
-//                                TODO: fix me! what if backup migrates after response is returned?
+//                                TODO: @mm - FIX ME! what if backup migrates after response is returned?
                                 backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
                                 backupResponse = backupOp;
                             } else {
@@ -313,11 +315,11 @@ final class OperationServiceImpl implements OperationService {
                 asyncBackups = new ArrayList<BackupFuture>(asyncBackupCount);
                 for (int replicaIndex = syncBackupCount + 1; replicaIndex <= asyncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
-                    final Operation backupOp = backupAwareOp.getBackupOperation();
-                    if (backupOp == null) {
-                        throw new IllegalArgumentException("Backup operation should not be null!");
-                    }
                     if (target != null) {
+                        final Operation backupOp = backupAwareOp.getBackupOperation();
+                        if (backupOp == null) {
+                            throw new IllegalArgumentException("Backup operation should not be null!");
+                        }
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
