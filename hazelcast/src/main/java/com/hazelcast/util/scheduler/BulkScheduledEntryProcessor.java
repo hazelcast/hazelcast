@@ -14,8 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.secondexecutor;
+package com.hazelcast.util.scheduler;
 
-public interface SecondBulkTaskFactory extends SecondScheduler.SecondTaskFactory {
-    SecondBulkTask newSecondTask();
+import java.util.Collection;
+
+public interface BulkScheduledEntryProcessor<K,V> {
+    /**
+     * Processes all entries in one shot. Implementation has to
+     * handle the failures and can possibly reschedule it for a future time.
+     * Imagine you are implementing this for a dirty records. If mapStore.storeAll
+     * throws exception, you might want to reschedule the failed records.
+     *
+     * @param scheduler
+     * @param entries
+     */
+    void processAll(EntryTaskScheduler scheduler, Collection<ScheduledEntry<K,V>> entries);
+
 }

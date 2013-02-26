@@ -28,30 +28,9 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.logging.Level;
 
-public class Util {
+public class StreamUtil {
 
-    final static ILogger logger = Logger.getLogger(Util.class.getName());
-
-    public static void checkNotNull(Object obj) {
-        if (obj == null) {
-            throw new NullPointerException("Object cannot be null.");
-        }
-    }
-
-    public static long zeroOrPositive(long value) {
-        return (value > 0) ? value : 0;
-    }
-
-    public static int hashCode(final byte[] data) {
-        if (data == null) return Integer.MIN_VALUE;
-        // FNV (Fowler/Noll/Vo) Hash "1a"
-        final int prime = 0x01000193;
-        int hash = 0x811c9dc5;
-        for (int i = data.length - 1; i >= 0; i--) {
-            hash = (hash ^ data[i]) * prime;
-        }
-        return hash;
-    }
+    final static ILogger logger = Logger.getLogger(StreamUtil.class.getName());
 
     public static void copyStream(final InputStream in, final OutputStream out)
             throws IOException {
@@ -60,16 +39,6 @@ public class Util {
         while ((len = in.read(buffer)) >= 0) {
             out.write(buffer, 0, len);
         }
-    }
-
-    public static String inputStreamToString(final InputStream in) throws IOException {
-        final BufferedReader br = new BufferedReader(new InputStreamReader(in));
-        final StringBuffer sb = new StringBuffer();
-        String line;
-        while ((line = br.readLine()) != null) {
-            sb.append(line).append("\n");
-        }
-        return sb.toString();
     }
 
     public static void streamXML(final Document doc, final OutputStream out) {

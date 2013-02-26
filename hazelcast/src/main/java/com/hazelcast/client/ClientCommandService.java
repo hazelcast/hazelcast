@@ -28,8 +28,8 @@ import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.Connection;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.FastExecutor;
-import com.hazelcast.util.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.FastExecutor;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;

@@ -14,32 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.secondexecutor;
+package com.hazelcast.util.scheduler;
 
 /**
- * Schedule execution of an entry for seconds later.
- * This is kind of like a scheduled executor service but instead of scheduling
- * a execution for a specific millisecond, this service will
- * schedule it with second proximity. If delayMillis is 600 ms for example,
- * then the entry will be scheduled to execute in 1 second. If delayMillis is 2400
- * this the entry will be scheduled to execute in 3 seconds. So delayMillis is
- * ceil-ed to the next second. It gives up from exact time scheduling to gain
- * the power of
- * a) bulk execution of all operations within the same second
- * or
- * b) being able to reschedule (postpone) execution
+ * Schedules (or reschedules) the execution of given entry.
  */
-public interface SecondExecutorService {
+
+public interface EntryTaskScheduler<K, V> {
     /**
-     * Schedules (or reschedules) the execution of given entry. key parameter is
+     * Schedules (or reschedules) the execution of given entry. Key parameter is
      * used to check whether there is an existing scheduling for this entry.
      *
      * @param delayMillis milliseconds to delay the execution.
-     *                    It is ceil to the next second. 2300 ms means 3 seconds.
      * @param key         key of this scheduling.
      * @param object      user object to pass back when it is time to execute.
      * @return returns true if this call resulted in a new scheduling,
      *         false otherwise.
      */
-    boolean schedule(long delayMillis, Object key, Object object);
+    boolean schedule(long delayMillis, K key, V object);
+
+    ScheduledEntry<K, V> cancel(K key);
+
+    void cancelAll();
 }

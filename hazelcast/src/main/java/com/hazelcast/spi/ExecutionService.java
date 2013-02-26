@@ -36,4 +36,7 @@ public interface ExecutionService {
     ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit);
 
     ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    ScheduledExecutorService getScheduledExecutor();
+
 }

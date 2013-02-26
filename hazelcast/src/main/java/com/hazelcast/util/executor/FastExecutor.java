@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.util.executor;
+
+import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.Collections;

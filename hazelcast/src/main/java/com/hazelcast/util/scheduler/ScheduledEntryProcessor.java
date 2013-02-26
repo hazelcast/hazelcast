@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.secondexecutor;
+package com.hazelcast.util.scheduler;
 
-import java.util.concurrent.ConcurrentMap;
+public interface ScheduledEntryProcessor<K,V> {
 
-interface SecondBulkTask extends SecondTask {
     /**
-     * Executes all entries in one shot. Implementation has to
-     * handle the failures and can possibly reschedule it for a future time.
-     * Imagine you are implementing this for a dirty records. If mapStore.storeAll
-     * throws exception, you might want to reschedule the failed records.
+     * Processes a single entry. All failures has to be handled by the implementation.
+     * Implementation can choose to ignore the failures or reschedules the entry for
+     * a future time.
      *
-     * @param ses
-     * @param entries
-     * @param delaySecond delaySeconds set for this entry
+     * @param taskScheduler
+     * @param entry
      */
-    void executeAll(SecondExecutorService ses, ConcurrentMap<Object, Object> entries, int delaySecond);
+    void process(EntryTaskScheduler taskScheduler, ScheduledEntry<K,V> entry);
 }

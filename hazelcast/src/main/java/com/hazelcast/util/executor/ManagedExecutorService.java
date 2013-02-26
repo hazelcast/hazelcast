@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.util.executor;
 
 import java.util.Collection;
 import java.util.List;

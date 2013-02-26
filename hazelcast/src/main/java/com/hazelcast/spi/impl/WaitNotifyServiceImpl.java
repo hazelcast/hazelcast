@@ -27,7 +27,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
-import com.hazelcast.util.ExecutorThreadFactory;
+import com.hazelcast.util.executor.ExecutorThreadFactory;
 
 import java.util.Iterator;
 import java.util.Queue;
