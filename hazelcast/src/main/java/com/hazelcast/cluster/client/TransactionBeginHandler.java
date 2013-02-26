@@ -29,7 +29,7 @@ public class TransactionBeginHandler extends ClientCommandHandler {
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
-        node.hazelcastInstance.getTransaction().begin();
+//        node.hazelcastInstance.getTransaction().begin();
         return protocol.success();
     }
 }

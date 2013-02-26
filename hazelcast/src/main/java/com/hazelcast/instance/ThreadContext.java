@@ -87,7 +87,7 @@ public final class ThreadContext {
         ThreadContext ctx = getOrCreate();
         TransactionImpl tx = ctx.transactions.get(hazelcastInstance.getName());
         if (tx == null) {
-            tx = new TransactionImpl(hazelcastInstance);
+//            tx = new TransactionImpl(hazelcastInstance);
             ctx.transactions.put(hazelcastInstance.getName(), tx);
         }
         return tx;

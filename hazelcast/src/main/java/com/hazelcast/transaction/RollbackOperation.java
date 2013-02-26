@@ -16,38 +16,21 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.exception.TransactionException;
 
-import java.io.IOException;
+public class RollbackOperation extends BaseTxOperation {
 
-public class RollbackOperation extends AbstractOperation {
-    String txnId = null;
+
+    public RollbackOperation() {
+    }
 
     public RollbackOperation(String txnId) {
         this.txnId = txnId;
     }
 
-    public RollbackOperation() {
-    }
-
     public void run() throws TransactionException {
-        TransactionalService txnalService = (TransactionalService) getService();
+        TransactionalService txnalService = getService();
         txnalService.rollback(txnId, getPartitionId());
     }
 
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
-    }
 }

@@ -16,23 +16,20 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.spi.TransactionalService;
+public class TransactionException extends Exception {
 
-public class PrepareOperation extends BaseTxOperation {
-
-    public PrepareOperation() {
+    public TransactionException() {
     }
 
-    public PrepareOperation(String txnId) {
-        this.txnId = txnId;
+    public TransactionException(String message) {
+        super(message);
     }
 
-    public void run() {
-        TransactionalService txnalService = getService();
-        try {
-            txnalService.prepare(txnId, getPartitionId());
-        } catch (TransactionException e) {
-            response = e;
-        }
+    public TransactionException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TransactionException(Throwable cause) {
+        super(cause);
     }
 }

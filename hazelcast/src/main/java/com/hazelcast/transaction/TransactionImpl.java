@@ -17,53 +17,44 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.core.Transaction;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class TransactionImpl implements Transaction {
+import static com.hazelcast.core.Transaction.State.*;
 
-    private final HazelcastInstanceImpl instance;
+public final class TransactionImpl implements Transaction {
+
     private final NodeEngine nodeEngine;
-    private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(1);
+    private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(3);
 
-    private int status = TXN_STATUS_NO_TXN;
     private final String txnId = UUID.randomUUID().toString();
-    private long transactionTimeoutSeconds = TimeUnit.MINUTES.toSeconds(5);
-    private long expirationMillis = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5);
+    private State state = NO_TXN;
+    private long timeoutSeconds = TimeUnit.MINUTES.toSeconds(5);
 
-    public TransactionImpl(HazelcastInstanceImpl instance) {
-        this.instance = instance;
-        this.nodeEngine = instance.node.nodeEngine;
+    public TransactionImpl(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
     }
 
     public String getTxnId() {
         return txnId;
     }
 
-    public void setTransactionTimeout(int seconds) {
-        expirationMillis = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds);
-        this.transactionTimeoutSeconds = seconds;
-    }
-
-    public long getTransactionTimeoutSeconds() {
-        return transactionTimeoutSeconds;
-    }
-
-    public long getMillisLeft() {
-        return expirationMillis - System.currentTimeMillis();
+    public void setTransactionTimeout(int seconds)  {
+        timeoutSeconds = seconds;
     }
 
     public void attachParticipant(String serviceName, int partitionId) {
         participants.add(new TxnParticipant(serviceName, partitionId));
     }
 
-    class TxnParticipant {
+    private class TxnParticipant {
         final String serviceName;
         final int partitionId;
 
@@ -91,54 +82,54 @@ public class TransactionImpl implements Transaction {
     }
 
     public void begin() throws IllegalStateException {
-        if (status == TXN_STATUS_ACTIVE) {
+        if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
-        status = TXN_STATUS_ACTIVE;
-        ThreadContext.setTransaction(instance.getName(), this);
+        state = ACTIVE;
     }
 
-    public void commit() throws IllegalStateException {
-        if (status != TXN_STATUS_ACTIVE) {
+    public void commit() throws TransactionException, IllegalStateException {
+        if (state != ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
         }
         try {
-            status = TXN_STATUS_PREPARING;
-            List<Future> futures = new ArrayList<Future>(participants.size());
+            state = PREPARING;
+            final List<Future> futures = new ArrayList<Future>(participants.size());
+            final OperationService operationService = nodeEngine.getOperationService();
             for (TxnParticipant t : participants) {
                 Operation op = new PrepareOperation(txnId);
-                futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
+                futures.add(operationService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
                         .invoke());
             }
             for (Future future : futures) {
-                future.get(300, TimeUnit.SECONDS);
+                future.get(timeoutSeconds, TimeUnit.SECONDS);
             }
-            status = TXN_STATUS_PREPARED;
+            state = PREPARED;
             futures.clear();
-            status = TXN_STATUS_COMMITTING;
+            state = COMMITTING;
             for (TxnParticipant t : participants) {
                 Operation op = new CommitOperation(txnId);
-                futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
+                futures.add(operationService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
                         .invoke());
             }
             for (Future future : futures) {
-                future.get(300, TimeUnit.SECONDS);
+                future.get(timeoutSeconds, TimeUnit.SECONDS);
             }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            status = TXN_STATUS_COMMITTED;
-            finalizeTxn();
+            state = COMMITTED;
+        } catch (Throwable e) {
+            state = COMMIT_FAILED;
+            if (e instanceof ExecutionException && e.getCause() instanceof TransactionException) {
+                throw (TransactionException) e.getCause();
+            }
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
     public void rollback() throws IllegalStateException {
-        if (status == TXN_STATUS_NO_TXN) {
+        if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }
-        status = TXN_STATUS_ROLLING_BACK;
+        state = ROLLING_BACK;
         try {
             List<Future> futures = new ArrayList<Future>(participants.size());
             for (TxnParticipant t : participants) {
@@ -149,22 +140,29 @@ public class TransactionImpl implements Transaction {
             for (Future future : futures) {
                 future.get(300, TimeUnit.SECONDS);
             }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrow(e);
         } finally {
-            status = TXN_STATUS_ROLLED_BACK;
-            finalizeTxn();
+            state = ROLLED_BACK;
         }
     }
 
     public int getStatus() {
-        return status;
+        return state.getValue();
     }
 
-    public void finalizeTxn() {
-        status = TXN_STATUS_NO_TXN;
-        ThreadContext.finalizeTransaction(instance.getName());
+    public State getState() {
+        return state;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Transaction");
+        sb.append("{txnId='").append(txnId).append('\'');
+        sb.append(", state=").append(state);
+        sb.append(", timeoutSeconds=").append(timeoutSeconds);
+        sb.append('}');
+        return sb.toString();
     }
 }

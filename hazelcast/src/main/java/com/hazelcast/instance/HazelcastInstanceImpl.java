@@ -24,7 +24,7 @@ import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
-import com.hazelcast.concurrent.lock.SharedLockService;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -41,6 +41,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.transaction.TransactionCtxImpl;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -132,15 +133,15 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ILock getLock(Object key) {
-        return getDistributedObject(SharedLockService.SERVICE_NAME, node.getSerializationService().toData(key));
+        return getDistributedObject(LockService.SERVICE_NAME, node.getSerializationService().toData(key));
+    }
+
+    public TransactionContext newTransactionContext() {
+        return new TransactionCtxImpl(this);
     }
 
     public IExecutorService getExecutorService(final String name) {
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
-    }
-
-    public Transaction getTransaction() {
-        return ThreadContext.createOrGetTransaction(this);
     }
 
     public IdGenerator getIdGenerator(final String name) {

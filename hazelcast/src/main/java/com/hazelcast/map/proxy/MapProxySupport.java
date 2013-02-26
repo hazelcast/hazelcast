@@ -570,7 +570,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         final NodeEngine nodeEngine = getNodeEngine();
         TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = null;
-        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+        if (txn != null && txn.getState() == Transaction.State.ACTIVE) {
             txnId = txn.getTxnId();
             txn.attachParticipant(SERVICE_NAME, partitionId);
         }
@@ -581,7 +581,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         final NodeEngine nodeEngine = getNodeEngine();
         TransactionImpl txn = nodeEngine.getTransaction();
         String txnId = null;
-        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
+        if (txn != null && txn.getState() == Transaction.State.ACTIVE) {
             return txn.getTxnId();
         }
         return txnId;

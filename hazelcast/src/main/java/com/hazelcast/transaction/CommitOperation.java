@@ -16,48 +16,23 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.exception.TransactionException;
 
-import java.io.IOException;
+public class CommitOperation extends BaseTxOperation {
 
-public class CommitOperation extends AbstractOperation {
-    String txnId = null;
-    private Object response = null;
+    public CommitOperation() {
+    }
 
     public CommitOperation(String txnId) {
         this.txnId = txnId;
     }
 
-    public CommitOperation() {
-    }
-
     public void run() {
-        TransactionalService txnalService = (TransactionalService) getService();
+        TransactionalService txnalService = getService();
         try {
             txnalService.commit(txnId, getPartitionId());
         } catch (TransactionException e) {
             response = e;
         }
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
     }
 }

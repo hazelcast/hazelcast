@@ -18,15 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
@@ -52,10 +48,9 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -474,12 +469,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         try {
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception ignored) {
-            //commit can never fail
+        } catch (Exception e) {
+            throw new TransactionException(e);
         }
     }
 
-    public void rollback(String txnId, int partitionId) throws TransactionException {
+    public void rollback(String txnId, int partitionId) {
         System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
@@ -487,10 +482,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
         } catch (Exception e) {
-            throw new TransactionException(e);
+            throw new HazelcastException(e);
         }
     }
 
+    public <T extends TransactionalObject> T createTransactionalObject(Object id, Transaction transaction) {
+        return null;
+    }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
         public NearCache createNew(String mapName) {
