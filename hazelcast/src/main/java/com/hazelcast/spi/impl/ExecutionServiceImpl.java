@@ -138,8 +138,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         executors.clear();
     }
 
-    @PrivateApi
-    public void destroyExecutor(String name) {
+    public void shutdownExecutor(String name) {
         final ExecutorService ex = executors.remove(name);
         if (ex != null) {
             ex.shutdown();
