@@ -42,9 +42,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
 
     @Override
     public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        System.out.println("map store write process:"+ entries.size());
         for (ScheduledEntry<Data, Object> entry : entries) {
-            System.out.println("map store write:"+ mapService.toObject(entry.getKey()) +" value:"+ mapService.toObject(entry.getValue()));
             mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
         }
     }

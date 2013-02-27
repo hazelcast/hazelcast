@@ -35,10 +35,13 @@ public class PutBackupOperation extends KeyBasedMapOperation implements BackupOp
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Record record = recordStore.getRecords().get(dataKey);
         if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl);
+            record = mapService.createRecord(name, dataKey, dataValue, ttl, true);
             recordStore.getRecords().put(dataKey, record);
         } else {
-            recordStore.setRecordValue(record, dataValue);
+            if (record instanceof DataRecord)
+                ((DataRecord) record).setValue(dataValue);
+            else if (record instanceof ObjectRecord)
+                ((ObjectRecord) record).setValue(mapService.toObject(dataValue));
         }
     }
 

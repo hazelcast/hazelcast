@@ -78,7 +78,6 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         final Integer existingSecond = secondsOfKeys.put(key, newSecond);
         if (existingSecond != null) {
             if (existingSecond.equals(newSecond)){
-                System.out.println("same second existing:"+existingSecond+ " new:"+newSecond);
                 return false;
             }
             removeKeyFromSecond(key, existingSecond);
@@ -129,7 +128,6 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         ConcurrentMap<K, ScheduledEntry<K, V>> scheduledKeys = scheduledEntries.get(existingSecond);
         if (scheduledKeys != null) {
             scheduledKeys.remove(key);
-            System.out.println("removed key:"+key);
         }
     }
 
