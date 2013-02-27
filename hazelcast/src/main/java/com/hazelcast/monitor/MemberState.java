@@ -28,15 +28,15 @@ public interface MemberState extends DataSerializable {
 
     MemberHealthStats getMemberHealthStats();
 
-    Map<String,Long> getRuntimeProps();
+    Map<String, Long> getRuntimeProps();
 
     LocalMapStats getLocalMapStats(String mapName);
 
     LocalMapStats getLocalMultiMapStats(String mapName);
 
-    LocalExecutorOperationStats getInternalExecutorStats(String name);
+    LocalExecutorStats getInternalExecutorStats(String name);
 
-    LocalExecutorOperationStats getExternalExecutorStats(String name);
+    LocalExecutorStats getExternalExecutorStats(String name);
 
     LocalQueueStats getLocalQueueStats(String queueName);
 

@@ -173,7 +173,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             this.recordMap = recordMap;
         }
 
-        @Override
         public void run() {
             for (final MapContainer mapContainer : recordMap.keySet()) {
 
@@ -198,7 +197,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     final MapMergePolicy finalMergePolicy = mergePolicy;
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
-                        @Override
                         public void run() {
                             SimpleEntryView entryView = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
@@ -600,7 +598,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
-    @Override
     public void clientDisconnected(String clientUuid) {
         // TODO: @mm - release locks owned by this client.
     }
@@ -989,7 +986,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
                     int tryCount = 3;
                     // wait if the partition table is not updated yet
-                    while(memberSize > backupCount && replicaAddress == null && tryCount-- > 0) {
+                    while (memberSize > backupCount && replicaAddress == null && tryCount-- > 0) {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {

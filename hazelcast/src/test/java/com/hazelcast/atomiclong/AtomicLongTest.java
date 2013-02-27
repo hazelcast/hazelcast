@@ -33,12 +33,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
-/**
- * User: sancar
- * Date: 12/31/12
- * Time: 10:26 AM
- */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class AtomicLongTest {
 
@@ -103,8 +97,8 @@ public class AtomicLongTest {
 
     @Test
     public void testAtomicLongFailure() {
-        int k = 5;
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(k);
+        int k = 4;
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(k + 1);
         Config config = new Config();
         HazelcastInstance instance = nodeFactory.newInstance(config);
         String name = "testAtomicLongFailure";
@@ -124,8 +118,8 @@ public class AtomicLongTest {
 
     @Test
     public void testAtomicLongSpawnNodeInParallel() {
-        int total = 20;
-        int parallel = 4;
+        int total = 6;
+        int parallel = 2;
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(total + 1);
         final Config config = new Config();
         HazelcastInstance instance = nodeFactory.newInstance(config);

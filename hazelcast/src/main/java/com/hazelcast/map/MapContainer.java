@@ -168,7 +168,7 @@ public class MapContainer {
             Map<Data, Object> chunk = new HashMap<Data, Object>();
 
 
-            List<Map<Data,Object>> chunkList = new ArrayList<Map<Data, Object>>();
+            List<Map<Data, Object>> chunkList = new ArrayList<Map<Data, Object>>();
             for (Object key : keys) {
                 Data dataKey = mapService.toData(key);
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
@@ -187,7 +187,7 @@ public class MapContainer {
             AtomicInteger counter = new AtomicInteger(numberOfChunks);
             for (Map<Data, Object> currentChunk : chunkList) {
                 try {
-                nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(currentChunk, counter));
+                    nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(currentChunk, counter));
                 } catch (Throwable t) {
                     ExceptionUtil.rethrow(t);
                 }
@@ -205,7 +205,6 @@ public class MapContainer {
             this.counter = counter;
         }
 
-        @Override
         public void run() {
             NodeEngine nodeEngine = mapService.getNodeEngine();
             Map values = store.loadAll(keys.values());

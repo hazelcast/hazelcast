@@ -18,12 +18,93 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalAtomicLongOperationStats;
 import com.hazelcast.monitor.LocalAtomicLongStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 public class LocalAtomicLongStatsImpl extends LocalInstanceStatsSupport<LocalAtomicLongOperationStats>
         implements LocalAtomicLongStats {
 
+    private long creationTime;
+    private long lastAccessTime;
+    private long lastUpdateTime;
+    private long totalModifiedOperations;
+    private long totalNonModifiedOperations;
+
     @Override
     LocalAtomicLongOperationStats newOperationStatsInstance() {
         return new LocalAtomicLongOperationStatsImpl();
+    }
+
+    @Override
+    void writeDataInternal(ObjectDataOutput out) throws IOException {
+        out.writeLong(creationTime);
+        out.writeLong(lastAccessTime);
+        out.writeLong(lastUpdateTime);
+        out.writeLong(totalModifiedOperations);
+        out.writeLong(totalNonModifiedOperations);
+
+    }
+
+    @Override
+    void readDataInternal(ObjectDataInput in) throws IOException {
+        creationTime = in.readLong();
+        lastAccessTime = in.readLong();
+        lastUpdateTime = in.readLong();
+        totalModifiedOperations = in.readLong();
+        totalNonModifiedOperations = in.readLong();
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+
+    public long getTotalModifiedOperations() {
+        return totalModifiedOperations;
+    }
+
+    public void setTotalModifiedOperations(long totalModifiedOperations) {
+        this.totalModifiedOperations = totalModifiedOperations;
+    }
+
+    public long getTotalNonModifiedOperations() {
+        return totalNonModifiedOperations;
+    }
+
+    public void setTotalNonModifiedOperations(long totalNonModifiedOperations) {
+        this.totalNonModifiedOperations = totalNonModifiedOperations;
+    }
+
+    @Override
+    public String toString() {
+        return "LocalAtomicLongStatsImpl{" +
+                "creationTime=" + creationTime +
+                ", lastAccessTime=" + lastAccessTime +
+                ", lastUpdateTime=" + lastUpdateTime +
+                ", totalModifiedOperations=" + totalModifiedOperations +
+                ", totalNonModifiedOperations=" + totalNonModifiedOperations +
+                ", localAtomicLongOperationStats=" + getOperationStats() +
+                '}';
     }
 }
