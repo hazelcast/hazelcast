@@ -29,7 +29,6 @@ public class PutOperation extends BasePutOperation implements IdentifiedDataSeri
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

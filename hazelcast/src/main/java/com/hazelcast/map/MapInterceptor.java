@@ -16,15 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.Serializable;
-import java.util.Map;
 
 public interface MapInterceptor extends Serializable {
 
     Object process(MapInterceptorContext interceptorContext);
+
     void afterProcess(MapInterceptorContext interceptorContext);
 
 }

@@ -16,48 +16,28 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
-
-public class PrepareOperation extends AbstractOperation {
-    String txnId = null;
-    Object response = null;
-
-    public PrepareOperation(String txnId) {
-        this.txnId = txnId;
-    }
+public class PrepareOperation extends BaseTxOperation {
 
     public PrepareOperation() {
     }
 
-    public void run() {
-        TransactionalService txnalService = (TransactionalService) getService();
-        try {
-            txnalService.prepare(txnId, getPartitionId());
-        } catch (TransactionException e) {
-            response = e;
+    public PrepareOperation(String txnId, String[] services) {
+        super(txnId, services);
+    }
+
+    public void run() throws Exception {
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        TransactionManagerService txService = getService();
+        txService.prepare(getCallerUuid(), txnId, getPartitionId(), services);
+        for (String serviceName : services) {
+            final TransactionalService service = nodeEngine.getService(serviceName);
+            if (service == null) {
+                throw new TransactionException("Unknown service: " + serviceName);
+            }
+            service.prepare(txnId, getPartitionId());
         }
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
     }
 }

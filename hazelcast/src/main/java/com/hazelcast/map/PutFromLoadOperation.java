@@ -28,7 +28,6 @@ public class PutFromLoadOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

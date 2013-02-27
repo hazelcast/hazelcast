@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.exception;
+package com.hazelcast.transaction;
 
-public class TransactionException extends Exception {
-    public TransactionException() {
-    }
+import com.hazelcast.core.DistributedObject;
 
-    public TransactionException(String message) {
-        super(message);
-    }
+public interface TransactionalObject extends DistributedObject {
 
-    public TransactionException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    void setTransaction(TransactionImpl transaction);
 
-    public TransactionException(Throwable cause) {
-        super(cause);
-    }
 }

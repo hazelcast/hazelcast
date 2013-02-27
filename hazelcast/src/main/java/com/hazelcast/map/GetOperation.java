@@ -23,7 +23,6 @@ import com.hazelcast.util.Clock;
 public class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
-    private transient long startTime;
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -33,8 +32,6 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
     }
 
     public void run() {
-        startTime = Clock.currentTimeMillis();
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         if (getTxnId() != null) {
             String txnId = getTxnId();
             PartitionContainer p = mapService.getPartitionContainer(getPartitionId());
@@ -52,7 +49,7 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
 
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.GET, dataKey, result, result);
-        mapService.getMapContainer(name).getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - startTime);
+        mapContainer.getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - getStartTime());
     }
 
     @Override

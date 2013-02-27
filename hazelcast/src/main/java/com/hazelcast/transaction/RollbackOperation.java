@@ -16,38 +16,39 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
+import java.util.logging.Level;
 
-public class RollbackOperation extends AbstractOperation {
-    String txnId = null;
-
-    public RollbackOperation(String txnId) {
-        this.txnId = txnId;
-    }
+public class RollbackOperation extends BaseTxOperation {
 
     public RollbackOperation() {
     }
 
-    public void run() throws TransactionException {
-        TransactionalService txnalService = (TransactionalService) getService();
-        txnalService.rollback(txnId, getPartitionId());
+    public RollbackOperation(String txnId, String[] services) {
+        super(txnId, services);
     }
 
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
+    public void run() throws Exception {
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        TransactionManagerService txService = getService();
+        txService.rollback(getCallerUuid(), txnId, getPartitionId(), services);
+        final ILogger logger = nodeEngine.getLogger(getClass());
+        for (String serviceName : services) {
+            final TransactionalService service = nodeEngine.getService(serviceName);
+            if (service == null) {
+                logger.log(Level.WARNING, "Unknown service: " + serviceName);
+                continue;
+            }
+            try {
+                service.rollback(txnId, getPartitionId());
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, "Problem while service["
+                        + serviceName + "] rolling-back the transaction[" + txnId + "]!", e);
+            }
+        }
     }
 
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
-    }
 }

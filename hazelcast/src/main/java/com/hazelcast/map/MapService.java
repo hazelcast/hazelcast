@@ -32,6 +32,7 @@ import com.hazelcast.map.client.*;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.map.proxy.TransactionalMapProxy;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -51,9 +52,9 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.TransactionException;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -98,7 +99,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 3, 1, TimeUnit.SECONDS);
     }
 
-    public void initMap(String mapName) {
+    private void initMap(String mapName) {
         getMapContainer(mapName);
     }
 
@@ -458,35 +459,39 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         try {
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new TransactionException(e);
         }
     }
 
-    public void commit(String txnId, int partitionId) throws TransactionException {
+    public void commit(String txnId, int partitionId) {
         System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception ignored) {
-            //commit can never fail
+        } catch (Throwable e) {
+            throw new HazelcastException(e);
         }
     }
 
-    public void rollback(String txnId, int partitionId) throws TransactionException {
+    public void rollback(String txnId, int partitionId) {
         System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).rollback(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception e) {
-            throw new TransactionException(e);
+        } catch (Throwable e) {
+            throw new HazelcastException(e);
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public TransactionalMapProxy createTransactionalObject(Object id) {
+        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine);
+    }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
         public NearCache createNew(String mapName) {
@@ -539,11 +544,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public ObjectMapProxy createDistributedObject(Object objectId) {
-        return new ObjectMapProxy(String.valueOf(objectId), this, nodeEngine);
+        final String name = String.valueOf(objectId);
+        initMap(name);
+        return new ObjectMapProxy(name, this, nodeEngine);
     }
 
     public DataMapProxy createDistributedObjectForClient(Object objectId) {
-        return new DataMapProxy(String.valueOf(objectId), this, nodeEngine);
+        final String name = String.valueOf(objectId);
+        initMap(name);
+        return new DataMapProxy(name, this, nodeEngine);
     }
 
     public void destroyDistributedObject(Object objectId) {

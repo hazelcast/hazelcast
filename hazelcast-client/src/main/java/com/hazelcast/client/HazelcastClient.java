@@ -190,6 +190,10 @@ public class HazelcastClient implements HazelcastInstance {
         return clusterClientProxy;
     }
 
+    public TransactionContext newTransactionContext() {
+        return null;
+    }
+
     public IExecutorService getExecutorService(String name) {
         Map<Object, DistributedObject> innerProxyMap = getProxiesMap("ExecutorService");
         DistributedObject proxy = innerProxyMap.get(name);

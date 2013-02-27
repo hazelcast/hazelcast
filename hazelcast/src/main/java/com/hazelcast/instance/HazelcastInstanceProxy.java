@@ -72,8 +72,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getExecutorService(name);
     }
 
-    public Transaction getTransaction() {
-        return getOriginal().getTransaction();
+    public TransactionContext newTransactionContext() {
+        return getOriginal().newTransactionContext();
     }
 
     public IdGenerator getIdGenerator(String name) {

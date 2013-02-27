@@ -16,13 +16,16 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.TransactionException;
 
-public interface TransactionalService {
+public interface TransactionalService extends MigrationAwareService {
 
     void prepare(String txnId, int partitionId) throws TransactionException;
 
-    void commit(String txnId, int partitionId) throws TransactionException;
+    void commit(String txnId, int partitionId);
 
-    void rollback(String txnId, int partitionId) throws TransactionException;
+    void rollback(String txnId, int partitionId);
+
+    <T extends TransactionalObject> T createTransactionalObject(Object id);
 }

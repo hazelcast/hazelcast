@@ -16,52 +16,72 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.transaction.TransactionException;
+
 /**
  * Hazelcast transaction interface.
- * <p/>
- * <b>Note that Hazelcast doesn't support two phase commit (XA) transactions. </b>
- *
- * @see HazelcastInstance#getTransaction()
  */
 public interface Transaction {
 
-    public static final int TXN_STATUS_NO_TXN = 0;
-    public static final int TXN_STATUS_ACTIVE = 1;
-    public static final int TXN_STATUS_PREPARED = 2;
-    public static final int TXN_STATUS_COMMITTED = 3;
-    public static final int TXN_STATUS_ROLLED_BACK = 4;
-    public static final int TXN_STATUS_PREPARING = 5;
-    public static final int TXN_STATUS_COMMITTING = 6;
-    public static final int TXN_STATUS_ROLLING_BACK = 7;
-    public static final int TXN_STATUS_UNKNOWN = 8;
+    public enum State {
+        NO_TXN(-1),
+        ACTIVE(0),
+        PREPARING(1),
+        PREPARED(2),
+        COMMITTING(3),
+        COMMITTED(4),
+        COMMIT_FAILED(5),
+        ROLLING_BACK(6),
+        ROLLED_BACK(7);
+
+        final int value;
+
+        private State(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
 
     /**
-     * Creates a new transaction and associate it with the current thread.
+     * Begins the transaction.
      *
      * @throws IllegalStateException if transaction is already began
      */
     void begin() throws IllegalStateException;
 
     /**
-     * Commits the transaction associated with the current thread.
+     * Commits the transaction.
      *
      * @throws IllegalStateException if transaction didn't begin.
      */
-    void commit() throws IllegalStateException;
+    void commit() throws TransactionException, IllegalStateException;
 
     /**
-     * Rolls back the transaction associated with the current thread.
+     * Rolls back the transaction.
      *
      * @throws IllegalStateException if transaction didn't begin.
      */
     void rollback() throws IllegalStateException;
 
     /**
-     * Returns the status of the transaction associated with the current thread.
+     * Returns the status of the transaction.
      *
      * @return the status
      */
     int getStatus();
 
+    /**
+     * Returns the state of the transaction.
+     *
+     * @return the state
+     */
+    State getState();
+
+    /**
+     * @param seconds
+     */
     void setTransactionTimeout(int seconds);
 }

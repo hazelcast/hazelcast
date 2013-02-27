@@ -16,48 +16,38 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
+import java.util.logging.Level;
 
-public class CommitOperation extends AbstractOperation {
-    String txnId = null;
-    private Object response = null;
-
-    public CommitOperation(String txnId) {
-        this.txnId = txnId;
-    }
+public class CommitOperation extends BaseTxOperation {
 
     public CommitOperation() {
     }
 
-    public void run() {
-        TransactionalService txnalService = (TransactionalService) getService();
-        try {
-            txnalService.commit(txnId, getPartitionId());
-        } catch (TransactionException e) {
-            response = e;
+    public CommitOperation(String txnId, String[] services) {
+        super(txnId, services);
+    }
+
+    public void run() throws Exception {
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        TransactionManagerService txService = getService();
+        txService.commit(getCallerUuid(), txnId, getPartitionId(), services);
+        final ILogger logger = nodeEngine.getLogger(getClass());
+        for (String serviceName : services) {
+            final TransactionalService service = nodeEngine.getService(serviceName);
+            if (service == null) {
+                logger.log(Level.WARNING, "Unknown service: " + serviceName);
+                continue;
+            }
+            try {
+                service.commit(txnId, getPartitionId());
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, "Problem while service["
+                        + serviceName + "] committing the transaction[" + txnId + "]!", e);
+            }
         }
-    }
-
-    @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
     }
 }

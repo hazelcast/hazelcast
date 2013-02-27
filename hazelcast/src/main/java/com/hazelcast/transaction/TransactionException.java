@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.transaction;
 
-/**
- * Hazelcast operations may throw an <tt>OperationRejectedException</tt>
- * when an operation can not be accepted because number of concurrent
- * calls reaches the limit.
- *
- * @see com.hazelcast.instance.GroupProperties#PROP_MAX_CONCURRENT_OPERATION_LIMIT
- * @see java.util.concurrent.RejectedExecutionException
- */
-public class OperationRejectedException extends HazelcastException {
+public class TransactionException extends Exception {
 
-    public OperationRejectedException() {
+    public TransactionException() {
     }
 
-    public OperationRejectedException(String message) {
+    public TransactionException(String message) {
         super(message);
+    }
+
+    public TransactionException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TransactionException(Throwable cause) {
+        super(cause);
     }
 }

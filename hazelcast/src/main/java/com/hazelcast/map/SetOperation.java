@@ -29,7 +29,6 @@ public class SetOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        super.run();
         if (prepareTransaction()) {
             return;
         }

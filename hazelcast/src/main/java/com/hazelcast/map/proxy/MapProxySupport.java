@@ -21,7 +21,6 @@ import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.Transaction;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
@@ -29,7 +28,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.*;
-import com.hazelcast.transaction.TransactionImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.QueryResultStream;
 
@@ -48,7 +46,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
         super(nodeEngine, mapService);
-        mapService.initMap(name);
         this.name = name;
         lockSupport = new LockProxySupport(new LockNamespace(MapService.SERVICE_NAME, name));
     }
@@ -567,24 +564,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
      * @return txnId if thread is in transaction, null otherwise
      */
     protected String attachTxnParticipant(int partitionId) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        TransactionImpl txn = nodeEngine.getTransaction();
-        String txnId = null;
-        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-            txnId = txn.getTxnId();
-            txn.attachParticipant(SERVICE_NAME, partitionId);
-        }
-        return txnId;
+        return null;
     }
 
     protected String getCurrentTransactionId() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        TransactionImpl txn = nodeEngine.getTransaction();
-        String txnId = null;
-        if (txn != null && txn.getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-            return txn.getTxnId();
-        }
-        return txnId;
+        return null;
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

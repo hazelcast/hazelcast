@@ -56,6 +56,10 @@ public class TransactionClientProxy implements Transaction {
         return proxyHelper.doCommandAsInt(Command.TRXSTATUS, new String[]{});
     }
 
+    public State getState() {
+        return null;
+    }
+
     public void rollback() throws IllegalStateException {
         Context context = Context.get();
         checkNull(context);
