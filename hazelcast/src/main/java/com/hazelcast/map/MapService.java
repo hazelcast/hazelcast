@@ -461,20 +461,20 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         try {
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new TransactionException(e);
         }
     }
 
-    public void commit(String txnId, int partitionId) throws TransactionException {
+    public void commit(String txnId, int partitionId) {
         System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
         getPartitionContainer(partitionId).commit(txnId);
         int maxBackupCount = 1; //txnLog.getMaxBackupCount();
         try {
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception e) {
-            throw new TransactionException(e);
+        } catch (Throwable e) {
+            throw new HazelcastException(e);
         }
     }
 
@@ -485,7 +485,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         try {
             nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
                     maxBackupCount, 60);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new HazelcastException(e);
         }
     }

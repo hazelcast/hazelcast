@@ -124,6 +124,10 @@ public class NodeEngineImpl implements NodeEngine {
         return waitNotifyService;
     }
 
+    public TransactionManagerService getTransactionManagerService() {
+        return transactionManagerService;
+    }
+
     public Data toData(final Object object) {
         return node.serializationService.toData(object);
     }

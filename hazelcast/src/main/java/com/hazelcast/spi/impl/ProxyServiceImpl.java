@@ -46,7 +46,7 @@ import static com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
  */
 public class ProxyServiceImpl implements ProxyService, EventPublishingService<DistributedObjectEvent, Object> {
 
-    static final String NAME = "hz:core:proxyService";
+    static final String SERVICE_NAME = "hz:core:proxyService";
 
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, ProxyRegistry> registries = new ConcurrentHashMap<String, ProxyRegistry>();
@@ -60,7 +60,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
     }
 
     void init() {
-        nodeEngine.getEventService().registerListener(NAME, NAME, new Object());
+        nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
     private final ConcurrencyUtil.ConstructorFunction<String, ProxyRegistry> registryConstructor
@@ -91,7 +91,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         for (MemberImpl member : members) {
             if (member.localMember()) continue;
 
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(NAME,
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                     new DistributedObjectDestroyOperation(serviceName, objectId), member.getAddress())
                     .setTryCount(10).build();
             calls.add(inv.invoke());
@@ -221,8 +221,8 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
 
         private void publish(DistributedObjectEvent event) {
             final EventService eventService = nodeEngine.getEventService();
-            final Collection<EventRegistration> registrations = eventService.getRegistrations(NAME, NAME);
-            eventService.publishEvent(NAME, registrations, event);
+            final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+            eventService.publishEvent(SERVICE_NAME, registrations, event);
         }
 
         private DistributedObjectEvent createEvent(Object objectId, DistributedObjectEvent.EventType type) {

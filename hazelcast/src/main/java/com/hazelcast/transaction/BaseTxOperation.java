@@ -19,17 +19,17 @@ package com.hazelcast.transaction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 /**
  * @mdogan 2/26/13
  */
-abstract class BaseTxOperation extends Operation {
+abstract class BaseTxOperation extends Operation implements PartitionAwareOperation {
 
     protected String txnId;
     protected String[] services;
-    protected transient Object response;
 
     protected BaseTxOperation() {
     }
@@ -50,7 +50,7 @@ abstract class BaseTxOperation extends Operation {
     }
 
     public final Object getResponse() {
-        return response;
+        return Boolean.TRUE;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

@@ -42,7 +42,7 @@ public class TransactionalMapProxy<K,V> extends ObjectMapProxy<K,V> implements T
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
-        transaction.attachParticipant(getServiceName(), partitionId);
+        transaction.attachParticipant(partitionId, getServiceName());
         return transaction.getTxnId();
     }
 

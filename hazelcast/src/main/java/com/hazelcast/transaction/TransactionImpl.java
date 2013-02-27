@@ -18,7 +18,6 @@ package com.hazelcast.transaction;
 
 import com.hazelcast.core.Transaction;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -28,11 +27,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.Transaction.State.*;
+import static com.hazelcast.transaction.TransactionManagerService.SERVICE_NAME;
 
 public final class TransactionImpl implements Transaction {
 
     private final NodeEngine nodeEngine;
-    private final Map<Integer, Collection<String>> participants = new HashMap<Integer, Collection<String>>(3);
+    private final Map<Integer, Collection<String>> participants = new HashMap<Integer, Collection<String>>(3); // partitionId -> services
 
     private final String txnId = UUID.randomUUID().toString();
     private State state = NO_TXN;
@@ -50,7 +50,7 @@ public final class TransactionImpl implements Transaction {
         timeoutSeconds = seconds;
     }
 
-    public void attachParticipant(String serviceName, int partitionId) {
+    public void attachParticipant(int partitionId, String serviceName) {
         Collection<String> services = participants.get(partitionId);
         if (services == null) {
             services = new HashSet<String>(3);
@@ -58,7 +58,6 @@ public final class TransactionImpl implements Transaction {
         }
         services.add(serviceName);
     }
-
 
     public void begin() throws IllegalStateException {
         if (state == ACTIVE) {
@@ -75,10 +74,11 @@ public final class TransactionImpl implements Transaction {
             state = PREPARING;
             final List<Future> futures = new ArrayList<Future>(participants.size());
             final OperationService operationService = nodeEngine.getOperationService();
-            for (TxnParticipant t : participants) {
-                PrepareOperation op = new PrepareOperation(txnId);
-                futures.add(operationService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
-                        .invoke());
+            for (Map.Entry<Integer, Collection<String>> entry : participants.entrySet()) {
+                final int partitionId = entry.getKey();
+                PrepareOperation op = new PrepareOperation(txnId, getServicesArray(entry.getValue()));
+                futures.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId)
+                        .build().invoke());
             }
             for (Future future : futures) {
                 future.get(timeoutSeconds, TimeUnit.SECONDS);
@@ -86,10 +86,11 @@ public final class TransactionImpl implements Transaction {
             state = PREPARED;
             futures.clear();
             state = COMMITTING;
-            for (TxnParticipant t : participants) {
-                Operation op = new CommitOperation(txnId);
-                futures.add(operationService.createInvocationBuilder(t.serviceName, op, t.partitionId).build()
-                        .invoke());
+            for (Map.Entry<Integer, Collection<String>> entry : participants.entrySet()) {
+                final int partitionId = entry.getKey();
+                CommitOperation op = new CommitOperation(txnId, getServicesArray(entry.getValue()));
+                futures.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId)
+                        .build().invoke());
             }
             for (Future future : futures) {
                 future.get(timeoutSeconds, TimeUnit.SECONDS);
@@ -104,6 +105,10 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
+    private static String[] getServicesArray(Collection<String> services) {
+        return services.toArray(new String[services.size()]);
+    }
+
     public void rollback() throws IllegalStateException {
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
@@ -111,13 +116,14 @@ public final class TransactionImpl implements Transaction {
         state = ROLLING_BACK;
         try {
             List<Future> futures = new ArrayList<Future>(participants.size());
-            for (TxnParticipant t : participants) {
-                Operation op = new RollbackOperation(txnId);
-                futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
-                        .invoke());
+            for (Map.Entry<Integer, Collection<String>> entry : participants.entrySet()) {
+                final int partitionId = entry.getKey();
+                RollbackOperation op = new RollbackOperation(txnId, getServicesArray(entry.getValue()));
+                futures.add(nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, partitionId)
+                        .build().invoke());
             }
             for (Future future : futures) {
-                future.get(300, TimeUnit.SECONDS);
+                future.get(timeoutSeconds, TimeUnit.SECONDS);
             }
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);

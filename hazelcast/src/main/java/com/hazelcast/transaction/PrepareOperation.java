@@ -17,22 +17,27 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class PrepareOperation extends BaseTxOperation {
 
     public PrepareOperation() {
     }
 
-    public PrepareOperation(String txnId) {
-        this.txnId = txnId;
+    public PrepareOperation(String txnId, String[] services) {
+        super(txnId, services);
     }
 
-    public void run() {
-        TransactionalService txnalService = getService();
-        try {
-            txnalService.prepare(txnId, getPartitionId());
-        } catch (TransactionException e) {
-            response = e;
+    public void run() throws Exception {
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        TransactionManagerService txService = getService();
+        txService.prepare(getCallerUuid(), txnId, getPartitionId(), services);
+        for (String serviceName : services) {
+            final TransactionalService service = nodeEngine.getService(serviceName);
+            if (service == null) {
+                throw new TransactionException("Unknown service: " + serviceName);
+            }
+            service.prepare(txnId, getPartitionId());
         }
     }
 }
