@@ -16,15 +16,18 @@
 
 package com.hazelcast.util.scheduler;
 
-public interface ScheduledEntryProcessor<K,V> {
+import java.util.Collection;
 
+public interface ScheduledEntryProcessor<K,V> {
     /**
-     * Processes a single entry. All failures has to be handled by the implementation.
-     * Implementation can choose to ignore the failures or reschedules the entry for
-     * a future time.
+     * Processes all entries. Implementation has to
+     * handle the failures and can possibly reschedule it for a future time.
+     * Imagine you are implementing this for a dirty records. If mapStore.storeAll
+     * throws exception, you might want to reschedule the failed records.
      *
-     * @param taskScheduler
-     * @param entry
+     * @param scheduler
+     * @param entries
      */
-    void process(EntryTaskScheduler taskScheduler, ScheduledEntry<K,V> entry);
+    void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<K, V>> entries);
+
 }

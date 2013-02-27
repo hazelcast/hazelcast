@@ -277,7 +277,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return res;
     }
 
-    // todo optimize these
+    // todo optimize these: send keys in groups to partitions and wirte mapstore in bulk
     protected void putAllDataInternal(final Map<? extends Data, ? extends Data> m) {
         for (Entry<? extends Data, ? extends Data> entry : m.entrySet()) {
             putInternal(entry.getKey(), entry.getValue(), -1, null);

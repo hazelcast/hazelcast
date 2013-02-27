@@ -22,6 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Factory for EntryTaskSchedulers.
  */
 public final class EntryTaskSchedulerFactory {
+
     /**
      * Creates a new EntryTaskScheduler that will run all second operations in bulk.
      * Imagine a write-behind map where dirty entries will be stored in bulk.
@@ -41,27 +42,8 @@ public final class EntryTaskSchedulerFactory {
      * @param entryProcessor bulk processor
      * @return EntryTaskScheduler
      */
-    public static <K, V> EntryTaskScheduler<K, V> newBulkScheduler(ScheduledExecutorService scheduledExecutorService, BulkScheduledEntryProcessor entryProcessor) {
-        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor);
+    public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor, boolean postponesSchedule) {
+        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, postponesSchedule);
     }
 
-    /**
-     * Creates a new EntryTaskScheduler that will execute each entry one by one.
-     * Imagine a map with entries with different max-idle-seconds.
-     * Note that each key can be rescheduled and its execution can be postponed.
-     * So two things to
-     * remember:
-     * 1. a key can be rescheduled any number of times so its execution can be postponed.
-     * 2. each entry is executed individually.
-     * Once a key is executed, it can be re-scheduled for another execution.
-     * <p/>
-     * EntryTaskScheduler implementation is thread-safe.
-     *
-     * @param scheduledExecutorService  ScheduledExecutorService instance to execute the second
-     * @param entryProcessor entry processor
-     * @return EntryTaskScheduler
-     */
-    public static <K, V> EntryTaskScheduler<K, V> newSingleScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor) {
-        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor);
-    }
 }
