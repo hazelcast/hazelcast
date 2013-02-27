@@ -33,12 +33,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
-/**
- * User: sancar
- * Date: 12/31/12
- * Time: 10:26 AM
- */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class AtomicLongTest {
 

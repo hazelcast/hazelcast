@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalTopicOperationStats extends LocalInstanceOperationStats {
+public interface LocalExecutorStats extends LocalInstanceStats<LocalExecutorOperationStats> {
+    /**
+     * Returns the total number of started executions onf this executor service on this member.
+     *
+     * @return the total number of started executions.
+     */
+    long getTotalStarted();
 
     /**
-     * Returns the number of publish operations of the topic on this member in a specific time interval.
+     * Returns the total number of finished executions onf this executor service on this member.
      *
-     * @return number of publish operations
+     * @return the total number of finished executions.
      */
-    public long getNumberOfPublishes();
-
-    /**
-     * Returns the number of received messages of the topic on this member in a specific time interval
-     *
-     * @return number of received messages .
-     */
-    public long getNumberOfReceivedMessages();
+    long getTotalFinished();
 }

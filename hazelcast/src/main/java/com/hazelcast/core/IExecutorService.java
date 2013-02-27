@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.monitor.LocalExecutorStats;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -32,7 +34,6 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
 
     void executeOnAllMembers(Runnable command);
 
-
     <T> Future<T> submitToKeyOwner(Callable<T> task, Object key);
 
     <T> Future<T> submitToMember(Callable<T> task, Member member);
@@ -41,17 +42,15 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
 
     <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task);
 
-
     void submit(Runnable task, ExecutionCallback callback);
 
     void submitToKeyOwner(Runnable task, Object key, ExecutionCallback callback);
 
-    void submitToMember(Runnable  task, Member member, ExecutionCallback callback);
+    void submitToMember(Runnable task, Member member, ExecutionCallback callback);
 
     void submitToMembers(Runnable task, Collection<Member> members, MultiExecutionCallback callback);
 
     void submitToAllMembers(Runnable task, MultiExecutionCallback callback);
-
 
     <T> void submit(Callable<T> task, ExecutionCallback<T> callback);
 
@@ -63,4 +62,5 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
 
     <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback);
 
+    LocalExecutorStats getLocalExecutorStats();
 }

@@ -18,6 +18,8 @@ package com.hazelcast.executor;
 
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -37,7 +39,6 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     private final String name;
     private final Random random = new Random();
     private final int partitionCount;
-
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
     private volatile long lastSubmitTime = 0L;
 
@@ -295,6 +296,16 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     public List<Runnable> shutdownNow() {
         shutdown();
         return null;
+    }
+
+    public LocalExecutorStats getLocalExecutorStats() {
+        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl();
+        ExecutorServiceStatsContainer serviceStatsContainer = getService().getExecutorServiceStatsContainer(name);
+        localExecutorStats.setCreationTime(serviceStatsContainer.getCreationTime());
+        localExecutorStats.setTotalFinished(serviceStatsContainer.getTotalFinished());
+        localExecutorStats.setTotalStarted(serviceStatsContainer.getTotalStarted());
+        localExecutorStats.setOperationStats(serviceStatsContainer.getOperationsCounter().getPublishedStats());
+        return localExecutorStats;
     }
 
     public String getServiceName() {

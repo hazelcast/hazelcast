@@ -17,11 +17,14 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.monitor.impl.ExecutorOperationsCounter;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.ExecutionServiceImpl;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.Collections;
 import java.util.Properties;
@@ -36,8 +39,13 @@ import java.util.logging.Level;
 public class DistributedExecutorService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
-
     private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private final ConcurrentHashMap<String, ExecutorServiceStatsContainer> executorServiceStatsContainers = new ConcurrentHashMap<String, ExecutorServiceStatsContainer>();
+    private final ConcurrencyUtil.ConstructorFunction<String, ExecutorServiceStatsContainer> executorServiceContainerConstructor = new ConcurrencyUtil.ConstructorFunction<String, ExecutorServiceStatsContainer>() {
+        public ExecutorServiceStatsContainer createNew(String key) {
+            return new ExecutorServiceStatsContainer();
+        }
+    };
     private NodeEngine nodeEngine;
     private ExecutionServiceImpl executionService;
 
@@ -55,30 +63,8 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public void execute(String name, final Callable callable, final ResponseHandler responseHandler) {
-        executionService.execute(name, new CallableProcessor(callable, responseHandler));
-    }
-
-    private class CallableProcessor implements Runnable {
-        final Callable callable;
-        final ResponseHandler responseHandler;
-
-        private CallableProcessor(Callable callable, ResponseHandler responseHandler) {
-            this.callable = callable;
-            this.responseHandler = responseHandler;
-        }
-
-        public void run() {
-            Object result = null;
-            try {
-                result = callable.call();
-            } catch (Exception e) {
-                nodeEngine.getLogger(DistributedExecutorService.class.getName())
-                        .log(Level.FINEST, "While executing callable: " + callable, e);
-                result = e;
-            } finally {
-                responseHandler.sendResponse(result);
-            }
-        }
+        startPending(name);
+        executionService.execute(name, new CallableProcessor(name, callable, responseHandler));
     }
 
     public void shutdownExecutor(String name) {
@@ -108,4 +94,50 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         shutdownExecutors.remove(name);
         executionService.destroyExecutor(name);
     }
+
+    public ExecutorServiceStatsContainer getExecutorServiceStatsContainer(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(executorServiceStatsContainers, name, executorServiceContainerConstructor);
+    }
+
+    public void startExecution(String name, long elapsed) {
+        getExecutorServiceStatsContainer(name).startExecution(elapsed);
+    }
+
+    public void finishExecution(String name, long elapsed) {
+        getExecutorServiceStatsContainer(name).finishExecution(elapsed);
+    }
+
+    public void startPending(String name) {
+        getExecutorServiceStatsContainer(name).startPending();
+    }
+
+    private class CallableProcessor implements Runnable {
+        final Callable callable;
+        final ResponseHandler responseHandler;
+        final long creationTime = Clock.currentTimeMillis();
+        final String name;
+
+        private CallableProcessor(String name, Callable callable, ResponseHandler responseHandler) {
+            this.name = name;
+            this.callable = callable;
+            this.responseHandler = responseHandler;
+        }
+
+        public void run() {
+            long start = Clock.currentTimeMillis();
+            startExecution(name, start - creationTime);
+            Object result = null;
+            try {
+                result = callable.call();
+            } catch (Exception e) {
+                nodeEngine.getLogger(DistributedExecutorService.class.getName())
+                        .log(Level.FINEST, "While executing callable: " + callable, e);
+                result = e;
+            } finally {
+                responseHandler.sendResponse(result);
+                finishExecution(name, Clock.currentTimeMillis() - start);
+            }
+        }
+    }
+
 }
