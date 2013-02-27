@@ -16,23 +16,61 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
+import com.hazelcast.core.PartitionAware;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 // author: sancar - 24.12.2012
-public abstract class AtomicLongBaseOperation extends AbstractNamedOperation {
+public abstract class AtomicLongBaseOperation extends Operation implements PartitionAware {
+
+    protected String name;
 
     public AtomicLongBaseOperation() {
         super();
     }
 
     public AtomicLongBaseOperation(String name) {
-        super(name);
+        this.name = name;
     }
 
     public AtomicLong getNumber() {
         return ((AtomicLongService) getService()).getNumber(name);
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
+    public void beforeRun() throws Exception {
+    }
+
+    @Override
+    public Object getResponse() {
+        return null;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getPartitionKey() {
+        return getServiceName() + name;
     }
 
 }

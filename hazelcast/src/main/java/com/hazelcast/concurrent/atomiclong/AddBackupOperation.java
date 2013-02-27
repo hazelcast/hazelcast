@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,42 +18,42 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-// author: sancar - 24.12.2012
-public class SetOperation extends AtomicLongBackupAwareOperation {
+/**
+ * User: sancar
+ * Date: 2/27/13
+ * Time: 2:24 PM
+ */
+public class AddBackupOperation extends AtomicLongBaseOperation implements BackupOperation {
 
-    private long newValue;
+    private long delta;
 
-    public SetOperation() {
+    public AddBackupOperation() {
         super();
     }
 
-    public SetOperation(String name, long newValue) {
+    public AddBackupOperation(String name, long delta) {
         super(name);
-        this.newValue = newValue;
+        this.delta = delta;
     }
 
     @Override
     public void run() throws Exception {
-        getNumber().set(newValue);
+        getNumber().addAndGet(delta);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(newValue);
+        out.writeLong(delta);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        newValue = in.readLong();
-    }
-
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, newValue);
+        delta = in.readLong();
     }
 }

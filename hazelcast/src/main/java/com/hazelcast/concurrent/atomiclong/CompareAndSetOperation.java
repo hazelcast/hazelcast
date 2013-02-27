@@ -46,11 +46,6 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return returnValue;
     }

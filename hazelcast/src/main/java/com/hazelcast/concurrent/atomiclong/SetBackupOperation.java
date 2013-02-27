@@ -42,15 +42,6 @@ public class SetBackupOperation extends AtomicLongBaseOperation implements Backu
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    public Object getResponse() {
-        return newValue;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(newValue);
