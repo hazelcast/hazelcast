@@ -44,11 +44,6 @@ public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return returnValue;
     }
@@ -66,6 +61,6 @@ public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, returnValue + delta);
+        return new AddBackupOperation(name, delta);
     }
 }
