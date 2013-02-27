@@ -420,6 +420,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
+        return createRecord(name, dataKey, value, ttl, false);
+    }
+
+    public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean backup) {
         Record record = null;
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.RecordType recordType = mapContainer.getMapConfig().getRecordType();
@@ -432,17 +436,20 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         } else {
             throw new IllegalArgumentException("Should not happen!");
         }
-        if (ttl <= 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
-            record.getState().updateTtlExpireTime(mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
-            scheduleTtlEviction(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
-        }
-        if (ttl > 0) {
-            record.getState().updateTtlExpireTime(ttl);
-            scheduleTtlEviction(name, record.getKey(), ttl);
-        }
-        if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
-            record.getState().updateIdleExpireTime(mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
-            scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
+
+        if (!backup) {
+            if (ttl <= 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
+                record.getState().updateTtlExpireTime(mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
+                scheduleTtlEviction(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
+            }
+            if (ttl > 0) {
+                record.getState().updateTtlExpireTime(ttl);
+                scheduleTtlEviction(name, record.getKey(), ttl);
+            }
+            if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
+                record.getState().updateIdleExpireTime(mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
+                scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
+            }
         }
         return record;
     }

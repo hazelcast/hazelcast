@@ -45,7 +45,6 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
 
     @Override
     public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        System.out.println("eviction process:"+ entries.size());
 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
@@ -56,7 +55,6 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
                         .build();
                 Future f = invocation.invoke();
                 f.get();
-//                System.out.println("map store eviction:"+ mapService.toObject(entry.getKey()));
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
             }
