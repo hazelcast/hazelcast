@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.util.Clock;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,28 +39,25 @@ import java.util.concurrent.TimeUnit;
 
 class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
 
-    private static final long initialTimeMillis = System.currentTimeMillis();
+    private static final long initialTimeMillis = Clock.currentTimeMillis();
 
     private final ConcurrentMap<K, Integer> secondsOfKeys = new ConcurrentHashMap<K, Integer>(1000);
     private final ConcurrentMap<Integer, ConcurrentMap<K, ScheduledEntry<K, V>>> scheduledEntries = new ConcurrentHashMap<Integer, ConcurrentMap<K, ScheduledEntry<K, V>>>(1000);
     private final ScheduledExecutorService scheduledExecutorService;
-    private final Object entryProcessor;
-    private final boolean bulk;
+    private final ScheduledEntryProcessor entryProcessor;
+    private final boolean postponesSchedule;
 
-    SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService, Object entryProcessor) {
-        if (entryProcessor instanceof ScheduledEntryProcessor || entryProcessor instanceof BulkScheduledEntryProcessor) {
+    SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor, boolean postponesSchedule) {
             this.scheduledExecutorService = scheduledExecutorService;
             this.entryProcessor = entryProcessor;
-            this.bulk = (entryProcessor instanceof BulkScheduledEntryProcessor);
-        }
-        throw new IllegalArgumentException();
+            this.postponesSchedule = postponesSchedule;
     }
 
     public boolean schedule(long delayMillis, K key, V value) {
-        if (bulk) {
-            return scheduleIfNew(delayMillis, key, value);
-        } else {
+        if (postponesSchedule) {
             return scheduleEntry(delayMillis, key, value);
+        } else {
+            return scheduleIfNew(delayMillis, key, value);
         }
     }
 
@@ -78,21 +77,14 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         final Integer newSecond = findRelativeSecond(delayMillis);
         final Integer existingSecond = secondsOfKeys.put(key, newSecond);
         if (existingSecond != null) {
-            if (existingSecond.equals(newSecond)) return false;
+            if (existingSecond.equals(newSecond)){
+                System.out.println("same second existing:"+existingSecond+ " new:"+newSecond);
+                return false;
+            }
             removeKeyFromSecond(key, existingSecond);
         }
         doSchedule(new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
         return true;
-    }
-
-    private int findRelativeSecond(long delayMillis) {
-        long now = System.currentTimeMillis();
-        long d = (now + delayMillis - initialTimeMillis);
-        return ceilToSecond(d);
-    }
-
-    private int ceilToSecond(long delayMillis) {
-        return (int) Math.ceil(delayMillis / 1000d);
     }
 
     private boolean scheduleIfNew(long delayMillis, K key, V value) {
@@ -101,6 +93,16 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         if (secondsOfKeys.putIfAbsent(key, newSecond) != null) return false;
         doSchedule(new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
         return true;
+    }
+
+    private int findRelativeSecond(long delayMillis) {
+        long now = Clock.currentTimeMillis();
+        long d = (now + delayMillis - initialTimeMillis);
+        return ceilToSecond(d);
+    }
+
+    private int ceilToSecond(long delayMillis) {
+        return (int) Math.ceil(delayMillis / 1000d);
     }
 
     private void doSchedule(ScheduledEntry<K, V> entry, Integer second) {
@@ -127,6 +129,7 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         ConcurrentMap<K, ScheduledEntry<K, V>> scheduledKeys = scheduledEntries.get(existingSecond);
         if (scheduledKeys != null) {
             scheduledKeys.remove(key);
+            System.out.println("removed key:"+key);
         }
     }
 
@@ -144,21 +147,10 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         public void run() {
             final ConcurrentMap<K, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
-            if (bulk) {
-                final BulkScheduledEntryProcessor<K, V> bulkEntryProcessor = (BulkScheduledEntryProcessor) entryProcessor;
                 for (K key : entries.keySet()) {
                     secondsOfKeys.remove(key);
                 }
-                bulkEntryProcessor.processAll(SecondsBasedEntryTaskScheduler.this, entries.values());
-            } else {
-                final ScheduledEntryProcessor<K, V> singleEntryProcessor = (ScheduledEntryProcessor) entryProcessor;
-                for (ScheduledEntry<K, V> entry : entries.values()) {
-                    final Object scheduleKey = entry.getKey();
-                    if (secondsOfKeys.remove(scheduleKey, second)) {
-                        singleEntryProcessor.process(SecondsBasedEntryTaskScheduler.this, entry);
-                    }
-                }
-            }
+            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, entries.values());
         }
     }
 

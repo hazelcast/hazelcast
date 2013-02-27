@@ -54,13 +54,14 @@ public class MapRecordStateOperation extends LockAwareOperation implements Backu
                 recordStore.evict(dataKey);
                 evicted = true;
             }
-        } else if (recordStore.getRemovedDelayedKeys().contains(dataKey)) {
-            MapStore store = recordStore.getMapContainer().getStore();
-            if (store != null) {
-                store.delete(mapService.toObject(dataKey));
-            }
-            recordStore.getRemovedDelayedKeys().remove(dataKey);
         }
+//        else if (recordStore.getRemovedDelayedKeys().contains(dataKey)) {
+//            MapStore store = recordStore.getMapContainer().getStore();
+//            if (store != null) {
+//                store.delete(mapService.toObject(dataKey));
+//            }
+//            recordStore.getRemovedDelayedKeys().remove(dataKey);
+//        }
     }
 
     @Override

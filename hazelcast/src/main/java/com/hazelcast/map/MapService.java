@@ -57,6 +57,8 @@ import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -77,7 +79,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ILogger logger;
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
-    private final AtomicLong counter = new AtomicLong(new Random().nextLong());
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
@@ -336,10 +337,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return getPartitionContainer(partitionId).getRecordStore(mapName);
     }
 
-    public long nextId() {
-        return counter.incrementAndGet();
-    }
-
     public AtomicReference<List<Integer>> getOwnedPartitions() {
         if (ownedPartitions.get() == null) {
             ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
@@ -439,15 +436,15 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         if (ttl <= 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
             record.getState().updateTtlExpireTime(mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
-            scheduleOperation(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
+            scheduleTtlEviction(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
         }
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
-            scheduleOperation(name, record.getKey(), ttl);
+            scheduleTtlEviction(name, record.getKey(), ttl);
         }
         if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
             record.getState().updateIdleExpireTime(mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
-            scheduleOperation(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
+            scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
         }
         return record;
     }
@@ -751,11 +748,27 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getMapContainer(eventData.getMapName()).getMapOperationCounter().incrementReceivedEvents();
     }
 
-    public void scheduleOperation(String mapName, Data key, long executeTime) {
+    public void scheduleOperationOlddd(String mapName, Data key, long executeTime) {
         MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
         final MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation,
                 nodeEngine.getPartitionService().getPartitionId(key));
         nodeEngine.getExecutionService().schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
+    }
+
+    public void scheduleIdleEviction(String mapName, Data key, long delay) {
+        getMapContainer(mapName).getIdleEvictionScheduler().schedule(delay, key, null);
+    }
+
+    public void scheduleTtlEviction(String mapName, Data key, long delay) {
+        getMapContainer(mapName).getTtlEvictionScheduler().schedule(delay, key, null);
+    }
+
+    public void scheduleMapStoreWrite(String mapName, Data key, Object value, long delay) {
+        getMapContainer(mapName).getMapStoreWriteScheduler().schedule(delay, key, value);
+    }
+
+    public void scheduleMapStoreDelete(String mapName, Data key, long delay) {
+        getMapContainer(mapName).getMapStoreDeleteScheduler().schedule(delay, key, null);
     }
 
     public SerializationService getSerializationService() {
@@ -931,11 +944,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
         }
     }
-
-    public static String getNamespace(String name) {
-        return MapService.SERVICE_NAME + '/' + name;
-    }
-
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();

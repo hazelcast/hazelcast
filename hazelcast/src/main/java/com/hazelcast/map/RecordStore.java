@@ -73,8 +73,6 @@ public interface RecordStore {
 
     MapContainer getMapContainer();
 
-    Set<Data> getRemovedDelayedKeys();
-
     Set<Map.Entry<Data, Object>> entrySetObject();
 
     Set<Map.Entry<Data, Data>> entrySetData();

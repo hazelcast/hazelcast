@@ -35,6 +35,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -62,12 +64,18 @@ public class MapContainer {
     private final long creationTime;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
 
+    private final EntryTaskScheduler idleEvictionScheduler;
+    private final EntryTaskScheduler ttlEvictionScheduler;
+    private final EntryTaskScheduler mapStoreWriteScheduler;
+    private final EntryTaskScheduler mapStoreDeleteScheduler;
+
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         MapStore storeTemp = null;
         this.name = name;
         this.mapConfig = mapConfig;
         this.mapService = mapService;
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        NodeEngine nodeEngine = mapService.getNodeEngine();
 
         if (mapStoreConfig != null) {
             try {
@@ -93,7 +101,6 @@ public class MapContainer {
         store = storeTemp;
 
         if (store != null) {
-            NodeEngine nodeEngine = mapService.getNodeEngine();
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
             if (nodeEngine.getClusterService().isMaster() && initialLoaded.compareAndSet(false, true)) {
@@ -114,9 +121,28 @@ public class MapContainer {
             } else {
                 mapReady = true;
             }
+
+            if(mapStoreConfig.getWriteDelaySeconds() > 0) {
+                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService) , false);
+                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService) , false);
+            }
+            else {
+                mapStoreDeleteScheduler = null;
+                mapStoreWriteScheduler = null;
+            }
         } else {
             mapReady = true;
+            mapStoreDeleteScheduler = null;
+            mapStoreWriteScheduler = null;
         }
+        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
+        if(mapConfig.getMaxIdleSeconds() > 0) {
+            idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
+        }
+        else {
+            idleEvictionScheduler = null;
+        }
+
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
@@ -203,6 +229,22 @@ public class MapContainer {
                 mapReady = true;
             }
         }
+    }
+
+    public EntryTaskScheduler getIdleEvictionScheduler() {
+        return idleEvictionScheduler;
+    }
+
+    public EntryTaskScheduler getTtlEvictionScheduler() {
+        return ttlEvictionScheduler;
+    }
+
+    public EntryTaskScheduler getMapStoreWriteScheduler() {
+        return mapStoreWriteScheduler;
+    }
+
+    public EntryTaskScheduler getMapStoreDeleteScheduler() {
+        return mapStoreDeleteScheduler;
     }
 
     public IndexService getIndexService() {
