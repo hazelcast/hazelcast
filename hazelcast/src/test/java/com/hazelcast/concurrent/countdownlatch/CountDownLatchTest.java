@@ -99,8 +99,8 @@ public class CountDownLatchTest {
     public void testLatchDestroyed() {
         StaticNodeFactory factory = new StaticNodeFactory(2);
         final Config config = new Config();
-        HazelcastInstance hz1 = factory.newInstance(config);
-        HazelcastInstance hz2 = factory.newInstance(config);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         final ICountDownLatch latch = hz1.getCountDownLatch("test");
         latch.trySetCount(2);
 
