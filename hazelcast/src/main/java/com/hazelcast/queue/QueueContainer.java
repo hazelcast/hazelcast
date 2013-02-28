@@ -18,6 +18,8 @@ package com.hazelcast.queue;
 
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.monitor.impl.QueueOperationsCounter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -48,13 +50,15 @@ public class QueueContainer implements DataSerializable {
 
     private QueueStoreWrapper store;
 
-    private long minAge;
+    private final QueueOperationsCounter operationsCounter = new QueueOperationsCounter();
 
-    private long maxAge;
+    private volatile long minAge;
 
-    private long aveAge;
+    private volatile long maxAge;
 
-    private long totalAged;
+    private volatile long totalAge;
+
+    private volatile long totalAgedCount;
 
     public QueueContainer() {
     }
@@ -101,7 +105,8 @@ public class QueueContainer implements DataSerializable {
     }
 
     public int size() {
-        return itemQueue.size();
+        operationsCounter.incrementOtherOperations();
+        return itemQueue.size(); //TODO check max size
     }
 
     public List<Data> clear() {
@@ -434,21 +439,37 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
+    public QueueOperationsCounter getOperationsCounter() {
+        return operationsCounter;
+    }
+
     private void age(QueueItem item, long currentTime){
         long elapsed = currentTime - item.getCreationTime();
         if (elapsed <= 0){
             return;//elapsed time can not be a negative value, a system clock problem maybe. ignored
         }
-        totalAged++;
+        totalAgedCount++;
+        totalAge += elapsed;
         if (minAge == 0){
             minAge = elapsed;
             maxAge = elapsed;
-            aveAge = elapsed;
         }
         else {
             minAge = Math.min(minAge, elapsed);
             maxAge = Math.max(maxAge, elapsed);
         }
+    }
+
+    public void setStats(LocalQueueStatsImpl stats){
+        stats.setMinAge(minAge);
+        minAge = 0;
+        stats.setMaxAge(maxAge);
+        maxAge = 0;
+        long totalAgeVal = totalAge;
+        totalAge = 0;
+        long totalAgedCountVal = totalAgedCount;
+        totalAgedCount = 0;
+        stats.setAveAge(totalAgeVal / totalAgedCountVal);
     }
 
 }

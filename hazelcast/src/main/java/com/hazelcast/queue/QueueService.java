@@ -217,8 +217,9 @@ public class QueueService implements ManagedService, MigrationAwareService,
         else{
             stats.setBackupItemCount(container.size());
         }
-        LocalQueueStatsImpl localQueueStats = new LocalQueueStatsImpl();
-        return null;
+        container.setStats(stats);
+        stats.setOperationStats(container.getOperationsCounter().getPublishedStats());
+        return stats;
     }
 
 
