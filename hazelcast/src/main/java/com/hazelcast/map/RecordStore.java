@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public interface RecordStore {
 
-    boolean tryRemove(Data dataKey);
+    Object tryRemove(Data dataKey);
 
     Object remove(Data dataKey);
 
@@ -72,8 +72,6 @@ public interface RecordStore {
     Collection<Data> valuesData();
 
     MapContainer getMapContainer();
-
-    Set<Data> getRemovedDelayedKeys();
 
     Set<Map.Entry<Data, Object>> entrySetObject();
 

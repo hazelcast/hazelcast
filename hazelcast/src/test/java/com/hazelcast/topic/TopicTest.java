@@ -1,0 +1,343 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.topic;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.config.TopicConfig;
+import com.hazelcast.core.*;
+import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.util.Clock;
+import junit.framework.Assert;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+
+
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+public class TopicTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+
+    }
+
+    @After
+    @Before
+    public void shutdown() {
+        Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testTopicTotalOrder() throws Exception {
+        final Config config = new Config();
+        TopicConfig topicConfig = new TopicConfig();
+        topicConfig.setGlobalOrderingEnabled(true);
+        topicConfig.setName("default");
+        config.addTopicConfig(topicConfig);
+
+        final int k = 4;
+
+        final Map<Long, String> stringMap = new HashMap<Long, String>();
+        final CountDownLatch countDownLatch = new CountDownLatch(k);
+        final CountDownLatch mainLatch = new CountDownLatch(k);
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+
+        Assert.assertEquals(true, instances[0].getConfig().getTopicConfig("default").isGlobalOrderingEnabled());
+
+        for (int i = 0; i < k; i++) {
+            final HazelcastInstance hazelcastInstance = instances[i];
+            new Thread(new Runnable() {
+
+                public void run() {
+                    ITopic<Long> topic = hazelcastInstance.getTopic("first");
+                    final long threadId = Thread.currentThread().getId();
+                    topic.addMessageListener(new MessageListener<Long>() {
+
+                        public void onMessage(Message<Long> message) {
+                            String str = stringMap.get(threadId) + message.getMessageObject().toString();
+                            stringMap.put(threadId, str);
+                        }
+                    });
+                    countDownLatch.countDown();
+                    try {
+                        countDownLatch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    for (int j = 0; j < 20; j++) {
+                        if (threadId % 2 == 0)
+                            topic.publish((long) j);
+                        else
+                            topic.publish(Long.valueOf(-1));
+                    }
+                    mainLatch.countDown();
+                }
+            }, String.valueOf(i)).start();
+
+        }
+        mainLatch.await();
+        Thread.sleep(500);
+
+        String ref = stringMap.values().iterator().next();
+        for (String s : stringMap.values()) {
+            if (!ref.equals(s)) {
+                assertFalse("no total order", true);
+                return;
+            }
+        }
+        assertTrue("total order", true);
+    }
+
+    @Test
+    public void testName() {
+        HazelcastInstance hClient = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        ITopic<?> topic = hClient.getTopic("testName");
+        Assert.assertEquals("testName", topic.getName());
+    }
+
+    @Test
+    public void addMessageListener() throws InterruptedException {
+        HazelcastInstance hClient = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        ITopic<String> topic = hClient.getTopic("addMessageListener");
+        final CountDownLatch latch = new CountDownLatch(1);
+        final String message = "Hazelcast Rocks!";
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().equals(message)) {
+                    latch.countDown();
+                }
+            }
+        });
+        topic.publish(message);
+        assertTrue(latch.await(10000, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void addTwoMessageListener() throws InterruptedException {
+        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        ITopic<String> topic = hazelcastInstance.getTopic("addTwoMessageListener");
+        final CountDownLatch latch = new CountDownLatch(2);
+        final String message = "Hazelcast Rocks!";
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().equals(message)) {
+                    latch.countDown();
+                }
+            }
+        });
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().equals(message)) {
+                    latch.countDown();
+                }
+            }
+        });
+        topic.publish(message);
+        assertTrue(latch.await(10000, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void removeMessageListener() throws InterruptedException {
+        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
+        final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch cp = new CountDownLatch(1);
+
+        MessageListener<String> messageListener = new MessageListener<String>() {
+            public void onMessage(Message<String> msg) {
+
+                System.out.println("Received " + msg + " at " + this);
+                latch.countDown();
+                cp.countDown();
+
+            }
+        };
+        final String message = "message_" + messageListener.hashCode() + "_";
+        topic.addMessageListener(messageListener);
+        topic.publish(message + "1");
+        cp.await();
+        topic.removeMessageListener(messageListener);
+        topic.publish(message + "2");
+        Thread.sleep(50);
+        Assert.assertEquals(1, latch.getCount());
+        hazelcastInstance.getLifecycleService().shutdown();
+    }
+
+    @Test
+    public void test10TimesRemoveMessageListener() throws InterruptedException {
+        ExecutorService ex = Executors.newFixedThreadPool(1);
+        final CountDownLatch latch = new CountDownLatch(10);
+        ex.execute(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    try {
+                        removeMessageListener();
+                        latch.countDown();
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            }
+        });
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testPerformance() throws InterruptedException {
+        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        long begin = Clock.currentTimeMillis();
+        int count = 10000;
+        final ITopic topic = hazelcastInstance.getTopic("perf");
+        ExecutorService ex = Executors.newFixedThreadPool(10);
+        final CountDownLatch l = new CountDownLatch(count);
+        for (int i = 0; i < count; i++) {
+            ex.submit(new Runnable() {
+                public void run() {
+                    topic.publish("my object");
+                    l.countDown();
+                }
+            });
+        }
+        assertTrue(l.await(20, TimeUnit.SECONDS));
+        long time = Clock.currentTimeMillis() - begin;
+        System.out.println("per second: " + count * 1000 / time);
+        hazelcastInstance.getLifecycleService().shutdown();
+    }
+
+    @Test
+    public void add2listenerAndRemoveOne() throws InterruptedException {
+        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
+        final CountDownLatch latch = new CountDownLatch(4);
+        final CountDownLatch cp = new CountDownLatch(2);
+        final String message = "Hazelcast Rocks!";
+        MessageListener<String> messageListener1 = new MessageListener<String>() {
+            public void onMessage(Message<String> msg) {
+                if (msg.getMessageObject().startsWith(message)) {
+                    latch.countDown();
+                    cp.countDown();
+                }
+            }
+        };
+        MessageListener<String> messageListener2 = new
+
+                MessageListener<String>() {
+                    public void onMessage(Message<String> msg) {
+                        if (msg.getMessageObject().startsWith(message)) {
+                            latch.countDown();
+                            cp.countDown();
+                        }
+                    }
+                };
+        topic.addMessageListener(messageListener1);
+        topic.addMessageListener(messageListener2);
+        topic.publish(message + "1");
+        Thread.sleep(50);
+        topic.removeMessageListener(messageListener1);
+        cp.await();
+        topic.publish(message + "2");
+        Thread.sleep(100);
+        Assert.assertEquals(1, latch.getCount());
+    }
+
+    /**
+     * Testing if topic can properly listen messages
+     * and if topic has any issue after a shutdown.
+     */
+    @Test
+    public void testTopicCluster() {
+        final Config cfg = new Config();
+        HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, 2);
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+        String topicName = "TestMessages";
+        ITopic<String> topic1 = h1.getTopic(topicName);
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        topic1.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message msg) {
+                assertEquals("Test1", msg.getMessageObject());
+                latch1.countDown();
+            }
+        });
+        ITopic<String> topic2 = h2.getTopic(topicName);
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        topic2.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message msg) {
+                assertEquals("Test1", msg.getMessageObject());
+                latch2.countDown();
+            }
+        });
+        topic1.publish("Test1");
+        h1.getLifecycleService().shutdown();
+        topic2.publish("Test1");
+        try {
+            assertTrue(latch1.await(5, TimeUnit.SECONDS));
+            assertTrue(latch2.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException ignored) {
+        }
+
+    }
+
+    @Test
+    public void testTopicStats() throws InterruptedException {
+        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        ITopic<String> topic = hazelcastInstance.getTopic("testTopicStats");
+
+
+        final CountDownLatch latch1 = new CountDownLatch(1000);
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message msg) {
+                latch1.countDown();
+            }
+        });
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        topic.addMessageListener(new MessageListener<String>() {
+            public void onMessage(Message msg) {
+                latch2.countDown();
+            }
+        });
+
+        for (int i = 0; i < 1000; i++) {
+            topic.publish("sancar");
+        }
+
+        latch1.await();
+        latch2.await();
+        LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
+        Assert.assertEquals(1000, stats.getTotalPublishes());
+        Assert.assertEquals(2000, stats.getTotalReceivedMessages());
+        Assert.assertTrue(stats.getCreationTime() < stats.getLastPublishTime());
+        Assert.assertEquals(1000, stats.getOperationStats().getNumberOfPublishes());
+        Assert.assertEquals(2000, stats.getOperationStats().getNumberOfReceivedMessages());
+
+
+    }
+
+}

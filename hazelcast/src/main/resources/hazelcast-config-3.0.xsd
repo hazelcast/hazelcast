@@ -410,7 +410,7 @@
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:integer">
-                    <xs:attribute name="policy" use="optional" default="PER_JVM"/>
+                    <xs:attribute name="policy" use="optional" default="PER_NODE"/>
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>
@@ -980,13 +980,6 @@
     <xs:element name="services">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="map-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="queue-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="topic-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="collection-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="atomiclong-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="countdownlatch-service" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="semaphore-service" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="service" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
             <xs:attribute name="enable-defaults" type="xs:boolean" default="true" />
@@ -1002,14 +995,6 @@
             <xs:attribute name="enabled" type="xs:boolean" default="true" />
         </xs:complexType>
     </xs:element>
-    <xs:element name="map-service" />
-    <xs:element name="queue-service" />
-    <xs:element name="topic-service" />
-    <xs:element name="collection-service" />
-    <xs:element name="atomiclong-service" />
-    <xs:element name="countdownlatch-service" />
-    <xs:element name="semaphore-service" />
-
     <xs:element name="security">
         <xs:complexType>
             <xs:sequence>

@@ -100,6 +100,4 @@ public interface IAtomicLong extends DistributedObject {
      */
     public void set(long newValue);
 
-
-    LocalAtomicLongStats getLocalAtomicLongStats();
 }

@@ -28,13 +28,14 @@ import com.hazelcast.spi.ClientProtocolService;
 import com.hazelcast.spi.Connection;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.FastExecutor;
-import com.hazelcast.util.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.FastExecutor;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class ClientCommandService implements ConnectionListener {
@@ -52,7 +53,8 @@ public class ClientCommandService implements ConnectionListener {
         logger = node.getLogger(ClientCommandService.class.getName());
         final String poolNamePrefix = node.getThreadPoolNamePrefix("client");
         executor = new FastExecutor(3, 100, 1 << 16, 250L, poolNamePrefix,
-                new PoolExecutorThreadFactory(node.threadGroup, poolNamePrefix, node.getConfig().getClassLoader()), false);
+                new PoolExecutorThreadFactory(node.threadGroup, poolNamePrefix, node.getConfig().getClassLoader()),
+                TimeUnit.MINUTES.toMillis(3), true, false);
         node.getConnectionManager().addConnectionListener(this);
         services = new ConcurrentHashMap<Command, ClientCommandHandler>();
         unknownCommandHandler = new ClientCommandHandler() {

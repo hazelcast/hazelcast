@@ -49,7 +49,8 @@ public class Sample implements MessageListener<MyEvent> {
         topic.publish (new MyEvent());
     }
 
-    public void onMessage(MyEvent myEvent) {
+   public void onMessage(Message<MyEvent> message) {
+        MyEvent myEvent = message.getMessageObject();
         System.out.println("Message received = " + myEvent.toString());
         if (myEvent.isHeavyweight()) {
             messageExecutor.execute(new Runnable() {

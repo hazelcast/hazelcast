@@ -22,33 +22,31 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class ExecutorOperationsCounter extends OperationsCounterSupport<LocalExecutorOperationStats> {
 
-    private final static LocalExecutorOperationStats empty = new LocalExecutorOperationStatsImpl("");
+    private final static LocalExecutorOperationStats empty = new LocalExecutorOperationStatsImpl();
 
     private final OperationCounter executionStarts = new OperationCounter();
     private final OperationCounter executionEnds = new OperationCounter();
     private final AtomicLong pending = new AtomicLong(0);
-    private final AtomicLong maxCompletionTime = new AtomicLong(Long.MIN_VALUE);
-    private final AtomicLong minCompletionTime = new AtomicLong(Long.MAX_VALUE);
-    private final String executorName;
+    private final AtomicLong maxExecutionTime = new AtomicLong(Long.MIN_VALUE);
+    private final AtomicLong minExecutionTime = new AtomicLong(Long.MAX_VALUE);
 
-    public ExecutorOperationsCounter(long interval, String name) {
+    public ExecutorOperationsCounter(long interval) {
         super(interval);
-        executorName = name;
     }
 
     ExecutorOperationsCounter getAndReset() {
         OperationCounter executionNow = executionStarts.copyAndReset();
         OperationCounter waitNow = executionEnds.copyAndReset();
         long pendingNow = pending.get();
-        long maxCompletion = maxCompletionTime.getAndSet(Long.MIN_VALUE);
-        long minCompletion = minCompletionTime.getAndSet(Long.MAX_VALUE);
+        long maxCompletion = maxExecutionTime.getAndSet(Long.MIN_VALUE);
+        long minCompletion = minExecutionTime.getAndSet(Long.MAX_VALUE);
 
-        ExecutorOperationsCounter newOne = new ExecutorOperationsCounter(interval, executorName);
+        ExecutorOperationsCounter newOne = new ExecutorOperationsCounter(interval);
         newOne.executionStarts.set(executionNow);
         newOne.executionEnds.set(waitNow);
         newOne.pending.set(pendingNow);
-        newOne.maxCompletionTime.set(maxCompletion);
-        newOne.minCompletionTime.set(minCompletion);
+        newOne.maxExecutionTime.set(maxCompletion);
+        newOne.minExecutionTime.set(minCompletion);
 
         newOne.startTime = this.startTime;
         newOne.endTime = now();
@@ -58,10 +56,10 @@ public class ExecutorOperationsCounter extends OperationsCounterSupport<LocalExe
 
     public void finishExecution(long elapsed) {
         executionEnds.count(elapsed);
-        if(elapsed > maxCompletionTime.get())
-            maxCompletionTime.set(elapsed);
-        if(elapsed < minCompletionTime.get())
-            minCompletionTime.set(elapsed);
+        if (elapsed > maxExecutionTime.get())
+            maxExecutionTime.set(elapsed);
+        if (elapsed < minExecutionTime.get())
+            minExecutionTime.set(elapsed);
         publishSubResult();
     }
 
@@ -77,7 +75,7 @@ public class ExecutorOperationsCounter extends OperationsCounterSupport<LocalExe
     }
 
     LocalExecutorOperationStats aggregateSubCounterStats() {
-        LocalExecutorOperationStatsImpl stats = new LocalExecutorOperationStatsImpl(executorName);
+        LocalExecutorOperationStatsImpl stats = new LocalExecutorOperationStatsImpl();
         stats.periodStart = ((ExecutorOperationsCounter) listOfSubCounters.get(0)).startTime;
         long max = Long.MIN_VALUE;
         long min = Long.MAX_VALUE;
@@ -85,36 +83,36 @@ public class ExecutorOperationsCounter extends OperationsCounterSupport<LocalExe
         for (int i = 0; i < listOfSubCounters.size(); i++) {
             ExecutorOperationsCounter sub = (ExecutorOperationsCounter) listOfSubCounters.get(i);
 
-            if(sub.minCompletionTime.get() < min)
-                min = sub.minCompletionTime.get();
+            if (sub.minExecutionTime.get() < min)
+                min = sub.minExecutionTime.get();
 
-            if(sub.maxCompletionTime.get() > max)
-                max = sub.maxCompletionTime.get();
+            if (sub.maxExecutionTime.get() > max)
+                max = sub.maxExecutionTime.get();
 
             stats.started.addAndGet(sub.executionStarts.count.get());
             stats.startLatency.addAndGet(sub.executionStarts.totalLatency.get());
 
             stats.completed.addAndGet(sub.executionEnds.count.get());
-            stats.completionTime.addAndGet(sub.executionEnds.totalLatency.get());
+            stats.totalExecutionTime.addAndGet(sub.executionEnds.totalLatency.get());
             stats.periodEnd = sub.endTime;
         }
-        stats.maxCompletionTime.set(max);
-        stats.minCompletionTime.set(min);
+        stats.maxExecutionTime.set(max);
+        stats.minExecutionTime.set(min);
         stats.pending.set(((ExecutorOperationsCounter) listOfSubCounters.get(listOfSubCounters.size() - 1)).pending.get());
         return stats;
     }
 
     LocalExecutorOperationStats getThis() {
-        LocalExecutorOperationStatsImpl stats = new LocalExecutorOperationStatsImpl(executorName);
+        LocalExecutorOperationStatsImpl stats = new LocalExecutorOperationStatsImpl();
         stats.periodStart = this.startTime;
         stats.started.set(this.executionStarts.count.get());
         stats.startLatency.set(this.executionStarts.totalLatency.get());
 
         stats.completed.set(this.executionEnds.count.get());
-        stats.completionTime.set(this.executionEnds.totalLatency.get());
+        stats.totalExecutionTime.set(this.executionEnds.totalLatency.get());
 
-        stats.maxCompletionTime.set(this.maxCompletionTime.get());
-        stats.minCompletionTime.set(this.minCompletionTime.get());
+        stats.maxExecutionTime.set(this.maxExecutionTime.get());
+        stats.minExecutionTime.set(this.minExecutionTime.get());
         stats.periodEnd = now();
         return stats;
     }

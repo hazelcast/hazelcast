@@ -61,7 +61,7 @@ public class QueueStoreTest {
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
         StaticNodeFactory staticNodeFactory = new StaticNodeFactory(1);
-        HazelcastInstance instance = staticNodeFactory.newInstance(config);
+        HazelcastInstance instance = staticNodeFactory.newHazelcastInstance(config);
 
         for (int i = 0; i < maxSize * 2; i++) {
             queueStore.store.put((long) i, i);
@@ -85,7 +85,7 @@ public class QueueStoreTest {
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
         StaticNodeFactory staticNodeFactory = new StaticNodeFactory(2);
-        HazelcastInstance instance = staticNodeFactory.newInstance(config);
+        HazelcastInstance instance = staticNodeFactory.newHazelcastInstance(config);
 
         for (int i = 0; i < maxSize / 2; i++) {
             queueStore.store.put((long) i, i);
@@ -98,7 +98,7 @@ public class QueueStoreTest {
         }
 
         instance.getLifecycleService().shutdown();
-        HazelcastInstance instance2 = staticNodeFactory.newInstance(config);
+        HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);
 
         IQueue<Object> queue2 = instance2.getQueue("testQueueMapStore");
         Assert.assertEquals(maxSize,queue2.size());

@@ -41,12 +41,10 @@ public class AtomicLongMigrationOperation extends AbstractOperation {
         this.migrationData = migrationData;
     }
 
-    @Override
     public void run() throws Exception {
-
         AtomicLongService atomicLongService = getService();
         for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
-            atomicLongService.setNumber(longEntry.getKey(), longEntry.getValue());
+            atomicLongService.getNumber(longEntry.getKey()).set(longEntry.getValue());
         }
 
     }

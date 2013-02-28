@@ -31,11 +31,8 @@ import java.util.concurrent.Future;
  */
 public class TotalOrderedTopicProxy extends TopicProxy {
 
-    private final int partitionId;
-
-    public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine) {
-        super(name, nodeEngine);
-        partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
+    public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
+        super(name, nodeEngine, service);
     }
 
     @Override
@@ -43,7 +40,7 @@ public class TotalOrderedTopicProxy extends TopicProxy {
         try {
             final NodeEngine nodeEngine = getNodeEngine();
             PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
-            getTopicOperationCounter().incrementPublishes();
+            final int partitionId = nodeEngine.getPartitionService().getPartitionId(getName());
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(TopicService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             f.get();

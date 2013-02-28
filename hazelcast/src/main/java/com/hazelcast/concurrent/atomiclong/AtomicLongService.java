@@ -16,11 +16,13 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
+import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,30 +30,27 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 // author: sancar - 21.12.2012
 public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
-
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, Long> numbers = new ConcurrentHashMap<String, Long>();
+    private final ConcurrentMap<String, AtomicLong> numbers = new ConcurrentHashMap<String, AtomicLong>();
+
+    private final ConcurrencyUtil.ConstructorFunction<String, AtomicLong> atomicLongConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, AtomicLong>() {
+        public AtomicLong createNew(String key) {
+            return new AtomicLong(0L);
+        }
+    };
 
     public AtomicLongService() {
     }
 
-    public long getNumber(String name) {
-        Long value = numbers.get(name);
-        if (value == null) {
-            value = 0L;
-            numbers.put(name, value);
-        }
-        return value;
-    }
-
-    public void setNumber(String name, long newValue) {
-        numbers.put(name, newValue);
+    public AtomicLong getNumber(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(numbers, name, atomicLongConstructorFunction);
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -97,7 +96,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         final int partitionId = migrationServiceEvent.getPartitionId();
         for (String name : numbers.keySet()) {
             if (partitionId == nodeEngine.getPartitionService().getPartitionId(name)) {
-                data.put(name, numbers.get(name));
+                data.put(name, numbers.get(name).get());
             }
         }
         return data.isEmpty() ? null : new AtomicLongMigrationOperation(data);
@@ -128,11 +127,11 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     }
 
     public void removeNumber(int partitionId) {
-        final Iterator<String> iter = numbers.keySet().iterator();
-        while (iter.hasNext()) {
-            String name = iter.next();
+        final Iterator<String> iterator = numbers.keySet().iterator();
+        while (iterator.hasNext()) {
+            String name = iterator.next();
             if (nodeEngine.getPartitionService().getPartitionId(name) == partitionId) {
-                iter.remove();
+                iterator.remove();
             }
         }
     }

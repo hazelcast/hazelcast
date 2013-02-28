@@ -27,7 +27,6 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
 
     private long expect;
     private long update;
-
     private boolean returnValue = false;
 
     public CompareAndSetOperation() {
@@ -42,18 +41,8 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        if (getNumber() == expect) {
-            setNumber(update);
-            returnValue = true;
-        } else {
-            shouldBackup = false;
-        }
-    }
-
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
+        returnValue = getNumber().compareAndSet(expect, update);
+        shouldBackup = !returnValue;
     }
 
     @Override

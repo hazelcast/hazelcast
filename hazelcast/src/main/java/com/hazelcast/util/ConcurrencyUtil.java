@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ConcurrencyUtil {
 
 
-    public static <K,V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, Object mutex, ConstructorFunction<K,V> func) {
+    public static <K,V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, final Object mutex, ConstructorFunction<K,V> func) {
         if (mutex == null) {
             throw new NullPointerException();
         }

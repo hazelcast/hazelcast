@@ -36,7 +36,7 @@ public class MemberStateImpl implements MemberState {
 
     Address address = new Address();
     MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
-    Map<String,Long> runtimeProps = new HashMap<String, Long>();
+    Map<String, Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalMapStatsImpl> multiMapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
@@ -45,8 +45,8 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
     Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
     List<Integer> lsPartitions = new ArrayList<Integer>(271);
-    Map<String, LocalExecutorOperationStatsImpl> internalThroughputStats = new HashMap<String, LocalExecutorOperationStatsImpl>();
-    Map<String, LocalExecutorOperationStatsImpl> throughputStats = new HashMap<String, LocalExecutorOperationStatsImpl>();
+    Map<String, LocalExecutorStatsImpl> internalThroughputStats = new HashMap<String, LocalExecutorStatsImpl>();
+    Map<String, LocalExecutorStatsImpl> throughputStats = new HashMap<String, LocalExecutorStatsImpl>();
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
@@ -92,12 +92,12 @@ public class MemberStateImpl implements MemberState {
             out.writeLong(entry.getValue());
         }
         out.writeInt(internalThroughputStats.size());
-        for (Map.Entry<String, LocalExecutorOperationStatsImpl> entry : internalThroughputStats.entrySet()) {
+        for (Map.Entry<String, LocalExecutorStatsImpl> entry : internalThroughputStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
         out.writeInt(throughputStats.size());
-        for (Map.Entry<String, LocalExecutorOperationStatsImpl> entry : throughputStats.entrySet()) {
+        for (Map.Entry<String, LocalExecutorStatsImpl> entry : throughputStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
@@ -153,13 +153,13 @@ public class MemberStateImpl implements MemberState {
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
-            (impl = new LocalExecutorOperationStatsImpl(name)).readData(in);
-            internalThroughputStats.put(name, (LocalExecutorOperationStatsImpl) impl);
+            (impl = new LocalExecutorStatsImpl()).readData(in);
+            internalThroughputStats.put(name, (LocalExecutorStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
-            (impl = new LocalExecutorOperationStatsImpl(name)).readData(in);
-            throughputStats.put(name, (LocalExecutorOperationStatsImpl) impl);
+            (impl = new LocalExecutorStatsImpl()).readData(in);
+            throughputStats.put(name, (LocalExecutorStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             lsPartitions.add(in.readInt());
@@ -221,11 +221,11 @@ public class MemberStateImpl implements MemberState {
         return multiMapStats.get(mapName);
     }
 
-    public LocalExecutorOperationStats getInternalExecutorStats(String name) {
+    public LocalExecutorStats getInternalExecutorStats(String name) {
         return internalThroughputStats.get(name);
     }
 
-    public LocalExecutorOperationStats getExternalExecutorStats(String name) {
+    public LocalExecutorStats getExternalExecutorStats(String name) {
         return throughputStats.get(name);
     }
 
@@ -277,11 +277,11 @@ public class MemberStateImpl implements MemberState {
         topicStats.put(name, localTopicStats);
     }
 
-    public void putInternalThroughputStats(Map<String, LocalExecutorOperationStatsImpl> internalThroughputStats) {
+    public void putInternalThroughputStats(Map<String, LocalExecutorStatsImpl> internalThroughputStats) {
         this.internalThroughputStats.putAll(internalThroughputStats);
     }
 
-    public void putThroughputStats(Map<String, LocalExecutorOperationStatsImpl> throughputStats) {
+    public void putThroughputStats(Map<String, LocalExecutorStatsImpl> throughputStats) {
         this.throughputStats.putAll(throughputStats);
     }
 
