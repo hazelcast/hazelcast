@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.test;
+package com.hazelcast.topic;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;

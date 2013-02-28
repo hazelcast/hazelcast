@@ -241,20 +241,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     }
                 }
                 servicesConfig.addServiceConfig(serviceConfig);
-            } else if ("map-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new MapServiceConfig().setEnabled(true));
-            } else if ("queue-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new QueueServiceConfig().setEnabled(true));
-            } else if ("topic-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new TopicServiceConfig().setEnabled(true));
-            } else if ("collection-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new CollectionServiceConfig().setEnabled(true));
-            } else if ("atomiclong-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new AtomicLongServiceConfig().setEnabled(true));
-            } else if ("semaphore-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new SemaphoreServiceConfig().setEnabled(true));
-            } else if ("countdownlatch-service".equals(nodeName)) {
-                servicesConfig.addServiceConfig(new CountDownLatchServiceConfig().setEnabled(true));
             }
         }
     }

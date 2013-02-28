@@ -81,8 +81,4 @@ public class ServiceConfig {
         this.properties = properties;
         return this;
     }
-
-    public boolean isDefaultService() {
-        return false;
-    }
 }

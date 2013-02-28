@@ -86,20 +86,10 @@ class ServiceManager {
 
             final Collection<ServiceConfig> serviceConfigs = servicesConfigConfig.getServiceConfigs();
             for (ServiceConfig serviceConfig : serviceConfigs) {
-                Object service = null;
                 if (serviceConfig.isEnabled()) {
-                    if (serviceConfig.isDefaultService()) {
-                        if (servicesConfigConfig.isEnableDefaults()) {
-                            // already registered...
-                            continue;
-                        }
+                    Object service = serviceConfig.getServiceImpl();
+                    if (service == null) {
                         service = createServiceObject(serviceConfig.getClassName());
-                    }
-                    else {
-                        service = serviceConfig.getServiceImpl();
-                        if (service == null) {
-                            service = createServiceObject(serviceConfig.getClassName());
-                        }
                     }
                     if (service != null) {
                         registerService(serviceConfig.getName(), service, serviceConfig.getProperties());

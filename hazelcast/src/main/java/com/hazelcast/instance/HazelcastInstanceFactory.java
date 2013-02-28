@@ -24,9 +24,7 @@ import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -128,7 +126,12 @@ public class HazelcastInstanceFactory {
     }
 
     public static void shutdownAll() {
-        Collection<HazelcastInstanceProxy> instances = INSTANCE_MAP.values();
+        final List<HazelcastInstanceProxy> instances = new ArrayList<HazelcastInstanceProxy>(INSTANCE_MAP.values());
+        Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
+            public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
         for (HazelcastInstanceProxy proxy : instances) {
             proxy.getLifecycleService().shutdown();
             proxy.original = null;
