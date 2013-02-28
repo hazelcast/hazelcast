@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.test;
+package com.hazelcast.map.old;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -26,7 +26,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import sun.management.ThreadInfoCompositeData;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

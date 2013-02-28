@@ -14,31 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.test;
+package com.hazelcast.map.old;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-public class MapBackupTest extends BaseTest {
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+public class MapDeathTest  {
 
     @Test
-    public void testMapPutBackups() throws InterruptedException {
-        IMap map = getInstance(0).getMap("testMapBackups");
+    public void testMapReleaseLocks() throws InterruptedException {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        IMap map = instance1.getMap("testMapReleaseLocks");
         int size = 1000;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
+            map.lock(i);
         }
-        Thread.sleep(1000);
 
-        getInstance(1).getLifecycleService().shutdown();
-        Thread.sleep(2000);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i));
+            assertEquals(true, map.isLocked(i));
         }
-        assertEquals(map.size(), size);
+        Thread.sleep(100);
+        instance1.getLifecycleService().shutdown();
+        IMap map2 = instance2.getMap("testMapReleaseLocks");
+
+        Thread.sleep(3000);
+        for (int i = 0; i < size; i++) {
+            assertEquals(false, map2.isLocked(i));
+        }
+        assertEquals(map2.size(), size);
+        Hazelcast.shutdownAll();
     }
 
 }

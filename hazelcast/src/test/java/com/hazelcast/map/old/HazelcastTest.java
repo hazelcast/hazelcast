@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.test;
+package com.hazelcast.map.old;
 
 import com.hazelcast.core.*;
 import org.junit.*;
@@ -122,7 +122,6 @@ public class HazelcastTest extends BaseTest {
 
 
     @Test
-    @Ignore
     public void testGetInstances() {
         HazelcastInstance instance = getInstance();
         instance.getList("A");

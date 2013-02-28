@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.test;
+package com.hazelcast.map.old;
 
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.*;
 import com.hazelcast.query.Predicate;

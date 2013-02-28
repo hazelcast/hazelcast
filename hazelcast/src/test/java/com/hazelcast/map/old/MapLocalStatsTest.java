@@ -14,43 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.test;
+package com.hazelcast.map.old;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.monitor.LocalMapStats;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class MapDeathTest  {
+public class MapLocalStatsTest {
 
     @Test
-    public void testMapReleaseLocks() throws InterruptedException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        IMap map = instance1.getMap("testMapReleaseLocks");
-        int size = 1000;
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
+    public void test() throws InterruptedException {
+
+        Config cfg = new Config();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+        ObjectMapProxy map = (ObjectMapProxy) instance.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i,i);
+        }
+        for (int i = 0; i < 20; i++) {
+            map.get(i);
+        }
+        for (int i = 0; i < 10; i++) {
             map.lock(i);
         }
 
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        LocalMapStats stats = map.getLocalMapStats();
 
-        for (int i = 0; i < size; i++) {
-            assertEquals(true, map.isLocked(i));
-        }
-        Thread.sleep(100);
-        instance1.getLifecycleService().shutdown();
-        IMap map2 = instance2.getMap("testMapReleaseLocks");
+        assertEquals(1000, stats.getOwnedEntryCount());
+        assertEquals(0, stats.getBackupEntryCount());
+        assertEquals(20, stats.getHits());
+        assertEquals(10, stats.getLockedEntryCount());
 
-        Thread.sleep(3000);
-        for (int i = 0; i < size; i++) {
-            assertEquals(false, map2.isLocked(i));
-        }
-        assertEquals(map2.size(), size);
         Hazelcast.shutdownAll();
     }
 

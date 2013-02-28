@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.test;
+package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -23,11 +23,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -38,12 +39,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 
-/**
- * Run these tests with
- * -Xms512m -Xmx512m
- */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class ClusterBackupTest {
+public class BackupTest {
 
     @After
     public void cleanup() throws Exception {
@@ -56,7 +52,8 @@ public class ClusterBackupTest {
     @Test
     public void testGracefulShutdown() throws Exception {
         int size = 100000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(5);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         IMap m1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
             m1.put(i, i);

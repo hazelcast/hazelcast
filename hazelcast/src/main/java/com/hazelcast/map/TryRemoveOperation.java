@@ -40,7 +40,8 @@ public class TryRemoveOperation extends BaseRemoveOperation {
         if (prepareTransaction()) {
             return;
         }
-        successful = recordStore.tryRemove(dataKey);
+        dataOldValue = mapService.toData(recordStore.tryRemove(dataKey));
+        successful = dataOldValue != null;
     }
 
     public void afterRun() {

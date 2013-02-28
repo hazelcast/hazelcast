@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public interface RecordStore {
 
-    boolean tryRemove(Data dataKey);
+    Object tryRemove(Data dataKey);
 
     Object remove(Data dataKey);
 

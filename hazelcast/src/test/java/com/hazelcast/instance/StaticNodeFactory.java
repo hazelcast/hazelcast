@@ -37,7 +37,7 @@ public class StaticNodeFactory {
         registry = new StaticNodeRegistry(addresses);
     }
 
-    public HazelcastInstance newInstance(Config config) {
+    public HazelcastInstance newHazelcastInstance(Config config) {
         if (nodeIndex >= addresses.length) {
             throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
         }
