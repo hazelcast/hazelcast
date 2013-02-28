@@ -288,12 +288,6 @@ public class Node {
         logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
     }
 
-    public void checkNodeState() {
-        if (!isActive()) {
-            throw new IllegalStateException("Hazelcast Instance is not active!");
-        }
-    }
-
     public boolean joined() {
         return joined.get();
     }

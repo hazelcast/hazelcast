@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.old;
+package com.hazelcast.map.finalTest;
 
-
+import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.map.*;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.Clock;
@@ -30,10 +31,24 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-public class MapTest extends BaseTest {
+public class BasicTest {
+
+    static final Config cfg = new Config();
+    static final int instanceCount = 2;
+    static final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, instanceCount);
+    static final Random rand = new Random(Clock.currentTimeMillis());
+
+
+    private HazelcastInstance getInstance() {
+        return instances[rand.nextInt(instanceCount)];
+    }
 
     @Test
     public void testMapPutAndGet() {
@@ -108,13 +123,19 @@ public class MapTest extends BaseTest {
         final IMap<Object, Object> map = getInstance().getMap("testMapTryRemove");
         map.put("key1", "value1");
         map.lock("key1");
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final CountDownLatch latch3 = new CountDownLatch(1);
+        final AtomicReference firstObject = new AtomicReference();
+        final AtomicReference secondObject= new AtomicReference();
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    assertNull(map.tryRemove("key1", 1, TimeUnit.SECONDS));
-                    latch.await();
-                    assertEquals(map.tryRemove("key1", 1, TimeUnit.SECONDS), "value1");
+                    firstObject.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
+                    latch2.countDown();
+                    latch1.await();
+                    secondObject.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
+                    latch3.countDown();
                 } catch (Exception e) {
                     e.printStackTrace();
                     fail(e.getMessage());
@@ -122,9 +143,12 @@ public class MapTest extends BaseTest {
             }
         });
         thread.start();
-        Thread.sleep(2000);
+        latch2.await();
         map.unlock("key1");
-        latch.countDown();
+        latch1.countDown();
+        latch3.await();
+        assertNull(firstObject.get());
+        assertEquals("value1", secondObject.get());
         thread.join();
     }
 
@@ -208,9 +232,9 @@ public class MapTest extends BaseTest {
     @Test
     public void testMapContainsValue() {
         IMap map = getInstance().getMap("testMapContainsValue");
-        map.put(1,1);
-        map.put(2,2);
-        map.put(3,3);
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
         assertTrue(map.containsValue(1));
         assertFalse(map.containsValue(5));
         map.remove(1);
@@ -315,17 +339,24 @@ public class MapTest extends BaseTest {
         assertTrue(map.isLocked("key1"));
         assertFalse(map.isLocked("key2"));
 
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicBoolean b1 = new AtomicBoolean();
+        final AtomicBoolean b2 = new AtomicBoolean();
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    assertTrue(map.isLocked("key1"));
-                    assertFalse(map.isLocked("key2"));
+                    b1.set(map.isLocked("key1"));
+                    b2.set(map.isLocked("key2"));
+                    latch.countDown();
                 } catch (Exception e) {
                     fail(e.getMessage());
                 }
             }
         });
         thread.start();
+        latch.await();
+        assertTrue(b1.get());
+        assertFalse(b2.get());
         thread.join();
     }
 
@@ -385,11 +416,11 @@ public class MapTest extends BaseTest {
         assertTrue(entryView3.getCreationTime() >= time1 && entryView3.getCreationTime() <= time2);
 
         assertTrue(entryView1.getLastAccessTime() >= time1 && entryView1.getLastAccessTime() <= time2);
-        assertTrue(entryView2.getLastAccessTime() >= time3 );
+        assertTrue(entryView2.getLastAccessTime() >= time3);
         assertTrue(entryView3.getLastAccessTime() >= time2 && entryView3.getLastAccessTime() <= time3);
 
         assertTrue(entryView1.getLastUpdateTime() >= time1 && entryView1.getLastUpdateTime() <= time2);
-        assertTrue(entryView2.getLastUpdateTime() >= time3 );
+        assertTrue(entryView2.getLastUpdateTime() >= time3);
         assertTrue(entryView3.getLastUpdateTime() >= time1 && entryView3.getLastUpdateTime() <= time2);
 
     }
@@ -398,17 +429,30 @@ public class MapTest extends BaseTest {
     public void testMapTryPut() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapTryPut");
         map.lock("key1");
+        final AtomicInteger counter = new AtomicInteger(6);
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    assertFalse(map.tryPut("key1", "value1", 1, TimeUnit.SECONDS));
-                    assertNull(map.get("key1"));
+                    if (map.tryPut("key1", "value1", 100, TimeUnit.MILLISECONDS) == false)
+                        counter.decrementAndGet();
 
-                    assertTrue(map.tryPut("key", "value", 1, TimeUnit.SECONDS));
-                    assertEquals(map.get("key"), "value");
+                    if(map.get("key1") == null)
+                        counter.decrementAndGet();
 
-                    assertTrue(map.tryPut("key1", "value1", 30, TimeUnit.SECONDS));
-                    assertEquals(map.get("key1"), "value1");
+                    if(map.tryPut("key", "value", 100, TimeUnit.MILLISECONDS))
+                        counter.decrementAndGet();
+
+                    if(map.get("key").equals("value"))
+                        counter.decrementAndGet();
+
+                    if(map.tryPut("key1", "value1", 1, TimeUnit.SECONDS))
+                        counter.decrementAndGet();
+
+                    if(map.get("key1").equals("value1"))
+                        counter.decrementAndGet();
+
+                    latch.countDown();
                 } catch (Exception e) {
                     e.printStackTrace();
                     fail(e.getMessage());
@@ -416,8 +460,10 @@ public class MapTest extends BaseTest {
             }
         });
         thread.start();
-        Thread.sleep(3000);
+        Thread.sleep(300);
         map.unlock("key1");
+        latch.await();
+        assertEquals(counter.get(), 0);
         thread.join();
     }
 
@@ -773,6 +819,7 @@ public class MapTest extends BaseTest {
             entry.setValue((Integer) entry.getValue() + 1);
         }
     }
+
 
 
 }

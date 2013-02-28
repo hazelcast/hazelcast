@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore.test;
+package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,9 +26,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -47,7 +44,7 @@ public class SemaphoreTest {
 
         ISemaphore semaphore = instances[0].getSemaphore("test");
         int numberOfPermits = 20;
-        semaphore.init(numberOfPermits);
+        Assert.assertTrue(semaphore.init(numberOfPermits));
         try {
             for (int i = 0; i < numberOfPermits; i++) {
                 Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
@@ -63,7 +60,7 @@ public class SemaphoreTest {
             semaphore.release();
         }
 
-        semaphore.init(numberOfPermits);
+        Assert.assertTrue(semaphore.init(numberOfPermits));
         try {
             for (int i = 0; i < numberOfPermits; i += 5) {
                 Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
@@ -79,7 +76,7 @@ public class SemaphoreTest {
             semaphore.release(5);
         }
 
-        semaphore.init(numberOfPermits);
+        Assert.assertTrue(semaphore.init(numberOfPermits));
         try {
             semaphore.acquire(5);
         } catch (InterruptedException e) {
@@ -89,7 +86,7 @@ public class SemaphoreTest {
         Assert.assertEquals(drainedPermits, numberOfPermits - 5);
         Assert.assertEquals(semaphore.availablePermits(), 0);
 
-        semaphore.init(numberOfPermits);
+        Assert.assertTrue(semaphore.init(numberOfPermits));
         for (int i = 0; i < numberOfPermits; i += 5) {
             Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
             semaphore.reducePermits(5);
@@ -98,7 +95,7 @@ public class SemaphoreTest {
         Assert.assertEquals(semaphore.availablePermits(), 0);
 
 
-        semaphore.init(numberOfPermits);
+        Assert.assertTrue(semaphore.init(numberOfPermits));
         for (int i = 0; i < numberOfPermits; i++) {
             Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
             Assert.assertEquals(semaphore.tryAcquire(), true);
@@ -106,7 +103,7 @@ public class SemaphoreTest {
 
         Assert.assertEquals(semaphore.availablePermits(), 0);
 
-        semaphore.init(numberOfPermits);
+        Assert.assertTrue(semaphore.init(numberOfPermits));
         for (int i = 0; i < numberOfPermits; i += 5) {
             Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
             Assert.assertEquals(semaphore.tryAcquire(5), true);
@@ -118,33 +115,39 @@ public class SemaphoreTest {
 
     @Test
     public void testMutex() {
-        //Same test for java.util.concurrent.locks.Lock is right below this test (implemented to justify correctness of this test)
         final int k = 5;
         final Config config = new Config();
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
-        final Object sync = new Object();
-        final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(k);
+        final int loopCount = 1000;
 
-        instances[0].getSemaphore("test").init(1);
+        class Counter {
+            int count = 0;
+            void inc() {count++;}
+            int get() {return count;}
+        }
+        final Counter counter = new Counter();
+
+        Assert.assertTrue(instances[0].getSemaphore("test").init(1));
 
         for (int i = 0; i < k; i++) {
             final ISemaphore semaphore = instances[i].getSemaphore("test");
             new Thread() {
                 public void run() {
-                    for (int j = 0; j < 10000; j++) {
+                    for (int j = 0; j < loopCount; j++) {
                         try {
                             semaphore.acquire();
                         } catch (InterruptedException e) {
-                            System.out.println("Acquire : " + e.getMessage());
+                            System.err.println("Acquire : " + e.getMessage());
+                            return;
                         }
-                        synchronized (sync) {
-                            Assert.assertEquals(atomicBoolean.compareAndSet(false, true), true);
-                        }
-                        //CRITICAL SECTION
-                        synchronized (sync) {
+                        try {
+                            sleep((int) (Math.random() * 3));
+                            counter.inc();
+                        } catch (InterruptedException e) {
+                            return;
+                        } finally {
                             semaphore.release();
-                            atomicBoolean.set(false);
                         }
                     }
                     latch.countDown();
@@ -152,43 +155,11 @@ public class SemaphoreTest {
             }.start();
         }
         try {
-            Assert.assertEquals(latch.await(15, TimeUnit.SECONDS), true);
+            Assert.assertTrue(latch.await(60, TimeUnit.SECONDS));
+            Assert.assertEquals(loopCount * k, counter.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
-        }
-    }
-
-    @Test
-    public void testMutexLock() {
-        int k = 5;
-        final Object sync = new Object();
-        final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
-        final Lock lock = new ReentrantLock();
-        final CountDownLatch latch = new CountDownLatch(k);
-        for (int i = 0; i < k; i++) {
-            new Thread() {
-                public void run() {
-                    for (int j = 0; j < 10000; j++) {
-                        lock.lock();
-                        synchronized (sync) {
-                            Assert.assertEquals(atomicBoolean.compareAndSet(false, true), true);
-                        }
-                        //CRITICAL SECTION
-                        synchronized (sync) {
-                            lock.unlock();
-                            atomicBoolean.set(false);
-                        }
-                    }
-                    latch.countDown();
-                }
-            }.start();
-        }
-        try {
-            Assert.assertEquals(latch.await(15, TimeUnit.SECONDS), true);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            Assert.fail();
         }
     }
 
@@ -230,8 +201,8 @@ public class SemaphoreTest {
         final Config config = new Config();
         final StaticNodeFactory staticNodeFactory = new StaticNodeFactory(3);
 
-        final HazelcastInstance instance1 = staticNodeFactory.newInstance(config);
-        final HazelcastInstance instance2 = staticNodeFactory.newInstance(config);
+        final HazelcastInstance instance1 = staticNodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);
         final ISemaphore semaphore = instance1.getSemaphore("test");
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         semaphore.init(0);
@@ -250,7 +221,7 @@ public class SemaphoreTest {
 
         instance2.getLifecycleService().shutdown();
         semaphore.release();
-        HazelcastInstance instance3 = staticNodeFactory.newInstance(config);
+        HazelcastInstance instance3 = staticNodeFactory.newHazelcastInstance(config);
 
         ISemaphore semaphore1 = instance3.getSemaphore("test");
         semaphore1.release();

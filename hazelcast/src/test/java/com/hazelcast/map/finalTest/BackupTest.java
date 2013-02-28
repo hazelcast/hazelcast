@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.finalTest;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -26,7 +26,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.Test;
 
@@ -58,30 +57,31 @@ public class BackupTest {
         for (int i = 0; i < size; i++) {
             m1.put(i, i);
         }
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
         IMap m2 = h2.getMap("default");
         h1.getLifecycleService().shutdown();
         Thread.sleep(1000);
         assertEquals(size, m2.size());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(new Config());
         IMap m3 = h3.getMap("default");
         h2.getLifecycleService().shutdown();
         assertEquals(size, m3.size());
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(new Config());
         h4.getLifecycleService().shutdown();
         assertEquals(size, m3.size());
     }
 
     @Test
     public void testGracefulShutdown2() throws Exception {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
         int size = 10000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         IMap m1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
             m1.put(i, i);
         }
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(new Config());
         IMap m2 = h2.getMap("default");
         IMap m3 = h3.getMap("default");
         h1.getLifecycleService().shutdown();
@@ -93,12 +93,13 @@ public class BackupTest {
 
     @Test
     public void issue395BackupProblemWithBCount2() throws InterruptedException {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
         final int size = 1000;
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         config.getMapConfig("default").setBackupCount(2);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         for (int i = 0; i < size; i++) {
@@ -106,7 +107,7 @@ public class BackupTest {
         }
         assertEquals(size, getTotalOwnedEntryCount(map1, map2));
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         IMap map3 = h3.getMap("default");
         // we should wait here a little,
         // since copying 2nd backup is not immediate.
@@ -123,21 +124,22 @@ public class BackupTest {
      */
     @Test(timeout = 60000)
     public void testDataRecovery2() throws Exception {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
         final int size = 1000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
             map1.put(i, "value" + i);
         }
         assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
         sleep(3000);
         IMap map2 = h2.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, getTotalOwnedEntryCount(map1, map2));
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(new Config());
         IMap map3 = h3.getMap("default");
         sleep(3000);
         assertEquals(size, map1.size());
@@ -166,23 +168,25 @@ public class BackupTest {
      */
     @Test(timeout = 60000)
     public void testDataRecovery() throws Exception {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+
         final int size = 1000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         IMap map1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
             map1.put(i, "value" + i);
         }
         assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
         IMap map2 = h2.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(new Config());
         IMap map3 = h3.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
         assertEquals(size, map3.size());
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(new Config());
         IMap map4 = h4.getMap("default");
         assertEquals(size, map1.size());
         assertEquals(size, map2.size());
@@ -216,12 +220,14 @@ public class BackupTest {
 
     @Test(timeout = 160000)
     public void testBackupCountTwo() throws Exception {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+
         Config config = new Config();
         config.getProperties().put(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setBackupCount(2);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         int size = 10000;
@@ -230,12 +236,12 @@ public class BackupTest {
         }
         assertEquals(size, getTotalOwnedEntryCount(map1, map2));
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         IMap map3 = h3.getMap("default");
         Thread.sleep(3000);
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
         assertEquals(2 * size, getTotalBackupEntryCount(map1, map2, map3));
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
         IMap map4 = h4.getMap("default");
         Thread.sleep(3000);
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3, map4));
@@ -279,21 +285,23 @@ public class BackupTest {
      */
     @Test(timeout = 3600000)
     public void testDataRecoveryAndCorrectness() throws Exception {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+
         final int size = 10000;
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
         IMap map1 = h1.getMap("default");
         for (int i = 0; i < size; i++) {
             map1.put(i, "value" + i);
         }
         assertEquals(size, map1.size());
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
         IMap map2 = h2.getMap("default");
         for (int i = 0; i < 100; i++) {
             assertEquals(size, map1.size());
             assertEquals(size, map2.size());
         }
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(new Config());
         IMap map3 = h3.getMap("default");
         for (int i = 0; i < 100; i++) {
             assertEquals(size, map1.size());
@@ -301,7 +309,7 @@ public class BackupTest {
             assertEquals(size, map3.size());
         }
         assertEquals(3, h3.getCluster().getMembers().size());
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(new Config());
         IMap map4 = h4.getMap("default");
         for (int i = 0; i < 100; i++) {
             assertEquals(size, map1.size());
@@ -329,6 +337,8 @@ public class BackupTest {
 
     @Test
     public void testIssue177BackupCount() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(10);
+
         final Config config = new Config();
         config.setProperty("hazelcast.partition.migration.interval", "0");
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
@@ -347,7 +357,7 @@ public class BackupTest {
                 public void run() {
                     try {
                         Thread.sleep(3000 * finalI);
-                        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+                        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
                         instances.set(finalI, instance);
                         Thread.sleep(rand.nextInt(100));
                         if (finalI != 0) { // do not run on master node,
@@ -399,12 +409,14 @@ public class BackupTest {
      * Test for issue #259.
      */
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+
         final Config config = new Config();
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
         final String name = "test";
 
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
         final IMap<Object, Object> map = hz2.getMap(name);
 
         final int size = 100000;
@@ -452,12 +464,14 @@ public class BackupTest {
      * Test for issue #259.
      */
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+
         final Config config = new Config();
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
         final String name = "test";
 
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
         final IMap<Object, Object> map = hz2.getMap(name);
 
         final int size = 100000;

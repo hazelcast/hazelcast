@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.atomiclong;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -44,7 +44,7 @@ public class AtomicLongTest {
 
     @Test
     public void testSimpleAtomicLong() {
-        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newInstance(new Config());
+        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
         IAtomicLong an = hazelcastInstance.getAtomicLong("testAtomicLong");
         assertEquals(0, an.get());
         assertEquals(-1, an.decrementAndGet());
@@ -100,14 +100,14 @@ public class AtomicLongTest {
         int k = 4;
         StaticNodeFactory nodeFactory = new StaticNodeFactory(k + 1);
         Config config = new Config();
-        HazelcastInstance instance = nodeFactory.newInstance(config);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         String name = "testAtomicLongFailure";
         IAtomicLong atomicLong = instance.getAtomicLong(name);
 
         atomicLong.set(100);
 
         for (int i = 0; i < k; i++) {
-            HazelcastInstance newInstance = nodeFactory.newInstance(config);
+            HazelcastInstance newInstance = nodeFactory.newHazelcastInstance(config);
             IAtomicLong newAtomicLong = newInstance.getAtomicLong(name);
             Assert.assertEquals((long) 100 + i, newAtomicLong.get());
             newAtomicLong.incrementAndGet();
@@ -122,7 +122,7 @@ public class AtomicLongTest {
         int parallel = 2;
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(total + 1);
         final Config config = new Config();
-        HazelcastInstance instance = nodeFactory.newInstance(config);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         final String name = "testAtomicLongSpawnNodeInParallel";
         IAtomicLong atomicLong = instance.getAtomicLong(name);
 
@@ -135,7 +135,7 @@ public class AtomicLongTest {
                 final int id = j;
                 new Thread() {
                     public void run() {
-                        instances[id] = nodeFactory.newInstance(config);
+                        instances[id] = nodeFactory.newHazelcastInstance(config);
                         instances[id].getAtomicLong(name).incrementAndGet();
                         countDownLatch.countDown();
                     }

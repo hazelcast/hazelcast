@@ -350,26 +350,6 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
-    /**
-     * @return the maxSize
-     * @deprecated use MaxSizeConfig.getSize
-     */
-    public int getMaxSize() {
-        return maxSizeConfig.getSize();
-    }
-
-    /**
-     * @param maxSize the maxSize to set
-     * @deprecated use MaxSizeConfig.setSize
-     */
-    public MapConfig setMaxSize(final int maxSize) {
-        if (maxSize < 0) {
-            throw new IllegalArgumentException("map max size must be greater than 0");
-        }
-        this.maxSizeConfig.setSize(maxSize);
-        return this;
-    }
-
     public MaxSizeConfig getMaxSizeConfig() {
         return maxSizeConfig;
     }

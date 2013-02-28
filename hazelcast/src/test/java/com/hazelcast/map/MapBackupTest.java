@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.old;
+package com.hazelcast.map;
 
 import com.hazelcast.core.IMap;
 import org.junit.Test;

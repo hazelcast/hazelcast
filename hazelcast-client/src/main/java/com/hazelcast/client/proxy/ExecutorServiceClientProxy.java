@@ -22,6 +22,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.RunnableAdapter;
+import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
@@ -201,6 +202,10 @@ public class ExecutorServiceClientProxy implements IExecutorService {
 
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
         submitToMembers(task, client.getCluster().getMembers(), callback);
+    }
+
+    public LocalExecutorStats getLocalExecutorStats() {
+        return null;
     }
 
     public Object getId() {

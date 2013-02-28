@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.old;
+package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -111,7 +111,7 @@ public class SimpleLocalMapTest {
         Config cfg = new Config();
         cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.DATA);
         for (int i = 0; i < instanceCount; i++) {
-            SimpleLocalMapTest test = new SimpleLocalMapTest(factory.newInstance(cfg), threadCount, entryCount, valueSize,
+            SimpleLocalMapTest test = new SimpleLocalMapTest(factory.newHazelcastInstance(cfg), threadCount, entryCount, valueSize,
                     getPercentage, putPercentage, load);
             test.start();
         }
