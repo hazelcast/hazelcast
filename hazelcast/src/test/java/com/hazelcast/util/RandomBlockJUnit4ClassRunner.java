@@ -27,6 +27,7 @@ import org.junit.runners.model.InitializationError;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -47,6 +48,11 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        Random rand = new Random();
+        int x1 = rand.nextInt(255);
+        int x2 = rand.nextInt(255);
+        int x3 = rand.nextInt(255);
+        System.setProperty("hazelcast.multicast.group", "224." + x1 + "." + x2 + "." + x3);
     }
 
     final static String indexStr = System.getProperty("hazelcast.test.index");

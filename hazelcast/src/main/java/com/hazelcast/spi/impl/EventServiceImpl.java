@@ -437,7 +437,10 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
 
         public void run() {
-            EventPublishingService service = nodeEngine.getService(serviceName);
+            final EventPublishingService service = nodeEngine.getService(serviceName);
+            if (service == null && nodeEngine.isActive()) {
+                throw new IllegalArgumentException("Service[" + serviceName + "] could not be found!");
+            }
             service.dispatchEvent(event, listener);
         }
     }

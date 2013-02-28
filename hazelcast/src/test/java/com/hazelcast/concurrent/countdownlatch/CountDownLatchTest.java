@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch.test;
+package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;

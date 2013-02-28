@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.atomiclong;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
