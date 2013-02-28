@@ -39,7 +39,7 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     public void run() {
-        dataList = getContainer().clear();
+        dataList = getOrCreateContainer().clear();
         response = true;
     }
 

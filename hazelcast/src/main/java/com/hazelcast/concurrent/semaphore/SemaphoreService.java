@@ -165,16 +165,11 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return max;
     }
 
-    public ConcurrentMap<String, Permit> getPermitMap() {
-        return permitMap; //TODO testing only
-    }
-
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         return null;
     }
 
     public void clientDisconnected(String clientUuid) {
-        // TODO: @mm - release locks owned by this client.
         onOwnerDisconnected(clientUuid);
     }
 }

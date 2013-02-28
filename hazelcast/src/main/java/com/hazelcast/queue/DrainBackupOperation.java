@@ -38,7 +38,7 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
     }
 
     public void run() throws Exception {
-        getContainer().drainFromBackup(maxSize);
+        getOrCreateContainer().drainFromBackup(maxSize);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
