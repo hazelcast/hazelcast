@@ -26,24 +26,34 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class StaticNodeFactory {
 
+    private final static boolean MOCK_NETWORK = !Boolean.getBoolean("hazelcast.test.use.network");
     private final static AtomicInteger ports = new AtomicInteger(5000);
 
     private final Address[] addresses;
     private final StaticNodeRegistry registry;
-    int nodeIndex = 0;
+    private int nodeIndex = 0;
 
     public StaticNodeFactory(int count) {
-        this.addresses = createAddresses(count);
-        registry = new StaticNodeRegistry(addresses);
+        if (MOCK_NETWORK) {
+            addresses = createAddresses(count);
+            registry = new StaticNodeRegistry(addresses);
+        } else {
+            addresses = null;
+            registry = null;
+        }
     }
 
     public HazelcastInstance newInstance(Config config) {
-        if (nodeIndex >= addresses.length) {
-            throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
+        if (MOCK_NETWORK) {
+            if (nodeIndex >= addresses.length) {
+                throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
+            }
+            init(config);
+            NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex++]);
+            return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
+        } else {
+            return HazelcastInstanceFactory.newHazelcastInstance(config);
         }
-        init(config);
-        NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex++]);
-        return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
     }
 
     private static Address[] createAddresses(int count) {
@@ -59,19 +69,26 @@ public class StaticNodeFactory {
     }
 
     public static HazelcastInstance[] newInstances(Config config, int count) {
-        init(config);
-        Address[] addresses = createAddresses(count);
-        HazelcastInstance[] instances = new HazelcastInstance[count];
-        StaticNodeRegistry staticNodeRegistry = new StaticNodeRegistry(addresses);
-        for (int i = 0; i < count; i++) {
-            NodeContext nodeContext = staticNodeRegistry.createNodeContext(addresses[i]);
-            instances[i] = HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
+        final HazelcastInstance[] instances = new HazelcastInstance[count];
+        if (MOCK_NETWORK) {
+            init(config);
+            Address[] addresses = createAddresses(count);
+            StaticNodeRegistry staticNodeRegistry = new StaticNodeRegistry(addresses);
+            for (int i = 0; i < count; i++) {
+                NodeContext nodeContext = staticNodeRegistry.createNodeContext(addresses[i]);
+                instances[i] = HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
+            }
+        } else {
+            for (int i = 0; i < count; i++) {
+                instances[i] = HazelcastInstanceFactory.newHazelcastInstance(config);
+            }
         }
         return instances;
     }
 
     private static void init(Config config) {
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "5");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
     }
 }

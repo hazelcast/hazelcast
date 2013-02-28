@@ -21,7 +21,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import org.junit.After;
@@ -48,7 +47,6 @@ public class CountDownLatchTest {
     public void testSimpleUsage() {
         final int k = 5;
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "0");
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
@@ -82,7 +80,6 @@ public class CountDownLatchTest {
     public void testAwaitFail() {
         final int k = 3;
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "1");
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
@@ -102,7 +99,6 @@ public class CountDownLatchTest {
     public void testLatchDestroyed() {
         StaticNodeFactory factory = new StaticNodeFactory(2);
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "1");
         HazelcastInstance hz1 = factory.newInstance(config);
         HazelcastInstance hz2 = factory.newInstance(config);
         final ICountDownLatch latch = hz1.getCountDownLatch("test");

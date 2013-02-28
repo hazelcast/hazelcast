@@ -58,24 +58,20 @@ public class HazelcastInstanceFactory {
         String name = config.getInstanceName();
         if (name == null || name.trim().length() == 0) {
             name = createInstanceName(config);
-            return newHazelcastInstance(config, name);
+            return newHazelcastInstance(config, name, new DefaultNodeContext());
         } else {
             synchronized (INIT_LOCK) {
                 if (INSTANCE_MAP.containsKey(name)) {
                     throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
                 }
                 factoryIdGen.incrementAndGet();
-                return newHazelcastInstance(config, name);
+                return newHazelcastInstance(config, name, new DefaultNodeContext());
             }
         }
     }
 
     private static String createInstanceName(Config config) {
         return "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
-    }
-
-    static HazelcastInstance newHazelcastInstance(Config config, String instanceName) {
-        return newHazelcastInstance(config, instanceName, new DefaultNodeContext());
     }
 
     static HazelcastInstance newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
