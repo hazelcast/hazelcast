@@ -57,15 +57,12 @@ import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
@@ -819,7 +816,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             int targetSizePerPartition = -1;
             int maxPartitionSize = 0;
             final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
-            if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_JVM) {
+            if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_INSTANCE) {
                 maxPartitionSize = mapConfig.getMaxSizeConfig().getSize() * memberCount / nodeEngine.getPartitionService().getPartitionCount();
                 targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
             } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
@@ -864,7 +861,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                             sortedRecords.add(entry.getValue());
                         }
                         int evictSize = 0;
-                        if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_JVM || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
+                        if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_INSTANCE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             evictSize = sortedRecords.size() - targetSizePerPartition;
                         } else {
                             evictSize = sortedRecords.size() * evictionPercentage / 100;
@@ -892,7 +889,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
             MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
             String mapName = mapContainer.getName();
-            if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_JVM || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
+            if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_INSTANCE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                 int totalSize = 0;
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
@@ -906,7 +903,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         }
                     }
                 }
-                if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_JVM)
+                if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_INSTANCE)
                     return totalSize >= maxSizeConfig.getSize();
                 else
                     return false;

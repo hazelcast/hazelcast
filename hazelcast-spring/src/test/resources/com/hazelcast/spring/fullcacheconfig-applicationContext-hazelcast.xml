@@ -147,7 +147,7 @@
             <hz:map name="testMap2"
                     backup-count="2"
                     max-size="1000"
-                    max-size-policy="PER_JVM"
+                    max-size-policy="PER_INSTANCE"
                     eviction-percentage="30"
                     read-backup-data="true"
                     eviction-policy="NONE"

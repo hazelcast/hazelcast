@@ -74,7 +74,7 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size policy="PER_JVM">5000</max-size>
+        <max-size policy="PER_INSTANCE">5000</max-size>
 
         <!--
             When max. size is reached, specified percentage of
@@ -103,7 +103,7 @@
 
             <listitem>
                 <para>
-                    <emphasis role="bold">PER_JVM:</emphasis>  Max map size per JVM.
+                    <emphasis role="bold">PER_INSTANCE:</emphasis>  Max map size per JVM.
                     <programlisting language="xml"><![CDATA[<max-size policy="map_size_per_jvm">5000</max-size>]]></programlisting>
                 </para>
             </listitem>

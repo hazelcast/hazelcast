@@ -21,22 +21,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.util.Clock;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.*;
 
 public class EvictionTest {
 
@@ -64,7 +55,7 @@ public class EvictionTest {
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mc.setEvictionPercentage(25);
         MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_INSTANCE);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
