@@ -17,13 +17,11 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.monitor.LocalSemaphoreStats;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -133,15 +131,6 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
-    }
-
-    public LocalSemaphoreStats getLocalSemaphoreStats() {
-        for (Map.Entry<String, Permit> entry : getService().getPermitMap().entrySet()) {
-            System.out.println("name: " + entry.getKey());
-            System.out.println("permit: " + entry.getValue());
-            System.out.println("-------------------------------");
-        }
-        return null;
     }
 
     public Object getId() {
