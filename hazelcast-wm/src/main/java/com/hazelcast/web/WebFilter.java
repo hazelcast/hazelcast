@@ -550,7 +550,11 @@ public class WebFilter implements Filter {
         if (sessionCookieDomain != null) {
             sessionCookie.setDomain(sessionCookieDomain);
         }
-        sessionCookie.setHttpOnly(sessionCookieHttpOnly);
+		try {
+			sessionCookie.setHttpOnly(sessionCookieHttpOnly);
+		} catch (NoSuchMethodError e) {
+			// must be servlet spec before 3.0, don't worry about it!
+		}
         sessionCookie.setSecure(sessionCookieSecure);
         req.res.addCookie(sessionCookie);
     }
