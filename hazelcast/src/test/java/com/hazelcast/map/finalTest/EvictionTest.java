@@ -55,7 +55,7 @@ public class EvictionTest {
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mc.setEvictionPercentage(25);
         MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_INSTANCE);
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
