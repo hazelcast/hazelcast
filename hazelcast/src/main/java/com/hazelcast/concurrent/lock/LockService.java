@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.util.Map;
 import java.util.Properties;
@@ -84,7 +85,6 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     }
 
     public void memberRemoved(MembershipServiceEvent event) {
-        // TODO: release lock on member remove
         final MemberImpl member = event.getMember();
         final String uuid = member.getUuid();
         releaseLocksOf(uuid);
@@ -97,14 +97,14 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
                 for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
                     final LockInfo lock = entry.getValue();
-//                    if (uuid.equals(lock.getOwner())) {
-//                        UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
-//                        op.setNodeEngine(nodeEngine);
-//                        op.setServiceName(SERVICE_NAME);
-//                        op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-//                        op.setPartitionId(container.getPartitionId());
-//                        nodeEngine.getOperationService().runOperation(op);
-//                    }
+                    if (uuid.equals(lock.getOwner())) {
+                        UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
+                        op.setNodeEngine(nodeEngine);
+                        op.setServiceName(SERVICE_NAME);
+                        op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        op.setPartitionId(container.getPartitionId());
+                        nodeEngine.getOperationService().runOperation(op);
+                    }
                 }
             }
         }

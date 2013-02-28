@@ -19,8 +19,11 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
-import com.hazelcast.core.Member;
+import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -44,30 +47,168 @@ import static org.junit.Assert.*;
 public class LockTest {
 
     @Test
-    public void testSimpleUsage() {
+    public void testSimpleUsage() throws InterruptedException {
         // with multiple threads on single node
         // lock, tryLock, isLocked, unlock
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final Config config = new Config();
+        final HazelcastInstance instance = nodeFactory.newInstance(config);
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        final ILock lock = instance.getLock("testSimpleUsage");
+        Assert.assertEquals("testSimpleUsage", lock.getName());
+
+        final Runnable tryLockRunnable = new Runnable() {
+            public void run() {
+                if (lock.tryLock())
+                    atomicInteger.incrementAndGet();
+            }
+        };
+
+        final Runnable lockRunnable = new Runnable() {
+            public void run() {
+                lock.lock();
+            }
+        };
+
+        Assert.assertEquals(false, lock.isLocked());
+        lock.lock();
+        Assert.assertEquals(true, lock.isLocked());
+        Assert.assertEquals(true, lock.tryLock());
+        lock.unlock();
+
+        Thread thread1 = new Thread(tryLockRunnable);
+        thread1.start();
+        thread1.join();
+        Assert.assertEquals(0, atomicInteger.get());
+
+        lock.unlock();
+        Thread thread2 = new Thread(tryLockRunnable);
+        thread2.start();
+        thread2.join();
+        Assert.assertEquals(1, atomicInteger.get());
+        Assert.assertEquals(true, lock.isLocked());
+        lock.forceUnlock();
+
+        Thread thread3 = new Thread(lockRunnable);
+        thread3.start();
+        thread3.join();
+        Assert.assertEquals(true, lock.isLocked());
+        Assert.assertEquals(false, lock.tryLock(2, TimeUnit.SECONDS));
+
+        Thread thread4 = new Thread(lockRunnable);
+        thread4.start();
+        Thread.sleep(1000);
+        Assert.assertEquals(true, lock.isLocked());
+        lock.forceUnlock();
+        thread4.join();
     }
 
     @Test
     public void testSimpleUsageOnMultipleNodes() {
-        // with multiple threads on multiple nodes
+        // TODO with multiple threads on multiple nodes
+    }
+
+    @Test(expected = DistributedObjectDestroyedException.class)
+    public void testDestroyLockWhenOtherWaitingOnLock() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance instance = nodeFactory.newInstance(new Config());
+        final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
+        lock.lock();
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                lock.lock();
+            }
+        });
+        t.start();
+        lock.destroy();
+        t.join();
+    }
+
+    @Test(expected = HazelcastInstanceNotActiveException.class)
+    public void testShutDownNodeWhenOtherWaitingOnLock() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final HazelcastInstance instance = nodeFactory.newInstance(new Config());
+        nodeFactory.newInstance(new Config());
+        final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
+        lock.lock();
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                lock.lock();
+            }
+        });
+        t.start();
+        instance.getLifecycleService().shutdown();
+        t.join();
+    }
+
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testIllegalUnlock() {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance instance = nodeFactory.newInstance(new Config());
+        final ILock lock = instance.getLock("testIllegalUnlock");
+        lock.unlock();
     }
 
     @Test(timeout = 100000)
     public void testLockOwnerDies() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final AtomicInteger integer = new AtomicInteger(0);
+        final HazelcastInstance lockOwner = nodeFactory.newInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newInstance(config);
 
+        final String name = "testLockOwnerDies";
+        final ILock lock = lockOwner.getLock(name);
+        lock.lock();
+        Assert.assertEquals(true, lock.isLocked());
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = instance1.getLock(name);
+                lock.lock();
+                integer.incrementAndGet();
+
+            }
+        });
+        t.start();
+        Assert.assertEquals(0, integer.get());
+        lockOwner.getLifecycleService().shutdown();
+        Thread.sleep(5000);
+        Assert.assertEquals(1, integer.get());
     }
 
     @Test(timeout = 100000)
     public void testKeyOwnerDies() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
-        int key = 0;
-        final Member expectedOwner = h2.getCluster().getLocalMember();
-        while (h1.getPartitionService().getPartition(key++).getOwner().equals(expectedOwner));
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        final Config config = new Config();
+        final HazelcastInstance keyOwner = nodeFactory.newInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newInstance(config);
+        int k = 0;
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        while (instance1.getPartitionService().getPartition(k++).equals(keyOwner.getCluster().getLocalMember())) ;
+        final int key = k;
 
+        final ILock lock1 = instance1.getLock(key);
+        lock1.lock();
+
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = instance2.getLock(key);
+                lock.lock();
+                atomicInteger.incrementAndGet();
+            }
+        });
+        t.start();
+
+        keyOwner.getLifecycleService().shutdown();
+        Assert.assertEquals(true, lock1.isLocked());
+        Assert.assertEquals(true, lock1.tryLock());
+        lock1.unlock();
+        lock1.unlock();
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, atomicInteger.get());
+        lock1.forceUnlock();
 
     }
 
@@ -155,7 +296,6 @@ public class LockTest {
         assertTrue("Could not acquire lock!", lock.tryLock());
     }
 
-
     /**
      * Test for issue #39
      */
@@ -195,7 +335,6 @@ public class LockTest {
         lock.unlock();
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
-
 
     @Test(timeout = 1000 * 100)
     /**
