@@ -410,7 +410,7 @@
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:integer">
-                    <xs:attribute name="policy" use="optional" default="PER_JVM"/>
+                    <xs:attribute name="policy" use="optional" default="PER_NODE"/>
                 </xs:extension>
             </xs:simpleContent>
         </xs:complexType>

@@ -24,14 +24,14 @@ import java.io.IOException;
 
 public class MaxSizeConfig implements DataSerializable {
     int size = MapConfig.DEFAULT_MAX_SIZE;
-    MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_JVM;
+    MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
     public enum MaxSizePolicy {
-        PER_JVM, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
+        PER_NODE, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
     }
 
     public static void main(String[] args) {
-        System.out.println(MaxSizePolicy.PER_JVM.name());
+        System.out.println(MaxSizePolicy.PER_NODE.name());
 
     }
 

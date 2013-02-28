@@ -26,7 +26,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import sun.management.ThreadInfoCompositeData;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +55,7 @@ public class MapEvictionTest {
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mc.setEvictionPercentage(25);
         MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
@@ -133,7 +132,7 @@ public class MapEvictionTest {
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mc.setEvictionPercentage(25);
         MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
@@ -185,7 +184,7 @@ public class MapEvictionTest {
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
         mc.setEvictionPercentage(25);
         MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
@@ -238,7 +237,7 @@ public class MapEvictionTest {
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mc.setEvictionPercentage(10);
         MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_JVM);
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
         HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, 2);

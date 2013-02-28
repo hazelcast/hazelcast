@@ -111,7 +111,7 @@ public class SimpleLocalMapTest {
         Config cfg = new Config();
         cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.DATA);
         for (int i = 0; i < instanceCount; i++) {
-            SimpleLocalMapTest test = new SimpleLocalMapTest(factory.newInstance(cfg), threadCount, entryCount, valueSize,
+            SimpleLocalMapTest test = new SimpleLocalMapTest(factory.newHazelcastInstance(cfg), threadCount, entryCount, valueSize,
                     getPercentage, putPercentage, load);
             test.start();
         }

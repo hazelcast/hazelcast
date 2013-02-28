@@ -21,7 +21,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import org.junit.After;
@@ -48,7 +47,6 @@ public class CountDownLatchTest {
     public void testSimpleUsage() {
         final int k = 5;
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "0");
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
@@ -82,7 +80,6 @@ public class CountDownLatchTest {
     public void testAwaitFail() {
         final int k = 3;
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "1");
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
@@ -102,9 +99,8 @@ public class CountDownLatchTest {
     public void testLatchDestroyed() {
         StaticNodeFactory factory = new StaticNodeFactory(2);
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "1");
-        HazelcastInstance hz1 = factory.newInstance(config);
-        HazelcastInstance hz2 = factory.newInstance(config);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         final ICountDownLatch latch = hz1.getCountDownLatch("test");
         latch.trySetCount(2);
 
@@ -133,8 +129,8 @@ public class CountDownLatchTest {
     @Test
     public void testLatchMigration() throws InterruptedException {
         StaticNodeFactory factory = new StaticNodeFactory(5);
-        HazelcastInstance hz1 = factory.newInstance(new Config());
-        HazelcastInstance hz2 = factory.newInstance(new Config());
+        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
 
         final ICountDownLatch latch1 = hz1.getCountDownLatch("test");
         latch1.trySetCount(10);
@@ -147,7 +143,7 @@ public class CountDownLatchTest {
         hz1.getLifecycleService().shutdown();
         Assert.assertEquals(9, latch2.getCount());
 
-        HazelcastInstance hz3 = factory.newInstance(new Config());
+        HazelcastInstance hz3 = factory.newHazelcastInstance(new Config());
         final ICountDownLatch latch3 = hz3.getCountDownLatch("test");
         latch3.countDown();
         Assert.assertEquals(8, latch3.getCount());
@@ -156,8 +152,8 @@ public class CountDownLatchTest {
         latch3.countDown();
         Assert.assertEquals(7, latch3.getCount());
 
-        HazelcastInstance hz4 = factory.newInstance(new Config());
-        HazelcastInstance hz5 = factory.newInstance(new Config());
+        HazelcastInstance hz4 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz5 = factory.newHazelcastInstance(new Config());
         Thread.sleep(250);
 
         hz3.getLifecycleService().shutdown();

@@ -122,7 +122,6 @@ public class HazelcastTest extends BaseTest {
 
 
     @Test
-    @Ignore
     public void testGetInstances() {
         HazelcastInstance instance = getInstance();
         instance.getList("A");

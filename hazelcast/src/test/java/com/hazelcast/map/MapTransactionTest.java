@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,8 +48,8 @@ public class MapTransactionTest {
     public void testTxnTimeout() {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newInstance(config);
-        HazelcastInstance h2 = factory.newInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         Transaction txn = h1.getTransaction();
@@ -81,8 +81,8 @@ public class MapTransactionTest {
     public void testTxnCommit() {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newInstance(config);
-        HazelcastInstance h2 = factory.newInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         Transaction txn = h1.getTransaction();
@@ -105,8 +105,8 @@ public class MapTransactionTest {
     public void testTxnRollback() {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newInstance(config);
-        HazelcastInstance h2 = factory.newInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
         Transaction txn = h1.getTransaction();

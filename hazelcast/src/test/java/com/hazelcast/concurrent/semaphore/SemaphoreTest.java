@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,8 +201,8 @@ public class SemaphoreTest {
         final Config config = new Config();
         final StaticNodeFactory staticNodeFactory = new StaticNodeFactory(3);
 
-        final HazelcastInstance instance1 = staticNodeFactory.newInstance(config);
-        final HazelcastInstance instance2 = staticNodeFactory.newInstance(config);
+        final HazelcastInstance instance1 = staticNodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);
         final ISemaphore semaphore = instance1.getSemaphore("test");
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         semaphore.init(0);
@@ -221,7 +221,7 @@ public class SemaphoreTest {
 
         instance2.getLifecycleService().shutdown();
         semaphore.release();
-        HazelcastInstance instance3 = staticNodeFactory.newInstance(config);
+        HazelcastInstance instance3 = staticNodeFactory.newHazelcastInstance(config);
 
         ISemaphore semaphore1 = instance3.getSemaphore("test");
         semaphore1.release();

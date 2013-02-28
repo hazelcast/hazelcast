@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.IMap;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
