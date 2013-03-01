@@ -277,8 +277,16 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         throw new UnsupportedOperationException();
     }
 
+    protected RuntimeException throwNotActiveException() {
+        throw new RejectedExecutionException();
+    }
+
     public boolean isShutdown() {
-        return getService().isShutdown(name);
+        try {
+            return getService().isShutdown(name);
+        } catch (HazelcastInstanceNotActiveException e) {
+            return true;
+        }
     }
 
     public boolean isTerminated() {
