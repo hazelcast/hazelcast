@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
@@ -108,6 +109,7 @@ final class OperationServiceImpl implements OperationService {
 
     /**
      * Executes operation in operation executor pool.
+     *
      * @param op
      */
     public void executeOperation(final Operation op) {
@@ -116,6 +118,7 @@ final class OperationServiceImpl implements OperationService {
 
     /**
      * Runs operation in caller thread.
+     *
      * @param op
      */
     public void runOperation(final Operation op) {
@@ -399,7 +402,7 @@ final class OperationServiceImpl implements OperationService {
             final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
             logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
         } else {
-            final Level level = nodeEngine.isActive() ? Level.SEVERE: Level.FINEST;
+            final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
             logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
         if (node.isActive()) {
@@ -439,7 +442,7 @@ final class OperationServiceImpl implements OperationService {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         for (int partition : partitions) {
             Address owner = nodeEngine.getPartitionService().getPartitionOwner(partition);
-            if(!memberPartitions.containsKey(owner)){
+            if (!memberPartitions.containsKey(owner)) {
                 memberPartitions.put(owner, new ArrayList<Integer>());
             }
             memberPartitions.get(owner).add(partition);
@@ -611,6 +614,10 @@ final class OperationServiceImpl implements OperationService {
     void shutdown() {
         logger.log(Level.FINEST, "Stopping operation threads...");
         executor.shutdown();
+        final Object response = new HazelcastInstanceNotActiveException();
+        for (Call call : mapCalls.values()) {
+            call.offerResponse(response);
+        }
         mapCalls.clear();
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = null;
