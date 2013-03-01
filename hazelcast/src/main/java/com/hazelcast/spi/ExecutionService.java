@@ -31,9 +31,14 @@ public interface ExecutionService {
 
     ExecutorService getExecutor(String name);
 
+    void shutdownExecutor(String name);
+
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
     ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit);
 
     ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    ScheduledExecutorService getScheduledExecutor();
+
 }

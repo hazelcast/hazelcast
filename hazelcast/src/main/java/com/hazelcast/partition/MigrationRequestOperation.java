@@ -118,14 +118,12 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     private void onError(Throwable e) {
-        e.printStackTrace();
-        Level level = Level.WARNING;
         if (e instanceof ExecutionException) {
             e = e.getCause();
         }
-        if (e instanceof MemberLeftException || e instanceof IllegalStateException) {
-            level = Level.FINEST;
-        }
+        Level level = (e instanceof MemberLeftException || e instanceof InterruptedException)
+                    || !getNodeEngine().isActive()
+                ? Level.FINEST : Level.WARNING;
         getLogger().log(level, e.getMessage(), e);
         success = false;
     }

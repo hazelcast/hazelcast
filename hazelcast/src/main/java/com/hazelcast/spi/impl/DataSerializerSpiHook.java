@@ -37,7 +37,6 @@ public final class DataSerializerSpiHook implements DataSerializerHook {
     static final int PARTITION_ITERATOR = 3;
     static final int PARTITION_RESPONSE = 4;
     static final int PARALLEL_OPERATION_FACTORY = 5;
-    //    static final int OPERATION_WRAPPER = 5;
     static final int EVENT_PACKET = 6;
 
     public Map<Integer, DataSerializableFactory> getFactories() {
@@ -48,6 +47,7 @@ public final class DataSerializerSpiHook implements DataSerializerHook {
                 return new Data();
             }
         });
+
         factories.put(RESPONSE, new DataSerializableFactory() {
             public IdentifiedDataSerializable create() {
                 return new Response();
@@ -83,11 +83,6 @@ public final class DataSerializerSpiHook implements DataSerializerHook {
                 return new ParallelOperationFactory();
             }
         });
-//        factories.put(OPERATION_WRAPPER, new DataSerializableFactory() {
-//            public IdentifiedDataSerializable create() {
-//                return new OperationWrapper();
-//            }
-//        });
 
         return factories;
     }

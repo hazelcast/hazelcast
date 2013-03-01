@@ -24,15 +24,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 
 public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
-    Object key;
 
-    PartitionContainer pc;
-    ResponseHandler responseHandler;
-    RecordStore recordStore;
-    MapService mapService;
-    NodeEngine nodeEngine;
     boolean evicted = false;
-
 
     public EvictOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
@@ -44,23 +37,11 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
 
     protected boolean prepareTransaction() {
         if (txnId != null) {
-            pc.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
-            responseHandler.sendResponse(null);
+            partitionContainer.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
+            getResponseHandler().sendResponse(null);
             return true;
         }
         return false;
-    }
-
-    protected void init() {
-        responseHandler = getResponseHandler();
-        mapService = (MapService) getService();
-        nodeEngine = (NodeEngine) getNodeEngine();
-        pc = mapService.getPartitionContainer(getPartitionId());
-        recordStore = pc.getRecordStore(name);
-    }
-
-    public void beforeRun() {
-        init();
     }
 
     public void run() {

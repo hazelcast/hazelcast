@@ -20,86 +20,38 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
-public abstract class AbstractMapOperation extends Operation implements KeyBasedOperation {
+public abstract class AbstractMapOperation extends AbstractNamedOperation {
 
-    protected String name;
-    protected Data dataKey;
-    protected int threadId = -1;
-    protected Data dataValue = null;
-    protected long ttl = -1; // how long should this item live? -1 means forever
-    protected String txnId = null;
+    protected transient MapService mapService;
+    protected transient MapContainer mapContainer;
 
     public AbstractMapOperation() {
     }
 
-    public AbstractMapOperation(String name, Data dataKey) {
+    public AbstractMapOperation(String name) {
         super();
-        this.dataKey = dataKey;
         this.name = name;
-    }
-
-    protected AbstractMapOperation(String name, Data dataKey, Data dataValue) {
-        this.name = name;
-        this.dataKey = dataKey;
-        this.dataValue = dataValue;
-    }
-
-    protected AbstractMapOperation(String name, Data dataKey, long ttl) {
-        this.name = name;
-        this.dataKey = dataKey;
-        this.ttl = ttl;
-    }
-
-    protected AbstractMapOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        this.name = name;
-        this.dataKey = dataKey;
-        this.dataValue = dataValue;
-        this.ttl = ttl;
-    }
-
-    public final String getName() {
-        return name;
-    }
-
-    public final Data getKey() {
-        return dataKey;
-    }
-
-    public final int getThreadId() {
-        return threadId;
-    }
-
-    public final void setThreadId(int threadId) {
-        this.threadId = threadId;
-    }
-
-    public final Data getValue() {
-        return dataValue;
-    }
-
-    public final long getTtl() {
-        return ttl;
-    }
-
-    public final String getTxnId() {
-        return txnId;
-    }
-
-    public final void setTxnId(String txnId) {
-        this.txnId = txnId;
-    }
-
-    public final int getKeyHash() {
-        return dataKey != null ? dataKey.getPartitionHash() : 0;
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public final void beforeRun() throws Exception {
+        mapService = getService();
+        mapContainer = mapService.getMapContainer(name);
+        if( !(this instanceof BackupOperation) &&  !mapContainer.isMapReady()) {
+            throw new RetryableHazelcastException("Map is not ready.");
+        }
+        innerBeforeRun();
+    }
+
+    public void innerBeforeRun() {
     }
 
     @Override
@@ -107,35 +59,8 @@ public abstract class AbstractMapOperation extends Operation implements KeyBased
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return true;
     }
 
-    protected final void invalidateNearCaches() {
-        final MapService mapService = getService();
-        final MapContainer mapContainer = mapService.getMapContainer(name);
-        if (mapContainer.isNearCacheEnabled()
-                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            mapService.invalidateAllNearCaches(name, dataKey);
-        }
-    }
-
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        dataKey.writeData(out);
-        out.writeInt(threadId);
-        IOUtil.writeNullableData(out, dataValue);
-        out.writeLong(ttl);
-        out.writeUTF(txnId);
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        dataKey = new Data();
-        dataKey.readData(in);
-        threadId = in.readInt();
-        dataValue = IOUtil.readNullableData(in);
-        ttl = in.readLong();
-        txnId = in.readUTF();
-    }
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -63,15 +62,15 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        entryProcessor = IOUtil.readNullableObject(in);
-        entryBackupProcessor = IOUtil.readNullableObject(in);
+        entryProcessor = in.readObject();
+        entryBackupProcessor = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableObject(out, entryProcessor);
-        IOUtil.writeNullableObject(out, entryBackupProcessor);
+        out.writeObject(entryProcessor);
+        out.writeObject(entryBackupProcessor);
     }
 
     @Override

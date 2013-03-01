@@ -16,7 +16,7 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.util.Util;
+import com.hazelcast.util.StreamUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -117,7 +117,7 @@ public class Installer {
                 } else if (name.equals("WEB-INF/web.xml")) {
                     readModifyWrite(in, out);
                 } else {
-                    Util.copyStream(in, out);
+                    StreamUtil.copyStream(in, out);
                 }
                 in.close();
             }
@@ -141,7 +141,7 @@ public class Installer {
         final ZipEntry hazelcastZip = new ZipEntry(zipFilePath);
         out.putNextEntry(hazelcastZip);
         final InputStream in = new FileInputStream(fileName);
-        Util.copyStream(in, out);
+        StreamUtil.copyStream(in, out);
         in.close();
     }
 
@@ -230,9 +230,9 @@ public class Installer {
 
     public void readModifyWrite(final InputStream in, final OutputStream out) {
         final Document finalDoc = modifyWebXml(createDocument(in));
-        Util.streamXML(finalDoc, out);
+        StreamUtil.streamXML(finalDoc, out);
         if (DEBUG)
-            Util.streamXML(finalDoc, System.out);
+            StreamUtil.streamXML(finalDoc, System.out);
     }
 
     public void setAddHazelcastLib(final boolean addHazelcastLib) {
@@ -270,7 +270,7 @@ public class Installer {
                 final File entryFile = new File(destDir, entry.getName());
                 final InputStream in = zipFile.getInputStream(entry);
                 final OutputStream out = new BufferedOutputStream(new FileOutputStream(entryFile));
-                Util.copyStream(in, out);
+                StreamUtil.copyStream(in, out);
                 in.close();
                 out.close();
             }
@@ -358,7 +358,7 @@ public class Installer {
                 }
                 if (entry.getName().equals("WEB-INF/web.xml")) {
                     final ByteArrayOutputStream bosWebXml = new ByteArrayOutputStream();
-                    Util.copyStream(zin, bosWebXml);
+                    StreamUtil.copyStream(zin, bosWebXml);
                     bosWebXml.flush();
                     final byte[] webxmlBytes = bosWebXml.toByteArray();
                     bosWebXml.close();
@@ -366,7 +366,7 @@ public class Installer {
                     readModifyWrite(binWebXml, out);
                     binWebXml.close();
                 } else {
-                    Util.copyStream(zin, out);
+                    StreamUtil.copyStream(zin, out);
                 }
                 out.flush();
             }

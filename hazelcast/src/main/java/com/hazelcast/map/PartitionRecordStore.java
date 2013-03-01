@@ -35,8 +35,6 @@ public class PartitionRecordStore implements RecordStore {
     final String name;
     final PartitionContainer partitionContainer;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
-    // todo remove this. do not forget to migrate if decide not to remove
-    final Set<Data> removedDelayedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Data, Boolean>());
     final MapContainer mapContainer;
     final MapService mapService;
     final LockStoreView lockStore;
@@ -67,7 +65,7 @@ public class PartitionRecordStore implements RecordStore {
         return records;
     }
 
-    void destroy() {
+    void clear() {
         final SharedLockService lockService = mapService.getNodeEngine()
                 .getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
         if (lockService != null) {
@@ -104,10 +102,11 @@ public class PartitionRecordStore implements RecordStore {
                 lockAwareOperation.getCallerUuid(), lockAwareOperation.getThreadId());
     }
 
-    public boolean tryRemove(Data dataKey) {
+    public Object tryRemove(Data dataKey) {
         Record record = records.get(dataKey);
         boolean removed = false;
         boolean evicted = false;
+        Object oldValue = null;
         if (record == null) {
             // already removed from map by eviction but still need to delete it
             if (mapContainer.getStore() != null && mapContainer.getStore().load(mapService.toObject(dataKey)) != null) {
@@ -116,13 +115,14 @@ public class PartitionRecordStore implements RecordStore {
         } else {
             accessRecord(record);
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, record.getValue(), record.getValue());
-            records.remove(dataKey);
+            Record removedRecord = records.remove(dataKey);
+            oldValue = removedRecord.getValue();
             removed = true;
         }
         if ((removed || evicted) && mapContainer.getStore() != null) {
             mapStoreDelete(record);
         }
-        return removed;
+        return oldValue;
     }
 
     public Set<Map.Entry<Data, Object>> entrySetObject() {
@@ -188,7 +188,6 @@ public class PartitionRecordStore implements RecordStore {
 
     public void reset() {
         records.clear();
-        removedDelayedKeys.clear();
     }
 
     public Object remove(Data dataKey) {
@@ -341,10 +340,6 @@ public class PartitionRecordStore implements RecordStore {
         }
     }
 
-    public Set<Data> getRemovedDelayedKeys() {
-        return removedDelayedKeys;
-    }
-
     public Object replace(Data dataKey, Object value) {
         Record record = records.get(dataKey);
         Object oldValue = null;
@@ -446,7 +441,7 @@ public class PartitionRecordStore implements RecordStore {
         int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
             record.getState().updateIdleExpireTime(maxIdleSeconds * 1000);
-            mapService.scheduleOperation(name, record.getKey(), maxIdleSeconds * 1000);
+            mapService.scheduleIdleEviction(name, record.getKey(), maxIdleSeconds * 1000);
         }
     }
 
@@ -464,7 +459,7 @@ public class PartitionRecordStore implements RecordStore {
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
-                    mapService.scheduleOperation(name, record.getKey(), writeDelayMillis);
+                    mapService.scheduleMapStoreWrite(name, record.getKey(), record.getValue(), writeDelayMillis);
                 }
             }
         }
@@ -480,8 +475,7 @@ public class PartitionRecordStore implements RecordStore {
             } else {
                 if (record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
-                    mapService.scheduleOperation(name, record.getKey(), writeDelayMillis);
-                    removedDelayedKeys.add(record.getKey());
+                    mapService.scheduleMapStoreDelete(name, record.getKey(), writeDelayMillis);
                 }
             }
         }
@@ -490,7 +484,7 @@ public class PartitionRecordStore implements RecordStore {
     private void updateTtl(Record record, long ttl) {
         if (ttl > 0) {
             record.getState().updateTtlExpireTime(ttl);
-            mapService.scheduleOperation(name, record.getKey(), ttl);
+            mapService.scheduleTtlEviction(name, record.getKey(), ttl);
         }
     }
 

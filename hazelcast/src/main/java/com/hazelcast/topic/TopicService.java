@@ -26,10 +26,15 @@ import com.hazelcast.topic.client.TopicListenHandler;
 import com.hazelcast.topic.client.TopicPublishHandler;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * User: sancar
@@ -39,14 +44,34 @@ import java.util.Properties;
 public class TopicService implements ManagedService, RemoteService, EventPublishingService, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
-
+    private final Lock[] orderingLocks = new Lock[1000];
     private NodeEngine nodeEngine;
+
+    private final ConcurrentMap<String, TopicContainer> topicContainers = new ConcurrentHashMap<String, TopicContainer>();
+
+    private final ConcurrencyUtil.ConstructorFunction<String, TopicContainer> topicConstructor = new ConcurrencyUtil.ConstructorFunction<String, TopicContainer>() {
+        public TopicContainer createNew(String mapName) {
+            return new TopicContainer();
+        }
+    };
 
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
+        for (int i = 0; i < orderingLocks.length; i++) {
+            orderingLocks[i] = new ReentrantLock();
+        }
+    }
+
+    public void reset() {
+        topicContainers.clear();
     }
 
     public void shutdown() {
+        reset();
+    }
+
+    public Lock getOrderLock(String key) {
+        return orderingLocks[Math.abs(key.hashCode()) % orderingLocks.length];
     }
 
     public String getServiceName() {
@@ -58,9 +83,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         TopicProxy proxy;
         TopicConfig topicConfig = nodeEngine.getConfig().getTopicConfig(name);
         if (topicConfig.isGlobalOrderingEnabled())
-            proxy = new TotalOrderedTopicProxy(name, nodeEngine);
+            proxy = new TotalOrderedTopicProxy(name, nodeEngine, this);
         else
-            proxy = new TopicProxy(name, nodeEngine);
+            proxy = new TopicProxy(name, nodeEngine, this);
         return proxy;
     }
 
@@ -69,12 +94,27 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public void destroyDistributedObject(Object objectId) {
+        topicContainers.remove(String.valueOf(objectId));
+
     }
 
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
         Message message = new Message(topicEvent.name, nodeEngine.toObject(topicEvent.data));
+        incrementReceivedMessages(topicEvent.name);
         ((MessageListener) listener).onMessage(message);
+    }
+
+    public TopicContainer getAtomicLongContainer(String name) {
+        return ConcurrencyUtil.getOrPutSynchronized(topicContainers, name, topicContainers, topicConstructor);
+    }
+
+    public void incrementPublishes(String topicName) {
+        topicContainers.get(topicName).incrementPublishes();
+    }
+
+    public void incrementReceivedMessages(String topicName) {
+        topicContainers.get(topicName).incrementReceivedMessages();
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
@@ -84,7 +124,4 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return map;
     }
 
-    @Override
-    public void onClientDisconnect(String clientUuid) {
-    }
 }

@@ -21,26 +21,7 @@ package com.hazelcast.nio.serialization;
  */
 public interface FieldDefinition extends DataSerializable {
 
-    final byte TYPE_PORTABLE = 0;
-    final byte TYPE_BYTE = 1;
-    final byte TYPE_BOOLEAN = 2;
-    final byte TYPE_CHAR = 3;
-    final byte TYPE_SHORT = 4;
-    final byte TYPE_INT = 5;
-    final byte TYPE_LONG = 6;
-    final byte TYPE_FLOAT = 7;
-    final byte TYPE_DOUBLE = 8;
-    final byte TYPE_UTF = 9;
-    final byte TYPE_PORTABLE_ARRAY = 10;
-    final byte TYPE_BYTE_ARRAY = 11;
-    final byte TYPE_CHAR_ARRAY = 12;
-    final byte TYPE_SHORT_ARRAY = 13;
-    final byte TYPE_INT_ARRAY = 14;
-    final byte TYPE_LONG_ARRAY = 15;
-    final byte TYPE_FLOAT_ARRAY = 16;
-    final byte TYPE_DOUBLE_ARRAY = 17;
-
-    byte getType();
+    FieldType getType();
 
     String getName();
 

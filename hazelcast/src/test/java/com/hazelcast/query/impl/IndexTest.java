@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
-import com.hazelcast.util.TestUtil;
+import com.hazelcast.instance.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -93,9 +93,6 @@ public class IndexTest extends TestUtil {
     }
 
     private class TestPortableFactory implements PortableFactory {
-
-        public void init(ClassDefinitionBuilderFactory classDefinitionBuilderFactory) {
-        }
 
         public Portable create(int classId) {
             switch (classId) {

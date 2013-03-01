@@ -62,4 +62,7 @@ public class TransactionClientProxy implements Transaction {
         proxyHelper.doCommand(Command.TRXROLLBACK, new String[]{});
         release(context);
     }
+
+    public void setTransactionTimeout(int seconds) {
+    }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
 import java.util.Set;
@@ -26,10 +27,11 @@ import java.util.Set;
  */
 public class DefaultPortableReader implements PortableReader {
 
-    final PortableSerializer serializer;
-    final ClassDefinition cd;
-    final BufferObjectDataInput in;
-    final int offset;
+    protected final ClassDefinition cd;
+    private final PortableSerializer serializer;
+    private final BufferObjectDataInput in;
+    private final int offset;
+    private boolean raw = false;
 
     public DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
@@ -50,8 +52,8 @@ public class DefaultPortableReader implements PortableReader {
         return cd.getFieldNames();
     }
 
-    public int getFieldTypeId(String fieldName) {
-        return cd.getFieldTypeId(fieldName);
+    public FieldType getFieldType(String fieldName) {
+        return cd.getFieldType(fieldName);
     }
 
     public int getFieldClassId(String fieldName) {
@@ -283,6 +285,9 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     protected int getPosition(String fieldName) throws IOException {
+        if (raw) {
+            throw new HazelcastSerializationException("Can read Portable fields after getRawDataInput() is called!");
+        }
         FieldDefinition fd = cd.get(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
@@ -292,5 +297,14 @@ public class DefaultPortableReader implements PortableReader {
 
     protected int getPosition(FieldDefinition fd) throws IOException {
         return in.readInt(offset + fd.getIndex() * 4);
+    }
+
+    public ObjectDataInput getRawDataInput() throws IOException {
+        if (!raw) {
+            int pos = in.readInt(offset + cd.getFieldCount() * 4);
+            in.position(pos);
+        }
+        raw = true;
+        return in;
     }
 }

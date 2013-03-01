@@ -23,7 +23,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  */
 
 @PrivateApi
-public class OperationAccessor {
+public final class OperationAccessor {
 
     public static void setCallId(Operation op, long callId) {
         op.setCallId(callId);
@@ -39,5 +39,8 @@ public class OperationAccessor {
 
     public static void setCallTimeout(Operation op, long callTimeout) {
         op.setCallTimeout(callTimeout);
+    }
+
+    private OperationAccessor() {
     }
 }

@@ -19,14 +19,14 @@ package com.hazelcast.monitor;
 public interface LocalTopicOperationStats extends LocalInstanceOperationStats {
 
     /**
-     * Returns the number of publish operations.
+     * Returns the number of publish operations of the topic on this member in a specific time interval.
      *
      * @return number of publish operations
      */
     public long getNumberOfPublishes();
 
     /**
-     * Returns the number of received messages
+     * Returns the number of received messages of the topic on this member in a specific time interval
      *
      * @return number of received messages .
      */

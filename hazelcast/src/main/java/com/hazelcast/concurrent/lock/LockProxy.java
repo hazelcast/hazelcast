@@ -24,6 +24,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 
 /**
  * @mdogan 2/12/13
@@ -68,8 +69,12 @@ public class LockProxy extends AbstractDistributedObject<LockService> implements
         lockSupport.forceUnlock(getNodeEngine(), key);
     }
 
-    public ICondition newCondition() {
-        return new ConditionImpl(this);
+    public Condition newCondition() {
+        throw new UnsupportedOperationException("Use ICondition newCondition(String name) instead!");
+    }
+
+    public ICondition newCondition(String name) {
+        return new ConditionImpl(this, name);
     }
 
     public Object getId() {

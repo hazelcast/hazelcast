@@ -25,7 +25,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -34,17 +33,16 @@ import java.util.logging.Level;
 public class AsyncInvocationServiceImpl implements AsyncInvocationService {
 
     private static final int TIMEOUT = 10;
-    private static final int CAPACITY = 1000;
 
     private final NodeEngine nodeEngine;
     private final Executor executor;
     private final ILogger logger;
-    private final AtomicInteger size = new AtomicInteger(0);
 
     public AsyncInvocationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         String executorName = "hz:async-service";
-        this.executor = nodeEngine.getExecutionService().getExecutor(executorName);
+        final ExecutionServiceImpl executionService = (ExecutionServiceImpl) nodeEngine.getExecutionService();
+        this.executor = executionService.register(executorName, 20, 10000);  // TODO: @mm - both sizes should be configurable.
         logger = nodeEngine.getLogger(AsyncInvocationService.class.getName());
     }
 
@@ -59,13 +57,12 @@ public class AsyncInvocationServiceImpl implements AsyncInvocationService {
     }
 
     private void invoke(final InvocationImpl invocation, final Callback<Object> responseCallback) {
-        if (size.get() >= CAPACITY) {
-            logger.log(Level.WARNING, "Capacity overloaded! Executing " + invocation
-                    + " in current thread, instead of invoking asynchronously.");
-            invokeInCurrentThread(invocation, responseCallback);
-        } else {
-            size.incrementAndGet();
+        try {
             executor.execute(new AsyncInvocation(invocation, responseCallback));
+        } catch (RejectedExecutionException e) {
+            logger.log(Level.WARNING, "Capacity overloaded! Executing " + invocation.getOperation()
+                    + " in current thread, instead of invoking async.");
+            invokeInCurrentThread(invocation, responseCallback);
         }
     }
 
@@ -98,12 +95,8 @@ public class AsyncInvocationServiceImpl implements AsyncInvocationService {
         }
 
         public void run() {
-            try {
-                invocation.setCallback(new AsyncInvocationCallback(responseCallback));
-                invocation.invoke();
-            } finally {
-                size.decrementAndGet();
-            }
+            invocation.setCallback(new AsyncInvocationCallback(responseCallback));
+            invocation.invoke();
         }
     }
 

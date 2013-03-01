@@ -90,6 +90,10 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         this.nodeEngine = nodeEngine;
     }
 
+    public void reset() {
+        latches.clear();
+    }
+
     public void shutdown() {
         latches.clear();
     }
@@ -173,9 +177,5 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         map.put(Command.CDLGETCOUNT, new CDLGetCountHandler(this));
         map.put(Command.CDLSETCOUNT, new CDLSetCountHandler(this));
         return map;
-    }
-
-    @Override
-    public void onClientDisconnect(String clientUuid) {
     }
 }

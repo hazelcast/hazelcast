@@ -202,6 +202,10 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getLogger(name);
     }
 
+    public ILogger getLogger(Class clazz) {
+        return node.getLogger(clazz);
+    }
+
     public GroupProperties getGroupProperties() {
         return node.getGroupProperties();
     }
@@ -251,15 +255,16 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void onMemberLeft(MemberImpl member) {
-        operationService.onMemberLeft(member);
         waitNotifyService.onMemberLeft(member.getAddress());
+        operationService.onMemberLeft(member);
         eventService.onMemberLeft(member);
     }
 
-    @PrivateApi
-    public void onMemberDisconnect(Address disconnectedAddress) {
-        operationService.onMemberDisconnect(disconnectedAddress);
-    }
+    // @mm - I guess we dont need to take any action on disconnect.
+//    @PrivateApi
+//    public void onMemberDisconnect(Address disconnectedAddress) {
+//        operationService.onMemberDisconnect(disconnectedAddress);
+//    }
 
     @PrivateApi
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
@@ -272,7 +277,6 @@ public class NodeEngineImpl implements NodeEngine {
      * <p/>
      * Post join operations should return response, at least a null response.
      * <p/>
-     * Also making post join operation a JoinOperation will help a lot.
      */
     @PrivateApi
     public Operation[] getPostJoinOperations() {

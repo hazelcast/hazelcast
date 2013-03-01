@@ -18,7 +18,7 @@ package com.hazelcast.aws.utility;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.util.Util;
+import com.hazelcast.util.StreamUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
@@ -65,7 +65,7 @@ public class CloudyUtility {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(in);
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Util.streamXML(doc, baos);
+            StreamUtil.streamXML(doc, baos);
             final byte[] bytes = baos.toByteArray();
 //            final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 //            Reader reader = new BufferedReader(new InputStreamReader(bais));

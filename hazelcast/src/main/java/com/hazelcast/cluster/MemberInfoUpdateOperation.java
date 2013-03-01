@@ -51,7 +51,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         this.sendResponse = sendResponse;
     }
 
-    public void run() {
+    public void run() throws Exception {
         if (isValid()) {
             final ClusterServiceImpl clusterService = getService();
             clusterService.setMasterTime(masterTime);

@@ -49,6 +49,14 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
+    public void reset() {
+        for (LockStoreContainer container : containers) {
+            for (LockStore lockStore : container.getLockStores()) {
+                lockStore.clear();
+            }
+        }
+    }
+
     public void shutdown() {
         for (LockStoreContainer container : containers) {
             container.clear();
@@ -77,20 +85,19 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     }
 
     public void memberRemoved(MembershipServiceEvent event) {
-        // TODO: release lock on member remove
         final MemberImpl member = event.getMember();
         final String uuid = member.getUuid();
         releaseLocksOf(uuid);
     }
 
-    private void releaseLocksOf(String uuid) {
+    private void releaseLocksOf(final String uuid) {
         for (LockStoreContainer container : containers) {
             for (LockStore lockStore : container.getLockStores()) {
                 Map<Data, LockInfo> locks = lockStore.getLocks();
                 for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
                     final LockInfo lock = entry.getValue();
-                    if (lock.getOwner().equals(uuid)) {
+                    if (uuid.equals(lock.getOwner())) {
                         UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
                         op.setNodeEngine(nodeEngine);
                         op.setServiceName(SERVICE_NAME);
@@ -166,7 +173,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return null;
     }
 
-    public void onClientDisconnect(String clientUuid) {
+    public void clientDisconnected(String clientUuid) {
         releaseLocksOf(clientUuid);
     }
 }

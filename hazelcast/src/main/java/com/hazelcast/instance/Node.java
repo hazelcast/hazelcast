@@ -125,11 +125,11 @@ public class Node {
         this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
         this.groupProperties = new GroupProperties(config);
-        SerializationServiceImpl ss = null;
+        SerializationServiceImpl ss;
         try {
             ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         serializationService = ss;
         systemLogService = new SystemLogService(this);
@@ -137,7 +137,7 @@ public class Node {
         try {
             addressPicker.pickAddress();
         } catch (Throwable e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
@@ -153,7 +153,7 @@ public class Node {
                 serverSocketChannel.close();
             } catch (Throwable ignored) {
             }
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeEngine = new NodeEngineImpl(this);
@@ -286,12 +286,6 @@ public class Node {
 
     public void handleInterruptedException(Thread thread, Exception e) {
         logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
-    }
-
-    public void checkNodeState() {
-        if (!isActive()) {
-            throw new IllegalStateException("Hazelcast Instance is not active!");
-        }
     }
 
     public boolean joined() {
@@ -438,6 +432,10 @@ public class Node {
 
     public ILogger getLogger(String name) {
         return loggingService.getLogger(name);
+    }
+
+    public ILogger getLogger(Class clazz) {
+        return loggingService.getLogger(clazz);
     }
 
     public GroupProperties getGroupProperties() {

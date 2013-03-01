@@ -16,7 +16,8 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -29,20 +30,43 @@ import java.util.concurrent.TimeoutException;
 public final class FutureProxy<V> implements Future<V> {
 
     private final Future future;
-    private final NodeEngine nodeEngine;
+    private final SerializationService serializationService;
+    private final V value;
+    private final boolean hasValue;
     private volatile boolean done = false;
 
-    public FutureProxy(Future future, NodeEngine nodeEngine) {
+    public FutureProxy(Future future, SerializationService serializationService) {
         this.future = future;
-        this.nodeEngine = nodeEngine;
+        this.serializationService = serializationService;
+        this.value = null;
+        this.hasValue = false;
+    }
+
+    public FutureProxy(Future future, SerializationService serializationService, V value) {
+        this.future = future;
+        this.value = value;
+        this.serializationService = serializationService;
+        this.hasValue = true;
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        return nodeEngine.toObject(future.get());
+        final Object object = future.get();
+        return getResult(object);
     }
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return nodeEngine.toObject(future.get(timeout, unit));
+        final Object object = future.get(timeout, unit);
+        return getResult(object);
+    }
+
+    private V getResult(Object object) {
+        if (hasValue) {
+            return value;
+        }
+        if (object instanceof Data) {
+            object = serializationService.toObject((Data) object);
+        }
+        return (V) object;
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {

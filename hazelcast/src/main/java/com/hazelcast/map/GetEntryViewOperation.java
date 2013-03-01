@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.serialization.Data;
 
-public class GetEntryViewOperation extends AbstractMapOperation {
+public class GetEntryViewOperation extends KeyBasedMapOperation {
 
     private transient EntryView<Data, Data> result;
 

@@ -25,6 +25,14 @@ public interface ManagedService {
 
     void init(NodeEngine nodeEngine, Properties properties);
 
+    /**
+     * reset service, back to initial state
+     */
+    void reset();
+
+    /**
+     * shutdown service
+     */
     void shutdown();
 
 }

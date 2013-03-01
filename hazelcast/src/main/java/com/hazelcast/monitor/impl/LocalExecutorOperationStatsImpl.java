@@ -23,23 +23,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalExecutorOperationStatsImpl extends LocalOperationStatsSupport implements LocalExecutorOperationStats  {
-    private String executorName;
+public class LocalExecutorOperationStatsImpl extends LocalOperationStatsSupport implements LocalExecutorOperationStats {
+
     final AtomicLong pending = new AtomicLong(0);
     final AtomicLong started = new AtomicLong(0);
     final AtomicLong startLatency = new AtomicLong(0);
     final AtomicLong completed = new AtomicLong(0);
-    final AtomicLong completionTime = new AtomicLong(0);
-    final AtomicLong minCompletionTime = new AtomicLong(Long.MAX_VALUE);
-    final AtomicLong maxCompletionTime = new AtomicLong(Long.MIN_VALUE);
+    final AtomicLong totalExecutionTime = new AtomicLong(0);
+    final AtomicLong minExecutionTime = new AtomicLong(Long.MAX_VALUE);
+    final AtomicLong maxExecutionTime = new AtomicLong(Long.MIN_VALUE);
 
 
-    public LocalExecutorOperationStatsImpl(String executorName) {
-        this.executorName = executorName;
-    }
-
-    public String getExecutorName() {
-        return executorName;
+    public LocalExecutorOperationStatsImpl() {
     }
 
     public long getPending() {
@@ -50,12 +45,8 @@ public class LocalExecutorOperationStatsImpl extends LocalOperationStatsSupport 
         return started.get();
     }
 
-    public long getStartLatency() {
-        return startLatency.get();
-    }
-
     public long getAverageStartLatency() {
-        if(started.get() == 0)
+        if (started.get() == 0)
             return 0;
         return startLatency.get() / started.get();
     }
@@ -64,45 +55,52 @@ public class LocalExecutorOperationStatsImpl extends LocalOperationStatsSupport 
         return completed.get();
     }
 
-    public long getCompletionTime() {
-        return completionTime.get();
+    public long getMinExecutionTime() {
+        return minExecutionTime.get();
     }
 
-    public long getMinCompletionTime() {
-        return minCompletionTime.get();
-    }
-
-    public long getAverageCompletionTime() {
-        if(completed.get() == 0) {
+    public long getAverageExecutionTime() {
+        if (completed.get() == 0) {
             return 0;
         }
-        return completionTime.get() / completed.get();
+        return totalExecutionTime.get() / completed.get();
     }
 
-    public long getMaxCompletionTime() {
-        return maxCompletionTime.get();
+    public long getMaxExecutionTime() {
+        return maxExecutionTime.get();
     }
 
     public void writeDataInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(executorName);
         out.writeLong(pending.get());
         out.writeLong(started.get());
         out.writeLong(startLatency.get());
         out.writeLong(completed.get());
-        out.writeLong(completionTime.get());
-        out.writeLong(minCompletionTime.get());
-        out.writeLong(maxCompletionTime.get());
+        out.writeLong(totalExecutionTime.get());
+        out.writeLong(minExecutionTime.get());
+        out.writeLong(maxExecutionTime.get());
     }
 
     public void readDataInternal(ObjectDataInput in) throws IOException {
-        executorName = in.readUTF();
         pending.set(in.readLong());
         started.set(in.readLong());
         startLatency.set(in.readLong());
         completed.set(in.readLong());
-        completionTime.set(in.readLong());
-        minCompletionTime.set(in.readLong());
-        maxCompletionTime.set(in.readLong());
+        totalExecutionTime.set(in.readLong());
+        minExecutionTime.set(in.readLong());
+        maxExecutionTime.set(in.readLong());
     }
 
+    @Override
+    public String toString() {
+        return "LocalExecutorOperationStatsImpl{" +
+                "pending=" + pending +
+                ", started=" + started +
+                ", startLatency=" + startLatency +
+                ", completed=" + completed +
+                ", totalExecutionTime=" + totalExecutionTime +
+                ", averageExecutionTime= " + getAverageExecutionTime() +
+                ", minExecutionTime=" + minExecutionTime +
+                ", maxExecutionTime=" + maxExecutionTime +
+                '}';
+    }
 }

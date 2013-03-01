@@ -20,7 +20,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -31,8 +30,6 @@ public class MigrationInfo implements DataSerializable {
     private int replicaIndex;
     private MigrationType migrationType;
     private int copyBackReplicaIndex = -1;
-
-    private transient long creationTime = Clock.currentTimeMillis();
 
     public MigrationInfo() {
     }
@@ -86,10 +83,6 @@ public class MigrationInfo implements DataSerializable {
 
     void setMigrationType(MigrationType migrationType) {
         this.migrationType = migrationType;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -153,7 +146,6 @@ public class MigrationInfo implements DataSerializable {
         sb.append(", to=").append(to);
         sb.append(", replicaIndex=").append(replicaIndex);
         sb.append(", migrationType=").append(migrationType);
-        sb.append(", creationTime=").append(creationTime);
         sb.append('}');
         return sb.toString();
     }

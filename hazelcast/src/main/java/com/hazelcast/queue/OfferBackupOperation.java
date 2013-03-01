@@ -41,7 +41,7 @@ public class OfferBackupOperation extends QueueOperation implements BackupOperat
     }
 
     public void run() throws Exception {
-        getContainer().offerBackup(data);
+        getOrCreateContainer().offerBackup(data);
         response = true;
     }
 

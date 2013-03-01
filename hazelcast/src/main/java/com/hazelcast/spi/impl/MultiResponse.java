@@ -16,17 +16,16 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.*;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * @mdogan 10/1/12
@@ -75,7 +74,6 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
         hasResponse = true;
     }
 
-    @Override
     public void beforeRun() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         final int len = operationData.length;
@@ -85,7 +83,15 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
             op.setNodeEngine(nodeEngine)
                     .setCallerAddress(getCallerAddress())
                     .setConnection(getConnection())
-                    .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                    .setResponseHandler(new ResponseHandler() {
+                        public void sendResponse(Object obj) {
+                            if (obj instanceof Throwable) {
+                                final Throwable t = (Throwable) obj;
+                                final ILogger logger = nodeEngine.getLogger(op.getClass());
+                                logger.log(Level.WARNING, "While executing operation within MultiResponse: " + t.getMessage(), t);
+                            }
+                        }
+                    });
             if (op instanceof Response) {
                 OperationAccessor.setCallId(op, getCallId());
             }
@@ -96,8 +102,7 @@ public final class MultiResponse extends AbstractOperation implements ResponseOp
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
             final NodeEngine nodeEngine = getNodeEngine();
-            for (int i = 0; i < operations.length; i++) {
-                final Operation op = operations[i];
+            for (final Operation op : operations) {
                 if (op != null) {
                     nodeEngine.getOperationService().runOperation(op);
                 }

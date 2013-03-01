@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalSemaphoreStats;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -298,5 +296,5 @@ public interface ISemaphore extends DistributedObject {
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException;
 
 
-    LocalSemaphoreStats getLocalSemaphoreStats();
+//    LocalSemaphoreStats getLocalSemaphoreStats();
 }

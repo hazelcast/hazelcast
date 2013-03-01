@@ -41,7 +41,7 @@ public class ContainsOperation extends QueueOperation {
     }
 
     public void run() throws Exception {
-        response = getContainer().contains(dataList);
+        response = getOrCreateContainer().contains(dataList);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

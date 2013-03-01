@@ -32,7 +32,7 @@ public class PollBackupOperation extends QueueOperation implements BackupOperati
     }
 
     public void run() throws Exception {
-        getContainer().pollBackup();
+        getOrCreateContainer().pollBackup();
         response = Boolean.TRUE;
     }
 

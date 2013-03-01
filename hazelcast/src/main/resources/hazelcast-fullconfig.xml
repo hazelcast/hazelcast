@@ -174,9 +174,8 @@
         </member-group>
     </partition-group>
     <executor-service name="default">
-        <!--<core-pool-size>16</core-pool-size>-->
-        <max-pool-size>64</max-pool-size>
-        <!--<keep-alive-seconds>60</keep-alive-seconds>-->
+        <pool-size>16</pool-size>
+        <queue-capacity>1000</queue-capacity>
     </executor-service>
     <queue name="default">
         <!--
@@ -242,7 +241,7 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size policy="PER_JVM">0</max-size>
+        <max-size policy="PER_NODE">0</max-size>
         <!--
             When max. size is reached, specified percentage of
             the map will be evicted. Any integer between 0 and 100.
@@ -323,12 +322,6 @@
         </semaphore-factory>
     </semaphore>
 
-    <merge-policies>
-        <map-merge-policy name="hz.MERGING_WINS">
-            <class-name>com.hazelcast.examples.MyOwnMergePolicy</class-name>
-        </map-merge-policy>
-    </merge-policies>
-
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
         <listener>com.hazelcast.examples.InstanceListener</listener>
@@ -339,8 +332,8 @@
         <portable-version>0</portable-version>
         <portable-factory-class>com.hazelcast.examples.PortableFactory</portable-factory-class>
         <serializers>
-            <type-serializer global="true">com.hazelcast.examples.GlobalSerializerFactory</type-serializer>
-            <type-serializer global="false" type-class="com.hazelcast.examples.DummyType">
+            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <type-serializer type-class="com.hazelcast.examples.DummyType">
                 com.hazelcast.examples.SerializerFactory</type-serializer>
         </serializers>
     </serialization>

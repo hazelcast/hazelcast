@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.spi.exception.RetryableException;
 
 import java.util.concurrent.ExecutionException;
 
@@ -26,7 +27,7 @@ import java.util.concurrent.ExecutionException;
  */
 public final class ExceptionUtil {
 
-    public static <T> T rethrow(final Throwable t) {
+    public static RuntimeException rethrow(final Throwable t) {
         if (t instanceof Error) {
             if (t instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
@@ -37,10 +38,14 @@ public final class ExceptionUtil {
         } else if (t instanceof ExecutionException) {
             final Throwable cause = t.getCause();
             if (cause != null) {
-                return rethrow(cause);
+                throw rethrow(cause);
             } else {
                 throw new HazelcastException(t);
             }
+            // TODO: handle remote and local interruptions separately!
+//        } else if (t instanceof InterruptedException){
+//            Thread.currentThread().interrupt();
+//            throw new HazelcastException(t);
         } else {
             throw new HazelcastException(t);
         }
@@ -55,5 +60,20 @@ public final class ExceptionUtil {
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void sneakyThrowInternal(Throwable t) throws T {
         throw (T) t;
+    }
+
+    private final static String EXCEPTION_SEPARATOR = "------ End remote and begin local stack-trace ------";
+
+    public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace) {
+        StackTraceElement[] remoteStackTrace = remoteCause.getStackTrace();
+        StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length];
+        System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
+        newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", null, -1);
+        System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 1, localSideStackTrace.length - 1);
+        remoteCause.setStackTrace(newStackTrace);
+    }
+
+    public static boolean isRetryableException(Throwable t) {
+        return t instanceof RetryableException || t.getCause() instanceof RetryableException;
     }
 }

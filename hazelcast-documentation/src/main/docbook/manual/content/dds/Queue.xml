@@ -17,10 +17,8 @@
 
 <sect1 xml:id="Queue" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Distributed Queue</title>
     <para>Hazelcast distributed queue is an implementation
         of<literal>java.util.concurrent.BlockingQueue</literal>.
@@ -49,14 +47,9 @@ if (task != null) {
         in the example above), that are (en/de)queued have to
         be<literal>Serializable</literal>. Maximum capacity per JVM and the TTL (Time to Live)
         for a queue can be configured.
-        </para>
+    </para>
 
-        <para>
-            Distributed queues are backed by distributed maps. Thus,
-            queues can have custom backup counts and persistent storage. Hazelcast will generate
-            cluster-wide unique id for each element in the queue.
-        </para>
-        <para>
+    <para>
         Sample configuration:
         <programlisting language="xml"><![CDATA[<hazelcast>
     ...
@@ -68,54 +61,18 @@ if (task != null) {
             Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
         -->
         <max-size-per-jvm>10000</max-size-per-jvm>
-        
-        <!--
-            Name of the map configuration that will be used for the backing distributed
-            map for this queue.
-        -->
-        <backing-map-ref>queue-map</backing-map-ref>
     </queue>
 
-    <map name="queue-map">
 
-        <backup-count>1</backup-count>
-
-        <map-store enabled="true">
-
-            <class-name>com.your,company.storage.DBMapStore</class-name>
-
-            <write-delay-seconds>0</write-delay-seconds>
-
-        </map-store>
-
-        ...
-
-    </map>
 </hazelcast>
 ]]></programlisting>
-        If the backing map has no
-        <literal>map-store</literal>
-        defined then your
-        distributed queue will be in-memory only. If the backing map has a
-        <literal>map-store</literal>
-        defined then Hazelcast will call your
-        <literal>MapStore</literal>
-        implementation to persist queue elements. Even if you reboot
-        your cluster Hazelcast will rebuild the queue with its content. When implementing a
-        <literal>MapStore</literal>
-        for the backing map, note that type of the
-        <literal>key</literal>
-        is always
-        <literal>Long</literal>
-        and values are the elements you place into the queue. So make
-        sure
-        <literal>MapStore.loadAllKeys</literal>
-        returns
-        <literal>Set&lt;Long&gt;</literal>
-        for
-        instance.
     </para>
-
-
+    <sect2>
+        <title>Persistence</title>
+        <para>Hazelcast allows you to load and store the distributed queue entries from/to a
+            persistent datastore such as relational database.
+        </para>
+        <!-- TODO more explanation -->
+    </sect2>
     <xi:include href="../WildcardConfigurationLink.xml"/>
 </sect1>

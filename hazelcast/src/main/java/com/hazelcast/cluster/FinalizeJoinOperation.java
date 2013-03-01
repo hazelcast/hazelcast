@@ -16,8 +16,8 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
@@ -49,7 +50,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     @Override
-    public void run() {
+    public void run() throws Exception {
         if (isValid()) {
             super.run();
 
@@ -87,7 +88,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     } catch (InterruptedException ignored) {
                     } catch (TimeoutException ignored) {
                     } catch (ExecutionException e) {
-                        throw new HazelcastException(e);
+                        final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
+                        logger.log(Level.FINEST, "Error while executing post-join operations -> "
+                                + e.getClass().getSimpleName() + "[" +e.getMessage() + "]");
                     }
                 }
             }

@@ -19,69 +19,36 @@ package com.hazelcast.topic.proxy;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * User: sancar
  * Date: 12/26/12
  * Time: 2:06 PM
  */
-public class TopicProxy<E> extends AbstractDistributedObject<TopicService> implements ITopic<E> {
+public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
-    private final String name;
-    private final EventService eventService;
-    private final ConcurrentMap<MessageListener, String> registeredIds = new ConcurrentHashMap<MessageListener, String>();
-
-    public TopicProxy(String name, NodeEngine nodeEngine) {
-        super(nodeEngine, null);
-        this.name = name;
-        this.eventService = nodeEngine.getEventService();
-    }
-
-    public String getName() {
-        return name;
+    public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
+        super(name, nodeEngine, service);
     }
 
     public void publish(E message) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        TopicEvent topicEvent = new TopicEvent(name, nodeEngine.toData(message));
-        eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
+        publishInternal(getNodeEngine().toData(message));
     }
 
     public void addMessageListener(MessageListener<E> listener) {
-        EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
-        String currentId = registeredIds.put(listener, eventRegistration.getId());
-        if (currentId != null) {
-            eventService.deregisterListener(TopicService.SERVICE_NAME, name, currentId);
-        }
+        addMessageListenerInternal(listener);
     }
 
     public void removeMessageListener(MessageListener<E> listener) {
-        String id = registeredIds.remove(listener);
-        if (id != null) {
-            eventService.deregisterListener(TopicService.SERVICE_NAME, name, id);
-        }
+        removeMessageListenerInternal(listener);
     }
 
     public LocalTopicStats getLocalTopicStats() {
-        return null;
+        return getLocalTopicStatsInternal();
     }
 
-    public Object getId() {
-        return getName();
-    }
-
-    public String getServiceName() {
-        return TopicService.SERVICE_NAME;
-    }
 }
 
 

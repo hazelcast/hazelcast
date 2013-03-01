@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -33,10 +34,13 @@ public class QueueItem implements DataSerializable {
 
     private Data data;
 
+    private long creationTime;
+
     private final transient QueueContainer container;
 
     QueueItem(QueueContainer container) {
         this.container = container;
+        this.creationTime = Clock.currentTimeMillis();
     }
 
     QueueItem(QueueContainer container, long itemId) {
@@ -62,6 +66,10 @@ public class QueueItem implements DataSerializable {
 
     public long getItemId() {
         return itemId;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
     }
 
     public boolean equals(Object obj) {

@@ -17,10 +17,9 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.KeyBasedOperation;
 
 // author: sancar - 25.12.2012
-public abstract class AtomicLongBackupAwareOperation extends AtomicLongBaseOperation implements BackupAwareOperation, KeyBasedOperation {
+public abstract class AtomicLongBackupAwareOperation extends AtomicLongBaseOperation implements BackupAwareOperation {
 
     protected boolean shouldBackup = true;
 
@@ -44,8 +43,4 @@ public abstract class AtomicLongBackupAwareOperation extends AtomicLongBaseOpera
         return 0;
     }
 
-    public int getKeyHash() {
-        String key = AtomicLongService.SERVICE_NAME + getName();
-        return key.hashCode();
-    }
 }

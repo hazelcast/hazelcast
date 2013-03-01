@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 final class Call {
 
@@ -35,11 +34,12 @@ final class Call {
         callback.notify(response);
     }
 
-    public void onDisconnect(Address disconnectedAddress) {
-        if (disconnectedAddress.equals(target)) {
-            callback.notify(new TargetDisconnectedException(disconnectedAddress));
-        }
-    }
+    // @mm - I guess we dont need to take any action on disconnect.
+//    public void onDisconnect(Address disconnectedAddress) {
+//        if (disconnectedAddress.equals(target)) {
+//            callback.notify(new TargetDisconnectedException(disconnectedAddress));
+//        }
+//    }
 
     public void onMemberLeft(MemberImpl leftMember) {
         if (leftMember.getAddress().equals(target)) {

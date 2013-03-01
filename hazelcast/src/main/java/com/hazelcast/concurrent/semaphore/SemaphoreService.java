@@ -65,6 +65,10 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
+    public void reset() {
+        permitMap.clear();
+    }
+
     public void shutdown() {
         permitMap.clear();
     }
@@ -161,16 +165,11 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return max;
     }
 
-    public ConcurrentMap<String, Permit> getPermitMap() {
-        return permitMap; //TODO testing only
-    }
-
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         return null;
     }
 
-    public void onClientDisconnect(String clientUuid) {
-        // TODO: @mm - release locks owned by this client.
+    public void clientDisconnected(String clientUuid) {
         onOwnerDisconnected(clientUuid);
     }
 }

@@ -42,7 +42,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     }
 
     public void run() throws Exception {
-        getContainer().addAllBackup(dataList);
+        getOrCreateContainer().addAllBackup(dataList);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

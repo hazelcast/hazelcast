@@ -45,4 +45,12 @@ public class LocalTopicOperationStatsImpl extends LocalOperationStatsSupport
     public long getNumberOfReceivedMessages() {
         return numberOfReceives;
     }
+
+    @Override
+    public String toString() {
+        return "LocalTopicOperationStatsImpl{" +
+                "numberOfPublishes=" + numberOfPublishes +
+                ", numberOfReceives=" + numberOfReceives +
+                '}';
+    }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+import com.hazelcast.util.executor.ExecutorThreadFactory;
 
 import java.util.Iterator;
 import java.util.Queue;
@@ -37,6 +38,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
     private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
+    private final ExecutorService expirationService;
     private final Future expirationTask;
     private final WaitingOpProcessor waitingOpProcessor;
     private final NodeEngine nodeEngine;
@@ -48,7 +50,14 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(WaitNotifyService.class.getName());
 
-        expirationTask = nodeEngine.getExecutionService().submit("hz:system", new Runnable() {
+        expirationService = Executors.newSingleThreadExecutor(
+                new ExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader()) {
+                    protected String newThreadName() {
+                        return node.getThreadNamePrefix("wait-notify");
+                    }
+                });
+
+        expirationTask = expirationService.submit(new Runnable() {
             public void run() {
                 while (true) {
                     if (Thread.interrupted()) {
@@ -140,9 +149,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     public void onMemberLeft(Address leftMember) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
-                if (Thread.interrupted()) {
-                    return;
-                }
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
                     if (leftMember.equals(op.getCallerAddress())) {
@@ -184,9 +190,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     public void cancelWaitingOps(String serviceName, Object objectId, Throwable cause) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
-                if (Thread.interrupted()) {
-                    return;
-                }
                 if (waitingOp.isValid()) {
                     WaitNotifyKey wnk = waitingOp.waitSupport.getWaitKey();
                     if (serviceName.equals(wnk.getServiceName())
@@ -208,6 +211,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     void shutdown() {
         logger.log(Level.FINEST, "Stopping tasks...");
         expirationTask.cancel(true);
+        expirationService.shutdown();
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
                 if (waitingOp.isValid()) {

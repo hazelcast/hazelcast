@@ -20,7 +20,7 @@ import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryException;
 import com.hazelcast.query.impl.ReflectionHelper;
-import com.hazelcast.util.TestUtil;
+import com.hazelcast.instance.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

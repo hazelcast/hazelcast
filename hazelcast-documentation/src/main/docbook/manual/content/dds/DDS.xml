@@ -61,28 +61,32 @@
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 
-public class Sample implements InstanceListener {
+public class Sample implements DistributedObjectListener {
     public static void main(String[] args) {
         Sample sample = new Sample();
 
         Config cfg = new Config();
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-        hz.addInstanceListener(sample);
+        hz.addDistributedObjectListener(sample);
 
-        Collection<Instance> instances = hz.getInstances();
-        for (Instance instance : instances) {
-            System.out.println(instance.getInstanceType() + "," + instance.getId());
+        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+
+        for (DistributedObject distributedObject : distributedObjects) {
+            System.out.println(distributedObject.getName() + "," + distributedObject.getId());
         }
     }
 
-    public void distributedObjectCreated(InstanceEvent event) {
-        Instance instance = event.getInstance();
-        System.out.println("Created " + instance.getInstanceType() + "," + instance.getId());
+    @Override
+    public void distributedObjectCreated(DistributedObjectEvent event) {
+        DistributedObject instance = event.getDistributedObject();
+        System.out.println("Created " + instance.getName() + "," + instance.getId());
     }
 
-    public void distributedObjectDestroyed(InstanceEvent event) {
-        Instance instance = event.getInstance();
-        System.out.println("Destroyed " + instance.getInstanceType() + "," + instance.getId());
+    @Override
+    public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        DistributedObject instance = event.getDistributedObject();
+        System.out.println("Destroyed " + instance.getName() + "," + instance.getId());
+
     }
 }]]></programlisting>
 </para>

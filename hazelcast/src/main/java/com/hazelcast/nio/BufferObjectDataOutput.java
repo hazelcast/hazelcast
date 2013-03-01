@@ -56,4 +56,6 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     BufferObjectDataOutput slice();
 
+    byte[] toByteArray();
+
 }

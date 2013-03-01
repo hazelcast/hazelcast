@@ -24,9 +24,7 @@ import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,24 +58,20 @@ public class HazelcastInstanceFactory {
         String name = config.getInstanceName();
         if (name == null || name.trim().length() == 0) {
             name = createInstanceName(config);
-            return newHazelcastInstance(config, name);
+            return newHazelcastInstance(config, name, new DefaultNodeContext());
         } else {
             synchronized (INIT_LOCK) {
                 if (INSTANCE_MAP.containsKey(name)) {
                     throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
                 }
                 factoryIdGen.incrementAndGet();
-                return newHazelcastInstance(config, name);
+                return newHazelcastInstance(config, name, new DefaultNodeContext());
             }
         }
     }
 
     private static String createInstanceName(Config config) {
         return "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
-    }
-
-    static HazelcastInstance newHazelcastInstance(Config config, String instanceName) {
-        return newHazelcastInstance(config, instanceName, new DefaultNodeContext());
     }
 
     static HazelcastInstance newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
@@ -122,13 +116,18 @@ public class HazelcastInstanceFactory {
             }
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
         return proxy;
     }
 
     public static void shutdownAll() {
-        Collection<HazelcastInstanceProxy> instances = INSTANCE_MAP.values();
+        final List<HazelcastInstanceProxy> instances = new ArrayList<HazelcastInstanceProxy>(INSTANCE_MAP.values());
+        Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
+            public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
         for (HazelcastInstanceProxy proxy : instances) {
             proxy.getLifecycleService().shutdown();
             proxy.original = null;

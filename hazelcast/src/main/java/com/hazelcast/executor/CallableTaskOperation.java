@@ -19,6 +19,7 @@ package com.hazelcast.executor;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ import java.util.concurrent.Callable;
 /**
  * @mdogan 1/18/13
  */
-public class CallableTaskOperation<V> extends AbstractNamedOperation {
+public class CallableTaskOperation<V> extends AbstractNamedOperation implements IdentifiedDataSerializable {
 
     private Callable<V> callable;
 
@@ -70,5 +71,9 @@ public class CallableTaskOperation<V> extends AbstractNamedOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         callable = in.readObject();
+    }
+
+    public int getId() {
+        return DataSerializerExecutorHook.CALLABLE_TASK;
     }
 }

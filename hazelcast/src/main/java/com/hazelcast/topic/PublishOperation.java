@@ -19,17 +19,20 @@ package com.hazelcast.topic;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.concurrent.locks.Lock;
 
 /**
  * User: sancar
  * Date: 12/31/12
  * Time: 12:10 PM
  */
-public class PublishOperation extends AbstractNamedOperation implements KeyBasedOperation {
+public class PublishOperation extends AbstractNamedOperation {
 
     private Data message;
 
@@ -43,21 +46,28 @@ public class PublishOperation extends AbstractNamedOperation implements KeyBased
     }
 
     @Override
+    public void beforeRun() throws Exception {
+        ((TopicService) getService()).incrementPublishes(name);
+    }
+
+    @Override
     public void run() throws Exception {
-
+        TopicService service = getService();
         TopicEvent topicEvent = new TopicEvent(name, message);
-        getNodeEngine().getEventService().publishEvent(TopicService.SERVICE_NAME, getNodeEngine().getEventService().getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
-
+        final EventService eventService = getNodeEngine().getEventService();
+        final Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
+        final Lock lock = service.getOrderLock(name);
+        lock.lock();
+        try {
+            eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public boolean returnsResponse() {
         return true;
-    }
-
-    public int getKeyHash() {
-        String key = TopicService.SERVICE_NAME + getName();
-        return key.hashCode();
     }
 
     @Override

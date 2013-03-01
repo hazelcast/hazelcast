@@ -38,7 +38,7 @@ public class RemoveBackupOperation extends QueueOperation implements BackupOpera
     }
 
     public void run() throws Exception {
-        getContainer().removeBackup(itemId);
+        getOrCreateContainer().removeBackup(itemId);
         response = true;
     }
 

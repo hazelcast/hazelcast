@@ -119,6 +119,10 @@ public class HazelcastClient implements HazelcastInstance {
         throw new UnsupportedOperationException();
     }
 
+    public ConcurrentMap<String, Object> getUserContext() {
+        throw new UnsupportedOperationException();
+    }
+
     public PartitionService getPartitionService() {
         return partitionClientProxy;
     }
@@ -367,7 +371,7 @@ public class HazelcastClient implements HazelcastInstance {
         return config;
     }
 
-    public void registerFallbackSerializer(final TypeSerializer serializer) {
+    public void registerGlobalSerializer(final TypeSerializer serializer) {
         serializationService.registerFallback(serializer);
     }
 

@@ -31,9 +31,9 @@ public interface EventService {
 
     EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);
 
-    void deregisterListener(String serviceName, String topic, String id);
+    boolean deregisterListener(String serviceName, String topic, Object id);
 
-    void deregisterListeners(String serviceName, String topic);
+    void deregisterAllListeners(String serviceName, String topic);
 
     Collection<EventRegistration> getRegistrations(String serviceName, String topic);
 
@@ -42,6 +42,4 @@ public interface EventService {
     void publishEvent(String serviceName, EventRegistration registration, Object event);
 
     void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event);
-
-    void executeEvent(Runnable eventRunnable);
 }

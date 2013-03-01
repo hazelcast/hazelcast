@@ -29,6 +29,6 @@ public class IteratorOperation extends QueueOperation {
     }
 
     public void run() {
-        response = new SerializableCollectionContainer(getContainer().getAsDataList());
+        response = new SerializableCollectionContainer(getOrCreateContainer().getAsDataList());
     }
 }

@@ -391,7 +391,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             MemberImpl deadMember = getMember(deadAddress);
             if (deadMember != null) {
                 removeMember(deadMember);
-                nodeEngine.onMemberLeft(deadMember);
                 logger.log(Level.INFO, membersString());
             }
         } finally {
@@ -447,7 +446,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             } catch (Exception e) {
                 validJoinRequest = false;
             }
-//            final Connection conn = joinMessage.getConnection();
+            final Connection conn = joinRequest.getConnection();
             if (validJoinRequest) {
                 final MemberImpl member = getMember(joinMessage.getAddress());
                 if (member != null) {
@@ -501,10 +500,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                             }
                         }
                     }
-//                    if (joinMessage.getRemoteAddress() != null && !joinMessage.getRemoteAddress().equals(thisAddress)) {
-//                        sendMasterAnswer(joinMessage);
-//                        return;
-//                    }
                     if (!joinInProgress) {
                         if (firstJoinRequest != 0 && now - firstJoinRequest >= maxWaitSecondsBeforeJoin * 1000) {
                             startJoin();
@@ -525,7 +520,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
             } else {
-//                conn.close();
+                conn.close();
             }
         } finally {
             lock.unlock();
@@ -571,10 +566,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                             tasks.add(runnable);
                         }
                     }
+                    final Collection<ManagedService> managedServices = nodeEngine.getServices(ManagedService.class);
+                    for (ManagedService service : managedServices) {
+                        service.reset();
+                    }
                     node.onRestart();
                     node.connectionManager.restart();
-                    node.clusterService.onRestart();
-                    node.partitionService.onRestart();
                     node.rejoin();
                     final Collection<Future> futures = new LinkedList<Future>();
                     for (Runnable task : tasks) {
@@ -606,10 +603,17 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    public void onRestart() {
-        joinReset();
-        membersRef.set(null);
-        masterConfirmationTimes.clear();
+    public void reset() {
+        lock.lock();
+        try {
+            joinInProgress = false;
+            setJoins.clear();
+            timeToStartJoin = 0;
+            membersRef.set(null);
+            masterConfirmationTimes.clear();
+        } finally {
+            lock.unlock();
+        }
     }
 
     void startJoin() {
@@ -790,6 +794,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 masterConfirmationTimes.remove(deadMember);
                 setMembers(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
+                nodeEngine.onMemberLeft(deadMember);
                 sendMembershipEventNotifications(deadMember, false); // async events
                 if (node.isMaster()) {
                     logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");
@@ -874,18 +879,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     public Collection<MemberImpl> getMemberList() {
         final Map<Address, MemberImpl> map = membersRef.get();
         return map != null ? Collections.unmodifiableCollection(map.values()) : Collections.<MemberImpl>emptySet();
-    }
-
-    public void reset() {
-        lock.lock();
-        try {
-            setJoins.clear();
-            timeToStartJoin = 0;
-            membersRef.set(null);
-            masterConfirmationTimes.clear();
-        } finally {
-            lock.unlock();
-        }
     }
 
     public void shutdown() {
@@ -979,10 +972,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         commandHandlers.put(Command.TRXROLLBACK, new TransactionRollbackHandler(this));
         commandHandlers.put(Command.TRXSTATUS, new TransactionStatusHandler(this));
         return commandHandlers;
-    }
-
-    @Override
-    public void onClientDisconnect(String clientUuid) {
     }
 
     @Override

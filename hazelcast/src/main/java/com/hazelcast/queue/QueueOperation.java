@@ -51,11 +51,11 @@ public abstract class QueueOperation extends Operation implements KeyBasedOperat
         this.timeoutMillis = timeoutMillis;
     }
 
-    protected final QueueContainer getContainer() {
+    protected final QueueContainer getOrCreateContainer() {
         if (container == null) {
             QueueService queueService = getService();
             try {
-                container = queueService.getContainer(name, this instanceof BackupOperation);
+                container = queueService.getOrCreateContainer(name, this instanceof BackupOperation);
             } catch (Exception e) {
                 throw new RetryableHazelcastException(e);
             }

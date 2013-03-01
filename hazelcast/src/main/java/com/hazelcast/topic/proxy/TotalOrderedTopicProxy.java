@@ -20,6 +20,7 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.PublishOperation;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
@@ -28,13 +29,10 @@ import java.util.concurrent.Future;
  * Date: 12/31/12
  * Time: 12:08 PM
  */
-public class TotalOrderedTopicProxy extends TopicProxy{
+public class TotalOrderedTopicProxy extends TopicProxy {
 
-    private final int partitionId;
-
-    public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine) {
-        super(name, nodeEngine);
-        partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
+    public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
+        super(name, nodeEngine, service);
     }
 
     @Override
@@ -42,11 +40,12 @@ public class TotalOrderedTopicProxy extends TopicProxy{
         try {
             final NodeEngine nodeEngine = getNodeEngine();
             PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
+            final int partitionId = nodeEngine.getPartitionService().getPartitionId(getName());
             Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(TopicService.SERVICE_NAME, operation, partitionId).build();
             Future f = inv.invoke();
             f.get();
         } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 

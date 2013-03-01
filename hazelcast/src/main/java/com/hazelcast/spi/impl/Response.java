@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -81,7 +80,7 @@ public final class Response extends AbstractOperation implements ResponseOperati
         if (isData) {
             ((Data) result).writeData(out);
         } else {
-            IOUtil.writeNullableObject(out, result);
+            out.writeObject(result);
         }
         out.writeBoolean(exception);
     }
@@ -93,7 +92,7 @@ public final class Response extends AbstractOperation implements ResponseOperati
             data.readData(in);
             result = data;
         } else {
-            result = IOUtil.readNullableObject(in);
+            result = in.readObject();
         }
         exception = in.readBoolean();
     }

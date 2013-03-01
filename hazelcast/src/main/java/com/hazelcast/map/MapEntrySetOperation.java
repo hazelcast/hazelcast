@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import java.util.Map;
 import java.util.Set;
 
-public class MapEntrySetOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
     Set<Map.Entry<Data,Data>> entrySet;
 
     public MapEntrySetOperation(String name) {
@@ -34,10 +34,9 @@ public class MapEntrySetOperation extends AbstractNamedOperation implements Part
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         entrySet = recordStore.entrySetData();
-        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        mapContainer.getMapOperationCounter().incrementOtherOperations();
     }
 
     @Override
@@ -45,8 +44,5 @@ public class MapEntrySetOperation extends AbstractNamedOperation implements Part
         return new MapEntrySet(entrySet);
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
+
 }

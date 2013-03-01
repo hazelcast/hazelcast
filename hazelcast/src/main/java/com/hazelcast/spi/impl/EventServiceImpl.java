@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -32,11 +31,12 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
-import com.hazelcast.util.ExecutorThreadFactory;
+import com.hazelcast.util.executor.ExecutorThreadFactory;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -56,8 +56,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         eventExecutorService = Executors.newSingleThreadExecutor(
-                new ExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        node.getConfig().getClassLoader()) {
+                new ExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader()) {
                     protected String newThreadName() {
                         return node.getThreadNamePrefix("event");
                     }
@@ -108,18 +107,20 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         return segment.addRegistration(reg.topic, reg);
     }
 
-    public void deregisterListener(String serviceName, String topic, String id) {
+    public boolean deregisterListener(String serviceName, String topic, Object id) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
-            final Registration reg = segment.removeRegistration(topic, id);
+            final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
             if (reg != null && !reg.isLocalOnly()) {
-                final DeregistrationOperation op = new DeregistrationOperation(topic, id);
+                final DeregistrationOperation op = new DeregistrationOperation(topic, String.valueOf(id));
                 invokeOnOtherNodes(serviceName, op);
             }
+            return reg != null;
         }
+        return false;
     }
 
-    public void deregisterListeners(String serviceName, String topic) {
+    public void deregisterAllListeners(String serviceName, String topic) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
@@ -155,7 +156,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     private String createId(String serviceName) {
-        return serviceName + ":" + UUID.randomUUID().toString();
+        return serviceName + "[" + UUID.randomUUID().toString() + "]";
     }
 
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
@@ -189,14 +190,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             executeLocal(serviceName, event, reg);
         } else {
             final Address subscriber = registration.getSubscriber();
-            final Data data = nodeEngine.toData(new EventPacket(registration.getId(), serviceName, event));
-            sendEventPacket(subscriber, data);
-        }
-    }
-
-    private void executeLocal(String serviceName, Object event, Registration reg) {
-        if (nodeEngine.getNode().isActive()) {
-            eventExecutorService.execute(new LocalEventDispatcher(serviceName, event, reg.listener));
+            sendEventPacket(subscriber, new EventPacket(registration.getId(), serviceName, event));
         }
     }
 
@@ -216,20 +210,33 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                     eventData = nodeEngine.toData(event);
                 }
                 final Address subscriber = registration.getSubscriber();
-                final Data data = nodeEngine.toData(new EventPacket(registration.getId(), serviceName, eventData));
-                sendEventPacket(subscriber, data);
+                sendEventPacket(subscriber, new EventPacket(registration.getId(), serviceName, eventData));
             }
         }
     }
 
-    private void sendEventPacket(Address subscriber, Data data) {
-        final Packet packet = new Packet(data, nodeEngine.getSerializationContext());
-        packet.setHeader(Packet.HEADER_EVENT, true);
-        nodeEngine.send(packet, subscriber);
+    private void executeLocal(String serviceName, Object event, Registration reg) {
+        if (nodeEngine.isActive()) {
+            eventExecutorService.execute(new LocalEventDispatcher(serviceName, event, reg.listener));
+        }
     }
 
-    public void executeEvent(Runnable eventRunnable) {
-        eventExecutorService.execute(eventRunnable);
+    private void sendEventPacket(Address subscriber, EventPacket eventPacket) {
+        final String serviceName = eventPacket.serviceName;
+        final EventServiceSegment segment = getSegment(serviceName, true);
+        boolean sync = segment.incrementPublish() % 1000 == 0;
+        if (sync) {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                    new SendEventOperation(eventPacket), subscriber).setTryCount(10).build();
+            try {
+                inv.invoke().get(5, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
+        } else {
+            final Packet packet = new Packet(nodeEngine.toData(eventPacket), nodeEngine.getSerializationContext());
+            packet.setHeader(Packet.HEADER_EVENT, true);
+            nodeEngine.send(packet, subscriber);
+        }
     }
 
     private EventServiceSegment getSegment(String service, boolean forceCreate) {
@@ -245,8 +252,15 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     @PrivateApi
+    void executeEvent(Runnable eventRunnable) {
+        if (nodeEngine.isActive()) {
+            eventExecutorService.execute(eventRunnable);
+        }
+    }
+
+    @PrivateApi
     void handleEvent(Packet packet) {
-        eventExecutorService.execute(new EventPacketProcessor(packet));
+        eventExecutorService.execute(new RemoteEventPacketProcessor(packet));
     }
 
     public PostJoinRegistrationOperation getPostJoinOperation() {
@@ -283,6 +297,8 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 = new ConcurrentHashMap<String, Collection<Registration>>();
 
         final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
+
+        final AtomicInteger totalPublishes = new AtomicInteger();
 
         EventServiceSegment(String serviceName) {
             this.serviceName = serviceName;
@@ -346,18 +362,27 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 }
             }
         }
+
+        int incrementPublish() {
+            return totalPublishes.incrementAndGet();
+        }
     }
 
     private class EventPacketProcessor implements Runnable {
-        private Packet packet;
+        private EventPacket eventPacket;
 
-        public EventPacketProcessor(Packet packet) {
-            this.packet = packet;
+        private EventPacketProcessor() {
+        }
+
+        public EventPacketProcessor(EventPacket packet) {
+            this.eventPacket = packet;
         }
 
         public void run() {
-            Data data = packet.getData();
-            EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
+            process(eventPacket);
+        }
+
+        void process(EventPacket eventPacket) {
             Object eventObject = eventPacket.event;
             if (eventObject instanceof Data) {
                 eventObject = nodeEngine.toObject(eventObject);
@@ -386,6 +411,20 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
+    private class RemoteEventPacketProcessor extends EventPacketProcessor implements Runnable {
+        private Packet packet;
+
+        public RemoteEventPacketProcessor(Packet packet) {
+            this.packet = packet;
+        }
+
+        public void run() {
+            Data data = packet.getData();
+            EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
+            process(eventPacket);
+        }
+    }
+
     private class LocalEventDispatcher implements Runnable {
         final String serviceName;
         final Object event;
@@ -398,7 +437,10 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
 
         public void run() {
-            EventPublishingService service = nodeEngine.getService(serviceName);
+            final EventPublishingService service = nodeEngine.getService(serviceName);
+            if (service == null && nodeEngine.isActive()) {
+                throw new IllegalArgumentException("Service[" + serviceName + "] could not be found!");
+            }
             service.dispatchEvent(event, listener);
         }
     }
@@ -557,6 +599,37 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
+    public static class SendEventOperation extends AbstractOperation {
+        private EventPacket eventPacket;
+
+        public SendEventOperation() {
+        }
+
+        public SendEventOperation(EventPacket eventPacket) {
+            this.eventPacket = eventPacket;
+        }
+
+        public void run() throws Exception {
+            EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
+            eventService.executeEvent(eventService.new EventPacketProcessor(eventPacket));
+        }
+
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            eventPacket.writeData(out);
+        }
+
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            eventPacket = new EventPacket();
+            eventPacket.readData(in);
+        }
+    }
+
     public static class RegistrationOperation extends AbstractOperation {
 
         private Registration registration;
@@ -637,7 +710,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
-    public static class PostJoinRegistrationOperation extends AbstractOperation implements JoinOperation {
+    public static class PostJoinRegistrationOperation extends AbstractOperation {
 
         private Collection<Registration> registrations;
 

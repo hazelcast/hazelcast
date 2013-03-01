@@ -18,7 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -56,7 +55,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        credentials = IOUtil.readNullableObject(in);
+        credentials = in.readObject();
         if (credentials != null) {
             credentials.setEndpoint(getAddress().getHost());
         }
@@ -65,7 +64,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        IOUtil.writeNullableObject(out, credentials);
+        out.writeObject(credentials);
         out.writeInt(tryCount);
     }
 

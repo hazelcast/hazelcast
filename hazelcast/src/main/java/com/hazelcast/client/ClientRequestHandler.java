@@ -59,7 +59,7 @@ public final class ClientRequestHandler implements Runnable {
         } catch (Throwable e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             if (node.isActive()) {
-                ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e);
             }
         } finally {
             runningThread = null;

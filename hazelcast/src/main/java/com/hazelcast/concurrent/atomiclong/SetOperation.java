@@ -38,12 +38,7 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        setNumber(newValue);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
+        getNumber().set(newValue);
     }
 
     @Override

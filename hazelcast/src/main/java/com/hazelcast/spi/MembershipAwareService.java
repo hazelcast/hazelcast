@@ -16,9 +16,6 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.spi.annotation.ExecutedBy;
-import com.hazelcast.spi.annotation.ThreadType;
-
 /**
 * @mdogan 9/5/12
 */
@@ -27,12 +24,15 @@ public interface MembershipAwareService {
     /**
      * Invoked when a new member is added to the cluster.
      */
-    @ExecutedBy(ThreadType.EVENT_THREAD)
     void memberAdded(MembershipServiceEvent event);
 
     /**
      * Invoked when an existing member leaves the cluster.
      */
-    @ExecutedBy(ThreadType.EVENT_THREAD)
     void memberRemoved(MembershipServiceEvent event);
+
+    /**
+     * Invoked when a client disconnected from a member.
+     */
+    void clientDisconnected(String clientUuid);
 }

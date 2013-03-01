@@ -58,6 +58,10 @@ public class LoggingServiceImpl implements LoggingService {
         return ConcurrencyUtil.getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
 
+    public ILogger getLogger(Class clazz) {
+        return ConcurrencyUtil.getOrPutIfAbsent(mapLoggers, clazz.getName(), loggerConstructor);
+    }
+
     public void addLogListener(Level level, LogListener logListener) {
         lsListeners.add(new LogListenerRegistration(level, logListener));
         if (level.intValue() < minLevel.intValue()) {

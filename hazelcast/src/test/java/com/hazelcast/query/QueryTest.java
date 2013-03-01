@@ -23,7 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.TestUtil;
+import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -289,7 +289,7 @@ public class QueryTest extends TestUtil {
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(4);
-        HazelcastInstance h1 = factory.newInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
         imap.addIndex("age", true);
@@ -297,9 +297,9 @@ public class QueryTest extends TestUtil {
         for (int i = 0; i < 10000; i++) {
             imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
-        HazelcastInstance h2 = factory.newInstance(config);
-        HazelcastInstance h3 = factory.newInstance(config);
-        HazelcastInstance h4 = factory.newInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        HazelcastInstance h3 = factory.newHazelcastInstance(config);
+        HazelcastInstance h4 = factory.newHazelcastInstance(config);
         long startNow = Clock.currentTimeMillis();
         int count = 0;
         while ((Clock.currentTimeMillis() - startNow) < 50000) {
@@ -841,7 +841,7 @@ public class QueryTest extends TestUtil {
     public void testPredicateStringAttribute() {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(1);
-        HazelcastInstance h1 = factory.newInstance(config);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
         IMap map = h1.getMap("testPredicateStringWithString");
         testPredicateStringAttribute(map);
     }

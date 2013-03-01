@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 
-public class PutBackupOperation extends AbstractMapOperation implements BackupOperation, IdentifiedDataSerializable {
+public class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name, dataKey, dataValue, ttl);
@@ -35,10 +35,13 @@ public class PutBackupOperation extends AbstractMapOperation implements BackupOp
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Record record = recordStore.getRecords().get(dataKey);
         if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl);
+            record = mapService.createRecord(name, dataKey, dataValue, ttl, true);
             recordStore.getRecords().put(dataKey, record);
         } else {
-            recordStore.setRecordValue(record, dataValue);
+            if (record instanceof DataRecord)
+                ((DataRecord) record).setValue(dataValue);
+            else if (record instanceof ObjectRecord)
+                ((ObjectRecord) record).setValue(mapService.toObject(dataValue));
         }
     }
 

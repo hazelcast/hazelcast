@@ -33,9 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 
-public class QueryOperation extends AbstractNamedOperation {
-
-    MapService mapService;
+public class QueryOperation extends AbstractMapOperation {
     Predicate predicate;
     QueryResult result;
 
@@ -49,7 +47,6 @@ public class QueryOperation extends AbstractNamedOperation {
 
     @Override
     public void run() throws Exception {
-        mapService = getService();
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = indexService.query(predicate);

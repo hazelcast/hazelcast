@@ -36,24 +36,30 @@ public class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
-        if (!(out instanceof BufferObjectDataOutput)) {
-            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
-        }
         if (p.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        ClassDefinition cd = getClassDefinition(p);
-        DefaultPortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
+        write(out, p, p.getClassId());
+    }
+
+    void write(ObjectDataOutput out, Portable p, int classId) throws IOException {
+        if (!(out instanceof BufferObjectDataOutput)) {
+            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
+        }
+        if (classId == 0) {
+            throw new IllegalArgumentException("Portable class id cannot be zero!");
+        }
+        ClassDefinition cd = getClassDefinition(p, classId);
+        PortableWriter writer = new DefaultPortableWriter(this, (BufferObjectDataOutput) out, cd);
         p.writePortable(writer);
     }
 
-    public ClassDefinition getClassDefinition(Portable p) throws IOException {
-        final int classId = p.getClassId();
+    private ClassDefinition getClassDefinition(Portable p, int classId) throws IOException {
         ClassDefinition cd = context.lookup(classId);
         if (cd == null) {
             ClassDefinitionWriter classDefinitionWriter = new ClassDefinitionWriter(classId);
             p.writePortable(classDefinitionWriter);
-            cd = classDefinitionWriter.register();
+            cd = classDefinitionWriter.registerAndGet();
         }
         return cd;
     }
@@ -84,13 +90,13 @@ public class PortableSerializer implements TypeSerializer<Portable> {
 
     private class ClassDefinitionWriter implements PortableWriter {
 
-        final ClassDefinitionBuilderImpl builder;
+        final ClassDefinitionBuilder builder;
 
         ClassDefinitionWriter(int classId) {
-            builder = new ClassDefinitionBuilderImpl(context, classId);
+            builder = new ClassDefinitionBuilder(classId);
         }
 
-        private ClassDefinitionWriter(ClassDefinitionBuilderImpl builder) {
+        private ClassDefinitionWriter(ClassDefinitionBuilder builder) {
             this.builder = builder;
         }
 
@@ -167,9 +173,21 @@ public class PortableSerializer implements TypeSerializer<Portable> {
                 throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
                         "registering class definition!");
             }
-            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
-                    .createPortableFieldBuilder(fieldName, portable.getClassId());
-            addNestedField(portable, nestedBuilder);
+            writePortable(fieldName, portable.getClassId(), portable);
+        }
+
+        public void writePortable(String fieldName, int classId, Portable portable) throws IOException {
+            builder.addPortableField(fieldName, classId);
+            if (portable != null) {
+                addNestedField(portable, new ClassDefinitionBuilder(classId));
+            } else if (context.lookup(classId) == null) {
+                throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
+                        "registering class definition!");
+            }
+        }
+
+        public void writeNullPortable(String fieldName, int classId) throws IOException {
+            writePortable(fieldName, classId, null);
         }
 
         public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
@@ -184,20 +202,25 @@ public class PortableSerializer implements TypeSerializer<Portable> {
                     throw new IllegalArgumentException("Detected different class-ids in portable array!");
                 }
             }
-            ClassDefinitionBuilderImpl nestedBuilder = (ClassDefinitionBuilderImpl) builder
-                    .createPortableArrayFieldBuilder(fieldName, classId);
-            addNestedField(p, nestedBuilder);
+            builder.addPortableArrayField(fieldName, classId);
+            addNestedField(p, new ClassDefinitionBuilder(classId));
         }
 
-        private void addNestedField(Portable portable, ClassDefinitionBuilderImpl nestedBuilder) throws IOException {
+        public ObjectDataOutput getRawDataOutput() {
+            return new EmptyObjectDataOutput();
+        }
+
+        private void addNestedField(Portable portable, ClassDefinitionBuilder nestedBuilder) throws IOException {
             ClassDefinitionWriter nestedWriter = new ClassDefinitionWriter(nestedBuilder);
             portable.writePortable(nestedWriter);
-            nestedBuilder.buildAndRegister();
+            ClassDefinition cd = nestedBuilder.build();
+            context.registerClassDefinition(cd);
         }
 
-        ClassDefinitionImpl register() {
-            builder.buildAndRegister();
-            return builder.getCd();
+        ClassDefinition registerAndGet() {
+            final ClassDefinition cd = builder.build();
+            context.registerClassDefinition(cd);
+            return cd;
         }
     }
 }

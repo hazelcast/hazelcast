@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
-public class EntryBackupOperation extends AbstractMapOperation implements BackupOperation {
+public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     EntryBackupProcessor entryProcessor;
 

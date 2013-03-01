@@ -30,11 +30,9 @@ import java.util.Set;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-public class ClearOperation extends AbstractNamedOperation implements PartitionLevelOperation, BackupAwareOperation {
+public class ClearOperation extends AbstractMapOperation implements PartitionLevelOperation, BackupAwareOperation {
 
     Set<Data> keys;
-    MapService mapService;
-    RecordStore recordStore;
 
     public ClearOperation(String name) {
         super(name);
@@ -48,13 +46,9 @@ public class ClearOperation extends AbstractNamedOperation implements PartitionL
     public ClearOperation() {
     }
 
-    @Override
-    public void beforeRun() throws Exception {
-        mapService = getService();
-        recordStore = mapService.getRecordStore(getPartitionId(), name);
-    }
-
     public void run() {
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+
         if (keys == null) {
             recordStore.removeAll();
             return;

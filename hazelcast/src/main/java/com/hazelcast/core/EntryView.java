@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.serialization.Data;
-
 public interface EntryView<K,V> {
 
     K getKey();

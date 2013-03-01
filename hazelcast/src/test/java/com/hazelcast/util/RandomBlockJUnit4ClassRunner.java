@@ -24,12 +24,11 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.LogManager;
 
 /**
  * Run the tests randomly and log the running test.
@@ -37,17 +36,23 @@ import java.util.logging.LogManager;
 public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
-        try {
-            InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("logging.properties");
-            LogManager.getLogManager().readConfiguration(in);
-            in.close();
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+//        try {
+//            InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("logging.properties");
+//            LogManager.getLogManager().readConfiguration(in);
+//            in.close();
+//        } catch (Throwable t) {
+//            t.printStackTrace();
+//        }
+        System.setProperty("hazelcast.logging.type", "log4j");
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        Random rand = new Random();
+        int x1 = rand.nextInt(255);
+        int x2 = rand.nextInt(255);
+        int x3 = rand.nextInt(255);
+        System.setProperty("hazelcast.multicast.group", "224." + x1 + "." + x2 + "." + x3);
     }
 
     final static String indexStr = System.getProperty("hazelcast.test.index");

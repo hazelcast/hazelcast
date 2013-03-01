@@ -193,12 +193,6 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
                         System.out.println("\t\t\tval: " + nodeEngine.toObject(o.getObject()) + ", id: " + o.getRecordId());
                     }
                 }
-//                Map<Data, LockInfo> locks = container.getLocks();
-//                System.out.println("\t\t\t\t\t-------------");
-//                for (Data key : locks.keySet()) {
-//                    System.out.println("\t\t\t\t\t\tkey: " + nodeEngine.toObject(key));
-//                }
-//                System.out.println("\t\t\t\t\t-------------");
             }
 
         }

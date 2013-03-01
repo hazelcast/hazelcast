@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.proxy.listener.MigrationEventLRH;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
@@ -27,7 +28,6 @@ import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.core.PartitionService;
 
 import java.net.UnknownHostException;
 import java.util.*;
@@ -132,5 +132,7 @@ public class PartitionClientProxy implements PartitionService {
         }
     }
 
-
+    public boolean hasOngoingMigration() {
+        return false;
+    }
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -35,6 +34,8 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.*;
+import com.hazelcast.util.executor.FastExecutor;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -68,14 +69,13 @@ final class OperationServiceImpl implements OperationService {
         final int coreSize = Runtime.getRuntime().availableProcessors();
         final String poolNamePrefix = node.getThreadPoolNamePrefix("operation");
         executor = new FastExecutor(coreSize, poolNamePrefix,
-                new PoolExecutorThreadFactory(node.threadGroup, node.hazelcastInstance,
-                        poolNamePrefix, node.getConfig().getClassLoader()));
+                new PoolExecutorThreadFactory(node.threadGroup, poolNamePrefix, node.getConfig().getClassLoader()));
 
         ownerLocks = new Lock[100000];
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = new ReentrantLock();
         }
-        backupLocks = new Lock[50000];
+        backupLocks = new Lock[10000];
         for (int i = 0; i < backupLocks.length; i++) {
             backupLocks[i] = new ReentrantLock();
         }
@@ -97,7 +97,13 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     public void handleOperation(final Packet packet) {
-        executor.execute(new RemoteOperationProcessor(packet));
+        try {
+            executor.execute(new RemoteOperationProcessor(packet));
+        } catch (RejectedExecutionException e) {
+            if (nodeEngine.isActive()) {
+                throw e;
+            }
+        }
     }
 
     /**
@@ -152,8 +158,7 @@ final class OperationServiceImpl implements OperationService {
                     final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
                     final boolean validatesTarget = op.validatesTarget();
                     if (validatesTarget && !node.getThisAddress().equals(owner)) {
-                        throw new WrongTargetException(node.getThisAddress(), owner, partitionId,
-                                op.getClass().getName(), op.getServiceName());
+                        throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getClass().getName(), op.getServiceName());
                     }
                     if (op instanceof KeyBasedOperation) {
                         final int hash = ((KeyBasedOperation) op).getKeyHash();
@@ -264,38 +269,42 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private void handleBackupAndSendResponse(BackupAwareOperation backupAwareOp) throws Exception {
+        final int maxRetryCount = 50;
         final int maxBackups = node.getClusterService().getSize() - 1;
         final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
         final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
                 ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
-        Collection<Future> syncBackups = null;
-        Collection<Future> asyncBackups = null;
+        Collection<BackupFuture> syncBackups = null;
+        Collection<BackupFuture> asyncBackups = null;
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
-        final Operation backupOp;
         Operation backupResponse = null;
-        if ((syncBackupCount + asyncBackupCount > 0) && (backupOp = backupAwareOp.getBackupOperation()) != null) {
+        if (syncBackupCount + asyncBackupCount > 0) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             if (syncBackupCount > 0) {
-                syncBackups = new ArrayList<Future>(syncBackupCount);
+                syncBackups = new ArrayList<BackupFuture>(syncBackupCount);
                 for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
                     if (target != null) {
+                        final Operation backupOp = backupAwareOp.getBackupOperation();
+                        if (backupOp == null) {
+                            throw new IllegalArgumentException("Backup operation should not be null!");
+                        }
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
                             if (op.returnsResponse() && target.equals(op.getCallerAddress())) {
-                                // TODO: fix me! what if backup migrates after response is returned?
+//                                TODO: @mm - FIX ME! what if backup migrates after response is returned?
                                 backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
                                 backupResponse = backupOp;
                             } else {
                                 final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                        .setReplicaIndex(replicaIndex).setTryCount(20).build().invoke();
+                                        .setReplicaIndex(replicaIndex).setTryCount(maxRetryCount).build().invoke();
                                 if (returnsResponse) {
-                                    syncBackups.add(f);
+                                    syncBackups.add(new BackupFuture(f, partitionId, replicaIndex, maxRetryCount));
                                 }
                             }
                         }
@@ -303,17 +312,21 @@ final class OperationServiceImpl implements OperationService {
                 }
             }
             if (asyncBackupCount > 0) {
-                asyncBackups = new ArrayList<Future>(asyncBackupCount);
+                asyncBackups = new ArrayList<BackupFuture>(asyncBackupCount);
                 for (int replicaIndex = syncBackupCount + 1; replicaIndex <= asyncBackupCount; replicaIndex++) {
                     final Address target = partitionInfo.getReplicaAddress(replicaIndex);
                     if (target != null) {
+                        final Operation backupOp = backupAwareOp.getBackupOperation();
+                        if (backupOp == null) {
+                            throw new IllegalArgumentException("Backup operation should not be null!");
+                        }
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
                             final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                    .setReplicaIndex(replicaIndex).setTryCount(10).build().invoke();
+                                    .setReplicaIndex(replicaIndex).setTryCount(maxRetryCount).build().invoke();
                             if (returnsResponse) {
-                                asyncBackups.add(f);
+                                asyncBackups.add(new BackupFuture(f, partitionId, replicaIndex, maxRetryCount));
                             }
                         }
                     }
@@ -323,23 +336,58 @@ final class OperationServiceImpl implements OperationService {
         final Object response = op.returnsResponse()
                 ? (backupResponse == null ? op.getResponse() :
                 new MultiResponse(nodeEngine.getSerializationService(), backupResponse, op.getResponse())) : null;
-        waitFutureResponses(syncBackups);
+        waitBackupResponses(syncBackups);
         sendResponse(op, response);
-        waitFutureResponses(asyncBackups);
+        waitBackupResponses(asyncBackups);
     }
 
-    private void waitFutureResponses(final Collection<Future> futures) throws ExecutionException {
-        int size = futures != null ? futures.size() : 0;
-        while (size > 0) {
-            for (Future f : futures) {
-                if (!f.isDone()) {
-                    try {
-                        f.get(1, TimeUnit.SECONDS);
-                    } catch (InterruptedException ignored) {
-                    } catch (TimeoutException ignored) {
+    private class BackupFuture {
+        final Future future;
+        final int partitionId;
+        final int replicaIndex;
+        final int retryCount;
+        int retries;
+
+        BackupFuture(Future future, int partitionId, int replicaIndex, int retryCount) {
+            this.future = future;
+            this.partitionId = partitionId;
+            this.replicaIndex = replicaIndex;
+            this.retryCount = retryCount;
+        }
+
+        Object get(int timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return future.get(timeout, unit);
+        }
+
+        boolean canRetry() {
+            return retries++ < retryCount;
+        }
+    }
+
+    private void waitBackupResponses(final Collection<BackupFuture> futures) throws ExecutionException {
+        while (futures != null && !futures.isEmpty()) {
+            final Iterator<BackupFuture> iter = futures.iterator();
+            ExecutionException lastError = null;
+            while (iter.hasNext()) {
+                final BackupFuture f = iter.next();
+                try {
+                    if (f.canRetry()) {
+                        f.get(500, TimeUnit.MILLISECONDS);
+                        lastError = null;
                     }
-                    if (f.isDone()) {
-                        size--;
+                    iter.remove();
+                    if (lastError != null) {
+                        logger.log(Level.WARNING, "While backing up -> " + lastError.getMessage(), lastError);
+                    }
+                } catch (InterruptedException ignored) {
+                } catch (TimeoutException ignored) {
+                } catch (ExecutionException e) {
+                    if (!ExceptionUtil.isRetryableException(e)) {
+                        throw e;
+                    } else if (nodeEngine.getClusterService().getSize() <= f.replicaIndex) {
+                        iter.remove();
+                    } else {
+                        lastError = e;
                     }
                 }
             }
@@ -351,9 +399,12 @@ final class OperationServiceImpl implements OperationService {
             final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
             logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
         } else {
-            logger.log(Level.SEVERE, "While executing op: " + op + " -> " + e.getMessage(), e);
+            final Level level = nodeEngine.isActive() ? Level.SEVERE: Level.FINEST;
+            logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
-        sendResponse(op, e);
+        if (node.isActive()) {
+            sendResponse(op, e);
+        }
     }
 
     private void sendResponse(Operation op, Object response) {
@@ -524,6 +575,7 @@ final class OperationServiceImpl implements OperationService {
         return mapCalls.remove(id);
     }
 
+    // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
     @PrivateApi
     void notifyCall(long callId, Object response) {
         Call call = deregisterRemoteCall(callId);
@@ -544,13 +596,13 @@ final class OperationServiceImpl implements OperationService {
         return executingCalls.contains(new CallKey(caller, operationCallId));
     }
 
-    void onMemberDisconnect(Address disconnectedAddress) {
-        for (Call call : mapCalls.values()) {
-            call.onDisconnect(disconnectedAddress);
-        }
-    }
+//    void onMemberDisconnect(Address disconnectedAddress) {
+//        for (Call call : mapCalls.values()) {
+//            call.onDisconnect(disconnectedAddress);
+//        }
+//    }
 
-    void onMemberLeft(MemberImpl member) {
+    void onMemberLeft(final MemberImpl member) {
         for (Call call : mapCalls.values()) {
             call.onMemberLeft(member);
         }
@@ -560,6 +612,12 @@ final class OperationServiceImpl implements OperationService {
         logger.log(Level.FINEST, "Stopping operation threads...");
         executor.shutdown();
         mapCalls.clear();
+        for (int i = 0; i < ownerLocks.length; i++) {
+            ownerLocks[i] = null;
+        }
+        for (int i = 0; i < backupLocks.length; i++) {
+            backupLocks[i] = null;
+        }
     }
 
     private class OperationExecutor implements Runnable {
@@ -622,7 +680,7 @@ final class OperationServiceImpl implements OperationService {
                 }
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-                send(new ErrorResponse(node.getThisAddress(), e), conn);
+//                send(new ErrorResponse(node.getThisAddress(), e), conn);
             }
         }
 
@@ -678,11 +736,6 @@ final class OperationServiceImpl implements OperationService {
 
     private static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation
-                && op.getClass().getClassLoader() == thisClassLoader;
-    }
-
-    private static boolean isJoinOperation(Operation op) {
-        return op instanceof JoinOperation
                 && op.getClass().getClassLoader() == thisClassLoader;
     }
 

@@ -58,6 +58,8 @@ public interface NodeEngine {
 
     ILogger getLogger(String name);
 
+    ILogger getLogger(Class clazz);
+
     Data toData(Object object);
 
     <T> T toObject(Object object);

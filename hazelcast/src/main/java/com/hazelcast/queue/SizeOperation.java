@@ -32,6 +32,6 @@ public class SizeOperation extends QueueOperation {
     }
 
     public void run() {
-        response = getContainer().size();
+        response = getOrCreateContainer().size();
     }
 }
