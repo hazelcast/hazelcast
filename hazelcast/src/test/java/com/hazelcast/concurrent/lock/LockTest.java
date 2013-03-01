@@ -17,10 +17,12 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
+import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -43,39 +45,471 @@ import static org.junit.Assert.*;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class LockTest {
 
+    @Before
+    @After
+    public void shutdownAll() {
+        Hazelcast.shutdownAll();
+    }
+
     @Test
-    public void testSimpleUsage() {
-        // with multiple threads on single node
-        // lock, tryLock, isLocked, unlock
+    public void testSimpleUsage() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final Config config = new Config();
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        final ILock lock = instance.getLock("testSimpleUsage");
+        Assert.assertEquals("testSimpleUsage", lock.getName());
+
+        final Runnable tryLockRunnable = new Runnable() {
+            public void run() {
+                if (lock.tryLock())
+                    atomicInteger.incrementAndGet();
+            }
+        };
+
+        final Runnable lockRunnable = new Runnable() {
+            public void run() {
+                lock.lock();
+            }
+        };
+
+        Assert.assertEquals(false, lock.isLocked());
+        lock.lock();
+        Assert.assertEquals(true, lock.isLocked());
+        Assert.assertEquals(true, lock.tryLock());
+        lock.unlock();
+
+        Thread thread1 = new Thread(tryLockRunnable);
+        thread1.start();
+        thread1.join();
+        Assert.assertEquals(0, atomicInteger.get());
+
+        lock.unlock();
+        Thread thread2 = new Thread(tryLockRunnable);
+        thread2.start();
+        thread2.join();
+        Assert.assertEquals(1, atomicInteger.get());
+        Assert.assertEquals(true, lock.isLocked());
+        lock.forceUnlock();
+
+        Thread thread3 = new Thread(lockRunnable);
+        thread3.start();
+        thread3.join();
+        Assert.assertEquals(true, lock.isLocked());
+        Assert.assertEquals(false, lock.tryLock(2, TimeUnit.SECONDS));
+
+        Thread thread4 = new Thread(lockRunnable);
+        thread4.start();
+        Thread.sleep(1000);
+        Assert.assertEquals(true, lock.isLocked());
+        lock.forceUnlock();
+        thread4.join();
     }
 
     @Test
     public void testSimpleUsageOnMultipleNodes() {
-        // with multiple threads on multiple nodes
+        // TODO with multiple threads on multiple nodes
+    }
+
+    @Test(expected = DistributedObjectDestroyedException.class)
+    public void testDestroyLockWhenOtherWaitingOnLock() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                lock.lock();
+            }
+        });
+        t.start();
+        t.join();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                lock.destroy();
+            }
+        }).start();
+
+        lock.lock();
+
+    }
+
+    @Test(expected = HazelcastInstanceNotActiveException.class)
+    public void testShutDownNodeWhenOtherWaitingOnLock() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        nodeFactory.newHazelcastInstance(new Config());
+        final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
+        final Thread thread = new Thread(new Runnable() {
+            public void run() {
+                lock.lock();
+            }
+        });
+        thread.start();
+        thread.join();
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                instance.getLifecycleService().shutdown();
+            }
+        }).start();
+        lock.lock();
+    }
+
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testIllegalUnlock() {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final ILock lock = instance.getLock("testIllegalUnlock");
+        lock.unlock();
     }
 
     @Test(timeout = 100000)
     public void testLockOwnerDies() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final AtomicInteger integer = new AtomicInteger(0);
+        final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
+        final String name = "testLockOwnerDies";
+        final ILock lock = lockOwner.getLock(name);
+        lock.lock();
+        Assert.assertEquals(true, lock.isLocked());
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = instance1.getLock(name);
+                lock.lock();
+                integer.incrementAndGet();
+
+            }
+        });
+        t.start();
+        Assert.assertEquals(0, integer.get());
+        lockOwner.getLifecycleService().shutdown();
+        Thread.sleep(5000);
+        Assert.assertEquals(1, integer.get());
     }
 
     @Test(timeout = 100000)
     public void testKeyOwnerDies() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(new Config());
-        int key = 0;
-        final Member expectedOwner = h2.getCluster().getLocalMember();
-        while (h1.getPartitionService().getPartition(key++).getOwner().equals(expectedOwner));
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        final Config config = new Config();
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        int k = 0;
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        while (instance1.getPartitionService().getPartition(k++).equals(keyOwner.getCluster().getLocalMember())) ;
+        final int key = k;
+
+        final ILock lock1 = instance1.getLock(key);
+        lock1.lock();
+
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = instance2.getLock(key);
+                lock.lock();
+                atomicInteger.incrementAndGet();
+            }
+        });
+        t.start();
+
+        keyOwner.getLifecycleService().shutdown();
+        Assert.assertEquals(true, lock1.isLocked());
+        Assert.assertEquals(true, lock1.tryLock());
+        lock1.unlock();
+        lock1.unlock();
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, atomicInteger.get());
+        lock1.forceUnlock();
+
+    }
+
+    @Test
+    public void testLockConditionSimpleUsage() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final String name = "testLockConditionSimpleUsage";
+        final ILock lock = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ICondition condition = lock.newCondition(name + "c");
+        final AtomicInteger count = new AtomicInteger(0);
+
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    lock.lock();
+                    if (lock.isLocked() && lock.tryLock()) {
+                        count.incrementAndGet();
+                        lock.unlock();
+                    }
+                    condition.await();
+                    if (lock.isLocked() && lock.tryLock()) {
+                        count.incrementAndGet();
+                        lock.unlock();
+                    }
+                } catch (InterruptedException e) {
+                    return;
+                } finally {
+                    lock.unlock();
+                }
+            }
+        });
+        t.start();
+        Thread.sleep(1000);
+
+        final ILock lock1 = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ICondition condition1 = lock1.newCondition(name + "c");
+        Assert.assertEquals(false, lock1.isLocked());
+        lock1.lock();
+        Assert.assertEquals(true, lock1.isLocked());
+        condition1.signal();
+        lock1.unlock();
+        t.join();
+        Assert.assertEquals(2, count.get());
+    }
+
+    @Test
+    public void testLockConditionSignalAll() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final String name = "testLockConditionSimpleUsage";
+        final ILock lock = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ICondition condition = lock.newCondition(name + "c");
+        final AtomicInteger count = new AtomicInteger(0);
+        final int k = 50;
+
+        final CountDownLatch awaitLatch = new CountDownLatch(k);
+        final CountDownLatch finalLatch = new CountDownLatch(k);
+        for (int i = 0; i < k; i++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        lock.lock();
+                        if (lock.isLocked() && lock.tryLock()) {
+                            count.incrementAndGet();
+                            lock.unlock();
+                        }
+                        awaitLatch.countDown();
+                        condition.await();
+                        if (lock.isLocked() && lock.tryLock()) {
+                            count.incrementAndGet();
+                            lock.unlock();
+                        }
+                    } catch (InterruptedException e) {
+                        return;
+                    } finally {
+                        lock.unlock();
+                        finalLatch.countDown();
+                    }
+
+                }
+            }).start();
+        }
+
+        awaitLatch.await(1, TimeUnit.MINUTES);
+        final ILock lock1 = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ICondition condition1 = lock1.newCondition(name + "c");
+        lock1.lock();
+        condition1.signalAll();
+        lock1.unlock();
+        finalLatch.await(1, TimeUnit.MINUTES);
+        Assert.assertEquals(k * 2, count.get());
+    }
+
+    @Test
+    public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final String name = "testLockConditionSignalAllShutDownKeyOwner";
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        final AtomicInteger count = new AtomicInteger(0);
+        final int size = 50;
+        int k = 0;
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
+        while (instance.getPartitionService().getPartition(k++).equals(keyOwner.getCluster().getLocalMember())) ;
+
+        final ILock lock = instance.getLock(k);
+        final ICondition condition = lock.newCondition(name);
+
+        final CountDownLatch awaitLatch = new CountDownLatch(size);
+        final CountDownLatch finalLatch = new CountDownLatch(size);
+        for (int i = 0; i < size; i++) {
+            new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        lock.lock();
+                        if (lock.isLocked() && lock.tryLock()) {
+                            count.incrementAndGet();
+                            lock.unlock();
+                        }
+                        awaitLatch.countDown();
+                        condition.await();
+                        Thread.sleep(5);
+                        if (lock.isLocked() && lock.tryLock()) {
+                            count.incrementAndGet();
+                            lock.unlock();
+                        }
+                    } catch (InterruptedException e) {
+                        return;
+                    } finally {
+                        lock.unlock();
+                        finalLatch.countDown();
+                    }
+
+                }
+            }).start();
+        }
 
 
+        final ILock lock1 = keyOwner.getLock(k);
+        final ICondition condition1 = lock1.newCondition(name);
+        awaitLatch.await(1, TimeUnit.MINUTES);
+        lock1.lock();
+        condition1.signalAll();
+        lock1.unlock();
+        keyOwner.getLifecycleService().shutdown();
+
+        finalLatch.await(1, TimeUnit.MINUTES);
+        Assert.assertEquals(size * 2, count.get());
+    }
+
+    @Test(timeout = 100000)
+    public void testKeyOwnerDiesOnCondition() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        final Config config = new Config();
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        int k = 0;
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        while (instance1.getPartitionService().getPartition(k++).equals(keyOwner.getCluster().getLocalMember())) ;
+        final int key = k;
+
+        final ILock lock1 = instance1.getLock(key);
+        final String name = "testKeyOwnerDiesOnCondition";
+        final ICondition condition1 = lock1.newCondition(name);
+
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = instance2.getLock(key);
+                final ICondition condition = lock.newCondition(name);
+                lock.lock();
+                try {
+                    condition.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    lock.unlock();
+                }
+                atomicInteger.incrementAndGet();
+            }
+        });
+        t.start();
+        Thread.sleep(1000);
+        lock1.lock();
+        keyOwner.getLifecycleService().shutdown();
+
+        condition1.signal();
+
+        lock1.unlock();
+        Thread.sleep(1000);
+        t.join();
+        Assert.assertEquals(1, atomicInteger.get());
+
+    }
+
+    @Test(expected = DistributedObjectDestroyedException.class)
+    public void testDestroyLockWhenOtherWaitingOnConditionAwait() {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final ILock lock = instance.getLock("testDestroyLockWhenOtherWaitingOnConditionAwait");
+        final ICondition condition = lock.newCondition("condition");
+
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                lock.destroy();
+            }
+        }).start();
+
+        lock.lock();
+        try {
+            condition.await();
+        } catch (InterruptedException e) {
+        }
+        lock.unlock();
+    }
+
+    @Test(expected = HazelcastInstanceNotActiveException.class)
+    public void testShutDownNodeWhenOtherWaitingOnConditionAwait() throws InterruptedException {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        nodeFactory.newHazelcastInstance(new Config());
+        final String name = "testShutDownNodeWhenOtherWaitingOnConditionAwait";
+        final ILock lock = instance.getLock(name);
+        final ICondition condition = lock.newCondition("s");
+
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                instance.getLifecycleService().shutdown();
+            }
+        }).start();
+        lock.lock();
+        try {
+            condition.await();
+        } catch (InterruptedException e) {
+        }
+        lock.unlock();
+    }
+
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testIllegalConditionUsage1() {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final ILock lock = instance.getLock("testIllegalConditionUsage");
+        final ICondition condition = lock.newCondition("condition");
+        try {
+            condition.await();
+        } catch (InterruptedException e) {
+        }
+    }
+
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testIllegalConditionUsage2() {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final ILock lock = instance.getLock("testIllegalConditionUsage");
+        final ICondition condition = lock.newCondition("condition");
+        condition.signal();
     }
 
     @Test(timeout = 100000)
     public void testScheduledLockActionForDeadMember() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock1 = h1.getLock("default");
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock2 = h2.getLock("default");
         assertTrue(lock1.tryLock());
         new Thread(new Runnable() {
@@ -97,9 +531,10 @@ public class LockTest {
     @Test
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
 
-        final Lock lock = hz.getLock("test");
+        final Lock lock = hz.getLock("testLockInterruption");
         Random rand = new Random();
         for (int i = 0; i < 30; i++) {
             Thread t = new Thread() {
@@ -131,9 +566,10 @@ public class LockTest {
     @Test
     public void testLockInterruption2() throws InterruptedException {
         Config config = new Config();
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
 
-        final Lock lock = hz.getLock("test");
+        final Lock lock = hz.getLock("testLockInterruption2");
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
@@ -155,16 +591,16 @@ public class LockTest {
         assertTrue("Could not acquire lock!", lock.tryLock());
     }
 
-
     /**
      * Test for issue #39
      */
     @Test
     public void testLockIsLocked() throws InterruptedException {
         Config config = new Config();
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         final ILock lock = h1.getLock("testLockIsLocked");
         final ILock lock2 = h2.getLock("testLockIsLocked");
 
@@ -196,14 +632,14 @@ public class LockTest {
         assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 
-
     @Test(timeout = 1000 * 100)
     /**
      * Test for issue 267
      */
     public void testHighConcurrentLockAndUnlock() {
         Config config = new Config();
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
         final String key = "key";
         final int threadCount = 100;
         final int lockCountPerThread = 5000;

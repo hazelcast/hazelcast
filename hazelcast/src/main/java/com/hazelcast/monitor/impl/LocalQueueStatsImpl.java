@@ -69,6 +69,26 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         return ownedItemCount;
     }
 
+    public void setOwnedItemCount(int ownedItemCount) {
+        this.ownedItemCount = ownedItemCount;
+    }
+
+    public void setBackupItemCount(int backupItemCount) {
+        this.backupItemCount = backupItemCount;
+    }
+
+    public void setMinAge(long minAge) {
+        this.minAge = minAge;
+    }
+
+    public void setMaxAge(long maxAge) {
+        this.maxAge = maxAge;
+    }
+
+    public void setAveAge(long aveAge) {
+        this.aveAge = aveAge;
+    }
+
     public int getBackupItemCount() {
         return backupItemCount;
     }

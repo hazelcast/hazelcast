@@ -33,7 +33,7 @@ public class PeekOperation extends QueueOperation implements IdentifiedDataSeria
     }
 
     public void run() {
-        QueueItem item = getContainer().peek();
+        QueueItem item = getOrCreateContainer().peek();
         response = item != null ? item.getData() : null;
     }
 

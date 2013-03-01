@@ -46,7 +46,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     public void run() {
-        QueueContainer container = getContainer();
+        QueueContainer container = getOrCreateContainer();
         if (container.checkBound()) {
             container.addAll(dataList);
             response = true;

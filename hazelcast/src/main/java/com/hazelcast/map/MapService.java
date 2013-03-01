@@ -967,7 +967,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         long lockedEntryCount = 0;
 
         MapContainer mapContainer = getMapContainer(mapName);
-        int backupCount = mapContainer.getBackupCount();
+        int backupCount = mapContainer.getTotalBackupCount();
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
 
         Address thisAddress = clusterService.getThisAddress();

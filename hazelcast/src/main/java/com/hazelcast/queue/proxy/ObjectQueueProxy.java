@@ -37,7 +37,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        return null;
+        return getService().createLocalQueueStats(name, partitionId);
     }
 
     public boolean add(E e) {

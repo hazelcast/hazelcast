@@ -35,11 +35,11 @@ public abstract class QueueBackupAwareOperation extends QueueOperation implement
     }
 
     public final int getSyncBackupCount() {
-        return getContainer().getConfig().getSyncBackupCount();
+        return getOrCreateContainer().getConfig().getSyncBackupCount();
     }
 
     public final int getAsyncBackupCount() {
-        return getContainer().getConfig().getAsyncBackupCount();
+        return getOrCreateContainer().getConfig().getAsyncBackupCount();
     }
 
 }

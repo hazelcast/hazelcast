@@ -51,7 +51,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     }
 
     public void run() {
-        dataMap = getContainer().compareAndRemove(dataList, retain);
+        dataMap = getOrCreateContainer().compareAndRemove(dataList, retain);
         response = dataMap.size() > 0;
     }
 
