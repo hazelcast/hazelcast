@@ -3645,11 +3645,27 @@ public class ConcurrentMapManager extends BaseManager {
                         winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingRecord);
                         if (winner != null) {
                             if (cmap.isMultiMap()) {
-                                MPutMulti mput = node.concurrentMapManager.new MPutMulti();
-                                mput.put(request.name, request.key, winner);
+                                
+                                if (winner == MergePolicy.REMOVE_EXISTING) {
+                                    // TODO remove logging message if implementation is correct!
+                                    logger.log(Level.FINER, String.format("Merge policy %s decided to REMOVE_EXISTING for key %s in map %s!", cmap.mergePolicy.getClass().getSimpleName(), cmap.getName(), key));
+                                    MRemoveMulti mremove = node.concurrentMapManager.new MRemoveMulti();
+                                    mremove.remove(request.name, request.key);
+                                } else {
+                                    MPutMulti mput = node.concurrentMapManager.new MPutMulti();
+                                    mput.put(request.name, request.key, winner);
+                                }
                             } else {
-                                ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
-                                mput.put(request.name, request.key, winner, -1);
+                                
+                                if (winner == MergePolicy.REMOVE_EXISTING) {
+                                    // TODO remove logging message if implementation is correct!
+                                    logger.log(Level.FINER, String.format("Merge policy %s decided to REMOVE_EXISTING for key %s in map %s!", cmap.mergePolicy.getClass().getSimpleName(), cmap.getName(), key));
+                                    MRemove mremove = node.concurrentMapManager.new MRemove();
+                                    mremove.remove(request.name, request.key);
+                                } else {
+                                    ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
+                                    mput.put(request.name, request.key, winner, -1);                                    
+                                }
                             }
                             success = true;
                         }
