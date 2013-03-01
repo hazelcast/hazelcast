@@ -31,37 +31,53 @@ public final class FutureProxy<V> implements Future<V> {
 
     private final Future future;
     private final SerializationService serializationService;
-    private final V value;
-    private final boolean hasValue;
+    private final V defaultValue;
+    private final boolean hasDefaultValue;
+    private V value;
     private volatile boolean done = false;
 
     public FutureProxy(Future future, SerializationService serializationService) {
         this.future = future;
         this.serializationService = serializationService;
-        this.value = null;
-        this.hasValue = false;
+        this.defaultValue = null;
+        this.hasDefaultValue = false;
     }
 
-    public FutureProxy(Future future, SerializationService serializationService, V value) {
+    public FutureProxy(Future future, SerializationService serializationService, V defaultValue) {
         this.future = future;
-        this.value = value;
+        this.defaultValue = defaultValue;
         this.serializationService = serializationService;
-        this.hasValue = true;
+        this.hasDefaultValue = true;
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        final Object object = future.get();
-        return getResult(object);
+        if (!done) {
+            synchronized (this) {
+                if (!done) {
+                    final Object object = future.get();
+                    value = getResult(object);
+                }
+            }
+        }
+        return value;
     }
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final Object object = future.get(timeout, unit);
-        return getResult(object);
+        if (!done) {
+            synchronized (this) {
+                if (!done) {
+                    final Object object = future.get(timeout, unit);
+                    value = getResult(object);
+                }
+            }
+        }
+        return value;
     }
 
     private V getResult(Object object) {
-        if (hasValue) {
-            return value;
+        done = true;
+        if (hasDefaultValue) {
+            return defaultValue;
         }
         if (object instanceof Data) {
             object = serializationService.toObject((Data) object);
