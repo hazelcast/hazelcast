@@ -25,13 +25,16 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.query.Predicate;
+import com.hazelcast.partition.Partition;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EventListener;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -45,11 +48,13 @@ public class ProxyHelper {
     final ProtocolWriter writer;
     final ProtocolReader reader;
     final ConnectionPool cp;
+    final PartitionClientProxy pp;
     private final SerializationService ss;
 
-    public ProxyHelper(SerializationService ss, ConnectionPool cp) {
-        this.cp = cp;
-        this.ss = ss;
+    public ProxyHelper(HazelcastClient client) {
+        this.cp = client.getConnectionPool();
+        this.ss = client.getSerializationService();
+        this.pp = (PartitionClientProxy) client.getPartitionService();
         this.writer = new ProtocolWriter(ss);
         this.reader = new ProtocolReader(ss);
     }
@@ -60,29 +65,6 @@ public class ProxyHelper {
 
     public static Long newCallId() {
         return callIdGen.incrementAndGet();
-    }
-
-    public void destroy() {
-//        doOp(ClusterOperation.DESTROY, null, null);
-//        this.client.destroy(name);
-    }
-
-    public <K> Collection<K> keys(Predicate predicate) {
-//        Keys keys = (Keys) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_KEYS, null, predicate);
-        Collection<K> collection = new ArrayList<K>();
-//        for (Data d : keys) {
-//            collection.add((K) toObject(d.buffer));
-//        }
-        return collection;
-    }
-
-    public <K> Collection<K> entries(final Predicate predicate) {
-//        Keys keys = (Keys) doOp(ClusterOperation.CONCURRENT_MAP_ITERATE_ENTRIES, null, predicate);
-        Collection<K> collection = new ArrayList<K>();
-//        for (Data d : keys) {
-//            collection.add((K) toObject(d.buffer));
-//        }
-        return collection;
     }
 
     public static void check(Object obj) {
@@ -151,23 +133,17 @@ public class ProxyHelper {
     }
 
     public Member key2Member(Object object) {
-        if (object == null) return null;
-        if (cp.partitionCount.get() == 0) {
-            return null;
-        }
-        Data key = toData(object);
-        int id = key.getPartitionHash() % cp.partitionCount.get();
-        Member member = cp.partitionTable.get(id);
-        return member;
+        Partition partition = pp.getCachedPartition(object);
+        return partition == null ? null : partition.getOwner();
     }
 
     public Protocol doCommand(Data key, Command command, String[] args, Data... data) {
-        Member member = key2Member(key);
+        Member member = key == null ? null : key2Member(key);
         return doCommand(member, command, args, data);
     }
 
     public Protocol doCommand(Command command, String[] args, Data... data) {
-        return doCommand((Member)null, command, args, data);
+        return doCommand((Member) null, command, args, data);
     }
 
     /**
@@ -305,8 +281,6 @@ public class ProxyHelper {
             throw new RuntimeException(e);
         }
     }
-
-
 
     protected Protocol lock(String name, Data key, Command command, String[] args, Data data) {
         Context context = ensureContextHasConnection(key);

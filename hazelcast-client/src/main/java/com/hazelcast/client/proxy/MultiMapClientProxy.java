@@ -17,30 +17,25 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.EntryListenerManager;
 import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
-import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Predicate;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.proxy.ProxyHelper.check;
-import static com.hazelcast.client.proxy.ProxyHelper.checkTime;
 import static java.lang.String.valueOf;
 
-public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,V> {
+public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K, V> {
     private final String name;
     private final ProxyHelper proxyHelper;
     private final HazelcastClient client;
@@ -48,7 +43,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
 
     public MultiMapClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
         this.client = client;
     }
 
@@ -60,15 +55,14 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
-
-
     public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MMLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
+        Data[] datas = dKey == null? null: new Data[]{dKey};
+        Protocol request = proxyHelper.createProtocol(Command.MMLISTEN, new String[]{name, valueOf(includeValue)}, datas);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.multiMapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
@@ -164,7 +158,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
     }
 
     public Set keySet() {
-        List<Data> list =  proxyHelper.doCommandAsList(Command.MMKEYS, new String[]{getName()});
+        List<Data> list = proxyHelper.doCommandAsList(Command.MMKEYS, new String[]{getName()});
         return new HashSet(list);
     }
 

@@ -18,31 +18,62 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.ListenerThread;
-import com.hazelcast.client.proxy.listener.MembershipLRH;
 import com.hazelcast.client.proxy.listener.MigrationEventLRH;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.core.PartitionService;
 
 import java.net.UnknownHostException;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PartitionClientProxy implements PartitionService {
     final private ProxyHelper proxyHelper;
     final private HazelcastClient client;
     Map<MigrationListener, ListenerThread> listenerMap = new ConcurrentHashMap<MigrationListener, ListenerThread>();
+    private final ConcurrentHashMap<Integer, Partition> cachedParttitionTable = new ConcurrentHashMap<Integer, Partition>(271);
+    private final AtomicInteger partitionCount = new AtomicInteger(0);
 
     public PartitionClientProxy(HazelcastClient client) {
-        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
         this.client = client;
+    }
+
+    public void initInternalPartitionTable(){
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                createPartitionTable(PartitionClientProxy.this);
+            }
+        }, 0, 1000);
+        partitionCount.set(cachedParttitionTable.size());
+    }
+
+    public Partition getCachedPartition(Object object) {
+        if (object == null) return null;
+        if (partitionCount.get() == 0) {
+            return null;
+        }
+        Data key = proxyHelper.toData(object);
+        int id = key.getPartitionHash() % partitionCount.get();
+        Partition partition = cachedParttitionTable.get(id);
+        return partition;
+    }
+
+    private void createPartitionTable(PartitionService partitionService) {
+        Set<Partition> partitions = partitionService.getPartitions();
+        for (Partition p : partitions) {
+            if (p.getOwner() != null)
+                cachedParttitionTable.put(p.getPartitionId(), p);
+        }
     }
 
     public Set<Partition> getPartitions() {
@@ -62,8 +93,7 @@ public class PartitionClientProxy implements PartitionService {
 
     private Partition partition(final int partitionId, String hostname, int port) {
         Address address = null;
-        if(hostname!="null"){
-           
+        if(hostname != null && !hostname.equals("null")){
             try {
                 address = new Address(hostname, port);
             } catch (UnknownHostException e) {
@@ -101,4 +131,6 @@ public class PartitionClientProxy implements PartitionService {
             thread.stopListening();
         }
     }
+
+
 }

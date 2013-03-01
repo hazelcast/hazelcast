@@ -17,11 +17,9 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.MessageListenerManager;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.proxy.listener.MessageLRH;
 import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.Protocol;
@@ -43,7 +41,7 @@ public class TopicClientProxy<T> implements ITopic {
     public TopicClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.client = client;
-        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
     }
 
     public String getName() {
@@ -64,12 +62,12 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public void removeMessageListener(MessageListener messageListener) {
-        System.out.println("ListenerMap sizeis " + listenerMap.size() );
+        System.out.println("ListenerMap sizeis " + listenerMap.size());
         ListenerThread thread = listenerMap.remove(messageListener);
-        if(thread!=null) {
+        if (thread != null) {
             thread.stopListening();
         }
-        System.out.println("ListenerMap sizeis " + listenerMap.size() );
+        System.out.println("ListenerMap sizeis " + listenerMap.size());
     }
 
     public void destroy() {

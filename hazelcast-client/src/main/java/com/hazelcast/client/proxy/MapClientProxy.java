@@ -50,7 +50,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.client = client;
-        this.proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        this.proxyHelper = new ProxyHelper(client);
     }
 
     public void flush(boolean flushAllEntries) {
@@ -77,7 +77,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
+        Data[] datas = dKey == null? null: new Data[]{dKey};
+        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, datas);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.mapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);

@@ -46,7 +46,7 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         super();
         this.name = name;
         this.client = client;
-        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
     }
 
     public String getName() {

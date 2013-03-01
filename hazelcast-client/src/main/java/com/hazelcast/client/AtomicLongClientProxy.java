@@ -26,9 +26,9 @@ public class AtomicLongClientProxy implements IAtomicLong {
     private final String name;
     private final ProxyHelper proxyHelper;
 
-    public AtomicLongClientProxy(HazelcastClient hazelcastClient, String name) {
+    public AtomicLongClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        this.proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
+        this.proxyHelper = new ProxyHelper(client);
     }
 
     public long addAndGet(long delta) {

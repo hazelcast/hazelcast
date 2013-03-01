@@ -40,6 +40,7 @@ public class RoundRobinRouter implements Router, MembershipListener {
     @Override
     public Member next() {
         Member[] members = memberRef.get();
+        if(members.length == 0) return null;
         return members[(int) (index.getAndAdd(1) % members.length)];
     }
 

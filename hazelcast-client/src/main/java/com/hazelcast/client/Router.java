@@ -23,5 +23,9 @@ import com.hazelcast.core.Member;
 public interface Router {
     public void init(HazelcastInstance h);
 
+    /**
+     * Returns the next member to route to
+     * @return Returns the next member or null if no member is available
+     */
     public Member next();
 }

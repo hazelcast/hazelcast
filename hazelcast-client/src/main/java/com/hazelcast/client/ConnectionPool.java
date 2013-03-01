@@ -21,21 +21,15 @@ import com.hazelcast.client.util.pool.ObjectPool;
 import com.hazelcast.client.util.pool.QueueBasedObjectPool;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.Partition;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionPool {
     static private final int POOL_SIZE = 2;
@@ -43,8 +37,6 @@ public class ConnectionPool {
     private final ConnectionManager connectionManager;
     private final SerializationService serializationService;
 
-    public final ConcurrentHashMap<Integer, Member> partitionTable = new ConcurrentHashMap<Integer, Member>(271);
-    public final AtomicInteger partitionCount = new AtomicInteger(0);
     private final Router router;
     private final ConcurrentMap<Address, ObjectPool<Connection>> mPool = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -57,25 +49,9 @@ public class ConnectionPool {
         router = config.getRouter();
     }
 
-    public void init(HazelcastInstance hazelcast, final PartitionService partitionService) {
+    public void init(HazelcastInstance hazelcast) {
         router.init(hazelcast);
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                createPartitionTable(partitionService);
-            }
-        }, 0, 1000);
-        partitionCount.set(partitionTable.size());
         initialized.set(true);
-    }
-
-    private void createPartitionTable(PartitionService partitionService) {
-        Set<Partition> partitions = partitionService.getPartitions();
-        for (Partition p : partitions) {
-            if (p.getOwner() != null)
-                partitionTable.put(p.getPartitionId(), p.getOwner());
-        }
     }
 
     private Connection initialConnection(ClientConfig config) {
@@ -117,7 +93,7 @@ public class ConnectionPool {
         if (member == null) {
             member = router.next();
             if (member == null) {
-                throw new RuntimeException("Router shouldn't return null member");
+                throw new NoMemberAvailableException();
             }
         }
         ObjectPool<Connection> pool = mPool.get(member.getInetSocketAddress());
