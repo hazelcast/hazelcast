@@ -52,7 +52,7 @@ public class LockTest {
         // lock, tryLock, isLocked, unlock
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
         final Config config = new Config();
-        final HazelcastInstance instance = nodeFactory.newInstance(config);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         final ILock lock = instance.getLock("testSimpleUsage");
         Assert.assertEquals("testSimpleUsage", lock.getName());
@@ -111,7 +111,7 @@ public class LockTest {
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnLock() throws InterruptedException {
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
-        final HazelcastInstance instance = nodeFactory.newInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
         lock.lock();
         Thread t = new Thread(new Runnable() {
@@ -127,8 +127,8 @@ public class LockTest {
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testShutDownNodeWhenOtherWaitingOnLock() throws InterruptedException {
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
-        final HazelcastInstance instance = nodeFactory.newInstance(new Config());
-        nodeFactory.newInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
         lock.lock();
         Thread t = new Thread(new Runnable() {
@@ -144,7 +144,7 @@ public class LockTest {
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalUnlock() {
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
-        final HazelcastInstance instance = nodeFactory.newInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testIllegalUnlock");
         lock.unlock();
     }
@@ -154,8 +154,8 @@ public class LockTest {
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         final Config config = new Config();
         final AtomicInteger integer = new AtomicInteger(0);
-        final HazelcastInstance lockOwner = nodeFactory.newInstance(config);
-        final HazelcastInstance instance1 = nodeFactory.newInstance(config);
+        final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
         final String name = "testLockOwnerDies";
         final ILock lock = lockOwner.getLock(name);
@@ -180,9 +180,9 @@ public class LockTest {
     public void testKeyOwnerDies() throws Exception {
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
         final Config config = new Config();
-        final HazelcastInstance keyOwner = nodeFactory.newInstance(config);
-        final HazelcastInstance instance1 = nodeFactory.newInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newInstance(config);
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         int k = 0;
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         while (instance1.getPartitionService().getPartition(k++).equals(keyOwner.getCluster().getLocalMember())) ;
