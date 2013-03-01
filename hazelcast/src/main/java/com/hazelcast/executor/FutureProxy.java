@@ -18,6 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -34,6 +35,7 @@ public final class FutureProxy<V> implements Future<V> {
     private final V defaultValue;
     private final boolean hasDefaultValue;
     private V value;
+    private Throwable error;
     private volatile boolean done = false;
 
     public FutureProxy(Future future, SerializationService serializationService) {
@@ -51,31 +53,43 @@ public final class FutureProxy<V> implements Future<V> {
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        if (!done) {
-            synchronized (this) {
-                if (!done) {
-                    final Object object = future.get();
-                    value = getResult(object);
-                }
-            }
+        try {
+            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            // should not happen!
+            return ExceptionUtil.sneakyThrow(e);
         }
-        return value;
     }
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (!done) {
             synchronized (this) {
                 if (!done) {
-                    final Object object = future.get(timeout, unit);
-                    value = getResult(object);
+                    try {
+                        value = getResult(future.get(timeout, unit));
+                    } catch (InterruptedException e) {
+                        error = e;
+                    } catch (ExecutionException e) {
+                        error = e;
+                    }
+                    done = true;
                 }
             }
+        }
+        if (error != null) {
+            if (error instanceof ExecutionException) {
+                throw (ExecutionException) error;
+            }
+            if (error instanceof InterruptedException) {
+                throw (InterruptedException) error;
+            }
+            // should not happen!
+            throw new ExecutionException(error);
         }
         return value;
     }
 
     private V getResult(Object object) {
-        done = true;
         if (hasDefaultValue) {
             return defaultValue;
         }
