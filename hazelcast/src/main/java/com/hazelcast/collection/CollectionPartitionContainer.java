@@ -49,8 +49,8 @@ public class CollectionPartitionContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(containerMap, proxyId, collectionConstructor);
     }
 
-    public ConcurrentMap<CollectionProxyId, CollectionContainer> getContainerMap() {
-        return containerMap; //TODO for testing only
+    public CollectionContainer getCollectionContainer(CollectionProxyId proxyId){
+        return containerMap.get(proxyId);
     }
 
     public int getMaxBackupCount() {

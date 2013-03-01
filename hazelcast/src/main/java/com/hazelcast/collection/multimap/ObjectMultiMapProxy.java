@@ -174,28 +174,6 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public LocalMapStats getLocalMultiMapStats() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int count = nodeEngine.getPartitionService().getPartitionCount();
-        for (int i = 0; i < count; i++) {
-            CollectionPartitionContainer partitionContainer = getService().getPartitionContainer(i);
-            Map<CollectionProxyId, CollectionContainer> multiMaps = partitionContainer.getContainerMap();
-            if (multiMaps.size() > 0) {
-                System.out.println("partitionId: " + i);
-            }
-            for (Map.Entry<CollectionProxyId, CollectionContainer> entry : multiMaps.entrySet()) {
-                System.out.println("\tname: " + entry.getKey());
-                CollectionContainer container = entry.getValue();
-                Map<Data, Collection<CollectionRecord>> map = container.getCollections();
-                for (Map.Entry<Data, Collection<CollectionRecord>> en : map.entrySet()) {
-                    System.out.println("\t\tkey: " + nodeEngine.toObject(en.getKey()));
-                    Collection<CollectionRecord> col = en.getValue();
-                    for (CollectionRecord o : col) {
-                        System.out.println("\t\t\tval: " + nodeEngine.toObject(o.getObject()) + ", id: " + o.getRecordId());
-                    }
-                }
-            }
-
-        }
         return null;
     }
 

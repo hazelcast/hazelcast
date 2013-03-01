@@ -17,6 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.list.client.*;
@@ -25,12 +26,16 @@ import com.hazelcast.collection.multimap.client.*;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
+import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 
 import java.util.*;
@@ -213,7 +218,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         for (Map.Entry<CollectionProxyId, Map> entry : map.entrySet()) {
             CollectionProxyId proxyId = entry.getKey();
             CollectionContainer container = getOrCreateCollectionContainer(partitionId, proxyId);
-            Map<Data, Collection<CollectionRecord>> collections = entry.getValue();
+            Map<Data, CollectionWrapper> collections = entry.getValue();
             container.collections.putAll(collections);
         }
     }
@@ -312,5 +317,38 @@ public class CollectionService implements ManagedService, RemoteService, Members
     }
 
     public void clientDisconnected(String clientUuid) {
+    }
+
+    public LocalMapStats createStats(CollectionProxyId proxyId){
+        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+        long ownedEntryCount = 0;
+        long backupEntryCount = 0;
+        long dirtyCount = 0;
+        long ownedEntryMemoryCost = 0;
+        long backupEntryMemoryCost = 0;
+        long hits = 0;
+        long lockedEntryCount = 0;
+
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+
+        Address thisAddress = clusterService.getThisAddress();
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
+            if (partitionInfo.getOwner().equals(thisAddress)) {
+                CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
+                CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
+                if (collectionContainer != null){
+                    for (CollectionWrapper wrapper: collectionContainer.collections.values()){
+                        for (CollectionRecord record: wrapper.getCollection()){
+                            ownedEntryCount++;
+                        }
+                    }
+                }
+            }
+            else {
+
+            }
+        }
+        return stats;
     }
 }
