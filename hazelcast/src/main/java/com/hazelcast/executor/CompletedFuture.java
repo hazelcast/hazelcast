@@ -18,7 +18,6 @@ package com.hazelcast.executor;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -28,13 +27,12 @@ import java.util.concurrent.TimeoutException;
 /**
  * @mdogan 1/18/13
  */
-public final class FakeFuture<V> implements Future<V> {
+public final class CompletedFuture<V> implements Future<V> {
 
     private final SerializationService serializationService;
     private final Object value;
-    private volatile boolean done = false;
 
-    public FakeFuture(SerializationService serializationService, Object value) {
+    public CompletedFuture(SerializationService serializationService, Object value) {
         this.serializationService = serializationService;
         this.value = value;
     }
@@ -45,7 +43,13 @@ public final class FakeFuture<V> implements Future<V> {
             object = serializationService.toObject((Data) object);
         }
         if (object instanceof Throwable) {
-            ExceptionUtil.sneakyThrow((Throwable) object);
+            if (object instanceof ExecutionException) {
+                throw (ExecutionException) object;
+            }
+            if (object instanceof InterruptedException) {
+                throw (InterruptedException) object;
+            }
+            throw new ExecutionException((Throwable) object);
         }
         return (V) object;
     }
@@ -55,7 +59,6 @@ public final class FakeFuture<V> implements Future<V> {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-        done = true;
         return false;
     }
 
@@ -64,6 +67,6 @@ public final class FakeFuture<V> implements Future<V> {
     }
 
     public boolean isDone() {
-        return done;
+        return true;
     }
 }

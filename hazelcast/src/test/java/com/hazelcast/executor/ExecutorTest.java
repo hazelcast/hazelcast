@@ -17,25 +17,275 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
+import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ExecutorTest {
+
+    public static int COUNT = 1000;
+
+    @BeforeClass
+    @AfterClass
+    public static void init() throws Exception {
+        Hazelcast.shutdownAll();
+    }
+
+    public static IExecutorService getExecutorService(String name) {
+        final HazelcastInstance instance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        return instance.getExecutorService(name);
+    }
 
     @Before
     @After
     public void shutdown() {
         Hazelcast.shutdownAll();
+    }
+
+    /**
+     * Get a service instance.
+     */
+    @Test
+    public void testGetExecutorService() {
+        ExecutorService executor = getExecutorService("testDefault");
+        assertNotNull(executor);
+    }
+
+    @Test
+    public void testIssue292() throws Exception {
+        final BlockingQueue qResponse = new ArrayBlockingQueue(1);
+        new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        getExecutorService("testIssue292").submit(new MemberCheck(), new ExecutionCallback<Member>() {
+            public void onResponse(Member response) {
+                qResponse.offer(response);
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        });
+        Object response = qResponse.poll(10, TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertTrue(response instanceof Member);
+    }
+
+    /**
+     * Submit a null task must raise a NullPointerException
+     */
+    @Test(expected = NullPointerException.class)
+    public void submitNullTask() throws Exception {
+        ExecutorService executor = getExecutorService("submitNullTask");
+        Callable c = null;
+        executor.submit(c);
+    }
+
+    /**
+     * Run a basic task
+     */
+    @Test
+    public void testBasicTask() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = getExecutorService("testBasicTask");
+        Future future = executor.submit(task);
+        assertEquals(future.get(), BasicTestTask.RESULT);
+    }
+
+    @Test
+    public void testCancellationAwareTask() {
+        CancellationAwareTask task = new CancellationAwareTask(5000);
+        ExecutorService executor = getExecutorService("testCancellationAwareTask");
+        Future future = executor.submit(task);
+        try {
+            future.get(2, TimeUnit.SECONDS);
+            fail("Should throw TimeoutException!");
+        } catch (TimeoutException expected) {
+        } catch (Exception e) {
+            fail("No other Exception!!");
+        }
+        assertFalse(future.isDone());
+        assertFalse(future.cancel(true));
+        assertFalse(future.isCancelled());
+        assertTrue(future.isDone());
+
+        try {
+            future.get();
+        } catch (InterruptedException e) {
+            fail();
+        } catch (ExecutionException e) {
+            fail();
+        }
+
+    }
+
+    /**
+     * Test the method isDone()
+     */
+    @Test
+    public void isDoneMethod() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        IExecutorService executor = getExecutorService("isDoneMethod");
+        Future future = executor.submit(task);
+        if (future.isDone()) {
+            assertTrue(future.isDone());
+        }
+        assertEquals(future.get(), BasicTestTask.RESULT);
+        assertTrue(future.isDone());
+    }
+
+    /**
+     * Test for the issue 129.
+     * Repeatedly runs tasks and check for isDone() status after
+     * get().
+     */
+    @Test
+    public void isDoneMethod2() throws Exception {
+        ExecutorService executor = getExecutorService("isDoneMethod2");
+        for (int i = 0; i < COUNT; i++) {
+            Callable<String> task1 = new BasicTestTask();
+            Callable<String> task2 = new BasicTestTask();
+            Future future1 = executor.submit(task1);
+            Future future2 = executor.submit(task2);
+            assertEquals(future2.get(), BasicTestTask.RESULT);
+            assertTrue(future2.isDone());
+            assertEquals(future1.get(), BasicTestTask.RESULT);
+            assertTrue(future1.isDone());
+        }
+    }
+
+    /**
+     * Test the Execution Callback
+     */
+    @Test
+    public void testExecutionCallback() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        IExecutorService executor = getExecutorService("testExecutionCallback");
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ExecutionCallback executionCallback = new ExecutionCallback() {
+            public void onResponse(Object response) {
+                latch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        };
+        executor.submit(task, executionCallback);
+
+        assertTrue(latch.await(2, TimeUnit.SECONDS));
+
+    }
+
+    /**
+     * Execute a task that is executing
+     * something else inside. Nested Execution.
+     */
+    @Test(timeout = 10000)
+    public void testNestedExecution() throws Exception {
+        Callable<String> task = new NestedExecutorTask();
+        ExecutorService executor = getExecutorService("testNestedExecution");
+        Future future = executor.submit(task);
+        future.get();
+    }
+
+    /**
+     * Test multiple Future.get() invocation
+     */
+    @Test
+    public void isTwoGetFromFuture() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = getExecutorService("isTwoGetFromFuture");
+        Future<String> future = executor.submit(task);
+        String s1 = future.get();
+        assertEquals(s1, BasicTestTask.RESULT);
+        assertTrue(future.isDone());
+        String s2 = future.get();
+        assertEquals(s2, BasicTestTask.RESULT);
+        assertTrue(future.isDone());
+        String s3 = future.get();
+        assertEquals(s3, BasicTestTask.RESULT);
+        assertTrue(future.isDone());
+        String s4 = future.get();
+        assertEquals(s4, BasicTestTask.RESULT);
+        assertTrue(future.isDone());
+    }
+
+    /**
+     * invokeAll tests
+     */
+    @Test
+    public void testInvokeAll() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = getExecutorService("testInvokeAll");
+        assertFalse(executor.isShutdown());
+        // Only one task
+        ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
+        tasks.add(new BasicTestTask());
+        List<Future<String>> futures = executor.invokeAll(tasks);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new BasicTestTask());
+        }
+        futures = executor.invokeAll(tasks);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+            assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+        }
+    }
+
+    /**
+     * Shutdown-related method behaviour when the cluster is running
+     */
+    @Test
+    public void testShutdownBehaviour() throws Exception {
+        ExecutorService executor = getExecutorService("testShutdownBehaviour");
+        // Fresh instance, is not shutting down
+        assertFalse(executor.isShutdown());
+        assertFalse(executor.isTerminated());
+        executor.shutdown();
+        assertTrue(executor.isShutdown());
+        assertTrue(executor.isTerminated());
+        // shutdownNow() should return an empty list and be ignored
+        List<Runnable> pending = executor.shutdownNow();
+        assertTrue(pending.isEmpty());
+        assertTrue(executor.isShutdown());
+        assertTrue(executor.isTerminated());
+        // awaitTermination() should return immediately false
+        try {
+            boolean terminated = executor.awaitTermination(60L, TimeUnit.SECONDS);
+            assertFalse(terminated);
+        } catch (InterruptedException ie) {
+            fail("InterruptedException");
+        }
+        assertTrue(executor.isShutdown());
+        assertTrue(executor.isTerminated());
+    }
+
+    /**
+     * Shutting down the cluster should act as the ExecutorService shutdown
+     */
+    @Test(expected = RejectedExecutionException.class)
+    public void testClusterShutdown() throws Exception {
+        ExecutorService executor = getExecutorService("testClusterShutdown");
+        Hazelcast.shutdownAll();
+        Thread.sleep(2000);
+        assertNotNull(executor);
+        assertTrue(executor.isShutdown());
+        assertTrue(executor.isTerminated());
+        // New tasks must be rejected
+        Callable<String> task = new BasicTestTask();
+
+        Future future = executor.submit(task);
+
     }
 
     @Test
@@ -68,4 +318,51 @@ public class ExecutorTest {
         Assert.assertTrue(executionTime <= executorService.getLocalExecutorStats().getOperationStats().getMaxExecutionTime());
 
     }
+
+    public static class BasicTestTask implements Callable<String>, Serializable {
+
+        public static String RESULT = "Task completed";
+
+        public String call() throws Exception {
+            return RESULT;
+        }
+    }
+
+    public static class CancellationAwareTask implements Callable<Boolean>, Serializable {
+
+        long sleepTime = 10000;
+
+        public CancellationAwareTask(long sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
+        public Boolean call() throws InterruptedException {
+            Thread.sleep(sleepTime);
+            return Boolean.TRUE;
+        }
+    }
+
+    public static class NestedExecutorTask implements Callable<String>, Serializable {
+
+        public String call() throws Exception {
+            Future future = getExecutorService("NestedExecutorTask").submit(new BasicTestTask());
+            return (String) future.get();
+        }
+    }
+
+    public static class MemberCheck implements Callable<Member>, Serializable, HazelcastInstanceAware {
+
+        private Member localMember;
+
+        public Member call() throws Exception {
+            return localMember;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            localMember = hazelcastInstance.getCluster().getLocalMember();
+        }
+    }
+
 }
+

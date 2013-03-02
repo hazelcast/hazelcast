@@ -1245,7 +1245,7 @@ public class HazelcastTest extends BaseTest {
 //    public void testMapPutOverCapacity() throws InterruptedException {
 //        final int capacity = 100;
 //        Config config = getInstance().getDefaultInstance().getConfig();
-//        config.getMapConfig("testMapPutOverCapacity").getMaxSizeConfig().setSize(capacity);
+//        config.getMapConfig("testMapPutOverCapacity").getMaxSizeConfig().setMaxSize(capacity);
 //        final IMap map = getInstance().getMap("testMapPutOverCapacity");
 //        for (int i = 0; i < capacity; i++) {
 //            map.put(i, i);
