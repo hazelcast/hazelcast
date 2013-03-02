@@ -28,6 +28,7 @@ import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -37,6 +38,7 @@ import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,6 +55,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
     private final NodeEngine nodeEngine;
     private final CollectionPartitionContainer[] partitionContainers;
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
+    private final ConcurrentMap<CollectionProxyId, MapOperationsCounter> counterMap = new ConcurrentHashMap<CollectionProxyId, MapOperationsCounter>(1000);
 
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -133,6 +136,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         Set<Data> keySet = new HashSet<Data>();
         for (CollectionPartitionContainer partitionContainer : partitionContainers) {
             CollectionContainer container = partitionContainer.getOrCreateCollectionContainer(proxyId);
+            container.getOperationsCounter().incrementOtherOperations();
             keySet.addAll(container.keySet());
         }
         return keySet;
@@ -174,16 +178,17 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public void dispatchEvent(CollectionEvent event, EventListener listener) {
         if (listener instanceof EntryListener) {
             EntryListener entryListener = (EntryListener) listener;
-            EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
+            EntryEvent entryEvent = new EntryEvent(event.getProxyId().getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
                     event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
             if (event.eventType.equals(EntryEventType.ADDED)) {
                 entryListener.entryAdded(entryEvent);
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
                 entryListener.entryRemoved(entryEvent);
             }
+            getOrCreateOperationCounter(event.getProxyId()).incrementReceivedEvents();
         } else if (listener instanceof ItemListener) {
             ItemListener itemListener = (ItemListener) listener;
-            ItemEvent itemEvent = new ItemEvent(event.getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
+            ItemEvent itemEvent = new ItemEvent(event.getProxyId().getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
                     nodeEngine.getClusterService().getMember(event.getCaller()));
             if (event.eventType.getType() == ItemEventType.ADDED.getType()) {
                 itemListener.itemAdded(itemEvent);
@@ -328,27 +333,72 @@ public class CollectionService implements ManagedService, RemoteService, Members
         long backupEntryMemoryCost = 0;
         long hits = 0;
         long lockedEntryCount = 0;
+        long creationTime = Long.MAX_VALUE;
 
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
+            CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
+            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
+            if (collectionContainer == null){
+                continue;
+            }
             if (partitionInfo.getOwner().equals(thisAddress)) {
-                CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
-                CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
-                if (collectionContainer != null){
-                    for (CollectionWrapper wrapper: collectionContainer.collections.values()){
-                        for (CollectionRecord record: wrapper.getCollection()){
-                            ownedEntryCount++;
+                stats.setLastAccessTime(collectionContainer.getLastAccessTime());
+                stats.setLastUpdateTime(collectionContainer.getLastUpdateTime());
+                creationTime = Math.min(creationTime, collectionContainer.getCreationTime());
+                lockedEntryCount += collectionContainer.getLockedCount();
+                for (CollectionWrapper wrapper: collectionContainer.collections.values()){
+                    hits += wrapper.getHits();
+                    ownedEntryCount += wrapper.getCollection().size();
+                }
+            }
+            else {
+                int backupCount = collectionContainer.config.getTotalBackupCount();
+                for (int j = 1; j <= backupCount; j++) {
+                    Address replicaAddress = partitionInfo.getReplicaAddress(j);
+                    int memberSize = nodeEngine.getClusterService().getMembers().size();
+
+                    int tryCount = 3;
+                    // wait if the partition table is not updated yet
+                    while (memberSize > backupCount && replicaAddress == null && tryCount-- > 0) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            ExceptionUtil.rethrow(e);
+                        }
+                        replicaAddress = partitionInfo.getReplicaAddress(j);
+                    }
+
+                    if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
+                        for (CollectionWrapper wrapper: collectionContainer.collections.values()){
+                            backupEntryCount += wrapper.getCollection().size();
                         }
                     }
                 }
             }
-            else {
-
-            }
         }
+        stats.setCreationTime(creationTime == Long.MAX_VALUE ? -1 : creationTime);
+        stats.setOwnedEntryCount(ownedEntryCount);
+        stats.setBackupEntryCount(backupEntryCount);
+        stats.setHits(hits);
+        stats.setLockedEntryCount(lockedEntryCount);
+        stats.setOperationStats(getOrCreateOperationCounter(proxyId).getPublishedStats());
         return stats;
     }
+
+    public MapOperationsCounter getOrCreateOperationCounter(CollectionProxyId proxyId){
+        MapOperationsCounter operationsCounter = counterMap.get(proxyId);
+        if (operationsCounter == null){
+            operationsCounter = new MapOperationsCounter();
+            MapOperationsCounter counter = counterMap.putIfAbsent(proxyId, operationsCounter);
+            if (counter != null){
+                operationsCounter = counter;
+            }
+        }
+        return operationsCounter;
+    }
+
 }

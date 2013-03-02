@@ -174,7 +174,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public LocalMapStats getLocalMultiMapStats() {
-        return null;
+        return getService().createStats(proxyId);
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {

@@ -76,7 +76,7 @@ public abstract class CollectionOperation extends Operation implements Partition
             CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
             if (filter.getKey() != null && filter.getKey().equals(key)) {
                 Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
-                CollectionEvent event = new CollectionEvent(proxyId.getName(), key, dataValue, eventType, engine.getThisAddress());
+                CollectionEvent event = new CollectionEvent(proxyId, key, dataValue, eventType, engine.getThisAddress());
                 eventService.publishEvent(CollectionService.SERVICE_NAME, registration, event);
             }
         }

@@ -51,6 +51,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     public void afterRun() throws Exception {
+        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
         for (Data data : dataList) {
             publishEvent(ItemEventType.REMOVED, data);
         }

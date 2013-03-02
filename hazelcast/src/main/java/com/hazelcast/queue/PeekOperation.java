@@ -37,6 +37,10 @@ public class PeekOperation extends QueueOperation implements IdentifiedDataSeria
         response = item != null ? item.getData() : null;
     }
 
+    public void afterRun() throws Exception {
+        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
+    }
+
     public int getId() {
         return DataSerializerQueueHook.PEEK;
     }

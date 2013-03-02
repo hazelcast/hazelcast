@@ -105,7 +105,6 @@ public class QueueContainer implements DataSerializable {
     }
 
     public int size() {
-        operationsCounter.incrementOtherOperations();
         return itemQueue.size(); //TODO check max size
     }
 

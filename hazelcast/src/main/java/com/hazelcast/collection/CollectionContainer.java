@@ -20,8 +20,10 @@ import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.concurrent.lock.LockStoreView;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +52,9 @@ public class CollectionContainer {
     final int partitionId;
 
     final AtomicLong idGen = new AtomicLong();
+    final AtomicLong lastAccessTime = new AtomicLong();
+    final AtomicLong lastUpdateTime = new AtomicLong();
+    final long creationTime;
 
     public CollectionContainer(CollectionProxyId proxyId, CollectionService service, int partitionId) {
         this.proxyId = proxyId;
@@ -62,6 +67,7 @@ public class CollectionContainer {
         final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, lockNamespace, config.getSyncBackupCount(), config.getAsyncBackupCount());
+        creationTime = Clock.currentTimeMillis();
     }
 
     public boolean isLocked(Data dataKey) {
@@ -85,6 +91,10 @@ public class CollectionContainer {
     public Collection<CollectionRecord> getCollection(Data dataKey) {
         CollectionWrapper wrapper = collections.get(dataKey);
         return wrapper != null ? wrapper.getCollection() : null;
+    }
+
+    public CollectionWrapper getCollectionWrapper(Data dataKey) {
+        return collections.get(dataKey);
     }
 
     public Collection<CollectionRecord> removeCollection(Data dataKey) {
@@ -179,4 +189,31 @@ public class CollectionContainer {
         collections.clear();
     }
 
+    public void access(){
+        lastAccessTime.set(Clock.currentTimeMillis());
+    }
+
+    public void update(){
+        lastUpdateTime.set(Clock.currentTimeMillis());
+    }
+
+    public long getLastAccessTime(){
+        return lastAccessTime.get();
+    }
+
+    public long getLastUpdateTime(){
+        return lastUpdateTime.get();
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public long getLockedCount(){
+        return lockStore.getLockedKeys().size();
+    }
+
+    public MapOperationsCounter getOperationsCounter() {
+        return service.getOrCreateOperationCounter(proxyId);
+    }
 }

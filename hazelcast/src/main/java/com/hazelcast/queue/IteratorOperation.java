@@ -31,4 +31,8 @@ public class IteratorOperation extends QueueOperation {
     public void run() {
         response = new SerializableCollectionContainer(getOrCreateContainer().getAsDataList());
     }
+
+    public void afterRun() throws Exception {
+        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
+    }
 }

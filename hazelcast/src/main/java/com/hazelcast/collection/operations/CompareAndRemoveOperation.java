@@ -47,7 +47,11 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        Collection<CollectionRecord> coll = getOrCreateCollection();
+        Collection<CollectionRecord> coll = getCollection();
+        if (coll == null){
+            response = false;
+            return;
+        }
         idSet = new HashSet<Long>();
         for (Data data : dataList) {
             Object obj = isBinary() ? data : toObject(data);

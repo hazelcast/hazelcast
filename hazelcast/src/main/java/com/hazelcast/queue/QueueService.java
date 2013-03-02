@@ -143,6 +143,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         } else {
             listener.itemRemoved(itemEvent);
         }
+        containerMap.get(event.name).getOperationsCounter().incrementReceivedEvents();
     }
 
     public String getServiceName() {

@@ -33,6 +33,7 @@ public class KeySetOperation extends CollectionOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
+        container.getOperationsCounter().incrementOtherOperations();
         response = new CollectionResponse(container.keySet());
     }
 }

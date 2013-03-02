@@ -46,11 +46,17 @@ public class CollectionPartitionContainer {
     }
 
     public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId) {
-        return ConcurrencyUtil.getOrPutIfAbsent(containerMap, proxyId, collectionConstructor);
+        CollectionContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, proxyId, collectionConstructor);
+        container.access();
+        return container;
     }
 
     public CollectionContainer getCollectionContainer(CollectionProxyId proxyId){
-        return containerMap.get(proxyId);
+        CollectionContainer container = containerMap.get(proxyId);
+        if (container != null){
+            container.access();
+        }
+        return container;
     }
 
     public int getMaxBackupCount() {
