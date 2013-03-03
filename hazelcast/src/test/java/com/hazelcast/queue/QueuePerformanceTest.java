@@ -16,25 +16,75 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.core.Hazelcast;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.StaticNodeFactory;
+
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @ali 2/22/13
  */
 public class QueuePerformanceTest {
 
-    @Before
-    @After
-    public void cleanup() {
-        Hazelcast.shutdownAll();
+    final AtomicLong totalOffer = new AtomicLong();
+    final AtomicLong totalPoll = new AtomicLong();
+    final Random rnd = new Random(System.currentTimeMillis());
+    private HazelcastInstance[] instances;
+
+    public static void main(String[] args) throws Exception {
+//        System.setProperty("hazelcast.test.use.network","true");
+        QueuePerformanceTest test = new QueuePerformanceTest();
+        test.oneQueue();
     }
 
-    @Test
-    public void performance1() throws Exception {
+    public void oneQueue() throws Exception {
+        Config config = new Config();
+        final int insCount = 4;
+        final int threadCount = 10;
+        final String name = "defQueue";
+        instances = StaticNodeFactory.newInstances(config, insCount);
 
+        Thread.sleep(1000);
+
+        System.err.println("starting threads");
+        for (int i=0; i < threadCount; i++){
+            new Thread(){
+                public void run() {
+                    while (true){
+                        if(rnd.nextInt(100) > 41){
+                            getQueue(name).poll();
+                            totalPoll.incrementAndGet();
+                        }
+                        else {
+                            getQueue(name).offer("item");
+                            totalOffer.incrementAndGet();
+                        }
+                    }
+                }
+            }.start();
+        }
+        System.err.println("finished starting threads");
+
+        while (true){
+            long sleepTime = 10;
+            Thread.sleep(sleepTime*1000);
+            long totalOfferVal = totalOffer.getAndSet(0);
+            long totalPollVal = totalPoll.getAndSet(0);
+
+
+            System.err.println("_______________________________________________________________________________________");
+            System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal);
+            System.err.println(" size: " + getQueue(name).size() + " \t speed: " + ((totalOfferVal+totalPollVal)/sleepTime));
+            System.err.println("---------------------------------------------------------------------------------------");
+            System.err.println("");
+        }
+    }
+
+    private IQueue getQueue(String name){
+        return instances[rnd.nextInt(instances.length)].getQueue(name);
     }
 
 }
