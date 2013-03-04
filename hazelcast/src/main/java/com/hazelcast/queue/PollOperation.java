@@ -41,13 +41,12 @@ public class PollOperation extends QueueBackupAwareOperation implements WaitSupp
     }
 
     public void afterRun() throws Exception {
-        QueueContainer container = getOrCreateContainer();
         if (response != null) {
+            getQueueService().getOrCreateOperationsCounter(name).incrementPolls();
             publishEvent(ItemEventType.REMOVED, (Data) response);
-            container.getOperationsCounter().incrementPolls();
         }
         else {
-            container.getOperationsCounter().incrementEmptyPolls();
+            getQueueService().getOrCreateOperationsCounter(name).incrementEmptyPolls();
         }
     }
 

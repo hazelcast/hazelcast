@@ -29,10 +29,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @ali 2/12/13
@@ -262,13 +263,15 @@ public class BasicQueueTest {
     }
 
     @Test
-    public void testListeners(){
+    public void testListeners() throws InterruptedException {
         final String name = "defQueue";
         Config config = new Config();
         final int count = 100;
         config.getQueueConfig(name).setMaxSize(count);
         final int insCount = 4;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final CountDownLatch latch = new CountDownLatch(20);
+        final AtomicBoolean notCalled = new AtomicBoolean(true);
 
         IQueue q = getQueue(instances, name);
         ItemListener listener = new ItemListener() {
@@ -277,11 +280,21 @@ public class BasicQueueTest {
             int poll;
 
             public void itemAdded(ItemEvent item) {
-                assertEquals(item.getItem(), "item"+offer++);
+                if(item.getItem().equals("item"+offer++)){
+                    latch.countDown();
+                }
+                else {
+                    notCalled.set(false);
+                }
             }
 
             public void itemRemoved(ItemEvent item) {
-                assertEquals(item.getItem(), "item"+poll++);
+                if(item.getItem().equals("item"+poll++)){
+                    latch.countDown();
+                }
+                else {
+                    notCalled.set(false);
+                }
             }
         };
         q.addItemListener(listener, true);
@@ -292,9 +305,12 @@ public class BasicQueueTest {
         for (int i = 0; i < 10; i++) {
             getQueue(instances, name).poll();
         }
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         q.removeItemListener(listener);
         getQueue(instances, name).offer("item-a");
         getQueue(instances, name).poll();
+        Thread.sleep(2*1000);
+        assertTrue(notCalled.get());
     }
 
     private IQueue getQueue(HazelcastInstance[] instances, String name) {
