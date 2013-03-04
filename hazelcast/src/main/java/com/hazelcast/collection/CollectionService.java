@@ -185,7 +185,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
                 entryListener.entryRemoved(entryEvent);
             }
-            getOrCreateOperationCounter(event.getProxyId()).incrementReceivedEvents();
+            getOrCreateOperationsCounter(event.getProxyId()).incrementReceivedEvents();
         } else if (listener instanceof ItemListener) {
             ItemListener itemListener = (ItemListener) listener;
             ItemEvent itemEvent = new ItemEvent(event.getProxyId().getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
@@ -385,11 +385,11 @@ public class CollectionService implements ManagedService, RemoteService, Members
         stats.setBackupEntryCount(backupEntryCount);
         stats.setHits(hits);
         stats.setLockedEntryCount(lockedEntryCount);
-        stats.setOperationStats(getOrCreateOperationCounter(proxyId).getPublishedStats());
+        stats.setOperationStats(getOrCreateOperationsCounter(proxyId).getPublishedStats());
         return stats;
     }
 
-    public MapOperationsCounter getOrCreateOperationCounter(CollectionProxyId proxyId){
+    public MapOperationsCounter getOrCreateOperationsCounter(CollectionProxyId proxyId){
         MapOperationsCounter operationsCounter = counterMap.get(proxyId);
         if (operationsCounter == null){
             operationsCounter = new MapOperationsCounter();

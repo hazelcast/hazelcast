@@ -19,7 +19,6 @@ package com.hazelcast.queue;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.monitor.impl.QueueOperationsCounter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -50,8 +49,6 @@ public class QueueContainer implements DataSerializable {
 
     private QueueStoreWrapper store;
 
-    private final QueueOperationsCounter operationsCounter = new QueueOperationsCounter();
-
     private volatile long minAge;
 
     private volatile long maxAge;
@@ -79,14 +76,6 @@ public class QueueContainer implements DataSerializable {
     }
 
     public boolean offer(Data data) {
-        if (data == null){
-            System.err.println("wrong!!!!");
-            System.err.println("wrong!!!!");
-            System.err.println("wrong!!!!");
-            System.err.println("wrong!!!!");
-            System.err.println("wrong!!!!");
-
-        }
         QueueItem item = new QueueItem(this, idGen++);
         if (store.isEnabled()) {
             try {
@@ -435,10 +424,6 @@ public class QueueContainer implements DataSerializable {
             itemQueue.offer(item);
             idGen++;
         }
-    }
-
-    public QueueOperationsCounter getOperationsCounter() {
-        return operationsCounter;
     }
 
     private void age(QueueItem item, long currentTime){

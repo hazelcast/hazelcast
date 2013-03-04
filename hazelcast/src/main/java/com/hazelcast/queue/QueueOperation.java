@@ -119,4 +119,8 @@ public abstract class QueueOperation extends Operation implements KeyBasedOperat
         timeoutMillis = in.readLong();
     }
 
+    protected QueueService getQueueService(){
+        return getService();
+    }
+
 }
