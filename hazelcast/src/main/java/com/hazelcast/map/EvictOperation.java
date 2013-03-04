@@ -48,7 +48,8 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         if (prepareTransaction()) {
             return;
         }
-        evicted = recordStore.evict(dataKey);
+        dataValue = mapService.toData(recordStore.evict(dataKey));
+        evicted = dataValue != null;
     }
 
     @Override
@@ -80,7 +81,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.EVICT, dataKey, dataValue, dataValue);
         int eventType = EntryEvent.TYPE_EVICTED;
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, null, dataValue);
+        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
         invalidateNearCaches();
     }
 

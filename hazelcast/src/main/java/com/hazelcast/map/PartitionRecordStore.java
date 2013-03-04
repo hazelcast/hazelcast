@@ -215,15 +215,16 @@ public class PartitionRecordStore implements RecordStore {
         }
     }
 
-    public boolean evict(Data dataKey) {
+    public Object evict(Data dataKey) {
         Record record = records.get(dataKey);
+        Object oldValue = null;
         if (record != null) {
             mapService.intercept(name, MapOperationType.EVICT, dataKey, record.getValue(), record.getValue());
+            oldValue = record.getValue();
             records.remove(dataKey);
             removeIndex(dataKey);
-            return true;
         }
-        return false;
+        return oldValue;
     }
 
     public boolean remove(Data dataKey, Object testValue) {
