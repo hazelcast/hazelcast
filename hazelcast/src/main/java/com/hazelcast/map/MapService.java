@@ -658,10 +658,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             EventFilter filter = candidate.getFilter();
             if (filter instanceof EventServiceImpl.EmptyFilter) {
                 registrationsWithValue.add(candidate);
-
-            } else if (filter instanceof QueryEventFilter) {
+             } else if (filter instanceof QueryEventFilter) {
                 Object testValue;
-                if (eventType == EntryEvent.TYPE_REMOVED) {
+                if (eventType == EntryEvent.TYPE_REMOVED || eventType == EntryEvent.TYPE_EVICTED) {
                     oldValue = oldValue != null ? oldValue : toObject(dataOldValue);
                     testValue = oldValue;
                 } else {
@@ -747,13 +746,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 break;
         }
         getMapContainer(eventData.getMapName()).getMapOperationCounter().incrementReceivedEvents();
-    }
-
-    public void scheduleOperationOlddd(String mapName, Data key, long executeTime) {
-        MapRecordStateOperation stateOperation = new MapRecordStateOperation(mapName, key);
-        final MapRecordTask recordTask = new MapRecordTask(nodeEngine, stateOperation,
-                nodeEngine.getPartitionService().getPartitionId(key));
-        nodeEngine.getExecutionService().schedule(recordTask, executeTime, TimeUnit.MILLISECONDS);
     }
 
     public void scheduleIdleEviction(String mapName, Data key, long delay) {
@@ -906,8 +898,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     if (nodeEngine.getThisAddress().equals(owner)) {
                         int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
-                            if (size >= maxSize)
+                            if (size >= maxSize){
                                 return true;
+                            }
                         } else {
                             totalSize += size;
                         }
