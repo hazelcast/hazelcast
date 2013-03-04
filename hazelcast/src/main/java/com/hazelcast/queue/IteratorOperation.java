@@ -33,6 +33,6 @@ public class IteratorOperation extends QueueOperation {
     }
 
     public void afterRun() throws Exception {
-        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
+        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
     }
 }

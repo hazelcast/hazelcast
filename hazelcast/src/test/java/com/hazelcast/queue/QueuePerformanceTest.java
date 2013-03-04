@@ -36,6 +36,7 @@ public class QueuePerformanceTest {
 
     public static void main(String[] args) throws Exception {
 //        System.setProperty("hazelcast.test.use.network","true");
+
         QueuePerformanceTest test = new QueuePerformanceTest();
         test.oneQueue();
     }
@@ -47,7 +48,10 @@ public class QueuePerformanceTest {
         final String name = "defQueue";
         instances = StaticNodeFactory.newInstances(config, insCount);
 
-        Thread.sleep(1000);
+//        Thread.sleep(3000);
+//        getQueue(name).size();
+//        Thread.sleep(3000);
+//        getQueue(name).size();
 
         System.err.println("starting threads");
         for (int i=0; i < threadCount; i++){

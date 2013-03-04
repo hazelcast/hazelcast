@@ -57,7 +57,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     public void afterRun() throws Exception {
-        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
+        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
         if (Boolean.TRUE.equals(response)) {
             for (Data data : dataList) {
                 publishEvent(ItemEventType.ADDED, data);

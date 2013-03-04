@@ -214,6 +214,6 @@ public class CollectionContainer {
     }
 
     public MapOperationsCounter getOperationsCounter() {
-        return service.getOrCreateOperationCounter(proxyId);
+        return service.getOrCreateOperationsCounter(proxyId);
     }
 }

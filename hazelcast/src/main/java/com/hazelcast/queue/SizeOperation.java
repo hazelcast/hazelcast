@@ -36,6 +36,6 @@ public class SizeOperation extends QueueOperation {
     }
 
     public void afterRun() throws Exception {
-        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
+        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
     }
 }

@@ -38,7 +38,7 @@ public class PeekOperation extends QueueOperation implements IdentifiedDataSeria
     }
 
     public void afterRun() throws Exception {
-        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
+        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
     }
 
     public int getId() {
