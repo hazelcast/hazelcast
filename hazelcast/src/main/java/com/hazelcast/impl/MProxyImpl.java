@@ -983,7 +983,8 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public void clear() {
-            if (concurrentMapManager.getMap(name).isClearQuick()) {
+            final CMap cMap = concurrentMapManager.getMap(name);
+            if (cMap != null && cMap.isClearQuick()) {
                 mapOperationCounter.incrementOtherOperations();
                 MClearQuick mClearQuick = concurrentMapManager.new MClearQuick(name);
                 mClearQuick.call();
