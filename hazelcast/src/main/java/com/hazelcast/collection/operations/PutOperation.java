@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -38,6 +39,8 @@ public class PutOperation extends CollectionBackupAwareOperation {
 
     int index;
 
+    transient long begin = -1;
+
     public PutOperation() {
     }
 
@@ -48,6 +51,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
+        begin = Clock.currentTimeMillis();
         CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
         Collection<CollectionRecord> coll = getOrCreateCollection();
         if (index == -1) {
@@ -63,6 +67,8 @@ public class PutOperation extends CollectionBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
+        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
+        getOrCreateContainer().getOperationsCounter().incrementPuts(elapsed);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value);
         }

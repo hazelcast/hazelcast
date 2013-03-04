@@ -33,6 +33,7 @@ public class EntrySetOperation extends CollectionOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
+        container.getOperationsCounter().incrementOtherOperations();
         response = new EntrySetResponse(container.copyCollections(), getNodeEngine());
     }
 }

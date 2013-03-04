@@ -49,37 +49,42 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public void execute(Runnable command) {
-        Callable<?> callable = new RunnableAdapter(command);
+        Callable<?> callable = createRunnableAdapter(command);
         submit(callable);
     }
 
+    private <T> RunnableAdapter<T> createRunnableAdapter(Runnable command) {
+        if (command == null) throw new NullPointerException();
+        return new RunnableAdapter<T>(command);
+    }
+
     public void executeOnKeyOwner(Runnable command, Object key) {
-        Callable<?> callable = new RunnableAdapter(command);
+        Callable<?> callable = createRunnableAdapter(command);
         submitToKeyOwner(callable, key);
     }
 
     public void executeOnMember(Runnable command, Member member) {
-        Callable<?> callable = new RunnableAdapter(command);
+        Callable<?> callable = createRunnableAdapter(command);
         submitToMember(callable, member);
     }
 
     public void executeOnMembers(Runnable command, Collection<Member> members) {
-        Callable<?> callable = new RunnableAdapter(command);
+        Callable<?> callable = createRunnableAdapter(command);
         submitToMembers(callable, members);
     }
 
     public void executeOnAllMembers(Runnable command) {
-        Callable<?> callable = new RunnableAdapter(command);
+        Callable<?> callable = createRunnableAdapter(command);
         submitToAllMembers(callable);
     }
 
     public Future<?> submit(Runnable task) {
-        Callable<?> callable = new RunnableAdapter(task);
+        Callable<?> callable = createRunnableAdapter(task);
         return submit(callable);
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        Callable<T> callable = new RunnableAdapter<T>(task);
+        Callable<T> callable = createRunnableAdapter(task);
         return new FutureProxy<T>(submit(callable), getNodeEngine().getSerializationService(), result);
     }
 
@@ -89,6 +94,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId) {
+        if (task == null) throw new NullPointerException();
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
@@ -109,7 +115,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             } catch (Exception e) {
                 response = e;
             }
-            return new FakeFuture<T>(nodeEngine.getSerializationService(), response);
+            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response);
         }
         return new FutureProxy<T>(future, nodeEngine.getSerializationService());
     }
@@ -144,6 +150,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
+        if (task == null) throw new NullPointerException();
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
@@ -167,27 +174,27 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public void submit(Runnable task, ExecutionCallback callback) {
-        Callable<?> callable = new RunnableAdapter(task);
+        Callable<?> callable = createRunnableAdapter(task);
         submit(callable, callback);
     }
 
     public void submitToKeyOwner(Runnable task, Object key, ExecutionCallback callback) {
-        Callable<?> callable = new RunnableAdapter(task);
+        Callable<?> callable = createRunnableAdapter(task);
         submitToKeyOwner(callable, key, callback);
     }
 
     public void submitToMember(Runnable task, Member member, ExecutionCallback callback) {
-        Callable<?> callable = new RunnableAdapter(task);
+        Callable<?> callable = createRunnableAdapter(task);
         submitToMember(callable, member, callback);
     }
 
     public void submitToMembers(Runnable task, Collection<Member> members, MultiExecutionCallback callback) {
-        Callable<?> callable = new RunnableAdapter(task);
+        Callable<?> callable = createRunnableAdapter(task);
         submitToMembers(callable, members, callback);
     }
 
     public void submitToAllMembers(Runnable task, MultiExecutionCallback callback) {
-        Callable<?> callable = new RunnableAdapter(task);
+        Callable<?> callable = createRunnableAdapter(task);
         submitToAllMembers(callable, callback);
     }
 
@@ -241,7 +248,21 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        throw new UnsupportedOperationException();
+        final List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
+        final List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
+        for (Callable<T> task : tasks) {
+            futures.add(submit(task));
+        }
+        for (Future<T> future : futures) {
+            Object value;
+            try {
+                value = future.get();
+            } catch (ExecutionException e) {
+                value = e;
+            }
+            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value));
+        }
+        return result;
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
@@ -256,8 +277,16 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         throw new UnsupportedOperationException();
     }
 
+    protected RuntimeException throwNotActiveException() {
+        throw new RejectedExecutionException();
+    }
+
     public boolean isShutdown() {
-        return getService().isShutdown(name);
+        try {
+            return getService().isShutdown(name);
+        } catch (HazelcastInstanceNotActiveException e) {
+            return true;
+        }
     }
 
     public boolean isTerminated() {
@@ -295,7 +324,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     public List<Runnable> shutdownNow() {
         shutdown();
-        return null;
+        return Collections.emptyList();
     }
 
     public LocalExecutorStats getLocalExecutorStats() {

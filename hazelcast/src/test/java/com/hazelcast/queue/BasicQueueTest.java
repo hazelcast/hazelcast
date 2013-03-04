@@ -20,22 +20,28 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.Assert.*;
 
 /**
  * @ali 2/12/13
  */
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class BasicQueueTest {
+
+    @BeforeClass
+    public static void init() {
+//        System.setProperty("hazelcast.test.use.network","true");
+    }
 
     @Before
     @After
@@ -44,63 +50,93 @@ public class BasicQueueTest {
     }
 
     @Test
-    public void testSimpleUsage() throws Exception {
-        final int k = 8;
-        final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "0");
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
-        final IQueue[] queues = new IQueue[30];
-        for (int i=0; i<queues.length; i++){
-            queues[i] = instances[0].getQueue("queue_"+i);
-        }
-        final AtomicBoolean hasNull = new AtomicBoolean(false);
-        final AtomicBoolean offerDone = new AtomicBoolean(false);
-        final AtomicBoolean pollDone = new AtomicBoolean(false);
+    public void testOfferPoll() throws Exception {
+        Config config = new Config();
+        final int count = 100;
+        final int insCount = 4;
+        final String name = "defQueue";
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final Random rnd = new Random(System.currentTimeMillis());
 
-        new Thread() {
+        for (int i = 0; i<count; i++){
+            int index = rnd.nextInt(insCount);
+            IQueue<String> queue = instances[index].getQueue(name);
+            queue.offer("item"+i);
+        }
+
+        assertEquals(100, instances[0].getQueue(name).size());
+
+        for (int i = 0; i<count; i++){
+            int index = rnd.nextInt(insCount);
+            IQueue<String> queue = instances[index].getQueue(name);
+            String item = queue.poll();
+            assertEquals(item, "item" + i);
+        }
+        assertEquals(0, instances[0].getQueue(name).size());
+        assertNull(instances[0].getQueue(name).poll());
+
+    }
+
+    @Test
+    public void testOfferPollWithTimeout() throws Exception {
+        final String name = "defQueue";
+        Config config = new Config();
+        final int count = 100;
+        config.getQueueConfig(name).setMaxSize(count);
+        final int insCount = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final IQueue<String> q = instances[0].getQueue(name);
+        final Random rnd = new Random(System.currentTimeMillis());
+
+        for (int i = 0; i<count; i++){
+            int index = rnd.nextInt(insCount);
+            IQueue<String> queue = instances[index].getQueue(name);
+            queue.offer("item"+i);
+        }
+
+        assertFalse(q.offer("rejected", 1, TimeUnit.SECONDS));
+        assertEquals("item0", q.poll());
+        assertTrue(q.offer("not rejected", 1, TimeUnit.SECONDS));
+
+
+        new Thread(){
             public void run() {
-                for (int i = 0; i < 10000; i++) {
-                    for (IQueue queue: queues) {
-                        queue.offer("value" + i);
-                    }
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                offerDone.set(true);
+                q.poll();
             }
         }.start();
+        assertTrue(q.offer("not rejected", 5, TimeUnit.SECONDS));
 
-        new Thread() {
+        assertEquals(count, q.size());
+
+        for (int i = 0; i<count; i++){
+            int index = rnd.nextInt(insCount);
+            IQueue<String> queue = instances[index].getQueue(name);
+            queue.poll();
+        }
+
+        assertNull(q.poll(1, TimeUnit.SECONDS));
+        assertTrue(q.offer("offered1"));
+        assertEquals("offered1",q.poll(1, TimeUnit.SECONDS));
+
+
+        new Thread(){
             public void run() {
-                for (IQueue queue: queues) {
-                    for (int i = 0; i < 10000; i++) {
-                        try {
-                            Object o = queue.poll(30, TimeUnit.SECONDS);
-                            hasNull.compareAndSet(false, o == null);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                pollDone.set(true);
+                q.offer("offered2");
             }
         }.start();
+        assertEquals("offered2",q.poll(5, TimeUnit.SECONDS));
 
-        Thread.sleep(3*1000);
-
-        instances[1].getLifecycleService().shutdown();
-        instances[2].getLifecycleService().shutdown();
-
-        Thread.sleep(3*1000);
-        instances[4].getLifecycleService().shutdown();
-
-        while (!offerDone.get() || !pollDone.get()){
-            Thread.sleep(1*1000);
-        }
-
-        Assert.assertTrue(!hasNull.get());
-        for (IQueue queue: queues) {
-            Assert.assertTrue(queue.size() == 0);
-        }
-
+        assertEquals(0, q.size());
 
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 
@@ -31,6 +32,8 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
 
     transient Collection<CollectionRecord> coll;
 
+    transient long begin = -1;
+
     public RemoveAllOperation() {
     }
 
@@ -39,16 +42,24 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
+        begin = Clock.currentTimeMillis();
         coll = removeCollection();
         response = new CollectionResponse(coll, getNodeEngine());
     }
 
     public void afterRun() throws Exception {
+        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
+        getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
         if (coll != null) {
+            getOrCreateContainer().update();
             for (CollectionRecord record : coll) {
                 publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
             }
         }
+    }
+
+    public boolean shouldBackup() {
+        return coll != null;
     }
 
     public Operation getBackupOperation() {

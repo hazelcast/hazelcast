@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.collection;
 
+import java.util.Collection;
 
 /**
- * User: ali
- * Date: 11/19/12
- * Time: 11:37 AM
+ * @ali 3/1/13
  */
-public class SizeOperation extends QueueOperation {
+public class CollectionWrapper {
 
-    public SizeOperation() {
+    private final Collection<CollectionRecord> collection;
+
+    private int hits;
+
+    public CollectionWrapper(Collection<CollectionRecord> collection) {
+        this.collection = collection;
     }
 
-    public SizeOperation(String name) {
-        super(name);
+    public Collection<CollectionRecord> getCollection() {
+        return collection;
     }
 
-    public void run() {
-        response = getOrCreateContainer().size();
+    public void incrementHit(){
+        hits++;
     }
 
-    public void afterRun() throws Exception {
-        getOrCreateContainer().getOperationsCounter().incrementOtherOperations();
+    public int getHits() {
+        return hits;
     }
 }

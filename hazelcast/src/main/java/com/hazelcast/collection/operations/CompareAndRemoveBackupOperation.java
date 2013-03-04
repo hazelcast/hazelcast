@@ -36,7 +36,6 @@ public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation
 
     Set<Long> idSet;
 
-
     public CompareAndRemoveBackupOperation() {
     }
 
@@ -46,7 +45,11 @@ public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation
     }
 
     public void run() throws Exception {
-        Collection<CollectionRecord> coll = getOrCreateCollection();
+        Collection<CollectionRecord> coll = getCollection();
+        if (coll == null){
+            response = false;
+            return;
+        }
         Iterator<CollectionRecord> iter = coll.iterator();
         while (iter.hasNext()) {
             CollectionRecord record = iter.next();

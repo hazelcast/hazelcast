@@ -78,7 +78,15 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    public QueueItem offer(Data data) {
+    public boolean offer(Data data) {
+        if (data == null){
+            System.err.println("wrong!!!!");
+            System.err.println("wrong!!!!");
+            System.err.println("wrong!!!!");
+            System.err.println("wrong!!!!");
+            System.err.println("wrong!!!!");
+
+        }
         QueueItem item = new QueueItem(this, idGen++);
         if (store.isEnabled()) {
             try {
@@ -91,8 +99,7 @@ public class QueueContainer implements DataSerializable {
         if (!store.isEnabled() || store.getMemoryLimit() > itemQueue.size()) {
             item.setData(data);
         }
-        itemQueue.offer(item);
-        return item;
+        return itemQueue.offer(item);
     }
 
     public QueueItem offerBackup(Data data) {
@@ -105,7 +112,6 @@ public class QueueContainer implements DataSerializable {
     }
 
     public int size() {
-        operationsCounter.incrementOtherOperations();
         return itemQueue.size(); //TODO check max size
     }
 
@@ -371,14 +377,6 @@ public class QueueContainer implements DataSerializable {
 
     public QueueConfig getConfig() {
         return config;
-    }
-
-    public boolean isStoreEnabled() {
-        return store.isEnabled();
-    }
-
-    public QueueStoreWrapper getStore() {
-        return store;
     }
 
     public void setConfig(QueueConfig config, SerializationService serializationService) {
