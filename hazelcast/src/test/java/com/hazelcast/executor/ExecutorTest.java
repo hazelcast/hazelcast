@@ -22,9 +22,14 @@ import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
@@ -49,6 +54,66 @@ public class ExecutorTest {
     @After
     public void shutdown() {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testExecuteMultipleNode() {
+        final int k = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+
+        for (int i = 0; i < k; i++) {
+            final IExecutorService service = instances[i].getExecutorService("testExecuteOnMember");
+            final String script = "hazelcast.getAtomicLong('count').incrementAndGet();";
+            service.execute(new ScriptRunnable(script, null));
+        }
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        final IAtomicLong count = instances[0].getAtomicLong("count");
+        Assert.assertEquals(k, count.get());
+    }
+
+    @Test
+    public void testExecuteOnMember() {
+        final int k = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+
+        for (int i = 0; i < k; i++) {
+            final HazelcastInstance instance = instances[k - i - 1];
+            final IExecutorService service = instance.getExecutorService("testExecuteOnMember");
+            final String script = "if(!hazelcast.getCluster().getLocalMember().equals(member)) " +
+                    "hazelcast.getAtomicLong('testExecuteOnMember').incrementAndGet();";
+            final HashMap map = new HashMap();
+            map.put("member", instance.getCluster().getLocalMember());
+            service.executeOnMember(new ScriptRunnable(script, map), instance.getCluster().getLocalMember());
+        }
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Assert.assertEquals(0, instances[0].getAtomicLong("testExecuteOnMember").get());
+    }
+
+    @Test
+    public void testExecuteOnAllMembers() {
+        final int k = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+
+        for (int i = 0; i < k; i++) {
+            final IExecutorService service = instances[i].getExecutorService("testExecuteOnMember");
+            final String script = "hazelcast.getAtomicLong('count').incrementAndGet();";
+            service.executeOnAllMembers(new ScriptRunnable(script, null));
+        }
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        final IAtomicLong count = instances[0].getAtomicLong("count");
+        Assert.assertEquals(k * k, count.get());
     }
 
     /**
@@ -317,6 +382,82 @@ public class ExecutorTest {
         Assert.assertTrue(executionTime <= executorService.getLocalExecutorStats().getOperationStats().getMinExecutionTime());
         Assert.assertTrue(executionTime <= executorService.getLocalExecutorStats().getOperationStats().getMaxExecutionTime());
 
+    }
+
+    static class ScriptRunnable implements Runnable, Serializable, HazelcastInstanceAware {
+        private final String script;
+        private final Map<String, Object> map;
+        private transient HazelcastInstance hazelcastInstance;
+
+        ScriptRunnable(String script, Map<String, Object> map) {
+            this.script = script;
+            this.map = map;
+        }
+
+        public void run() {
+            final ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+            ScriptEngine e = scriptEngineManager.getEngineByName("javascript");
+            if (map != null) {
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    e.put(entry.getKey(), entry.getValue());
+                }
+            }
+            e.put("hazelcast", hazelcastInstance);
+            try {
+                e.eval("importPackage(java.lang);");
+                e.eval("importPackage(java.util);");
+                e.eval("importPackage(com.hazelcast.core);");
+                e.eval("importPackage(com.hazelcast.config);");
+                e.eval("importPackage(java.util.concurrent);");
+                e.eval("importPackage(org.junit);");
+                e.eval(script);
+            } catch (ScriptException e1) {
+                e1.printStackTrace();
+            }
+
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+    }
+
+    static class ScriptCallable implements Callable, Serializable, HazelcastInstanceAware {
+        private final String script;
+        private final Map<String, Object> map;
+        private transient HazelcastInstance hazelcastInstance;
+
+        ScriptCallable(String script, Map<String, Object> map) {
+            this.script = script;
+            this.map = map;
+        }
+
+        public Object call() {
+            final ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+            ScriptEngine e = scriptEngineManager.getEngineByName("javascript");
+            if (map != null) {
+                for (Map.Entry<String, Object> entry : map.entrySet()) {
+                    e.put(entry.getKey(), entry.getValue());
+                }
+            }
+            e.put("hazelcast", hazelcastInstance);
+            try {
+                e.eval("importPackage(java.lang);");
+                e.eval("importPackage(java.util);");
+                e.eval("importPackage(com.hazelcast.core);");
+                e.eval("importPackage(com.hazelcast.config);");
+                e.eval("importPackage(java.util.concurrent);");
+                e.eval("importPackage(import org.junit);");
+
+                return e.eval(script);
+            } catch (ScriptException e1) {
+                throw new RuntimeException(e1);
+            }
+        }
+
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
     }
 
     public static class BasicTestTask implements Callable<String>, Serializable {
