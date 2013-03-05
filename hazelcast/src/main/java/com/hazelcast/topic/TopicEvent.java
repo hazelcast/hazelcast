@@ -16,11 +16,14 @@
 
 package com.hazelcast.topic;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -32,24 +35,34 @@ import java.io.IOException;
 public class TopicEvent implements DataSerializable {
 
     public String name;
-
+    public long publishTime;
+    public Member publishingMember;
     public Data data;
 
-    public TopicEvent(){
+    public TopicEvent() {
     }
 
-    public TopicEvent(String name, Data data){
+    public TopicEvent(String name, Data data, Member publishingMember) {
+        publishTime = Clock.currentTimeMillis();
+        this.publishingMember = publishingMember;
         this.name = name;
         this.data = data;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeLong(publishTime);
+        out.writeObject(publishingMember);
+//        publishingMember.writeData(out);<
         IOUtil.writeNullableData(out, data);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        publishTime = in.readLong();
+//        publishingMember = new MemberImpl();
+//        publishingMember.readData(in);
+        publishingMember = in.readObject();
         data = IOUtil.readNullableData(in);
     }
 }
