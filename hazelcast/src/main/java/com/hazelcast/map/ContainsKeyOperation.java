@@ -32,7 +32,7 @@ public class ContainsKeyOperation extends KeyBasedMapOperation {
     public void run() {
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        containsKey = recordStore.getRecords().containsKey(dataKey);
+        containsKey = recordStore.containsKey(dataKey);
     }
 
     @Override
