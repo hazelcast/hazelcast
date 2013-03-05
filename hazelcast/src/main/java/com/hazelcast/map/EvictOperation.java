@@ -48,7 +48,6 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         if (prepareTransaction()) {
             return;
         }
-        System.out.println("evicting!!!");
         dataValue = mapService.toData(recordStore.evict(dataKey));
         evicted = dataValue != null;
     }

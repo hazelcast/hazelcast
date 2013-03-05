@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.finalTest;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.query.SqlPredicate;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -35,11 +35,87 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertNull;
 
 public class MapStoreTest {
+
+    @Test
+    public void testOneMemberFlushOnShutdown() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 200);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        assertEquals(0, map1.size());
+        for (int i = 0; i < 100; i++) {
+            map1.put(i, i);
+        }
+        assertEquals(100, map1.size());
+        assertEquals(0, testMapStore.getStore().size());
+        h1.getLifecycleService().shutdown();
+        assertEquals(100, testMapStore.getStore().size());
+        assertEquals(1, testMapStore.getDestroyCount());
+    }
+
+
+    @Test
+    public void testOneMemberWriteThroughWithIndex() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 0);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        testMapStore.insert("1", "value1");
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        Assert.assertTrue(map.tryLock("1", 1, TimeUnit.SECONDS));
+        assertEquals("value1", map.get("1"));
+        map.unlock("1");
+        assertEquals("value1", map.put("1", "value2"));
+        assertEquals("value2", map.get("1"));
+        assertEquals("value2", testMapStore.getStore().get("1"));
+        assertEquals(1, map.size());
+        Assert.assertTrue(map.evict("1"));
+        assertEquals(0, map.size());
+        assertEquals(1, testMapStore.getStore().size());
+        assertEquals("value2", map.get("1"));
+        assertEquals(1, map.size());
+        map.remove("1");
+        assertEquals(0, map.size());
+        assertEquals(0, testMapStore.getStore().size());
+        testMapStore.assertAwait(1);
+        assertEquals(1, testMapStore.getInitCount());
+        assertEquals("default", testMapStore.getMapName());
+        assertEquals(TestUtil.getNode((HazelcastInstanceProxy)h1), TestUtil.getNode(testMapStore.getHazelcastInstance()));
+    }
+
+    @Test
+    public void testOneMemberWriteThroughWithLRU() throws Exception {
+        int size = 10000;
+        TestMapStore testMapStore = new TestMapStore(size*2, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 0);
+        MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+        maxSizeConfig.setSize(size);
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        mapConfig.setMaxSizeConfig(maxSizeConfig);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        for (int i = 0; i < size*2; i++) {
+            map.put(i, new Employee("joe", i, true, 100.00));
+        }
+        assertEquals(testMapStore.getStore().size(), size * 2);
+        Thread.sleep(1000);
+        assertTrue(map.size() > size / 2);
+        assertTrue(map.size() <= size);
+        assertEquals(testMapStore.getStore().size(), size * 2);
+    }
 
 
     @Test
@@ -76,7 +152,6 @@ public class MapStoreTest {
         map.put("1", employee);
         Thread.sleep(2000);
         assertEquals(employee, testMapStore.getStore().get("1"));
-        System.out.println("map size:::"+ map.size());
         assertEquals(employee, map.get("1"));
         map.evict("2");
         assertEquals(newEmployee, map.get("2"));
@@ -768,6 +843,7 @@ public class MapStoreTest {
         }
 
         public void delete(Object key) {
+            System.out.println("removeeee");
             store.remove(key);
             callCount.incrementAndGet();
             latchDelete.countDown();
@@ -787,6 +863,7 @@ public class MapStoreTest {
         }
 
         public void deleteAll(Collection keys) {
+            System.out.println("removeeee allll");
             for (Object key : keys) {
                 store.remove(key);
             }
