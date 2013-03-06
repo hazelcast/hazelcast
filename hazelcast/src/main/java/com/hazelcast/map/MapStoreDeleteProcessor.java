@@ -22,6 +22,8 @@ import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Object>{
 
@@ -35,12 +37,11 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
 
     @Override
     public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        System.out.println("map store delete process:"+ entries.size());
-
+        Set keys = new HashSet();
         for (ScheduledEntry<Data, Object> entry : entries) {
-            System.out.println("map store delete:"+ mapService.toObject(entry.getKey()));
-            mapContainer.getStore().delete(mapService.toObject(entry.getKey()));
+            keys.add(mapService.toObject(entry.getKey()));
         }
+        mapContainer.getStore().deleteAll(keys);
     }
 
 }

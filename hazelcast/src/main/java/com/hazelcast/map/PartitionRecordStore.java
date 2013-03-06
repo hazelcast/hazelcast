@@ -35,6 +35,7 @@ public class PartitionRecordStore implements RecordStore {
     final String name;
     final PartitionContainer partitionContainer;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
+    final Set<Data> toBeRemovedKeys = new HashSet<Data>();
     final MapContainer mapContainer;
     final MapService mapService;
     final LockStoreView lockStore;
@@ -50,10 +51,16 @@ public class PartitionRecordStore implements RecordStore {
                         mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
     }
 
+    // todo flush operation should cancel scheduled mapstore operations
     public void flush(boolean flushAllRecords) {
         for (Record record : records.values()) {
-            if (flushAllRecords || record.getState().shouldStored())
+            if (flushAllRecords || record.getState().isDirty()) {
                 mapStoreWrite(record, true);
+            }
+        }
+        for (Data key : toBeRemovedKeys) {
+            if (toBeRemovedKeys.remove(key))
+                mapContainer.getStore().delete(mapService.toObject(key));
         }
     }
 
@@ -490,13 +497,8 @@ public class PartitionRecordStore implements RecordStore {
                 if (record != null)
                     record.onStore();
             } else {
-                if(record == null) {
-                    mapService.scheduleMapStoreDelete(name, record.getKey(), writeDelayMillis);
-                }
-                else if (record.getState().getStoreTime() <= 0) {
-                    record.getState().updateStoreTime(writeDelayMillis);
-                    mapService.scheduleMapStoreDelete(name, record.getKey(), writeDelayMillis);
-                }
+                mapService.scheduleMapStoreDelete(name, key, writeDelayMillis);
+                toBeRemovedKeys.add(key);
             }
         }
     }

@@ -140,8 +140,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private void flushMaps() {
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
-
-                partitionContainer.getRecordStore(mapName).flush(true);
+                partitionContainer.getRecordStore(mapName).flush(false);
             }
         }
     }

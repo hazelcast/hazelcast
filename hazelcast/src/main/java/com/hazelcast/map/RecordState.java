@@ -35,30 +35,12 @@ public class RecordState implements DataSerializable {
                 || (idleExpireTime > 0 && idleExpireTime <= Clock.currentTimeMillis());
     }
 
-    public boolean shouldStored() {
-        return storeTime > 0 && storeTime < Clock.currentTimeMillis();
-    }
-
     public boolean isDirty() {
         return storeTime > 0;
     }
 
-    public long getTtlExpireTime() {
-        return ttlExpireTime;
-    }
-
-    public long getIdleExpireTime() {
-        return idleExpireTime;
-    }
-
     public void resetStoreTime() {
         storeTime = 0;
-    }
-
-    // todo is this required
-    public void resetExpiration() {
-        ttlExpireTime = 0;
-        idleExpireTime = 0;
     }
 
     public long getStoreTime() {
