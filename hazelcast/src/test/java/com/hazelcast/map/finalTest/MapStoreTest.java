@@ -22,6 +22,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.SqlPredicate;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -38,9 +39,275 @@ import java.util.concurrent.atomic.AtomicLong;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class MapStoreTest {
+
+    @Test
+    public void issue614() {
+        final ConcurrentMap<Long, String> STORE =
+                new ConcurrentHashMap<Long, String>();
+        STORE.put(1l, "Event1");
+        STORE.put(2l, "Event2");
+        STORE.put(3l, "Event3");
+        STORE.put(4l, "Event4");
+        STORE.put(5l, "Event5");
+        STORE.put(6l, "Event6");
+        Config config = new Config();
+        config
+                .getMapConfig("map")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1)
+                        .setImplementation(new SimpleMapStore<Long, String>(STORE)));
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IMap map = h.getMap("map");
+        Collection collection = map.values();
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(0, localMapStats.getDirtyEntryCount());
+    }
+
+    @Test
+    public void testIssue583MapReplaceShouldTriggerMapStore() {
+        final ConcurrentMap<String, Long> store = new ConcurrentHashMap<String, Long>();
+        final MapStore<String, Long> myMapStore = new SimpleMapStore<String, Long>(store);
+        Config config = new Config();
+        config
+                .getMapConfig("myMap")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
+        HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
+        IMap<String, Long> myMap = hc.getMap("myMap");
+        myMap.put("one", 1L);
+        assertEquals(1L, myMap.get("one").longValue());
+        assertEquals(1L, store.get("one").longValue());
+        myMap.putIfAbsent("two", 2L);
+        assertEquals(2L, myMap.get("two").longValue());
+        assertEquals(2L, store.get("two").longValue());
+        myMap.putIfAbsent("one", 5L);
+        assertEquals(1L, myMap.get("one").longValue());
+        assertEquals(1L, store.get("one").longValue());
+        myMap.replace("one", 1L, 111L);
+        assertEquals(111L, myMap.get("one").longValue());
+        assertEquals(111L, store.get("one").longValue());
+        myMap.replace("one", 1L);
+        assertEquals(1L, myMap.get("one").longValue());
+        assertEquals(1L, store.get("one").longValue());
+    }
+
+
+    @Test
+    public void issue587CallMapLoaderDuringRemoval() {
+        final AtomicInteger loadCount = new AtomicInteger(0);
+        final AtomicInteger storeCount = new AtomicInteger(0);
+        final AtomicInteger deleteCount = new AtomicInteger(0);
+        class SimpleMapStore2<K, V> extends SimpleMapStore<K, V>  {
+
+            SimpleMapStore2(ConcurrentMap<K, V> store) {
+                super(store);
+            }
+
+            public V load(K key) {
+                loadCount.incrementAndGet();
+                return super.load(key);
+            }
+
+            public void store(K key, V value) {
+                storeCount.incrementAndGet();
+                super.store(key, value);
+            }
+
+            public void delete(K key) {
+                deleteCount.incrementAndGet();
+                super.delete(key);
+            }
+        }
+        final ConcurrentMap<String, Long> store = new ConcurrentHashMap<String, Long>();
+        final MapStore<String, Long> myMapStore = new SimpleMapStore2<String, Long>(store);
+        Config config = new Config();
+        config
+                .getMapConfig("myMap")
+                .setMapStoreConfig(new MapStoreConfig()
+                        //.setWriteDelaySeconds(1)
+                        .setImplementation(myMapStore));
+        HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
+        store.put("one", 1l);
+        store.put("two", 2l);
+        assertEquals(0, loadCount.get());
+        assertEquals(0, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        IMap<String, Long> myMap = hc.getMap("myMap");
+        assertEquals(1l, myMap.get("one").longValue());
+        assertEquals(2l, myMap.get("two").longValue());
+        assertEquals(2, loadCount.get());
+        assertEquals(0, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        assertNull(myMap.remove("ten"));
+        assertEquals(3, loadCount.get());
+        assertEquals(0, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        myMap.put("three", 3L);
+        myMap.put("four", 4L);
+        assertEquals(5, loadCount.get());
+        assertEquals(2, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        myMap.remove("one");
+        assertEquals(2, storeCount.get());
+        assertEquals(1, deleteCount.get());
+        assertEquals(5, loadCount.get());
+    }
+
+
+    @Test
+    public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Config config = newConfig(testMapStore, 1);
+        config.getMapConfig("default").setMaxIdleSeconds(4);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
+        for (int i = 0; i < 10; i++) {
+            map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
+        }
+        Thread.sleep(2000);
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(10));
+        Thread.sleep(2000);
+        assertEquals(null, testMapStore.waitForEvent(1));
+        assertEquals(10, testMapStore.getStore().size());
+        assertEquals(0, map.size());
+        Thread.sleep(2000);
+        assertEquals(null, testMapStore.waitForEvent(10));
+    }
+
+    @Test
+    public void testOneMemberWriteBehindWithEvictions() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        Config config = newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
+        for (int i = 0; i < 100; i++) {
+            map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
+        }
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(20));
+        assertEquals(100, testMapStore.getStore().size());
+        for (int i = 0; i < 100; i++) {
+            map.evict(i);
+        }
+        // we should not receive any store event.
+        assertEquals(null, testMapStore.waitForEvent(10));
+        assertEquals(100, testMapStore.getStore().size());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
+        }
+        for (int i = 0; i < 100; i++) {
+            map.evict(i);
+        }
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(10));
+        assertEquals(null, testMapStore.waitForEvent(10));
+        assertEquals(100, testMapStore.getStore().size());
+        assertEquals(0, map.size());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, "value" + i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
+        }
+        for (int i = 0; i < 100; i++) {
+            map.remove(i);
+        }
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(10));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE_ALL, testMapStore.waitForEvent(10));
+        assertEquals(0, testMapStore.getStore().size());
+        assertEquals(0, map.size());
+        assertEquals(null, testMapStore.waitForEvent(10));
+    }
+
+
+    @Test
+    public void testOneMemberWriteBehind() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 2);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        testMapStore.insert("1", "value1");
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        assertEquals("value1", map.get("1"));
+        assertEquals("value1", map.put("1", "value2"));
+        assertEquals("value2", map.get("1"));
+        // store should have the old data as we will write-behind
+        assertEquals("value1", testMapStore.getStore().get("1"));
+        assertEquals(1, map.size());
+        map.flush();
+        Assert.assertTrue(map.evict("1"));
+        assertEquals("value2", testMapStore.getStore().get("1"));
+        assertEquals(0, map.size());
+        assertEquals(1, testMapStore.getStore().size());
+        assertEquals("value2", map.get("1"));
+        assertEquals(1, map.size());
+        map.remove("1");
+        // store should have the old data as we will delete-behind
+        assertEquals(1, testMapStore.getStore().size());
+        assertEquals(0, map.size());
+        testMapStore.assertAwait(12);
+        assertEquals(0, testMapStore.getStore().size());
+    }
+
+
+
+    @Test
+    public void testOneMemberWriteBehind2() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 1);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(2));
+        assertEquals(0, map.size());
+        map.put("1", "value1");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(2));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(2));
+        assertEquals(1, map.size());
+        assertEquals(1, testMapStore.getStore().size());
+        map.remove("1");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.waitForEvent(5));
+        assertEquals(0, map.size());
+        assertEquals(0, testMapStore.getStore().size());
+    }
+
+
+
+    @Test
+    public void testOneMemberFlush() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        int size = 100;
+        Config config = newConfig(testMapStore, 200);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        assertEquals(size, map.size());
+        assertEquals(0, testMapStore.getStore().size());
+        assertEquals(size, map.getLocalMapStats().getDirtyEntryCount());
+        map.flush();
+        assertEquals(size, testMapStore.getStore().size());
+        assertEquals(0, map.getLocalMapStats().getDirtyEntryCount());
+        assertEquals(size, map.size());
+
+        for (int i = 0; i < size/2; i++) {
+            map.remove(i);
+        }
+        assertEquals(size/2, map.size());
+        assertEquals(size, testMapStore.getStore().size());
+        map.flush();
+        assertEquals(size/2, testMapStore.getStore().size());
+        assertEquals(size/2, map.size());
+    }
 
     @Test
     public void testOneMemberFlushOnShutdown() throws Exception {
@@ -510,7 +777,6 @@ public class MapStoreTest {
 
         public Set<K> loadAllKeys() {
             callCount.incrementAndGet();
-            System.out.println("load all keys");
             events.offer(STORE_EVENTS.LOAD_ALL_KEYS);
             if (!loadAllKeys) return null;
             return store.keySet();
@@ -843,7 +1109,6 @@ public class MapStoreTest {
         }
 
         public void delete(Object key) {
-            System.out.println("removeeee");
             store.remove(key);
             callCount.incrementAndGet();
             latchDelete.countDown();
@@ -988,5 +1253,51 @@ public class MapStoreTest {
             return sb.toString();
         }
     }
+
+
+    public static class SimpleMapStore<K, V> extends MapStoreAdaptor<K, V> {
+        final Map<K, V> store ;
+        private boolean loadAllKeys = true;
+
+        public SimpleMapStore() {
+            store = new ConcurrentHashMap<K, V>();
+        }
+
+        public SimpleMapStore(final Map<K, V> store) {
+            this.store = store;
+        }
+
+        @Override
+        public void delete(final K key) {
+            store.remove(key);
+        }
+
+        @Override
+        public V load(final K key) {
+            return store.get(key);
+        }
+
+        @Override
+        public void store(final K key, final V value) {
+            store.put(key, value);
+        }
+
+        public Set<K> loadAllKeys() {
+            if (loadAllKeys) {
+                return store.keySet();
+            }
+            return null;
+        }
+
+        public void setLoadAllKeys(boolean loadAllKeys) {
+            this.loadAllKeys = loadAllKeys;
+        }
+
+        @Override
+        public void storeAll(final Map<K, V> kvMap) {
+            store.putAll(kvMap);
+        }
+    }
+
 
 }
