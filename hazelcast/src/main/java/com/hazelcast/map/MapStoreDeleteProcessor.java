@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Object>{
+public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
     MapContainer mapContainer;
     MapService mapService;
@@ -37,6 +37,14 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
 
     @Override
     public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+        if(entries.isEmpty())
+            return;
+
+        if(entries.size() == 1) {
+            mapContainer.getStore().delete(mapService.toObject(entries.iterator().next().getKey()));
+            return;
+        }
+
         Set keys = new HashSet();
         for (ScheduledEntry<Data, Object> entry : entries) {
             keys.add(mapService.toObject(entry.getKey()));

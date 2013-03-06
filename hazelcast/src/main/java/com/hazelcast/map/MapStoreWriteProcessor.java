@@ -44,6 +44,14 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
 
     @Override
     public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+        if(entries.isEmpty())
+            return;
+        if(entries.size() == 1) {
+            ScheduledEntry<Data, Object> entry = entries.iterator().next();
+            mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+            return;
+        }
+
         Map map = new HashMap(entries.size());
         for (ScheduledEntry<Data, Object> entry : entries) {
             map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));

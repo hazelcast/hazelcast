@@ -18,12 +18,10 @@ package com.hazelcast.map.finalTest;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.SqlPredicate;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,6 +43,86 @@ import static org.junit.Assert.assertNull;
 public class MapStoreTest {
 
     @Test
+    public void testMapInitialLoad() throws InterruptedException {
+        int size = 10000;
+
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new SimpleMapLoader(size));
+        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance1.getMap("testMapInitialLoad");
+
+
+        assertEquals(size, map.size());
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
+        }
+
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
+        }
+
+        Hazelcast.shutdownAll();
+    }
+
+    class SimpleMapLoader implements MapStore {
+
+        int size;
+
+        SimpleMapLoader(int size) {
+            this.size = size;
+        }
+
+        @Override
+        public void store(Object key, Object value) {
+        }
+
+        @Override
+        public void storeAll(Map map) {
+        }
+
+        @Override
+        public void delete(Object key) {
+        }
+
+        @Override
+        public void deleteAll(Collection keys) {
+        }
+
+        @Override
+        public Object load(Object key) {
+            return null;
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            Map result = new HashMap();
+            for (Object key : keys) {
+                result.put(key, key);
+            }
+            return result;
+        }
+
+        @Override
+        public Set loadAllKeys() {
+            Set keys = new HashSet();
+            for (int i = 0; i < size; i++) {
+                keys.add(i);
+            }
+            return keys;
+        }
+    }
+
+    @Test
     public void issue614() {
         final ConcurrentMap<Long, String> STORE =
                 new ConcurrentHashMap<Long, String>();
@@ -60,7 +138,8 @@ public class MapStoreTest {
                 .setMapStoreConfig(new MapStoreConfig()
                         .setWriteDelaySeconds(1)
                         .setImplementation(new SimpleMapStore<Long, String>(STORE)));
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h = nodeFactory.newHazelcastInstance(config);
         IMap map = h.getMap("map");
         Collection collection = map.values();
         LocalMapStats localMapStats = map.getLocalMapStats();
@@ -76,7 +155,8 @@ public class MapStoreTest {
                 .getMapConfig("myMap")
                 .setMapStoreConfig(new MapStoreConfig()
                         .setImplementation(myMapStore));
-        HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
         IMap<String, Long> myMap = hc.getMap("myMap");
         myMap.put("one", 1L);
         assertEquals(1L, myMap.get("one").longValue());
@@ -130,7 +210,8 @@ public class MapStoreTest {
                 .setMapStoreConfig(new MapStoreConfig()
                         //.setWriteDelaySeconds(1)
                         .setImplementation(myMapStore));
-        HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
         store.put("one", 1l);
         store.put("two", 2l);
         assertEquals(0, loadCount.get());
@@ -163,7 +244,8 @@ public class MapStoreTest {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 1);
         config.getMapConfig("default").setMaxIdleSeconds(4);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
         for (int i = 0; i < 10; i++) {
@@ -184,7 +266,8 @@ public class MapStoreTest {
     public void testOneMemberWriteBehindWithEvictions() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 2);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
         for (int i = 0; i < 100; i++) {
@@ -230,7 +313,8 @@ public class MapStoreTest {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 2);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         testMapStore.insert("1", "value1");
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
@@ -262,7 +346,8 @@ public class MapStoreTest {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 1);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(2));
         assertEquals(0, map.size());
@@ -285,7 +370,8 @@ public class MapStoreTest {
         testMapStore.setLoadAllKeys(false);
         int size = 100;
         Config config = newConfig(testMapStore, 200);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
         for (int i = 0; i < size; i++) {
@@ -314,7 +400,8 @@ public class MapStoreTest {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 200);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         assertEquals(0, map1.size());
         for (int i = 0; i < 100; i++) {
@@ -498,7 +585,7 @@ public class MapStoreTest {
     @Test
     public void testOneMemberWriteThroughFailingStore() throws Exception {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
-        testMapStore.setFail(true);
+        testMapStore.setFail(true, true);
         Config config = newConfig(testMapStore, 0);
         StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
@@ -521,70 +608,29 @@ public class MapStoreTest {
             fail("should have thrown exception");
         } catch (Exception e) {
         }
-        System.out.println("map size:"+map.size());
+        System.out.println("map size:" + map.size());
         assertEquals(0, testMapStore.stores.get());
         assertEquals(0, map.size());
     }
 
-
     @Test
-    public void testThreeMemberGetAll() throws Exception {
-        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
-        testMapStore.setLoadAllKeys(false);
-        Map store = testMapStore.getStore();
-        Set keys = new HashSet();
-        int size = 1000;
-        for (int i = 0; i < size; i++) {
-            store.put(i, "value" + i);
-            keys.add(i);
-        }
-        Config config = newConfig(testMapStore, 2);
-        config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "0");
+    public void testOneMemberWriteThroughFailingStore2() throws Exception {
+        FailAwareMapStore testMapStore = new FailAwareMapStore();
+        testMapStore.setFail(true, false);
+        Config config = newConfig(testMapStore, 0);
         StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
-
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(5));
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(5));
-        final CountDownLatch l = new CountDownLatch(1);
-        map1.addEntryListener(new EntryAdapter() {
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
 
-            public void entryAdded(EntryEvent entryEvent) {
-                assertEquals("value1", entryEvent.getValue());
-                l.countDown();
-            }
-        }, 1, true);
-        assertEquals("value1", map1.get(1));
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(5));
-        assertTrue(l.await(10, TimeUnit.SECONDS));
-        assertEquals("value1", map1.get(1));
-        assertEquals(null, testMapStore.waitForEvent(3));
-        Map loaded = map1.getAll(keys);
-        assertEquals(size, loaded.size());
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
-        loaded = map2.getAll(keys);
-        assertEquals(size, loaded.size());
-        assertEquals(null, testMapStore.waitForEvent(5));
-        for (int i = 0; i < size; i++) {
-            map1.evict(i);
+        try {
+            map.put("1", "value");
+            fail("should have thrown exception");
+        } catch (Exception e) {
         }
-        assertEquals(0, map1.size());
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        Thread.sleep(5000); // wait till partitions become stable
-        loaded = map1.getAll(keys);
-        assertEquals(size, loaded.size());
-        for (int i = 0; i < 3; i++) {
-            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL, testMapStore.waitForEvent(5));
-        }
-        assertEquals(0, testMapStore.getEventCount());
-        loaded = map2.getAll(keys);
-        assertEquals(size, loaded.size());
-        assertEquals(null, testMapStore.waitForEvent(5));
+        System.out.println("map size:" + map.size());
+        assertEquals(0, map.size());
     }
-
 
     @Test
     public void testThreeMemberInit() throws Exception {
@@ -783,7 +829,6 @@ public class MapStoreTest {
         }
 
         public Map loadAll(Collection keys) {
-            System.out.println("load all");
             Map map = new HashMap(keys.size());
             for (Object key : keys) {
                 Object value = store.get(key);
@@ -816,7 +861,8 @@ public class MapStoreTest {
         final AtomicLong loads = new AtomicLong();
         final AtomicLong loadAlls = new AtomicLong();
         final AtomicLong loadAllKeys = new AtomicLong();
-        final AtomicBoolean shouldFail = new AtomicBoolean(false);
+        final AtomicBoolean storeFail = new AtomicBoolean(false);
+        final AtomicBoolean loadFail = new AtomicBoolean(false);
         final List<BlockingQueue> listeners = new CopyOnWriteArrayList<BlockingQueue>();
 
         public void addListener(BlockingQueue obj) {
@@ -831,7 +877,7 @@ public class MapStoreTest {
 
         public void delete(Object key) {
             try {
-                if (shouldFail.get()) {
+                if (storeFail.get()) {
                     throw new RuntimeException();
                 } else {
                     db.remove(key);
@@ -842,8 +888,9 @@ public class MapStoreTest {
             }
         }
 
-        public void setFail(boolean shouldFail) {
-            this.shouldFail.set(shouldFail);
+        public void setFail(boolean shouldFail, boolean loadFail) {
+            this.storeFail.set(shouldFail);
+            this.loadFail.set(loadFail);
         }
 
         public int dbSize() {
@@ -860,7 +907,7 @@ public class MapStoreTest {
 
         public void store(Object key, Object value) {
             try {
-                if (shouldFail.get()) {
+                if (storeFail.get()) {
                     throw new RuntimeException();
                 } else {
                     db.put(key, value);
@@ -881,7 +928,7 @@ public class MapStoreTest {
 
         public Object load(Object key) {
             try {
-                if (shouldFail.get()) {
+                if (loadFail.get()) {
                     throw new RuntimeException();
                 } else {
                     return db.get(key);
@@ -893,7 +940,7 @@ public class MapStoreTest {
 
         public void storeAll(Map map) {
             try {
-                if (shouldFail.get()) {
+                if (storeFail.get()) {
                     throw new RuntimeException();
                 } else {
                     db.putAll(map);
@@ -906,7 +953,7 @@ public class MapStoreTest {
 
         public Map loadAll(Collection keys) {
             try {
-                if (shouldFail.get()) {
+                if (loadFail.get()) {
                     throw new RuntimeException();
                 } else {
                     Map results = new HashMap();
@@ -926,7 +973,7 @@ public class MapStoreTest {
 
         public void deleteAll(Collection keys) {
             try {
-                if (shouldFail.get()) {
+                if (storeFail.get()) {
                     throw new RuntimeException();
                 } else {
                     for (Object key : keys) {
