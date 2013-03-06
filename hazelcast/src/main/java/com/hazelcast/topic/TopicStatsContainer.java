@@ -16,11 +16,58 @@
 
 package com.hazelcast.topic;
 
+import com.hazelcast.monitor.impl.TopicOperationsCounter;
+import com.hazelcast.util.Clock;
+
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * User: sancar
  * Date: 2/26/13
- * Time: 12:06 PM
+ * Time: 2:37 PM
  */
 public class TopicStatsContainer {
+
+    private final long creationTime;
+    private final TopicOperationsCounter operationsCounter = new TopicOperationsCounter();
+    private final AtomicLong totalReceivedMessages = new AtomicLong();
+    private final AtomicLong totalPublishes = new AtomicLong();
+    private final AtomicLong lastAccessTime = new AtomicLong();
+
+    public TopicStatsContainer() {
+        creationTime = Clock.currentTimeMillis();
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime.get();
+    }
+
+    public long getTotalPublishes() {
+        return totalPublishes.get();
+    }
+
+    public long getTotalReceivedMessages() {
+        return totalReceivedMessages.get();
+    }
+
+    public TopicOperationsCounter getOperationsCounter() {
+        return operationsCounter;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void incrementPublishes() {
+        operationsCounter.incrementPublishes();
+        totalPublishes.incrementAndGet();
+        lastAccessTime.set(Clock.currentTimeMillis());
+    }
+
+    public void incrementReceivedMessages() {
+        operationsCounter.incrementReceivedMessages();
+        totalReceivedMessages.incrementAndGet();
+    }
+
 
 }

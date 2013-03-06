@@ -47,11 +47,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     private final Lock[] orderingLocks = new Lock[1000];
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, TopicContainer> topicContainers = new ConcurrentHashMap<String, TopicContainer>();
+    private final ConcurrentMap<String, TopicStatsContainer> topicContainers = new ConcurrentHashMap<String, TopicStatsContainer>();
 
-    private final ConcurrencyUtil.ConstructorFunction<String, TopicContainer> topicConstructor = new ConcurrencyUtil.ConstructorFunction<String, TopicContainer>() {
-        public TopicContainer createNew(String mapName) {
-            return new TopicContainer();
+    private final ConcurrencyUtil.ConstructorFunction<String, TopicStatsContainer> topicConstructor = new ConcurrencyUtil.ConstructorFunction<String, TopicStatsContainer>() {
+        public TopicStatsContainer createNew(String mapName) {
+            return new TopicStatsContainer();
         }
     };
 
@@ -105,7 +105,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         ((MessageListener) listener).onMessage(message);
     }
 
-    public TopicContainer getAtomicLongContainer(String name) {
+    public TopicStatsContainer getTopicStatsContainer(String name) {
         return ConcurrencyUtil.getOrPutSynchronized(topicContainers, name, topicContainers, topicConstructor);
     }
 

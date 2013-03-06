@@ -22,10 +22,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
@@ -113,6 +110,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void shutdown() {
+        flushMaps();
+        destroyMapStores();
         final PartitionContainer[] containers = partitionContainers;
         for (int i = 0; i < containers.length; i++) {
             PartitionContainer container = containers[i];
@@ -127,6 +126,24 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nearCacheMap.clear();
         mapContainers.clear();
         eventRegistrations.clear();
+    }
+
+    private void destroyMapStores() {
+        for (MapContainer mapContainer : mapContainers.values()) {
+            MapStore store = mapContainer.getStore();
+            if(store != null && store instanceof MapLoaderLifecycleSupport) {
+                ((MapLoaderLifecycleSupport)store).destroy();
+            }
+        }
+    }
+
+    private void flushMaps() {
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            for (String mapName : mapContainers.keySet()) {
+
+                partitionContainer.getRecordStore(mapName).flush(true);
+            }
+        }
     }
 
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
