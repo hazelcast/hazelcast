@@ -134,11 +134,20 @@ public class CollectionService implements ManagedService, RemoteService, Members
 
     public Set<Data> localKeySet(CollectionProxyId proxyId) {
         Set<Data> keySet = new HashSet<Data>();
-        for (CollectionPartitionContainer partitionContainer : partitionContainers) {
-            CollectionContainer container = partitionContainer.getOrCreateCollectionContainer(proxyId);
-            container.getOperationsCounter().incrementOtherOperations();
-            keySet.addAll(container.keySet());
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        Address thisAddress = clusterService.getThisAddress();
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
+            CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
+            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
+            if (collectionContainer == null){
+                continue;
+            }
+            if (partitionInfo.getOwner().equals(thisAddress)) {
+                keySet.addAll(collectionContainer.keySet());
+            }
         }
+        getOrCreateOperationsCounter(proxyId).incrementOtherOperations();
         return keySet;
     }
 
