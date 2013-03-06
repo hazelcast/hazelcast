@@ -26,17 +26,16 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ExecutorTest {
 
+    public static final int simpleTestNodeCount = 3;
     public static int COUNT = 1000;
 
     @BeforeClass
@@ -57,62 +56,276 @@ public class ExecutorTest {
     }
 
     @Test
-    public void testExecuteMultipleNode() {
-        final int k = 4;
+    public void testExecuteMultipleNode() throws InterruptedException, ExecutionException {
+        final int k = simpleTestNodeCount;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
-
         for (int i = 0; i < k; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testExecuteOnMember");
+            final IExecutorService service = instances[i].getExecutorService("testExecuteMultipleNode");
             final String script = "hazelcast.getAtomicLong('count').incrementAndGet();";
-            service.execute(new ScriptRunnable(script, null));
-        }
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            final int rand = new Random().nextInt(100);
+            final Future<Integer> future = service.submit(new ScriptRunnable(script, null), rand);
+            Assert.assertEquals(Integer.valueOf(rand), future.get());
         }
         final IAtomicLong count = instances[0].getAtomicLong("count");
         Assert.assertEquals(k, count.get());
     }
 
     @Test
-    public void testExecuteOnMember() {
-        final int k = 4;
+    public void testSubmitToKeyOwnerRunnable() throws InterruptedException {
+        final int k = simpleTestNodeCount;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(k);
+        final ExecutionCallback callback = new ExecutionCallback() {
+            public void onResponse(Object response) {
+                if (response == null)
+                    count.incrementAndGet();
+                latch.countDown();
+            }
 
+            public void onFailure(Throwable t) {
+            }
+        };
         for (int i = 0; i < k; i++) {
-            final HazelcastInstance instance = instances[k - i - 1];
-            final IExecutorService service = instance.getExecutorService("testExecuteOnMember");
+            final HazelcastInstance instance = instances[i];
+            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerRunnable");
             final String script = "if(!hazelcast.getCluster().getLocalMember().equals(member)) " +
-                    "hazelcast.getAtomicLong('testExecuteOnMember').incrementAndGet();";
+                    "hazelcast.getAtomicLong('testSubmitToKeyOwnerRunnable').incrementAndGet();";
             final HashMap map = new HashMap();
             map.put("member", instance.getCluster().getLocalMember());
-            service.executeOnMember(new ScriptRunnable(script, map), instance.getCluster().getLocalMember());
+            int key = 0;
+            while (!instance.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++key).getOwner()))
+                ;
+            service.submitToKeyOwner(new ScriptRunnable(script, map), key, callback);
         }
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        Assert.assertEquals(0, instances[0].getAtomicLong("testExecuteOnMember").get());
+        latch.await(10, TimeUnit.SECONDS);
+        Assert.assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        Assert.assertEquals(k, count.get());
     }
 
     @Test
-    public void testExecuteOnAllMembers() {
-        final int k = 4;
+    public void testSubmitToMemberRunnable() throws InterruptedException {
+        final int k = simpleTestNodeCount;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(k);
+        final ExecutionCallback callback = new ExecutionCallback() {
+            public void onResponse(Object response) {
+                if (response == null)
+                    count.incrementAndGet();
+                latch.countDown();
+            }
 
+            public void onFailure(Throwable t) {
+            }
+        };
         for (int i = 0; i < k; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testExecuteOnMember");
-            final String script = "hazelcast.getAtomicLong('count').incrementAndGet();";
-            service.executeOnAllMembers(new ScriptRunnable(script, null));
+            final HazelcastInstance instance = instances[i];
+            final IExecutorService service = instance.getExecutorService("testSubmitToMemberRunnable");
+            final String script = "if(!hazelcast.getCluster().getLocalMember().equals(member)) " +
+                    "hazelcast.getAtomicLong('testSubmitToMemberRunnable').incrementAndGet();";
+            final HashMap map = new HashMap();
+            map.put("member", instance.getCluster().getLocalMember());
+            service.submitToMember(new ScriptRunnable(script, map), instance.getCluster().getLocalMember(), callback);
         }
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        latch.await(10, TimeUnit.SECONDS);
+        Assert.assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
+        Assert.assertEquals(k, count.get());
+    }
+
+    @Test
+    public void testSubmitToMembersRunnable() throws InterruptedException {
+        final int k = simpleTestNodeCount;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final MultiExecutionCallback callback = new MultiExecutionCallback() {
+            public void onResponse(Member member, Object value) {
+                count.incrementAndGet();
+            }
+
+            public void onComplete(Map<Member, Object> values) {
+            }
+        };
+        int sum = 0;
+        final Object[] members = instances[0].getCluster().getMembers().toArray();
+        for (int i = 0; i < k; i++) {
+            final IExecutorService service = instances[i].getExecutorService("testSubmitToMembersRunnable");
+            final String script = "hazelcast.getAtomicLong('testSubmitToMembersRunnable').incrementAndGet();";
+            final int n = new Random().nextInt(k) + 1;
+            sum += n;
+            Member[] m = new Member[n];
+            for (int j = 0; j < n; j++)
+                m[j] = (Member) members[j];
+            service.submitToMembers(new ScriptRunnable(script, null), Arrays.asList(m), callback);
         }
-        final IAtomicLong count = instances[0].getAtomicLong("count");
+        Thread.sleep(3000);
+        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
+        Assert.assertEquals(sum, result.get());
+        Assert.assertEquals(sum, count.get());
+    }
+
+    @Test
+    public void testSubmitToAllMembersRunnable() throws InterruptedException {
+        final int k = simpleTestNodeCount;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(k * k);
+        final MultiExecutionCallback callback = new MultiExecutionCallback() {
+            public void onResponse(Member member, Object value) {
+                if (value == null)
+                    count.incrementAndGet();
+                latch.countDown();
+            }
+
+            public void onComplete(Map<Member, Object> values) {
+            }
+        };
+        for (int i = 0; i < k; i++) {
+            final IExecutorService service = instances[i].getExecutorService("testSubmitToAllMembersRunnable");
+            final String script = "hazelcast.getAtomicLong('testSubmitToAllMembersRunnable').incrementAndGet();";
+            service.submitToAllMembers(new ScriptRunnable(script, null), callback);
+        }
+        latch.await(10, TimeUnit.SECONDS);
+        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
+        Assert.assertEquals(k * k, result.get());
+        Assert.assertEquals(k * k, count.get());
+    }
+
+    @Test
+    public void testSubmitMultipleNode() throws ExecutionException, InterruptedException {
+        final int k = simpleTestNodeCount;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        for (int i = 0; i < k; i++) {
+            final IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
+            final String script = "hazelcast.getAtomicLong('testSubmitMultipleNode').incrementAndGet();";
+            final Future future = service.submit(new ScriptCallable(script, null));
+            Assert.assertEquals(Long.valueOf(i + 1), future.get());
+        }
+    }
+
+    @Test
+    public void testSubmitToKeyOwnerCallable() throws Exception {
+        final int k = simpleTestNodeCount;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch countDownLatch = new CountDownLatch(k / 2);
+        final ExecutionCallback callback = new ExecutionCallback() {
+            public void onResponse(Object response) {
+                if ((Boolean) response)
+                    count.incrementAndGet();
+                countDownLatch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        };
+        for (int i = 0; i < k; i++) {
+            final HazelcastInstance instance = instances[i];
+            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
+            final String script = "hazelcast.getCluster().getLocalMember().equals(member)";
+            final HashMap map = new HashMap();
+            final Member localMember = instance.getCluster().getLocalMember();
+            map.put("member", localMember);
+            int key = 0;
+            while (!localMember.equals(instance.getPartitionService().getPartition(++key).getOwner())) ;
+            if (i % 2 == 0) {
+                final Future f = service.submitToKeyOwner(new ScriptCallable(script, map), key);
+                Assert.assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+            } else {
+                service.submitToKeyOwner(new ScriptCallable(script, map), key, callback);
+            }
+        }
+        countDownLatch.await(10, TimeUnit.SECONDS);
+        Assert.assertEquals(k / 2, count.get());
+    }
+
+    @Test
+    public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
+        final int k = simpleTestNodeCount;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch countDownLatch = new CountDownLatch(k / 2);
+        final ExecutionCallback callback = new ExecutionCallback() {
+            public void onResponse(Object response) {
+                if ((Boolean) response)
+                    count.incrementAndGet();
+                countDownLatch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        };
+        for (int i = 0; i < k; i++) {
+            final HazelcastInstance instance = instances[i];
+            final IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
+            final String script = "hazelcast.getCluster().getLocalMember().equals(member); ";
+            final HashMap map = new HashMap();
+            map.put("member", instance.getCluster().getLocalMember());
+            if (i % 2 == 0) {
+                final Future f = service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember());
+                Assert.assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+            } else {
+                service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember(), callback);
+            }
+        }
+        countDownLatch.await(10, TimeUnit.SECONDS);
+        Assert.assertEquals(k / 2, count.get());
+    }
+
+    @Test
+    public void testSubmitToMembersCallable() throws InterruptedException {
+        final int k = simpleTestNodeCount;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final MultiExecutionCallback callback = new MultiExecutionCallback() {
+            public void onResponse(Member member, Object value) {
+                count.incrementAndGet();
+            }
+
+            public void onComplete(Map<Member, Object> values) {
+            }
+        };
+        int sum = 0;
+        final Object[] members = instances[0].getCluster().getMembers().toArray();
+        for (int i = 0; i < k; i++) {
+            final IExecutorService service = instances[i].getExecutorService("testSubmitToMembersCallable");
+            final String script = "hazelcast.getAtomicLong('testSubmitToMembersCallable').incrementAndGet();";
+            final int n = new Random().nextInt(k) + 1;
+            sum += n;
+            Member[] m = new Member[n];
+            for (int j = 0; j < n; j++)
+                m[j] = (Member) members[j];
+            service.submitToMembers(new ScriptCallable(script, null), Arrays.asList(m), callback);
+        }
+        Thread.sleep(2000);
+        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersCallable");
+        Assert.assertEquals(sum, result.get());
+        Assert.assertEquals(sum, count.get());
+    }
+
+    @Test
+    public void testSubmitToAllMembersCallable() throws InterruptedException {
+        final int k = simpleTestNodeCount;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch countDownLatch = new CountDownLatch(k * k);
+        final MultiExecutionCallback callback = new MultiExecutionCallback() {
+            public void onResponse(Member member, Object value) {
+                count.incrementAndGet();
+                countDownLatch.countDown();
+            }
+
+            public void onComplete(Map<Member, Object> values) {
+            }
+        };
+        for (int i = 0; i < k; i++) {
+            final IExecutorService service = instances[i].getExecutorService("testSubmitToAllMembersCallable");
+            final String script = "hazelcast.getAtomicLong('testSubmitToAllMembersCallable').incrementAndGet();";
+            service.submitToAllMembers(new ScriptCallable(script, null), callback);
+        }
+        countDownLatch.await(10, TimeUnit.SECONDS);
+        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
+        Assert.assertEquals(k * k, result.get());
         Assert.assertEquals(k * k, count.get());
     }
 
@@ -447,7 +660,7 @@ public class ExecutorTest {
                 e.eval("importPackage(com.hazelcast.core);");
                 e.eval("importPackage(com.hazelcast.config);");
                 e.eval("importPackage(java.util.concurrent);");
-                e.eval("importPackage(import org.junit);");
+                e.eval("importPackage(org.junit);");
 
                 return e.eval(script);
             } catch (ScriptException e1) {
