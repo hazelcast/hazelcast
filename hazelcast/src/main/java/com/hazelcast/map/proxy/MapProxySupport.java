@@ -326,10 +326,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void flush(boolean flushAll) {
+    public void flush() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            MapFlushOperation mapFlushOperation = new MapFlushOperation(name, flushAll);
+            // here the second parameter is for flushing all record either it is dirty or not.
+            // todo add a feature to mancenter to sync cache to db using the second parameter
+            MapFlushOperation mapFlushOperation = new MapFlushOperation(name, false);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, mapFlushOperation);
         } catch (Throwable t) {

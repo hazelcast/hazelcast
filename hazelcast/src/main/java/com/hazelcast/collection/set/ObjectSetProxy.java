@@ -112,11 +112,7 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        return addAll(-1, c);
-    }
-
-    public boolean addAll(int index, Collection<? extends E> c) {
-        return addAllInternal(key, toDataList(c), index);
+        return addAllInternal(key, toDataList(c), -1);
     }
 
     public boolean retainAll(Collection<?> c) {

@@ -18,6 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -31,37 +32,66 @@ public final class FutureProxy<V> implements Future<V> {
 
     private final Future future;
     private final SerializationService serializationService;
-    private final V value;
-    private final boolean hasValue;
+    private final V defaultValue;
+    private final boolean hasDefaultValue;
+    private V value;
+    private Throwable error;
     private volatile boolean done = false;
 
     public FutureProxy(Future future, SerializationService serializationService) {
         this.future = future;
         this.serializationService = serializationService;
-        this.value = null;
-        this.hasValue = false;
+        this.defaultValue = null;
+        this.hasDefaultValue = false;
     }
 
-    public FutureProxy(Future future, SerializationService serializationService, V value) {
+    public FutureProxy(Future future, SerializationService serializationService, V defaultValue) {
         this.future = future;
-        this.value = value;
+        this.defaultValue = defaultValue;
         this.serializationService = serializationService;
-        this.hasValue = true;
+        this.hasDefaultValue = true;
     }
 
     public V get() throws InterruptedException, ExecutionException {
-        final Object object = future.get();
-        return getResult(object);
+        try {
+            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            // should not happen!
+            return ExceptionUtil.sneakyThrow(e);
+        }
     }
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final Object object = future.get(timeout, unit);
-        return getResult(object);
+        if (!done) {
+            synchronized (this) {
+                if (!done) {
+                    try {
+                        value = getResult(future.get(timeout, unit));
+                    } catch (InterruptedException e) {
+                        error = e;
+                    } catch (ExecutionException e) {
+                        error = e;
+                    }
+                    done = true;
+                }
+            }
+        }
+        if (error != null) {
+            if (error instanceof ExecutionException) {
+                throw (ExecutionException) error;
+            }
+            if (error instanceof InterruptedException) {
+                throw (InterruptedException) error;
+            }
+            // should not happen!
+            throw new ExecutionException(error);
+        }
+        return value;
     }
 
     private V getResult(Object object) {
-        if (hasValue) {
-            return value;
+        if (hasDefaultValue) {
+            return defaultValue;
         }
         if (object instanceof Data) {
             object = serializationService.toObject((Data) object);

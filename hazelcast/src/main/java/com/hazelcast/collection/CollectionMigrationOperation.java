@@ -52,12 +52,13 @@ public class CollectionMigrationOperation extends AbstractOperation {
             CollectionProxyId proxyId = entry.getKey();
             proxyId.writeData(out);
 
-            Map<Data, Collection<CollectionRecord>> collections = entry.getValue();
+            Map<Data, CollectionWrapper> collections = entry.getValue();
             out.writeInt(collections.size());
-            for (Map.Entry<Data, Collection<CollectionRecord>> collectionEntry : collections.entrySet()) {
+            for (Map.Entry<Data, CollectionWrapper> collectionEntry : collections.entrySet()) {
                 Data key = collectionEntry.getKey();
                 key.writeData(out);
-                Collection<CollectionRecord> coll = collectionEntry.getValue();
+                CollectionWrapper wrapper = collectionEntry.getValue();
+                Collection<CollectionRecord> coll = wrapper.getCollection();
                 out.writeInt(coll.size());
                 for (CollectionRecord record : coll) {
                     out.writeLong(record.getRecordId());
@@ -74,7 +75,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
             CollectionProxyId proxyId = new CollectionProxyId();
             proxyId.readData(in);
             int collectionSize = in.readInt();
-            Map<Data, Collection<CollectionRecord>> collections = new HashMap<Data, Collection<CollectionRecord>>();
+            Map<Data, CollectionWrapper> collections = new HashMap<Data, CollectionWrapper>();
             for (int j = 0; j < collectionSize; j++) {
                 Data key = new Data();
                 key.readData(in);
@@ -85,7 +86,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                     Object obj = in.readObject();
                     coll.add(new CollectionRecord(recordId, obj));
                 }
-                collections.put(key, coll);
+                collections.put(key, new CollectionWrapper(coll));
 
             }
             map.put(proxyId, collections);

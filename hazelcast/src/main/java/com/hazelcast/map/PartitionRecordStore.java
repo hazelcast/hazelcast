@@ -35,6 +35,7 @@ public class PartitionRecordStore implements RecordStore {
     final String name;
     final PartitionContainer partitionContainer;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
+    final Set<Data> toBeRemovedKeys = new HashSet<Data>();
     final MapContainer mapContainer;
     final MapService mapService;
     final LockStoreView lockStore;
@@ -50,10 +51,16 @@ public class PartitionRecordStore implements RecordStore {
                         mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
     }
 
+    // todo flush operation should cancel scheduled mapstore operations
     public void flush(boolean flushAllRecords) {
         for (Record record : records.values()) {
-            if (flushAllRecords || record.getState().shouldStored())
+            if (flushAllRecords || record.getState().isDirty()) {
                 mapStoreWrite(record, true);
+            }
+        }
+        for (Data key : toBeRemovedKeys) {
+            if (toBeRemovedKeys.remove(key))
+                mapContainer.getStore().delete(mapService.toObject(key));
         }
     }
 
@@ -120,7 +127,7 @@ public class PartitionRecordStore implements RecordStore {
             removed = true;
         }
         if ((removed || evicted) && mapContainer.getStore() != null) {
-            mapStoreDelete(record);
+            mapStoreDelete(record, dataKey);
         }
         return oldValue;
     }
@@ -203,7 +210,7 @@ public class PartitionRecordStore implements RecordStore {
             records.remove(dataKey);
         }
         if (oldValue != null) {
-            mapStoreDelete(record);
+            mapStoreDelete(record, dataKey);
         }
         return oldValue;
     }
@@ -215,15 +222,16 @@ public class PartitionRecordStore implements RecordStore {
         }
     }
 
-    public boolean evict(Data dataKey) {
+    public Object evict(Data dataKey) {
         Record record = records.get(dataKey);
+        Object oldValue = null;
         if (record != null) {
             mapService.intercept(name, MapOperationType.EVICT, dataKey, record.getValue(), record.getValue());
+            oldValue = record.getValue();
             records.remove(dataKey);
             removeIndex(dataKey);
-            return true;
         }
-        return false;
+        return oldValue;
     }
 
     public boolean remove(Data dataKey, Object testValue) {
@@ -243,7 +251,7 @@ public class PartitionRecordStore implements RecordStore {
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             records.remove(dataKey);
             removed = true;
-            mapStoreDelete(record);
+            mapStoreDelete(record, dataKey);
         }
         return removed;
     }
@@ -267,9 +275,25 @@ public class PartitionRecordStore implements RecordStore {
         value = mapService.intercept(name, MapOperationType.GET, dataKey, value, value);
 //        check if record has expired or removed but waiting delay millis
         if (record != null && record.getState().isExpired()) {
+            System.out.println("record has been waiting to be deleted");
             return null;
         }
         return value;
+    }
+
+    // todo containsKey tries to load from db even if it returned null just second ago. try to put a record with null with eviction
+    public boolean containsKey(Data dataKey) {
+        Record record = records.get(dataKey);
+        if (record == null) {
+            if (mapContainer.getStore() != null) {
+                Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
+                if (value != null) {
+                    record = mapService.createRecord(name, dataKey, value, -1);
+                    records.put(dataKey, record);
+                }
+            }
+        }
+        return record != null;
     }
 
     public void put(Map.Entry<Data, Object> entry) {
@@ -309,15 +333,14 @@ public class PartitionRecordStore implements RecordStore {
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         Record record = records.get(dataKey);
         Object newValue = null;
-        if(record == null) {
+        if (record == null) {
             newValue = mergingEntry.getValue();
             record = mapService.createRecord(name, dataKey, newValue, -1);
             records.put(dataKey, record);
-        }
-        else {
+        } else {
             EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
-            if(newValue == null) { // existing entry will stay
+            if (newValue == null) { // existing entry will stay
                 return false;
             }
             if (record instanceof DataRecord)
@@ -465,18 +488,17 @@ public class PartitionRecordStore implements RecordStore {
         }
     }
 
-    private void mapStoreDelete(Record record) {
-        removeIndex(record.getKey());
+    private void mapStoreDelete(Record record, Data key) {
+        removeIndex(key);
         if (mapContainer.getStore() != null) {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
-                mapContainer.getStore().delete(mapService.toObject(record.getKey()));
-                record.onStore();
+                mapContainer.getStore().delete(mapService.toObject(key));
+                if (record != null)
+                    record.onStore();
             } else {
-                if (record.getState().getStoreTime() <= 0) {
-                    record.getState().updateStoreTime(writeDelayMillis);
-                    mapService.scheduleMapStoreDelete(name, record.getKey(), writeDelayMillis);
-                }
+                mapService.scheduleMapStoreDelete(name, key, writeDelayMillis);
+                toBeRemovedKeys.add(key);
             }
         }
     }

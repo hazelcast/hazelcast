@@ -48,9 +48,9 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
     private final boolean postponesSchedule;
 
     SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor, boolean postponesSchedule) {
-            this.scheduledExecutorService = scheduledExecutorService;
-            this.entryProcessor = entryProcessor;
-            this.postponesSchedule = postponesSchedule;
+        this.scheduledExecutorService = scheduledExecutorService;
+        this.entryProcessor = entryProcessor;
+        this.postponesSchedule = postponesSchedule;
     }
 
     public boolean schedule(long delayMillis, K key, V value) {
@@ -77,7 +77,7 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         final Integer newSecond = findRelativeSecond(delayMillis);
         final Integer existingSecond = secondsOfKeys.put(key, newSecond);
         if (existingSecond != null) {
-            if (existingSecond.equals(newSecond)){
+            if (existingSecond.equals(newSecond)) {
                 return false;
             }
             removeKeyFromSecond(key, existingSecond);
@@ -145,9 +145,10 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         public void run() {
             final ConcurrentMap<K, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
-                for (K key : entries.keySet()) {
-                    secondsOfKeys.remove(key);
-                }
+            for (K key : entries.keySet()) {
+                // todo there is a concurrency problem here. you should put the object you can remove to a seperate list then send them
+                secondsOfKeys.remove(key);
+            }
             entryProcessor.process(SecondsBasedEntryTaskScheduler.this, entries.values());
         }
     }

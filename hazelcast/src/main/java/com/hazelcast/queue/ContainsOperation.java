@@ -44,6 +44,10 @@ public class ContainsOperation extends QueueOperation {
         response = getOrCreateContainer().contains(dataList);
     }
 
+    public void afterRun() throws Exception {
+        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
+    }
+
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataList.size());

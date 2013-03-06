@@ -22,6 +22,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.monitor.impl.QueueOperationsCounter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -52,6 +53,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
 
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
+    private final ConcurrentMap<String, QueueOperationsCounter> counterMap = new ConcurrentHashMap<String, QueueOperationsCounter>(1000);
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
 
     public QueueService(NodeEngine nodeEngine) {
@@ -143,6 +145,7 @@ public class QueueService implements ManagedService, MigrationAwareService,
         } else {
             listener.itemRemoved(itemEvent);
         }
+        getOrCreateOperationsCounter(event.name).incrementReceivedEvents();
     }
 
     public String getServiceName() {
@@ -218,10 +221,21 @@ public class QueueService implements ManagedService, MigrationAwareService,
             stats.setBackupItemCount(container.size());
         }
         container.setStats(stats);
-        stats.setOperationStats(container.getOperationsCounter().getPublishedStats());
+        stats.setOperationStats(getOrCreateOperationsCounter(name).getPublishedStats());
         return stats;
     }
 
+    public QueueOperationsCounter getOrCreateOperationsCounter(String name){
+        QueueOperationsCounter operationsCounter = counterMap.get(name);
+        if (operationsCounter == null){
+            operationsCounter = new QueueOperationsCounter();
+            QueueOperationsCounter counter = counterMap.putIfAbsent(name, operationsCounter);
+            if (counter != null){
+                operationsCounter = counter;
+            }
+        }
+        return operationsCounter;
+    }
 
 
 }

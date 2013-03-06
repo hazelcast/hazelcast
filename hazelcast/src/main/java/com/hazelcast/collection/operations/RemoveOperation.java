@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,6 +36,8 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
 
     Data value;
 
+    transient long begin = -1;
+
     public RemoveOperation() {
     }
 
@@ -44,6 +47,7 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
+        begin = Clock.currentTimeMillis();
         Collection<CollectionRecord> coll = getCollection();
         if (coll == null) {
             response = false;
@@ -57,7 +61,10 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
+        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
+        getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
         if (Boolean.TRUE.equals(response)) {
+            getOrCreateContainer().update();
             publishEvent(EntryEventType.REMOVED, dataKey, value);
         }
     }

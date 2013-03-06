@@ -19,7 +19,6 @@ package com.hazelcast.queue;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.monitor.impl.QueueOperationsCounter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -50,8 +49,6 @@ public class QueueContainer implements DataSerializable {
 
     private QueueStoreWrapper store;
 
-    private final QueueOperationsCounter operationsCounter = new QueueOperationsCounter();
-
     private volatile long minAge;
 
     private volatile long maxAge;
@@ -78,7 +75,7 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    public QueueItem offer(Data data) {
+    public boolean offer(Data data) {
         QueueItem item = new QueueItem(this, idGen++);
         if (store.isEnabled()) {
             try {
@@ -91,8 +88,7 @@ public class QueueContainer implements DataSerializable {
         if (!store.isEnabled() || store.getMemoryLimit() > itemQueue.size()) {
             item.setData(data);
         }
-        itemQueue.offer(item);
-        return item;
+        return itemQueue.offer(item);
     }
 
     public QueueItem offerBackup(Data data) {
@@ -105,7 +101,6 @@ public class QueueContainer implements DataSerializable {
     }
 
     public int size() {
-        operationsCounter.incrementOtherOperations();
         return itemQueue.size(); //TODO check max size
     }
 
@@ -373,14 +368,6 @@ public class QueueContainer implements DataSerializable {
         return config;
     }
 
-    public boolean isStoreEnabled() {
-        return store.isEnabled();
-    }
-
-    public QueueStoreWrapper getStore() {
-        return store;
-    }
-
     public void setConfig(QueueConfig config, SerializationService serializationService) {
         store = new QueueStoreWrapper(serializationService);
         this.config = new QueueConfig(config);
@@ -437,10 +424,6 @@ public class QueueContainer implements DataSerializable {
             itemQueue.offer(item);
             idGen++;
         }
-    }
-
-    public QueueOperationsCounter getOperationsCounter() {
-        return operationsCounter;
     }
 
     private void age(QueueItem item, long currentTime){

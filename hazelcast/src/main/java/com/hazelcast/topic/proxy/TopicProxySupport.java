@@ -24,7 +24,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.topic.TopicContainer;
+import com.hazelcast.topic.TopicStatsContainer;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
 
@@ -44,7 +44,7 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
 
     TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
-        service.getAtomicLongContainer(name);
+        service.getTopicStatsContainer(name);
         this.name = name;
         eventService = nodeEngine.getEventService();
 
@@ -52,17 +52,17 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
 
     public LocalTopicStats getLocalTopicStatsInternal() {
         LocalTopicStatsImpl localTopicStats = new LocalTopicStatsImpl();
-        TopicContainer atomicLongContainer = getService().getAtomicLongContainer(name);
-        localTopicStats.setCreationTime(atomicLongContainer.getCreationTime());
-        localTopicStats.setTotalReceivedMessages(atomicLongContainer.getTotalReceivedMessages());
-        localTopicStats.setTotalPublishes(atomicLongContainer.getTotalPublishes());
-        localTopicStats.setLastPublishTime(atomicLongContainer.getLastAccessTime());
-        localTopicStats.setOperationStats(atomicLongContainer.getOperationsCounter().getPublishedStats());
+        TopicStatsContainer topicStatsContainer = getService().getTopicStatsContainer(name);
+        localTopicStats.setCreationTime(topicStatsContainer.getCreationTime());
+        localTopicStats.setTotalReceivedMessages(topicStatsContainer.getTotalReceivedMessages());
+        localTopicStats.setTotalPublishes(topicStatsContainer.getTotalPublishes());
+        localTopicStats.setLastPublishTime(topicStatsContainer.getLastAccessTime());
+        localTopicStats.setOperationStats(topicStatsContainer.getOperationsCounter().getPublishedStats());
         return localTopicStats;
     }
 
     public void publishInternal(Data message) {
-        TopicEvent topicEvent = new TopicEvent(name, message);
+        TopicEvent topicEvent = new TopicEvent(name, message, getNodeEngine().getLocalMember());
         eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
     }
 

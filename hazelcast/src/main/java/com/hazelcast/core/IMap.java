@@ -163,7 +163,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * If this map has a MapStore this method flushes
      * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
      */
-    void flush(boolean flushAllEntries);
+    void flush();
 
     /**
      * Returns the name of this map

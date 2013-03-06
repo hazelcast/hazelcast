@@ -29,9 +29,10 @@ public class MapFlushHandler extends MapCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
+        // todo flush will not have parameter anymore. there should be related protocol revision if needed
         Boolean flashAllEntries = Boolean.valueOf(protocol.args[1]);
         DataMapProxy dataMapProxy = getMapProxy(name);
-        dataMapProxy.flush(flashAllEntries);
+        dataMapProxy.flush();
         return protocol.success();
     }
 }

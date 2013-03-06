@@ -35,6 +35,8 @@ public interface RecordStore {
 
     Object get(Data dataKey);
 
+    boolean containsKey(Data dataKey);
+
     Object put(Data dataKey, Object dataValue, long ttl);
 
     void put(Map.Entry<Data, Object> entry);
@@ -65,7 +67,7 @@ public interface RecordStore {
 
     boolean canRun(LockAwareOperation lockAwareOperation);
 
-    boolean evict(Data key);
+    Object evict(Data key);
 
     Collection<Object> valuesObject();
 

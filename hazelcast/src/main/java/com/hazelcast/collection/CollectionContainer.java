@@ -20,8 +20,10 @@ import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.concurrent.lock.LockStoreView;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +43,7 @@ public class CollectionContainer {
 
     final MultiMapConfig config;
 
-    final ConcurrentMap<Data, Collection<CollectionRecord>> collections = new ConcurrentHashMap<Data, Collection<CollectionRecord>>(1000);
+    final ConcurrentMap<Data, CollectionWrapper> collections = new ConcurrentHashMap<Data, CollectionWrapper>(1000);
 
     final LockNamespace lockNamespace;
 
@@ -50,6 +52,9 @@ public class CollectionContainer {
     final int partitionId;
 
     final AtomicLong idGen = new AtomicLong();
+    final AtomicLong lastAccessTime = new AtomicLong();
+    final AtomicLong lastUpdateTime = new AtomicLong();
+    final long creationTime;
 
     public CollectionContainer(CollectionProxyId proxyId, CollectionService service, int partitionId) {
         this.proxyId = proxyId;
@@ -62,6 +67,7 @@ public class CollectionContainer {
         final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, lockNamespace, config.getSyncBackupCount(), config.getAsyncBackupCount());
+        creationTime = Clock.currentTimeMillis();
     }
 
     public boolean isLocked(Data dataKey) {
@@ -73,20 +79,27 @@ public class CollectionContainer {
     }
 
     public Collection<CollectionRecord> getOrCreateCollection(Data dataKey) {
-        Collection<CollectionRecord> coll = collections.get(dataKey);
-        if (coll == null) {
-            coll = service.createNew(proxyId);
-            collections.put(dataKey, coll);
+        CollectionWrapper wrapper = collections.get(dataKey);
+        if (wrapper == null) {
+            Collection<CollectionRecord> coll = service.createNew(proxyId);
+            wrapper = new CollectionWrapper(coll);
+            collections.put(dataKey, wrapper);
         }
-        return coll;
+        return wrapper.getCollection();
     }
 
     public Collection<CollectionRecord> getCollection(Data dataKey) {
+        CollectionWrapper wrapper = collections.get(dataKey);
+        return wrapper != null ? wrapper.getCollection() : null;
+    }
+
+    public CollectionWrapper getCollectionWrapper(Data dataKey) {
         return collections.get(dataKey);
     }
 
     public Collection<CollectionRecord> removeCollection(Data dataKey) {
-        return collections.remove(dataKey);
+        CollectionWrapper wrapper = collections.remove(dataKey);
+        return wrapper != null ? wrapper.getCollection() : null;
     }
 
     public Set<Data> keySet() {
@@ -98,8 +111,8 @@ public class CollectionContainer {
 
     public Collection<CollectionRecord> values() {
         Collection<CollectionRecord> valueCollection = new LinkedList<CollectionRecord>();
-        for (Collection<CollectionRecord> coll : collections.values()) {
-            valueCollection.addAll(coll);
+        for (CollectionWrapper wrapper : collections.values()) {
+            valueCollection.addAll(wrapper.getCollection());
         }
         return valueCollection;
     }
@@ -109,12 +122,12 @@ public class CollectionContainer {
     }
 
     public boolean containsEntry(boolean binary, Data key, Data value) {
-        Collection<CollectionRecord> coll = collections.get(key);
-        if (coll == null) {
+        CollectionWrapper wrapper = collections.get(key);
+        if (wrapper == null) {
             return false;
         }
         CollectionRecord record = new CollectionRecord(binary ? value : nodeEngine.toObject(value));
-        return coll.contains(record);
+        return wrapper.getCollection().contains(record);
     }
 
     public boolean containsValue(boolean binary, Data value) {
@@ -128,9 +141,9 @@ public class CollectionContainer {
 
     public Map<Data, Collection<CollectionRecord>> copyCollections() {
         Map<Data, Collection<CollectionRecord>> map = new HashMap<Data, Collection<CollectionRecord>>(collections.size());
-        for (Map.Entry<Data, Collection<CollectionRecord>> entry : collections.entrySet()) {
+        for (Map.Entry<Data, CollectionWrapper> entry : collections.entrySet()) {
             Data key = entry.getKey();
-            Collection<CollectionRecord> col = copyCollection(entry.getValue());
+            Collection<CollectionRecord> col = copyCollection(entry.getValue().getCollection());
             map.put(key, col);
         }
         return map;
@@ -144,15 +157,15 @@ public class CollectionContainer {
 
     public int size() {
         int size = 0;
-        for (Collection<CollectionRecord> coll : collections.values()) {
-            size += coll.size();
+        for (CollectionWrapper wrapper : collections.values()) {
+            size += wrapper.getCollection().size();
         }
         return size;
     }
 
     public void clearCollections() {
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        Map<Data, Collection<CollectionRecord>> temp = new HashMap<Data, Collection<CollectionRecord>>(locks.size());
+        Map<Data, CollectionWrapper> temp = new HashMap<Data, CollectionWrapper>(locks.size());
         for (Data key : locks) {
             temp.put(key, collections.get(key));
         }
@@ -168,10 +181,6 @@ public class CollectionContainer {
         return config;
     }
 
-    public ConcurrentMap<Data, Collection<CollectionRecord>> getCollections() {
-        return collections; //TODO for testing only
-    }
-
     public void destroy() {
         final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
         if (lockService != null) {
@@ -180,4 +189,31 @@ public class CollectionContainer {
         collections.clear();
     }
 
+    public void access(){
+        lastAccessTime.set(Clock.currentTimeMillis());
+    }
+
+    public void update(){
+        lastUpdateTime.set(Clock.currentTimeMillis());
+    }
+
+    public long getLastAccessTime(){
+        return lastAccessTime.get();
+    }
+
+    public long getLastUpdateTime(){
+        return lastUpdateTime.get();
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public long getLockedCount(){
+        return lockStore.getLockedKeys().size();
+    }
+
+    public MapOperationsCounter getOperationsCounter() {
+        return service.getOrCreateOperationsCounter(proxyId);
+    }
 }

@@ -51,6 +51,7 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     public void afterRun() throws Exception {
+        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
         if (itemId != -1) {
             publishEvent(ItemEventType.REMOVED, data);
         }

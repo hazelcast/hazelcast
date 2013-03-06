@@ -21,13 +21,25 @@ import java.util.EventObject;
 public class Message<E> extends EventObject {
 
     private final E messageObject;
+    private final long publishTime;
+    private final Member publishingMember;
 
-    public Message(String topicName, E messageObject) {
+    public Message(String topicName, E messageObject, long publishTime, Member publishingMember) {
         super(topicName);
         this.messageObject = messageObject;
+        this.publishTime = publishTime;
+        this.publishingMember = publishingMember;
     }
 
     public E getMessageObject() {
         return messageObject;
+    }
+
+    public long getPublishTime() {
+        return publishTime;
+    }
+
+    public Member getPublishingMember() {
+        return publishingMember;
     }
 }

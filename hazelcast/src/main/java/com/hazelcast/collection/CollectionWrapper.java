@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.collection;
+
+import java.util.Collection;
 
 /**
- * @ali 12/18/12
+ * @ali 3/1/13
  */
-public class IteratorOperation extends QueueOperation {
+public class CollectionWrapper {
 
-    public IteratorOperation() {
+    private final Collection<CollectionRecord> collection;
+
+    private int hits;
+
+    public CollectionWrapper(Collection<CollectionRecord> collection) {
+        this.collection = collection;
     }
 
-    public IteratorOperation(String name) {
-        super(name);
+    public Collection<CollectionRecord> getCollection() {
+        return collection;
     }
 
-    public void run() {
-        response = new SerializableCollectionContainer(getOrCreateContainer().getAsDataList());
+    public void incrementHit(){
+        hits++;
     }
 
-    public void afterRun() throws Exception {
-        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
+    public int getHits() {
+        return hits;
     }
 }
