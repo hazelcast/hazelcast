@@ -62,7 +62,7 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
     }
 
     public void publishInternal(Data message) {
-        TopicEvent topicEvent = new TopicEvent(name, message);
+        TopicEvent topicEvent = new TopicEvent(name, message, getNodeEngine().getLocalMember());
         eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
     }
 

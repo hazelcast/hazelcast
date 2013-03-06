@@ -81,6 +81,8 @@ public abstract class AbstractRecord implements DataSerializable {
     public void onStore() {
         if(stats != null)
             stats.store();
+        if(state != null)
+            state.resetStoreTime();
     }
 
     public void onUpdate() {

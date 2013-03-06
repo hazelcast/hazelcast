@@ -100,7 +100,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
-        Message message = new Message(topicEvent.name, nodeEngine.toObject(topicEvent.data));
+        Message message = new Message(topicEvent.name, nodeEngine.toObject(topicEvent.data), topicEvent.publishTime, topicEvent.publishingMember);
         incrementReceivedMessages(topicEvent.name);
         ((MessageListener) listener).onMessage(message);
     }

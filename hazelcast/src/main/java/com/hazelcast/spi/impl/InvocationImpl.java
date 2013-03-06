@@ -39,8 +39,16 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 
 abstract class InvocationImpl implements Future, Invocation {
-    static final Object NULL_RESPONSE = new Object();
-    static final Object TIMEOUT_RESPONSE = new Object();
+    static final Object NULL_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::NULL_RESPONSE";
+        }
+    };
+    static final Object TIMEOUT_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::TIMEOUT_RESPONSE";
+        }
+    };
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     private final long callTimeout;
@@ -79,7 +87,7 @@ abstract class InvocationImpl implements Future, Invocation {
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
             if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 5000) {
-                return waitTimeoutMillis  + 5000;
+                return waitTimeoutMillis + 5000;
             }
         }
         return defaultCallTimeout;
@@ -204,7 +212,7 @@ abstract class InvocationImpl implements Future, Invocation {
                 timeout = decrementTimeout(timeout, Clock.currentTimeMillis() - start);
             } catch (InterruptedException e) {
                 // do not allow interruption while waiting for a response!
-                logger.log(Level.FINEST, Thread.currentThread().getName()  + " is interrupted while waiting " +
+                logger.log(Level.FINEST, Thread.currentThread().getName() + " is interrupted while waiting " +
                         "response for operation " + op);
                 if (!isActive()) {
                     return e;
@@ -245,7 +253,7 @@ abstract class InvocationImpl implements Future, Invocation {
                 final Address target = getTarget();
                 if (nodeEngine.getThisAddress().equals(target)) {
                     // target may change during invocation because of migration!
-                   continue;
+                    continue;
                 }
                 // TODO: @mm - improve logging (see SystemLogService)
                 logger.log(Level.WARNING, "No response for " + pollTimeout + " ms. " + toString());

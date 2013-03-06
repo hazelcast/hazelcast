@@ -26,6 +26,8 @@ import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
@@ -42,9 +44,11 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
 
     @Override
     public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+        Map map = new HashMap(entries.size());
         for (ScheduledEntry<Data, Object> entry : entries) {
-            mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+            map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
         }
+        mapContainer.getStore().storeAll(map);
     }
 
 }

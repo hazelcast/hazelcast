@@ -35,6 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -52,6 +53,62 @@ public class TopicTest {
     @Before
     public void shutdown() {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testTopicPublishingMember() {
+        final Config config = new Config();
+        TopicConfig topicConfig = new TopicConfig();
+        topicConfig.setGlobalOrderingEnabled(false);
+        topicConfig.setName("default");
+        config.addTopicConfig(topicConfig);
+        final int k = 3;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+
+        final CountDownLatch mainLatch = new CountDownLatch(k);
+        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicInteger count1 = new AtomicInteger(0);
+        final AtomicInteger count2 = new AtomicInteger(0);
+        final String name = "testTopicPublishingMember";
+
+        for (int i = 0; i < k; i++) {
+            final HazelcastInstance instance = instances[i];
+            new Thread(new Runnable() {
+                public void run() {
+                    ITopic<Long> topic = instance.getTopic(name);
+                    topic.addMessageListener(new MessageListener<Long>() {
+                        public void onMessage(Message<Long> message) {
+                            if (message.getPublishingMember().equals(instance.getCluster().getLocalMember()))
+                                count.incrementAndGet();
+                            if (message.getPublishingMember().equals(message.getMessageObject()))
+                                count1.incrementAndGet();
+                            if (message.getPublishingMember().localMember())
+                                count2.incrementAndGet();
+                        }
+                    });
+                    mainLatch.countDown();
+                }
+            }).start();
+
+        }
+        try {
+            mainLatch.await(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < k; i++) {
+            final HazelcastInstance instance = instances[i];
+            instance.getTopic(name).publish(instance.getCluster().getLocalMember());
+        }
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Assert.assertEquals(k, count.get());
+        Assert.assertEquals(k * k, count1.get());
+        Assert.assertEquals(k, count2.get());
+
     }
 
     @Test
