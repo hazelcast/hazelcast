@@ -17,10 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -28,9 +25,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @ali 3/6/13
@@ -50,18 +52,90 @@ public class ListTest {
     }
 
     @Test
-    public void testAddGetRemove() throws Exception {
+    public void testListMethods() throws Exception {
         Config config = new Config();
         final String name = "defList";
-        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
         final int count = 100;
         final int insCount = 4;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
 
+        for (int i=0; i<count; i++){
+            assertTrue(getList(instances, name).add("item"+i));
+        }
 
+        Iterator iter = getList(instances, name).iterator();
+        int item = 0;
+        while (iter.hasNext()){
+            assertEquals("item"+item++, iter.next());
+        }
 
-        assertTrue(getList(instances, name).contains(""));
+        assertEquals(count, getList(instances, name).size());
+
+        assertEquals("item0", getList(instances, name).get(0));
+        getList(instances, name).add(0, "item");
+        assertEquals(count+1, getList(instances, name).size());
+        assertEquals("item",getList(instances, name).set(0, "newItem"));
+        assertEquals("newItem",getList(instances, name).remove(0));
+        assertEquals(count, getList(instances, name).size());
+        assertTrue(getList(instances, name).remove("item99"));
+        assertFalse(getList(instances, name).remove("item99"));
+
+        List list = new ArrayList();
+        list.add("item-1");
+        list.add("item-2");
+
+        assertTrue(getList(instances, name).addAll(list));
+        assertEquals("item-1", getList(instances, name).get(count-1));
+        assertEquals("item-2", getList(instances, name).get(count));
+        assertEquals(count+list.size()-1, getList(instances, name).size());
+        assertTrue(getList(instances, name).addAll(10,list));
+        assertEquals("item-1", getList(instances, name).get(10));
+        assertEquals("item-2", getList(instances, name).get(11));
+        assertEquals(count+2*list.size()-1, getList(instances, name).size());
+        assertEquals(10, getList(instances, name).indexOf("item-1"));
+        assertEquals(count-1+list.size(), getList(instances, name).lastIndexOf("item-1"));
+
+        assertTrue(getList(instances, name).containsAll(list));
+        list.add("asd");
+        assertFalse(getList(instances, name).containsAll(list));
+        assertTrue(getList(instances, name).contains("item98"));
+        assertFalse(getList(instances, name).contains("item99"));
     }
+
+    @Test
+    public void testListener() throws Exception {
+        Config config = new Config();
+        final String name = "defList";
+        final int count = 10;
+        final int insCount = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final CountDownLatch latchAdd = new CountDownLatch(count);
+        final CountDownLatch latchRemove = new CountDownLatch(count);
+
+        ItemListener listener = new ItemListener() {
+            public void itemAdded(ItemEvent item) {
+                latchAdd.countDown();
+            }
+
+            public void itemRemoved(ItemEvent item) {
+                latchRemove.countDown();
+            }
+        };
+
+        getList(instances, name).addItemListener(listener, true);
+
+        for (int i = 0; i < count; i++) {
+            getList(instances, name).add("item" + i);
+        }
+        for (int i = 0; i < count; i++) {
+            getList(instances, name).remove("item"+i);
+        }
+        assertTrue(latchAdd.await(5, TimeUnit.SECONDS));
+        assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
+
+    }
+
+
 
     private IList getList(HazelcastInstance[] instances, String name){
         final Random rnd = new Random(System.currentTimeMillis());

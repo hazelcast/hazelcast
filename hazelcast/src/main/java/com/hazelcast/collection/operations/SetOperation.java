@@ -50,7 +50,8 @@ public class SetOperation extends CollectionBackupAwareOperation {
         CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
         List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollection();
         try {
-            response = list.set(index, record);
+            record = list.set(index, record);
+            response = record == null ? null : record.getObject();
             shouldBackup = true;
         } catch (IndexOutOfBoundsException e) {
             response = e;
