@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
@@ -101,6 +102,9 @@ public class MapContainer {
         store = storeTemp;
 
         if (store != null) {
+            if(store instanceof MapLoaderLifecycleSupport) {
+                ((MapLoaderLifecycleSupport)store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
+            }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
             if (nodeEngine.getClusterService().isMaster() && initialLoaded.compareAndSet(false, true)) {

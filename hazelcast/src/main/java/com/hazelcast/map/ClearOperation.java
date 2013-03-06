@@ -55,7 +55,7 @@ public class ClearOperation extends AbstractMapOperation implements PartitionLev
         }
         for (Data key : keys) {
             if (!recordStore.isLocked(key)) {
-                recordStore.remove(key);
+                recordStore.evict(key);
             }
         }
     }
