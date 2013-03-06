@@ -18,9 +18,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -29,6 +27,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -196,6 +196,110 @@ public class MultiMapTest {
 
         assertTrue(getMultiMap(instances, name).containsValue("key2_val2"));
         assertFalse(getMultiMap(instances, name).containsValue("key2_val4"));
+    }
+
+    @Test
+    public void testListeners() throws Exception {
+        Config config = new Config();
+        final String name = "defMM";
+        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+        final int insCount = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+
+        final Set keys = new HashSet();
+
+        EntryListener listener = new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+                keys.add(event.getKey());
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                keys.remove(event.getKey());
+            }
+
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            public void entryEvicted(EntryEvent event) {
+            }
+        };
+
+        instances[0].getMultiMap(name).addLocalEntryListener(listener);
+        instances[0].getMultiMap(name).put("key1","val1");
+        instances[0].getMultiMap(name).put("key2","val2");
+        instances[0].getMultiMap(name).put("key3","val3");
+        instances[0].getMultiMap(name).put("key4","val4");
+        instances[0].getMultiMap(name).put("key5","val5");
+        instances[0].getMultiMap(name).put("key6","val6");
+        instances[0].getMultiMap(name).put("key7","val7");
+        instances[0].getMultiMap(name).put("key8","val8");
+        Thread.sleep(1500);
+        assertTrue(instances[0].getMultiMap(name).localKeySet().containsAll(keys));
+        if (keys.size() != 0){
+            instances[0].getMultiMap(name).remove(keys.iterator().next());
+        }
+        Thread.sleep(1500);
+        assertTrue(instances[0].getMultiMap(name).localKeySet().containsAll(keys));
+        instances[0].getMultiMap(name).removeEntryListener(listener);
+        getMultiMap(instances, name).clear();
+        keys.clear();
+
+        instances[0].getMultiMap(name).addEntryListener(listener, true);
+        getMultiMap(instances, name).put("key3","val3");
+        getMultiMap(instances, name).put("key3","val33");
+        getMultiMap(instances, name).put("key4","val4");
+        getMultiMap(instances, name).remove("key3","val33");
+        Thread.sleep(1500);
+        assertEquals(1, keys.size());
+        getMultiMap(instances, name).clear();
+        Thread.sleep(1500);
+        assertEquals(0, keys.size());
+
+        instances[0].getMultiMap(name).removeEntryListener(listener);
+        instances[0].getMultiMap(name).addEntryListener(listener, "key7", true);
+        getMultiMap(instances, name).put("key2","val2");
+        getMultiMap(instances, name).put("key3","val3");
+        getMultiMap(instances, name).put("key7","val7");
+        Thread.sleep(1500);
+        assertEquals(1, keys.size());
+    }
+
+    @Test
+    public void testLock() throws Exception {
+        Config config = new Config();
+        final String name = "defMM";
+        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+        final int insCount = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(){
+            public void run() {
+                instances[0].getMultiMap(name).lock("alo");
+                latch.countDown();
+                try {
+                    Thread.sleep(5*1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                instances[0].getMultiMap(name).unlock("alo");
+            }
+        }.start();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertFalse(getMultiMap(instances, name).tryLock("alo"));
+        assertTrue(instances[0].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
+
+        new Thread(){
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                instances[0].getLifecycleService().shutdown();
+            }
+        }.start();
+
+        assertTrue(instances[1].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
 
     }
 
