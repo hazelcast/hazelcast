@@ -26,7 +26,8 @@ public class DataMessage<E> extends Message {
     private final transient SerializationService serializationService;
 
     public DataMessage(String topicName, Data data, SerializationService serializationService) {
-        super(topicName, null);
+        //TODO make sure there is publishTime , publishingMember
+        super(topicName, null, 0L, null);
         this.data = data;
         this.serializationService = serializationService;
     }

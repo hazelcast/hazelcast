@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -51,6 +52,8 @@ public interface NodeEngine {
     WaitNotifyService getWaitNotifyService();
 
     Address getThisAddress();
+
+    MemberImpl getLocalMember();
 
     Config getConfig();
 

@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.collection;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.core.*;
+import com.hazelcast.instance.StaticNodeFactory;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+
+/**
+ * @ali 3/6/13
+ */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+public class SetTest {
+
+    @BeforeClass
+    public static void init() {
+//        System.setProperty("hazelcast.test.use.network","true");
+    }
+
+    @Before
+    @After
+    public void cleanup() {
+        Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testSetMethods() throws Exception {
+        Config config = new Config();
+        final String name = "defSet";
+        final int count = 100;
+        final int insCount = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+
+        for (int i=0; i<count; i++){
+            assertTrue(getSet(instances, name).add("item"+i));
+        }
+        assertFalse(getSet(instances, name).add("item0"));
+
+        Iterator iter = getSet(instances, name).iterator();
+        int item = 0;
+        while (iter.hasNext()){
+            getSet(instances, name).contains(iter.next());
+            item++;
+        }
+        assertEquals(count, item);
+
+        assertEquals(count, getSet(instances, name).size());
+
+        assertTrue(getSet(instances, name).remove("item99"));
+        assertFalse(getSet(instances, name).remove("item99"));
+
+        List list = new ArrayList();
+        list.add("item-1");
+        list.add("item-2");
+
+        assertTrue(getSet(instances, name).addAll(list));
+        assertEquals(count+list.size()-1, getSet(instances, name).size());
+        assertFalse(getSet(instances, name).addAll(list));
+        assertEquals(count+list.size()-1, getSet(instances, name).size());
+
+        assertTrue(getSet(instances, name).containsAll(list));
+        list.add("asd");
+        assertFalse(getSet(instances, name).containsAll(list));
+        assertTrue(getSet(instances, name).contains("item98"));
+        assertFalse(getSet(instances, name).contains("item99"));
+    }
+
+    @Test
+    public void testListener() throws Exception {
+        Config config = new Config();
+        final String name = "defSet";
+        final int count = 10;
+        final int insCount = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final CountDownLatch latchAdd = new CountDownLatch(count);
+        final CountDownLatch latchRemove = new CountDownLatch(count);
+
+        ItemListener listener = new ItemListener() {
+            public void itemAdded(ItemEvent item) {
+                latchAdd.countDown();
+            }
+
+            public void itemRemoved(ItemEvent item) {
+                latchRemove.countDown();
+            }
+        };
+
+        getSet(instances, name).addItemListener(listener, true);
+
+        for (int i = 0; i < count; i++) {
+            assertTrue(getSet(instances, name).add("item" + i));
+        }
+        for (int i = 0; i < count; i++) {
+            assertTrue(getSet(instances, name).remove("item" + i));
+        }
+        assertTrue(latchAdd.await(5, TimeUnit.SECONDS));
+        assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
+
+    }
+
+    private ISet getSet(HazelcastInstance[] instances, String name){
+        final Random rnd = new Random(System.currentTimeMillis());
+        return instances[rnd.nextInt(instances.length)].getSet(name);
+    }
+}

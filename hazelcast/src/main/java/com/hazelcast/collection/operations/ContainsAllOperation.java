@@ -51,11 +51,13 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
             }
             response = coll.containsAll(recordSet);
         }
-        response = false;
+        else {
+            response = false;
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+        super.writeInternal(out);
         out.writeInt(dataSet.size());
         for (Data data : dataSet) {
             data.writeData(out);
@@ -63,7 +65,7 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readData(in);
+        super.readInternal(in);
         int size = in.readInt();
         dataSet = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {

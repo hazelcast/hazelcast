@@ -44,7 +44,8 @@ public class RemoveIndexOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollection();
         try {
-            response = list.remove(index);
+            CollectionRecord record = list.remove(index);
+            response = record == null ? null : record.getObject();
         } catch (IndexOutOfBoundsException e) {
             response = e;
         }

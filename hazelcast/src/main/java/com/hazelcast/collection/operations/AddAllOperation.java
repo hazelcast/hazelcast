@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
@@ -49,11 +48,10 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
         Collection<CollectionRecord> coll = getOrCreateCollection();
         Collection<CollectionRecord> recordList = new ArrayList<CollectionRecord>(dataList.size());
         for (Data data : dataList) {
-            recordList.add(new CollectionRecord(container.nextId(), isBinary() ? data : toObject(data)));
+            recordList.add(new CollectionRecord(isBinary() ? data : toObject(data)));
         }
 
         if (index == -1) {

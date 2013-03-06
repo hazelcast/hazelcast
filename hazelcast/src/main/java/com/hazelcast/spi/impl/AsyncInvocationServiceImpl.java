@@ -144,7 +144,7 @@ public class AsyncInvocationServiceImpl implements AsyncInvocationService {
                 if (response instanceof Throwable) {
                     executionCallback.onFailure((Throwable) response);
                 } else {
-                    executionCallback.onResponse(response);
+                    executionCallback.onResponse(InvocationImpl.NULL_RESPONSE != response ? response : null);
                 }
             } catch (Throwable e) {
                 logger.log(Level.WARNING, e.getMessage(), e);

@@ -56,7 +56,7 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
     }
 
     public void afterRun() throws Exception {
-        if (!objects.isEmpty()) {
+        if (objects != null && !objects.isEmpty()) {
             CollectionContainer container = getOrCreateContainer();
             for (Map.Entry<Data, Collection<CollectionRecord>> entry : objects.entrySet()) {
                 Data key = entry.getKey();
@@ -74,7 +74,7 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
     }
 
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(objects.isEmpty());
+        return Boolean.TRUE.equals(objects != null && !objects.isEmpty());
     }
 
     public Operation getBackupOperation() {

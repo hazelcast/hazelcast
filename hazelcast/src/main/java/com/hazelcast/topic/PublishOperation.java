@@ -16,6 +16,8 @@
 
 package com.hazelcast.topic;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -53,7 +55,8 @@ public class PublishOperation extends AbstractNamedOperation {
     @Override
     public void run() throws Exception {
         TopicService service = getService();
-        TopicEvent topicEvent = new TopicEvent(name, message);
+        final Member publishingMember = getNodeEngine().getClusterService().getMember(getCallerAddress());
+        TopicEvent topicEvent = new TopicEvent(name, message, publishingMember);
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
         final Lock lock = service.getOrderLock(name);
