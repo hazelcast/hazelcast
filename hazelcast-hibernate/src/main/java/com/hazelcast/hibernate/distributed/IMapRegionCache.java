@@ -77,20 +77,24 @@ public class IMapRegionCache implements RegionCache {
         if (versionComparator != null && currentVersion != null) {
             if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
                 final CacheEntry currentEntry = (CacheEntry) value;
-                if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
-                    try {
-                        final CacheEntry previousEntry = (CacheEntry) map.get(key);
-                        if (previousEntry == null ||
-                            versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                            map.set(key, value, 0, TimeUnit.MILLISECONDS);
-                            return true;
-                        } else {
-                            return false;
+                try {
+                    if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
+                        try {
+                            final CacheEntry previousEntry = (CacheEntry) map.get(key);
+                            if (previousEntry == null ||
+                                versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                                map.set(key, value, 0, TimeUnit.MILLISECONDS);
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        } finally {
+                            map.unlock(key);
                         }
-                    } finally {
-                        map.unlock(key);
+                    } else {
+                        return false;
                     }
-                } else {
+                } catch (InterruptedException e) {
                     return false;
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
@@ -109,7 +113,11 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public SoftLock tryLock(final Object key, final Object version) {
-        return map.tryLock(key, lockTimeout, TimeUnit.MILLISECONDS) ? LOCK_SUCCESS : LOCK_FAILURE;
+        try {
+            return map.tryLock(key, lockTimeout, TimeUnit.MILLISECONDS) ? LOCK_SUCCESS : LOCK_FAILURE;
+        } catch (InterruptedException e) {
+            return LOCK_FAILURE;
+        }
     }
 
     public void unlock(final Object key, SoftLock lock) {

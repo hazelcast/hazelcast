@@ -380,7 +380,7 @@ public interface MultiMap<K, V> extends DistributedObject {
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
      *         if the waiting time elapsed before the lock was acquired.
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit);
+    boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
 
     /**
      * Releases the lock for the specified key. It never blocks and

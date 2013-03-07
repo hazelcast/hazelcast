@@ -24,6 +24,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -154,14 +155,22 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public void lock(K key) {
-        tryLock(key, -1, TimeUnit.MILLISECONDS);
+        try {
+            tryLock(key, -1, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            ExceptionUtil.sneakyThrow(e);
+        }
     }
 
     public boolean tryLock(K key) {
-        return tryLock(key, 0, TimeUnit.MILLISECONDS);
+        try {
+            return tryLock(key, 0, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
 
-    public boolean tryLock(K key, long time, TimeUnit timeunit) {
+    public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit);

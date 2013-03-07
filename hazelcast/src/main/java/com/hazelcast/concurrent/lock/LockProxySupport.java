@@ -65,10 +65,14 @@ public final class LockProxySupport {
     }
 
     public boolean tryLock(NodeEngine nodeEngine, Data key) {
-        return tryLock(nodeEngine, key, 0, TimeUnit.MILLISECONDS);
+        try {
+            return tryLock(nodeEngine, key, 0, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
 
-    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit) {
+    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit) throws InterruptedException {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         LockOperation operation = new LockOperation(namespace, key, ThreadContext.getThreadId(),
                 getTimeInMillis(timeout, timeunit));
@@ -78,7 +82,7 @@ public final class LockProxySupport {
             Future future = invocation.invoke();
             return (Boolean) future.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrowAllowInterrupted(t);
         }
     }
 

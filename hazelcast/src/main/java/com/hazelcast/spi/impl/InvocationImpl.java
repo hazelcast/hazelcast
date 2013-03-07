@@ -194,6 +194,7 @@ abstract class InvocationImpl implements Future, Invocation {
         final long maxCallTimeout = callTimeout * 2 > 0 ? callTimeout * 2 : Long.MAX_VALUE;
         final boolean longPolling = timeout > maxCallTimeout;
         int pollCount = 0;
+        InterruptedException interrupted = null;
 
         while (timeout >= 0) {
             final long pollTimeout = Math.min(maxCallTimeout, timeout);
@@ -206,6 +207,7 @@ abstract class InvocationImpl implements Future, Invocation {
                 // do not allow interruption while waiting for a response!
                 logger.log(Level.FINEST, Thread.currentThread().getName()  + " is interrupted while waiting " +
                         "response for operation " + op);
+                interrupted = e;
                 if (!isActive()) {
                     return e;
                 }
@@ -214,6 +216,9 @@ abstract class InvocationImpl implements Future, Invocation {
             pollCount++;
 
             if (response instanceof Throwable) {
+                if (interrupted != null) {
+                    return interrupted;
+                }
                 final InvocationAction action = op.onException((Throwable) response);
                 final int localInvokeCount = invokeCount;
                 if (action == InvocationAction.RETRY_INVOCATION && localInvokeCount < tryCount && timeout > 0) {
