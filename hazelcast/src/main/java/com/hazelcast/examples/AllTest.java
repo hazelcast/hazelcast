@@ -332,7 +332,11 @@ public class AllTest {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 int key = random.nextInt(size);
-                boolean locked = map.tryLock(key, 10, TimeUnit.MILLISECONDS);
+                boolean locked = false;
+                try {
+                    locked = map.tryLock(key, 10, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                }
                 if (locked) {
                     try {
                         Thread.sleep(1);

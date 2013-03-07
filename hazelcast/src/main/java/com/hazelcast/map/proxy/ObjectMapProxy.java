@@ -194,7 +194,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key));
     }
 
-    public boolean tryLock(final K key, final long time, final TimeUnit timeunit) {
+    public boolean tryLock(final K key, final long time, final TimeUnit timeunit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key), time, timeunit);
     }

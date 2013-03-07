@@ -658,7 +658,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (time == 0)
             locked = getMap().tryLock(key);
         else
-            locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
+            try {
+                locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                locked = false;
+            }
         println(locked);
     }
 

@@ -479,8 +479,12 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         map.lock("1");
         new Thread(new Runnable() {
             public void run() {
-                if (!map.tryLock("1", 100, TimeUnit.MILLISECONDS)) {
-                    latch.countDown();
+                try {
+                    if (!map.tryLock("1", 100, TimeUnit.MILLISECONDS)) {
+                        latch.countDown();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
                 if (!map.tryLock("1")) {
                     latch.countDown();
