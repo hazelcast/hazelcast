@@ -21,9 +21,8 @@ import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -41,7 +40,7 @@ import java.util.concurrent.TimeoutException;
 
 import static java.lang.String.valueOf;
 
-public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
+public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     final ProxyHelper proxyHelper;
     final private String name;
     final HazelcastClient client;
@@ -53,8 +52,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         this.proxyHelper = new ProxyHelper(client);
     }
 
-    public void flush(boolean flushAllEntries) {
-        proxyHelper.doCommand(Command.MFLUSH, new String[]{getName(), String.valueOf(flushAllEntries)});
+    public void flush() {
+        proxyHelper.doCommand(Command.MFLUSH, new String[]{getName()});
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -77,7 +76,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Data[] datas = dKey == null? null: new Data[]{dKey};
+        Data[] datas = dKey == null ? null : new Data[]{dKey};
         Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, datas);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.mapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
@@ -153,7 +152,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         Boolean evicted = Boolean.valueOf(protocol.args[0]);
         return evicted;
     }
-
 //    public EntryView<K, V> getMapEntry(final K key) {
 //        check(key);
 //        Data dKey = proxyHelper.toData(key);

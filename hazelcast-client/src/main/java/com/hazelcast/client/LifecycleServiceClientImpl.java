@@ -128,8 +128,8 @@ public class LifecycleServiceClientImpl implements LifecycleService {
                 synchronized (lifecycleLock) {
                     long begin = Clock.currentTimeMillis();
                     fireLifecycleEvent(SHUTTING_DOWN);
-                    hazelcastClient.doShutdown();
                     running.set(false);
+                    hazelcastClient.doShutdown();
                     long time = Clock.currentTimeMillis() - begin;
                     logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
                     fireLifecycleEvent(SHUTDOWN);

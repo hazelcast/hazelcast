@@ -27,7 +27,7 @@ public class SingleHazelcastClient {
     HazelcastInstance hz;
 
     public HazelcastClient getHazelcastClient() {
-        if (client == null || !client.isActive()) {
+        if (client == null || !client.getLifecycleService().isRunning()) {
             Config config = new Config();
             config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
             hz = Hazelcast.newHazelcastInstance(config);
@@ -44,7 +44,7 @@ public class SingleHazelcastClient {
         Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
         if (client != null) {
-            client.shutdown();
+            client.getLifecycleService().shutdown();
         }
         client = null;
         hz = null;

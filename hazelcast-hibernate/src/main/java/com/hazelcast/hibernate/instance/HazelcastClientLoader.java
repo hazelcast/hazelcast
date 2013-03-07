@@ -90,7 +90,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             return;
         }
         try {
-            client.shutdown();
+            client.getLifecycleService().shutdown();
             client = null;
         } catch (Exception e) {
             throw new CacheException(e);

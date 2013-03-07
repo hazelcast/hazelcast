@@ -33,18 +33,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ConnectionPool {
     static private final int POOL_SIZE = 2;
-
-    private final ConnectionManager connectionManager;
     private final SerializationService serializationService;
-
+    private final DefaultClientBinder binder;
     private final Router router;
     private final ConcurrentMap<Address, ObjectPool<Connection>> mPool = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final Connection initialConnection;
 
-    public ConnectionPool(ClientConfig config, final ConnectionManager connectionManager, final SerializationService serializationService) {
-        this.connectionManager = connectionManager;
+    public ConnectionPool(ClientConfig config, final SerializationService serializationService) {
         this.serializationService = serializationService;
+        binder = new DefaultClientBinder(serializationService, config.getCredentials());
         initialConnection = initialConnection(config);
         router = config.getRouter();
     }
@@ -60,13 +58,13 @@ public class ConnectionPool {
             try {
                 Address address = new Address(isa);
                 initialConnection = new Connection(address, 0, this.serializationService);
-                this.connectionManager.bindConnection(initialConnection);
+                binder.bind(initialConnection);
                 return initialConnection;
             } catch (IOException e) {
                 continue;
             }
         }
-        throw new RuntimeException("Couldn't connect to any address in the config");
+        throw new IllegalStateException("Unable to connect to any address in the config");
     }
 
     private ObjectPool<Connection> createPoolForTheMember(MemberImpl member) {
@@ -75,7 +73,7 @@ public class ConnectionPool {
             @Override
             public Connection create() throws IOException {
                 Connection connection = new Connection(address, 0, serializationService);
-                connectionManager.bindConnection(connection);
+                binder.bind(initialConnection);
                 return connection;
             }
         });
