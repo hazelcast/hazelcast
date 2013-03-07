@@ -50,6 +50,7 @@ public class ConditionImpl implements ICondition {
         try {
             await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            // TODO: @mm - what if interrupted?
             ExceptionUtil.sneakyThrow(e);
         }
     }
@@ -81,7 +82,7 @@ public class ConditionImpl implements ICondition {
             Future f = inv2.invoke();
             return Boolean.TRUE.equals(f.get());
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrowAllowInterrupted(t);
         }
     }
 

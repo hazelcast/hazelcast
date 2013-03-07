@@ -35,7 +35,11 @@ public class TryLockHandler extends MultiMapCommandHandler {
         boolean result;
         if (protocol.args.length > 1) {
             long time = Long.valueOf(protocol.args[1]);
-            result = proxy.tryLock(key, time, TimeUnit.MILLISECONDS);
+            try {
+                result = proxy.tryLock(key, time, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                result = false;
+            }
         } else
             result = proxy.tryLock(key);
         return protocol.success(String.valueOf(result));
