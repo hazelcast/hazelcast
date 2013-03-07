@@ -16,15 +16,19 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class PredicateBuilder implements IndexAwarePredicate {
+public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
     public String attribute = null;
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
@@ -86,5 +90,24 @@ public class PredicateBuilder implements IndexAwarePredicate {
             return ((IndexAwarePredicate) p).isIndexed(queryContext);
         }
         return false;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attribute);
+        out.writeInt(lsPredicates.size());
+        for (Predicate predicate : lsPredicates) {
+            out.writeObject(predicate);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        attribute = in.readUTF();
+        int size = in.readInt();
+        lsPredicates = new ArrayList<Predicate>(size);
+        for (int i = 0; i < size; i++) {
+            lsPredicates.add((Predicate) in.readObject());
+        }
     }
 }

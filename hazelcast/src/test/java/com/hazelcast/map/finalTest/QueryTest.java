@@ -88,7 +88,7 @@ public class QueryTest extends TestUtil {
             map.put("0", v);
             fail();
         } catch (Throwable e) {
-            assertEquals("There is no suitable accessor for 'qwe'", e.getMessage().split(":"));
+            assertTrue(e.getMessage().contains("There is no suitable accessor for 'qwe'"));
         }
     }
 
@@ -188,7 +188,13 @@ public class QueryTest extends TestUtil {
         map.put("2", new ValueType("two"));
         map.put("3", new ValueType("three"));
         final Predicate predicate = new SqlPredicate("typeName in ('one','two')");
-        testIterator(map.keySet().iterator(), 3);
+//        testIterator(map.keySet().iterator(), 3);
+        System.out.println("sz keyset:" + map.keySet(predicate).size());
+        System.out.println("sz entryset:" + map.entrySet(predicate).size());
+        System.out.println("sz values:" + map.values(predicate).size());
+
+        System.out.println("sz keyset iter:" + map.keySet(predicate).iterator());
+
         testIterator(map.keySet(predicate).iterator(), 2);
         testIterator(map.entrySet().iterator(), 3);
         testIterator(map.entrySet(predicate).iterator(), 2);
@@ -197,7 +203,7 @@ public class QueryTest extends TestUtil {
     }
 
     private void testIterator(final Iterator it, int size) {
-        for (int i = 0; i < size + 1; i++) {
+        for (int i = 0; i < size *2 ; i++) {
             assertTrue("i is " + i, it.hasNext());
         }
         for (int i = 0; i < size; i++) {
@@ -254,12 +260,12 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void testQueryWithTTL() throws Exception {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         Config cfg = new Config();
         MapConfig mapConfig = new MapConfig();
         int TTL = 2;
         mapConfig.setTimeToLiveSeconds(TTL);
-        mapConfig.setName("employess");
+        mapConfig.setName("employees");
         cfg.addMapConfig(mapConfig);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
@@ -435,6 +441,7 @@ public class QueryTest extends TestUtil {
         }
     }
 
+    // todo fails
     @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
         Config cfg = new Config();
@@ -544,6 +551,7 @@ public class QueryTest extends TestUtil {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
+    // todo fails
     @Test
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
@@ -645,6 +653,7 @@ public class QueryTest extends TestUtil {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
+    // todo fails
     @Test
     public void testNullIndexing() {
         Config cfg = new Config();
@@ -828,7 +837,7 @@ public class QueryTest extends TestUtil {
     @Test
     public void testSecondMemberAfterAddingIndexes() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -907,6 +916,7 @@ public class QueryTest extends TestUtil {
     /**
      * Github issues 98 and 131
      */
+    // todo fails
     @Test
     public void testPredicateStringAttributesWithIndex() {
         Config cfg = new Config();
@@ -982,6 +992,7 @@ public class QueryTest extends TestUtil {
                 " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
+    // todo fails
     @Test
     public void testPredicateEnumAttribute() {
         Config cfg = new Config();
@@ -1153,6 +1164,7 @@ public class QueryTest extends TestUtil {
         }
     }
 
+    // todo fails
     @Test
     public void testInvalidSqlPredicate() {
         Config cfg = new Config();
@@ -1165,31 +1177,31 @@ public class QueryTest extends TestUtil {
             map.values(new SqlPredicate("invalid_sql"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
-            assertEquals("There is no suitable accessor for 'invalid_sql'", e.getMessage());
+            assertTrue(e.getMessage().contains("There is no suitable accessor for 'invalid_sql'"));
         }
         try {
             map.values(new SqlPredicate("invalid sql"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
-            assertEquals("Invalid SQL: [invalid sql]", e.getMessage());
+            assertTrue(e.getMessage().contains("Invalid SQL: [invalid sql]"));
         }
         try {
             map.values(new SqlPredicate("invalid and sql"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
-            assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
+            assertTrue(e.getMessage().contains("There is no suitable accessor for 'invalid'"));
         }
         try {
             map.values(new SqlPredicate("invalid sql and"));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
-            assertEquals("There is no suitable accessor for 'invalid'", e.getMessage());
+            assertTrue(e.getMessage().contains("There is no suitable accessor for 'invalid'"));
         }
         try {
             map.values(new SqlPredicate(""));
             fail("Should fail because of invalid SQL!");
         } catch (RuntimeException e) {
-            assertEquals("Invalid SQL: []", e.getMessage());
+            assertTrue(e.getMessage().contains("Invalid SQL: []"));
         }
         assertEquals(2, map.values(new SqlPredicate("age=1 and name like 'e%'")).size());
     }
@@ -1197,17 +1209,18 @@ public class QueryTest extends TestUtil {
     /**
      * test for issue #359
      */
+    // todo fails
     @Test
     public void testIndexCleanupOnMigration() throws InterruptedException {
         Config cfg = new Config();
-        final StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        final int n = 6;
+        final int runCount = 500;
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(n);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         final String mapName = "testIndexCleanupOnMigration";
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
-        final int n = 6;
-        final int runCount = 500;
         ExecutorService ex = Executors.newFixedThreadPool(n);
         final CountDownLatch latch = new CountDownLatch(n);
         final AtomicInteger countdown = new AtomicInteger(n * runCount);
