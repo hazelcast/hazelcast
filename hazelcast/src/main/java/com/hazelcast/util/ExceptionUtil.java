@@ -47,7 +47,7 @@ public final class ExceptionUtil {
         }
     }
 
-    public static RuntimeException rethrowAllowInterrupted(final Throwable t) throws InterruptedException {
+    public static <T extends Throwable> RuntimeException rethrow(final Throwable t, Class<T> allowedType) throws T {
         if (t instanceof Error) {
             if (t instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
@@ -58,15 +58,19 @@ public final class ExceptionUtil {
         } else if (t instanceof ExecutionException) {
             final Throwable cause = t.getCause();
             if (cause != null) {
-                throw rethrowAllowInterrupted(cause);
+                throw rethrow(cause, allowedType);
             } else {
                 throw new HazelcastException(t);
             }
-        } else if (t instanceof InterruptedException) {
-            throw (InterruptedException) t;
+        } else if (allowedType.isAssignableFrom(t.getClass())) {
+            throw (T) t;
         } else {
             throw new HazelcastException(t);
         }
+    }
+
+    public static RuntimeException rethrowAllowInterrupted(final Throwable t) throws InterruptedException {
+        return rethrow(t, InterruptedException.class);
     }
 
     @SuppressWarnings("unchecked")
