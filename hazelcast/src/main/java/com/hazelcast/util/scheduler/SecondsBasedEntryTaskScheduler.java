@@ -149,7 +149,6 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
             if (entries == null || entries.isEmpty()) return;
             Set<ScheduledEntry<K,V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
             for (K key : entries.keySet()) {
-                // TODO: there is a concurrency problem here. you should put the object you can remove to a separate list then send them
                 Integer removed = secondsOfKeys.remove(key);
                 if (removed != null ) {
                     values.add(entries.get(key));
