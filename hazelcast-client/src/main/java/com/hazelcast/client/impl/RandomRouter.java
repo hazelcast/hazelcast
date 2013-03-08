@@ -20,34 +20,49 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.Router;
 import com.hazelcast.core.*;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * The RandomRouter randomly selects a member to route to.
+ */
 public class RandomRouter implements Router, MembershipListener {
-    List<Member> members = new CopyOnWriteArrayList<Member>();
-    Random random = new Random(System.currentTimeMillis());
+    final AtomicReference<List<Member>> membersRef = new AtomicReference<List<Member>>();
+    final Random random = new Random(System.currentTimeMillis());
 
     @Override
     public void init(HazelcastInstance h) {
         Cluster cluster = h.getCluster();
         cluster.addMembershipListener(this);
+        List<Member> members = new LinkedList<Member>();
         members.addAll(cluster.getMembers());
+        membersRef.set(members);
     }
 
     @Override
     public Member next() {
-        int i = random.nextInt(members.size());
-        return members.get(i);
+        List<Member> members = membersRef.get();
+        if(members.isEmpty()){
+            return null;
+        }
+        int index = random.nextInt(members.size());
+        return members.get(index);
     }
 
     @Override
     public void memberAdded(MembershipEvent membershipEvent) {
-        members.add(membershipEvent.getMember());
+        List<Member> newMembers = new LinkedList<Member>(membersRef.get());
+        newMembers.add(membershipEvent.getMember());
+        membersRef.set(newMembers);
     }
 
     @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
-        members.remove(membershipEvent.getMember());
+        List<Member> newMembers = new LinkedList<Member>(membersRef.get());
+        newMembers.remove(membershipEvent.getMember());
+        membersRef.set(newMembers);
     }
 }
