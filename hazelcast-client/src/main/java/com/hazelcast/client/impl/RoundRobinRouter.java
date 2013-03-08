@@ -24,14 +24,18 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * A {@link Router} that uses round robin to select a member to route to.
+ */
 public class RoundRobinRouter implements Router, MembershipListener {
     final AtomicLong index = new AtomicLong(0);
-    final AtomicReference<Member[]> memberRef = new AtomicReference(new Member[]{});
+    final AtomicReference<Member[]> memberRef = new AtomicReference<Member[]>(new Member[]{});
 
     @Override
     public void init(HazelcastInstance h) {
         Cluster cluster = h.getCluster();
         cluster.addMembershipListener(this);
+
         for(Member member: cluster.getMembers()){
             addMember(member);
         }
@@ -40,6 +44,9 @@ public class RoundRobinRouter implements Router, MembershipListener {
     @Override
     public Member next() {
         Member[] members = memberRef.get();
+        if(members.length == 0){
+            return null;
+        }
         return members[(int) (index.getAndAdd(1) % members.length)];
     }
 

@@ -20,8 +20,24 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 
+/**
+ * The Router can be used for load balancing between cluster members.
+ *
+ * A Router belongs to a single {@link HazelcastInstance}.
+ */
 public interface Router {
+
+    /**
+     * Initializes the Router with the given {@link HazelcastInstance}.
+     *
+     * @param h  the HazelcastInstance. This value will not be null.
+     */
     public void init(HazelcastInstance h);
 
+    /**
+     * Returns the next Member to route to.
+     *
+     * @return the next Member to route to, or null if no member is available.
+     */
     public Member next();
 }

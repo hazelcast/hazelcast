@@ -21,6 +21,11 @@ import com.hazelcast.client.Router;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 
+/**
+ * A {@link Router} that always routes to a single member, no matter if that member is part of the cluster or not.
+ *
+ * The StaticRouter can be useful for debugging.
+ */
 public class StaticRouter implements Router {
     final Member member;
 
