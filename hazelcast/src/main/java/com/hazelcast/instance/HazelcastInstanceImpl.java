@@ -36,12 +36,12 @@ import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
-import com.hazelcast.transaction.TransactionCtxImpl;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,8 +73,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ThreadGroup threadGroup;
 
-    final NodeEngine nodeEngine;
-
     final ConcurrentMap<String, Object> userContext;
 
     HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
@@ -86,7 +84,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         final ConcurrentMap<String, Object> cfgUserContext = config.getUserContext();
         userContext = cfgUserContext != null ? cfgUserContext : new ConcurrentHashMap<String, Object>();
         node = new Node(this, config, nodeContext);
-        nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
         lifecycleService.fireLifecycleEvent(STARTING);
         node.start();
@@ -136,8 +133,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(LockService.SERVICE_NAME, node.getSerializationService().toData(key));
     }
 
-    public TransactionContext newTransactionContext() {
-        return new TransactionCtxImpl(this);
+    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        return node.nodeEngine.getTransactionManagerService().executeTransaction(task);
     }
 
     public IExecutorService getExecutorService(final String name) {

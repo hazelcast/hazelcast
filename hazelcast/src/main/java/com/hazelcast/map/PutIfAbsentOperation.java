@@ -30,9 +30,6 @@ public class PutIfAbsentOperation extends BasePutOperation {
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         dataOldValue = mapService.toData(recordStore.putIfAbsent(dataKey, dataValue, ttl));
         successful = dataOldValue == null;
     }

@@ -33,6 +33,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.transaction.TransactionManagerServiceImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -51,7 +52,7 @@ public class NodeEngineImpl implements NodeEngine {
     final EventServiceImpl eventService;
     final AsyncInvocationServiceImpl asyncInvocationService;
     final WaitNotifyServiceImpl waitNotifyService;
-    final TransactionManagerService transactionManagerService;
+    final TransactionManagerServiceImpl transactionManagerService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -63,7 +64,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         asyncInvocationService = new AsyncInvocationServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this, new WaitingOpProcessorImpl());
-        transactionManagerService = new TransactionManagerService(this);
+        transactionManagerService = new TransactionManagerServiceImpl(this);
     }
 
     @PrivateApi
@@ -254,7 +255,6 @@ public class NodeEngineImpl implements NodeEngine {
     public void onMemberLeft(MemberImpl member) {
         waitNotifyService.onMemberLeft(member.getAddress());
         operationService.onMemberLeft(member);
-        transactionManagerService.onMemberLeft(member);
         eventService.onMemberLeft(member);
     }
 

@@ -50,8 +50,9 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
             this.scheduledExecutorService = scheduledExecutorService;
             this.entryProcessor = entryProcessor;
             this.bulk = (entryProcessor instanceof BulkScheduledEntryProcessor);
+        } else {
+            throw new IllegalArgumentException();
         }
-        throw new IllegalArgumentException();
     }
 
     public boolean schedule(long delayMillis, K key, V value) {

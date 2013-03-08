@@ -32,7 +32,7 @@ import com.hazelcast.map.client.*;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
-import com.hazelcast.map.proxy.TransactionalMapProxy;
+import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -54,7 +54,7 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -420,7 +420,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             mapPartition.clear();
         }
         container.maps.clear();
-        container.transactions.clear(); // TODO: not sure?
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
@@ -451,46 +450,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return record;
     }
 
-    public void prepare(String txnId, int partitionId) throws TransactionException {
-        System.out.println(nodeEngine.getThisAddress() + " MapService prepare " + txnId);
-        PartitionContainer pc = partitionContainers[partitionId];
-        TransactionLog txnLog = pc.getTransactionLog(txnId);
-        int maxBackupCount = 1; //txnLog.getMaxBackupCount();
-        try {
-            nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupPrepareOperation(txnLog), 0, partitionId,
-                    maxBackupCount, 60);
-        } catch (Throwable e) {
-            throw new TransactionException(e);
-        }
-    }
-
-    public void commit(String txnId, int partitionId) {
-        System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
-        getPartitionContainer(partitionId).commit(txnId);
-        int maxBackupCount = 1; //txnLog.getMaxBackupCount();
-        try {
-            nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupCommitOperation(txnId), 0, partitionId,
-                    maxBackupCount, 60);
-        } catch (Throwable e) {
-            throw new HazelcastException(e);
-        }
-    }
-
-    public void rollback(String txnId, int partitionId) {
-        System.out.println(nodeEngine.getThisAddress() + " MapService commit " + txnId);
-        getPartitionContainer(partitionId).rollback(txnId);
-        int maxBackupCount = 1; //txnLog.getMaxBackupCount();
-        try {
-            nodeEngine.getOperationService().takeBackups(SERVICE_NAME, new MapTxnBackupRollbackOperation(txnId), 0, partitionId,
-                    maxBackupCount, 60);
-        } catch (Throwable e) {
-            throw new HazelcastException(e);
-        }
-    }
-
     @SuppressWarnings("unchecked")
-    public TransactionalMapProxy createTransactionalObject(Object id) {
-        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine);
+    public TransactionalMapProxy createTransactionalObject(Object id, Transaction transaction) {
+        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine, transaction);
     }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
@@ -941,7 +903,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public static String getNamespace(String name) {
         return MapService.SERVICE_NAME + '/' + name;
     }
-
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();

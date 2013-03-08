@@ -17,8 +17,7 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.logging.Level;
 
@@ -27,27 +26,18 @@ public class RollbackOperation extends BaseTxOperation {
     public RollbackOperation() {
     }
 
-    public RollbackOperation(String txnId, String[] services) {
-        super(txnId, services);
+    public RollbackOperation(String txnId) {
+        super(txnId);
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        TransactionManagerService txService = getService();
-        txService.rollback(getCallerUuid(), txnId, getPartitionId(), services);
-        final ILogger logger = nodeEngine.getLogger(getClass());
-        for (String serviceName : services) {
-            final TransactionalService service = nodeEngine.getService(serviceName);
-            if (service == null) {
-                logger.log(Level.WARNING, "Unknown service: " + serviceName);
-                continue;
-            }
-            try {
-                service.rollback(txnId, getPartitionId());
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, "Problem while service["
-                        + serviceName + "] rolling-back the transaction[" + txnId + "]!", e);
-            }
+        final NodeEngine nodeEngine = getNodeEngine();
+        TransactionManagerServiceImpl txService = getService();
+        try {
+            txService.rollback(getCallerUuid(), txnId, getPartitionId());
+        } catch (Throwable e) {
+            final ILogger logger = nodeEngine.getLogger(getClass());
+            logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + txnId + "]!", e);
         }
     }
 

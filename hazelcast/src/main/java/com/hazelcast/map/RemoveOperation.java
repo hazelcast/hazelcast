@@ -31,9 +31,6 @@ public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDa
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         dataOldValue = mapService.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }

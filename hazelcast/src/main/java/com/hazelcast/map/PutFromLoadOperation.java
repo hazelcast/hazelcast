@@ -28,19 +28,12 @@ public class PutFromLoadOperation extends BasePutOperation {
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         recordStore.putTransient(dataKey, dataValue, ttl);
     }
 
     @Override
     public Object getResponse() {
         return null;
-    }
-
-    public boolean shouldBackup() {
-        return true;
     }
 
     @Override

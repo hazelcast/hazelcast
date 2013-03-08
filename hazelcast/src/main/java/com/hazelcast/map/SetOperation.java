@@ -27,21 +27,13 @@ public class SetOperation extends BasePutOperation {
     public SetOperation() {
     }
 
-    @Override
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         recordStore.set(dataKey, dataValue, ttl);
     }
 
     @Override
     public Object getResponse() {
         return null;
-    }
-
-    public boolean shouldBackup() {
-        return true;
     }
 
     @Override

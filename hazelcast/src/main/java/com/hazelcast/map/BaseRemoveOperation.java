@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
@@ -29,20 +28,9 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     public BaseRemoveOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
-        setTxnId(txnId);
     }
 
     public BaseRemoveOperation() {
-    }
-
-    protected final boolean prepareTransaction() {
-        if (txnId != null) {
-            partitionContainer.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
-            ResponseHandler responseHandler = getResponseHandler();
-            responseHandler.sendResponse(null);
-            return true;
-        }
-        return false;
     }
 
     public void afterRun() {
@@ -63,11 +51,11 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
+        return mapContainer.getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+        return mapContainer.getBackupCount();
     }
 
     public boolean shouldBackup() {

@@ -19,7 +19,9 @@ package com.hazelcast.map;
 import java.io.Serializable;
 import java.util.Map;
 
-public interface EntryProcessor extends Serializable {
-    Object process(Map.Entry entry);
-    EntryBackupProcessor getBackupProcessor();
+public interface EntryProcessor<K, V> extends Serializable {
+
+    Object process(Map.Entry<K, V> entry);
+
+    EntryBackupProcessor<K, V> getBackupProcessor();
 }

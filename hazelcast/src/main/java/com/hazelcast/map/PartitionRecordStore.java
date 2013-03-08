@@ -94,8 +94,28 @@ public class PartitionRecordStore implements RecordStore {
         return false;
     }
 
+    public boolean lock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
+    }
+
+    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
+    }
+
+    public boolean unlock(Data key, String caller, int threadId) {
+        return lockStore != null && lockStore.unlock(key, caller, threadId);
+    }
+
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
+    }
+
+    public boolean isLockedBy(Data key, String caller, int threadId) {
+        return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
+    }
+
+    public boolean canAcquireLock(Data key, String caller, int threadId) {
+        return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
     public boolean canRun(LockAwareOperation lockAwareOperation) {
@@ -239,6 +259,7 @@ public class PartitionRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
         }
+        // TODO: @mm - Data.equals() or Object.equals() should be decided due to record type.
         if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             records.remove(dataKey);

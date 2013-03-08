@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Concurrent, distributed, observable and queryable map.
@@ -159,18 +158,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      */
     boolean remove(Object key, Object value);
 
+
+    void delete(Object key);
+
     /**
      * If this map has a MapStore this method flushes
      * all the local dirty entries by calling MapStore.storeAll() and/or MapStore.deleteAll()
      */
     void flush(boolean flushAllEntries);
-
-    /**
-     * Returns the name of this map
-     *
-     * @return name of this map
-     */
-    String getName();
 
     /**
      * Returns the entries for the given keys.
@@ -287,11 +282,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
      * @param timeout  maximum time to wait for acquiring the lock
      *                 for the key
      * @param timeunit time unit for the timeout
-     * @return removed value of the entry
-     * @throws java.util.concurrent.TimeoutException
-     *          if lock cannot be acquired for the given key within timeout
+     * @return <tt>true</tt> if the remove is successful, <tt>false</tt>
+     *         otherwise.
      */
-    Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException;
+    boolean tryRemove(K key, long timeout, TimeUnit timeunit) ;
 
     /**
      * Tries to put the given key, value into this map within specified
@@ -834,5 +828,4 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, DistributedObject {
 
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
-    void cleanUpNearCache();
 }

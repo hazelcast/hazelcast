@@ -16,9 +16,9 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.Transaction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
@@ -26,17 +26,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.core.Transaction.State.*;
-import static com.hazelcast.transaction.TransactionManagerService.SERVICE_NAME;
+import static com.hazelcast.transaction.Transaction.State.*;
+import static com.hazelcast.transaction.TransactionManagerServiceImpl.SERVICE_NAME;
 
-public final class TransactionImpl implements Transaction {
+final class TransactionImpl implements Transaction {
 
     private final NodeEngine nodeEngine;
-    private final Map<Integer, Collection<String>> participants = new HashMap<Integer, Collection<String>>(3); // partitionId -> services
+    private final Set<Integer> partitions = new HashSet<Integer>(5);
 
     private final String txnId = UUID.randomUUID().toString();
     private State state = NO_TXN;
-    private long timeoutSeconds = TimeUnit.MINUTES.toSeconds(5);
+    private long timeoutMillis = TimeUnit.MINUTES.toMillis(2);
+    private long startTime = 0L;
 
     public TransactionImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -46,54 +47,45 @@ public final class TransactionImpl implements Transaction {
         return txnId;
     }
 
-    public void setTransactionTimeout(int seconds)  {
-        timeoutSeconds = seconds;
+    public void addPartition(int partitionId) {
+        partitions.add(partitionId);
     }
 
-    public void attachParticipant(int partitionId, String serviceName) {
-        Collection<String> services = participants.get(partitionId);
-        if (services == null) {
-            services = new HashSet<String>(3);
-            participants.put(partitionId, services);
-        }
-        services.add(serviceName);
-    }
-
-    public void begin() throws IllegalStateException {
+    void begin() throws IllegalStateException {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
+        startTime = Clock.currentTimeMillis();
         state = ACTIVE;
     }
 
-    public void commit() throws TransactionException, IllegalStateException {
+    void commit() throws TransactionException, IllegalStateException {
         if (state != ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
         }
+        checkTimeout();
         try {
             state = PREPARING;
-            final List<Future> futures = new ArrayList<Future>(participants.size());
+            final List<Future> futures = new ArrayList<Future>(partitions.size());
             final OperationService operationService = nodeEngine.getOperationService();
-            for (Map.Entry<Integer, Collection<String>> entry : participants.entrySet()) {
-                final int partitionId = entry.getKey();
-                PrepareOperation op = new PrepareOperation(txnId, getServicesArray(entry.getValue()));
+            for (Integer partitionId : partitions) {
+                PrepareOperation op = new PrepareOperation(txnId);
                 futures.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId)
                         .build().invoke());
             }
             for (Future future : futures) {
-                future.get(timeoutSeconds, TimeUnit.SECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             }
             state = PREPARED;
             futures.clear();
             state = COMMITTING;
-            for (Map.Entry<Integer, Collection<String>> entry : participants.entrySet()) {
-                final int partitionId = entry.getKey();
-                CommitOperation op = new CommitOperation(txnId, getServicesArray(entry.getValue()));
+            for (Integer partitionId : partitions) {
+                CommitOperation op = new CommitOperation(txnId);
                 futures.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId)
                         .build().invoke());
             }
             for (Future future : futures) {
-                future.get(timeoutSeconds, TimeUnit.SECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             }
             state = COMMITTED;
         } catch (Throwable e) {
@@ -105,25 +97,26 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
-    private static String[] getServicesArray(Collection<String> services) {
-        return services.toArray(new String[services.size()]);
+    private void checkTimeout() throws TransactionException {
+        if (startTime + timeoutMillis < Clock.currentTimeMillis()) {
+            throw new TransactionException("Transaction is timed-out!");
+        }
     }
 
-    public void rollback() throws IllegalStateException {
+    void rollback() throws IllegalStateException {
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }
         state = ROLLING_BACK;
         try {
-            List<Future> futures = new ArrayList<Future>(participants.size());
-            for (Map.Entry<Integer, Collection<String>> entry : participants.entrySet()) {
-                final int partitionId = entry.getKey();
-                RollbackOperation op = new RollbackOperation(txnId, getServicesArray(entry.getValue()));
+            List<Future> futures = new ArrayList<Future>(partitions.size());
+            for (Integer partitionId : partitions) {
+                RollbackOperation op = new RollbackOperation(txnId);
                 futures.add(nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, partitionId)
                         .build().invoke());
             }
             for (Future future : futures) {
-                future.get(timeoutSeconds, TimeUnit.SECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             }
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
@@ -132,12 +125,16 @@ public final class TransactionImpl implements Transaction {
         }
     }
 
-    public int getStatus() {
-        return state.getValue();
-    }
-
     public State getState() {
         return state;
+    }
+
+    void setTimeout(int timeout, TimeUnit unit) {
+        timeoutMillis = unit.toMillis(timeout);
+    }
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     @Override
@@ -146,7 +143,7 @@ public final class TransactionImpl implements Transaction {
         sb.append("Transaction");
         sb.append("{txnId='").append(txnId).append('\'');
         sb.append(", state=").append(state);
-        sb.append(", timeoutSeconds=").append(timeoutSeconds);
+        sb.append(", timeoutMillis=").append(timeoutMillis);
         sb.append('}');
         return sb.toString();
     }

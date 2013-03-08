@@ -25,6 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.transaction.TransactionManagerService;
 
 /**
  * @mdogan 8/24/12
@@ -48,6 +49,8 @@ public interface NodeEngine {
     AsyncInvocationService getAsyncInvocationService();
 
     WaitNotifyService getWaitNotifyService();
+
+    TransactionManagerService getTransactionManagerService();
 
     Address getThisAddress();
 

@@ -36,15 +36,16 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         successful = recordStore.tryRemove(dataKey);
     }
 
     public void afterRun() {
         if (successful)
             super.afterRun();
+    }
+
+    public Object getResponse() {
+        return successful;
     }
 
     @Override

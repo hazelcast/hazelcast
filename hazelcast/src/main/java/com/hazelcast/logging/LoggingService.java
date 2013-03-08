@@ -24,4 +24,6 @@ public interface LoggingService {
     void removeLogListener(LogListener logListener);
 
     ILogger getLogger(String name);
+
+    ILogger getLogger(Class type);
 }

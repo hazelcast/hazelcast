@@ -14,41 +14,49 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.transaction;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
-public class MapTxnBackupPrepareOperation extends AbstractOperation {
-    TransactionLog txnLog;
+/**
+ * @mdogan 2/27/13
+ */
 
-    public MapTxnBackupPrepareOperation(TransactionLog txnLog) {
-        this.txnLog = txnLog;
+public class BroadcastRollbackOperation extends AbstractOperation {
+
+    private String txnId;
+
+    public BroadcastRollbackOperation() {
     }
 
-    public MapTxnBackupPrepareOperation() {
+    public BroadcastRollbackOperation(String txnId) {
+        this.txnId = txnId;
     }
 
-    public void run() {
-        int partitionId = getPartitionId();
-        MapService mapService = (MapService) getService();
-        System.out.println(getNodeEngine().getThisAddress() + " backupPrepare " + txnLog.txnId);
-        mapService.getPartitionContainer(partitionId).putTransactionLog(txnLog.txnId, txnLog);
+    public void run() throws Exception {
+        final NodeEngine nodeEngine = getNodeEngine();
+        nodeEngine.getLogger(getClass()).log(Level.INFO, "Rolling-back transaction[" + txnId + "]!");
+        TransactionManagerServiceImpl service = getService();
+        try {
+            service.rollbackAll(txnId);
+        } catch (Exception e) {
+            nodeEngine.getLogger(getClass()).log(Level.WARNING, e.getMessage(), e);
+        }
     }
 
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        txnLog.writeData(out);
+        out.writeUTF(txnId);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        txnLog = new TransactionLog();
-        txnLog.readData(in);
+        txnId = in.readUTF();
     }
 }

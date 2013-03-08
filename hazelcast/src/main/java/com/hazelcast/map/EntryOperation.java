@@ -30,28 +30,29 @@ import java.util.Map;
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
     EntryProcessor entryProcessor;
-    EntryBackupProcessor entryBackupProcessor;
-    Object response;
-    Map.Entry entry;
-    MapService mapService;
+
+    transient Object response;
+    transient Map.Entry entry;
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
         this.entryProcessor = entryProcessor;
-        this.entryBackupProcessor = entryProcessor.getBackupProcessor();
     }
 
     public EntryOperation() {
     }
 
     public void run() {
-        mapService = (MapService) getService();
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
         NodeEngine nodeEngine = mapService.getNodeEngine();
         entry = new AbstractMap.SimpleEntry(nodeEngine.toObject(dataKey), nodeEngine.toObject(mapEntry.getValue()));
         response = nodeEngine.toData(entryProcessor.process(entry));
         recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+    }
+
+    public void afterRun() throws Exception {
+        super.afterRun();
+        invalidateNearCaches();
     }
 
     @Override
@@ -63,14 +64,12 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         entryProcessor = in.readObject();
-        entryBackupProcessor = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(entryProcessor);
-        out.writeObject(entryBackupProcessor);
     }
 
     @Override
@@ -84,7 +83,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public Operation getBackupOperation() {
-        return new EntryBackupOperation(name, dataKey, entryBackupProcessor);
+        return new EntryBackupOperation(name, dataKey, entryProcessor.getBackupProcessor());
     }
 
     public boolean shouldBackup() {
@@ -92,11 +91,11 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
+        return mapContainer.getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+        return mapContainer.getBackupCount();
     }
 
 }

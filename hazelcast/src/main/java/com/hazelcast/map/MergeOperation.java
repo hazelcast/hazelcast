@@ -55,10 +55,6 @@ public class MergeOperation extends BasePutOperation {
         invalidateNearCaches();
     }
 
-    public boolean shouldBackup() {
-        return true;
-    }
-
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);

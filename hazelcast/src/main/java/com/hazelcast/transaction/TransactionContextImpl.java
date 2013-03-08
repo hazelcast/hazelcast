@@ -16,38 +16,29 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Transaction;
-import com.hazelcast.core.TransactionContext;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.map.MapService;
+import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * @mdogan 2/26/13
  */
-public class TransactionCtxImpl implements TransactionContext {
+class TransactionContextImpl implements TransactionContext {
 
-    private final HazelcastInstanceImpl hazelcastInstance;
     private final NodeEngineImpl nodeEngine;
 
     private final TransactionImpl transaction;
 
-    public TransactionCtxImpl(HazelcastInstanceImpl hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
-        this.nodeEngine = hazelcastInstance.node.nodeEngine;
-        this.transaction  = new TransactionImpl(nodeEngine);
+    public TransactionContextImpl(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.transaction  = new TransactionImpl(this.nodeEngine);
     }
 
-    public Transaction beginTransaction() {
+    public void beginTransaction() {
         transaction.begin();
-        return transaction;
-    }
-
-    public Transaction getTransaction() {
-        return transaction;
     }
 
     public void commitTransaction() throws TransactionException {
@@ -60,17 +51,23 @@ public class TransactionCtxImpl implements TransactionContext {
 
     @SuppressWarnings("unchecked")
     public <K, V> TransactionalMap<K, V> getMap(String name) {
-        return (TransactionalMap<K, V>) getDistributedObject(MapService.SERVICE_NAME, name);
+        return (TransactionalMap<K, V>) getTransactionalObject(MapService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
-    public DistributedObject getDistributedObject(String serviceName, Object id) {
+    public <E> TransactionalQueue<E> getQueue(String name) {
+        return (TransactionalQueue<E>) getTransactionalObject(QueueService.SERVICE_NAME, name);
+    }
+
+    @SuppressWarnings("unchecked")
+    public TransactionalObject getTransactionalObject(String serviceName, Object id) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
-        final TransactionalService service = nodeEngine.getService(serviceName);
-        final TransactionalObject transactionalObject = service.createTransactionalObject(id);
-        transactionalObject.setTransaction(transaction);
-        return transactionalObject;
+        final Object service = nodeEngine.getService(serviceName);
+        if (service instanceof TransactionalService) {
+            return ((TransactionalService) service).createTransactionalObject(id, transaction);
+        }
+        throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
     }
 }

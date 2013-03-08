@@ -38,7 +38,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
-import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.transaction.TransactionManagerServiceImpl;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -69,7 +69,7 @@ class ServiceManager {
         registerService(ClusterServiceImpl.SERVICE_NAME, node.getClusterService());
         registerService(PartitionServiceImpl.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
-        registerService(TransactionManagerService.SERVICE_NAME, nodeEngine.getTransactionManagerService());
+        registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
 
         final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfigConfig();
         if (servicesConfigConfig != null) {

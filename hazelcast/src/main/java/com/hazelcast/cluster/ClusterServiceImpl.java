@@ -867,6 +867,22 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return memberMap != null ? memberMap.get(address) : null;
     }
 
+    public MemberImpl getMember(String uuid) {
+        if (uuid == null) {
+            return null;
+        }
+        final Map<Address, MemberImpl> memberMap = membersRef.get();
+        if (memberMap == null) {
+            return null;
+        }
+        for (MemberImpl member : memberMap.values()) {
+            if (uuid.equals(member.getUuid())) {
+                return member;
+            }
+        }
+        return null;
+    }
+
     private void setMembers(final Map<Address, MemberImpl> memberMap) {
         final Map<Address, MemberImpl> members = Collections.unmodifiableMap(memberMap);
         // make values(), keySet() and entrySet() to be cached

@@ -29,20 +29,18 @@ import java.io.IOException;
 abstract class BaseTxOperation extends Operation implements PartitionAwareOperation {
 
     protected String txnId;
-    protected String[] services;
 
     protected BaseTxOperation() {
     }
 
-    protected BaseTxOperation(String txnId, String[] services) {
+    protected BaseTxOperation(String txnId) {
         this.txnId = txnId;
-        this.services = services;
     }
 
-    public final void beforeRun() throws Exception {
+    public void beforeRun() throws Exception {
     }
 
-    public final void afterRun() throws Exception {
+    public void afterRun() throws Exception {
     }
 
     public final boolean returnsResponse() {
@@ -51,6 +49,10 @@ abstract class BaseTxOperation extends Operation implements PartitionAwareOperat
 
     public final Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    public final String getServiceName() {
+        return TransactionManagerServiceImpl.SERVICE_NAME;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

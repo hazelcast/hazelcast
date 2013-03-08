@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.ThreadContext;
@@ -395,6 +396,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private void handleOperationError(Operation op, Throwable e) {
+        // TODO: @mm - Handle OOME thrown by operations!
         if (e instanceof RetryableException) {
             final Level level = op.returnsResponse() ? Level.FINEST : Level.WARNING;
             logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
@@ -513,12 +515,16 @@ final class OperationServiceImpl implements OperationService {
 
     public void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
             throws ExecutionException, TimeoutException, InterruptedException {
+        if (!(op instanceof BackupOperation)) {
+            throw new IllegalArgumentException("Op should be BackupOperation!");
+        }
         op.setServiceName(serviceName);
+        final int retryCount = timeoutSeconds * 2;
         backupCount = Math.min(node.getClusterService().getSize() - 1, backupCount);
         if (backupCount > 0) {
-            List<Future> backupOps = new ArrayList<Future>(backupCount);
+            final List<BackupFuture> backupFutures = new ArrayList<BackupFuture>(backupCount);
             PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
-            for (int i = 0; i < backupCount; i++) {
+            for (int i = offset; i < backupCount; i++) {
                 int replicaIndex = i + 1;
                 Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
                 if (replicaTarget != null) {
@@ -526,14 +532,13 @@ final class OperationServiceImpl implements OperationService {
                         // Normally shouldn't happen!!
                         throw new IllegalStateException("Normally shouldn't happen!!");
                     } else {
-                        backupOps.add(createInvocationBuilder(serviceName, op, partitionId).setReplicaIndex(replicaIndex)
-                                .build().invoke());
+                        final Future future = createInvocationBuilder(serviceName, op, partitionId).setReplicaIndex(replicaIndex)
+                                .build().invoke();
+                        backupFutures.add(new BackupFuture(future, partitionId, replicaIndex, retryCount));
                     }
                 }
             }
-            for (Future backupOp : backupOps) {
-                backupOp.get(timeoutSeconds, TimeUnit.SECONDS);
-            }
+            waitBackupResponses(backupFutures);
         }
     }
 
@@ -611,6 +616,10 @@ final class OperationServiceImpl implements OperationService {
     void shutdown() {
         logger.log(Level.FINEST, "Stopping operation threads...");
         executor.shutdown();
+        final Object response = new HazelcastInstanceNotActiveException();
+        for (Call call : mapCalls.values()) {
+            call.offerResponse(response);
+        }
         mapCalls.clear();
         for (int i = 0; i < ownerLocks.length; i++) {
             ownerLocks[i] = null;

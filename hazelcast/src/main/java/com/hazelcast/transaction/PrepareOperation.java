@@ -16,28 +16,42 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.logging.Level;
 
 public class PrepareOperation extends BaseTxOperation {
+
+    private transient boolean error = false;
 
     public PrepareOperation() {
     }
 
-    public PrepareOperation(String txnId, String[] services) {
-        super(txnId, services);
+    public PrepareOperation(String txnId) {
+        super(txnId);
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        TransactionManagerService txService = getService();
-        txService.prepare(getCallerUuid(), txnId, getPartitionId(), services);
-        for (String serviceName : services) {
-            final TransactionalService service = nodeEngine.getService(serviceName);
-            if (service == null) {
-                throw new TransactionException("Unknown service: " + serviceName);
+        final NodeEngine nodeEngine = getNodeEngine();
+        TransactionManagerServiceImpl txService = getService();
+        try {
+            txService.prepare(getCallerUuid(), txnId, getPartitionId());
+        } catch (Exception e) {
+            error = true;
+            throw e;
+        }
+    }
+
+    public void afterRun() throws Exception {
+        if (error) {
+            try {
+                TransactionManagerServiceImpl txService = getService();
+                txService.rollback(getCallerUuid(), txnId, getPartitionId());
+            } catch (Throwable e) {
+                final ILogger logger = getNodeEngine().getLogger(getClass());
+                logger.log(Level.WARNING, "Error while rolling-back failed prepare!", e);
             }
-            service.prepare(txnId, getPartitionId());
         }
     }
 }

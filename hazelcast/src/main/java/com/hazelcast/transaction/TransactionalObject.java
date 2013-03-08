@@ -20,6 +20,4 @@ import com.hazelcast.core.DistributedObject;
 
 public interface TransactionalObject extends DistributedObject {
 
-    void setTransaction(TransactionImpl transaction);
-
 }

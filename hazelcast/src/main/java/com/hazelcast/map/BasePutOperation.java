@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
@@ -28,23 +29,13 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId) {
         super(name, dataKey, value, -1);
-        setTxnId(txnId);
     }
 
     public BasePutOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
         super(name, dataKey, value, ttl);
-        setTxnId(txnId);
     }
 
     public BasePutOperation() {
-    }
-
-    protected final boolean prepareTransaction() {
-        if (txnId != null) {
-            partitionContainer.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, dataValue, false, false));
-            return true;
-        }
-        return false;
     }
 
     public void afterRun() {
@@ -55,6 +46,10 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         mapContainer.getMapOperationCounter().incrementPuts(Clock.currentTimeMillis() - getStartTime());
     }
 
+    public boolean shouldBackup() {
+        return true;
+    }
+
     public final Operation getBackupOperation() {
         return new PutBackupOperation(name, dataKey, dataValue, ttl);
     }
@@ -63,13 +58,13 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return mapContainer.getAsyncBackupCount();
     }
 
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
     public final int getSyncBackupCount() {
         return mapContainer.getBackupCount();
+    }
+
+    public void onWaitExpire() {
+        final ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(null);
     }
 
     @Override

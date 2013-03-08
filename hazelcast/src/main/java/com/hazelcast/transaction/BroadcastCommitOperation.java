@@ -14,39 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.transaction;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
-public class MapTxnBackupRollbackOperation extends AbstractOperation {
-    String txnId;
+/**
+ * @mdogan 2/27/13
+ */
 
-    public MapTxnBackupRollbackOperation(String txnId) {
+public class BroadcastCommitOperation extends AbstractOperation {
+
+    private String txnId;
+
+    public BroadcastCommitOperation() {
+    }
+
+    public BroadcastCommitOperation(String txnId) {
         this.txnId = txnId;
     }
 
-    public MapTxnBackupRollbackOperation() {
+    public void run() throws Exception {
+        final NodeEngine nodeEngine = getNodeEngine();
+        nodeEngine.getLogger(getClass()).log(Level.INFO, "Committing transaction[" + txnId + "]!");
+        TransactionManagerServiceImpl service = getService();
+        try {
+            service.commitAll(txnId);
+        } catch (Exception e) {
+            nodeEngine.getLogger(getClass()).log(Level.WARNING, e.getMessage(), e);
+        }
     }
 
-    public void run() {
-        int partitionId = getPartitionId();
-        MapService mapService = (MapService) getService();
-        System.out.println(getNodeEngine().getThisAddress() + " backupRollback " + txnId);
-        PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-        partitionContainer.rollback(txnId);
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(txnId);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         txnId = in.readUTF();

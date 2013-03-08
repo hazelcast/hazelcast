@@ -42,13 +42,35 @@ public final class ExceptionUtil {
             } else {
                 throw new HazelcastException(t);
             }
-            // TODO: handle remote and local interruptions separately!
-//        } else if (t instanceof InterruptedException){
-//            Thread.currentThread().interrupt();
-//            throw new HazelcastException(t);
         } else {
             throw new HazelcastException(t);
         }
+    }
+
+    public static <T extends Throwable> RuntimeException rethrow(final Throwable t, Class<T> allowedType) throws T {
+        if (t instanceof Error) {
+            if (t instanceof OutOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
+            }
+            throw (Error) t;
+        } else if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        } else if (t instanceof ExecutionException) {
+            final Throwable cause = t.getCause();
+            if (cause != null) {
+                throw rethrow(cause, allowedType);
+            } else {
+                throw new HazelcastException(t);
+            }
+        } else if (allowedType.isAssignableFrom(t.getClass())) {
+            throw (T) t;
+        } else {
+            throw new HazelcastException(t);
+        }
+    }
+
+    public static RuntimeException rethrowAllowInterrupted(final Throwable t) throws InterruptedException {
+        return rethrow(t, InterruptedException.class);
     }
 
     @SuppressWarnings("unchecked")

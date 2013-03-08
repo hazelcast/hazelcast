@@ -19,9 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 
 public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
 
@@ -29,25 +27,12 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
 
     public EvictOperation(String name, Data dataKey, String txnId) {
         super(name, dataKey);
-        setTxnId(txnId);
     }
 
     public EvictOperation() {
     }
 
-    protected boolean prepareTransaction() {
-        if (txnId != null) {
-            partitionContainer.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
-            getResponseHandler().sendResponse(null);
-            return true;
-        }
-        return false;
-    }
-
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         evicted = recordStore.evict(dataKey);
     }
 

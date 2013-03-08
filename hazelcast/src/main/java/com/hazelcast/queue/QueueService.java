@@ -26,7 +26,9 @@ import com.hazelcast.partition.MigrationType;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
+import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
+import com.hazelcast.transaction.Transaction;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,7 +43,7 @@ import java.util.concurrent.ConcurrentMap;
  * Date: 11/14/12
  * Time: 12:21 AM
  */
-public class QueueService implements ManagedService, MigrationAwareService,
+public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
         RemoteService, EventPublishingService<QueueEvent, ItemListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
@@ -196,5 +198,9 @@ public class QueueService implements ManagedService, MigrationAwareService,
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    public TransactionalQueueProxy createTransactionalObject(Object id, Transaction transaction) {
+        return new TransactionalQueueProxy(String.valueOf(id), nodeEngine, this, transaction);
     }
 }

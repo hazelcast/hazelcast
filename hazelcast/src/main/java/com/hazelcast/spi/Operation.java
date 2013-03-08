@@ -213,7 +213,12 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    private transient boolean writeDataFlag = false;
     public final void writeData(ObjectDataOutput out) throws IOException {
+        if (writeDataFlag) {
+            throw new IOException("Cannot call writeData() from a sub-class!");
+        }
+        writeDataFlag = true;
         out.writeUTF(serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
@@ -223,9 +228,15 @@ public abstract class Operation implements DataSerializable {
         out.writeLong(callTimeout);
         out.writeUTF(callerUuid);
         writeInternal(out);
+        writeDataFlag = false;
     }
 
+    private transient boolean readDataFlag = false;
     public final void readData(ObjectDataInput in) throws IOException {
+        if (readDataFlag) {
+            throw new IOException("Cannot call readData() from a sub-class!");
+        }
+        readDataFlag = true;
         serviceName = in.readUTF();
         partitionId = in.readInt();
         replicaIndex = in.readInt();
@@ -235,6 +246,7 @@ public abstract class Operation implements DataSerializable {
         callTimeout = in.readLong();
         callerUuid = in.readUTF();
         readInternal(in);
+        readDataFlag = false;
     }
 
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;

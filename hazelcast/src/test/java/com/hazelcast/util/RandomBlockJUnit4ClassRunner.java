@@ -79,13 +79,6 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         return methods;
     }
 
-    //
-    protected void validateInstanceMethods(List<Throwable> errors) {
-        if (indexStr == null || concurrencyLevelStr == null) {
-            super.validateInstanceMethods(errors);
-        }
-    }
-
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
         long start = Clock.currentTimeMillis();
@@ -98,7 +91,7 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         });
         System.out.println("Started Running Test: " + testName);
         super.runChild(method, notifier);
-        long took = (Clock.currentTimeMillis() - start) / 1000;
-        System.out.println(String.format("Finished Running Test: %s in %d seconds.", testName, took));
+        float took = (float)(Clock.currentTimeMillis() - start) / 1000;
+        System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
     }
 }

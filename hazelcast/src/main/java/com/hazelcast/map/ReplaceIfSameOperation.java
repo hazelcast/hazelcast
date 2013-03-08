@@ -38,9 +38,6 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         successful = recordStore.replace(dataKey, testValue, dataValue);
     }
 

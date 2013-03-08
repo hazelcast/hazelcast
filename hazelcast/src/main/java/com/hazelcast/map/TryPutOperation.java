@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,9 +35,6 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         successful = recordStore.tryPut(dataKey, dataValue, ttl);
     }
 

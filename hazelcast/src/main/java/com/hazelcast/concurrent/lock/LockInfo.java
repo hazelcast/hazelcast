@@ -82,10 +82,24 @@ class LockInfo implements DataSerializable {
         return false;
     }
 
+    public boolean extendTTL(String caller, int threadId, long ttl) {
+        if (isLockedBy(caller, threadId)) {
+            if (expirationTime < Long.MAX_VALUE) {
+                setExpirationTime(expirationTime - Clock.currentTimeMillis() + ttl);
+            }
+            return true;
+        }
+        return false;
+    }
+
     private void setExpirationTime(long ttl) {
-        expirationTime = Clock.currentTimeMillis() + ttl;
-        if (expirationTime < 0) {
+        if (ttl < 0) {
             expirationTime = Long.MAX_VALUE;
+        } else {
+            expirationTime = Clock.currentTimeMillis() + ttl;
+            if (expirationTime < 0) {
+                expirationTime = Long.MAX_VALUE;
+            }
         }
     }
 

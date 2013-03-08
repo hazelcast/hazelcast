@@ -35,7 +35,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
@@ -59,22 +58,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 return cachedData;
         }
         GetOperation operation = new GetOperation(name, key);
-        return (Data) doTxnAwareOperation(key, operation);
-    }
-
-    private Object doTxnAwareOperation(Data key, KeyBasedMapOperation operation) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        operation.setTxnId(getCurrentTransactionId());
-        operation.setThreadId(ThreadContext.getThreadId());
-        try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future f = invocation.invoke();
-            return f.get();
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+        return (Data) invokeOperation(key, operation);
     }
 
     protected Future<Data> getAsyncInternal(final Data key) {
@@ -92,28 +76,27 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutOperation operation = new PutOperation(name, key, value, null, getTimeInMillis(ttl, timeunit));
-        return (Data) doTxnalOperation(key, operation);
+        return (Data) invokeOperation(key, operation);
     }
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
         TryPutOperation operation = new TryPutOperation(name, key, value, null, getTimeInMillis(timeout, timeunit));
-        return (Boolean) doTxnalOperation(key, operation);
+        return (Boolean) invokeOperation(key, operation);
     }
 
     protected Data putIfAbsentInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, null, getTimeInMillis(ttl, timeunit));
-        return (Data) doTxnalOperation(key, operation);
+        return (Data) invokeOperation(key, operation);
     }
 
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutTransientOperation operation = new PutTransientOperation(name, key, value, null, getTimeInMillis(ttl, timeunit));
-        doTxnalOperation(key, operation);
+        invokeOperation(key, operation);
     }
 
-    private Object doTxnalOperation(Data key, KeyBasedMapOperation operation) {
+    private Object invokeOperation(Data key, KeyBasedMapOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        operation.setTxnId(attachTxnParticipant(partitionId));
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -142,37 +125,37 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
         ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue, null);
-        return (Boolean) doTxnalOperation(key, operation);
+        return (Boolean) invokeOperation(key, operation);
     }
 
     protected Data replaceInternal(final Data key, final Data value) {
         ReplaceOperation operation = new ReplaceOperation(name, key, value, null);
-        return (Data) doTxnalOperation(key, operation);
+        return (Data) invokeOperation(key, operation);
     }
 
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         SetOperation operation = new SetOperation(name, key, value, null, ttl);
-        doTxnalOperation(key, operation);
+        invokeOperation(key, operation);
     }
 
     protected boolean evictInternal(final Data key) {
         EvictOperation operation = new EvictOperation(name, key, null);
-        return (Boolean) doTxnalOperation(key, operation);
+        return (Boolean) invokeOperation(key, operation);
     }
 
     protected Data removeInternal(Data key) {
         RemoveOperation operation = new RemoveOperation(name, key, null);
-        return (Data) doTxnalOperation(key, operation);
+        return (Data) invokeOperation(key, operation);
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
         RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value, null);
-        return (Boolean) doTxnalOperation(key, operation);
+        return (Boolean) invokeOperation(key, operation);
     }
 
-    protected Data tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+    protected boolean tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) {
         TryRemoveOperation operation = new TryRemoveOperation(name, key, null, getTimeInMillis(timeout, timeunit));
-        return (Data) doTxnalOperation(key, operation);
+        return (Boolean) invokeOperation(key, operation);
     }
 
     protected Future<Data> removeAsyncInternal(final Data key) {
@@ -191,6 +174,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     }
 
     protected boolean containsKeyInternal(Data key) {
+        // TODO: containsKey should check near-cache first!
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
@@ -473,9 +457,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
-    }
-
-    public void cleanUpNearCache() {
     }
 
     protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {

@@ -26,5 +26,5 @@ public interface ScheduledEntryProcessor<K,V> {
      * @param taskScheduler
      * @param entry
      */
-    void process(EntryTaskScheduler taskScheduler, ScheduledEntry<K,V> entry);
+    void process(EntryTaskScheduler<K,V> taskScheduler, ScheduledEntry<K,V> entry);
 }

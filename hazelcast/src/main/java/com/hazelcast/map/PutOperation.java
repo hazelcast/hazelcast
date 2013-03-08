@@ -29,19 +29,12 @@ public class PutOperation extends BasePutOperation implements IdentifiedDataSeri
     }
 
     public void run() {
-        if (prepareTransaction()) {
-            return;
-        }
         dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, ttl));
     }
 
     @Override
     public Object getResponse() {
         return dataOldValue;
-    }
-
-    public boolean shouldBackup() {
-        return true;
     }
 
     @Override
