@@ -35,6 +35,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
 import com.hazelcast.instance.TestUtil;
 
 
@@ -203,7 +204,7 @@ public class QueryTest extends TestUtil {
     }
 
     private void testIterator(final Iterator it, int size) {
-        for (int i = 0; i < size *2 ; i++) {
+        for (int i = 0; i < size * 2; i++) {
             assertTrue("i is " + i, it.hasNext());
         }
         for (int i = 0; i < size; i++) {
@@ -441,15 +442,11 @@ public class QueryTest extends TestUtil {
         }
     }
 
-    // todo fails
     @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
         imap.addIndex("age", true);
@@ -463,11 +460,15 @@ public class QueryTest extends TestUtil {
             imap.putAll(temp);
         }
         assertEquals(50000, imap.size());
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
         for (int i = 0; i < 1; i++) {
             Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
             assertEquals(6400, entries.size());
         }
     }
+
 
     @Test
     public void testOneMemberWithoutIndex() {
@@ -1256,7 +1257,7 @@ public class QueryTest extends TestUtil {
                     } catch (AssertionError e) {
                         e.printStackTrace();
                     } catch (Throwable e) {
-                        System.err.println(e.getClass().getName() + "-> " +e.getMessage());
+                        System.err.println(e.getClass().getName() + "-> " + e.getMessage());
                     } finally {
                         latch.countDown();
                     }

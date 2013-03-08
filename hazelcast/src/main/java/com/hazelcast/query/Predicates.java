@@ -285,8 +285,8 @@ public final class Predicates {
                         if (smallestIndexedResult == null) {
                             smallestIndexedResult = s;
                         } else if (s.size() < smallestIndexedResult.size()) {
+                            otherIndexedResults.add(smallestIndexedResult);
                             smallestIndexedResult = s;
-                            otherIndexedResults.add(s);
                         } else {
                             otherIndexedResults.add(s);
                         }
