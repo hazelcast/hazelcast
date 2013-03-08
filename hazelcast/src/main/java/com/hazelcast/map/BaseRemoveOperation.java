@@ -20,34 +20,17 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    private transient long startTime;
     protected transient Data dataOldValue;
 
-    public BaseRemoveOperation(String name, Data dataKey, String txnId) {
+    public BaseRemoveOperation(String name, Data dataKey) {
         super(name, dataKey);
-        setTxnId(txnId);
     }
 
     public BaseRemoveOperation() {
-    }
-
-    protected final boolean prepareTransaction() {
-        if (txnId != null) {
-            partitionContainer.addTransactionLogItem(txnId, new TransactionLogItem(name, dataKey, null, false, true));
-            ResponseHandler responseHandler = getResponseHandler();
-            responseHandler.sendResponse(null);
-            return true;
-        }
-        return false;
-    }
-
-    public void run() {
-        startTime = Clock.currentTimeMillis();
     }
 
     public void afterRun() {
@@ -55,7 +38,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
         invalidateNearCaches();
-        mapService.getMapContainer(name).getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - startTime);
+        mapService.getMapContainer(name).getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - getStartTime());
     }
 
     @Override
@@ -68,11 +51,11 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
+        return mapContainer.getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+        return mapContainer.getBackupCount();
     }
 
     public boolean shouldBackup() {

@@ -30,7 +30,6 @@ import com.hazelcast.util.QueryResultStream;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
@@ -120,6 +119,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return removeInternal(key, value);
     }
 
+    public void delete(Object key) {
+    }
+
     public boolean containsKey(Object k) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data key = nodeEngine.toData(k);
@@ -144,10 +146,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         lockSupport.unlock(nodeEngine, k);
     }
 
-    public Object tryRemove(final K key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+    public boolean tryRemove(final K key, final long timeout, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = nodeEngine.toData(key);
-        return nodeEngine.toObject(tryRemoveInternal(k, timeout, timeunit));
+        return tryRemoveInternal(k, timeout, timeunit);
     }
 
     public Future<V> getAsync(final K k) {
@@ -194,7 +196,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key));
     }
 
-    public boolean tryLock(final K key, final long time, final TimeUnit timeunit) {
+    public boolean tryLock(final K key, final long time, final TimeUnit timeunit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key), time, timeunit);
     }

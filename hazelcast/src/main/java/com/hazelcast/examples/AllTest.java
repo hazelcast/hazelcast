@@ -332,7 +332,11 @@ public class AllTest {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 int key = random.nextInt(size);
-                boolean locked = map.tryLock(key, 10, TimeUnit.MILLISECONDS);
+                boolean locked = false;
+                try {
+                    locked = map.tryLock(key, 10, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                }
                 if (locked) {
                     try {
                         Thread.sleep(1);
@@ -431,11 +435,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                try {
-                    map.tryRemove(random.nextInt(size), 10, TimeUnit.MILLISECONDS);
-                } catch (TimeoutException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
+                map.tryRemove(random.nextInt(size), 10, TimeUnit.MILLISECONDS);
             }
         }, 10);
         addOperation(operations, new Runnable() {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -43,12 +42,11 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
         this.mapName = mapName;
     }
 
-    @Override
-    public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+    public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
-            Operation operation = new EvictOperation(mapName, key, null);
+            Operation operation = new EvictOperation(mapName, key);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             try {
                 Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)

@@ -51,7 +51,11 @@ public class MapLockHandler extends MapCommandHandler {
         } else if (timeout == 0) {
             locked = dataMapProxy.tryLock(key);
         } else {
-            locked = dataMapProxy.tryLock(key, timeout, TimeUnit.MILLISECONDS);
+            try {
+                locked = dataMapProxy.tryLock(key, timeout, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                locked = false;
+            }
         }
         return protocol.success(String.valueOf(locked));
     }

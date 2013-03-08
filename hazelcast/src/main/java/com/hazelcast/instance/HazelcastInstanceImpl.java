@@ -24,7 +24,7 @@ import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
-import com.hazelcast.concurrent.lock.SharedLockService;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -36,11 +36,12 @@ import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,8 +73,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ThreadGroup threadGroup;
 
-    final NodeEngine nodeEngine;
-
     final ConcurrentMap<String, Object> userContext;
 
     HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
@@ -85,7 +84,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         final ConcurrentMap<String, Object> cfgUserContext = config.getUserContext();
         userContext = cfgUserContext != null ? cfgUserContext : new ConcurrentHashMap<String, Object>();
         node = new Node(this, config, nodeContext);
-        nodeEngine = node.nodeEngine;
         logger = node.getLogger(getClass().getName());
         lifecycleService.fireLifecycleEvent(STARTING);
         node.start();
@@ -132,15 +130,15 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ILock getLock(Object key) {
-        return getDistributedObject(SharedLockService.SERVICE_NAME, node.getSerializationService().toData(key));
+        return getDistributedObject(LockService.SERVICE_NAME, node.getSerializationService().toData(key));
+    }
+
+    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        return node.nodeEngine.getTransactionManagerService().executeTransaction(task);
     }
 
     public IExecutorService getExecutorService(final String name) {
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
-    }
-
-    public Transaction getTransaction() {
-        return ThreadContext.createOrGetTransaction(this);
     }
 
     public IdGenerator getIdGenerator(final String name) {

@@ -16,48 +16,42 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.exception.TransactionException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
 
-import java.io.IOException;
+import java.util.logging.Level;
 
-public class PrepareOperation extends AbstractOperation {
-    String txnId = null;
-    Object response = null;
+public class PrepareOperation extends BaseTxOperation {
 
-    public PrepareOperation(String txnId) {
-        this.txnId = txnId;
-    }
+    private transient boolean error = false;
 
     public PrepareOperation() {
     }
 
-    public void run() {
-        TransactionalService txnalService = (TransactionalService) getService();
+    public PrepareOperation(String txnId) {
+        super(txnId);
+    }
+
+    public void run() throws Exception {
+        final NodeEngine nodeEngine = getNodeEngine();
+        TransactionManagerServiceImpl txService = getService();
         try {
-            txnalService.prepare(txnId, getPartitionId());
-        } catch (TransactionException e) {
-            response = e;
+            txService.prepare(getCallerUuid(), txnId, getPartitionId());
+        } catch (Exception e) {
+            error = true;
+            throw e;
         }
     }
 
-    @Override
-    public Object getResponse() {
-        return response;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
+    public void afterRun() throws Exception {
+        if (error) {
+            try {
+                TransactionManagerServiceImpl txService = getService();
+                txService.rollback(getCallerUuid(), txnId, getPartitionId());
+            } catch (Throwable e) {
+                final ILogger logger = getNodeEngine().getLogger(getClass());
+                logger.log(Level.WARNING, "Error while rolling-back failed prepare!", e);
+            }
+        }
     }
 }

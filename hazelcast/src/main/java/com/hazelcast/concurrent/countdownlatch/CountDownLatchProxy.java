@@ -50,17 +50,13 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 //    }
 
     public boolean await(long timeout, TimeUnit unit) throws MemberLeftException, InterruptedException {
-        return awaitInternal(unit.toMillis(timeout));
-    }
-
-    private boolean awaitInternal(long timeout) throws MemberLeftException, InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
                 new AwaitOperation(name, timeout), partitionId).build();
         try {
             return (Boolean) nodeEngine.toObject(inv.invoke().get());
         } catch (ExecutionException e) {
-            throw ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrowAllowInterrupted(e);
         }
     }
 

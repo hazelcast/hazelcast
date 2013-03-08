@@ -21,7 +21,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.NodeEngine;
@@ -32,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data> {
 
@@ -103,7 +101,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return removeInternal(key, value);
     }
 
-    public Data tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+    public void delete(Object key) {
+    }
+
+    public boolean tryRemove(final Data key, final long timeout, final TimeUnit timeunit) {
         return tryRemoveInternal(key, timeout, timeunit);
     }
 
@@ -147,7 +148,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return lockSupport.tryLock(getNodeEngine(), key);
     }
 
-    public boolean tryLock(final Data key, final long time, final TimeUnit timeunit) {
+    public boolean tryLock(final Data key, final long time, final TimeUnit timeunit) throws InterruptedException {
         return lockSupport.tryLock(getNodeEngine(), key, time, timeunit);
     }
 

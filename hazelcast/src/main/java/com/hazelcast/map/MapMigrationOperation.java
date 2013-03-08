@@ -23,6 +23,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,7 +34,9 @@ import java.util.Map.Entry;
  */
 public class MapMigrationOperation extends AbstractOperation {
 
+    // TODO: @mm - simplify please...
     private Map<String, Map<Data, Record>> data;
+    private Collection<TransactionItem> transactionItems;
 
     public MapMigrationOperation() {
     }
@@ -53,6 +57,7 @@ public class MapMigrationOperation extends AbstractOperation {
             }
             data.put(name, map);
         }
+        transactionItems = container.transactionItems.values();
     }
 
     public void run() {
@@ -69,6 +74,12 @@ public class MapMigrationOperation extends AbstractOperation {
                     record.setStatistics(recordEntry.getStatistics());
                     recordStore.getRecords().put(entry.getKey(), record);
                 }
+            }
+        }
+        if (transactionItems != null && !transactionItems.isEmpty()) {
+            for (TransactionItem item : transactionItems) {
+                final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
+                partitionContainer.addTransactionItem(item);
             }
         }
     }
@@ -92,6 +103,15 @@ public class MapMigrationOperation extends AbstractOperation {
             }
             data.put(name, map);
         }
+        int txSize = in.readInt();
+        if (txSize > 0) {
+            transactionItems = new ArrayList<TransactionItem>(txSize);
+            for (int i = 0; i < txSize; i++) {
+                TransactionItem item = new TransactionItem();
+                item.readData(in);
+                transactionItems.add(item);
+            }
+        }
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
@@ -103,6 +123,13 @@ public class MapMigrationOperation extends AbstractOperation {
             for (Entry<Data, Record> entry : map.entrySet()) {
                 entry.getKey().writeData(out);
                 out.writeObject(entry.getValue());
+            }
+        }
+        final int txSize = transactionItems.size();
+        out.writeInt(txSize);
+        if (txSize > 0) {
+            for (TransactionItem item : transactionItems) {
+                item.writeData(out);
             }
         }
     }

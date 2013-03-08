@@ -18,13 +18,11 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 public class MultiResultSet extends AbstractSet<QueryableEntry> {
+    private Set<Object> index = null;
     private final List<ConcurrentMap<Data, QueryableEntry>> resultSets = new ArrayList<ConcurrentMap<Data, QueryableEntry>>();
 
     public MultiResultSet() {
@@ -37,12 +35,30 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
     @Override
     public boolean contains(Object o) {
         QueryableEntry entry = (QueryableEntry) o;
-        for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
-            if (resultSet.containsKey(entry.getIndexKey())) {
-                return true;
+        if (index != null) {
+            return checkFromIndex(entry);
+        } else {
+            if (resultSets.size() > 3) {
+                index = new HashSet<Object>();
+                for (ConcurrentMap<Data, QueryableEntry> result : resultSets) {
+                    for (QueryableEntry queryableEntry : result.values()) {
+                        index.add(queryableEntry.getIndexKey());
+                    }
+                }
+                return checkFromIndex(entry);
+            } else {
+                for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
+                    if (resultSet.containsKey(entry.getIndexKey())) {
+                        return true;
+                    }
+                }
+                return false;
             }
         }
-        return false;
+    }
+
+    private boolean checkFromIndex(QueryableEntry entry) {
+        return index.contains(entry.getIndexKey());
     }
 
     @Override

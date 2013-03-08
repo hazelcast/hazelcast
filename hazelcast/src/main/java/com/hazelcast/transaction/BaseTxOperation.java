@@ -14,41 +14,52 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.transaction;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public class MapTxnBackupPrepareOperation extends AbstractOperation {
-    TransactionLog txnLog;
+/**
+ * @mdogan 2/26/13
+ */
+abstract class BaseTxOperation extends Operation implements PartitionAwareOperation {
 
-    public MapTxnBackupPrepareOperation(TransactionLog txnLog) {
-        this.txnLog = txnLog;
+    protected String txnId;
+
+    protected BaseTxOperation() {
     }
 
-    public MapTxnBackupPrepareOperation() {
+    protected BaseTxOperation(String txnId) {
+        this.txnId = txnId;
     }
 
-    public void run() {
-        int partitionId = getPartitionId();
-        MapService mapService = (MapService) getService();
-        System.out.println(getNodeEngine().getThisAddress() + " backupPrepare " + txnLog.txnId);
-        mapService.getPartitionContainer(partitionId).putTransactionLog(txnLog.txnId, txnLog);
+    public void beforeRun() throws Exception {
     }
 
-    @Override
+    public void afterRun() throws Exception {
+    }
+
+    public final boolean returnsResponse() {
+        return true;
+    }
+
+    public final Object getResponse() {
+        return Boolean.TRUE;
+    }
+
+    public final String getServiceName() {
+        return TransactionManagerServiceImpl.SERVICE_NAME;
+    }
+
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        txnLog.writeData(out);
+        out.writeUTF(txnId);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnLog = new TransactionLog();
-        txnLog.readData(in);
+        txnId = in.readUTF();
     }
 }

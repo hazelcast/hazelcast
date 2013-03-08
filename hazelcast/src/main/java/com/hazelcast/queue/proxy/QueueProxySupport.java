@@ -46,10 +46,17 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         this.config = nodeEngine.getConfig().getQueueConfig(name);
     }
 
-    boolean offerInternal(Data data, long timeout) {
+    boolean offerInternal(Data data, long timeout) throws InterruptedException {
         checkNull(data);
         OfferOperation operation = new OfferOperation(name, timeout, data);
-        return (Boolean) invoke(operation);
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return (Boolean) nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
+        }
     }
 
     public int size() {
@@ -67,9 +74,16 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         return invokeData(operation);
     }
 
-    Object pollInternal(long timeout) {
+    Object pollInternal(long timeout) throws InterruptedException {
         PollOperation operation = new PollOperation(name, timeout);
-        return invokeData(operation);
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
+            Future f = inv.invoke();
+            return f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
+        }
     }
 
     boolean removeInternal(Data data) {

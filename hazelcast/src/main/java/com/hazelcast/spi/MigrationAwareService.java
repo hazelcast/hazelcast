@@ -29,6 +29,7 @@ public interface MigrationAwareService {
 
     void rollbackMigration(MigrationServiceEvent migrationServiceEvent);
 
+    // TODO: @mm - do we still need to ask max backup count??
     int getMaxBackupCount();
 
     String getServiceName();

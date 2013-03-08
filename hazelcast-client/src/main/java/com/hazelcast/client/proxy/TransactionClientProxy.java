@@ -17,7 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.transaction.Transaction;
 import com.hazelcast.nio.protocol.Command;
 
 public class TransactionClientProxy implements Transaction {
@@ -56,6 +56,23 @@ public class TransactionClientProxy implements Transaction {
         return proxyHelper.doCommandAsInt(Command.TRXSTATUS, new String[]{});
     }
 
+    public void addPartition(int partitionId) {
+
+    }
+
+    public String getTxnId() {
+        return null;
+    }
+
+    public State getState() {
+        return null;
+    }
+
+    @Override
+    public long getTimeoutMillis() {
+        return 0;
+    }
+
     public void rollback() throws IllegalStateException {
         Context context = Context.get();
         checkNull(context);
@@ -64,5 +81,9 @@ public class TransactionClientProxy implements Transaction {
     }
 
     public void setTransactionTimeout(int seconds) {
+    }
+
+    public long getTimeoutSeconds() {
+        return 0;
     }
 }

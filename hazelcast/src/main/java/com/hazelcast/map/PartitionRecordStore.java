@@ -45,7 +45,7 @@ public class PartitionRecordStore implements RecordStore {
         this.partitionContainer = partitionContainer;
         this.mapService = partitionContainer.getMapService();
         this.mapContainer = mapService.getMapContainer(name);
-        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name),
                         mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
@@ -55,7 +55,8 @@ public class PartitionRecordStore implements RecordStore {
     public void flush(boolean flushAllRecords) {
         for (Record record : records.values()) {
             if (flushAllRecords || record.getState().isDirty()) {
-                mapStoreWrite(record, true);
+                mapContainer.getStore().store(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
+                record.onStore();
             }
         }
         for (Data key : toBeRemovedKeys) {
@@ -73,8 +74,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     void clear() {
-        final SharedLockService lockService = mapService.getNodeEngine()
-                .getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.destroyLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
         }
@@ -100,8 +100,28 @@ public class PartitionRecordStore implements RecordStore {
         return false;
     }
 
+    public boolean lock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
+    }
+
+    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
+    }
+
+    public boolean unlock(Data key, String caller, int threadId) {
+        return lockStore != null && lockStore.unlock(key, caller, threadId);
+    }
+
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
+    }
+
+    public boolean isLockedBy(Data key, String caller, int threadId) {
+        return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
+    }
+
+    public boolean canAcquireLock(Data key, String caller, int threadId) {
+        return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
     public boolean canRun(LockAwareOperation lockAwareOperation) {
@@ -117,18 +137,17 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             // already removed from map by eviction but still need to delete it
             if (mapContainer.getStore() != null && mapContainer.getStore().load(mapService.toObject(dataKey)) != null) {
-                evicted = true;
+                mapStoreDelete(record, dataKey);
             }
         } else {
             accessRecord(record);
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, record.getValue(), record.getValue());
+            mapStoreDelete(record, dataKey);
             Record removedRecord = records.remove(dataKey);
             oldValue = removedRecord.getValue();
             removed = true;
         }
-        if ((removed || evicted) && mapContainer.getStore() != null) {
-            mapStoreDelete(record, dataKey);
-        }
+
         return oldValue;
     }
 
@@ -203,14 +222,17 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+                if (oldValue != null) {
+                    mapStoreDelete(record, dataKey);
+                }
             }
         } else {
             oldValue = record.getValue();
             oldValue = mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
+            if (oldValue != null) {
+                mapStoreDelete(record, dataKey);
+            }
             records.remove(dataKey);
-        }
-        if (oldValue != null) {
-            mapStoreDelete(record, dataKey);
         }
         return oldValue;
     }
@@ -247,11 +269,12 @@ public class PartitionRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
         }
+        // TODO: @mm - Data.equals() or Object.equals() should be decided due to record type.
         if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
+            mapStoreDelete(record, dataKey);
             records.remove(dataKey);
             removed = true;
-            mapStoreDelete(record, dataKey);
         }
         return removed;
     }
@@ -303,11 +326,14 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, -1);
+            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
         } else {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, record.getValue());
+            mapStoreWrite(record, dataKey, value);
             setRecordValue(record, value);
         }
+        saveIndex(record);
     }
 
     public Object put(Data dataKey, Object value, long ttl) {
@@ -319,14 +345,16 @@ public class PartitionRecordStore implements RecordStore {
             }
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
+            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
         } else {
             oldValue = record.getValue();
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, oldValue);
+            mapStoreWrite(record, dataKey, value);
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
-        mapStoreWrite(record);
+        saveIndex(record);
         return oldValue;
     }
 
@@ -336,6 +364,7 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             newValue = mergingEntry.getValue();
             record = mapService.createRecord(name, dataKey, newValue, -1);
+            mapStoreWrite(record, dataKey, newValue);
             records.put(dataKey, record);
         } else {
             EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()), record);
@@ -343,13 +372,13 @@ public class PartitionRecordStore implements RecordStore {
             if (newValue == null) { // existing entry will stay
                 return false;
             }
+            mapStoreWrite(record, dataKey, newValue);
             if (record instanceof DataRecord)
                 ((DataRecord) record).setValue(mapService.toData(newValue));
             else if (record instanceof ObjectRecord)
                 ((ObjectRecord) record).setValue(mapService.toObject(newValue));
         }
-
-        mapStoreWrite(record);
+        saveIndex(record);
         return newValue != null;
     }
 
@@ -369,11 +398,13 @@ public class PartitionRecordStore implements RecordStore {
         if (record != null) {
             oldValue = record.getValue();
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, oldValue);
+            mapStoreWrite(record, dataKey, value);
             setRecordValue(record, value);
         } else {
             return null;
         }
-        mapStoreWrite(record);
+        saveIndex(record);
+
         return oldValue;
     }
 
@@ -384,11 +415,13 @@ public class PartitionRecordStore implements RecordStore {
         Object recordValue = mapService.toObject(record.getValue());
         if (recordValue != null && recordValue.equals(mapService.toObject(testValue))) {
             newValue = mapService.intercept(name, MapOperationType.PUT, dataKey, newValue, recordValue);
+            mapStoreWrite(record, dataKey, newValue);
             setRecordValue(record, newValue);
         } else {
             return false;
         }
-        mapStoreWrite(record);
+        saveIndex(record);
+
         return true;
     }
 
@@ -397,13 +430,16 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
+            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
         } else {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, record.getValue());
+            mapStoreWrite(record, dataKey, value);
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
-        mapStoreWrite(record);
+        saveIndex(record);
+
     }
 
     public void putTransient(Data dataKey, Object value, long ttl) {
@@ -424,13 +460,16 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
+            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
         } else {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, record.getValue());
+            mapStoreWrite(record, dataKey, value);
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
-        mapStoreWrite(record);
+        saveIndex(record);
+
         return true;
     }
 
@@ -452,10 +491,12 @@ public class PartitionRecordStore implements RecordStore {
         if (oldValue == null) {
             value = mapService.intercept(name, MapOperationType.PUT, dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
+            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             updateTtl(record, ttl);
-            mapStoreWrite(record);
         }
+        saveIndex(record);
+
         return oldValue;
     }
 
@@ -468,21 +509,18 @@ public class PartitionRecordStore implements RecordStore {
         }
     }
 
-    private void mapStoreWrite(Record record) {
-        mapStoreWrite(record, false);
-        saveIndex(record);
-    }
-
-    private void mapStoreWrite(Record record, boolean flush) {
+    private void mapStoreWrite(Record record, Data key, Object value) {
         if (mapContainer.getStore() != null) {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
-            if (writeDelayMillis <= 0 || flush) {
-                mapContainer.getStore().store(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
-                record.onStore();
+            if (writeDelayMillis <= 0) {
+                mapContainer.getStore().store(mapService.toObject(key), mapService.toObject(value));
+                if (record != null)
+                    record.onStore();
             } else {
-                if (record.getState().getStoreTime() <= 0) {
+                // check if there is already scheduled store task
+                if (record != null && record.getState().getStoreTime() <= 0) {
                     record.getState().updateStoreTime(writeDelayMillis);
-                    mapService.scheduleMapStoreWrite(name, record.getKey(), record.getValue(), writeDelayMillis);
+                    mapService.scheduleMapStoreWrite(name, key, value, writeDelayMillis);
                 }
             }
         }

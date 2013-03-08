@@ -29,6 +29,9 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -145,8 +148,13 @@ public class HazelcastClient implements HazelcastInstance {
         return innerProxyMap;
     }
 
+
     public SerializationService getSerializationService() {
         return serializationService;
+    }
+    public Transaction getTransaction() {
+        Context context = Context.getOrCreate();
+        return context.getTransaction(this);
     }
 
     public ConcurrentMap<String, Object> getUserContext() {
@@ -174,17 +182,16 @@ public class HazelcastClient implements HazelcastInstance {
         return (IMap<K, V>) proxy;
     }
 
-    public com.hazelcast.core.Transaction getTransaction() {
-        Context context = Context.getOrCreate();
-        return context.getTransaction(this);
-    }
-
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         throw new UnsupportedOperationException();
     }
 
     public Cluster getCluster() {
         return clusterClientProxy;
+    }
+
+    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        return null;
     }
 
     public IExecutorService getExecutorService(String name) {

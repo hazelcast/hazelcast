@@ -403,12 +403,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //            execute(args);
         } else if (first.equals("partitions")) {
             handlePartitions(args);
-        } else if (first.equals("txn")) {
-            hazelcast.getTransaction().begin();
-        } else if (first.equals("commit")) {
-            hazelcast.getTransaction().commit();
-        } else if (first.equals("rollback")) {
-            hazelcast.getTransaction().rollback();
+//        } else if (first.equals("txn")) {
+//            hazelcast.getTransaction().begin();
+//        } else if (first.equals("commit")) {
+//            hazelcast.getTransaction().commit();
+//        } else if (first.equals("rollback")) {
+//            hazelcast.getTransaction().rollback();
 //        } else if (first.equalsIgnoreCase("executeOnKey")) {
 //            executeOnKey(args);
 //        } else if (first.equalsIgnoreCase("executeOnMember")) {
@@ -658,7 +658,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (time == 0)
             locked = getMap().tryLock(key);
         else
-            locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
+            try {
+                locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                locked = false;
+            }
         println(locked);
     }
 

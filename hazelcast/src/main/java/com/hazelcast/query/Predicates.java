@@ -73,7 +73,7 @@ public final class Predicates {
         }
     }
 
-    public static class NotPredicate implements Predicate {
+    public static class NotPredicate implements Predicate, DataSerializable {
         Predicate predicate;
 
         public NotPredicate(Predicate predicate) {
@@ -172,7 +172,7 @@ public final class Predicates {
         }
     }
 
-    public static class RegexPredicate implements Predicate {
+    public static class RegexPredicate implements Predicate, DataSerializable {
         String attribute;
         String regex;
         Pattern pattern = null;
@@ -216,7 +216,7 @@ public final class Predicates {
         }
     }
 
-    public static class LikePredicate implements Predicate {
+    public static class LikePredicate implements Predicate, DataSerializable {
         String attribute;
         String second;
         Pattern pattern = null;
@@ -260,9 +260,12 @@ public final class Predicates {
         }
     }
 
-    public static class AndPredicate implements IndexAwarePredicate {
+    public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
 
-        protected final Predicate[] predicates;
+        protected Predicate[] predicates;
+
+        public AndPredicate() {
+        }
 
         public AndPredicate(Predicate... predicates) {
             this.predicates = predicates;
@@ -282,8 +285,8 @@ public final class Predicates {
                         if (smallestIndexedResult == null) {
                             smallestIndexedResult = s;
                         } else if (s.size() < smallestIndexedResult.size()) {
+                            otherIndexedResults.add(smallestIndexedResult);
                             smallestIndexedResult = s;
-                            otherIndexedResults.add(s);
                         } else {
                             otherIndexedResults.add(s);
                         }
@@ -340,11 +343,31 @@ public final class Predicates {
             sb.append(")");
             return sb.toString();
         }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(predicates.length);
+            for (int i = 0; i < predicates.length; i++) {
+                out.writeObject(predicates[i]);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            predicates = new Predicate[size];
+            for (int i = 0; i < size; i++) {
+                predicates[i] = in.readObject();
+            }
+        }
     }
 
-    public static class OrPredicate implements IndexAwarePredicate {
+    public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
 
-        private final Predicate[] predicates;
+        private Predicate[] predicates;
+
+        public OrPredicate() {
+        }
 
         public OrPredicate(Predicate... predicates) {
             this.predicates = predicates;
@@ -398,6 +421,23 @@ public final class Predicates {
             }
             sb.append(")");
             return sb.toString();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(predicates.length);
+            for (int i = 0; i < predicates.length; i++) {
+                out.writeObject(predicates[i]);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            predicates = new Predicate[size];
+            for (int i = 0; i < size; i++) {
+                predicates[i] = in.readObject();
+            }
         }
     }
 
@@ -504,7 +544,7 @@ public final class Predicates {
                 return value == null || value == IndexImpl.NULL;
             }
             value = convert(mapEntry, value);
-            return value.equals(entryValue);
+            return value != null && value.equals(entryValue);
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {

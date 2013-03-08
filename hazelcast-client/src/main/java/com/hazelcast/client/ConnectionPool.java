@@ -97,15 +97,14 @@ public class ConnectionPool {
     }
 
     public Connection takeConnection(Member member) throws InterruptedException {
-        if (!initialized.get())  {
+        if (!initialized.get()) {
             lock.lock();
             return initialConnection;
-
         }
         if (member == null) {
             member = router.next();
             if (member == null) {
-                throw new NoMemberAvailableException();
+                throw new RuntimeException("Router '" + router + "' could not find a member to route to");
             }
         }
         ObjectPool<Connection> pool = mPool.get(member.getInetSocketAddress());
@@ -116,7 +115,7 @@ public class ConnectionPool {
     }
 
     public void releaseConnection(Connection connection) {
-        if(!initialized.get() && connection == initialConnection){
+        if (!initialized.get() && connection == initialConnection) {
             lock.unlock();
         }
         ObjectPool<Connection> pool = mPool.get(connection.getAddress());

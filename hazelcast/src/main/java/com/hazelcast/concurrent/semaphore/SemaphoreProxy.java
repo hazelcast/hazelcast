@@ -22,6 +22,7 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -62,7 +63,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             invoke(new AcquireOperation(name, permits, -1));
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrowAllowInterrupted(t);
         }
     }
 
@@ -129,7 +130,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return (Boolean) invoke(new AcquireOperation(name, permits, unit.toMillis(timeout)));
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrowAllowInterrupted(t);
         }
     }
 
@@ -137,20 +138,16 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         return name;
     }
 
-    private <T> T invoke(SemaphoreOperation operation) {
+    private <T> T invoke(SemaphoreOperation operation) throws ExecutionException, InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SemaphoreService.SERVICE_NAME, operation, partitionId).build();
-            Future f = inv.invoke();
-            return (T) nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SemaphoreService.SERVICE_NAME, operation, partitionId).build();
+        Future f = inv.invoke();
+        return (T) nodeEngine.toObject(f.get());
     }
 
     private void checkNegative(int permits) {
         if (permits < 0) {
-            throw new IllegalStateException("Value cannot be negative");
+            throw new IllegalArgumentException("Permits cannot be negative!");
         }
     }
 

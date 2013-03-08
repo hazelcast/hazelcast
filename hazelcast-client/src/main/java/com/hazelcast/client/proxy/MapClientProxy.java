@@ -36,7 +36,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.lang.String.valueOf;
 
@@ -272,6 +271,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return Boolean.valueOf(protocol.args[0]);
     }
 
+    public void delete(Object key) {
+    }
+
     public V replace(K key, V value) {
         check(key);
         check(value);
@@ -359,9 +361,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return null;
     }
 
-    public void cleanUpNearCache() {
-    }
-
     public Set<K> keySet() {
         return keySet(null);
     }
@@ -438,16 +437,17 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return (V) proxyHelper.doCommandAsObject(dKey, Command.MREMOVE, new String[]{getName()}, dKey);
     }
 
-    public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
+    public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
         check(key);
         Data dKey = proxyHelper.toData(key);
         Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYREMOVE, new String[]{getName(), "" + timeunit.toMillis(timeout)}, dKey);
-        if (protocol.args != null && protocol.args.length > 0) {
-            if ("timeout".equals(protocol.args[0])) {
-                throw new TimeoutException();
-            }
-        }
-        return protocol.hasBuffer() ? (V) proxyHelper.toObject(protocol.buffers[0]) : null;
+        return Boolean.valueOf(protocol.args[0]);
+//        if (protocol.args != null && protocol.args.length > 0) {
+//            if ("timeout".equals(protocol.args[0])) {
+//                throw new TimeoutException();
+//            }
+//        }
+//        return protocol.hasBuffer() ? (V) proxyHelper.toObject(protocol.buffers[0]) : null;
     }
 
     public int size() {

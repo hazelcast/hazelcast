@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -33,7 +32,8 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.transaction.TransactionImpl;
+import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.transaction.TransactionManagerServiceImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -52,6 +52,7 @@ public class NodeEngineImpl implements NodeEngine {
     final EventServiceImpl eventService;
     final AsyncInvocationServiceImpl asyncInvocationService;
     final WaitNotifyServiceImpl waitNotifyService;
+    final TransactionManagerServiceImpl transactionManagerService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -63,6 +64,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         asyncInvocationService = new AsyncInvocationServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this, new WaitingOpProcessorImpl());
+        transactionManagerService = new TransactionManagerServiceImpl(this);
     }
 
     @PrivateApi
@@ -123,6 +125,10 @@ public class NodeEngineImpl implements NodeEngine {
         return waitNotifyService;
     }
 
+    public TransactionManagerService getTransactionManagerService() {
+        return transactionManagerService;
+    }
+
     public Data toData(final Object object) {
         return node.serializationService.toData(object);
     }
@@ -132,10 +138,6 @@ public class NodeEngineImpl implements NodeEngine {
             return node.serializationService.toObject((Data) object);
         }
         return object;
-    }
-
-    public TransactionImpl getTransaction() {
-        return ThreadContext.getTransaction(node.getName());
     }
 
     public boolean isActive() {
@@ -226,16 +228,12 @@ public class NodeEngineImpl implements NodeEngine {
         return serviceManager.getService(serviceName);
     }
 
-    public <T extends SharedService> T getSharedService(Class<T> serviceClass, String serviceName) {
+    public <T extends SharedService> T getSharedService(String serviceName) {
         final Object service = serviceManager.getService(serviceName);
         if (service == null) {
             return null;
         }
-        if (serviceClass.isAssignableFrom(service.getClass())) {
-            return serviceClass.cast(service);
-        } else {
-            throw new IllegalArgumentException();
-        }
+        return (T) service;
     }
 
     /**

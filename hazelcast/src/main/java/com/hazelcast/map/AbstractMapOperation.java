@@ -16,17 +16,9 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.KeyBasedOperation;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-
-import java.io.IOException;
 
 public abstract class AbstractMapOperation extends AbstractNamedOperation {
 
@@ -45,7 +37,7 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     public final void beforeRun() throws Exception {
         mapService = getService();
         mapContainer = mapService.getMapContainer(name);
-        if( !(this instanceof BackupOperation) &&  !mapContainer.isMapReady()) {
+        if (!(this instanceof BackupOperation) && !mapContainer.isMapReady()) {
             throw new RetryableHazelcastException("Map is not ready.");
         }
         innerBeforeRun();

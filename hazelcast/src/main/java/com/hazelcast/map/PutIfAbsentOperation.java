@@ -22,18 +22,14 @@ public class PutIfAbsentOperation extends BasePutOperation {
 
     private transient boolean successful;
 
-    public PutIfAbsentOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
-        super(name, dataKey, value, txnId, ttl);
+    public PutIfAbsentOperation(String name, Data dataKey, Data value, long ttl) {
+        super(name, dataKey, value, ttl);
     }
 
     public PutIfAbsentOperation() {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         dataOldValue = mapService.toData(recordStore.putIfAbsent(dataKey, dataValue, ttl));
         successful = dataOldValue == null;
     }

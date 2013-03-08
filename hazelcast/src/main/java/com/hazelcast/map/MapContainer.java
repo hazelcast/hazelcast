@@ -22,11 +22,8 @@ import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.MapOperationsCounter;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -40,10 +37,10 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
@@ -216,16 +213,12 @@ public class MapContainer {
                 Object key = keys.get(dataKey);
                 Data dataValue = mapService.toData(values.get(key));
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, null, -1);
+                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, -1);
                 operation.setNodeEngine(nodeEngine);
                 operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 operation.setPartitionId(partitionId);
                 operation.setServiceName(MapService.SERVICE_NAME);
-                try {
-                    nodeEngine.getOperationService().runOperation(operation);
-                } catch (Throwable t) {
-                    ExceptionUtil.rethrow(t);
-                }
+                nodeEngine.getOperationService().runOperation(operation);
             }
 
             if (counter.decrementAndGet() <= 0) {

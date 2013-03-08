@@ -25,7 +25,15 @@ import java.util.Set;
  */
 public interface LockStoreView {
 
+    boolean lock(Data key, String caller, int threadId, long ttl);
+
+    boolean extendTTL(Data key, String caller, int threadId, long ttl);
+
+    boolean unlock(Data key, String caller, int threadId);
+
     boolean isLocked(Data key);
+
+    boolean isLockedBy(Data key, String caller, int threadId);
 
     boolean canAcquireLock(Data key, String caller, int threadId);
 

@@ -21,10 +21,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 
-import java.util.AbstractSet;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -87,22 +84,30 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
         QueryResultEntry currentEntry;
 
         public boolean hasNext() {
+            QueryResultEntry entry;
             try {
-                currentEntry = q.take();
-            } catch (InterruptedException e) {
+                entry = q.peek();
+            } catch (Exception e) {
                 return false;
             }
-            return currentEntry != END;
+            return entry != END && entry != null;
         }
 
         public Object next() {
+            currentEntry = q.poll();
+            if(currentEntry == null || currentEntry == END)
+                return null;
             if (iterationType == IterationType.VALUE) {
                 Data valueData = currentEntry.getValueData();
                 return (data) ? valueData : serializationService.toObject(valueData);
             } else if (iterationType == IterationType.KEY) {
                 Data keyData = currentEntry.getKeyData();
                 return (data) ? keyData : serializationService.toObject(keyData);
-            } else return currentEntry;
+            } else {
+                Data keyData = currentEntry.getKeyData();
+                Data valueData = currentEntry.getValueData();
+                return (data) ? new AbstractMap.SimpleImmutableEntry(keyData, valueData) : new AbstractMap.SimpleImmutableEntry(serializationService.toObject(keyData), serializationService.toObject(valueData));
+            }
         }
 
         public void remove() {

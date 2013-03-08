@@ -21,28 +21,20 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
 
-    public PutOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
-        super(name, dataKey, value, txnId, ttl);
+    public PutOperation(String name, Data dataKey, Data value, long ttl) {
+        super(name, dataKey, value, ttl);
     }
 
     public PutOperation() {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, ttl));
     }
 
     @Override
     public Object getResponse() {
         return dataOldValue;
-    }
-
-    public boolean shouldBackup() {
-        return true;
     }
 
     @Override

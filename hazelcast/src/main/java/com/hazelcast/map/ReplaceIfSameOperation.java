@@ -29,8 +29,8 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     private transient boolean successful = false;
 
 
-    public ReplaceIfSameOperation(String name, Data dataKey, Data oldValue, Data value, String txnId) {
-        super(name, dataKey, value, txnId);
+    public ReplaceIfSameOperation(String name, Data dataKey, Data oldValue, Data value) {
+        super(name, dataKey, value);
         testValue = oldValue;
     }
 
@@ -38,10 +38,6 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         successful = recordStore.replace(dataKey, testValue, dataValue);
     }
 
@@ -62,7 +58,6 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     public void onWaitExpire() {
         getResponseHandler().sendResponse(false);
     }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {

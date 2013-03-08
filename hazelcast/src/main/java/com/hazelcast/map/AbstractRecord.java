@@ -29,13 +29,13 @@ import java.io.IOException;
 public abstract class AbstractRecord implements DataSerializable {
 
     protected volatile RecordState state;
-    protected volatile RecordStatistics stats;
+    protected volatile RecordStatistics statistics;
     protected volatile Data key;
 
     public AbstractRecord(Data key) {
         this.key = key;
         state = new RecordState();
-        stats = new RecordStatistics();
+        statistics = new RecordStatistics();
     }
 
     public AbstractRecord() {
@@ -54,19 +54,19 @@ public abstract class AbstractRecord implements DataSerializable {
     }
 
     public RecordStatistics getStatistics() {
-        return stats;
+        return statistics;
     }
 
     public void setStatistics(RecordStatistics stats) {
-        this.stats = stats;
+        this.statistics = stats;
     }
 
     public Integer getHits() {
-        return stats == null ? -1 : stats.getHits();
+        return statistics == null ? -1 : statistics.getHits();
     }
 
     public Long getLastAccessTime() {
-        return stats == null ? -1 : stats.getLastAccessTime();
+        return statistics == null ? -1 : statistics.getLastAccessTime();
     }
 
     public long getCost() {
@@ -74,20 +74,20 @@ public abstract class AbstractRecord implements DataSerializable {
     }
 
     public void onAccess() {
-        if(stats != null)
-            stats.access();
+        if(statistics != null)
+            statistics.access();
     }
 
     public void onStore() {
-        if(stats != null)
-            stats.store();
+        if(statistics != null)
+            statistics.store();
         if(state != null)
             state.resetStoreTime();
     }
 
     public void onUpdate() {
-        if(stats != null)
-            stats.update();
+        if(statistics != null)
+            statistics.update();
     }
 
     public Record clone() {
@@ -105,9 +105,9 @@ public abstract class AbstractRecord implements DataSerializable {
             out.writeBoolean(false);
         }
 
-        if(stats != null) {
+        if(statistics != null) {
             out.writeBoolean(true);
-            stats.writeData(out);
+            statistics.writeData(out);
         }
         else {
             out.writeBoolean(false);
@@ -124,8 +124,8 @@ public abstract class AbstractRecord implements DataSerializable {
         }
         boolean statsEnabled = in.readBoolean();
         if(statsEnabled) {
-            stats = new RecordStatistics();
-            stats.readData(in);
+            statistics = new RecordStatistics();
+            statistics.readData(in);
         }
     }
 
