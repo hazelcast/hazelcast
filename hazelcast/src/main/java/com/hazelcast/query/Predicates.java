@@ -544,7 +544,7 @@ public final class Predicates {
                 return value == null || value == IndexImpl.NULL;
             }
             value = convert(mapEntry, value);
-            return value.equals(entryValue);
+            return value != null && value.equals(entryValue);
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
