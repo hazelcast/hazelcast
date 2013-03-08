@@ -61,7 +61,17 @@ public interface RecordStore {
 
     int size();
 
+    boolean lock(Data key, String caller, int threadId, long ttl);
+
+    boolean extendLock(Data key, String caller, int threadId, long ttl);
+
+    boolean unlock(Data key, String caller, int threadId);
+
     boolean isLocked(Data key);
+
+    boolean isLockedBy(Data key, String caller, int threadId);
+
+    boolean canAcquireLock(Data key, String caller, int threadId);
 
     boolean containsValue(Object testValue);
 

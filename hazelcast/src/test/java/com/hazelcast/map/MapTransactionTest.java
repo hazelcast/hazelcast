@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,28 +20,93 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MapTransactionTest {
 
     @BeforeClass
-    public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+    public static void init() {
         Hazelcast.shutdownAll();
     }
 
     @After
     public void cleanUp() {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testTxnCommit() throws TransactionException {
+        Config config = new Config();
+        StaticNodeFactory factory = new StaticNodeFactory(2);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap map2 = h2.getMap("default");
+
+        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap("default");
+                txMap.put("1", "value");
+                txMap.put("13", "value");
+                assertEquals("value", txMap.get("1"));
+                assertEquals("value", txMap.get("13"));
+                assertNull(map2.get("1"));
+                assertNull(map2.get("13"));
+                return true;
+            }
+        });
+        assertTrue(b);
+
+        IMap map1 = h1.getMap("default");
+        assertEquals("value", map1.get("1"));
+        assertEquals("value", map1.get("13"));
+        assertEquals("value", map2.get("1"));
+        assertEquals("value", map2.get("13"));
+    }
+
+//    @Test
+//    public void testTxnRollback() {
+//        Config config = new Config();
+//        StaticNodeFactory factory = new StaticNodeFactory(2);
+//        HazelcastInstance h1 = factory.newInstance(config);
+//        HazelcastInstance h2 = factory.newInstance(config);
+//        IMap map1 = h1.getMap("default");
+//        IMap map2 = h2.getMap("default");
+//        Transaction txn = h1.getTransaction();
+//        txn.begin();
+//        map1.put("1", "value");
+//        map1.put("13", "value");
+//        assertEquals("value", map1.get("1"));
+//        assertEquals("value", map1.get("13"));
+//        assertNull(map2.get("1"));
+//        assertNull(map2.get("13"));
+//        txn.rollback();
+//        assertNull(map1.get("1"));
+//        assertNull(map1.get("13"));
+//        assertNull(map2.get("1"));
+//        assertNull(map2.get("13"));
+//    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAccessTransactionalMapAfterTxEnds() throws TransactionException {
+        Config config = new Config();
+        StaticNodeFactory factory = new StaticNodeFactory(2);
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+//        TransactionContext txCtx = hz.newTransactionContext();
+//        Transaction tx = txCtx.beginTransaction();
+//        TransactionalMap txMap = txCtx.getMap("default");
+//        tx.commit();
+//        txMap.put("1", "value");
     }
 
     @Test
@@ -52,75 +117,39 @@ public class MapTransactionTest {
         HazelcastInstance h2 = factory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
-        Transaction txn = h1.getTransaction();
-        txn.setTransactionTimeout(1);
-        txn.begin();
-        try {
-            map1.put("1", "value");
-            Thread.sleep(1010);
-            map1.put("13", "value");
-            fail();
-        } catch (Throwable e) {
-        }
-        try {
-            txn.commit();
-            fail();
-        } catch (IllegalStateException e) {
-        }
-        map2.lock("1");
-        txn = h1.getTransaction();
-        txn.setTransactionTimeout(1);
-        txn.begin();
-        try {
-            map1.put("1", "value");
-        } catch (Exception e) {
-        }
-    }
+//        TransactionContext txCtx = h1.newTransactionContext();
+//        Transaction tx = txCtx.getTransaction();
+//        tx.setTransactionTimeout(1);
+//        tx.begin();
+//        TransactionalMap txMap = txCtx.getMap("default");
+//        try {
+//            txMap.put("1", "value");
+//            Thread.sleep(1100);
+//            txMap.put("13", "value");
+//            tx.commit();
+//            fail();
+//        } catch (Throwable e) {
+//            tx.rollback();
+//        }
 
-    @Test
-    public void testTxnCommit() {
-        Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
-        Transaction txn = h1.getTransaction();
-        txn.begin();
-        map1.put("1", "value");
-        map1.put("13", "value");
-        assertFalse(map2.tryPut("1", "value2", 0, null));
-        assertEquals("value", map1.get("1"));
-        assertEquals("value", map1.get("13"));
-        assertNull(map2.get("1"));
-        assertNull(map2.get("13"));
-        txn.commit();
-        assertEquals("value", map1.get("1"));
-        assertEquals("value", map1.get("13"));
-        assertEquals("value", map2.get("1"));
-        assertEquals("value", map2.get("13"));
-    }
-
-    @Test
-    public void testTxnRollback() {
-        Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
-        Transaction txn = h1.getTransaction();
-        txn.begin();
-        map1.put("1", "value");
-        map1.put("13", "value");
-        assertEquals("value", map1.get("1"));
-        assertEquals("value", map1.get("13"));
-        assertNull(map2.get("1"));
-        assertNull(map2.get("13"));
-        txn.rollback();
         assertNull(map1.get("1"));
-        assertNull(map1.get("13"));
-        assertNull(map2.get("1"));
-        assertNull(map2.get("13"));
+        assertFalse(map1.isLocked("1"));
+        assertTrue(map1.tryLock("1"));
+
+//        txCtx = h1.newTransactionContext();
+//        tx = txCtx.beginTransaction();
+//        txMap = txCtx.getMap("default");
+//        try {
+//            txMap.put("1", "value");
+//            tx.commit();
+//        } catch (Exception e) {
+//            tx.rollback();
+//            e.printStackTrace();
+//            fail(e.getMessage());
+//        }
+        assertEquals("value", map1.get("1"));
+        assertTrue(map1.isLocked("1"));
     }
+
+
 }

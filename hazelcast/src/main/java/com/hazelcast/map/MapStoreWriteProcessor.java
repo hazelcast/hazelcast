@@ -17,10 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -28,11 +24,8 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
 
-import static com.hazelcast.map.MapService.SERVICE_NAME;
-
-public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Object>{
+public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
     MapContainer mapContainer;
     MapService mapService;
@@ -42,8 +35,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
         this.mapService = mapService;
     }
 
-    @Override
-    public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+    public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
         if(entries.isEmpty())
             return;
         if(entries.size() == 1) {

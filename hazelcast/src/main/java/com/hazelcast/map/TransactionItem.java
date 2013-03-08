@@ -24,47 +24,43 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class TransactionLogItem implements DataSerializable {
-    String name;
-    Data key;
-    Data value;
-    boolean newEntry;
-    boolean removed;
+public class TransactionItem implements DataSerializable {
+    private String txnId;
+    private String name;
+    private Data key;
+    private Data value;
 
-    public TransactionLogItem(String name, Data key, Data value, boolean newEntry, boolean removed) {
+    public TransactionItem() {
+    }
+
+    public TransactionItem(String txnId, String name, Data key, Data value) {
+        this.txnId = txnId;
         this.name = name;
         this.key = key;
         this.value = value;
-        this.newEntry = newEntry;
-        this.removed = removed;
-    }
-
-    public TransactionLogItem() {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(txnId);
         out.writeUTF(name);
         key.writeData(out);
         IOUtil.writeNullableData(out, value);
-        out.writeBoolean(newEntry);
-        out.writeBoolean(removed);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        txnId = in.readUTF();
         name = in.readUTF();
         key = new Data();
         key.readData(in);
         value = IOUtil.readNullableData(in);
-        newEntry = in.readBoolean();
-        removed = in.readBoolean();
+    }
+
+    public String getTxnId() {
+        return txnId;
     }
 
     public String getName() {
         return name;
-    }
-
-    public boolean isRemoved() {
-        return removed;
     }
 
     public Data getKey() {
@@ -75,18 +71,15 @@ public class TransactionLogItem implements DataSerializable {
         return value;
     }
 
-    public boolean isNewEntry() {
-        return newEntry;
-    }
-
     @Override
     public String toString() {
-        return "TransactionLogItem{" +
-                "name='" + name + '\'' +
-                ", key=" + key +
-                ", value=" + value +
-                ", newEntry=" + newEntry +
-                ", removed=" + removed +
-                '}';
+        final StringBuilder sb = new StringBuilder();
+        sb.append("TransactionItem");
+        sb.append("{txnId='").append(txnId).append('\'');
+        sb.append(", name='").append(name).append('\'');
+        sb.append(", key=").append(key);
+        sb.append(", value=").append(value);
+        sb.append('}');
+        return sb.toString();
     }
 }

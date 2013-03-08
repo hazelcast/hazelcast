@@ -16,20 +16,21 @@
 
 package com.hazelcast.core;
 
-/**
- * Hazelcast operations may throw an <tt>OperationRejectedException</tt>
- * when an operation can not be accepted because number of concurrent
- * calls reaches the limit.
- *
- * @see com.hazelcast.instance.GroupProperties#PROP_MAX_CONCURRENT_OPERATION_LIMIT
- * @see java.util.concurrent.RejectedExecutionException
- */
-public class OperationRejectedException extends HazelcastException {
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalObject;
 
-    public OperationRejectedException() {
-    }
+import java.util.concurrent.TimeUnit;
 
-    public OperationRejectedException(String message) {
-        super(message);
-    }
+public interface TransactionalQueue<E> extends TransactionalObject {
+
+    boolean offer(E e) throws TransactionException;
+
+    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException, TransactionException;
+
+    E poll() throws TransactionException;
+
+    E poll(long timeout, TimeUnit unit) throws InterruptedException, TransactionException;
+
+    E peek() throws TransactionException;
+
 }

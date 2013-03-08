@@ -20,28 +20,20 @@ import com.hazelcast.nio.serialization.Data;
 
 public class PutTransientOperation extends BasePutOperation {
 
-    public PutTransientOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
-        super(name, dataKey, value, txnId, ttl);
+    public PutTransientOperation(String name, Data dataKey, Data value, long ttl) {
+        super(name, dataKey, value, ttl);
     }
 
     public PutTransientOperation() {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         recordStore.putTransient(dataKey, dataValue, ttl);
     }
 
     @Override
     public Object getResponse() {
         return null;
-    }
-
-    public boolean shouldBackup() {
-        return true;
     }
 
     @Override

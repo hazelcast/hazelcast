@@ -146,7 +146,7 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
             final ConcurrentMap<K, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
             for (K key : entries.keySet()) {
-                // todo there is a concurrency problem here. you should put the object you can remove to a seperate list then send them
+                // TODO: there is a concurrency problem here. you should put the object you can remove to a separate list then send them
                 secondsOfKeys.remove(key);
             }
             entryProcessor.process(SecondsBasedEntryTaskScheduler.this, entries.values());

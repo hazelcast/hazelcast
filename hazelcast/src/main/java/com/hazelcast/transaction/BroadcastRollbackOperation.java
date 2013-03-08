@@ -14,44 +14,49 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.transaction;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
-public class MapTxnBackupCommitOperation extends AbstractOperation {
-    String txnId;
+/**
+ * @mdogan 2/27/13
+ */
 
-    public MapTxnBackupCommitOperation(String txnId) {
+public class BroadcastRollbackOperation extends AbstractOperation {
+
+    private String txnId;
+
+    public BroadcastRollbackOperation() {
+    }
+
+    public BroadcastRollbackOperation(String txnId) {
         this.txnId = txnId;
     }
 
-    public MapTxnBackupCommitOperation() {
+    public void run() throws Exception {
+        final NodeEngine nodeEngine = getNodeEngine();
+        nodeEngine.getLogger(getClass()).log(Level.INFO, "Rolling-back transaction[" + txnId + "]!");
+        TransactionManagerServiceImpl service = getService();
+        try {
+            service.rollbackAll(txnId);
+        } catch (Exception e) {
+            nodeEngine.getLogger(getClass()).log(Level.WARNING, e.getMessage(), e);
+        }
     }
 
-    public void run() {
-        System.out.println(getNodeEngine().getThisAddress() + " backupCommit " + txnId);
-        int partitionId = getPartitionId();
-        MapService mapService = (MapService) getService();
-        PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-        partitionContainer.commit(txnId);
-        ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(null);
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+        super.writeInternal(out);
         out.writeUTF(txnId);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readData(in);
+        super.readInternal(in);
         txnId = in.readUTF();
     }
 }

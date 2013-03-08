@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,8 +26,8 @@ public class TryPutOperation extends BasePutOperation {
     private long timeout;
     private transient boolean successful;
 
-    public TryPutOperation(String name, Data dataKey, Data value, String txnId, long timeout) {
-        super(name, dataKey, value, txnId);
+    public TryPutOperation(String name, Data dataKey, Data value, long timeout) {
+        super(name, dataKey, value);
         this.timeout = timeout;
     }
 
@@ -36,10 +35,6 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         successful = recordStore.tryPut(dataKey, dataValue, ttl);
     }
 

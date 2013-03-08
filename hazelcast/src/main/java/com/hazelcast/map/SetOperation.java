@@ -20,29 +20,20 @@ import com.hazelcast.nio.serialization.Data;
 
 public class SetOperation extends BasePutOperation {
 
-    public SetOperation(String name, Data dataKey, Data value, String txnId, long ttl) {
-        super(name, dataKey, value, txnId, ttl);
+    public SetOperation(String name, Data dataKey, Data value, long ttl) {
+        super(name, dataKey, value, ttl);
     }
 
     public SetOperation() {
     }
 
-    @Override
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         recordStore.set(dataKey, dataValue, ttl);
     }
 
     @Override
     public Object getResponse() {
         return null;
-    }
-
-    public boolean shouldBackup() {
-        return true;
     }
 
     @Override

@@ -435,11 +435,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                try {
-                    map.tryRemove(random.nextInt(size), 10, TimeUnit.MILLISECONDS);
-                } catch (TimeoutException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
+                map.tryRemove(random.nextInt(size), 10, TimeUnit.MILLISECONDS);
             }
         }, 10);
         addOperation(operations, new Runnable() {

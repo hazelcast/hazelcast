@@ -45,7 +45,7 @@ public class PartitionRecordStore implements RecordStore {
         this.partitionContainer = partitionContainer;
         this.mapService = partitionContainer.getMapService();
         this.mapContainer = mapService.getMapContainer(name);
-        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name),
                         mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
@@ -74,8 +74,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     void clear() {
-        final SharedLockService lockService = mapService.getNodeEngine()
-                .getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.destroyLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
         }
@@ -101,8 +100,28 @@ public class PartitionRecordStore implements RecordStore {
         return false;
     }
 
+    public boolean lock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
+    }
+
+    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
+    }
+
+    public boolean unlock(Data key, String caller, int threadId) {
+        return lockStore != null && lockStore.unlock(key, caller, threadId);
+    }
+
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
+    }
+
+    public boolean isLockedBy(Data key, String caller, int threadId) {
+        return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
+    }
+
+    public boolean canAcquireLock(Data key, String caller, int threadId) {
+        return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
     public boolean canRun(LockAwareOperation lockAwareOperation) {
@@ -250,6 +269,7 @@ public class PartitionRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
         }
+        // TODO: @mm - Data.equals() or Object.equals() should be decided due to record type.
         if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             mapStoreDelete(record, dataKey);

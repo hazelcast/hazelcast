@@ -42,8 +42,10 @@ public final class EntryTaskSchedulerFactory {
      * @param entryProcessor bulk processor
      * @return EntryTaskScheduler
      */
-    public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor, boolean postponesSchedule) {
-        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, postponesSchedule);
+    public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService,
+                                                               ScheduledEntryProcessor entryProcessor,
+                                                               boolean allowPostponeScheduling) {
+        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, allowPostponeScheduling);
     }
 
 }

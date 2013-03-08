@@ -36,17 +36,6 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     private long lockedEntryCount;
     private long dirtyEntryCount;
 
-    enum Op {
-        CREATE,
-        READ,
-        UPDATE,
-        REMOVE,
-        LOCK,
-        UNLOCK,
-        ADD_LOCK_WAIT,
-        REMOVE_LOCK_WAIT
-    }
-
     public LocalMapStatsImpl() {
     }
 

@@ -34,7 +34,7 @@ public abstract class KeyBasedMapOperation extends Operation implements KeyBased
     protected int threadId = -1;
     protected Data dataValue = null;
     protected long ttl = -1;
-    protected String txnId = null;
+
     protected transient MapService mapService;
     protected transient MapContainer mapContainer;
     protected transient PartitionContainer partitionContainer;
@@ -93,14 +93,6 @@ public abstract class KeyBasedMapOperation extends Operation implements KeyBased
         return ttl;
     }
 
-    public final String getTxnId() {
-        return txnId;
-    }
-
-    public final void setTxnId(String txnId) {
-        this.txnId = txnId;
-    }
-
     public final int getKeyHash() {
         return dataKey != null ? dataKey.getPartitionHash() : 0;
     }
@@ -144,7 +136,6 @@ public abstract class KeyBasedMapOperation extends Operation implements KeyBased
         out.writeInt(threadId);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
-        out.writeUTF(txnId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
@@ -154,6 +145,5 @@ public abstract class KeyBasedMapOperation extends Operation implements KeyBased
         threadId = in.readInt();
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
-        txnId = in.readUTF();
     }
 }

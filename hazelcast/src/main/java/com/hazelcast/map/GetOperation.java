@@ -16,34 +16,36 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
+import java.io.IOException;
+
 public class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
 
+    private String txnId;
     private transient Data result;
-    private transient long startTime;
+
+    public GetOperation() {
+    }
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public GetOperation() {
+    public GetOperation(String name, Data dataKey, String txnId) {
+        super(name, dataKey);
+        this.txnId = txnId;
     }
 
     public void run() {
-        startTime = Clock.currentTimeMillis();
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        if (getTxnId() != null) {
-            String txnId = getTxnId();
-            PartitionContainer p = mapService.getPartitionContainer(getPartitionId());
-            final TransactionLog log = p.getTransactionLog(txnId);
-            final TransactionLogItem logItem = log.getTransactionLogItem(dataKey);
-            if (logItem != null) {
-                if (!logItem.isRemoved()) {
-                    result = logItem.getValue();
-                }
+        if (txnId != null) {
+            final TransactionItem item = partitionContainer.getTransactionItem(new TransactionKey(txnId, name, dataKey));
+            if (item != null) {
+                result = item.getValue();
                 return;
             }
         }
@@ -52,7 +54,7 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
 
     public void afterRun() {
         mapService.interceptAfterProcess(name, MapOperationType.GET, dataKey, result, result);
-        mapService.getMapContainer(name).getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - startTime);
+        mapContainer.getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - getStartTime());
     }
 
     @Override
@@ -67,5 +69,17 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
 
     public int getId() {
         return DataSerializerMapHook.GET;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(txnId);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        txnId = in.readUTF();
     }
 }

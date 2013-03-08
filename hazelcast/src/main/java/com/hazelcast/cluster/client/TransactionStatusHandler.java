@@ -29,7 +29,8 @@ public class TransactionStatusHandler extends ClientCommandHandler {
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
-        int status = node.hazelcastInstance.getTransaction().getStatus();
+//        int status = node.hazelcastInstance.getTransaction().getStatus();
+        int status = 0;
         return protocol.success(String.valueOf(status));
     }
 }

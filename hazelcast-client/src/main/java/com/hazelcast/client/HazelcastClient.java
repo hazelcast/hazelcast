@@ -28,6 +28,9 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -169,7 +172,7 @@ public class HazelcastClient implements HazelcastInstance {
         return innerProxyMap;
     }
 
-    public com.hazelcast.core.Transaction getTransaction() {
+    public Transaction getTransaction() {
         Context context = Context.getOrCreate();
         return context.getTransaction(this);
     }
@@ -190,6 +193,10 @@ public class HazelcastClient implements HazelcastInstance {
         return clusterClientProxy;
     }
 
+    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        return null;
+    }
+
     public IExecutorService getExecutorService(String name) {
         Map<Object, DistributedObject> innerProxyMap = getProxiesMap("ExecutorService");
         DistributedObject proxy = innerProxyMap.get(name);
@@ -202,14 +209,6 @@ public class HazelcastClient implements HazelcastInstance {
     public IdGenerator getIdGenerator(String name) {
         return new IdGeneratorProxy(this, name);
     }
-//    public IdGenerator getIdGenerator(String name) {
-//        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IdGenerator");
-//        DistributedObject proxy = innerProxyMap.get(name);
-//        if (proxy == null) {
-//            proxy = putAndReturnProxy(name, innerProxyMap, new IdGeneratorClientProxy(this, name));
-//        }
-//        return (IdGenerator) proxy;
-//    }
 
     public IAtomicLong getAtomicLong(String name) {
         Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IAtomicLong");

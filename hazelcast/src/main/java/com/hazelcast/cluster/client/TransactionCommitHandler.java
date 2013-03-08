@@ -29,7 +29,7 @@ public class TransactionCommitHandler extends ClientCommandHandler {
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
-        node.hazelcastInstance.getTransaction().commit();
+//        node.hazelcastInstance.getTransaction().commit();
         return protocol.success();
     }
 }
