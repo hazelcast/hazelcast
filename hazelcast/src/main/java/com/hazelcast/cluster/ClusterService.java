@@ -30,6 +30,8 @@ public interface ClusterService extends CoreService {
 
     MemberImpl getMember(Address address);
 
+    MemberImpl getMember(String uuid);
+
     Collection<MemberImpl> getMemberList();
 
     Collection<Member> getMembers();

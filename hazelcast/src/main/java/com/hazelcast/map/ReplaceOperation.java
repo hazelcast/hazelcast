@@ -22,18 +22,14 @@ public class ReplaceOperation extends BasePutOperation {
 
     private transient boolean successful = false;
 
-    public ReplaceOperation(String name, Data dataKey, Data value, String txnId) {
-        super(name, dataKey, value, txnId);
+    public ReplaceOperation(String name, Data dataKey, Data value) {
+        super(name, dataKey, value);
     }
 
     public ReplaceOperation() {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         final Object oldValue = recordStore.replace(dataKey, dataValue);
         dataOldValue = mapService.toData(oldValue);
         successful = oldValue != null;

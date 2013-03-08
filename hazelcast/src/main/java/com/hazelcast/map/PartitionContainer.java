@@ -16,8 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,17 +25,12 @@ public class PartitionContainer {
     private final MapService mapService;
     final int partitionId;
     final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
-    final ConcurrentMap<String, TransactionLog> transactions = new ConcurrentHashMap<String, TransactionLog>(1000);
+    // TODO: @mm - migrate transaction items!
+    final ConcurrentMap<TransactionKey, TransactionItem> transactionItems = new ConcurrentHashMap<TransactionKey, TransactionItem>();
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
-    }
-
-    void onDeadAddress(Address deadAddress) {
-        // invalidate scheduled operations of dead
-        // invalidate transactions of dead
-        // invalidate locks owned by dead
     }
 
     public MapService getMapService() {
@@ -55,46 +48,22 @@ public class PartitionContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);
     }
 
-    public TransactionLog getTransactionLog(String txnId) {
-        return transactions.get(txnId);
+    public void addTransactionItem(TransactionItem item) {
+        final TransactionKey key = new TransactionKey(item.getTxnId(), item.getName(), item.getKey());
+        transactionItems.put(key, item);
     }
 
-    public void addTransactionLogItem(String txnId, TransactionLogItem logItem) {
-        TransactionLog log = transactions.get(txnId);
-        if (log == null) {
-            log = new TransactionLog(txnId);
-            transactions.put(txnId, log);
-        }
-        log.addLogItem(logItem);
+    public TransactionItem getTransactionItem(TransactionKey key) {
+        return transactionItems.get(key);
     }
 
-    public void putTransactionLog(String txnId, TransactionLog txnLog) {
-        transactions.put(txnId, txnLog);
-    }
-
-    void rollback(String txnId) {
-        transactions.remove(txnId);
-    }
-
-    void commit(String txnId) {
-        TransactionLog txnLog = transactions.remove(txnId); // TODO: not sure?
-        if (txnLog == null) return;
-        for (TransactionLogItem txnLogItem : txnLog.changes.values()) {
-            System.out.println(mapService.getNodeEngine().getThisAddress() + " pc.commit " + txnLogItem);
-            RecordStore recordStore = getRecordStore(txnLogItem.getName());
-            Data key = txnLogItem.getKey();
-            if (txnLogItem.isRemoved()) {
-                recordStore.remove(key);
-            } else {
-                recordStore.put(key, txnLogItem.getValue(), -1);
-            }
-        }
+    public TransactionItem removeTransactionItem(TransactionKey key) {
+        return transactionItems.remove(key);
     }
 
     public int getMaxBackupCount() {
         int max = 1;
         for (PartitionRecordStore recordStore : maps.values()) {
-            // TODO: get max map backup count!
             max = Math.max(max, recordStore.getMapContainer().getTotalBackupCount());
         }
         return max;
@@ -111,6 +80,6 @@ public class PartitionContainer {
             store.clear();
         }
         maps.clear();
-        transactions.clear();
+        transactionItems.clear();
     }
 }

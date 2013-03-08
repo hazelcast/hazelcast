@@ -28,8 +28,8 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     private Data testValue;
     private transient boolean successful = false;
 
-    public RemoveIfSameOperation(String name, Data dataKey, Data oldValue, String txnId) {
-        super(name, dataKey, txnId);
+    public RemoveIfSameOperation(String name, Data dataKey, Data oldValue) {
+        super(name, dataKey);
         testValue = oldValue;
     }
 
@@ -37,10 +37,6 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
        successful = recordStore.remove(dataKey, testValue);
     }
 

@@ -19,7 +19,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.Connection;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.transaction.Transaction;
 
 import java.util.HashMap;
 import java.util.Map;

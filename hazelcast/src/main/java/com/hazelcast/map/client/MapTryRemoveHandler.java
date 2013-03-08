@@ -23,7 +23,6 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class MapTryRemoveHandler extends MapCommandHandler{
     public MapTryRemoveHandler(MapService mapService) {
@@ -37,11 +36,7 @@ public class MapTryRemoveHandler extends MapCommandHandler{
         Data key = protocol.buffers[0];
         final long ttl = Long.valueOf(args[1]);
         DataMapProxy dataMapProxy = getMapProxy(name);
-        try {
-            Data value = dataMapProxy.tryRemove(key, ttl, TimeUnit.MILLISECONDS);
-            return protocol.success(value);
-        } catch (TimeoutException e) {
-            return protocol.success("timeout");
-        }
+        boolean removed = dataMapProxy.tryRemove(key, ttl, TimeUnit.MILLISECONDS);
+        return protocol.success(String.valueOf(removed));
     }
 }

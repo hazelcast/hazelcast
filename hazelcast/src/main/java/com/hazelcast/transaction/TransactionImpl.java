@@ -16,158 +16,135 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.Transaction;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class TransactionImpl implements Transaction {
+import static com.hazelcast.transaction.Transaction.State.*;
+import static com.hazelcast.transaction.TransactionManagerServiceImpl.SERVICE_NAME;
 
-    private final HazelcastInstanceImpl instance;
+final class TransactionImpl implements Transaction {
+
     private final NodeEngine nodeEngine;
-    private final Set<TxnParticipant> participants = new HashSet<TxnParticipant>(1);
+    private final Set<Integer> partitions = new HashSet<Integer>(5);
 
-    private int status = TXN_STATUS_NO_TXN;
-    private final ILogger logger;
     private final String txnId = UUID.randomUUID().toString();
-    private long transactionTimeoutSeconds = TimeUnit.MINUTES.toSeconds(5);
-    private long expirationMillis = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5);
+    private State state = NO_TXN;
+    private long timeoutMillis = TimeUnit.MINUTES.toMillis(2);
+    private long startTime = 0L;
 
-    public TransactionImpl(HazelcastInstanceImpl instance) {
-        this.instance = instance;
-        this.logger = instance.getLoggingService().getLogger(this.getClass().getName());
-        this.nodeEngine = instance.node.nodeEngine;
+    public TransactionImpl(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
     }
 
     public String getTxnId() {
         return txnId;
     }
 
-    public void setTransactionTimeout(int seconds) {
-        expirationMillis = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds);
-        this.transactionTimeoutSeconds = seconds;
+    public void addPartition(int partitionId) {
+        partitions.add(partitionId);
     }
 
-    public long getTransactionTimeoutSeconds() {
-        return transactionTimeoutSeconds;
-    }
-
-    public long getMillisLeft() {
-        return expirationMillis - System.currentTimeMillis();
-    }
-
-    public void attachParticipant(String serviceName, int partitionId) {
-        participants.add(new TxnParticipant(serviceName, partitionId));
-    }
-
-    class TxnParticipant {
-        final String serviceName;
-        final int partitionId;
-
-        TxnParticipant(String serviceName, int partitionId) {
-            this.serviceName = serviceName;
-            this.partitionId = partitionId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            TxnParticipant that = (TxnParticipant) o;
-            if (partitionId != that.partitionId) return false;
-            if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = serviceName != null ? serviceName.hashCode() : 0;
-            result = 31 * result + partitionId;
-            return result;
-        }
-    }
-
-    public void begin() throws IllegalStateException {
-        if (status == TXN_STATUS_ACTIVE) {
+    void begin() throws IllegalStateException {
+        if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
-        status = TXN_STATUS_ACTIVE;
-        ThreadContext.setTransaction(instance.getName(), this);
+        startTime = Clock.currentTimeMillis();
+        state = ACTIVE;
     }
 
-    public void commit() throws IllegalStateException {
-        if (status != TXN_STATUS_ACTIVE) {
+    void commit() throws TransactionException, IllegalStateException {
+        if (state != ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
         }
+        checkTimeout();
         try {
-            status = TXN_STATUS_PREPARING;
-            List<Future> futures = new ArrayList<Future>(participants.size());
-            for (TxnParticipant t : participants) {
-                Operation op = new PrepareOperation(txnId);
-                futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
-                        .invoke());
+            state = PREPARING;
+            final List<Future> futures = new ArrayList<Future>(partitions.size());
+            final OperationService operationService = nodeEngine.getOperationService();
+            for (Integer partitionId : partitions) {
+                PrepareOperation op = new PrepareOperation(txnId);
+                futures.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId)
+                        .build().invoke());
             }
             for (Future future : futures) {
-                future.get(300, TimeUnit.SECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             }
-            status = TXN_STATUS_PREPARED;
+            state = PREPARED;
             futures.clear();
-            status = TXN_STATUS_COMMITTING;
-            for (TxnParticipant t : participants) {
-                Operation op = new CommitOperation(txnId);
-                futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
-                        .invoke());
+            state = COMMITTING;
+            for (Integer partitionId : partitions) {
+                CommitOperation op = new CommitOperation(txnId);
+                futures.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId)
+                        .build().invoke());
             }
             for (Future future : futures) {
-                future.get(300, TimeUnit.SECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            status = TXN_STATUS_COMMITTED;
-            finalizeTxn();
+            state = COMMITTED;
+        } catch (Throwable e) {
+            state = COMMIT_FAILED;
+            if (e instanceof ExecutionException && e.getCause() instanceof TransactionException) {
+                throw (TransactionException) e.getCause();
+            }
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
-    public void rollback() throws IllegalStateException {
-        if (status == TXN_STATUS_NO_TXN) {
+    private void checkTimeout() throws TransactionException {
+        if (startTime + timeoutMillis < Clock.currentTimeMillis()) {
+            throw new TransactionException("Transaction is timed-out!");
+        }
+    }
+
+    void rollback() throws IllegalStateException {
+        if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }
-        status = TXN_STATUS_ROLLING_BACK;
+        state = ROLLING_BACK;
         try {
-            List<Future> futures = new ArrayList<Future>(participants.size());
-            for (TxnParticipant t : participants) {
-                Operation op = new RollbackOperation(txnId);
-                futures.add(nodeEngine.getOperationService().createInvocationBuilder(t.serviceName, op, t.partitionId).build()
-                        .invoke());
+            List<Future> futures = new ArrayList<Future>(partitions.size());
+            for (Integer partitionId : partitions) {
+                RollbackOperation op = new RollbackOperation(txnId);
+                futures.add(nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, partitionId)
+                        .build().invoke());
             }
             for (Future future : futures) {
-                future.get(300, TimeUnit.SECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrow(e);
         } finally {
-            status = TXN_STATUS_ROLLED_BACK;
-            finalizeTxn();
+            state = ROLLED_BACK;
         }
     }
 
-    public int getStatus() {
-        return status;
+    public State getState() {
+        return state;
     }
 
-    public void finalizeTxn() {
-        status = TXN_STATUS_NO_TXN;
-        ThreadContext.finalizeTransaction(instance.getName());
+    void setTimeout(int timeout, TimeUnit unit) {
+        timeoutMillis = unit.toMillis(timeout);
+    }
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Transaction");
+        sb.append("{txnId='").append(txnId).append('\'');
+        sb.append(", state=").append(state);
+        sb.append(", timeoutMillis=").append(timeoutMillis);
+        sb.append('}');
+        return sb.toString();
     }
 }

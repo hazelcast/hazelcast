@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data> {
 
@@ -102,7 +101,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return removeInternal(key, value);
     }
 
-    public Data tryRemove(final Data key, final long timeout, final TimeUnit timeunit) throws TimeoutException {
+    public void delete(Object key) {
+    }
+
+    public boolean tryRemove(final Data key, final long timeout, final TimeUnit timeunit) {
         return tryRemoveInternal(key, timeout, timeunit);
     }
 

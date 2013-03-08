@@ -397,10 +397,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public boolean checkBound(int delta) {
-        if (itemQueue.size() + delta > config.getMaxSize()) {
-            return false;
-        }
-        return true;
+        return (itemQueue.size() + delta) <= config.getMaxSize();
     }
 
     public Data getDataFromMap(long itemId) {

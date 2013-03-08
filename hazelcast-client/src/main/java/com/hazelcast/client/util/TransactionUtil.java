@@ -17,7 +17,7 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Transaction;
+import com.hazelcast.transaction.Transaction;
 
 /**
  * @mdogan 5/23/12

@@ -35,8 +35,7 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
         this.mapService = mapService;
     }
 
-    @Override
-    public void process(EntryTaskScheduler scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+    public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
         if(entries.isEmpty())
             return;
 

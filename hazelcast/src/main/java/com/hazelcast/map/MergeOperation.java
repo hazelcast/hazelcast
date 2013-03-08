@@ -16,15 +16,11 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -35,7 +31,7 @@ public class MergeOperation extends BasePutOperation {
     private transient boolean merged = false;
 
     public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView, MapMergePolicy policy) {
-        super(name, dataKey, null, null);
+        super(name, dataKey, null);
         mergingEntry = entryView;
         mergePolicy = policy;
     }
@@ -44,7 +40,6 @@ public class MergeOperation extends BasePutOperation {
     }
 
     public void run() {
-        super.run();
         SimpleEntryView entryView = (SimpleEntryView) mergingEntry;
         entryView.setKey(mapService.toObject(mergingEntry.getKey()));
         entryView.setValue(mapService.toObject(mergingEntry.getValue()));
@@ -58,10 +53,6 @@ public class MergeOperation extends BasePutOperation {
 
     public void afterRun() {
         invalidateNearCaches();
-    }
-
-    public boolean shouldBackup() {
-        return true;
     }
 
     @Override

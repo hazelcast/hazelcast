@@ -27,8 +27,8 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     private long timeout;
     private transient boolean successful = false;
 
-    public TryRemoveOperation(String name, Data dataKey, String txnId, long timeout) {
-        super(name, dataKey, txnId);
+    public TryRemoveOperation(String name, Data dataKey, long timeout) {
+        super(name, dataKey);
         this.timeout = timeout;
     }
 
@@ -36,10 +36,6 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         dataOldValue = mapService.toData(recordStore.tryRemove(dataKey));
         successful = dataOldValue != null;
     }
@@ -47,6 +43,10 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     public void afterRun() {
         if (successful)
             super.afterRun();
+    }
+
+    public Object getResponse() {
+        return successful;
     }
 
     @Override

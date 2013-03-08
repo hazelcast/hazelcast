@@ -21,9 +21,8 @@ import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -37,7 +36,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.lang.String.valueOf;
 
@@ -53,8 +51,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         this.proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
     }
 
-    public void flush(boolean flushAllEntries) {
-        proxyHelper.doCommand(Command.MFLUSH, new String[]{getName(), String.valueOf(flushAllEntries)});
+    public void flush() {
+        proxyHelper.doCommand(Command.MFLUSH, new String[]{getName(), String.valueOf(false)});
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -273,6 +271,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         return Boolean.valueOf(protocol.args[0]);
     }
 
+    public void delete(Object key) {
+
+    }
+
     public V replace(K key, V value) {
         check(key);
         check(value);
@@ -360,9 +362,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         return null;
     }
 
-    public void cleanUpNearCache() {
-    }
-
     public Set<K> keySet() {
         return keySet(null);
     }
@@ -439,16 +438,17 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         return (V) proxyHelper.doCommandAsObject(dKey, Command.MREMOVE, new String[]{getName()}, dKey);
     }
 
-    public Object tryRemove(K key, long timeout, TimeUnit timeunit) throws TimeoutException {
+    public boolean tryRemove(K key, long timeout, TimeUnit timeunit){
         check(key);
         Data dKey = proxyHelper.toData(key);
         Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYREMOVE, new String[]{getName(), "" + timeunit.toMillis(timeout)}, dKey);
-        if (protocol.args != null && protocol.args.length > 0) {
-            if ("timeout".equals(protocol.args[0])) {
-                throw new TimeoutException();
-            }
-        }
-        return protocol.hasBuffer() ? (V) proxyHelper.toObject(protocol.buffers[0]) : null;
+        return Boolean.valueOf(protocol.args[0]);
+//        if (protocol.args != null && protocol.args.length > 0) {
+//            if ("timeout".equals(protocol.args[0])) {
+//                throw new TimeoutException();
+//            }
+//        }
+//        return protocol.hasBuffer() ? (V) proxyHelper.toObject(protocol.buffers[0]) : null;
     }
 
     public int size() {

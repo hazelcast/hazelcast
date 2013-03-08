@@ -17,9 +17,13 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.*;
+import com.hazelcast.util.ResponseQueueFactory;
 
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 
 /**
  * @mdogan 8/2/12
@@ -56,6 +60,54 @@ public final class ResponseHandlerFactory {
 
     private static class NoResponseHandler implements ResponseHandler {
         public void sendResponse(final Object obj) {
+        }
+    }
+
+    public static ResponseHandler createErrorLoggingResponseHandler(ILogger logger) {
+        return new ErrorLoggingResponseHandler(logger);
+    }
+
+    private static class ErrorLoggingResponseHandler implements ResponseHandler {
+        private final ILogger logger;
+
+        private ErrorLoggingResponseHandler(ILogger logger) {
+            this.logger = logger;
+        }
+
+        public void sendResponse(final Object obj) {
+            if (obj instanceof Throwable) {
+                Throwable t = (Throwable) obj;
+                logger.log(Level.SEVERE, t.getMessage(), t);
+            }
+        }
+    }
+
+    public static class FutureResponseHandler implements ResponseHandler, Future {
+
+        final BlockingQueue<Object> q = ResponseQueueFactory.newResponseQueue();
+
+        public void sendResponse(Object obj) {
+            q.offer(obj);
+        }
+
+        public Object get() throws InterruptedException, ExecutionException {
+            return q.take();
+        }
+
+        public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return q.poll(timeout, unit);
+        }
+
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        public boolean isCancelled() {
+            return false;
+        }
+
+        public boolean isDone() {
+            return false;
         }
     }
 

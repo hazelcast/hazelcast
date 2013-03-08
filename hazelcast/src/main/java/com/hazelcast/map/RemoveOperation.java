@@ -23,18 +23,14 @@ public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDa
 
     transient boolean successful = false;
 
-    public RemoveOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey, txnId);
+    public RemoveOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
     public RemoveOperation() {
     }
 
     public void run() {
-        super.run();
-        if (prepareTransaction()) {
-            return;
-        }
         dataOldValue = mapService.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }

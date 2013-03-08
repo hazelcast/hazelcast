@@ -64,7 +64,7 @@ public class CollectionContainer {
         this.config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(proxyId.name));
 
         this.lockNamespace = new LockNamespace(CollectionService.SERVICE_NAME, proxyId);
-        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, lockNamespace, config.getSyncBackupCount(), config.getAsyncBackupCount());
         creationTime = Clock.currentTimeMillis();
@@ -182,7 +182,7 @@ public class CollectionContainer {
     }
 
     public void destroy() {
-        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.class, SharedLockService.SERVICE_NAME);
+        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.destroyLockStore(partitionId, lockNamespace);
         }

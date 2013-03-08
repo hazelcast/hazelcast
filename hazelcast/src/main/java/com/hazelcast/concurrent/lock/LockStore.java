@@ -60,6 +60,11 @@ class LockStore implements DataSerializable, LockStoreView {
         return lock.lock(caller, threadId, ttl);
     }
 
+    public boolean extendTTL(Data key, String caller, int threadId, long ttl) {
+        final LockInfo lock = locks.get(key);
+        return lock != null && lock.extendTTL(caller, threadId, ttl);
+    }
+
     private LockInfo getLock(Data key) {
         return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
     }
@@ -67,6 +72,11 @@ class LockStore implements DataSerializable, LockStoreView {
     public boolean isLocked(Data key) {
         final LockInfo lock = locks.get(key);
         return lock != null && lock.isLocked();
+    }
+
+    public boolean isLockedBy(Data key, String caller, int threadId) {
+        LockInfo lock = locks.get(key);
+        return lock != null && lock.isLockedBy(caller, threadId);
     }
 
     public boolean canAcquireLock(Data key, String caller, int threadId) {

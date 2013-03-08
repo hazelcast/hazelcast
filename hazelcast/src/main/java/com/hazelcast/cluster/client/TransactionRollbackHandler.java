@@ -29,7 +29,7 @@ public class TransactionRollbackHandler extends ClientCommandHandler {
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
-        node.hazelcastInstance.getTransaction().rollback();
+//        node.hazelcastInstance.getTransaction().rollback();
         return protocol.success();
     }
 }

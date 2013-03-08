@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.exception;
+package com.hazelcast.transaction;
 
-public class TransactionException extends Exception {
-    public TransactionException() {
-    }
+/**
+ * @mdogan 2/26/13
+ */
+public interface TransactionManagerService  {
 
-    public TransactionException(String message) {
-        super(message);
-    }
+    <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
 
-    public TransactionException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public TransactionException(Throwable cause) {
-        super(cause);
-    }
 }

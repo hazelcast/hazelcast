@@ -39,11 +39,7 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
     protected LockAwareOperation() {
     }
 
-    public final boolean shouldWait() {
-        MapService mapService = (MapService) getService();
-        int partitionId = getPartitionId();
-        PartitionContainer pc = mapService.getPartitionContainer(partitionId);
-        RecordStore recordStore = pc.getRecordStore(name);
+    public boolean shouldWait() {
         return !recordStore.canRun(this);
     }
 

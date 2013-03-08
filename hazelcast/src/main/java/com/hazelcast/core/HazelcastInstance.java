@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
@@ -140,43 +142,8 @@ public interface HazelcastInstance {
      */
     IExecutorService getExecutorService(String name);
 
-    /**
-     * Returns the transaction instance associated with the current thread,
-     * creates a new one if it wasn't already.
-     * <p/>
-     * Transaction doesn't start until you call <tt>transaction.begin()</tt> and
-     * if a transaction is started then all transactional Hazelcast operations
-     * are automatically transactional.
-     * <pre>
-     *  Map map = Hazelcast.getMap("mymap");
-     *  Transaction txn = Hazelcast.getTransaction();
-     *  txn.begin();
-     *  try {
-     *    map.put ("key", "value");
-     *    txn.commit();
-     *  }catch (Exception e) {
-     *    txn.rollback();
-     *  }
-     * </pre>
-     * Isolation is always <tt>REPEATABLE_READ</tt> . If you are in
-     * a transaction, you can read the data in your transaction and the data that
-     * is already committed and if not in a transaction, you can only read the
-     * committed data. Implementation is different for queue and map/set. For
-     * queue operations (offer,poll), offered and/or polled objects are copied to
-     * the next member in order to safely commit/rollback. For map/set, Hazelcast
-     * first acquires the locks for the write operations (put, remove) and holds
-     * the differences (what is added/removed/updated) locally for each transaction.
-     * When transaction is set to commit, Hazelcast will release the locks and
-     * apply the differences. When rolling back, Hazelcast will simply releases
-     * the locks and discard the differences. Transaction instance is attached
-     * to the current thread and each Hazelcast operation checks if the current
-     * thread holds a transaction, if so, operation will be transaction aware.
-     * When transaction is committed, rolled back or timed out, it will be detached
-     * from the thread holding it.
-     *
-     * @return transaction for the current thread
-     */
-    Transaction getTransaction();
+
+    <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
 
     /**
      * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
