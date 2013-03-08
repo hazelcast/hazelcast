@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
@@ -30,6 +31,8 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ConnectionPool {
     static private final int POOL_SIZE = 2;
@@ -39,12 +42,15 @@ public class ConnectionPool {
     private final ConcurrentMap<Address, ObjectPool<Connection>> mPool = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final Connection initialConnection;
+    private final SocketInterceptor socketInterceptor;
+    private final Lock lock = new ReentrantLock();
 
     public ConnectionPool(ClientConfig config, final SerializationService serializationService) {
         this.serializationService = serializationService;
         binder = new DefaultClientBinder(serializationService, config.getCredentials());
         initialConnection = initialConnection(config);
         router = config.getRouter();
+        socketInterceptor = config.getSocketInterceptor();
     }
 
     public void init(HazelcastInstance hazelcast) {
@@ -57,8 +63,7 @@ public class ConnectionPool {
         for (InetSocketAddress isa : config.getAddressList()) {
             try {
                 Address address = new Address(isa);
-                initialConnection = new Connection(address, 0, this.serializationService);
-                binder.bind(initialConnection);
+                initialConnection = newConnection(address);
                 return initialConnection;
             } catch (IOException e) {
                 continue;
@@ -72,9 +77,7 @@ public class ConnectionPool {
         ObjectPool<Connection> pool = new QueueBasedObjectPool<Connection>(POOL_SIZE, new com.hazelcast.client.util.pool.Factory<Connection>() {
             @Override
             public Connection create() throws IOException {
-                Connection connection = new Connection(address, 0, serializationService);
-                binder.bind(initialConnection);
-                return connection;
+                return newConnection(address);
             }
         });
         if (mPool.putIfAbsent(address, pool) != null) {
@@ -85,9 +88,20 @@ public class ConnectionPool {
         return pool;
     }
 
+    public Connection newConnection(Address address) throws IOException {
+        Connection connection = new Connection(address, 0, serializationService);
+        if (socketInterceptor != null)
+            socketInterceptor.onConnect(connection.getSocket());
+        binder.bind(connection);
+        return connection;
+    }
+
     public Connection takeConnection(Member member) throws InterruptedException {
-        if (!initialized.get())
+        if (!initialized.get())  {
+            lock.lock();
             return initialConnection;
+
+        }
         if (member == null) {
             member = router.next();
             if (member == null) {
@@ -102,8 +116,19 @@ public class ConnectionPool {
     }
 
     public void releaseConnection(Connection connection) {
+        if(!initialized.get() && connection == initialConnection){
+            lock.unlock();
+        }
         ObjectPool<Connection> pool = mPool.get(connection.getAddress());
         if (pool != null)
             pool.release(connection);
+    }
+
+    public Router getRouter() {
+        return router;
+    }
+
+    public boolean isInitialized() {
+        return initialized.get();
     }
 }

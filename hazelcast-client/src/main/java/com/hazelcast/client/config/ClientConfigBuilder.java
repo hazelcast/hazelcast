@@ -41,8 +41,6 @@ public class ClientConfigBuilder {
     public final static String CONNECTION_ATTEMPT_LIMIT = "hazelcast.client.connection.attempts.limit";
     public final static String RECONNECTION_TIMEOUT = "hazelcast.client.reconnection.timeout";
     public final static String RECONNECTION_ATTEMPT_LIMIT = "hazelcast.client.reconnection.attempts.limit";
-    public final static String SHUFFLE_ADDRESSES = "hazelcast.client.shuffle.addresses";
-    public final static String UPDATE_AUTOMATIC = "hazelcast.client.update.automatic";
     public final static String ADDRESSES = "hazelcast.client.addresses";
 
     private final Properties props = new Properties();
@@ -106,12 +104,6 @@ public class ClientConfigBuilder {
         }
         if (props.containsKey(RECONNECTION_ATTEMPT_LIMIT)) {
             config.setReconnectionAttemptLimit(Integer.parseInt(props.getProperty(RECONNECTION_ATTEMPT_LIMIT)));
-        }
-        if (props.containsKey(SHUFFLE_ADDRESSES)) {
-            config.setShuffle(Boolean.valueOf(props.getProperty(SHUFFLE_ADDRESSES)));
-        }
-        if (props.containsKey(UPDATE_AUTOMATIC)) {
-            config.setUpdateAutomatic(Boolean.valueOf(props.getProperty(UPDATE_AUTOMATIC)));
         }
         if (props.containsKey(ADDRESSES)) {
             final String addressesProp = props.getProperty(ADDRESSES);

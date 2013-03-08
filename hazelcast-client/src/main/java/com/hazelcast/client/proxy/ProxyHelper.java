@@ -21,6 +21,7 @@ import com.hazelcast.client.proxy.listener.ListenerResponseHandler;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
@@ -116,7 +117,7 @@ public class ProxyHelper {
         Protocol protocol = createProtocol(command, args, data);
         try {
             protocol.onEnqueue();
-            Connection connection = cp.takeConnection((Member) null);
+            Connection connection = cp.takeConnection(null);
             writer.write(connection, protocol);
             cp.releaseConnection(connection);
         } catch (IOException e) {
@@ -126,10 +127,20 @@ public class ProxyHelper {
     }
 
     public ListenerThread createAListenerThread(String threadName, HazelcastClient client, Protocol request, ListenerResponseHandler lrh) {
-        InetSocketAddress isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
-        final Connection connection = client.getConnectionManager().createAndBindConnection(isa);
-        ListenerThread thread = new ListenerThread(threadName, request, lrh, connection, ss);
-        return thread;
+        ConnectionPool cp = client.getConnectionPool();
+        Router rt = cp.getRouter();
+        Member member = rt.next();
+        InetSocketAddress isa;
+        if (member == null)
+            isa = client.getCluster().getMembers().iterator().next().getInetSocketAddress();
+        else
+            isa = member.getInetSocketAddress();
+        try {
+            Connection connection = cp.newConnection(new Address(isa));
+            return new ListenerThread(threadName, request, lrh, connection, ss);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Member key2Member(Object object) {

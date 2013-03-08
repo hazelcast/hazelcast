@@ -31,10 +31,10 @@ public class RoundRobinRouter implements Router, MembershipListener {
     @Override
     public void init(HazelcastInstance h) {
         Cluster cluster = h.getCluster();
-        cluster.addMembershipListener(this);
         for(Member member: cluster.getMembers()){
             addMember(member);
         }
+        cluster.addMembershipListener(this);
     }
 
     @Override

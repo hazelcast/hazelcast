@@ -43,7 +43,7 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 //        } catch (Throwable t) {
 //            t.printStackTrace();
 //        }
-        System.setProperty("hazelcast.logging.type", "log4j");
+//        System.setProperty("hazelcast.logging.type", "log4j");
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
         System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
