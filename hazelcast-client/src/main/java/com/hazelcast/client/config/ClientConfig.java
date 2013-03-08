@@ -32,14 +32,39 @@ public class ClientConfig {
 
     private GroupConfig groupConfig = new GroupConfig();
     private final List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
-    private Credentials credentials;
+    private Router router = new RoundRobinRouter();
+
+
+    private final Collection<EventListener> listeners = new HashSet<EventListener>();
+
+    private boolean smart = true;
+    private int poolSize = 10;
+
+
     private int connectionTimeout = 300000;
     private int initialConnectionAttemptLimit = 1;
-    private int reconnectionAttemptLimit = 1;
     private int reConnectionTimeOut = 5000;
+    private int reconnectionAttemptLimit = 1;
+
+
     private SocketInterceptor socketInterceptor = null;
-    private final Collection<EventListener> listeners = new HashSet<EventListener>();
-    private Router router = new RoundRobinRouter();
+    private Credentials credentials;
+
+    public boolean isSmart() {
+        return smart;
+    }
+
+    public void setSmart(boolean smart) {
+        this.smart = smart;
+    }
+
+    public int getPoolSize() {
+        return poolSize;
+    }
+
+    public void setPoolSize(int poolSize) {
+        this.poolSize = poolSize;
+    }
 
     public SocketInterceptor getSocketInterceptor() {
         return socketInterceptor;

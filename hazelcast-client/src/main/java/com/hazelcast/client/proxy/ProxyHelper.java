@@ -50,6 +50,7 @@ public class ProxyHelper {
     final ProtocolReader reader;
     final ConnectionPool cp;
     final PartitionClientProxy pp;
+    final boolean smart;
     private final SerializationService ss;
 
     public ProxyHelper(HazelcastClient client) {
@@ -58,6 +59,7 @@ public class ProxyHelper {
         this.pp = (PartitionClientProxy) client.getPartitionService();
         this.writer = new ProtocolWriter(ss);
         this.reader = new ProtocolReader(ss);
+        smart = client.getClientConfig().isSmart();
     }
 
     public int getCurrentThreadId() {
@@ -143,13 +145,14 @@ public class ProxyHelper {
         }
     }
 
-    public Member key2Member(Object object) {
+    public Member key2MemberIfSmart(Object object) {
+        if (!smart) return null;
         Partition partition = pp.getCachedPartition(object);
         return partition == null ? null : partition.getOwner();
     }
 
     public Protocol doCommand(Data key, Command command, String[] args, Data... data) {
-        Member member = key == null ? null : key2Member(key);
+        Member member = key == null ? null : key2MemberIfSmart(key);
         return doCommand(member, command, args, data);
     }
 
@@ -303,7 +306,7 @@ public class ProxyHelper {
         Context context = Context.getOrCreate();
         if (context.getConnection() == null) {
             try {
-                Member member = key2Member(key);
+                Member member = key2MemberIfSmart(key);
                 Connection connection = cp.takeConnection(member);
                 context.setConnection(connection);
             } catch (InterruptedException e) {

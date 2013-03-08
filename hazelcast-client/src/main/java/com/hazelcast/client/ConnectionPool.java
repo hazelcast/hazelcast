@@ -35,7 +35,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ConnectionPool {
-    static private final int POOL_SIZE = 2;
+    private final int poolSize;
     private final SerializationService serializationService;
     private final DefaultClientBinder binder;
     private final Router router;
@@ -51,6 +51,7 @@ public class ConnectionPool {
         initialConnection = initialConnection(config);
         router = config.getRouter();
         socketInterceptor = config.getSocketInterceptor();
+        poolSize = config.getPoolSize();
     }
 
     public void init(HazelcastInstance hazelcast) {
@@ -74,7 +75,7 @@ public class ConnectionPool {
 
     private ObjectPool<Connection> createPoolForTheMember(MemberImpl member) {
         final Address address = member.getAddress();
-        ObjectPool<Connection> pool = new QueueBasedObjectPool<Connection>(POOL_SIZE, new com.hazelcast.client.util.pool.Factory<Connection>() {
+        ObjectPool<Connection> pool = new QueueBasedObjectPool<Connection>(poolSize, new com.hazelcast.client.util.pool.Factory<Connection>() {
             @Override
             public Connection create() throws IOException {
                 return newConnection(address);

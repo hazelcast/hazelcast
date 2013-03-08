@@ -249,7 +249,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     public Collection<V> values(Predicate predicate) {
         Map<K, V> map = getCopyOfTheMap(predicate);
         return map.values();
-//        return new ValueCollection<K, V>(this, set);
     }
 
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {

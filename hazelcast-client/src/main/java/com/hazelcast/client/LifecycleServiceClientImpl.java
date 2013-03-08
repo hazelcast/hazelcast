@@ -46,7 +46,6 @@ public class LifecycleServiceClientImpl implements LifecycleService {
 
     public LifecycleServiceClientImpl(HazelcastClient hazelcastClient) {
         this.hazelcastClient = hazelcastClient;
-
         if (hazelcastClient.getClientConfig() != null) {
             final List<LifecycleListener> listeners = new LinkedList<LifecycleListener>();
             for (Object listener : hazelcastClient.getClientConfig().getListeners()) {
