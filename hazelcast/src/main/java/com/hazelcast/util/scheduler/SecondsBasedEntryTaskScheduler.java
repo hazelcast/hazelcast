@@ -18,6 +18,8 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.util.Clock;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -145,11 +147,15 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         public void run() {
             final ConcurrentMap<K, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
+            Set<ScheduledEntry<K,V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
             for (K key : entries.keySet()) {
                 // TODO: there is a concurrency problem here. you should put the object you can remove to a separate list then send them
-                secondsOfKeys.remove(key);
+                Integer removed = secondsOfKeys.remove(key);
+                if (removed != null ) {
+                    values.add(entries.get(key));
+                }
             }
-            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, entries.values());
+            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, values);
         }
     }
 
