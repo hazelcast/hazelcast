@@ -117,7 +117,7 @@ public class ConnectionPool {
         if (member == null) {
             member = router.next();
             if (member == null) {
-                throw new RuntimeException("Router shouldn't return null member");
+                throw new RuntimeException("Router '"+router+"' could not find a member to route to");
             }
         }
         ObjectPool<Connection> pool = mPool.get(member.getInetSocketAddress());
