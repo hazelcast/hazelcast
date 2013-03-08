@@ -34,7 +34,7 @@ public class UnsortedIndexStore implements IndexStore {
             }
             return;
         }
-        if (trend == -1) {
+        if (trend < 0) {
             Comparable oldFrom = from;
             from = to;
             to = oldFrom;

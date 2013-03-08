@@ -654,7 +654,6 @@ public class QueryTest extends TestUtil {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    // todo fails
     @Test
     public void testNullIndexing() {
         Config cfg = new Config();
