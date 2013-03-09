@@ -30,6 +30,7 @@ import com.hazelcast.spi.annotation.ExecutedBy;
 import com.hazelcast.spi.annotation.ThreadType;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.PartitionKeyUtil;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -547,6 +548,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public final int getPartitionId(Object key) {
+        key = PartitionKeyUtil.getPartitionKey(key);
         return getPartitionId(nodeEngine.toData(key));
     }
 

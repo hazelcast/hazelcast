@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ByteUtil;
+import com.hazelcast.util.PartitionKeyUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -185,6 +186,7 @@ public class Config implements DataSerializable {
     }
 
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         T t = map.get(name);
         if (t == null) {
             final Set<String> tNames = map.keySet();

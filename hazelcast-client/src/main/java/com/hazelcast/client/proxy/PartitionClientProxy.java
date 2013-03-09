@@ -27,6 +27,7 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.util.PartitionKeyUtil;
 
 import java.net.UnknownHostException;
 import java.util.LinkedHashSet;
@@ -62,7 +63,7 @@ public class PartitionClientProxy implements PartitionService {
     private Partition partition(final int partitionId, String hostname, int port) {
         Address address = null;
         if(hostname!="null"){   //TODO: Do you mean (hostname != null) OR (!hostname.equals("null"))
-           
+
             try {
                 address = new Address(hostname, port);
             } catch (UnknownHostException e) {
@@ -82,6 +83,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public Partition getPartition(Object key) {
+        key = PartitionKeyUtil.getPartitionKey(key);
         Protocol protocol = proxyHelper.doCommand(Command.PARTITIONS, new String[]{}, proxyHelper.toData(key));
         return partition(Integer.valueOf(protocol.args[0]), protocol.args[1], Integer.valueOf(protocol.args[2]));
     }
