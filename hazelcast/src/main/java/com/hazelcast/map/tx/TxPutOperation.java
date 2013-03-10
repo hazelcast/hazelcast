@@ -30,7 +30,7 @@ public class TxPutOperation extends BaseTxPutOperation {
     }
 
     protected void innerProcess() {
-        partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue()));
+        partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
     }
 
     protected void innerOnCommit() {
