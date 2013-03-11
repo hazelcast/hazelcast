@@ -63,11 +63,11 @@ public class PollOperation extends QueueBackupAwareOperation implements WaitSupp
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new QueueWaitNotifyKey(getName(), "offer");
+        return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new QueueWaitNotifyKey(getName(), "poll");
+        return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
     public boolean shouldWait() {
