@@ -92,7 +92,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public void setInternal(Data key, Data value) throws TransactionException {
-
+        TxSetOperation op = new TxSetOperation(name, key, value);
+        invokeOperation(key, op);
     }
 
     public Data putIfAbsentInternal(Data key, Data value) throws TransactionException {

@@ -50,7 +50,8 @@ public class TransactionalMapProxy<K,V> extends TransactionalMapProxySupport imp
     }
 
     public void set(K key, V value) throws TransactionException {
-
+        final NodeEngine nodeEngine = getNodeEngine();
+        setInternal(nodeEngine.toData(key), nodeEngine.toData(value));
     }
 
     public V putIfAbsent(K key, V value) throws TransactionException {
