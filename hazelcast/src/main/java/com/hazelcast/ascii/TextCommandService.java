@@ -43,7 +43,7 @@ public interface TextCommandService {
 
     Object replace(String mapName, String key, Object value);
 
-    void lock(String mapName, String key);
+    void lock(String mapName, String key) throws InterruptedException;
 
     void unlock(String mapName, String key);
 

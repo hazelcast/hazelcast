@@ -89,7 +89,15 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
                 setCommand.setResponse(NOT_STORED);
             }
         } else if (APPEND == setCommand.getType()) {
-            textCommandService.lock(mapName, key);
+            try {
+                textCommandService.lock(mapName, key);
+            } catch (Exception e) {
+                setCommand.setResponse(NOT_STORED);
+                if (setCommand.shouldReply()) {
+                    textCommandService.sendResponse(setCommand);
+                }
+                return;
+            }
             Object oldValue = textCommandService.get(mapName, key);
             MemcacheEntry entry = null;
             if (oldValue != null) {
@@ -115,7 +123,15 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
             textCommandService.unlock(mapName, key);
 
         } else if (PREPEND == setCommand.getType()) {
-            textCommandService.lock(mapName, key);
+            try {
+                textCommandService.lock(mapName, key);
+            } catch (Exception e) {
+                setCommand.setResponse(NOT_STORED);
+                if (setCommand.shouldReply()) {
+                    textCommandService.sendResponse(setCommand);
+                }
+                return;
+            }
             Object oldValue = textCommandService.get(mapName, key);
             MemcacheEntry entry = null;
             if (oldValue != null) {

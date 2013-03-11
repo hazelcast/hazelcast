@@ -51,7 +51,15 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
             key = key.substring(index + 1);
         }
         int ttl = textCommandService.getAdjustedTTLSeconds(touchCommand.getExpiration());
-        textCommandService.lock(mapName, key);
+        try {
+            textCommandService.lock(mapName, key);
+        } catch (Exception e) {
+            touchCommand.setResponse(NOT_STORED);
+            if (touchCommand.shouldReply()) {
+                textCommandService.sendResponse(touchCommand);
+            }
+            return;
+        }
         final Object value = textCommandService.get(mapName, key);
         textCommandService.incrementTouchCount();
         if (value != null) {

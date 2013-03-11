@@ -51,7 +51,15 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
             mapName = MapNamePreceder + key.substring(0, index);
             key = key.substring(index + 1);
         }
-        textCommandService.lock(mapName, key);
+        try {
+            textCommandService.lock(mapName, key);
+        } catch (Exception e) {
+            incrementCommand.setResponse(NOT_FOUND);
+            if (incrementCommand.shouldReply()) {
+                textCommandService.sendResponse(incrementCommand);
+            }
+            return;
+        }
         Object value = textCommandService.get(mapName, key);
         MemcacheEntry entry = null;
         if (value != null) {

@@ -215,11 +215,12 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         return hazelcast.getMap(mapName).replace(key, value);
     }
 
-    public void lock(String mapName, String key) {
-        hazelcast.getMap(mapName).lock(key);
-//        if (!hazelcast.getMap(mapName).tryLock(key, 1, TimeUnit.MINUTES)) {
-//            throw new RuntimeException("Memcache client could not get the lock for map:" + mapName + " key:" + key + " in 1 minute");
-//        }
+    public void lock(String mapName, String key) throws InterruptedException {
+//        hazelcast.getMap(mapName).lock(key);
+//        throw new  RuntimeException("sssssss");
+        if (!hazelcast.getMap(mapName).tryLock(key, 1, TimeUnit.MINUTES)) {
+            throw new RuntimeException("Memcache client could not get the lock for map:" + mapName + " key:" + key + " in 1 minute");
+        }
     }
 
     public void unlock(String mapName, String key) {

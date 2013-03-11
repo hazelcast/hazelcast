@@ -181,7 +181,6 @@ public class MemcacheTest {
             Assert.assertEquals(i, client.get(String.valueOf(i)));
         }
         final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-        System.out.println(stats);
         Assert.assertEquals("100", stats.get("cmd_set"));
         Assert.assertEquals("100", stats.get("cmd_get"));
         Assert.assertEquals("100", stats.get("incr_hits"));
