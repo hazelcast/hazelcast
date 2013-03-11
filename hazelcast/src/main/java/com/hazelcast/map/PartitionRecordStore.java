@@ -289,8 +289,7 @@ public class PartitionRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
         }
-        // TODO: @mm - Data.equals() or Object.equals() should be decided due to record type.
-        if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
+        if(mapService.compare(name, testValue, oldValue)) {
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             mapStoreDelete(record, dataKey);
             records.remove(dataKey);

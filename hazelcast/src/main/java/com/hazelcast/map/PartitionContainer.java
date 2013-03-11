@@ -48,9 +48,9 @@ public class PartitionContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);
     }
 
-    public void addTransactionItem(TransactionItem item) {
+    public TransactionItem addTransactionItem(TransactionItem item) {
         final TransactionKey key = new TransactionKey(item.getTxnId(), item.getName(), item.getKey());
-        transactionItems.put(key, item);
+        return transactionItems.put(key, item);
     }
 
     public TransactionItem getTransactionItem(TransactionKey key) {
