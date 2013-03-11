@@ -22,15 +22,17 @@ import com.hazelcast.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.ascii.rest.RestValue;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.SimpleBlockingQueue;
 
 import java.nio.ByteBuffer;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,14 +44,20 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     private final Node node;
     private final TextCommandProcessor[] textCommandProcessors = new TextCommandProcessor[100];
     private final HazelcastInstance hazelcast;
-    private final AtomicLong gets = new AtomicLong();
     private final AtomicLong sets = new AtomicLong();
-    private final AtomicLong deletes = new AtomicLong();
+    private final AtomicLong touches = new AtomicLong();
     private final AtomicLong getHits = new AtomicLong();
+    private final AtomicLong getMisses = new AtomicLong();
+    private final AtomicLong deleteMisses = new AtomicLong();
+    private final AtomicLong deleteHits = new AtomicLong();
+    private final AtomicLong incrementHits = new AtomicLong();
+    private final AtomicLong incrementMisses = new AtomicLong();
+    private final AtomicLong decrementHits = new AtomicLong();
+    private final AtomicLong decrementMisses = new AtomicLong();
     private final long startTime = Clock.currentTimeMillis();
+    private final ILogger logger;
     private volatile ResponseThreadRunnable responseThreadRunnable;
     private volatile boolean running = true;
-    private final ILogger logger;
 
     public TextCommandServiceImpl(Node node) {
         this.node = node;
@@ -58,6 +66,8 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         textCommandProcessors[GET.getValue()] = new GetCommandProcessor(this, true);
         textCommandProcessors[PARTIAL_GET.getValue()] = new GetCommandProcessor(this, false);
         textCommandProcessors[SET.getValue()] = new SetCommandProcessor(this);
+        textCommandProcessors[APPEND.getValue()] = new SetCommandProcessor(this);
+        textCommandProcessors[PREPEND.getValue()] = new SetCommandProcessor(this);
         textCommandProcessors[ADD.getValue()] = new SetCommandProcessor(this);
         textCommandProcessors[REPLACE.getValue()] = new SetCommandProcessor(this);
         textCommandProcessors[GET_END.getValue()] = new NoOpCommandProcessor(this);
@@ -65,6 +75,10 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         textCommandProcessors[QUIT.getValue()] = new SimpleCommandProcessor(this);
         textCommandProcessors[STATS.getValue()] = new StatsCommandProcessor(this);
         textCommandProcessors[UNKNOWN.getValue()] = new ErrorCommandProcessor(this);
+        textCommandProcessors[VERSION.getValue()] = new VersionCommandProcessor(this);
+        textCommandProcessors[TOUCH.getValue()] = new TouchCommandProcessor(this);
+        textCommandProcessors[INCREMENT.getValue()] = new IncrementCommandProcessor(this);
+        textCommandProcessors[DECREMENT.getValue()] = new IncrementCommandProcessor(this);
         textCommandProcessors[ERROR_CLIENT.getValue()] = new ErrorCommandProcessor(this);
         textCommandProcessors[ERROR_SERVER.getValue()] = new ErrorCommandProcessor(this);
         textCommandProcessors[HTTP_GET.getValue()] = new HttpGetCommandProcessor(this);
@@ -88,30 +102,60 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         stats.uptime = (int) ((Clock.currentTimeMillis() - startTime) / 1000);
 //        stats.threads = parallelExecutor.getActiveCount();
 //        stats.waiting_requests = parallelExecutor.getPoolSize();
-        stats.cmd_get = gets.get();
+        stats.cmd_get = getMisses.get() + getHits.get();
         stats.cmd_set = sets.get();
-        stats.cmd_delete = deletes.get();
+        stats.cmd_touch = touches.get();
         stats.get_hits = getHits.get();
-        stats.get_misses = gets.get() - getHits.get();
+        stats.get_misses = getMisses.get();
+        stats.delete_hits = deleteHits.get();
+        stats.delete_misses = deleteMisses.get();
+        stats.incr_hits = incrementHits.get();
+        stats.incr_misses = incrementMisses.get();
+        stats.decr_hits = decrementHits.get();
+        stats.decr_misses = decrementMisses.get();
         stats.curr_connections = node.connectionManager.getCurrentClientConnections();
         stats.total_connections = node.connectionManager.getAllTextConnections();
         return stats;
     }
 
-    public long incrementDeleteCount() {
-        return deletes.incrementAndGet();
+    public long incrementDeleteHitCount(int inc) {
+        return deleteHits.addAndGet(inc);
     }
 
-    public long incrementGetCount() {
-        return gets.incrementAndGet();
+    public long incrementDeleteMissCount() {
+        return deleteMisses.incrementAndGet();
+    }
+
+    public long incrementGetHitCount() {
+        return getHits.incrementAndGet();
+    }
+
+    public long incrementGetMissCount() {
+        return getMisses.incrementAndGet();
     }
 
     public long incrementSetCount() {
         return sets.incrementAndGet();
     }
 
-    public long incrementHitCount() {
-        return getHits.incrementAndGet();
+    public long incrementIncHitCount() {
+        return incrementHits.incrementAndGet();
+    }
+
+    public long incrementIncMissCount() {
+        return incrementMisses.incrementAndGet();
+    }
+
+    public long incrementDecrHitCount() {
+        return decrementHits.incrementAndGet();
+    }
+
+    public long incrementDecrMissCount() {
+        return decrementMisses.incrementAndGet();
+    }
+
+    public long incrementTouchCount() {
+        return touches.incrementAndGet();
     }
 
     public void processRequest(TextCommand command) {
@@ -149,11 +193,14 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             } else if (value instanceof byte[]) {
                 result = (byte[]) value;
             } else {
-//                result = ThreadContext.get().toByteArray(value);
                 result = toByteArray(value);
             }
         }
         return result;
+    }
+
+    public Object put(String mapName, String key, Object value) {
+        return hazelcast.getMap(mapName).put(key, value);
     }
 
     public Object put(String mapName, String key, Object value, int ttlSeconds) {
@@ -166,6 +213,28 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     public Object replace(String mapName, String key, Object value) {
         return hazelcast.getMap(mapName).replace(key, value);
+    }
+
+    public void lock(String mapName, String key) throws InterruptedException {
+//        hazelcast.getMap(mapName).lock(key);
+//        throw new  RuntimeException("sssssss");
+        if (!hazelcast.getMap(mapName).tryLock(key, 1, TimeUnit.MINUTES)) {
+            throw new RuntimeException("Memcache client could not get the lock for map:" + mapName + " key:" + key + " in 1 minute");
+        }
+    }
+
+    public void unlock(String mapName, String key) {
+        hazelcast.getMap(mapName).unlock(key);
+    }
+
+    public int deleteAll(String mapName) {
+        final IMap<Object, Object> map = hazelcast.getMap(mapName);
+        final Set<Object> set = map.keySet();
+        int count = 0;
+        for (Object key : set) {
+            if (map.remove(key) != null) count++;
+        }
+        return count;
     }
 
     public Object delete(String mapName, String key) {
@@ -188,6 +257,19 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         return hazelcast.getQueue(queueName).poll();
     }
 
+    public void sendResponse(TextCommand textCommand) {
+        if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
+            throw new RuntimeException("Shouldn't reply " + textCommand);
+        }
+        responseThreadRunnable.sendResponse(textCommand);
+    }
+
+    public void stop() {
+        if (responseThreadRunnable != null) {
+            responseThreadRunnable.stop();
+        }
+    }
+
     class CommandExecutor implements Runnable {
         final TextCommand command;
 
@@ -205,15 +287,8 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         }
     }
 
-    public void sendResponse(TextCommand textCommand) {
-        if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
-            throw new RuntimeException("Shouldn't reply " + textCommand);
-        }
-        responseThreadRunnable.sendResponse(textCommand);
-    }
-
     class ResponseThreadRunnable implements Runnable {
-        private final BlockingQueue<TextCommand> blockingQueue = new SimpleBlockingQueue<TextCommand>();
+        private final BlockingQueue<TextCommand> blockingQueue = new ArrayBlockingQueue<TextCommand>(200);
         private final Object stopObject = new Object();
 
         public void sendResponse(TextCommand textCommand) {
@@ -259,12 +334,6 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                 } catch (Exception ignored) {
                 }
             }
-        }
-    }
-
-    public void stop() {
-        if (responseThreadRunnable != null) {
-            responseThreadRunnable.stop();
         }
     }
 }
