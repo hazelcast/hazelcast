@@ -117,13 +117,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                             case PREPARED:
                                 logger.log(Level.WARNING, "Rolling-back previously prepared transaction[" + log.getTxnId()
                                         + "], because caller is not a member of the cluster anymore!");
-                                for (TransactionalOperation txOp : log.getOperationRecords()) {
-                                    try {
-                                        txOp.doRollback();
-                                    } catch (Throwable e) {
-                                        logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + log.getTxnId() + "]!", e);
-                                    }
-                                }
+                                rollbackTransactionLog(log);
                                 break;
                             case COMMITTED:
                                 logger.log(Level.INFO, "Broadcasting COMMIT message for transaction[" + log.getTxnId()
@@ -190,13 +184,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         try {
             log.setCallerUuid(caller);
             log.setState(Transaction.State.COMMITTED);
-            for (TransactionalOperation op : log.getOperationRecords()) {
-                try {
-                    op.doCommit();
-                } catch (Throwable e) {
-                    logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
-                }
-            }
+            commitTransactionLog(log);
             scheduler.schedule(ONE_MIN_MS, key, DUMMY_OBJECT);
             log.setScheduled(true);
         } finally {
@@ -216,13 +204,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         try {
             log.setCallerUuid(caller);
             log.setState(Transaction.State.ROLLED_BACK);
-            for (TransactionalOperation op : log.getOperationRecords()) {
-                try {
-                    op.doRollback();
-                } catch (Throwable e) {
-                    logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + txnId + "]!", e);
-                }
-            }
+            rollbackTransactionLog(log);
             scheduler.schedule(ONE_MIN_MS, key, DUMMY_OBJECT);
             log.setScheduled(true);
         } finally {
@@ -236,13 +218,18 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             final TransactionLog log = iter.next();
             if (txnId.equals(log.getTxnId())) {
                 iter.remove();
-                for (TransactionalOperation op : log.getOperationRecords()) {
-                    try {
-                        op.doCommit();
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
-                    }
-                }
+                commitTransactionLog(log);
+            }
+        }
+    }
+
+    private void commitTransactionLog(TransactionLog log) {
+        String txnId = log.getTxnId();
+        for (TransactionalOperation op : log.getOperationRecords()) {
+            try {
+                op.doCommit();
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
             }
         }
     }
@@ -253,13 +240,21 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             final TransactionLog log = iter.next();
             if (txnId.equals(log.getTxnId())) {
                 iter.remove();
-                for (TransactionalOperation op : log.getOperationRecords()) {
-                    try {
-                        op.doRollback();
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + txnId + "]!", e);
-                    }
-                }
+                rollbackTransactionLog(log);
+            }
+        }
+    }
+
+    private void rollbackTransactionLog(TransactionLog log) {
+        final List<TransactionalOperation> ops = log.getOperationRecords();
+        // Rollback should be done in reverse order!
+        final ListIterator<TransactionalOperation> iter = ops.listIterator(ops.size());
+        while (iter.hasPrevious()) {
+            final TransactionalOperation op = iter.previous();
+            try {
+                op.doRollback();
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + log.getTxnId() + "]!", e);
             }
         }
     }
