@@ -45,11 +45,18 @@ public abstract class TransactionalOperation extends Operation implements DataSe
         this.txnId = txnId;
     }
 
+    public final void beforeRun() throws Exception {
+        if (state == Transaction.State.ACTIVE) {
+            final TransactionManagerServiceImpl txService = (TransactionManagerServiceImpl) getNodeEngine().getTransactionManagerService();
+            txService.addTransactionalOperation(getPartitionId(), this);
+            innerBeforeRun();
+        }
+    }
+
     public final void run() throws Exception {
         switch (state) {
             case ACTIVE:
                 process();
-                addTransactionRecord();
                 break;
 
             case PREPARED:
@@ -66,17 +73,6 @@ public abstract class TransactionalOperation extends Operation implements DataSe
 
             default:
                 throw new IllegalStateException();
-        }
-    }
-
-    private void addTransactionRecord() throws TransactionException {
-        final TransactionManagerServiceImpl txService = (TransactionManagerServiceImpl) getNodeEngine().getTransactionManagerService();
-        txService.addTransactionalOperation(getPartitionId(), this);
-    }
-
-    public final void beforeRun() throws Exception {
-        if (state == Transaction.State.ACTIVE) {
-            innerBeforeRun();
         }
     }
 

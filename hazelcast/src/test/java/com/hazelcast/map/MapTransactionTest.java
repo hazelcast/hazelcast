@@ -24,11 +24,14 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -69,7 +72,7 @@ public class MapTransactionTest {
                 assertNull(map2.get("13"));
                 return true;
             }
-        });
+        }, new TransactionOptions().setTimeout(1, TimeUnit.SECONDS));
         assertTrue(b);
 
         IMap map1 = h1.getMap("default");
