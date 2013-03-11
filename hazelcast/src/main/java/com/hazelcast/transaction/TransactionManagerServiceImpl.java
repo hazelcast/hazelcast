@@ -119,7 +119,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                                         + "], because caller is not a member of the cluster anymore!");
                                 for (TransactionalOperation txOp : log.getOperationRecords()) {
                                     try {
-                                        txOp.rollback();
+                                        txOp.doRollback();
                                     } catch (Throwable e) {
                                         logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + log.getTxnId() + "]!", e);
                                     }
@@ -169,7 +169,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             log.setCallerUuid(caller);
             log.setState(Transaction.State.PREPARED);
             for (TransactionalOperation op : log.getOperationRecords()) {
-                op.prepare();
+                op.doPrepare();
             }
             scheduler.schedule(ONE_MIN_MS * 2, key, DUMMY_OBJECT);
             log.setScheduled(true);
@@ -192,7 +192,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             log.setState(Transaction.State.COMMITTED);
             for (TransactionalOperation op : log.getOperationRecords()) {
                 try {
-                    op.commit();
+                    op.doCommit();
                 } catch (Throwable e) {
                     logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
                 }
@@ -218,7 +218,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             log.setState(Transaction.State.ROLLED_BACK);
             for (TransactionalOperation op : log.getOperationRecords()) {
                 try {
-                    op.rollback();
+                    op.doRollback();
                 } catch (Throwable e) {
                     logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + txnId + "]!", e);
                 }
@@ -238,7 +238,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                 iter.remove();
                 for (TransactionalOperation op : log.getOperationRecords()) {
                     try {
-                        op.commit();
+                        op.doCommit();
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
                     }
@@ -255,7 +255,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                 iter.remove();
                 for (TransactionalOperation op : log.getOperationRecords()) {
                     try {
-                        op.rollback();
+                        op.doRollback();
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + txnId + "]!", e);
                     }

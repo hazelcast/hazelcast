@@ -53,15 +53,15 @@ public abstract class TransactionalOperation extends Operation implements DataSe
                 break;
 
             case PREPARED:
-                onPrepare();
+                prepare();
                 break;
 
             case COMMITTED:
-                onCommit();
+                commit();
                 break;
 
             case ROLLED_BACK:
-                onRollback();
+                rollback();
                 break;
 
             default:
@@ -92,7 +92,7 @@ public abstract class TransactionalOperation extends Operation implements DataSe
     protected void innerAfterRun() throws Exception {
     }
 
-    final void prepare() throws TransactionException {
+    final void doPrepare() throws TransactionException {
         state = Transaction.State.PREPARED;
         ResponseHandlerFactory.FutureResponseHandler f = new ResponseHandlerFactory.FutureResponseHandler();
         setResponseHandler(f);
@@ -113,11 +113,11 @@ public abstract class TransactionalOperation extends Operation implements DataSe
         }
     }
 
-    final void commit() {
+    final void doCommit() {
         completeTx(Transaction.State.COMMITTED);
     }
 
-    final void rollback() {
+    final void doRollback() {
         completeTx(Transaction.State.ROLLED_BACK);
     }
 
@@ -154,11 +154,11 @@ public abstract class TransactionalOperation extends Operation implements DataSe
 
     protected abstract void process() throws TransactionException;
 
-    protected abstract void onPrepare() throws TransactionException;
+    protected abstract void prepare() throws TransactionException;
 
-    protected abstract void onCommit();
+    protected abstract void commit();
 
-    protected abstract void onRollback();
+    protected abstract void rollback();
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(txnId);

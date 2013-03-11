@@ -69,15 +69,15 @@ public abstract class TransactionalQueueOperation extends TransactionalOperation
 
     }
 
-    protected void onPrepare() throws TransactionException {
+    protected void prepare() throws TransactionException {
 
     }
 
-    protected void onCommit() {
+    protected void commit() {
 
     }
 
-    protected void onRollback() {
+    protected void rollback() {
 
     }
 

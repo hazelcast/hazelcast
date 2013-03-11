@@ -46,6 +46,9 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
     }
 
     public boolean offerInternal(Data data, long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
+        if (tx.getState() != Transaction.State.ACTIVE) {
+            throw new IllegalStateException("Transaction is not active!");
+        }
         tx.addPartition(partitionId);
         TxOfferOperation operation = new TxOfferOperation(name, tx.getTxnId(), getTimeout(timeout, unit) , data);
         final NodeEngine nodeEngine = getNodeEngine();
@@ -64,6 +67,9 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
     }
 
     public Data pollInternal(long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
+        if (tx.getState() != Transaction.State.ACTIVE) {
+            throw new IllegalStateException("Transaction is not active!");
+        }
         tx.addPartition(partitionId);
         return null;
     }
