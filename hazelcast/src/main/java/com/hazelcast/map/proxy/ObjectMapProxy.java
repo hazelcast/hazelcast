@@ -119,7 +119,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return removeInternal(key, value);
     }
 
-    public void delete(Object key) {
+    public void delete(Object k) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Data key = nodeEngine.toData(k);
+        deleteInternal(key);
     }
 
     public boolean containsKey(Object k) {

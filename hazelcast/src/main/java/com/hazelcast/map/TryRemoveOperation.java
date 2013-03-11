@@ -70,7 +70,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        getResponseHandler().sendResponse(false);
     }
 
     @Override

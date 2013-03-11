@@ -31,6 +31,8 @@ public interface RecordStore {
 
     Object remove(Data dataKey);
 
+    void delete(Data dataKey);
+
     boolean remove(Data dataKey, Object testValue);
 
     Object get(Data dataKey);
