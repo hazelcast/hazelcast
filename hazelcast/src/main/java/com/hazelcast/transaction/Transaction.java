@@ -34,7 +34,7 @@ public interface Transaction {
         ROLLED_BACK
     }
 
-    void addPartition(int partitionId);
+    void addPartition(int partitionId) throws TransactionException;
 
     String getTxnId();
 

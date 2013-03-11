@@ -29,7 +29,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
-
     private final TransactionImpl transaction;
 
     public TransactionContextImpl(NodeEngineImpl nodeEngine) {
