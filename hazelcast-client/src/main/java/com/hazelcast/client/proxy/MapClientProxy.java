@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.valueOf;
 
-public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
+public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     final ProxyHelper proxyHelper;
     final private String name;
     final HazelcastClient client;
@@ -271,8 +271,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K,V> {
         return Boolean.valueOf(protocol.args[0]);
     }
 
-    public void delete(Object key) {
 
+    public void delete(Object key) {
     }
 
     public V replace(K key, V value) {

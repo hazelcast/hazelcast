@@ -17,21 +17,24 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommandProcessor;
-import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.ascii.TextCommandProcessor;
+import com.hazelcast.ascii.TextCommandServiceImpl;
 
-public class StatsCommandProcessor extends MemcacheCommandProcessor<StatsCommand> {
-
-    public StatsCommandProcessor(TextCommandService textCommandService) {
+/**
+ * User: sancar
+ * Date: 3/7/13
+ * Time: 10:31 AM
+ */
+public class VersionCommandProcessor extends MemcacheCommandProcessor<VersionCommand> {
+    public VersionCommandProcessor(TextCommandServiceImpl textCommandService) {
         super(textCommandService);
     }
 
-    public void handle(StatsCommand command) {
-        Stats stats = textCommandService.getStats();
-        command.setResponse(stats);
-        textCommandService.sendResponse(command);
+    public void handle(VersionCommand request) {
+        textCommandService.sendResponse(request);
     }
 
-    public void handleRejection(StatsCommand command) {
-        handle(command);
+    public void handleRejection(VersionCommand request) {
+        handle(request);
     }
 }

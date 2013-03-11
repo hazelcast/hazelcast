@@ -16,22 +16,29 @@
 
 package com.hazelcast.ascii.memcache;
 
-import com.hazelcast.ascii.AbstractTextCommandProcessor;
-import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.ascii.AbstractTextCommand;
 
-public class StatsCommandProcessor extends MemcacheCommandProcessor<StatsCommand> {
+import java.nio.ByteBuffer;
 
-    public StatsCommandProcessor(TextCommandService textCommandService) {
-        super(textCommandService);
+/**
+ * User: sancar
+ * Date: 3/7/13
+ * Time: 10:27 AM
+ */
+public class VersionCommand extends AbstractTextCommand {
+
+    public static final byte[] version = "VERSION Hazelcast\r\n".getBytes();
+
+    protected VersionCommand(TextCommandType type) {
+        super(type);
     }
 
-    public void handle(StatsCommand command) {
-        Stats stats = textCommandService.getStats();
-        command.setResponse(stats);
-        textCommandService.sendResponse(command);
+    public boolean writeTo(ByteBuffer destination) {
+        destination.put(version);
+        return true;
     }
 
-    public void handleRejection(StatsCommand command) {
-        handle(command);
+    public boolean readFrom(ByteBuffer source) {
+        return true;
     }
 }

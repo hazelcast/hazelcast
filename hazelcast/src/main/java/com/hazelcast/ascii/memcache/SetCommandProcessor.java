@@ -16,9 +16,9 @@
 
 package com.hazelcast.ascii.memcache;
 
-import com.hazelcast.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ByteUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -26,7 +26,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
 
-public class SetCommandProcessor extends AbstractTextCommandProcessor<SetCommand> {
+public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
 
     private final ILogger logger;
 
@@ -55,49 +55,93 @@ public class SetCommandProcessor extends AbstractTextCommandProcessor<SetCommand
      * condition for an "add" or a "replace" command wasn't met, or that the
      * item is in a delete queue (see the "delete" command below).
      */
-    public void handle(SetCommand request) {
-//        System.out.println("Processing " + request);
+    public void handle(SetCommand setCommand) {
         String key = null;
         try {
-            key = URLDecoder.decode(request.getKey(), "UTF-8");
+            key = URLDecoder.decode(setCommand.getKey(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
-        String mapName = "default";
+        String mapName = DefaultMapName;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = key.substring(0, index);
+            mapName = MapNamePreceder + key.substring(0, index);
             key = key.substring(index + 1);
         }
-        Object value = new MemcacheEntry(request.getKey(), request.getValue(), request.getFlag());
-        int ttl = textCommandService.getAdjustedTTLSeconds(request.getExpiration());
+        Object value = new MemcacheEntry(setCommand.getKey(), setCommand.getValue(), setCommand.getFlag());
+        int ttl = textCommandService.getAdjustedTTLSeconds(setCommand.getExpiration());
         textCommandService.incrementSetCount();
-        if (SET == request.getType()) {
-            request.setResponse(STORED);
-            if (request.shouldReply()) {
-                textCommandService.sendResponse(request);
-            }
+        if (SET == setCommand.getType()) {
             textCommandService.put(mapName, key, value, ttl);
-        } else if (ADD == request.getType()) {
+            setCommand.setResponse(STORED);
+        } else if (ADD == setCommand.getType()) {
             boolean added = (textCommandService.putIfAbsent(mapName, key, value, ttl) == null);
             if (added) {
-                request.setResponse(STORED);
+                setCommand.setResponse(STORED);
             } else {
-                request.setResponse(NOT_STORED);
+                setCommand.setResponse(NOT_STORED);
             }
-            if (request.shouldReply()) {
-                textCommandService.sendResponse(request);
-            }
-        } else if (REPLACE == request.getType()) {
+        } else if (REPLACE == setCommand.getType()) {
             boolean replaced = (textCommandService.replace(mapName, key, value) != null);
             if (replaced) {
-                request.setResponse(STORED);
+                setCommand.setResponse(STORED);
             } else {
-                request.setResponse(NOT_STORED);
+                setCommand.setResponse(NOT_STORED);
             }
-            if (request.shouldReply()) {
-                textCommandService.sendResponse(request);
+        } else if (APPEND == setCommand.getType()) {
+            textCommandService.lock(mapName, key);
+            Object oldValue = textCommandService.get(mapName, key);
+            MemcacheEntry entry = null;
+            if (oldValue != null) {
+                if (oldValue instanceof MemcacheEntry) {
+                    final MemcacheEntry oldEntry = (MemcacheEntry) oldValue;
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(oldEntry.getValue(), setCommand.getValue()), 0);
+                } else if (oldValue instanceof byte[]) {
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(((byte[]) oldValue), setCommand.getValue()), 0);
+                } else if (oldValue instanceof String) {
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(((String) oldValue).getBytes(), setCommand.getValue()), 0);
+                } else {
+                    try {
+                        entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(textCommandService.toByteArray(oldValue), setCommand.getValue()), 0);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, e.getMessage(), e);
+                    }
+                }
+                textCommandService.put(mapName, key, entry, ttl);
+                setCommand.setResponse(STORED);
+            } else {
+                setCommand.setResponse(NOT_STORED);
             }
+            textCommandService.unlock(mapName, key);
+
+        } else if (PREPEND == setCommand.getType()) {
+            textCommandService.lock(mapName, key);
+            Object oldValue = textCommandService.get(mapName, key);
+            MemcacheEntry entry = null;
+            if (oldValue != null) {
+                if (oldValue instanceof MemcacheEntry) {
+                    final MemcacheEntry oldEntry = (MemcacheEntry) oldValue;
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), oldEntry.getValue()), oldEntry.getFlag());
+                } else if (oldValue instanceof byte[]) {
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), ((byte[]) oldValue)), 0);
+                } else if (oldValue instanceof String) {
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), ((String) oldValue).getBytes()), 0);
+                } else {
+                    try {
+                        entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), textCommandService.toByteArray(oldValue)), 0);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, e.getMessage(), e);
+                    }
+                }
+                textCommandService.put(mapName, key, entry, ttl);
+                setCommand.setResponse(STORED);
+            } else {
+                setCommand.setResponse(NOT_STORED);
+            }
+            textCommandService.unlock(mapName, key);
+        }
+        if (setCommand.shouldReply()) {
+            textCommandService.sendResponse(setCommand);
         }
     }
 

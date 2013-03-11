@@ -16,27 +16,45 @@
 
 package com.hazelcast.ascii.memcache;
 
+import com.hazelcast.ascii.CommandParser;
 import com.hazelcast.ascii.TextCommand;
 import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TypeAwareCommandParser;
 import com.hazelcast.nio.ascii.SocketTextReader;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
+import java.util.StringTokenizer;
 
-public class SimpleCommandParser extends TypeAwareCommandParser {
-    public SimpleCommandParser(TextCommandConstants.TextCommandType type) {
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+
+/**
+ * User: sancar
+ * Date: 3/8/13
+ * Time: 3:32 PM
+ */
+public class IncrementCommandParser extends TypeAwareCommandParser {
+    public IncrementCommandParser(TextCommandType type) {
         super(type);
     }
 
     public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
-        if (type == QUIT) {
-            return new SimpleCommand(type);
-        } else if (type == STATS) {
-            return new StatsCommand();
-        } else if (type == VERSION) {
-            return new VersionCommand(type);
+        StringTokenizer st = new StringTokenizer(cmd);
+        st.nextToken();
+        String key = null;
+        int value = 0;
+        boolean noReply = false;
+        if (st.hasMoreTokens()) {
+            key = st.nextToken();
         } else {
-            return new ErrorCommand(UNKNOWN);
+            return new ErrorCommand(ERROR_CLIENT);
         }
+        if (st.hasMoreTokens()) {
+            value = Integer.parseInt(st.nextToken());
+        } else {
+            return new ErrorCommand(ERROR_CLIENT);
+        }
+        if (st.hasMoreTokens()) {
+            noReply = "noreply".equals(st.nextToken());
+        }
+        return new IncrementCommand(type, key, value, noReply);
     }
 }
