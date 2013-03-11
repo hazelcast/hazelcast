@@ -57,10 +57,15 @@ public class MapTransactionTest {
             public Boolean execute(TransactionContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("1", "value");
+                txMap.put("1", "value2");
+                txMap.put("2", "value22");
                 txMap.put("13", "value");
-                assertEquals("value", txMap.get("1"));
+                txMap.set("1", "value3");
+                assertEquals("value3", txMap.get("1"));
+                assertEquals("value22", txMap.get("2"));
                 assertEquals("value", txMap.get("13"));
                 assertNull(map2.get("1"));
+                assertNull(map2.get("2"));
                 assertNull(map2.get("13"));
                 return true;
             }
@@ -68,9 +73,11 @@ public class MapTransactionTest {
         assertTrue(b);
 
         IMap map1 = h1.getMap("default");
-        assertEquals("value", map1.get("1"));
+        assertEquals("value3", map1.get("1"));
+        assertEquals("value22", map1.get("2"));
         assertEquals("value", map1.get("13"));
-        assertEquals("value", map2.get("1"));
+        assertEquals("value3", map2.get("1"));
+        assertEquals("value22", map2.get("2"));
         assertEquals("value", map2.get("13"));
     }
 

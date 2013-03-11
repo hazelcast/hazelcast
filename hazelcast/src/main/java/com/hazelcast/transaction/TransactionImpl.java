@@ -35,6 +35,7 @@ final class TransactionImpl implements Transaction {
     private final Set<Integer> partitions = new HashSet<Integer>(5);
 
     private final String txnId = UUID.randomUUID().toString();
+    private final long threadId = Thread.currentThread().getId();
     private State state = NO_TXN;
     private long timeoutMillis = TimeUnit.MINUTES.toMillis(2);
     private long startTime = 0L;
@@ -47,7 +48,13 @@ final class TransactionImpl implements Transaction {
         return txnId;
     }
 
-    public void addPartition(int partitionId) {
+    public void addPartition(int partitionId) throws TransactionException {
+        if (state != Transaction.State.ACTIVE) {
+            throw new IllegalStateException("Transaction is not active!");
+        }
+        if (threadId != Thread.currentThread().getId()) {
+            throw new TransactionException("Transaction cannot span multiple threads!");
+        }
         partitions.add(partitionId);
     }
 

@@ -147,6 +147,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return (Data) invokeOperation(key, operation);
     }
 
+    protected void deleteInternal(Data key) {
+        RemoveOperation operation = new RemoveOperation(name, key);
+        invokeOperation(key, operation);
+    }
+
     protected boolean removeInternal(final Data key, final Data value) {
         RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value);
         return (Boolean) invokeOperation(key, operation);
