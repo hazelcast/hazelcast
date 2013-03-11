@@ -31,8 +31,8 @@ public class TxPeekOperation extends TransactionalQueueOperation {
     public TxPeekOperation() {
     }
 
-    public TxPeekOperation(String name, String txnId, long timeoutMillis) {
-        super(name, txnId, timeoutMillis);
+    public TxPeekOperation(String name, String txnId) {
+        super(name, txnId, 0);
     }
 
     protected void process() throws TransactionException {

@@ -71,11 +71,31 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
             throw new IllegalStateException("Transaction is not active!");
         }
         tx.addPartition(partitionId);
-        return null;
+        TxPollOperation operation = new TxPollOperation(name, tx.getTxnId(), getTimeout(timeout, unit));
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Data) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
+        }
     }
 
     public Data peekInternal() throws TransactionException {
-        return null;
+        if (tx.getState() != Transaction.State.ACTIVE) {
+            throw new IllegalStateException("Transaction is not active!");
+        }
+        tx.addPartition(partitionId);
+        TxPeekOperation operation = new TxPeekOperation(name, tx.getTxnId());
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Data) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
     }
 
     public Object getId() {
