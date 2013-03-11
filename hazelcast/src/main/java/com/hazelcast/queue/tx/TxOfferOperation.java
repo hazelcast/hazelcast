@@ -24,9 +24,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.OfferBackupOperation;
 import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueItem;
-import com.hazelcast.queue.QueueWaitNotifyKey;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
@@ -60,6 +61,22 @@ public class TxOfferOperation extends TransactionalQueueOperation {
 //        }
 //    }
 
+
+    protected void process() throws TransactionException {
+        offered = getOrCreateContainer().txOffer(getTransactionId(), data);
+    }
+
+    protected void prepare() throws TransactionException {
+    }
+
+    protected void commit() {
+        getOrCreateContainer().commit(getTransactionId());
+    }
+
+    protected void rollback() {
+        getOrCreateContainer().rollback(getTransactionId());
+    }
+
     public Object getResponse() {
         return offered;
     }
@@ -83,16 +100,16 @@ public class TxOfferOperation extends TransactionalQueueOperation {
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new QueueWaitNotifyKey(name, "poll");
+        return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new QueueWaitNotifyKey(name, "offer");
+        return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
     public boolean shouldWait() {
-        QueueContainer container = getContainer();
-        return getWaitTimeoutMillis() != 0 && !container.checkBound();
+        QueueContainer container = getOrCreateContainer();
+        return getState() == Transaction.State.ACTIVE && getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity();
     }
 
     public void onWaitExpire() {

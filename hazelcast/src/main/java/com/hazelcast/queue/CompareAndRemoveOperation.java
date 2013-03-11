@@ -96,6 +96,6 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new QueueWaitNotifyKey(name, "offer");
+        return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 }
