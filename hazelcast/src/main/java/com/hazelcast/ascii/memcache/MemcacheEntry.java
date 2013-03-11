@@ -23,15 +23,18 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class MemcacheEntry implements DataSerializable, TextCommandConstants {
-    byte[] bytes;
-    int flag;
+    private byte[] bytes;
+    private byte[] value;
+    private int flag;
 
     public MemcacheEntry(String key, byte[] value, int flag) {
         byte[] flagBytes = new String(" " + flag + " ").getBytes();
         byte[] valueLen = String.valueOf(value.length).getBytes();
         byte[] keyBytes = key.getBytes();
+        this.value = value.clone();
         int size = VALUE_SPACE.length
                 + keyBytes.length
                 + flagBytes.length
@@ -58,12 +61,17 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
         int size = in.readInt();
         bytes = new byte[size];
         in.readFully(bytes);
+        size = in.readInt();
+        value = new byte[size];
+        in.readFully(value);
         flag = in.readInt();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(bytes.length);
         out.write(bytes);
+        out.writeInt(value.length);
+        out.write(value);
         out.writeInt(flag);
     }
 
@@ -79,7 +87,30 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
         return bytes;
     }
 
-    @Override
+    public byte[] getValue() {
+        return value;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MemcacheEntry that = (MemcacheEntry) o;
+
+        if (flag != that.flag) return false;
+        if (!Arrays.equals(bytes, that.bytes)) return false;
+        if (!Arrays.equals(value, that.value)) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = bytes != null ? Arrays.hashCode(bytes) : 0;
+        result = 31 * result + (value != null ? Arrays.hashCode(value) : 0);
+        result = 31 * result + flag;
+        return result;
+    }
+
     public String toString() {
         return "MemcacheEntry{" +
                 "bytes=" + new String(bytes) +

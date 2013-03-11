@@ -16,11 +16,25 @@
 
 package com.hazelcast.transaction;
 
-/**
- * @mdogan 2/26/13
- */
-public interface TransactionManagerService  {
+import java.util.concurrent.TimeUnit;
 
-    <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException;
+public class TransactionOptions {
 
+    private long timeoutMillis;
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
+    }
+
+    public TransactionOptions setTimeout(long timeout, TimeUnit timeUnit) {
+        if (timeout <= 0) {
+            throw new IllegalArgumentException("Timeout must be positive!");
+        }
+        this.timeoutMillis = timeUnit.toMillis(timeout);
+        return this;
+    }
+
+    public static TransactionOptions getDefault() {
+        return new TransactionOptions().setTimeout(2, TimeUnit.MINUTES);
+    }
 }

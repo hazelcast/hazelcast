@@ -35,19 +35,27 @@ final class TransactionImpl implements Transaction {
     private final Set<Integer> partitions = new HashSet<Integer>(5);
 
     private final String txnId = UUID.randomUUID().toString();
+    private final long threadId = Thread.currentThread().getId();
+    private final long timeoutMillis;
     private State state = NO_TXN;
-    private long timeoutMillis = TimeUnit.MINUTES.toMillis(2);
     private long startTime = 0L;
 
-    public TransactionImpl(NodeEngine nodeEngine) {
+    public TransactionImpl(NodeEngine nodeEngine, long timeoutMillis) {
         this.nodeEngine = nodeEngine;
+        this.timeoutMillis = timeoutMillis;
     }
 
     public String getTxnId() {
         return txnId;
     }
 
-    public void addPartition(int partitionId) {
+    public void addPartition(int partitionId) throws TransactionException {
+        if (state != Transaction.State.ACTIVE) {
+            throw new IllegalStateException("Transaction is not active!");
+        }
+        if (threadId != Thread.currentThread().getId()) {
+            throw new TransactionException("Transaction cannot span multiple threads!");
+        }
         partitions.add(partitionId);
     }
 
@@ -85,7 +93,7 @@ final class TransactionImpl implements Transaction {
                         .build().invoke());
             }
             for (Future future : futures) {
-                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                future.get(5, TimeUnit.MINUTES);
             }
             state = COMMITTED;
         } catch (Throwable e) {
@@ -116,7 +124,7 @@ final class TransactionImpl implements Transaction {
                         .build().invoke());
             }
             for (Future future : futures) {
-                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                future.get(5, TimeUnit.MINUTES);
             }
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
@@ -127,10 +135,6 @@ final class TransactionImpl implements Transaction {
 
     public State getState() {
         return state;
-    }
-
-    void setTimeout(int timeout, TimeUnit unit) {
-        timeoutMillis = unit.toMillis(timeout);
     }
 
     public long getTimeoutMillis() {

@@ -19,7 +19,7 @@ package com.hazelcast.ascii.memcache;
 import com.hazelcast.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.ascii.TextCommandService;
 
-public class StatsCommandProcessor extends AbstractTextCommandProcessor<StatsCommand> {
+public class StatsCommandProcessor extends MemcacheCommandProcessor<StatsCommand> {
 
     public StatsCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);

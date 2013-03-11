@@ -77,7 +77,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
+            container = new QueueContainer(name, nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
                     nodeEngine.getSerializationService(), fromBackup);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {

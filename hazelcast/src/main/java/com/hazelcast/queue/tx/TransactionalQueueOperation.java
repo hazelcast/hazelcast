@@ -53,7 +53,7 @@ public abstract class TransactionalQueueOperation extends TransactionalOperation
         this.timeoutMillis = timeoutMillis;
     }
 
-    protected final QueueContainer getContainer() {
+    protected final QueueContainer getOrCreateContainer() {
         if (container == null) {
             QueueService queueService = getService();
             try {
@@ -90,22 +90,16 @@ public abstract class TransactionalQueueOperation extends TransactionalOperation
     }
 
     public final int getSyncBackupCount() {
-        return getContainer().getConfig().getSyncBackupCount();
+        return getOrCreateContainer().getConfig().getSyncBackupCount();
     }
 
     public final int getAsyncBackupCount() {
-        return getContainer().getConfig().getAsyncBackupCount();
+        return getOrCreateContainer().getConfig().getAsyncBackupCount();
     }
 
     public boolean shouldBackup() {
         return getState() == Transaction.State.COMMITTED;
     }
-
-//    public boolean hasListener() {
-//        EventService eventService = getNodeEngine().getEventService();
-//        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
-//        return registrations.size() > 0;
-//    }
 
     public void publishEvent(ItemEventType eventType, Data data) {
         EventService eventService = getNodeEngine().getEventService();

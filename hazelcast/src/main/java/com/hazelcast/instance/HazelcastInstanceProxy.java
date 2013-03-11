@@ -22,6 +22,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
@@ -76,6 +77,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
 
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
         return getOriginal().executeTransaction(task);
+    }
+
+    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+        return getOriginal().executeTransaction(task, options);
     }
 
     public IdGenerator getIdGenerator(String name) {

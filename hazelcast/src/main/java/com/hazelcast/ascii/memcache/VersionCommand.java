@@ -14,13 +14,31 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.ascii.memcache;
+
+import com.hazelcast.ascii.AbstractTextCommand;
+
+import java.nio.ByteBuffer;
 
 /**
- * @mdogan 2/26/13
+ * User: sancar
+ * Date: 3/7/13
+ * Time: 10:27 AM
  */
-public interface TransactionManagerService  {
+public class VersionCommand extends AbstractTextCommand {
 
-    <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException;
+    public static final byte[] version = "VERSION Hazelcast\r\n".getBytes();
 
+    protected VersionCommand(TextCommandType type) {
+        super(type);
+    }
+
+    public boolean writeTo(ByteBuffer destination) {
+        destination.put(version);
+        return true;
+    }
+
+    public boolean readFrom(ByteBuffer source) {
+        return true;
+    }
 }

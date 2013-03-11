@@ -29,12 +29,11 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
-
     private final TransactionImpl transaction;
 
-    public TransactionContextImpl(NodeEngineImpl nodeEngine) {
+    public TransactionContextImpl(NodeEngineImpl nodeEngine, TransactionOptions options) {
         this.nodeEngine = nodeEngine;
-        this.transaction  = new TransactionImpl(this.nodeEngine);
+        this.transaction  = new TransactionImpl(this.nodeEngine, options.getTimeoutMillis());
     }
 
     public void beginTransaction() {

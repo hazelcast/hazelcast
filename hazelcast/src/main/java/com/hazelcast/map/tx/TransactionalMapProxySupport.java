@@ -129,7 +129,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     private Object invokeOperation(Data key, TransactionalMapOperation operation) throws TransactionException {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        attachTxnParticipant(partitionId);
+        tx.addPartition(partitionId);
         operation.setTransactionId(tx.getTxnId());
         operation.setTimeout(tx.getTimeoutMillis());
         operation.setThreadId(ThreadContext.getThreadId());
@@ -153,12 +153,5 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public final String getServiceName() {
         return MapService.SERVICE_NAME;
-    }
-
-    protected final void attachTxnParticipant(int partitionId) {
-        if (tx.getState() != Transaction.State.ACTIVE) {
-            throw new IllegalStateException("Transaction is not active!");
-        }
-        tx.addPartition(partitionId);
     }
 }

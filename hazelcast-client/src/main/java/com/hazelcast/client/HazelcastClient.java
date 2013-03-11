@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
@@ -194,6 +195,10 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        return null;
+    }
+
+    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
         return null;
     }
 

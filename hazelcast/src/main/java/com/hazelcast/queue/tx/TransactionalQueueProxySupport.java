@@ -46,9 +46,6 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
     }
 
     public boolean offerInternal(Data data, long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
-        if (tx.getState() != Transaction.State.ACTIVE) {
-            throw new IllegalStateException("Transaction is not active!");
-        }
         tx.addPartition(partitionId);
         TxOfferOperation operation = new TxOfferOperation(name, tx.getTxnId(), getTimeout(timeout, unit) , data);
         final NodeEngine nodeEngine = getNodeEngine();
@@ -67,15 +64,32 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
     }
 
     public Data pollInternal(long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
+        tx.addPartition(partitionId);
+        TxPollOperation operation = new TxPollOperation(name, tx.getTxnId(), getTimeout(timeout, unit));
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Data) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
+        }
+    }
+
+    public Data peekInternal() throws TransactionException {
         if (tx.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
         tx.addPartition(partitionId);
-        return null;
-    }
-
-    public Data peekInternal() throws TransactionException {
-        return null;
+        TxPeekOperation operation = new TxPeekOperation(name, tx.getTxnId());
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Data) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
     }
 
     public Object getId() {

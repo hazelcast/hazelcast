@@ -80,6 +80,6 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new QueueWaitNotifyKey(name, "offer");
+        return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 }

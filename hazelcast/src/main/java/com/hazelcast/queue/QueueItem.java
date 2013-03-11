@@ -68,6 +68,10 @@ public class QueueItem implements DataSerializable {
         return itemId;
     }
 
+    public void setItemId(long itemId) {
+        this.itemId = itemId;
+    }
+
     public long getCreationTime() {
         return creationTime;
     }

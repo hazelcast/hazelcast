@@ -48,7 +48,7 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
 
     public void run() {
         QueueContainer container = getOrCreateContainer();
-        if (container.checkBound()) {
+        if (container.hasEnoughCapacity()) {
             response = container.offer(data);
         } else {
             response = false;
@@ -78,16 +78,16 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new QueueWaitNotifyKey(getName(), "poll");
+        return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new QueueWaitNotifyKey(getName(), "offer");
+        return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
     public boolean shouldWait() {
         QueueContainer container = getOrCreateContainer();
-        return getWaitTimeoutMillis() != 0 && !container.checkBound();
+        return getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity();
     }
 
     public void onWaitExpire() {

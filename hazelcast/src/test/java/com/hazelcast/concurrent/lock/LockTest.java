@@ -210,7 +210,7 @@ public class LockTest {
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         int k = 0;
         final AtomicInteger atomicInteger = new AtomicInteger(0);
-        while (keyOwner.getCluster().getLocalMember().equals(instance1.getPartitionService().getPartition(k++).getOwner()))
+        while (!keyOwner.getCluster().getLocalMember().equals(instance1.getPartitionService().getPartition(++k).getOwner()))
             ;
         final int key = k;
 
@@ -339,7 +339,7 @@ public class LockTest {
         final int size = 50;
         int k = 0;
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
-        while (keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(k++).getOwner()))
+        while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner()))
             ;
 
         final ILock lock = instance.getLock(k);

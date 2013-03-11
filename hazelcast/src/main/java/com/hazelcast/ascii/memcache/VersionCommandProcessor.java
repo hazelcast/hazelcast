@@ -14,32 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.ascii.memcache;
+
+import com.hazelcast.ascii.AbstractTextCommandProcessor;
+import com.hazelcast.ascii.TextCommandProcessor;
+import com.hazelcast.ascii.TextCommandServiceImpl;
 
 /**
- * Hazelcast transaction interface.
+ * User: sancar
+ * Date: 3/7/13
+ * Time: 10:31 AM
  */
-public interface Transaction {
-
-
-    public enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
+public class VersionCommandProcessor extends MemcacheCommandProcessor<VersionCommand> {
+    public VersionCommandProcessor(TextCommandServiceImpl textCommandService) {
+        super(textCommandService);
     }
 
-    void addPartition(int partitionId) throws TransactionException;
+    public void handle(VersionCommand request) {
+        textCommandService.sendResponse(request);
+    }
 
-    String getTxnId();
-
-    State getState();
-
-    long getTimeoutMillis();
-
+    public void handleRejection(VersionCommand request) {
+        handle(request);
+    }
 }

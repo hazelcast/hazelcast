@@ -66,8 +66,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return SERVICE_NAME;
     }
 
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        final TransactionContextImpl context = new TransactionContextImpl(nodeEngine);
+    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+        final TransactionContextImpl context = new TransactionContextImpl(nodeEngine, options);
         context.beginTransaction();
         try {
             final T value = task.execute(context);
@@ -150,7 +150,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public void prepare(String caller, String txnId, int partitionId) throws TransactionException {
+    void prepare(String caller, String txnId, int partitionId) throws TransactionException {
         final TransactionKey key = new TransactionKey(txnId, partitionId);
         final TransactionLog log = txLogs.get(key);
         if (log == null) {
@@ -172,7 +172,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public void commit(String caller, String txnId, int partitionId) throws TransactionException {
+    void commit(String caller, String txnId, int partitionId) throws TransactionException {
         final TransactionKey key = new TransactionKey(txnId, partitionId);
         final TransactionLog log = txLogs.get(key);
         if (log == null) {
@@ -192,11 +192,12 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public void rollback(String caller, String txnId, int partitionId) throws TransactionException {
+    void rollback(String caller, String txnId, int partitionId) throws TransactionException {
         final TransactionKey key = new TransactionKey(txnId, partitionId);
         final TransactionLog log = txLogs.get(key);
         if (log == null) {
-            throw new TransactionException("No tx available!");
+            logger.log(Level.WARNING, "Ignoring roll-back, no transaction available!");
+            return;
         }
         if (!log.beginProcess()) {
             throw new TransactionException("Tx log is already being processed!");

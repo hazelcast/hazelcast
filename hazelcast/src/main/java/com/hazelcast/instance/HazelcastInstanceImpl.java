@@ -41,6 +41,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
@@ -134,7 +135,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        return node.nodeEngine.getTransactionManagerService().executeTransaction(task);
+        return executeTransaction(task, TransactionOptions.getDefault());
+    }
+
+    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+        return node.nodeEngine.getTransactionManagerService().executeTransaction(task, options);
     }
 
     public IExecutorService getExecutorService(final String name) {
