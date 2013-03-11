@@ -299,17 +299,17 @@ final class OperationServiceImpl implements OperationService {
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
-                            if (op.returnsResponse() && target.equals(op.getCallerAddress())) {
-//                                TODO: @mm - FIX ME! what if backup migrates after response is returned?
-                                backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
-                                backupResponse = backupOp;
-                            } else {
+//                            if (op.returnsResponse() && target.equals(op.getCallerAddress())) {
+////                                TODO: @mm - FIX ME! what if backup migrates after response is returned?
+//                                backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
+//                                backupResponse = backupOp;
+//                            } else {
                                 final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
                                         .setReplicaIndex(replicaIndex).setTryCount(maxRetryCount).build().invoke();
                                 if (returnsResponse) {
                                     syncBackups.add(new BackupFuture(f, partitionId, replicaIndex, maxRetryCount));
                                 }
-                            }
+//                            }
                         }
                     }
                 }

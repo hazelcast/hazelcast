@@ -70,7 +70,7 @@ public class TransactionQueueTest {
             }
         });
         assertTrue(b);
-        assertEquals(0, getQueue(instances, name));
+        assertEquals(0, getQueue(instances, name).size());
     }
 
     private IQueue getQueue(HazelcastInstance[] instances, String name) {
