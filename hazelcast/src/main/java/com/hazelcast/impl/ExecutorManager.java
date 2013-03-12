@@ -46,9 +46,7 @@ import static com.hazelcast.nio.IOUtil.toObject;
 public class ExecutorManager extends BaseManager {
 
     private final ConcurrentMap<String, NamedExecutorService> mapExecutors = new ConcurrentHashMap<String, NamedExecutorService>(10);
-
     private final ConcurrentMap<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
-
     private final ParallelExecutor mapLoaderExecutorService;
     private final ParallelExecutor asyncExecutorService;
     private final NamedExecutorService defaultExecutorService;
@@ -77,19 +75,25 @@ public class ExecutorManager extends BaseManager {
         logger.log(Level.FINEST, "Starting ExecutorManager");
         GroupProperties gp = node.groupProperties;
         ClassLoader classLoader = node.getConfig().getClassLoader();
+        ExecutorThreadFactory.ThreadCleanup cleanup = new ExecutorThreadFactory.ThreadCleanup() {
+            public void cleanup(Thread t) {
+                mapThreadCallContexts.remove(t);
+            }
+        };
         threadPoolExecutor = new ThreadPoolExecutor(
                 5, Integer.MAX_VALUE,
                 60L,
                 TimeUnit.SECONDS,
                 new SynchronousQueue(),
-                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"), classLoader),
+                new ExecutorThreadFactory(node.threadGroup, node.getThreadPoolNamePrefix("cached"),
+                        classLoader, cleanup),
                 new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);
             }
         };
         esScheduled = new ScheduledThreadPoolExecutor(3, new ExecutorThreadFactory(node.threadGroup,
-                node.getThreadPoolNamePrefix("scheduled"), classLoader), new RejectionHandler()) {
+                node.getThreadPoolNamePrefix("scheduled"), classLoader, cleanup), new RejectionHandler()) {
             protected void beforeExecute(Thread t, Runnable r) {
                 threadPoolBeforeExecute(t, r);
             }

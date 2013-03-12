@@ -3645,11 +3645,21 @@ public class ConcurrentMapManager extends BaseManager {
                         winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingRecord);
                         if (winner != null) {
                             if (cmap.isMultiMap()) {
-                                MPutMulti mput = node.concurrentMapManager.new MPutMulti();
-                                mput.put(request.name, request.key, winner);
+                                if (winner == MergePolicy.REMOVE_EXISTING) {
+                                    MRemoveMulti mremove = new MRemoveMulti();
+                                    mremove.remove(request.name, request.key);
+                                } else {
+                                    MPutMulti mput = new MPutMulti();
+                                    mput.put(request.name, request.key, winner);
+                                }
                             } else {
-                                ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
-                                mput.put(request.name, request.key, winner, -1);
+                                if (winner == MergePolicy.REMOVE_EXISTING) {
+                                    MRemove mremove = new MRemove();
+                                    mremove.remove(request.name, request.key);
+                                } else {
+                                    ConcurrentMapManager.MPut mput = new MPut();
+                                    mput.put(request.name, request.key, winner, -1);                                    
+                                }
                             }
                             success = true;
                         }
