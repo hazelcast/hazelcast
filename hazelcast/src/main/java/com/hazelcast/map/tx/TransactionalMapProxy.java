@@ -55,15 +55,20 @@ public class TransactionalMapProxy<K,V> extends TransactionalMapProxySupport imp
     }
 
     public V putIfAbsent(K key, V value) throws TransactionException {
-        return null;
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Data result = putIfAbsentInternal(nodeEngine.toData(key), nodeEngine.toData(value));
+        return nodeEngine.toObject(result);
     }
 
     public V replace(K key, V value) throws TransactionException {
-        return null;
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Data result = replaceInternal(nodeEngine.toData(key), nodeEngine.toData(value));
+        return nodeEngine.toObject(result);
     }
 
-    public boolean replace(K key, V oldValue, V newValue) throws TransactionException {
-        return false;
+    public boolean replace(K key, V testValue, V newValue) throws TransactionException {
+        final NodeEngine nodeEngine = getNodeEngine();
+        return replaceInternal(nodeEngine.toData(key), nodeEngine.toData(testValue), nodeEngine.toData(newValue));
     }
 
     public V remove(Object key) throws TransactionException {
@@ -73,10 +78,12 @@ public class TransactionalMapProxy<K,V> extends TransactionalMapProxySupport imp
     }
 
     public void delete(Object key) throws TransactionException {
-
+        final NodeEngine nodeEngine = getNodeEngine();
+        deleteInternal(nodeEngine.toData(key));
     }
 
     public boolean remove(Object key, Object value) throws TransactionException {
-        return false;
+        final NodeEngine nodeEngine = getNodeEngine();
+        return removeInternal(nodeEngine.toData(key), nodeEngine.toData(value));
     }
 }

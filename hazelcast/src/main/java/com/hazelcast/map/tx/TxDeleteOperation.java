@@ -20,42 +20,43 @@ import com.hazelcast.map.TransactionItem;
 import com.hazelcast.map.TransactionKey;
 import com.hazelcast.nio.serialization.Data;
 
-public class TxPutOperation extends BaseTxPutOperation {
+public class TxDeleteOperation extends BaseTxRemoveOperation {
 
-    public TxPutOperation() {
+    transient boolean successful = false;
+
+    public TxDeleteOperation() {
     }
 
-    public TxPutOperation(String name, Data dataKey, Data dataValue) {
-        super(name, dataKey, dataValue);
+    public TxDeleteOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
     protected void innerProcess() {
-        TransactionItem transactionItem = partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
-        if (transactionItem != null && !transactionItem.isRemoved()) {
-            dataOldValue = transactionItem.getValue();
-        }
-        if(dataOldValue == null) {
-            dataOldValue = mapService.toData(recordStore.get(dataKey));
-        }
+        partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), true));
     }
 
     protected void innerOnCommit() {
         partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
-        dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, ttl));
+        successful = recordStore.remove(dataKey) != null;
     }
 
     protected void innerOnRollback() {
         partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
     }
 
-    @Override
-    public Object getResponse() {
-        return dataOldValue;
+    public void innerAfterRun() throws Exception {
+        if (successful) {
+            super.innerAfterRun();
+        }
+    }
+
+    public boolean shouldBackup() {
+        return successful && isCommitted();
     }
 
     @Override
     public String toString() {
-        return "TxPutOperation{" + name + "}";
+        return "TxRemoveOperation{" + name + "}";
     }
 
 }

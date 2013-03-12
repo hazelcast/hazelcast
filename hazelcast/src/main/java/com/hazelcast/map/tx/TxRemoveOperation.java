@@ -32,7 +32,13 @@ public class TxRemoveOperation extends BaseTxRemoveOperation {
     }
 
     protected void innerProcess() {
-        partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), true));
+        TransactionItem transactionItem = partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), true));
+        if (transactionItem != null && !transactionItem.isRemoved()){
+            dataOldValue = transactionItem.getValue();
+        }
+        else {
+            dataOldValue = mapService.toData(recordStore.get(dataKey));
+        }
     }
 
     protected void innerOnCommit() {

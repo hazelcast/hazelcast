@@ -19,7 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class DeleteOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
+public class DeleteOperation extends BaseRemoveOperation {
+    boolean success = false;
 
     public DeleteOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -29,15 +30,16 @@ public class DeleteOperation extends BaseRemoveOperation implements IdentifiedDa
     }
 
     public void run() {
-        recordStore.remove(dataKey);
+        success = recordStore.remove(dataKey) != null;
     }
 
     public void afterRun() {
+        if (success)
             super.afterRun();
     }
 
     public boolean shouldBackup() {
-        return true;
+        return success;
     }
 
     @Override
@@ -47,10 +49,7 @@ public class DeleteOperation extends BaseRemoveOperation implements IdentifiedDa
 
     @Override
     public String toString() {
-        return "RemoveOperation{" + name + "}";
+        return "DeleteOperation{" + name + "}";
     }
 
-    public int getId() {
-        return DataSerializerMapHook.REMOVE;
-    }
 }

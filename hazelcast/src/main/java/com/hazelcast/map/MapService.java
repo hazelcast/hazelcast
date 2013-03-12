@@ -713,6 +713,27 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             return nodeEngine.toData(object);
     }
 
+    public boolean compare(String mapName, Object value1, Object value2) {
+        if(value1 == null && value2 == null) {
+            return true;
+        }
+        if(value1 == null && value2 != null) {
+            return false;
+        }
+        if(value1 != null && value2 == null) {
+            return false;
+        }
+
+        MapContainer mapContainer = getMapContainer(mapName);
+        if (mapContainer.getMapConfig().getRecordType().equals(MapConfig.RecordType.DATA)) {
+            return toData(value1).equals(toData(value2));
+        }
+        else if (mapContainer.getMapConfig().getRecordType().equals(MapConfig.RecordType.OBJECT)) {
+            return toObject(value1).equals(toObject(value2));
+        }
+        return value1.equals(value2);
+    }
+
     @SuppressWarnings("unchecked")
     public void dispatchEvent(EventData eventData, EntryListener listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
