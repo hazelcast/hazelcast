@@ -35,13 +35,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             Object value = textCommandService.get(mapName, key);
             prepareResponse(command, value);
         } else if (uri.startsWith(URI_QUEUES)) {
-            String queueName;
-            if (uri.endsWith("/")) {
-                queueName = uri.substring(URI_QUEUES.length(), uri.length() - 1);
-            } else {
-                queueName = uri.substring(URI_QUEUES.length());
-            }
-            Object value = textCommandService.poll(queueName);
+            int indexEnd = uri.indexOf('/', URI_QUEUES.length());
+            String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+            String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
+            int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
+            Object value = textCommandService.poll(queueName, seconds);
             prepareResponse(command, value);
         } else if (uri.startsWith(URI_CLUSTER)) {
             Node node = textCommandService.getNode();

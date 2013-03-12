@@ -232,7 +232,7 @@ public class MemcacheTest {
 
     @Test
     public void testMemcacheTouch() throws IOException, ExecutionException, InterruptedException {
-        //TODO spymemcache client does not support touch in ASCII protocol, tested manually from terminal
+        //TODO spymemcache client" does not support touch in ASCII protocol, tested manually from terminal
 //        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 //        MemcachedClient client = getMemcacheClient(instance);
 //        OperationFuture<Boolean> future = client.set("testMemcacheTouch", 2, 10);

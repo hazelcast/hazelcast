@@ -43,7 +43,7 @@ public class DeleteCommandProcessor extends MemcacheCommandProcessor<DeleteComma
             key = key.substring(index + 1);
         }
         if (key.equals("")) {
-            textCommandService.incrementDeleteHitCount(textCommandService.deleteAll(mapName));
+            textCommandService.deleteAll(mapName);
         } else {
             final Object oldValue = textCommandService.delete(mapName, key);
             if (oldValue == null) {
