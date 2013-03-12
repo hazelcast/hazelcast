@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
@@ -57,7 +57,7 @@ public class MapTransactionTest {
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("1", "value");
                 assertEquals("value", txMap.put("1", "value2"));
@@ -84,7 +84,7 @@ public class MapTransactionTest {
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.set("1", "value");
                 txMap.set("1", "value2");
@@ -112,7 +112,7 @@ public class MapTransactionTest {
         map2.put("2","2");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
                 map2.put("4", "4");
@@ -151,7 +151,7 @@ public class MapTransactionTest {
         map2.put("2","2");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
                 map2.put("4", "4");
@@ -192,7 +192,7 @@ public class MapTransactionTest {
         map2.put("2","2");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
                 map2.put("4", "4");
@@ -229,7 +229,7 @@ public class MapTransactionTest {
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.putIfAbsent("1", "value");
                 assertEquals("value", txMap.putIfAbsent("1", "value2"));
@@ -257,7 +257,7 @@ public class MapTransactionTest {
         map2.put("2","2");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertEquals(true, txMap.replace("1","1", "11"));
                 assertEquals(false, txMap.replace("5", "5", "55"));
@@ -287,7 +287,7 @@ public class MapTransactionTest {
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertNull(txMap.replace("1", "value"));
                 txMap.put("1","value2");
@@ -314,7 +314,7 @@ public class MapTransactionTest {
         final IMap map2 = h2.getMap("default");
         map2.put("1","value2");
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertEquals("value2", txMap.replace("1", "value3"));
                 assertEquals("value3", txMap.get("1"));
@@ -357,7 +357,7 @@ public class MapTransactionTest {
 //        Config config = new Config();
 //        StaticNodeFactory factory = new StaticNodeFactory(2);
 //        HazelcastInstance hz = factory.newHazelcastInstance(config);
-//        TransactionContext txCtx = hz.newTransactionContext();
+//        AutoTransactionContext txCtx = hz.newTransactionContext();
 //        Transaction tx = txCtx.beginTransaction();
 //        TransactionalMap txMap = txCtx.getMap("default");
 //        tx.commit();
@@ -372,7 +372,7 @@ public class MapTransactionTest {
 //        HazelcastInstance h2 = factory.newHazelcastInstance(config);
 //        IMap map1 = h1.getMap("default");
 //        IMap map2 = h2.getMap("default");
-//        TransactionContext txCtx = h1.newTransactionContext();
+//        AutoTransactionContext txCtx = h1.newTransactionContext();
 //        Transaction tx = txCtx.getTransaction();
 //        tx.setTransactionTimeout(1);
 //        tx.begin();

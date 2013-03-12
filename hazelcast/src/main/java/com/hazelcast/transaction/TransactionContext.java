@@ -16,30 +16,11 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalQueue;
+public interface TransactionContext extends TransactionalTaskContext {
 
-public interface TransactionContext {
+    void beginTransaction();
 
-    /**
-     * Returns the transactional distributed map instance with the specified name.
-     *
-     *
-     * @param name name of the distributed map
-     * @return transactional distributed map instance with the specified name
-     */
-    <K, V> TransactionalMap<K, V> getMap(String name);
+    void commitTransaction() throws TransactionException;
 
-    /**
-     * Returns the transactional queue instance with the specified name.
-     *
-     *
-     * @param name name of the queue
-     * @return transactional queue instance with the specified name
-     */
-    <E> TransactionalQueue<E> getQueue(String name);
-
-
-    <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id);
-
+    void rollbackTransaction();
 }

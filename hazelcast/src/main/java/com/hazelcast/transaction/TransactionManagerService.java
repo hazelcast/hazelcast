@@ -23,4 +23,6 @@ public interface TransactionManagerService  {
 
     <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException;
 
+    TransactionContext newTransactionContext(TransactionOptions options);
+
 }

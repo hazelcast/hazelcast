@@ -40,6 +40,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
@@ -140,6 +141,14 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
         return node.nodeEngine.getTransactionManagerService().executeTransaction(task, options);
+    }
+
+    public TransactionContext newTransactionContext() {
+        return newTransactionContext(TransactionOptions.getDefault());
+    }
+
+    public TransactionContext newTransactionContext(TransactionOptions options) {
+        return node.nodeEngine.getTransactionManagerService().newTransactionContext(options);
     }
 
     public IExecutorService getExecutorService(final String name) {
