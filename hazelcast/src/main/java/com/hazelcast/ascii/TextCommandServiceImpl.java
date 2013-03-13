@@ -100,8 +100,6 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     public Stats getStats() {
         Stats stats = new Stats();
         stats.uptime = (int) ((Clock.currentTimeMillis() - startTime) / 1000);
-//        stats.threads = parallelExecutor.getActiveCount();
-//        stats.waiting_requests = parallelExecutor.getPoolSize();
         stats.cmd_get = getMisses.get() + getHits.get();
         stats.cmd_set = sets.get();
         stats.cmd_touch = touches.get();
@@ -216,8 +214,6 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     }
 
     public void lock(String mapName, String key) throws InterruptedException {
-//        hazelcast.getMap(mapName).lock(key);
-//        throw new  RuntimeException("sssssss");
         if (!hazelcast.getMap(mapName).tryLock(key, 1, TimeUnit.MINUTES)) {
             throw new RuntimeException("Memcache client could not get the lock for map:" + mapName + " key:" + key + " in 1 minute");
         }
@@ -227,14 +223,9 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         hazelcast.getMap(mapName).unlock(key);
     }
 
-    public int deleteAll(String mapName) {
+    public void deleteAll(String mapName) {
         final IMap<Object, Object> map = hazelcast.getMap(mapName);
-        final Set<Object> set = map.keySet();
-        int count = 0;
-        for (Object key : set) {
-            if (map.remove(key) != null) count++;
-        }
-        return count;
+        map.clear();
     }
 
     public Object delete(String mapName, String key) {

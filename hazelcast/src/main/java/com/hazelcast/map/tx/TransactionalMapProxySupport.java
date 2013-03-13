@@ -97,15 +97,18 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public Data putIfAbsentInternal(Data key, Data value) throws TransactionException {
-        return null;
+        TxPutIfAbsentOperation op = new TxPutIfAbsentOperation(name, key, value);
+        return (Data)invokeOperation(key, op);
     }
 
     public Data replaceInternal(Data key, Data value) throws TransactionException {
-        return null;
+        TxReplaceOperation op = new TxReplaceOperation(name, key, value);
+        return (Data)invokeOperation(key, op);
     }
 
-    public boolean replaceInternal(Data key, Data oldValue, Data newValue) throws TransactionException {
-        return false;
+    public boolean replaceInternal(Data key, Data testValue, Data newValue) throws TransactionException {
+        TxReplaceIfSameOperation op = new TxReplaceIfSameOperation(name, key, testValue, newValue);
+        return (Boolean)invokeOperation(key, op);
     }
 
     public Data removeInternal(Data key) throws TransactionException {
@@ -114,11 +117,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public void deleteInternal(Data key) throws TransactionException {
-
+        TxDeleteOperation op = new TxDeleteOperation(name, key);
+        invokeOperation(key, op);
     }
 
     public boolean removeInternal(Data key, Data value) throws TransactionException {
-        return false;
+        TxRemoveIfSameOperation op = new TxRemoveIfSameOperation(name, key, value);
+        return (Boolean) invokeOperation(key, op);
     }
 
     private Object invokeOperation(Data key, TransactionalMapOperation operation) throws TransactionException {

@@ -20,32 +20,41 @@ import com.hazelcast.map.TransactionItem;
 import com.hazelcast.map.TransactionKey;
 import com.hazelcast.nio.serialization.Data;
 
-public class TxPutOperation extends BaseTxPutOperation {
+public class TxReplaceOperation extends BaseTxPutOperation {
+    transient boolean exists = false;
 
-    public TxPutOperation() {
+    public TxReplaceOperation() {
     }
 
-    public TxPutOperation(String name, Data dataKey, Data dataValue) {
+    public TxReplaceOperation(String name, Data dataKey, Data dataValue) {
         super(name, dataKey, dataValue);
     }
 
     protected void innerProcess() {
-        TransactionItem transactionItem = partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
-        if (transactionItem != null && !transactionItem.isRemoved()) {
+        TransactionItem transactionItem = partitionContainer.getTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        if(transactionItem != null) {
             dataOldValue = transactionItem.getValue();
+            exists = true;
         }
-        if(dataOldValue == null) {
+        else {
             dataOldValue = mapService.toData(recordStore.get(dataKey));
+            exists = dataOldValue != null;
         }
+        if(exists)
+            partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
     }
 
     protected void innerOnCommit() {
-        partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
-        dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, ttl));
+        if (exists) {
+            partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        }
+        dataOldValue = mapService.toData(recordStore.replace(dataKey, dataValue));
     }
 
     protected void innerOnRollback() {
-        partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        if (exists) {
+            partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        }
     }
 
     @Override
@@ -55,7 +64,7 @@ public class TxPutOperation extends BaseTxPutOperation {
 
     @Override
     public String toString() {
-        return "TxPutOperation{" + name + "}";
+        return "TxPutIfAbsentOperation{" + name + "}";
     }
 
 }

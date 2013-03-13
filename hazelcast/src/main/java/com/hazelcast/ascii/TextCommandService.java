@@ -71,7 +71,7 @@ public interface TextCommandService {
 
     Object delete(String mapName, String key);
 
-    int deleteAll(String mapName);
+    void deleteAll(String mapName);
 
     Stats getStats();
 

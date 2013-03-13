@@ -29,7 +29,7 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
     public static final String MapNamePreceder = "hz_memcache_";
     public static final String DefaultMapName = "hz_memcache_default";
 
-    public static byte[] intToByte(long v) {
+    public static byte[] longToByteArray(long v) {
         int len = (int) (v / 256) + 1;
         final byte[] bytes = new byte[len];
         for (int i = len - 1; i >= 0; i--) {
@@ -40,7 +40,7 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
         return bytes;
     }
 
-    public static int byteToInt(byte[] v) {
+    public static int byteArrayToLong(byte[] v) {
         if (v.length > 8) return -1;
         int r = 0;
         for (int i = 0; i < v.length; i++) {

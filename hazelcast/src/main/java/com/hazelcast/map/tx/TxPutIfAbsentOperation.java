@@ -20,28 +20,30 @@ import com.hazelcast.map.TransactionItem;
 import com.hazelcast.map.TransactionKey;
 import com.hazelcast.nio.serialization.Data;
 
-public class TxPutOperation extends BaseTxPutOperation {
+public class TxPutIfAbsentOperation extends BaseTxPutOperation {
 
-    public TxPutOperation() {
+    public TxPutIfAbsentOperation() {
     }
 
-    public TxPutOperation(String name, Data dataKey, Data dataValue) {
+    public TxPutIfAbsentOperation(String name, Data dataKey, Data dataValue) {
         super(name, dataKey, dataValue);
     }
 
     protected void innerProcess() {
-        TransactionItem transactionItem = partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
-        if (transactionItem != null && !transactionItem.isRemoved()) {
+        TransactionItem transactionItem = partitionContainer.getTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        boolean absent = !recordStore.containsKey(dataKey) && transactionItem == null;
+        if (absent) {
+            partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
+        } else if(transactionItem != null && !transactionItem.isRemoved()) {
             dataOldValue = transactionItem.getValue();
-        }
-        if(dataOldValue == null) {
-            dataOldValue = mapService.toData(recordStore.get(dataKey));
+        } else {
+            dataOldValue = (Data) recordStore.get(dataKey);
         }
     }
 
     protected void innerOnCommit() {
         partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
-        dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, ttl));
+        dataOldValue = mapService.toData(recordStore.putIfAbsent(dataKey, dataValue, ttl));
     }
 
     protected void innerOnRollback() {
@@ -55,7 +57,7 @@ public class TxPutOperation extends BaseTxPutOperation {
 
     @Override
     public String toString() {
-        return "TxPutOperation{" + name + "}";
+        return "TxPutIfAbsentOperation{" + name + "}";
     }
 
 }
