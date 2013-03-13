@@ -39,10 +39,10 @@ public class TxReplaceIfSameOperation extends BaseTxPutOperation {
 
     protected void innerProcess() {
         TransactionItem transactionItem = partitionContainer.getTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
-        if (transactionItem != null) {
-            same = mapService.compare(name, testValue, recordStore.get(dataKey));
+        if (transactionItem != null && !transactionItem.isRemoved()) {
+            same = mapService.compare(name, testValue, transactionItem.getValue());
         } else {
-            same = mapService.compare(name, recordStore.get(dataKey), testValue);
+            same = mapService.compare(name, testValue, recordStore.get(dataKey));
         }
         if (same) {
             partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));

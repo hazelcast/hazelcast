@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
-import com.hazelcast.transaction.TransactionException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +33,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         super(name, nodeEngine, service, tx);
     }
 
-    public boolean offer(E e) throws TransactionException {
+    public boolean offer(E e) {
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e1) {
@@ -42,13 +41,13 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         }
     }
 
-    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
+    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(e);
         return offerInternal(data, timeout, unit);
     }
 
-    public E poll() throws TransactionException {
+    public E poll() {
         try {
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -56,11 +55,11 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         }
     }
 
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
+    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         return getNodeEngine().toObject(pollInternal(timeout, unit));
     }
 
-    public E peek() throws TransactionException {
+    public E peek() {
         return getNodeEngine().toObject(peekInternal());
     }
 

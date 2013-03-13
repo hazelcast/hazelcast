@@ -21,7 +21,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
-import com.hazelcast.transaction.TransactionException;
 
 /**
  * @mdogan 2/26/13
@@ -32,57 +31,57 @@ public class TransactionalMapProxy<K,V> extends TransactionalMapProxySupport imp
         super(name, mapService, nodeEngine, transaction);
     }
 
-    public boolean containsKey(Object key) throws TransactionException {
+    public boolean containsKey(Object key) {
         final NodeEngine nodeEngine = getNodeEngine();
         return containsKeyInternal(nodeEngine.toData(key));
     }
 
-    public V get(Object key) throws TransactionException {
+    public V get(Object key) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = getInternal(nodeEngine.toData(key));
         return nodeEngine.toObject(value);
     }
 
-    public V put(K key, V value) throws TransactionException {
+    public V put(K key, V value) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data result = putInternal(nodeEngine.toData(key), nodeEngine.toData(value));
         return nodeEngine.toObject(result);
     }
 
-    public void set(K key, V value) throws TransactionException {
+    public void set(K key, V value) {
         final NodeEngine nodeEngine = getNodeEngine();
         setInternal(nodeEngine.toData(key), nodeEngine.toData(value));
     }
 
-    public V putIfAbsent(K key, V value) throws TransactionException {
+    public V putIfAbsent(K key, V value) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data result = putIfAbsentInternal(nodeEngine.toData(key), nodeEngine.toData(value));
         return nodeEngine.toObject(result);
     }
 
-    public V replace(K key, V value) throws TransactionException {
+    public V replace(K key, V value) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data result = replaceInternal(nodeEngine.toData(key), nodeEngine.toData(value));
         return nodeEngine.toObject(result);
     }
 
-    public boolean replace(K key, V testValue, V newValue) throws TransactionException {
+    public boolean replace(K key, V testValue, V newValue) {
         final NodeEngine nodeEngine = getNodeEngine();
         return replaceInternal(nodeEngine.toData(key), nodeEngine.toData(testValue), nodeEngine.toData(newValue));
     }
 
-    public V remove(Object key) throws TransactionException {
+    public V remove(Object key) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data result = removeInternal(nodeEngine.toData(key));
         return nodeEngine.toObject(result);
     }
 
-    public void delete(Object key) throws TransactionException {
+    public void delete(Object key) {
         final NodeEngine nodeEngine = getNodeEngine();
         deleteInternal(nodeEngine.toData(key));
     }
 
-    public boolean remove(Object key, Object value) throws TransactionException {
+    public boolean remove(Object key, Object value) {
         final NodeEngine nodeEngine = getNodeEngine();
         return removeInternal(nodeEngine.toData(key), nodeEngine.toData(value));
     }

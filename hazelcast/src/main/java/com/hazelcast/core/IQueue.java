@@ -20,7 +20,7 @@ import com.hazelcast.monitor.LocalQueueStats;
 
 import java.util.concurrent.BlockingQueue;
 
-public interface IQueue<E> extends ICollection<E>, BlockingQueue<E>, DistributedObject {
+public interface IQueue<E> extends XQueue<E>, ICollection<E>, BlockingQueue<E>, DistributedObject {
 
     LocalQueueStats getLocalQueueStats();
 }

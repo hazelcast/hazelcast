@@ -22,7 +22,6 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -45,7 +44,7 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
     }
 
-    public boolean offerInternal(Data data, long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
+    public boolean offerInternal(Data data, long timeout, TimeUnit unit) throws InterruptedException {
         tx.addPartition(partitionId);
         TxOfferOperation operation = new TxOfferOperation(name, tx.getTxnId(), getTimeout(timeout, unit) , data);
         final NodeEngine nodeEngine = getNodeEngine();
@@ -63,7 +62,7 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
         return timeoutMillis > tx.getTimeoutMillis() ? tx.getTimeoutMillis() : timeoutMillis;
     }
 
-    public Data pollInternal(long timeout, TimeUnit unit) throws InterruptedException, TransactionException {
+    public Data pollInternal(long timeout, TimeUnit unit) throws InterruptedException {
         tx.addPartition(partitionId);
         TxPollOperation operation = new TxPollOperation(name, tx.getTxnId(), getTimeout(timeout, unit));
         final NodeEngine nodeEngine = getNodeEngine();
@@ -76,7 +75,7 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
         }
     }
 
-    public Data peekInternal() throws TransactionException {
+    public Data peekInternal() {
         if (tx.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }

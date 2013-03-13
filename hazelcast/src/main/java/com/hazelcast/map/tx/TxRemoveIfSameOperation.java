@@ -52,10 +52,7 @@ public class TxRemoveIfSameOperation extends BaseTxRemoveOperation {
     }
 
     protected void innerOnCommit() {
-        dataOldValue = mapService.toData(recordStore.remove(dataKey,testValue));
-        if (!successful) {
-            successful = dataOldValue != null;
-        }
+        recordStore.remove(dataKey,testValue);
         if (successful) {
             partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
         }

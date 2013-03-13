@@ -84,6 +84,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return replaceInternal(key, value);
     }
 
+    public void set(Data key, Data value) {
+        setInternal(key, value, -1, null);
+    }
+
     public void set(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         setInternal(key, value, ttl, timeunit);
     }

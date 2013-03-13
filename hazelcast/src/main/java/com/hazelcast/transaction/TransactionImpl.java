@@ -49,12 +49,12 @@ final class TransactionImpl implements Transaction {
         return txnId;
     }
 
-    public void addPartition(int partitionId) throws TransactionException {
+    public void addPartition(int partitionId)  {
         if (state != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
         if (threadId != Thread.currentThread().getId()) {
-            throw new TransactionException("Transaction cannot span multiple threads!");
+            throw new IllegalStateException("Transaction cannot span multiple threads!");
         }
         partitions.add(partitionId);
     }

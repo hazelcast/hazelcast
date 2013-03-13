@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,31 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.core;
 
-/**
- * Hazelcast transaction interface.
- */
-public interface Transaction {
+// TODO: @mm - Rename!!!
+public interface XMap<K, V> extends DistributedObject {
 
-    public enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
-    }
+    boolean containsKey(Object key);
 
-    void addPartition(int partitionId);
+    V get(Object key);
 
-    String getTxnId();
+    V put(K key, V value);
 
-    State getState();
+    void set(K key, V value);
 
-    long getTimeoutMillis();
+    V putIfAbsent(K key, V value);
 
+    V replace(K key, V value);
+
+    boolean replace(K key, V oldValue, V newValue);
+
+    V remove(Object key);
+
+    void delete(Object key);
+
+    boolean remove(Object key, Object value);
 }

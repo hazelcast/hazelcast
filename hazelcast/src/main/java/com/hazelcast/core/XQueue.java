@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,31 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.core;
 
-/**
- * Hazelcast transaction interface.
- */
-public interface Transaction {
+import java.util.concurrent.TimeUnit;
 
-    public enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
-    }
+// TODO: @mm - Rename!!!
+public interface XQueue<E> extends DistributedObject {
 
-    void addPartition(int partitionId);
+    boolean offer(E e);
 
-    String getTxnId();
+    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
 
-    State getState();
+    E poll();
 
-    long getTimeoutMillis();
+    E poll(long timeout, TimeUnit unit) throws InterruptedException;
+
+    E peek();
 
 }

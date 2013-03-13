@@ -32,16 +32,16 @@ public class TxReplaceOperation extends BaseTxPutOperation {
 
     protected void innerProcess() {
         TransactionItem transactionItem = partitionContainer.getTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
-        if(transactionItem != null) {
+        if(transactionItem != null && !transactionItem.isRemoved()) {
             dataOldValue = transactionItem.getValue();
             exists = true;
-        }
-        else {
+        } else {
             dataOldValue = mapService.toData(recordStore.get(dataKey));
             exists = dataOldValue != null;
         }
-        if(exists)
+        if(exists) {
             partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
+        }
     }
 
     protected void innerOnCommit() {
