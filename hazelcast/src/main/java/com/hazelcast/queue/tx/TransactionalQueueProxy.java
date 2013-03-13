@@ -64,15 +64,4 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         return getNodeEngine().toObject(peekInternal());
     }
 
-    public Object getId() {
-        return name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
-    }
 }
