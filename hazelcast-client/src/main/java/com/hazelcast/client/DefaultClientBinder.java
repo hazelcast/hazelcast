@@ -72,7 +72,7 @@ public class DefaultClientBinder {
         Protocol response = writeAndRead(connection, auth);
         logger.log(Level.FINEST, "auth response:" + response.command);
         if (!response.command.equals(Command.OK)) {
-            throw new AuthenticationException("Client [" + connection + "] has failed authentication.");
+            throw new AuthenticationException("Client [" + connection + "] has failed authentication. Response was " + response.command);
         }
     }
 

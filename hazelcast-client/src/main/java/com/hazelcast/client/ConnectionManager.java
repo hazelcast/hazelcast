@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ConnectionPool {
+public class ConnectionManager {
     private final int poolSize;
     private final SerializationService serializationService;
     private final DefaultClientBinder binder;
@@ -44,8 +44,9 @@ public class ConnectionPool {
     private final Connection initialConnection;
     private final SocketInterceptor socketInterceptor;
     private final Lock lock = new ReentrantLock();
+//    final AtomicLong waitCount = new AtomicLong(0l);
 
-    public ConnectionPool(ClientConfig config, final SerializationService serializationService) {
+    public ConnectionManager(ClientConfig config, final SerializationService serializationService) {
         this.serializationService = serializationService;
         binder = new DefaultClientBinder(serializationService, config.getCredentials());
         initialConnection = initialConnection(config);
@@ -73,22 +74,6 @@ public class ConnectionPool {
         throw new IllegalStateException("Unable to connect to any address in the config");
     }
 
-    private ObjectPool<Connection> createPoolForTheMember(MemberImpl member) {
-        final Address address = member.getAddress();
-        ObjectPool<Connection> pool = new QueueBasedObjectPool<Connection>(poolSize, new com.hazelcast.client.util.pool.Factory<Connection>() {
-            @Override
-            public Connection create() throws IOException {
-                return newConnection(address);
-            }
-        });
-        if (mPool.putIfAbsent(address, pool) != null) {
-            return mPool.get(address);
-        }
-        if (address.equals(initialConnection.getAddress()))
-            pool.add(initialConnection);
-        return pool;
-    }
-
     public Connection newConnection(Address address) throws IOException {
         Connection connection = new Connection(address, 0, serializationService);
         if (socketInterceptor != null)
@@ -110,9 +95,36 @@ public class ConnectionPool {
         }
         ObjectPool<Connection> pool = mPool.get(member.getInetSocketAddress());
         if (pool == null) {
-            pool = createPoolForTheMember((MemberImpl) member);
+            synchronized (mPool) {
+                pool = mPool.get(member.getInetSocketAddress());
+                if (pool == null)
+                    pool = createPoolForTheMember((MemberImpl) member);
+            }
         }
-        return pool.take();
+        Connection connection = pool.take();
+        //Could be that this member is dead and that's why pool is not able to create and give a connection.
+        //We will call it again, and hopefully at some time Router will give us the right target for the connection.
+        if (connection == null) {
+            Thread.sleep(1000);
+            return takeConnection(null);
+        }
+        return connection;
+    }
+
+    private ObjectPool<Connection> createPoolForTheMember(MemberImpl member) {
+        final Address address = member.getAddress();
+        ObjectPool<Connection> pool = new QueueBasedObjectPool<Connection>(poolSize, new com.hazelcast.client.util.pool.Factory<Connection>() {
+            @Override
+            public Connection create() throws IOException {
+                return newConnection(address);
+            }
+        });
+        if (mPool.putIfAbsent(address, pool) != null) {
+            return mPool.get(address);
+        }
+        if (address.equals(initialConnection.getAddress()))
+            pool.add(initialConnection);
+        return pool;
     }
 
     public void releaseConnection(Connection connection) {
@@ -126,9 +138,5 @@ public class ConnectionPool {
 
     public Router getRouter() {
         return router;
-    }
-
-    public boolean isInitialized() {
-        return initialized.get();
     }
 }

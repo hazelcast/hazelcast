@@ -101,8 +101,6 @@ public class TestClientApplicationContext {
         assertEquals(2, config.getReconnectionAttemptLimit());
         assertEquals(1000, config.getConnectionTimeout());
         assertEquals(3000, config.getReConnectionTimeOut());
-        assertFalse(config.isUpdateAutomatic());
-        assertTrue(config.isShuffle());
 
         ClientConfig config2 = client2.getClientConfig();
         assertEquals(credentials, config2.getCredentials());

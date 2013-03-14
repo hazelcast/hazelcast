@@ -62,12 +62,10 @@ public class TopicClientProxy<T> implements ITopic {
     }
 
     public void removeMessageListener(MessageListener messageListener) {
-        System.out.println("ListenerMap sizeis " + listenerMap.size());
         ListenerThread thread = listenerMap.remove(messageListener);
         if (thread != null) {
             thread.stopListening();
         }
-        System.out.println("ListenerMap sizeis " + listenerMap.size());
     }
 
     public void destroy() {

@@ -65,14 +65,14 @@ public class HazelcastClient implements HazelcastInstance {
     private final PartitionClientProxy partitionClientProxy;
     private final LifecycleServiceClientImpl lifecycleService;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
-    private final ConnectionPool connectionPool;
+    private final ConnectionManager connectionPool;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
         this.id = clientIdCounter.incrementAndGet();
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
-        connectionPool = new ConnectionPool(config, serializationService);
+        connectionPool = new ConnectionManager(config, serializationService);
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
         connectionPool.init(this);
@@ -81,7 +81,7 @@ public class HazelcastClient implements HazelcastInstance {
         lsClients.add(HazelcastClient.this);
     }
 
-    public ConnectionPool getConnectionPool() {
+    public ConnectionManager getConnectionPool() {
         return connectionPool;
     }
 

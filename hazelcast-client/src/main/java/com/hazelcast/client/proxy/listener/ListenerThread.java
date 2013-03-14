@@ -52,11 +52,10 @@ public class ListenerThread extends Thread {
 
     public void run() {
         try {
-            System.out.println("Thread " + getName() + " is running");
+            System.out.println("Thread " + getName() + " is created");
             request.onEnqueue();
             writer.write(connection, request);
             writer.flush(connection);
-            Future<Protocol> f = null;
             while (running) {
                 Protocol response = reader.read(connection);
                 if (Command.EVENT.equals(response.command)) {
@@ -70,7 +69,7 @@ public class ListenerThread extends Thread {
             if (!running)
                 return;
             else
-                listenerResponseHandler.onError(e);
+                listenerResponseHandler.onError(connection, e);
         } finally {
             cleanup();
         }

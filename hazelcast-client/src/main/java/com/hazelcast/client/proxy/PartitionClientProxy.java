@@ -15,7 +15,6 @@
  */
 package com.hazelcast.client.proxy;
 
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.proxy.listener.MigrationEventLRH;
@@ -46,15 +45,18 @@ public class PartitionClientProxy implements PartitionService {
         this.client = client;
     }
 
-    public void initInternalPartitionTable(){
+    public void initInternalPartitionTable() {
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                createPartitionTable(PartitionClientProxy.this);
+                try {
+                    createPartitionTable(PartitionClientProxy.this);
+                    partitionCount.set(cachedParttitionTable.size());
+                } catch (Exception e) {
+                }
             }
         }, 0, 1000);
-        partitionCount.set(cachedParttitionTable.size());
     }
 
     public Partition getCachedPartition(Object object) {
@@ -63,7 +65,7 @@ public class PartitionClientProxy implements PartitionService {
             return null;
         }
         Data key = proxyHelper.toData(object);
-        int id = key.getPartitionHash() % partitionCount.get();
+        int id = Math.abs(key.getPartitionHash()) % partitionCount.get();
         Partition partition = cachedParttitionTable.get(id);
         return partition;
     }
@@ -80,8 +82,7 @@ public class PartitionClientProxy implements PartitionService {
         Protocol protocol = proxyHelper.doCommand(Command.PARTITIONS, new String[]{});
         Set<Partition> set = new LinkedHashSet<Partition>();
         int i = 0;
-
-        while(i<protocol.args.length-1){
+        while (i < protocol.args.length - 1) {
             final int partitionId = Integer.valueOf(protocol.args[i++]);
             String hostname = protocol.args[i++];
             int port = Integer.valueOf(protocol.args[i++]);
@@ -93,14 +94,14 @@ public class PartitionClientProxy implements PartitionService {
 
     private Partition partition(final int partitionId, String hostname, int port) {
         Address address = null;
-        if(hostname != null && !hostname.equals("null")){
+        if (hostname != null && !hostname.equals("null")) {
             try {
                 address = new Address(hostname, port);
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
         }
-        final Member member = address == null? null: new MemberImpl(address, false);
+        final Member member = address == null ? null : new MemberImpl(address, false);
         return new Partition() {
             public int getPartitionId() {
                 return partitionId;
@@ -118,7 +119,7 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {
-        Protocol request  = proxyHelper.createProtocol(Command.MIGRATIONLISTEN, null, null);
+        Protocol request = proxyHelper.createProtocol(Command.MIGRATIONLISTEN, null, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.migrationListener.",
                 client, request, new MigrationEventLRH(migrationListener, this));
         listenerMap.put(migrationListener, thread);
@@ -127,7 +128,7 @@ public class PartitionClientProxy implements PartitionService {
 
     public void removeMigrationListener(MigrationListener migrationListener) {
         ListenerThread thread = listenerMap.remove(migrationListener);
-        if(thread!=null){
+        if (thread != null) {
             thread.stopListening();
         }
     }

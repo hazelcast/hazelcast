@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocol;
@@ -43,6 +44,8 @@ public abstract class ClientCommandHandler implements CommandHandler {
         Protocol response;
         try {
             response = processCall(node, protocol);
+        } catch (HazelcastInstanceNotActiveException e){
+            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{"HazelcastInstanceNotActiveException"});
         } catch (RuntimeException e) {
             ILogger logger = node.getLogger(this.getClass().getName());
             logger.log(Level.WARNING,

@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.*;
 import com.hazelcast.client.proxy.listener.ListenerResponseHandler;
 import com.hazelcast.client.proxy.listener.ListenerThread;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -28,7 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.Partition;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
@@ -48,9 +48,10 @@ public class ProxyHelper {
     private final ILogger logger = com.hazelcast.logging.Logger.getLogger(this.getClass().getName());
     final ProtocolWriter writer;
     final ProtocolReader reader;
-    final ConnectionPool cp;
+    final ConnectionManager cp;
     final PartitionClientProxy pp;
     final boolean smart;
+    final boolean retry;
     private final SerializationService ss;
 
     public ProxyHelper(HazelcastClient client) {
@@ -60,6 +61,7 @@ public class ProxyHelper {
         this.writer = new ProtocolWriter(ss);
         this.reader = new ProtocolReader(ss);
         smart = client.getClientConfig().isSmart();
+        retry = client.getClientConfig().isRetryOperation();
     }
 
     public int getCurrentThreadId() {
@@ -129,7 +131,7 @@ public class ProxyHelper {
     }
 
     public ListenerThread createAListenerThread(String threadName, HazelcastClient client, Protocol request, ListenerResponseHandler lrh) {
-        ConnectionPool cp = client.getConnectionPool();
+        ConnectionManager cp = client.getConnectionPool();
         Router rt = cp.getRouter();
         Member member = rt.next();
         InetSocketAddress isa;
@@ -148,7 +150,8 @@ public class ProxyHelper {
     public Member key2MemberIfSmart(Object object) {
         if (!smart) return null;
         Partition partition = pp.getCachedPartition(object);
-        return partition == null ? null : partition.getOwner();
+        Member owner = partition == null ? null : partition.getOwner();
+        return owner;
     }
 
     public Protocol doCommand(Data key, Command command, String[] args, Data... data) {
@@ -235,16 +238,31 @@ public class ProxyHelper {
             cp.releaseConnection(connection);
             if (Command.OK.equals(response.command))
                 return response;
-            else {
+            else if (response.args.length > 0 && "HazelcastInstanceNotActiveException".equalsIgnoreCase(response.args[0])) {
+                throw new HazelcastInstanceNotActiveException();
+            } else {
                 throw new RuntimeException(response.command + ": " + Arrays.asList(response.args));
             }
-        } catch (EOFException e) {
-            return doCommand(member, command, args, data);
+        } catch (HazelcastInstanceNotActiveException e) {
+            if (retry) {
+                sleep(1000);
+                return doCommand((Member) null, command, args, data);
+            } else throw e;
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            if (retry) {
+                sleep(1000);
+                return doCommand((Member) null, command, args, data);
+            } else throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e1) {
+            e1.printStackTrace();
         }
     }
 

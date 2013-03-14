@@ -24,13 +24,13 @@ import org.junit.BeforeClass;
 
 public class ConnectionPoolTest {
     
-    ConnectionPool pool;
+    ConnectionManager pool;
     
     @BeforeClass
     public void initPool(){
         ClientConfig config = new ClientConfig();
         SerializationService ss = new SerializationServiceImpl(1,null);
-        pool = new ConnectionPool(config, ss);
+        pool = new ConnectionManager(config, ss);
     }
 
     public void testInit(){

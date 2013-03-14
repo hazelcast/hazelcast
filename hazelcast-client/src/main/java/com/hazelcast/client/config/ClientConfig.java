@@ -38,7 +38,9 @@ public class ClientConfig {
     private final Collection<EventListener> listeners = new HashSet<EventListener>();
 
     private boolean smart = true;
-    private int poolSize = 10;
+    
+    private boolean retryOperation = true;
+    private int poolSize = 500;
 
 
     private int connectionTimeout = 300000;
@@ -186,5 +188,13 @@ public class ClientConfig {
 
     public void setRouter(Router router) {
         this.router = router;
+    }
+
+    public boolean isRetryOperation() {
+        return retryOperation;
+    }
+
+    public void setRetryOperation(boolean retryOperation) {
+        this.retryOperation = retryOperation;
     }
 }
