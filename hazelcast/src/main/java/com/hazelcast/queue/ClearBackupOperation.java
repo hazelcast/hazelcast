@@ -16,22 +16,48 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @ali 12/11/12
  */
 public class ClearBackupOperation extends QueueOperation implements BackupOperation {
 
+    private transient Set<Long> itemIdSet;
+
     public ClearBackupOperation() {
     }
 
-    public ClearBackupOperation(String name) {
+    public ClearBackupOperation(String name, Set<Long> itemIdSet) {
         super(name);
+        this.itemIdSet = itemIdSet;
     }
 
     public void run() throws Exception {
-        getOrCreateContainer().clearBackup();
+        getOrCreateContainer().clearBackup(itemIdSet);
         response = true;
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeInt(itemIdSet.size());
+        for (Long itemId: itemIdSet){
+            out.writeLong(itemId);
+        }
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        int size = in.readInt();
+        itemIdSet = new HashSet<Long>(size);
+        for (int i=0; i<size; i++){
+            itemIdSet.add(in.readLong());
+        }
     }
 }

@@ -32,30 +32,35 @@ public class OfferBackupOperation extends QueueOperation implements BackupOperat
 
     private Data data;
 
+    private long itemId;
+
     public OfferBackupOperation() {
     }
 
-    public OfferBackupOperation(String name, Data data) {
+    public OfferBackupOperation(String name, Data data, long itemId) {
         super(name);
         this.data = data;
+        this.itemId = itemId;
     }
 
     public void run() throws Exception {
-        getOrCreateContainer().offerBackup(data);
+        getOrCreateContainer().offerBackup(data, itemId);
         response = true;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         data.writeData(out);
+        out.writeLong(itemId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         data = IOUtil.readData(in);
+        itemId = in.readLong();
     }
 
     public int getId() {
-        return DataSerializerQueueHook.OFFER_BACKUP;
+        return DataSerializerQueueHook.OFFER_BACKUP; //TODO do this for other operations
     }
 }

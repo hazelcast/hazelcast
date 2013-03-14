@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * @ali 12/12/12
  */
-public class QueueItem implements DataSerializable {
+public class QueueItem implements DataSerializable, Comparable<QueueItem> {
 
     private long itemId;
 
@@ -105,5 +105,15 @@ public class QueueItem implements DataSerializable {
         int result = (int) (itemId ^ (itemId >>> 32));
         result = 31 * result + (data != null ? data.hashCode() : 0);
         return result;
+    }
+
+    public int compareTo(QueueItem o) {
+        if (itemId < o.getItemId()){
+            return -1;
+        }
+        else if (itemId > o.getItemId()){
+            return 1;
+        }
+        return 0;
     }
 }

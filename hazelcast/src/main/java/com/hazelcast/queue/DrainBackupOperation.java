@@ -21,33 +21,55 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @ali 12/19/12
  */
 public class DrainBackupOperation extends QueueOperation implements BackupOperation {
 
-    int maxSize;
+    //can be null
+    Set<Long> itemIdSet;
 
     public DrainBackupOperation() {
     }
 
-    public DrainBackupOperation(String name, int maxSize) {
+    public DrainBackupOperation(String name) {
         super(name);
-        this.maxSize = maxSize;
+    }
+
+    public DrainBackupOperation(String name, Set<Long> itemIdSet) {
+        super(name);
+        this.itemIdSet = itemIdSet;
     }
 
     public void run() throws Exception {
-        getOrCreateContainer().drainFromBackup(maxSize);
+        getOrCreateContainer().drainFromBackup(itemIdSet);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(maxSize);
+        if (itemIdSet == null){
+            out.writeBoolean(false);
+        }
+        else {
+            out.writeBoolean(true);
+            out.writeInt(itemIdSet.size());
+            for (Long itemId: itemIdSet){
+                out.writeLong(itemId);
+            }
+        }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        maxSize = in.readInt();
+        if (in.readBoolean()){
+            int size = in.readInt();
+            itemIdSet = new HashSet<Long>(size);
+            for (int i=0; i<size; i++){
+                itemIdSet.add(in.readLong());
+            }
+        }
     }
 }
