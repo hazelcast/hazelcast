@@ -60,8 +60,6 @@ public class MapConfig implements DataSerializable {
 
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
 
-//    private boolean valueIndexed = false;
-
     private MapStoreConfig mapStoreConfig = null;
 
     private NearCacheConfig nearCacheConfig = null;
@@ -79,6 +77,8 @@ public class MapConfig implements DataSerializable {
     private List<MapIndexConfig> mapIndexConfigs;
 
     private StorageType storageType = null;
+
+    private boolean statisticsEnabled = false;
 
     public enum RecordType {
         DATA, OBJECT, CACHED
@@ -109,10 +109,10 @@ public class MapConfig implements DataSerializable {
         this.maxSizeConfig = config.maxSizeConfig;
         this.evictionPolicy = config.evictionPolicy;
         this.recordType = config.recordType;
-//        this.valueIndexed = config.valueIndexed;
         this.mapStoreConfig = config.mapStoreConfig;
         this.nearCacheConfig = config.nearCacheConfig;
         this.readBackupData = config.readBackupData;
+        this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
@@ -151,32 +151,6 @@ public class MapConfig implements DataSerializable {
         this.recordType = recordType;
         return this;
     }
-
-    /**
-     * Returns if the value of the mapEntry should be indexed for
-     * faster containsValue(obj) operations.
-     * <p/>
-     * Default is false.
-     *
-     * @return true if value is indexed, false otherwise
-     */
-//    public boolean isValueIndexed() {
-//        return valueIndexed;
-//    }
-
-    /**
-     * Sets if the value of the map entries should be indexed for
-     * faster containsValue(obj) operations.
-     * <p/>
-     * Default is false.
-     *
-     * @param valueIndexed
-     */
-//    public MapConfig setValueIndexed(boolean valueIndexed) {
-//        this.valueIndexed = valueIndexed;
-//        return this;
-//    }
-
 
     /**
      * @return the backupCount
@@ -411,6 +385,14 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+    }
+
     public boolean isReadBackupData() {
         return readBackupData;
     }
@@ -487,7 +469,6 @@ public class MapConfig implements DataSerializable {
                         (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
                                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
                 this.timeToLiveSeconds == other.timeToLiveSeconds &&
-//                this.valueIndexed == other.valueIndexed &&
                 this.readBackupData == other.readBackupData;
     }
 
@@ -610,7 +591,6 @@ public class MapConfig implements DataSerializable {
         sb.append(", mergePolicyConfig='").append(mergePolicyConfig).append('\'');
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", listenerConfigs=").append(listenerConfigs);
-//        sb.append(", valueIndexed=").append(valueIndexed);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
         sb.append(", storageType=").append(storageType);
         sb.append('}');

@@ -129,8 +129,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private void destroyMapStores() {
         for (MapContainer mapContainer : mapContainers.values()) {
             MapStore store = mapContainer.getStore();
-            if(store != null && store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport)store).destroy();
+            if (store != null && store instanceof MapLoaderLifecycleSupport) {
+                ((MapLoaderLifecycleSupport) store).destroy();
             }
         }
     }
@@ -437,12 +437,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         Record record = null;
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.RecordType recordType = mapContainer.getMapConfig().getRecordType();
+        boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
         if (recordType == MapConfig.RecordType.DATA) {
-            record = new DataRecord(dataKey, toData(value));
+            record = new DataRecord(dataKey, toData(value), statisticsEnabled);
         } else if (recordType == MapConfig.RecordType.OBJECT) {
-            record = new ObjectRecord(dataKey, toObject(value));
+            record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
         } else if (recordType == MapConfig.RecordType.CACHED) {
-            record = new CachedDataRecord(dataKey, toData(value));
+            record = new CachedDataRecord(dataKey, toData(value), statisticsEnabled);
         } else {
             throw new IllegalArgumentException("Should not happen!");
         }
@@ -606,7 +607,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             result = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
                 Object temp = interceptor.interceptGet(result);
-                if(temp != null) {
+                if (temp != null) {
                     result = temp;
                 }
             }
@@ -632,7 +633,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             oldValue = toObject(oldValue);
             for (MapInterceptor interceptor : interceptors) {
                 Object temp = interceptor.interceptPut(oldValue, result);
-                if(temp != null) {
+                if (temp != null) {
                     result = temp;
                 }
             }
@@ -657,7 +658,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             result = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
                 Object temp = interceptor.interceptRemove(result);
-                if(temp != null) {
+                if (temp != null) {
                     result = temp;
                 }
             }
@@ -688,7 +689,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             EventFilter filter = candidate.getFilter();
             if (filter instanceof EventServiceImpl.EmptyFilter) {
                 registrationsWithValue.add(candidate);
-             } else if (filter instanceof QueryEventFilter) {
+            } else if (filter instanceof QueryEventFilter) {
                 Object testValue;
                 if (eventType == EntryEvent.TYPE_REMOVED || eventType == EntryEvent.TYPE_EVICTED) {
                     oldValue = oldValue != null ? oldValue : toObject(dataOldValue);
@@ -699,7 +700,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 }
                 key = key != null ? key : toObject(key);
                 QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-                QueryEntry entry = new QueryEntry(getSerializationService() ,dataKey, dataKey, testValue);
+                QueryEntry entry = new QueryEntry(getSerializationService(), dataKey, dataKey, testValue);
                 if (queryEventFilter.eval(entry)) {
                     if (queryEventFilter.isIncludeValue()) {
                         registrationsWithValue.add(candidate);
@@ -758,21 +759,20 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public boolean compare(String mapName, Object value1, Object value2) {
-        if(value1 == null && value2 == null) {
+        if (value1 == null && value2 == null) {
             return true;
         }
-        if(value1 == null && value2 != null) {
+        if (value1 == null && value2 != null) {
             return false;
         }
-        if(value1 != null && value2 == null) {
+        if (value1 != null && value2 == null) {
             return false;
         }
 
         MapContainer mapContainer = getMapContainer(mapName);
         if (mapContainer.getMapConfig().getRecordType().equals(MapConfig.RecordType.DATA)) {
             return toData(value1).equals(toData(value2));
-        }
-        else if (mapContainer.getMapConfig().getRecordType().equals(MapConfig.RecordType.OBJECT)) {
+        } else if (mapContainer.getMapConfig().getRecordType().equals(MapConfig.RecordType.OBJECT)) {
             return toObject(value1).equals(toObject(value2));
         }
         return value1.equals(value2);
@@ -797,7 +797,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 listener.entryRemoved(event);
                 break;
         }
-        getMapContainer(eventData.getMapName()).getMapOperationCounter().incrementReceivedEvents();
+        MapContainer mapContainer = getMapContainer(eventData.getMapName());
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapContainer.getMapOperationCounter().incrementReceivedEvents();
+        }
     }
 
     public void scheduleIdleEviction(String mapName, Data key, long delay) {
@@ -950,7 +953,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     if (nodeEngine.getThisAddress().equals(owner)) {
                         int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
-                            if (size >= maxSize){
+                            if (size >= maxSize) {
                                 return true;
                             }
                         } else {
@@ -1003,6 +1006,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
+        MapContainer mapContainer = getMapContainer(mapName);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            return localMapStats;
+        }
+
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long dirtyCount = 0;
@@ -1011,7 +1019,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         long hits = 0;
         long lockedEntryCount = 0;
 
-        MapContainer mapContainer = getMapContainer(mapName);
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
 

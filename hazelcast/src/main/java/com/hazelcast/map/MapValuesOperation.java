@@ -34,7 +34,9 @@ public class MapValuesOperation extends AbstractMapOperation implements Partitio
     public void run() {
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         values = recordStore.valuesData();
-        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        }
     }
 
     @Override

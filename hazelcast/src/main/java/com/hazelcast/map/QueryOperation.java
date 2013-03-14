@@ -64,7 +64,9 @@ public class QueryOperation extends AbstractMapOperation {
         if (initialPartitions == finalPartitions) {
             result.setPartitionIds(finalPartitions);
         }
-        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        }
     }
 
     private void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {

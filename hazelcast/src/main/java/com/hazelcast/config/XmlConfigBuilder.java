@@ -708,6 +708,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.getMergePolicyConfig().setClassName(value);
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                mapConfig.setStatisticsEnabled(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
                 WanReplicationRef wanReplicationRef = new WanReplicationRef();
                 final String wanName = getAttribute(n, "name");

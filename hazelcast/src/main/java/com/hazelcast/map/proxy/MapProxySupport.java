@@ -41,7 +41,7 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected final String name;
-    protected final LockProxySupport lockSupport ;
+    protected final LockProxySupport lockSupport;
 
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
         super(nodeEngine, mapService);
@@ -58,7 +58,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 return cachedData;
         }
         GetOperation operation = new GetOperation(name, key);
-        return (Data) invokeOperation(key, operation);
+        Data result = (Data) invokeOperation(key, operation);
+        if (nearCacheEnabled) {
+            final NodeEngine nodeEngine = getNodeEngine();
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+            if (nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
+                mapService.putNearCache(name, key, result);
+            }
+        }
+        return result;
     }
 
     protected Future<Data> getAsyncInternal(final Data key) {

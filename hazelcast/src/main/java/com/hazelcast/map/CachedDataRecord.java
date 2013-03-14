@@ -22,8 +22,8 @@ public class CachedDataRecord extends DataRecord {
 
     private volatile Object cachedValue;
 
-    public CachedDataRecord(Data keyData, Data value) {
-        super(keyData, value);
+    public CachedDataRecord(Data keyData, Data value, boolean statisticsEnabled) {
+        super(keyData, value, statisticsEnabled);
     }
 
     @Override
