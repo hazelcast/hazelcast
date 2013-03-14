@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorThreadFactory;
@@ -388,7 +389,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 eventObject = nodeEngine.toObject(eventObject);
             }
             final String serviceName = eventPacket.serviceName;
-            EventPublishingService service = nodeEngine.getService(serviceName);
+            EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service == null) {
                 logger.log(Level.WARNING, "There is no service named: " + serviceName);
                 return;
@@ -407,7 +408,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 logger.log(Level.WARNING, "Invalid target for  " + registration);
                 return;
             }
-            service.dispatchEvent(eventObject, registration.listener);
+            dispatchEvent(service, eventObject, registration.listener);
         }
     }
 
@@ -437,11 +438,20 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
 
         public void run() {
-            final EventPublishingService service = nodeEngine.getService(serviceName);
+            final EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service == null && nodeEngine.isActive()) {
                 throw new IllegalArgumentException("Service[" + serviceName + "] could not be found!");
             }
-            service.dispatchEvent(event, listener);
+            dispatchEvent(service, event, listener);
+        }
+    }
+
+    private void dispatchEvent(EventPublishingService<Object, Object> service, Object event, Object listener) {
+        final long start = Clock.currentTimeMillis();
+        service.dispatchEvent(event, listener);
+        final long end = Clock.currentTimeMillis();
+        if ((end - start) > 10) {
+            logger.log(Level.WARNING, "Caution: Off-load event processing to your own thread-pool, don't use event thread!");
         }
     }
 

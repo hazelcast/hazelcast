@@ -45,7 +45,11 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
         if (txnId != null) {
             final TransactionItem item = partitionContainer.getTransactionItem(new TransactionKey(txnId, name, dataKey));
             if (item != null) {
-                result = item.getValue();
+                if (item.isRemoved()) {
+                    result = null;
+                } else {
+                    result = item.getValue();
+                }
                 return;
             }
         }

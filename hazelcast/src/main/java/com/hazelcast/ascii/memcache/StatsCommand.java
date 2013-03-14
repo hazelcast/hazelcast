@@ -28,11 +28,17 @@ public class StatsCommand extends AbstractTextCommand {
     static final byte[] BYTES = "bytes ".getBytes();
     static final byte[] CMD_SET = "cmd_set ".getBytes();
     static final byte[] CMD_GET = "cmd_get ".getBytes();
-    static final byte[] CMD_DELETE = "cmd_delete ".getBytes();
+    static final byte[] CMD_TOUCH = "cmd_touch ".getBytes();
     static final byte[] THREADS = "threads ".getBytes();
     static final byte[] WAITING_REQUESTS = "waiting_requests ".getBytes();
     static final byte[] GET_HITS = "get_hits ".getBytes();
     static final byte[] GET_MISSES = "get_misses ".getBytes();
+    static final byte[] DELETE_HITS = "delete_hits ".getBytes();
+    static final byte[] DELETE_MISSES = "delete_misses ".getBytes();
+    static final byte[] INCR_HITS = "incr_hits ".getBytes();
+    static final byte[] INCR_MISSES = "incr_misses ".getBytes();
+    static final byte[] DECR_HITS = "decr_hits ".getBytes();
+    static final byte[] DECR_MISSES = "decr_misses ".getBytes();
     static final byte[] CURR_CONNECTIONS = "curr_connections ".getBytes();
     static final byte[] TOTAL_CONNECTIONS = "total_connections ".getBytes();
 
@@ -54,9 +60,15 @@ public class StatsCommand extends AbstractTextCommand {
         putLong(BYTES, stats.bytes);
         putLong(CMD_GET, stats.cmd_get);
         putLong(CMD_SET, stats.cmd_set);
-        putLong(CMD_DELETE, stats.cmd_delete);
+        putLong(CMD_TOUCH, stats.cmd_touch);
         putLong(GET_HITS, stats.get_hits);
         putLong(GET_MISSES, stats.get_misses);
+        putLong(DELETE_HITS, stats.delete_hits);
+        putLong(DELETE_MISSES, stats.delete_misses);
+        putLong(INCR_HITS, stats.incr_hits);
+        putLong(INCR_MISSES, stats.incr_misses);
+        putLong(DECR_HITS, stats.decr_hits);
+        putLong(DECR_MISSES, stats.decr_misses);
         response.put(END);
         response.flip();
 //        System.out.println(new String(response.array(), 0, response.remaining()));

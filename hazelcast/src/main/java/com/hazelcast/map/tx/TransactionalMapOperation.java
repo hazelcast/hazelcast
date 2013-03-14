@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * @mdogan 3/7/13
  */
 public abstract class TransactionalMapOperation extends TransactionalOperation
-        implements KeyBasedOperation, WaitSupport, BackupAwareOperation {
+        implements KeyBasedOperation, WaitSupport, Notifier, BackupAwareOperation {
 
     protected String name;
     protected Data dataKey;
@@ -85,7 +85,7 @@ public abstract class TransactionalMapOperation extends TransactionalOperation
 
     protected abstract void innerProcess();
 
-    protected final void onPrepare() throws TransactionException {
+    protected final void prepare() throws TransactionException {
         if(!recordStore.extendLock(getKey(), getCallerUuid(), threadId, TimeUnit.MINUTES.toMillis(1))) {
             throw new TransactionException("Lock timed-out!");
         }
@@ -100,7 +100,7 @@ public abstract class TransactionalMapOperation extends TransactionalOperation
         }
     }
 
-    protected final void onCommit() {
+    protected final void commit() {
         try {
             innerOnCommit();
         } finally {
@@ -108,7 +108,7 @@ public abstract class TransactionalMapOperation extends TransactionalOperation
         }
     }
 
-    protected final void onRollback() {
+    protected final void rollback() {
         try {
             innerOnRollback();
         } finally {
@@ -167,6 +167,14 @@ public abstract class TransactionalMapOperation extends TransactionalOperation
     public final void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(new TransactionException("Transaction timed-out!"));
+    }
+
+    public final boolean shouldNotify() {
+        return isCommitted() || isRolledBack();
+    }
+
+    public WaitNotifyKey getNotifiedKey() {
+        return getWaitKey();
     }
 
     public boolean shouldBackup() {

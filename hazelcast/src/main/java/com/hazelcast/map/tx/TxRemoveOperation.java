@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.map.TransactionItem;
 import com.hazelcast.map.TransactionKey;
 import com.hazelcast.nio.serialization.Data;
 
@@ -31,15 +32,23 @@ public class TxRemoveOperation extends BaseTxRemoveOperation {
     }
 
     protected void innerProcess() {
-        partitionContainer.removeTransactionItem((new TransactionKey(getTransactionId(), name, dataKey)));
+        TransactionItem transactionItem = partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), true));
+        if (transactionItem != null && !transactionItem.isRemoved()){
+            dataOldValue = transactionItem.getValue();
+        }
+        else {
+            dataOldValue = mapService.toData(recordStore.get(dataKey));
+        }
     }
 
     protected void innerOnCommit() {
+        partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
         dataOldValue = mapService.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }
 
     protected void innerOnRollback() {
+        partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
     }
 
     public void innerAfterRun() throws Exception {

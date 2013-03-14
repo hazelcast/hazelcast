@@ -47,7 +47,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
 
     public void run() {
         QueueContainer container = getOrCreateContainer();
-        if (container.checkBound()) {
+        if (container.hasEnoughCapacity()) {
             container.addAll(dataList);
             response = true;
         } else {
@@ -95,6 +95,6 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new QueueWaitNotifyKey(name, "poll");
+        return getOrCreateContainer().getPollWaitNotifyKey();
     }
 }

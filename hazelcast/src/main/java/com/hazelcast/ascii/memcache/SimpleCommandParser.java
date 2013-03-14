@@ -33,6 +33,8 @@ public class SimpleCommandParser extends TypeAwareCommandParser {
             return new SimpleCommand(type);
         } else if (type == STATS) {
             return new StatsCommand();
+        } else if (type == VERSION) {
+            return new VersionCommand(type);
         } else {
             return new ErrorCommand(UNKNOWN);
         }

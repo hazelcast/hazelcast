@@ -45,38 +45,34 @@ public abstract class TransactionalOperation extends Operation implements DataSe
         this.txnId = txnId;
     }
 
+    public final void beforeRun() throws Exception {
+        if (state == Transaction.State.ACTIVE) {
+            final TransactionManagerServiceImpl txService = (TransactionManagerServiceImpl) getNodeEngine().getTransactionManagerService();
+            txService.addTransactionalOperation(getPartitionId(), this);
+            innerBeforeRun();
+        }
+    }
+
     public final void run() throws Exception {
         switch (state) {
             case ACTIVE:
                 process();
-                addTransactionRecord();
                 break;
 
             case PREPARED:
-                onPrepare();
+                prepare();
                 break;
 
             case COMMITTED:
-                onCommit();
+                commit();
                 break;
 
             case ROLLED_BACK:
-                onRollback();
+                rollback();
                 break;
 
             default:
                 throw new IllegalStateException();
-        }
-    }
-
-    private void addTransactionRecord() throws TransactionException {
-        final TransactionManagerServiceImpl txService = (TransactionManagerServiceImpl) getNodeEngine().getTransactionManagerService();
-        txService.addTransactionalOperation(getPartitionId(), this);
-    }
-
-    public final void beforeRun() throws Exception {
-        if (state == Transaction.State.ACTIVE) {
-            innerBeforeRun();
         }
     }
 
@@ -92,7 +88,7 @@ public abstract class TransactionalOperation extends Operation implements DataSe
     protected void innerAfterRun() throws Exception {
     }
 
-    final void prepare() throws TransactionException {
+    final void doPrepare() throws TransactionException {
         state = Transaction.State.PREPARED;
         ResponseHandlerFactory.FutureResponseHandler f = new ResponseHandlerFactory.FutureResponseHandler();
         setResponseHandler(f);
@@ -113,11 +109,11 @@ public abstract class TransactionalOperation extends Operation implements DataSe
         }
     }
 
-    final void commit() {
+    final void doCommit() {
         completeTx(Transaction.State.COMMITTED);
     }
 
-    final void rollback() {
+    final void doRollback() {
         completeTx(Transaction.State.ROLLED_BACK);
     }
 
@@ -152,13 +148,17 @@ public abstract class TransactionalOperation extends Operation implements DataSe
         return state == Transaction.State.COMMITTED;
     }
 
+    protected final boolean isRolledBack() {
+        return state == Transaction.State.ROLLED_BACK;
+    }
+
     protected abstract void process() throws TransactionException;
 
-    protected abstract void onPrepare() throws TransactionException;
+    protected abstract void prepare() throws TransactionException;
 
-    protected abstract void onCommit();
+    protected abstract void commit();
 
-    protected abstract void onRollback();
+    protected abstract void rollback();
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(txnId);

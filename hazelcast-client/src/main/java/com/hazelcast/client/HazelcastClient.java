@@ -29,9 +29,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.transaction.Transaction;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -191,6 +189,18 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        return null;
+    }
+
+    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+        return null;
+    }
+
+    public TransactionContext newTransactionContext() {
+        return null;
+    }
+
+    public TransactionContext newTransactionContext(TransactionOptions options) {
         return null;
     }
 

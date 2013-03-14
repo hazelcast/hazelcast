@@ -237,6 +237,26 @@ public class PartitionRecordStore implements RecordStore {
         return oldValue;
     }
 
+    public void delete(Data dataKey) {
+        Record record = records.get(dataKey);
+        Object oldValue = null;
+        if (record == null) {
+            if (mapContainer.getStore() != null) {
+                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+                if (oldValue != null) {
+                    mapStoreDelete(record, dataKey);
+                }
+            }
+        } else {
+            oldValue = record.getValue();
+            oldValue = mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
+            if (oldValue != null) {
+                mapStoreDelete(record, dataKey);
+            }
+            records.remove(dataKey);
+        }
+    }
+
     private void removeIndex(Data key) {
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
@@ -269,8 +289,7 @@ public class PartitionRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
         }
-        // TODO: @mm - Data.equals() or Object.equals() should be decided due to record type.
-        if (mapService.toObject(testValue).equals(mapService.toObject(oldValue))) {
+        if(mapService.compare(name, testValue, oldValue)) {
             mapService.intercept(name, MapOperationType.REMOVE, dataKey, oldValue, oldValue);
             mapStoreDelete(record, dataKey);
             records.remove(dataKey);

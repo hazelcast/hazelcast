@@ -35,23 +35,43 @@ public interface TextCommandService {
 
     byte[] getByteArray(String mapName, String key);
 
+    Object put(String mapName, String key, Object value);
+
     Object put(String mapName, String key, Object value, int ttlSeconds);
 
     Object putIfAbsent(String mapName, String key, Object value, int ttlSeconds);
 
     Object replace(String mapName, String key, Object value);
 
+    void lock(String mapName, String key) throws InterruptedException;
+
+    void unlock(String mapName, String key);
+
     int getAdjustedTTLSeconds(int ttl);
 
-    long incrementGetCount();
+    long incrementDeleteHitCount(int inc);
+
+    long incrementDeleteMissCount();
+
+    long incrementGetHitCount();
+
+    long incrementGetMissCount();
 
     long incrementSetCount();
 
-    long incrementDeleteCount();
+    long incrementIncHitCount();
 
-    long incrementHitCount();
+    long incrementIncMissCount();
+
+    long incrementDecrHitCount();
+
+    long incrementDecrMissCount();
+
+    long incrementTouchCount();
 
     Object delete(String mapName, String key);
+
+    void deleteAll(String mapName);
 
     Stats getStats();
 

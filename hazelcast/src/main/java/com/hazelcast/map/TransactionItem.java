@@ -29,15 +29,17 @@ public class TransactionItem implements DataSerializable {
     private String name;
     private Data key;
     private Data value;
+    private boolean removed;
 
     public TransactionItem() {
     }
 
-    public TransactionItem(String txnId, String name, Data key, Data value) {
+    public TransactionItem(String txnId, String name, Data key, Data value, boolean removed) {
         this.txnId = txnId;
         this.name = name;
         this.key = key;
         this.value = value;
+        this.removed = removed;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -45,6 +47,7 @@ public class TransactionItem implements DataSerializable {
         out.writeUTF(name);
         key.writeData(out);
         IOUtil.writeNullableData(out, value);
+        out.writeBoolean(removed);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -53,6 +56,7 @@ public class TransactionItem implements DataSerializable {
         key = new Data();
         key.readData(in);
         value = IOUtil.readNullableData(in);
+        removed = in.readBoolean();
     }
 
     public String getTxnId() {
@@ -71,6 +75,10 @@ public class TransactionItem implements DataSerializable {
         return value;
     }
 
+    public boolean isRemoved() {
+        return removed;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -79,6 +87,7 @@ public class TransactionItem implements DataSerializable {
         sb.append(", name='").append(name).append('\'');
         sb.append(", key=").append(key);
         sb.append(", value=").append(value);
+        sb.append(", removed=").append(removed);
         sb.append('}');
         return sb.toString();
     }

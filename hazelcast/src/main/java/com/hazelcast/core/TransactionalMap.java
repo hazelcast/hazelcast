@@ -16,28 +16,27 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 
-public interface TransactionalMap<K, V> extends TransactionalObject {
+public interface TransactionalMap<K, V> extends TransactionalObject, XMap<K, V> {
 
-    boolean containsKey(Object key) throws TransactionException;
+    boolean containsKey(Object key);
 
-    V get(Object key) throws TransactionException;
+    V get(Object key);
 
-    V put(K key, V value) throws TransactionException;
+    V put(K key, V value);
 
-    void set(K key, V value) throws TransactionException;
+    void set(K key, V value);
 
-    V putIfAbsent(K key, V value) throws TransactionException;
+    V putIfAbsent(K key, V value);
 
-    V replace(K key, V value) throws TransactionException;
+    V replace(K key, V value);
 
-    boolean replace(K key, V oldValue, V newValue) throws TransactionException;
+    boolean replace(K key, V oldValue, V newValue);
 
-    V remove(Object key) throws TransactionException;
+    V remove(Object key);
 
-    void delete(Object key) throws TransactionException;
+    void delete(Object key);
 
-    boolean remove(Object key, Object value) throws TransactionException;
+    boolean remove(Object key, Object value);
 }

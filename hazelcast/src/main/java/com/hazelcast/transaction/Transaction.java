@@ -21,7 +21,6 @@ package com.hazelcast.transaction;
  */
 public interface Transaction {
 
-
     public enum State {
         NO_TXN,
         ACTIVE,

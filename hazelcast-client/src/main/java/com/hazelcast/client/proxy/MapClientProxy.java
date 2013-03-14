@@ -387,6 +387,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return (V) proxyHelper.doCommandAsObject(dKey, Command.MPUT, new String[]{getName()}, dKey, proxyHelper.toData(value));
     }
 
+    public void set(K key, V value) {
+    }
+
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
         check(key);
         check(value);

@@ -916,7 +916,6 @@ public class QueryTest extends TestUtil {
     /**
      * Github issues 98 and 131
      */
-    // todo fails
     @Test
     public void testPredicateStringAttributesWithIndex() {
         Config cfg = new Config();
@@ -992,7 +991,6 @@ public class QueryTest extends TestUtil {
                 " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
-    // todo fails
     @Test
     public void testPredicateEnumAttribute() {
         Config cfg = new Config();
@@ -1164,7 +1162,6 @@ public class QueryTest extends TestUtil {
         }
     }
 
-    // todo fails
     @Test
     public void testInvalidSqlPredicate() {
         Config cfg = new Config();

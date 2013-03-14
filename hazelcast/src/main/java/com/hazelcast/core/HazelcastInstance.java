@@ -20,7 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
@@ -142,8 +144,13 @@ public interface HazelcastInstance {
      */
     IExecutorService getExecutorService(String name);
 
-
     <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
+
+    <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException;
+
+    TransactionContext newTransactionContext();
+
+    TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
      * Creates cluster-wide unique IDs. Generated IDs are long type primitive values

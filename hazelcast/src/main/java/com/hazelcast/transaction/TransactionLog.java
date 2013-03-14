@@ -21,10 +21,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -36,7 +35,7 @@ class TransactionLog implements DataSerializable {
     private String txnId;
     private int partitionId;
     private TransactionImpl.State state = Transaction.State.ACTIVE;
-    private final Set<TransactionalOperation> ops = Collections.newSetFromMap(new ConcurrentHashMap<TransactionalOperation, Boolean>(3));
+    private final List<TransactionalOperation> ops = new LinkedList<TransactionalOperation>();
 
     private transient boolean scheduled = false;
     private transient final AtomicBoolean control = new AtomicBoolean(false);
@@ -50,11 +49,21 @@ class TransactionLog implements DataSerializable {
     }
 
     void addOperationRecord(TransactionalOperation operation) {
-        ops.add(operation);
+        // Normally we do not need sync block, since a tx can be executed only by a single thread.
+        // But keeping sync block to prevent possible errors
+        // if services send async (or response-less) transactional operations which can be executed concurrently.
+        synchronized (this) {
+            ops.add(operation);
+        }
     }
 
-    Collection<TransactionalOperation> getOperationRecords() {
-        return ops;
+    List<TransactionalOperation> getOperationRecords() {
+        // Normally we do not need sync block, since a tx can be executed only by a single thread.
+        // But keeping sync block to prevent possible errors
+        // if services send async (or response-less) transactional operations which can be executed concurrently.
+        synchronized (this) {
+            return new ArrayList<TransactionalOperation>(ops);
+        }
     }
 
     public String getCallerUuid() {

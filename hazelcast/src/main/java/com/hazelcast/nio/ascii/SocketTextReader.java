@@ -49,9 +49,13 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         mapCommandParsers.put("replace", new SetCommandParser(REPLACE));
         mapCommandParsers.put("append", new SetCommandParser(APPEND));
         mapCommandParsers.put("prepend", new SetCommandParser(PREPEND));
+        mapCommandParsers.put("touch", new TouchCommandParser(TOUCH));
+        mapCommandParsers.put("incr", new IncrementCommandParser(INCREMENT));
+        mapCommandParsers.put("decr", new IncrementCommandParser(DECREMENT));
         mapCommandParsers.put("delete", new DeleteCommandParser());
         mapCommandParsers.put("quit", new SimpleCommandParser(QUIT));
         mapCommandParsers.put("stats", new SimpleCommandParser(STATS));
+        mapCommandParsers.put("version", new SimpleCommandParser(VERSION));
         mapCommandParsers.put("GET", new HttpGetCommandParser());
         mapCommandParsers.put("POST", new HttpPostCommandParser());
         mapCommandParsers.put("PUT", new HttpPostCommandParser());
@@ -135,7 +139,6 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     }
 
     public void publishRequest(TextCommand command) {
-//        System.out.println("publishing " + command);
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
                 if (!restEnabled) {

@@ -66,8 +66,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return SERVICE_NAME;
     }
 
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        final TransactionContextImpl context = new TransactionContextImpl(nodeEngine);
+    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+        final TransactionContextImpl context = new TransactionContextImpl(nodeEngine, options);
         context.beginTransaction();
         try {
             final T value = task.execute(context);
@@ -83,6 +83,10 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             }
             throw new TransactionException(e);
         }
+    }
+
+    public TransactionContext newTransactionContext(TransactionOptions options) {
+        return new TransactionContextImpl(nodeEngine, options);
     }
 
     ConcurrencyUtil.ConstructorFunction<TransactionKey, TransactionLog> logConstructor = new ConcurrencyUtil.ConstructorFunction<TransactionKey, TransactionLog>() {
@@ -117,13 +121,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                             case PREPARED:
                                 logger.log(Level.WARNING, "Rolling-back previously prepared transaction[" + log.getTxnId()
                                         + "], because caller is not a member of the cluster anymore!");
-                                for (TransactionalOperation txOp : log.getOperationRecords()) {
-                                    try {
-                                        txOp.rollback();
-                                    } catch (Throwable e) {
-                                        logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + log.getTxnId() + "]!", e);
-                                    }
-                                }
+                                rollbackTransactionLog(log);
                                 break;
                             case COMMITTED:
                                 logger.log(Level.INFO, "Broadcasting COMMIT message for transaction[" + log.getTxnId()
@@ -156,7 +154,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public void prepare(String caller, String txnId, int partitionId) throws TransactionException {
+    void prepare(String caller, String txnId, int partitionId) throws TransactionException {
         final TransactionKey key = new TransactionKey(txnId, partitionId);
         final TransactionLog log = txLogs.get(key);
         if (log == null) {
@@ -169,7 +167,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             log.setCallerUuid(caller);
             log.setState(Transaction.State.PREPARED);
             for (TransactionalOperation op : log.getOperationRecords()) {
-                op.prepare();
+                op.doPrepare();
             }
             scheduler.schedule(ONE_MIN_MS * 2, key, DUMMY_OBJECT);
             log.setScheduled(true);
@@ -178,7 +176,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public void commit(String caller, String txnId, int partitionId) throws TransactionException {
+    void commit(String caller, String txnId, int partitionId) throws TransactionException {
         final TransactionKey key = new TransactionKey(txnId, partitionId);
         final TransactionLog log = txLogs.get(key);
         if (log == null) {
@@ -190,13 +188,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         try {
             log.setCallerUuid(caller);
             log.setState(Transaction.State.COMMITTED);
-            for (TransactionalOperation op : log.getOperationRecords()) {
-                try {
-                    op.commit();
-                } catch (Throwable e) {
-                    logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
-                }
-            }
+            commitTransactionLog(log);
             scheduler.schedule(ONE_MIN_MS, key, DUMMY_OBJECT);
             log.setScheduled(true);
         } finally {
@@ -204,11 +196,12 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public void rollback(String caller, String txnId, int partitionId) throws TransactionException {
+    void rollback(String caller, String txnId, int partitionId) throws TransactionException {
         final TransactionKey key = new TransactionKey(txnId, partitionId);
         final TransactionLog log = txLogs.get(key);
         if (log == null) {
-            throw new TransactionException("No tx available!");
+            logger.log(Level.WARNING, "Ignoring roll-back, no transaction available!");
+            return;
         }
         if (!log.beginProcess()) {
             throw new TransactionException("Tx log is already being processed!");
@@ -216,13 +209,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         try {
             log.setCallerUuid(caller);
             log.setState(Transaction.State.ROLLED_BACK);
-            for (TransactionalOperation op : log.getOperationRecords()) {
-                try {
-                    op.rollback();
-                } catch (Throwable e) {
-                    logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + txnId + "]!", e);
-                }
-            }
+            rollbackTransactionLog(log);
             scheduler.schedule(ONE_MIN_MS, key, DUMMY_OBJECT);
             log.setScheduled(true);
         } finally {
@@ -236,13 +223,18 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             final TransactionLog log = iter.next();
             if (txnId.equals(log.getTxnId())) {
                 iter.remove();
-                for (TransactionalOperation op : log.getOperationRecords()) {
-                    try {
-                        op.commit();
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
-                    }
-                }
+                commitTransactionLog(log);
+            }
+        }
+    }
+
+    private void commitTransactionLog(TransactionLog log) {
+        String txnId = log.getTxnId();
+        for (TransactionalOperation op : log.getOperationRecords()) {
+            try {
+                op.doCommit();
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
             }
         }
     }
@@ -253,13 +245,21 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             final TransactionLog log = iter.next();
             if (txnId.equals(log.getTxnId())) {
                 iter.remove();
-                for (TransactionalOperation op : log.getOperationRecords()) {
-                    try {
-                        op.rollback();
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + txnId + "]!", e);
-                    }
-                }
+                rollbackTransactionLog(log);
+            }
+        }
+    }
+
+    private void rollbackTransactionLog(TransactionLog log) {
+        final List<TransactionalOperation> ops = log.getOperationRecords();
+        // Rollback should be done in reverse order!
+        final ListIterator<TransactionalOperation> iter = ops.listIterator(ops.size());
+        while (iter.hasPrevious()) {
+            final TransactionalOperation op = iter.previous();
+            try {
+                op.doRollback();
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + log.getTxnId() + "]!", e);
             }
         }
     }

@@ -19,9 +19,9 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.PollBackupOperation;
-import com.hazelcast.queue.QueueWaitNotifyKey;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.transaction.TransactionException;
 
 /**
  * @ali 12/6/12
@@ -37,9 +37,20 @@ public class TxPollOperation extends TransactionalQueueOperation {
         super(name, txnId, timeoutMillis);
     }
 
-//    public void run() {
-//        response = getContainer().poll();
-//    }
+    protected void process() throws TransactionException {
+        response = getOrCreateContainer().txPoll(getTransactionId());
+    }
+
+    protected void prepare() throws TransactionException {
+    }
+
+    protected void commit() {
+        getOrCreateContainer().commit(getTransactionId());
+    }
+
+    protected void rollback() {
+        getOrCreateContainer().rollback(getTransactionId());
+    }
 
     public Object getResponse() {
         return response;
@@ -64,15 +75,15 @@ public class TxPollOperation extends TransactionalQueueOperation {
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        return new QueueWaitNotifyKey(name, "offer");
+        return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new QueueWaitNotifyKey(name, "poll");
+        return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
     public boolean shouldWait() {
-        return getWaitTimeoutMillis() != 0 && getContainer().size() == 0;
+        return getWaitTimeoutMillis() != 0 && getOrCreateContainer().size() == 0;
     }
 
     public void onWaitExpire() {

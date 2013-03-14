@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 
-public class SimpleCommandProcessor extends AbstractTextCommandProcessor<SimpleCommand> {
+public class SimpleCommandProcessor extends MemcacheCommandProcessor<SimpleCommand> {
 
     private final ILogger logger;
 

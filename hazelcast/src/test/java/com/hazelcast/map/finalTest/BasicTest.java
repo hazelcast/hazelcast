@@ -92,6 +92,20 @@ public class BasicTest {
     }
 
     @Test
+    public void testMapDelete() {
+        IMap<String, String> map = getInstance().getMap("testMapRemove");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        map.delete("key1");
+        assertEquals(map.size(), 2);
+        map.delete("key1");
+        assertEquals(map.size(), 2);
+        map.delete("key3");
+        assertEquals(map.size(), 1);
+    }
+
+    @Test
     public void testMapClear() {
         IMap<String, String> map = getInstance().getMap("testMapClear");
         map.put("key1", "value1");
@@ -126,15 +140,15 @@ public class BasicTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         final CountDownLatch latch3 = new CountDownLatch(1);
-        final AtomicReference firstObject = new AtomicReference();
-        final AtomicReference secondObject= new AtomicReference();
+        final AtomicBoolean firstBool = new AtomicBoolean();
+        final AtomicBoolean secondBool = new AtomicBoolean();
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    firstObject.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
+                    firstBool.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
                     latch2.countDown();
                     latch1.await();
-                    secondObject.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
+                    secondBool.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
                     latch3.countDown();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -147,8 +161,8 @@ public class BasicTest {
         map.unlock("key1");
         latch1.countDown();
         latch3.await();
-        assertNull(firstObject.get());
-        assertEquals("value1", secondObject.get());
+        assertFalse(firstBool.get());
+        assertTrue(secondBool.get());
         thread.join();
     }
 

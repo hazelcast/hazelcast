@@ -21,6 +21,8 @@ package com.hazelcast.transaction;
  */
 public interface TransactionManagerService  {
 
-    <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
+    <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException;
+
+    TransactionContext newTransactionContext(TransactionOptions options);
 
 }
