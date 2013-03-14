@@ -36,8 +36,6 @@ public class ClientConfigTest {
         Assert.assertEquals(3, config.getInitialConnectionAttemptLimit());
         Assert.assertEquals(5000, config.getReConnectionTimeOut());
         Assert.assertEquals(5, config.getReconnectionAttemptLimit());
-        Assert.assertFalse(config.isShuffle());
-        Assert.assertTrue(config.isUpdateAutomatic());
         Assert.assertEquals(2, config.getAddressList().size());
 
     }

@@ -17,6 +17,7 @@
 
 package com.hazelcast.client.proxy.listener;
 
+import com.hazelcast.client.Connection;
 import com.hazelcast.client.proxy.PartitionClientProxy;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
@@ -55,7 +56,7 @@ public class MigrationEventLRH implements ListenerResponseHandler {
         }
     }
 
-    public void onError(Exception e) {
+    public void onError(Connection connection, Exception e) {
         partitionClientProxy.addMigrationListener(listener);
     }
 }

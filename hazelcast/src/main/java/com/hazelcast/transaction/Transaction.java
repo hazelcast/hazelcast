@@ -21,7 +21,6 @@ package com.hazelcast.transaction;
  */
 public interface Transaction {
 
-
     public enum State {
         NO_TXN,
         ACTIVE,
@@ -34,7 +33,7 @@ public interface Transaction {
         ROLLED_BACK
     }
 
-    void addPartition(int partitionId) throws TransactionException;
+    void addPartition(int partitionId);
 
     String getTxnId();
 

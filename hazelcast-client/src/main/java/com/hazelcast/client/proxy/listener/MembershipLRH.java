@@ -17,6 +17,7 @@
 
 package com.hazelcast.client.proxy.listener;
 
+import com.hazelcast.client.Connection;
 import com.hazelcast.client.proxy.ClusterClientProxy;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
@@ -39,7 +40,7 @@ public class MembershipLRH implements ListenerResponseHandler {
     public void handleResponse(Protocol response, SerializationService ss) throws Exception {
         String eventType = response.args[0];
         int eventTypeId;
-        if("ADDED".equalsIgnoreCase(eventType))
+        if ("ADDED".equalsIgnoreCase(eventType))
             eventTypeId = MembershipEvent.MEMBER_ADDED;
         else
             eventTypeId = MembershipEvent.MEMBER_REMOVED;
@@ -48,7 +49,7 @@ public class MembershipLRH implements ListenerResponseHandler {
         Address address = new Address(host, port);
         Member member = new MemberImpl(address, false);
         MembershipEvent event = new MembershipEvent(member, eventTypeId);
-        switch (eventTypeId){
+        switch (eventTypeId) {
             case MembershipEvent.MEMBER_ADDED:
                 listener.memberAdded(event);
                 break;
@@ -58,8 +59,8 @@ public class MembershipLRH implements ListenerResponseHandler {
         }
     }
 
-    public void onError(Exception e) {
-        e.printStackTrace();
+    public void onError(Connection connection, Exception e) {
+        listener.memberRemoved(new MembershipEvent(new MemberImpl(connection.getAddress(), false), MembershipEvent.MEMBER_REMOVED));
         clusterClientProxy.addMembershipListener(listener);
     }
 }

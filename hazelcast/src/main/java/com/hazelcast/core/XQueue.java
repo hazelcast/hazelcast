@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.client;
+package com.hazelcast.core;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.proxy.DataMapProxy;
-import com.hazelcast.nio.Protocol;
+import java.util.concurrent.TimeUnit;
 
-public class MapFlushHandler extends MapCommandHandler {
-    public MapFlushHandler(MapService mapService) {
-        super(mapService);
-    }
+// TODO: @mm - Rename!!!
+public interface XQueue<E> extends DistributedObject {
 
-    @Override
-    public Protocol processCall(Node node, Protocol protocol) {
-        String name = protocol.args[0];
-        DataMapProxy dataMapProxy = getMapProxy(name);
-        dataMapProxy.flush();
-        return protocol.success();
-    }
+    boolean offer(E e);
+
+    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
+
+    E poll();
+
+    E poll(long timeout, TimeUnit unit) throws InterruptedException;
+
+    E peek();
+
 }

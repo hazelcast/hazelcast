@@ -30,7 +30,6 @@ public class TestUtility {
         config.getGroupConfig().setName(groupName);
         config.getGroupConfig().setPassword(groupPassword);
         config.addAddress(address);
-        config.setUpdateAutomatic(true);
         return HazelcastClient.newHazelcastClient(config);
     }
 

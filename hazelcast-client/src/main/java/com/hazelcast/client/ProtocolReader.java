@@ -36,19 +36,19 @@ public class ProtocolReader {
     private final SerializationService serializationService;
 
     private static final int INITIAL_BUFFER_CAPACITY = 1024;
-    private ByteBuffer line = ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY);
 
     public ProtocolReader(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
 
     public Protocol read(Connection connection) throws IOException {
+        ByteBuffer line = ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY);
         int threadId = -1;
         String flag = null;
         Command command;
         String[] args;
         final ObjectDataInputStream dis = connection.getInputStream();
-        String commandLine = readLine(dis);
+        String commandLine = readLine(dis, line);
 //        System.out.println("Commandline is " + commandLine);
         String[] split = SocketProtocolReader.fastSplit(commandLine, ' ');
         if (split.length == 0) {
@@ -86,7 +86,7 @@ public class ProtocolReader {
             if (bufferCount * 11 > line.array().length) {
                 line = ByteBuffer.allocate(bufferCount * 11);
             }
-            String sizeLine = readLine(dis);
+            String sizeLine = readLine(dis, line);
 //            System.out.println("Size line is " + sizeLine);
             String[] sizes = SocketProtocolReader.fastSplit(sizeLine, ' ');
             int i = 0;
@@ -103,13 +103,13 @@ public class ProtocolReader {
             dis.readByte();
         }
         if (command.equals(Command.UNKNOWN)) {
-            throw new RuntimeException("Unknown command: " + split[commandIndex]);
+            throw new RuntimeException("Unknown command: " + split[commandIndex] + ":: "+ Thread.currentThread().getName());
         }
         Protocol protocol = new Protocol(null, command, flag, threadId, false, args, datas);
         return protocol;
     }
 
-    private String readLine(DataInput dis) throws IOException {
+    private String readLine(DataInput dis, ByteBuffer line) throws IOException {
         byte b = dis.readByte();
         char c = (char) b;
         while (c != '\n') {

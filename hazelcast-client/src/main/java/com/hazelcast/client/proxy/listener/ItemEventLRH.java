@@ -17,8 +17,8 @@
 
 package com.hazelcast.client.proxy.listener;
 
+import com.hazelcast.client.Connection;
 import com.hazelcast.client.impl.DataAwareItemEvent;
-import com.hazelcast.client.proxy.QueueClientProxy;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -55,7 +55,7 @@ public class ItemEventLRH<E> implements ListenerResponseHandler {
         }
     }
 
-    public void onError(Exception e) {
+    public void onError(Connection connection, Exception e) {
         proxy.addItemListener(listener, includeValue);
     }
 }

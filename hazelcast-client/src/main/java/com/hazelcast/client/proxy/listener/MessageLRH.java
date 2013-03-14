@@ -17,6 +17,7 @@
 
 package com.hazelcast.client.proxy.listener;
 
+import com.hazelcast.client.Connection;
 import com.hazelcast.client.impl.DataMessage;
 import com.hazelcast.client.proxy.TopicClientProxy;
 import com.hazelcast.core.Message;
@@ -40,7 +41,7 @@ public class MessageLRH implements ListenerResponseHandler {
         messageListener.onMessage(message);
     }
 
-    public void onError(Exception e) {
+    public void onError(Connection connection, Exception e) {
         topic.addMessageListener(messageListener);
     }
 }

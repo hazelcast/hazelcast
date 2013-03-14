@@ -17,8 +17,8 @@
 
 package com.hazelcast.client.proxy.listener;
 
+import com.hazelcast.client.Connection;
 import com.hazelcast.map.DataAwareEntryEvent;
-import com.hazelcast.client.proxy.MapClientProxy;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -72,7 +72,7 @@ public class EntryEventLRH<K, V> implements ListenerResponseHandler {
         }
     }
 
-    public void onError(Exception e) {
+    public void onError(Connection connection, Exception e) {
         proxy.addEntryListener(listener, key, includeValue);
     }
 }

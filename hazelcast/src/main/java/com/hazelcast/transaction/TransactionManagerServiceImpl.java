@@ -85,6 +85,10 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
+    public TransactionContext newTransactionContext(TransactionOptions options) {
+        return new TransactionContextImpl(nodeEngine, options);
+    }
+
     ConcurrencyUtil.ConstructorFunction<TransactionKey, TransactionLog> logConstructor = new ConcurrencyUtil.ConstructorFunction<TransactionKey, TransactionLog>() {
         public TransactionLog createNew(TransactionKey key) {
             return new TransactionLog(key.txnId, key.partitionId);

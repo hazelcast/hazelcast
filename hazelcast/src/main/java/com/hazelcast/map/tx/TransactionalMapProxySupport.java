@@ -25,7 +25,6 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -45,7 +44,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         this.tx = transaction;
     }
 
-    public boolean containsKeyInternal(Data key) throws TransactionException {
+    public boolean containsKeyInternal(Data key) {
         if (tx.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
@@ -58,11 +57,11 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             Future f = invocation.invoke();
             return (Boolean) f.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t, TransactionException.class);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
-    public Data getInternal(Data key) throws TransactionException {
+    public Data getInternal(Data key) {
         if (tx.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
@@ -82,51 +81,51 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             Future f = invocation.invoke();
             return (Data) f.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t, TransactionException.class);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
-    public Data putInternal(Data key, Data value) throws TransactionException {
+    public Data putInternal(Data key, Data value) {
         TxPutOperation op = new TxPutOperation(name, key, value);
         return (Data) invokeOperation(key, op);
     }
 
-    public void setInternal(Data key, Data value) throws TransactionException {
+    public void setInternal(Data key, Data value) {
         TxSetOperation op = new TxSetOperation(name, key, value);
         invokeOperation(key, op);
     }
 
-    public Data putIfAbsentInternal(Data key, Data value) throws TransactionException {
+    public Data putIfAbsentInternal(Data key, Data value) {
         TxPutIfAbsentOperation op = new TxPutIfAbsentOperation(name, key, value);
         return (Data)invokeOperation(key, op);
     }
 
-    public Data replaceInternal(Data key, Data value) throws TransactionException {
+    public Data replaceInternal(Data key, Data value) {
         TxReplaceOperation op = new TxReplaceOperation(name, key, value);
         return (Data)invokeOperation(key, op);
     }
 
-    public boolean replaceInternal(Data key, Data testValue, Data newValue) throws TransactionException {
+    public boolean replaceInternal(Data key, Data testValue, Data newValue) {
         TxReplaceIfSameOperation op = new TxReplaceIfSameOperation(name, key, testValue, newValue);
         return (Boolean)invokeOperation(key, op);
     }
 
-    public Data removeInternal(Data key) throws TransactionException {
+    public Data removeInternal(Data key) {
         TxRemoveOperation op = new TxRemoveOperation(name, key);
         return (Data) invokeOperation(key, op);
     }
 
-    public void deleteInternal(Data key) throws TransactionException {
+    public void deleteInternal(Data key) {
         TxDeleteOperation op = new TxDeleteOperation(name, key);
         invokeOperation(key, op);
     }
 
-    public boolean removeInternal(Data key, Data value) throws TransactionException {
+    public boolean removeInternal(Data key, Data value) {
         TxRemoveIfSameOperation op = new TxRemoveIfSameOperation(name, key, value);
         return (Boolean) invokeOperation(key, op);
     }
 
-    private Object invokeOperation(Data key, TransactionalMapOperation operation) throws TransactionException {
+    private Object invokeOperation(Data key, TransactionalMapOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         tx.addPartition(partitionId);
@@ -139,7 +138,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             Future f = invocation.invoke();
             return f.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t, TransactionException.class);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 

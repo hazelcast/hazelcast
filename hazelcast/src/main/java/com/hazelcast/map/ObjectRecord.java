@@ -34,6 +34,12 @@ public class ObjectRecord extends AbstractRecord implements Record<Object> {
     public ObjectRecord() {
     }
 
+    // as there is no easy way to calculate the size of Object cost is not implemented for ObjectRecord
+    @Override
+    public long getCost() {
+        return 0;
+    }
+
     public Object getValue() {
         return value;
     }

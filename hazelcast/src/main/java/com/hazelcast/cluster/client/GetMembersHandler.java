@@ -23,6 +23,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 public class GetMembersHandler extends ClientCommandHandler {
@@ -36,6 +37,7 @@ public class GetMembersHandler extends ClientCommandHandler {
             args[i++] = m.getAddress().getHost() ;
             args[i++] = String.valueOf(m.getAddress().getPort());
         }
+        System.out.println(Arrays.asList(args));
         return protocol.success(args);
     }
 }

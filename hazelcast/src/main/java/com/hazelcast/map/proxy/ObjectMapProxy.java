@@ -98,6 +98,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         return nodeEngine.toObject(replaceInternal(key, value));
     }
 
+    public void set(K key, V value) {
+        set(key, value, -1, null);
+    }
+
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data key = nodeEngine.toData(k);

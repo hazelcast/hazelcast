@@ -148,6 +148,10 @@ public abstract class TransactionalOperation extends Operation implements DataSe
         return state == Transaction.State.COMMITTED;
     }
 
+    protected final boolean isRolledBack() {
+        return state == Transaction.State.ROLLED_BACK;
+    }
+
     protected abstract void process() throws TransactionException;
 
     protected abstract void prepare() throws TransactionException;

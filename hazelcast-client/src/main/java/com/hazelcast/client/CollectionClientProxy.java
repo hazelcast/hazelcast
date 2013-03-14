@@ -27,10 +27,10 @@ public abstract class CollectionClientProxy<E> extends AbstractCollection<E> {
     final protected String name;
     final protected HazelcastClient client;
 
-    public CollectionClientProxy(HazelcastClient hazelcastClient, String name) {
+    public CollectionClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        this.client = hazelcastClient;
-        proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
+        this.client = client;
+        proxyHelper = new ProxyHelper(client);
     }
 
     public Object getId() {

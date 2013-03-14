@@ -22,6 +22,8 @@ import com.hazelcast.nio.serialization.Data;
 
 public class TxPutIfAbsentOperation extends BaseTxPutOperation {
 
+    private transient boolean absent;
+
     public TxPutIfAbsentOperation() {
     }
 
@@ -31,7 +33,7 @@ public class TxPutIfAbsentOperation extends BaseTxPutOperation {
 
     protected void innerProcess() {
         TransactionItem transactionItem = partitionContainer.getTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
-        boolean absent = !recordStore.containsKey(dataKey) && transactionItem == null;
+        absent = !recordStore.containsKey(dataKey) && (transactionItem == null || transactionItem.isRemoved());
         if (absent) {
             partitionContainer.addTransactionItem(new TransactionItem(getTransactionId(), name, getKey(), getValue(), false));
         } else if(transactionItem != null && !transactionItem.isRemoved()) {
@@ -42,12 +44,16 @@ public class TxPutIfAbsentOperation extends BaseTxPutOperation {
     }
 
     protected void innerOnCommit() {
-        partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
-        dataOldValue = mapService.toData(recordStore.putIfAbsent(dataKey, dataValue, ttl));
+        if (absent) {
+            partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        }
+        recordStore.putIfAbsent(dataKey, dataValue, ttl);
     }
 
     protected void innerOnRollback() {
-        partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        if (absent) {
+            partitionContainer.removeTransactionItem(new TransactionKey(getTransactionId(), name, dataKey));
+        }
     }
 
     @Override

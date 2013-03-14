@@ -17,15 +17,24 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import org.junit.BeforeClass;
 
-public interface Router {
-    public void init(HazelcastInstance h);
+public class ConnectionPoolTest {
+    
+    ConnectionManager pool;
+    
+    @BeforeClass
+    public void initPool(){
+        ClientConfig config = new ClientConfig();
+        SerializationService ss = new SerializationServiceImpl(1,null);
+        pool = new ConnectionManager(config, ss);
+    }
 
-    /**
-     * Returns the next member to route to
-     * @return Returns the next member or null if no member is available
-     */
-    public Member next();
+    public void testInit(){
+
+    }
+
 }

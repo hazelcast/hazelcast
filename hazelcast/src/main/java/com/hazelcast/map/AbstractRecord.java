@@ -69,9 +69,7 @@ public abstract class AbstractRecord implements DataSerializable {
         return statistics == null ? -1 : statistics.getLastAccessTime();
     }
 
-    public long getCost() {
-        return 0;
-    }
+    public abstract long getCost();
 
     public void onAccess() {
         if(statistics != null)

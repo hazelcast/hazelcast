@@ -46,13 +46,14 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
         String[] args = protocol.args;
         if (node.securityContext == null) {
             if (args.length < 2) {
-                throw new RuntimeException("Should provide both username and password");
+                protocol.error(null, "Should_provide_both_username_and_password");
             }
             credentials = new UsernamePasswordCredentials(args[0], args[1]);
-        } else {
-            // TODO: !!! FIX ME !!!
+        } else if (protocol.hasBuffer()) {
             Data data = protocol.buffers[0];
             credentials = (Credentials) node.nodeEngine.toObject(data);
+        } else {
+            return protocol.error(null, "not_authenticated");
         }
         boolean authenticated = doAuthenticate(node, credentials, protocol.conn);
         return authenticated ? protocol.success() : protocol.error(null, "not_authenticated");

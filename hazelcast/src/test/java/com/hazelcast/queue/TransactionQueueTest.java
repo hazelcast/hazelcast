@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
@@ -60,7 +60,7 @@ public class TransactionQueueTest {
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
 
         boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionContext context) throws TransactionException {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 TransactionalQueue<String> q = context.getQueue(name);
                 assertTrue(q.offer("ali"));
                 String s = q.poll();

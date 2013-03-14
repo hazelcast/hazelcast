@@ -17,7 +17,6 @@
 
 package com.hazelcast.client.util.pool;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -45,9 +44,9 @@ public class QueueBasedObjectPool<E> extends ObjectPool<E> {
         if (e == null) {
             try {
                 e = factory.create();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-                return take();
+            } catch (Exception ex) {
+//                ex.printStackTrace();
+                return null;
             }
         }
         return e;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,12 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.core;
 
-import com.hazelcast.security.Credentials;
+// TODO: @mm - Rename!!!
+public interface XMap<K, V> extends DistributedObject {
 
-import java.io.IOException;
+    boolean containsKey(Object key);
 
-public interface ClientBinder {
-    public void bind(Connection connection, Credentials credentials) throws IOException;
+    V get(Object key);
+
+    V put(K key, V value);
+
+    void set(K key, V value);
+
+    V putIfAbsent(K key, V value);
+
+    V replace(K key, V value);
+
+    boolean replace(K key, V oldValue, V newValue);
+
+    V remove(Object key);
+
+    void delete(Object key);
+
+    boolean remove(Object key, Object value);
 }
