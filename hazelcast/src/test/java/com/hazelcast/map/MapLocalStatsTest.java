@@ -57,4 +57,38 @@ public class MapLocalStatsTest {
         Hazelcast.shutdownAll();
     }
 
+    @Test
+    public void testMultiNodes() throws InterruptedException {
+
+        Config cfg = new Config();
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        ObjectMapProxy map1 = (ObjectMapProxy) instance1.getMap("map");
+        ObjectMapProxy map2 = (ObjectMapProxy) instance2.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map1.put(i, i);
+        }
+        for (int i = 0; i < 20; i++) {
+            map1.get(i);
+        }
+        for (int i = 0; i < 10; i++) {
+            map1.lock(i);
+        }
+
+        LocalMapStats stats1 = map1.getLocalMapStats();
+        LocalMapStats stats2 = map2.getLocalMapStats();
+
+        assertEquals(1000, stats1.getOwnedEntryCount() + stats2.getOwnedEntryCount());
+        assertEquals(1000, stats1.getBackupEntryCount() + stats2.getBackupEntryCount());
+        assertEquals(20, stats1.getHits() + stats2.getHits());
+        assertEquals(10, stats1.getLockedEntryCount() + stats2.getLockedEntryCount());
+        assertEquals(stats1.getOwnedEntryMemoryCost(), stats2.getBackupEntryMemoryCost());
+        assertEquals(stats2.getOwnedEntryMemoryCost(), stats1.getBackupEntryMemoryCost());
+
+        Hazelcast.shutdownAll();
+    }
+
+
+
 }

@@ -44,10 +44,7 @@ import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexService;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryResultEntryImpl;
+import com.hazelcast.query.impl.*;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
@@ -601,33 +598,79 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return getMapContainer(mapName).removeInterceptor(interceptor);
     }
 
-    // todo replace oldValue with existingEntry
-    public Object intercept(String mapName, MapOperationType operationType, Data key, Object value, Object oldValue) {
+    // todo interceptors should get a wrapped object which includes the serialized version
+    public Object interceptGet(String mapName, Object value) {
         List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
-        Object result = value;
-        // todo needs optimization about serialization (EntryView type should be used as input)
+        Object result = null;
         if (!interceptors.isEmpty()) {
-            value = toObject(value);
-            Map.Entry existingEntry = new AbstractMap.SimpleEntry(key, toObject(oldValue));
-            MapInterceptorContextImpl context = new MapInterceptorContextImpl(mapName, operationType, key, value, existingEntry);
+            result = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
-                result = interceptor.process(context);
-                context.setNewValue(toObject(result));
+                Object temp = interceptor.interceptGet(result);
+                if(temp != null) {
+                    result = temp;
+                }
             }
         }
-        return result;
+        return result == null ? value : result;
     }
 
-    // todo replace oldValue with existingEntry
-    public void interceptAfterProcess(String mapName, MapOperationType operationType, Data key, Object value, Object oldValue) {
+    public void afterGet(String mapName, Object value) {
         List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
-        // todo needs optimization about serialization (EntryView type should be used as input)
         if (!interceptors.isEmpty()) {
             value = toObject(value);
-            Map.Entry existingEntry = new AbstractMap.SimpleEntry(key, toObject(oldValue));
-            MapInterceptorContext context = new MapInterceptorContextImpl(mapName, operationType, key, value, existingEntry);
             for (MapInterceptor interceptor : interceptors) {
-                interceptor.afterProcess(context);
+                interceptor.afterGet(value);
+            }
+        }
+    }
+
+    public Object interceptPut(String mapName, Object oldValue, Object newValue) {
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        Object result = null;
+        if (!interceptors.isEmpty()) {
+            result = toObject(newValue);
+            oldValue = toObject(oldValue);
+            for (MapInterceptor interceptor : interceptors) {
+                Object temp = interceptor.interceptPut(oldValue, result);
+                if(temp != null) {
+                    result = temp;
+                }
+            }
+        }
+        return result == null ? newValue : result;
+    }
+
+    public void afterPut(String mapName, Object newValue) {
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        if (!interceptors.isEmpty()) {
+            newValue = toObject(newValue);
+            for (MapInterceptor interceptor : interceptors) {
+                interceptor.afterPut(newValue);
+            }
+        }
+    }
+
+    public Object interceptRemove(String mapName, Object value) {
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        Object result = null;
+        if (!interceptors.isEmpty()) {
+            result = toObject(value);
+            for (MapInterceptor interceptor : interceptors) {
+                Object temp = interceptor.interceptRemove(result);
+                if(temp != null) {
+                    result = temp;
+                }
+            }
+        }
+        return result == null ? value : result;
+    }
+
+    public void afterRemove(String mapName, Object value) {
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        if (!interceptors.isEmpty()) {
+            for (MapInterceptor interceptor : interceptors) {
+                value = toObject(value);
+                interceptor.afterRemove(value);
             }
         }
     }
@@ -656,7 +699,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 }
                 key = key != null ? key : toObject(key);
                 QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-                if (queryEventFilter.eval(new SimpleMapEntry(key, testValue))) {
+                QueryEntry entry = new QueryEntry(getSerializationService() ,dataKey, dataKey, testValue);
+                if (queryEventFilter.eval(entry)) {
                     if (queryEventFilter.isIncludeValue()) {
                         registrationsWithValue.add(candidate);
                     } else {
