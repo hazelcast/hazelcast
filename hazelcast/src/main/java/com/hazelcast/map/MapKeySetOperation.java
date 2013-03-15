@@ -36,7 +36,9 @@ public class MapKeySetOperation extends AbstractMapOperation implements Partitio
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         keySet = recordStore.keySet();
-        mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+        }
     }
 
     @Override

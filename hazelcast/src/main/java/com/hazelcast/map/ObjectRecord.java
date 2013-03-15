@@ -26,8 +26,8 @@ public class ObjectRecord extends AbstractRecord implements Record<Object> {
 
     private volatile Object value;
 
-    public ObjectRecord(Data keyData, Object value) {
-        super(keyData);
+    public ObjectRecord(Data keyData, Object value, boolean statisticsEnabled) {
+        super(keyData, statisticsEnabled);
         this.value = value;
     }
 

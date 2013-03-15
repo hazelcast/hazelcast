@@ -393,7 +393,11 @@ public class BasicTest {
 
     @Test
     public void testEntryView() {
-        final IMap<Integer, Integer> map = getInstance().getMap("testEntryView");
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        Config config = new Config();
+        config.getMapConfig("default").setStatisticsEnabled(true);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
         map.put(2, 2);

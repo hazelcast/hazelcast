@@ -26,8 +26,8 @@ public class DataRecord extends AbstractRecord implements Record<Data> {
 
     private volatile Data value;
 
-    public DataRecord(Data keyData, Data value) {
-        super(keyData);
+    public DataRecord(Data keyData, Data value, boolean statisticsEnabled) {
+        super(keyData, statisticsEnabled);
         this.value = value;
     }
 

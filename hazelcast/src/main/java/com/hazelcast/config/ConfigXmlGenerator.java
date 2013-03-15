@@ -216,6 +216,7 @@ public class ConfigXmlGenerator {
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
             xml.append("<merge-policy>").append(m.getMergePolicyConfig()).append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData()).append("</read-backup-data>");
+            xml.append("<statistics-enabled>").append(m.isStatisticsEnabled()).append("</statistics-enabled>");
             if (m.getMapStoreConfig() != null) {
                 final MapStoreConfig s = m.getMapStoreConfig();
                 xml.append("<map-store enabled=\"").append(s.isEnabled()).append("\">");
