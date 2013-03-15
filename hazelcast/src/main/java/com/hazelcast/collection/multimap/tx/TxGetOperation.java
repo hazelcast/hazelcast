@@ -17,32 +17,21 @@
 package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.operations.PutBackupOperation;
-import com.hazelcast.concurrent.lock.LockNamespace;
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
-import java.io.IOException;
-
 /**
- * @ali 3/13/13
+ * @ali 3/14/13
  */
-public class TxPutOperation extends TransactionalMultiMapOperation {
+public class TxGetOperation extends TransactionalMultiMapOperation {
 
-    Data value;
-
-    public TxPutOperation() {
+    public TxGetOperation() {
     }
 
-    public TxPutOperation(CollectionProxyId proxyId, Data dataKey, Data value, int threadId, String txnId, long timeoutMillis) {
+    public TxGetOperation(CollectionProxyId proxyId, Data dataKey, int threadId, String txnId, long timeoutMillis) {
         super(proxyId, dataKey, threadId, txnId, timeoutMillis);
-        this.value = value;
     }
 
     protected void process() throws TransactionException {
@@ -58,29 +47,21 @@ public class TxPutOperation extends TransactionalMultiMapOperation {
     }
 
     public boolean shouldBackup() {
-        return super.shouldBackup() && Boolean.TRUE.equals(response);
+        return false;
     }
 
     public Operation getBackupOperation() {
-        return new PutBackupOperation(proxyId, dataKey, value, -1);
+        return null;
+    }
+
+    public boolean shouldWait() {
+        return false;
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new LockNamespace(CollectionService.SERVICE_NAME, proxyId), dataKey);
+        return null;
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
-    }
-
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        value.writeData(out);
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        value = new Data();
-        value.readData(in);
     }
 }
