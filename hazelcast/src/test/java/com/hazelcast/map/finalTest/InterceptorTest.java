@@ -29,7 +29,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,7 +51,7 @@ public class InterceptorTest {
     public void testMapInterceptor() throws InterruptedException {
         StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         final IMap<Object, Object> map = instance1.getMap("testMapInterceptor");

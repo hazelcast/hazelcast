@@ -206,7 +206,7 @@ public class ConfigXmlGenerator {
         final Collection<MapConfig> mCfgs = config.getMapConfigs().values();
         for (MapConfig m : mCfgs) {
             xml.append("<map name=\"").append(m.getName()).append("\">");
-            xml.append("<record-type>").append(m.getRecordType()).append("</record-type>");
+            xml.append("<record-type>").append(m.getInMemoryFormat()).append("</record-type>");
             xml.append("<backup-count>").append(m.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(m.getAsyncBackupCount()).append("</async-backup-count>");
             xml.append("<time-to-live-seconds>").append(m.getTimeToLiveSeconds()).append("</time-to-live-seconds>");

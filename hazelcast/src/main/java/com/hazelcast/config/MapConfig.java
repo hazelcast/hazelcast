@@ -40,7 +40,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
-    public final static RecordType DEFAULT_RECORD_TYPE = RecordType.DATA;
+    public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.DATA;
 
     private String name = null;
 
@@ -68,7 +68,7 @@ public class MapConfig implements DataSerializable {
 
     private MapMergePolicyConfig mergePolicyConfig = new MapMergePolicyConfig();
 
-    private RecordType recordType = DEFAULT_RECORD_TYPE;
+    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
 
     private WanReplicationRef wanReplicationRef;
 
@@ -80,7 +80,7 @@ public class MapConfig implements DataSerializable {
 
     private boolean statisticsEnabled = false;
 
-    public enum RecordType {
+    public enum InMemoryFormat {
         DATA, OBJECT, CACHED
     }
 
@@ -108,7 +108,7 @@ public class MapConfig implements DataSerializable {
         this.evictionDelaySeconds = config.evictionDelaySeconds;
         this.maxSizeConfig = config.maxSizeConfig;
         this.evictionPolicy = config.evictionPolicy;
-        this.recordType = config.recordType;
+        this.inMemoryFormat = config.inMemoryFormat;
         this.mapStoreConfig = config.mapStoreConfig;
         this.nearCacheConfig = config.nearCacheConfig;
         this.readBackupData = config.readBackupData;
@@ -134,8 +134,8 @@ public class MapConfig implements DataSerializable {
     /**
      * @return data type that will be used for storing records.
      */
-    public RecordType getRecordType() {
-        return recordType;
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
     }
 
     /**
@@ -145,10 +145,10 @@ public class MapConfig implements DataSerializable {
      * OBJECT : values will be stored in their object forms
      * CACHED: object form of values will be cached
      *
-     * @param recordType the record type to set
+     * @param inMemoryFormat the record type to set
      */
-    public MapConfig setRecordType(RecordType recordType) {
-        this.recordType = recordType;
+    public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = inMemoryFormat;
         return this;
     }
 
@@ -526,7 +526,7 @@ public class MapConfig implements DataSerializable {
                         this.readBackupData == other.readBackupData &&
 //                        this.valueIndexed == other.valueIndexed &&
                         (this.mergePolicyConfig != null ? this.mergePolicyConfig.equals(other.mergePolicyConfig) : other.mergePolicyConfig == null) &&
-                        (this.recordType != null ? this.recordType.equals(other.recordType) : other.recordType == null) &&
+                        (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null) &&
                         (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
                                 : other.evictionPolicy == null) &&
                         (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
@@ -537,7 +537,7 @@ public class MapConfig implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        recordType = RecordType.valueOf(in.readUTF());
+        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         evictionPercentage = in.readInt();
@@ -556,7 +556,7 @@ public class MapConfig implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(recordType.toString());
+        out.writeUTF(inMemoryFormat.toString());
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(evictionPercentage);
@@ -576,7 +576,7 @@ public class MapConfig implements DataSerializable {
         final StringBuilder sb = new StringBuilder();
         sb.append("MapConfig");
         sb.append("{name='").append(name).append('\'');
-        sb.append(", recordType=").append(recordType).append('\'');
+        sb.append(", inMemoryFormat=").append(inMemoryFormat).append('\'');
         sb.append(", backupCount=").append(backupCount);
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append(", timeToLiveSeconds=").append(timeToLiveSeconds);

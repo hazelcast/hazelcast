@@ -48,7 +48,7 @@ public class EntryProcessorTest {
     public void testMapEntryProcessor() throws InterruptedException {
         StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -67,7 +67,7 @@ public class EntryProcessorTest {
     public void testBackups() throws InterruptedException {
         StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);

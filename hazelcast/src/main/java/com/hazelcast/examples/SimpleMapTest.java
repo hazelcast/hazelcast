@@ -71,7 +71,7 @@ public class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
-//        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
+//        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         cfg.getNetworkConfig().getJoin().getTcpIpConfig().addMember("192.168.2.5");

@@ -445,13 +445,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean backup) {
         Record record = null;
         MapContainer mapContainer = getMapContainer(name);
-        final MapConfig.RecordType recordType = mapContainer.getMapConfig().getRecordType();
+        final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
-        if (recordType == MapConfig.RecordType.DATA) {
+        if (inMemoryFormat == MapConfig.InMemoryFormat.DATA) {
             record = new DataRecord(dataKey, toData(value), statisticsEnabled);
-        } else if (recordType == MapConfig.RecordType.OBJECT) {
+        } else if (inMemoryFormat == MapConfig.InMemoryFormat.OBJECT) {
             record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
-        } else if (recordType == MapConfig.RecordType.CACHED) {
+        } else if (inMemoryFormat == MapConfig.InMemoryFormat.CACHED) {
             record = new CachedDataRecord(dataKey, toData(value), statisticsEnabled);
         } else {
             throw new IllegalArgumentException("Should not happen!");
@@ -781,9 +781,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
 
         MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().getRecordType().equals(MapConfig.RecordType.DATA)) {
+        if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.DATA)) {
             return toData(value1).equals(toData(value2));
-        } else if (mapContainer.getMapConfig().getRecordType().equals(MapConfig.RecordType.OBJECT)) {
+        } else if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.OBJECT)) {
             return toObject(value1).equals(toObject(value2));
         }
         return value1.equals(value2);

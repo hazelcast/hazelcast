@@ -39,7 +39,7 @@ public class NearCache {
     final long timeToLiveMillis;
     final boolean invalidateOnChange;
     final EvictionPolicy evictionPolicy;
-    final MapConfig.RecordType recordType;
+    final MapConfig.InMemoryFormat inMemoryFormat;
     final String mapName;
     final MapService mapService;
     final NodeEngine nodeEngine;
@@ -52,7 +52,7 @@ public class NearCache {
         this.mapService = mapService;
         this.nodeEngine = mapService.getNodeEngine();
         Config config = nodeEngine.getConfig();
-        recordType = config.getMapConfig(mapName).getRecordType();
+        inMemoryFormat = config.getMapConfig(mapName).getInMemoryFormat();
         NearCacheConfig nearCacheConfig = config.getMapConfig(mapName).getNearCacheConfig();
         maxSize = nearCacheConfig.getMaxSize();
         maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
