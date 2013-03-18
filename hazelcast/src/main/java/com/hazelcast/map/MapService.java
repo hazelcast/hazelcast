@@ -753,7 +753,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         if (data == null)
             return null;
         if (data instanceof Data) {
-//            System.out.println("m to object " + nodeEngine.getClusterService().getThisAddress());
             return nodeEngine.toObject(data);
         } else {
             return data;
@@ -766,7 +765,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         if (object instanceof Data) {
             return (Data) object;
         } else {
-//            System.out.println("m to data " + nodeEngine.getClusterService().getThisAddress());
             return nodeEngine.toData(object);
         }
     }
