@@ -64,7 +64,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void afterRun() {
-        mapService.afterRemove(name, dataValue);
+        mapService.interceptAfterRemove(name, dataValue);
         int eventType = EntryEvent.TYPE_EVICTED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
         invalidateNearCaches();

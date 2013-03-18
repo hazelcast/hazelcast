@@ -197,7 +197,16 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                             mergePolicy = ClassLoaderUtil.newInstance(mergeClassName);
                         } catch (Exception e) {
                             logger.log(Level.SEVERE, e.getMessage(), e);
+                            ExceptionUtil.rethrow(e);
                         }
+                    }
+                }
+                if(mergePolicy == null) {
+                    try {
+                        mergePolicy = ClassLoaderUtil.newInstance(MapMergePolicyConfig.DEFAULT_POLICY);
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, e.getMessage(), e);
+                        ExceptionUtil.rethrow(e);
                     }
                 }
 
@@ -209,7 +218,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), getNodeEngine().toData(record.getValue()), record);
+                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record);
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
@@ -615,7 +624,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return result == null ? value : result;
     }
 
-    public void afterGet(String mapName, Object value) {
+    public void interceptAfterGet(String mapName, Object value) {
         List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         if (!interceptors.isEmpty()) {
             value = toObject(value);
@@ -641,7 +650,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return result == null ? newValue : result;
     }
 
-    public void afterPut(String mapName, Object newValue) {
+    public void interceptAfterPut(String mapName, Object newValue) {
         List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         if (!interceptors.isEmpty()) {
             newValue = toObject(newValue);
@@ -666,7 +675,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return result == null ? value : result;
     }
 
-    public void afterRemove(String mapName, Object value) {
+    public void interceptAfterRemove(String mapName, Object value) {
         List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         if (!interceptors.isEmpty()) {
             for (MapInterceptor interceptor : interceptors) {
@@ -743,19 +752,23 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public Object toObject(Object data) {
         if (data == null)
             return null;
-        if (data instanceof Data)
+        if (data instanceof Data) {
+//            System.out.println("m to object " + nodeEngine.getClusterService().getThisAddress());
             return nodeEngine.toObject(data);
-        else
+        } else {
             return data;
+        }
     }
 
     public Data toData(Object object) {
         if (object == null)
             return null;
-        if (object instanceof Data)
+        if (object instanceof Data) {
             return (Data) object;
-        else
+        } else {
+//            System.out.println("m to data " + nodeEngine.getClusterService().getThisAddress());
             return nodeEngine.toData(object);
+        }
     }
 
     public boolean compare(String mapName, Object value1, Object value2) {

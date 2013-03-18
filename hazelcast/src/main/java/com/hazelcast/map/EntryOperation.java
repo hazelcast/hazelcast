@@ -45,8 +45,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     public void run() {
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
         NodeEngine nodeEngine = mapService.getNodeEngine();
-        entry = new AbstractMap.SimpleEntry(nodeEngine.toObject(dataKey), nodeEngine.toObject(mapEntry.getValue()));
-        response = nodeEngine.toData(entryProcessor.process(entry));
+        entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
+        response = mapService.toData(entryProcessor.process(entry));
         recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
     }
 

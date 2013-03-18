@@ -46,7 +46,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
         NodeEngine nodeEngine = mapService.getNodeEngine();
-        entry = new AbstractMap.SimpleEntry<Object,Object>(nodeEngine.toObject(dataKey), mapEntry.getValue());
+        entry = new AbstractMap.SimpleEntry<Object,Object>(mapService.toObject(dataKey), mapEntry.getValue());
         entryProcessor.processBackup(entry);
         recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
     }

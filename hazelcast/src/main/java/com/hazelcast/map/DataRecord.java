@@ -50,8 +50,6 @@ public class DataRecord extends AbstractRecord implements Record<Data> {
         return old;
     }
 
-
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);

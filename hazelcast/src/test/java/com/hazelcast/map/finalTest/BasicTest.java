@@ -45,7 +45,6 @@ public class BasicTest {
     static final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, instanceCount);
     static final Random rand = new Random(Clock.currentTimeMillis());
 
-
     private HazelcastInstance getInstance() {
         return instances[rand.nextInt(instanceCount)];
     }

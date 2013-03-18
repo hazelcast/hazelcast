@@ -54,6 +54,14 @@ public class SimpleMapTest {
     private final int putPercentage;
     private final boolean load;
 
+    static {
+        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.local.localAddress", "192.168.2.5");
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        System.setProperty("hazelcast.lite.member", "false");
+//        System.setProperty("hazelcast.logging.type", "none");
+    }
+
     public SimpleMapTest(final int threadCount, final int entryCount, final int valueSize,
                          final int getPercentage, final int putPercentage, final boolean load) {
         this.threadCount = threadCount;
@@ -63,7 +71,10 @@ public class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
-        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.DATA);
+//        cfg.getMapConfig("default").setRecordType(MapConfig.RecordType.OBJECT);
+        cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        cfg.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        cfg.getNetworkConfig().getJoin().getTcpIpConfig().addMember("192.168.2.5");
         cfg.getSerializationConfig().setPortableFactory(new PortableFactory() {
             public Portable create(int classId) {
                 return new PortableByteArray();
