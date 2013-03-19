@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,18 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_CONSOLE_COMMAND = 5;
     public static final int REQUEST_TYPE_MAP_CONFIG = 6;
     public static final int REQUEST_TYPE_DETECT_DEADLOCK = 7;
+    public static final int REQUEST_TYPE_MEMBER_CONFIG = 8;
+    public static final int REQUEST_TYPE_CLUSTER_PROPERTIES = 9;
+    public static final int REQUEST_TYPE_LOG_LEVEL = 10;
+    public static final int REQUEST_TYPE_LOGS = 11;
+    public static final int REQUEST_TYPE_MAP_ENTRY = 12;
+    public static final int REQUEST_TYPE_MEMBER_SYSTEM_PROPERTIES = 13;
+    public static final int REQUEST_TYPE_GET_VERSION = 14;
+    public static final int REQUEST_TYPE_RUN_GC = 15;
+    public static final int REQUEST_TYPE_SET_LOG_LEVEL = 16;
+    public static final int REQUEST_TYPE_LOG_VERSION_MISMATCH = 17;
+    public static final int REQUEST_TYPE_MEMBER_SHUTDOWN = 18;
+    public static final int REQUEST_TYPE_MEMBER_RESTART = 19;
 
     private ConsoleRequestConstants() {
     }

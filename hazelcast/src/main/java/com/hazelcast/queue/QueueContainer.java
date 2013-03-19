@@ -90,30 +90,30 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    public void commit(String txId){
+    public void commit(String txId) {
         List<QueueItem> list = txOfferMap.remove(txId);
-        if (list != null){
-            for (QueueItem item: list){
+        if (list != null) {
+            for (QueueItem item : list) {
                 item.setItemId(idGen++);
                 itemQueue.offer(item);
             }
         }
         list = txPollMap.remove(txId);
-        if (list != null){
+        if (list != null) {
             long current = Clock.currentTimeMillis();
-            for (QueueItem item: list){
+            for (QueueItem item : list) {
                 age(item, current);
             }
         }
     }
 
-    public void rollback(String txId){
+    public void rollback(String txId) {
         List<QueueItem> list = txPollMap.remove(txId);
-        if (list != null){
+        if (list != null) {
             ListIterator<QueueItem> iter = list.listIterator(list.size());
-            while (iter.hasPrevious()){
+            while (iter.hasPrevious()) {
                 QueueItem item = iter.previous();
-                if (item.getItemId() != -1){
+                if (item.getItemId() != -1) {
                     itemQueue.offerFirst(item);
                 }
             }
@@ -121,20 +121,20 @@ public class QueueContainer implements DataSerializable {
         txOfferMap.remove(txId);
     }
 
-    public boolean txOffer(String txId, Data data){
+    public boolean txOffer(String txId, Data data) {
         List<QueueItem> list = getTxList(txId, txOfferMap);
         return list.add(new QueueItem(this, -1, data));
     }
 
-    public Data txPoll(String txId){
+    public Data txPoll(String txId) {
         QueueItem item = itemQueue.poll();
-        if (item == null ){
+        if (item == null) {
             List<QueueItem> list = getTxList(txId, txOfferMap);
-            if (list.size() > 0){
+            if (list.size() > 0) {
                 item = list.remove(0);
             }
         }
-        if (item != null){
+        if (item != null) {
             List<QueueItem> list = getTxList(txId, txPollMap);
             list.add(item);
             return item.getData();
@@ -142,20 +142,20 @@ public class QueueContainer implements DataSerializable {
         return null;
     }
 
-    public Data txPeek(String txId){
+    public Data txPeek(String txId) {
         QueueItem item = itemQueue.peek();
-        if (item == null){
+        if (item == null) {
             List<QueueItem> list = getTxList(txId, txOfferMap);
-            if (list.size() > 0){
+            if (list.size() > 0) {
                 item = list.get(0);
             }
         }
         return item == null ? null : item.getData();
     }
 
-    private List<QueueItem> getTxList(String txId, Map<String, List<QueueItem>> map){
+    private List<QueueItem> getTxList(String txId, Map<String, List<QueueItem>> map) {
         List<QueueItem> list = map.get(txId);
-        if (list == null){
+        if (list == null) {
             list = new ArrayList<QueueItem>(3);
             map.put(txId, list);
         }
@@ -499,22 +499,22 @@ public class QueueContainer implements DataSerializable {
             item.writeData(out);
         }
         out.writeInt(txOfferMap.size());
-        for (Map.Entry<String, List<QueueItem>> entry: txOfferMap.entrySet()){
+        for (Map.Entry<String, List<QueueItem>> entry : txOfferMap.entrySet()) {
             String txId = entry.getKey();
             out.writeUTF(txId);
             List<QueueItem> list = entry.getValue();
             out.writeInt(list.size());
-            for (QueueItem item: list){
+            for (QueueItem item : list) {
                 item.writeData(out);
             }
         }
         out.writeInt(txPollMap.size());
-        for (Map.Entry<String, List<QueueItem>> entry: txPollMap.entrySet()){
+        for (Map.Entry<String, List<QueueItem>> entry : txPollMap.entrySet()) {
             String txId = entry.getKey();
             out.writeUTF(txId);
             List<QueueItem> list = entry.getValue();
             out.writeInt(list.size());
-            for (QueueItem item: list){
+            for (QueueItem item : list) {
                 item.writeData(out);
             }
         }
@@ -531,7 +531,7 @@ public class QueueContainer implements DataSerializable {
             idGen++;
         }
         int offerMapSize = in.readInt();
-        for (int i=0; i<offerMapSize; i++){
+        for (int i = 0; i < offerMapSize; i++) {
             String txId = in.readUTF();
             int listSize = in.readInt();
             List<QueueItem> list = new ArrayList<QueueItem>(listSize);
@@ -543,7 +543,7 @@ public class QueueContainer implements DataSerializable {
             txOfferMap.put(txId, list);
         }
         int pollMapSize = in.readInt();
-        for (int i=0; i<pollMapSize; i++){
+        for (int i = 0; i < pollMapSize; i++) {
             String txId = in.readUTF();
             int listSize = in.readInt();
             List<QueueItem> list = new ArrayList<QueueItem>(listSize);
@@ -556,24 +556,23 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    private void age(QueueItem item, long currentTime){
+    private void age(QueueItem item, long currentTime) {
         long elapsed = currentTime - item.getCreationTime();
-        if (elapsed <= 0){
+        if (elapsed <= 0) {
             return;//elapsed time can not be a negative value, a system clock problem maybe. ignored
         }
         totalAgedCount++;
         totalAge += elapsed;
-        if (minAge == 0){
+        if (minAge == 0) {
             minAge = elapsed;
             maxAge = elapsed;
-        }
-        else {
+        } else {
             minAge = Math.min(minAge, elapsed);
             maxAge = Math.max(maxAge, elapsed);
         }
     }
 
-    public void setStats(LocalQueueStatsImpl stats){
+    public void setStats(LocalQueueStatsImpl stats) {
         stats.setMinAge(minAge);
         minAge = 0;
         stats.setMaxAge(maxAge);
@@ -582,7 +581,7 @@ public class QueueContainer implements DataSerializable {
         totalAge = 0;
         long totalAgedCountVal = totalAgedCount;
         totalAgedCount = 0;
-        stats.setAveAge(totalAgeVal / totalAgedCountVal);
+        stats.setAveAge(totalAgedCountVal == 0 ? 0 : totalAgeVal / totalAgedCountVal);
     }
 
     public QueueWaitNotifyKey getPollWaitNotifyKey() {
