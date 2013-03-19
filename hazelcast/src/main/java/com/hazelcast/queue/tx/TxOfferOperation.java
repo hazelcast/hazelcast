@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.OfferBackupOperation;
 import com.hazelcast.queue.QueueContainer;
-import com.hazelcast.queue.QueueItem;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.Transaction;
@@ -41,7 +40,7 @@ public class TxOfferOperation extends TransactionalQueueOperation {
     private Data data;
 
     private transient boolean offered;
-    private transient QueueItem item;
+    private transient long itemId;
 
     public TxOfferOperation() {
     }
@@ -51,19 +50,16 @@ public class TxOfferOperation extends TransactionalQueueOperation {
         this.data = data;
     }
 
-//    public void run() {
-//        QueueContainer container = getContainer();
-//        if (container.checkBound()) {
-//            item = container.offer(data);
-//            offered = true;
-//        } else {
-//            offered = false;
-//        }
-//    }
-
-
     protected void process() throws TransactionException {
-        offered = getOrCreateContainer().txOffer(getTransactionId(), data);
+        QueueContainer container = getOrCreateContainer();
+        if (container.hasEnoughCapacity()) {
+            itemId = container.txOffer(getTransactionId(), data);
+            offered = true;
+        }
+        else {
+            offered = false;
+        }
+
     }
 
     protected void prepare() throws TransactionException {
@@ -88,7 +84,7 @@ public class TxOfferOperation extends TransactionalQueueOperation {
     }
 
     public Operation getBackupOperation() {
-        return new OfferBackupOperation(name, data);
+        return new OfferBackupOperation(name, data, itemId);
     }
 
     public boolean shouldBackup() {

@@ -69,7 +69,6 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
-            clientConfig.setUpdateAutomatic(true);
             clientConfig.setInitialConnectionAttemptLimit(3);
             clientConfig.setReconnectionAttemptLimit(5);
         }
@@ -90,7 +89,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             return;
         }
         try {
-            client.shutdown();
+            client.getLifecycleService().shutdown();
             client = null;
         } catch (Exception e) {
             throw new CacheException(e);

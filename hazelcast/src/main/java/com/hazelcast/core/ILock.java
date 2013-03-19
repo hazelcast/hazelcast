@@ -27,7 +27,7 @@ public interface ILock extends Lock, DistributedObject {
      *
      * @return lock object.
      */
-    Object getLockObject();
+    Object getKey();
 
     LocalLockStats getLocalLockStats();
 

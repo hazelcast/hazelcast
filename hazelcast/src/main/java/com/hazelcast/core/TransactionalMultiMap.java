@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.core;
 
-import com.hazelcast.security.Credentials;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalObject;
 
-import java.io.IOException;
+import java.util.Collection;
 
-public interface ClientBinder {
-    public void bind(Connection connection, Credentials credentials) throws IOException;
+/**
+ * @ali 3/13/13
+ */
+public interface TransactionalMultiMap<K, V> extends TransactionalObject {
+
+    boolean put(K key, V value) throws TransactionException;
+
+    Collection<V> get(K key);
+
+    boolean remove(Object key, Object value);
+
+    Collection<V> remove(Object key);
+
+    int valueCount(K key);
+
 }

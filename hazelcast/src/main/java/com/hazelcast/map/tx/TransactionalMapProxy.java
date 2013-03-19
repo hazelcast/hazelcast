@@ -32,57 +32,47 @@ public class TransactionalMapProxy<K,V> extends TransactionalMapProxySupport imp
     }
 
     public boolean containsKey(Object key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        return containsKeyInternal(nodeEngine.toData(key));
+        return containsKeyInternal(getService().toData(key));
     }
 
     public V get(Object key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data value = getInternal(nodeEngine.toData(key));
-        return nodeEngine.toObject(value);
+        final Data value = getInternal(getService().toData(key));
+        return (V) getService().toObject(value);
     }
 
     public V put(K key, V value) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data result = putInternal(nodeEngine.toData(key), nodeEngine.toData(value));
-        return nodeEngine.toObject(result);
+        final Data result = putInternal(getService().toData(key), getService().toData(value));
+        return (V) getService().toObject(result);
     }
 
     public void set(K key, V value) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        setInternal(nodeEngine.toData(key), nodeEngine.toData(value));
+        setInternal(getService().toData(key), getService().toData(value));
     }
 
     public V putIfAbsent(K key, V value) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data result = putIfAbsentInternal(nodeEngine.toData(key), nodeEngine.toData(value));
-        return nodeEngine.toObject(result);
+        final Data result = putIfAbsentInternal(getService().toData(key), getService().toData(value));
+        return (V) getService().toObject(result);
     }
 
     public V replace(K key, V value) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data result = replaceInternal(nodeEngine.toData(key), nodeEngine.toData(value));
-        return nodeEngine.toObject(result);
+        final Data result = replaceInternal(getService().toData(key), getService().toData(value));
+        return (V) getService().toObject(result);
     }
 
     public boolean replace(K key, V testValue, V newValue) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        return replaceInternal(nodeEngine.toData(key), nodeEngine.toData(testValue), nodeEngine.toData(newValue));
+        return replaceInternal(getService().toData(key), getService().toData(testValue), getService().toData(newValue));
     }
 
     public V remove(Object key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data result = removeInternal(nodeEngine.toData(key));
-        return nodeEngine.toObject(result);
+        final Data result = removeInternal(getService().toData(key));
+        return (V) getService().toObject(result);
     }
 
     public void delete(Object key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        deleteInternal(nodeEngine.toData(key));
+        deleteInternal(getService().toData(key));
     }
 
     public boolean remove(Object key, Object value) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        return removeInternal(nodeEngine.toData(key), nodeEngine.toData(value));
+        return removeInternal(getService().toData(key), getService().toData(value));
     }
 }

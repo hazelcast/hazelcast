@@ -38,7 +38,7 @@ public class LockMBean extends  HazelcastMBean<ILock> {
     @ManagedAnnotation("lockObject")
     @ManagedDescription("Lock Object as String")
     public String getLockObject() {
-        Object lockObject = managedObject.getLockObject();
+        Object lockObject = managedObject.getKey();
         return lockObject == null ? null : lockObject.toString();
     }
 

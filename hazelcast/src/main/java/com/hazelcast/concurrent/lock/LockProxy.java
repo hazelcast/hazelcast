@@ -82,14 +82,14 @@ public class LockProxy extends AbstractDistributedObject<LockService> implements
     }
 
     public String getName() {
-        return String.valueOf(getLockObject());
+        return String.valueOf(getKey());
     }
 
     public String getServiceName() {
         return SharedLockService.SERVICE_NAME;
     }
 
-    public Object getLockObject() {
+    public Object getKey() {
         return getNodeEngine().toObject(key);
     }
 

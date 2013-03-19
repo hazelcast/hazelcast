@@ -39,7 +39,7 @@ public class ClusterClientProxy implements Cluster {
 
     public ClusterClientProxy(HazelcastClient client) {
         this.client = client;
-        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
     }
 
     Map<MembershipListener, ListenerThread> listenerMap = new ConcurrentHashMap<MembershipListener, ListenerThread>();

@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.*;
+import com.hazelcast.client.proxy.listener.LockClientProxy;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -41,7 +42,6 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
-//import com.hazelcast.client.impl.ListenerManager;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -58,49 +58,28 @@ public class HazelcastClient implements HazelcastInstance {
     private final int id;
     private final ClientConfig config;
     private final AtomicBoolean active = new AtomicBoolean(true);
-    //    private final ListenerManager listenerManager;
     private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
-    private final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
     private final ClusterClientProxy clusterClientProxy;
     private final PartitionClientProxy partitionClientProxy;
     private final LifecycleServiceClientImpl lifecycleService;
-    private final ConnectionManager connectionManager;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
-    private final ConnectionPool connectionPool;
+    private final ConnectionManager connectionPool;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
         this.id = clientIdCounter.incrementAndGet();
         lifecycleService = new LifecycleServiceClientImpl(this);
         lifecycleService.fireLifecycleEvent(STARTING);
-        connectionManager = new ConnectionManager(this, config, lifecycleService);
-        connectionManager.setBinder(new DefaultClientBinder(serializationService));
-        connectionPool = new ConnectionPool(config, connectionManager, serializationService);
-        partitionClientProxy = new PartitionClientProxy(this);
+        connectionPool = new ConnectionManager(config, serializationService);
         clusterClientProxy = new ClusterClientProxy(this);
-        connectionPool.init(this, getPartitionService());
-//        try {
-//            final Connection c = connectionManager.getInitConnection();
-//            if (c == null) {
-//                connectionManager.shutdown();
-//                lifecycleService.destroy();
-//                throw new IllegalStateException("Unable to connect to cluster");
-//            }
-//        } catch (IOException e) {
-//            connectionManager.shutdown();
-//            lifecycleService.destroy();
-//            throw new ClusterClientException(e.getMessage(), e);
-//        }
-        if (config.isUpdateAutomatic()) {
-//            this.getCluster().addMembershipListener(connectionManager);
-//            connectionManager.updateMembers();
-        }
+        partitionClientProxy = new PartitionClientProxy(this);
+        connectionPool.init(this);
+        partitionClientProxy.initInternalPartitionTable();
         lifecycleService.fireLifecycleEvent(STARTED);
-//        connectionManager.scheduleHeartbeatTimerTask();
         lsClients.add(HazelcastClient.this);
     }
 
-    public ConnectionPool getConnectionPool() {
+    public ConnectionManager getConnectionPool() {
         return connectionPool;
     }
 
@@ -119,29 +98,26 @@ public class HazelcastClient implements HazelcastInstance {
         throw new UnsupportedOperationException();
     }
 
-    public ConcurrentMap<String, Object> getUserContext() {
-        throw new UnsupportedOperationException();
-    }
-
-    public PartitionService getPartitionService() {
-        return partitionClientProxy;
-    }
-
-    public ClientService getClientService() {
-        throw new UnsupportedOperationException();
-    }
-
-    public LoggingService getLoggingService() {
-        throw new UnsupportedOperationException();
-    }
-
-    public <K, V> IMap<K, V> getMap(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Map");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new MapClientProxy<Object, V>(this, name));
+    public static void shutdownAll() {
+        for (HazelcastClient hazelcastClient : lsClients) {
+            try {
+                hazelcastClient.getLifecycleService().shutdown();
+            } catch (Exception ignored) {
+            }
         }
-        return (IMap<K, V>) proxy;
+        lsClients.clear();
+    }
+
+    public static Collection<HazelcastClient> getAllHazelcastClients() {
+        return Collections.unmodifiableCollection(lsClients);
+    }
+
+    void doShutdown() {
+        if (active.compareAndSet(true, false)) {
+            logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
+            lsClients.remove(this);
+            serializationService.destroy();
+        }
     }
 
     private <V> DistributedObject putAndReturnProxy(Object key, Map<Object, DistributedObject> innerProxyMap, DistributedObject newProxy) {
@@ -170,17 +146,38 @@ public class HazelcastClient implements HazelcastInstance {
         return innerProxyMap;
     }
 
+
+    public SerializationService getSerializationService() {
+        return serializationService;
+    }
     public Transaction getTransaction() {
         Context context = Context.getOrCreate();
         return context.getTransaction(this);
     }
 
-    public ConnectionManager getConnectionManager() {
-        return connectionManager;
+    public ConcurrentMap<String, Object> getUserContext() {
+        throw new UnsupportedOperationException();
     }
 
-    public SerializationService getSerializationService() {
-        return serializationService;
+    public PartitionService getPartitionService() {
+        return partitionClientProxy;
+    }
+
+    public ClientService getClientService() {
+        throw new UnsupportedOperationException();
+    }
+
+    public LoggingService getLoggingService() {
+        throw new UnsupportedOperationException();
+    }
+
+    public <K, V> IMap<K, V> getMap(String name) {
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Map");
+        DistributedObject proxy = innerProxyMap.get(name);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(name, innerProxyMap, new MapClientProxy<Object, V>(this, name));
+        }
+        return (IMap<K, V>) proxy;
     }
 
     public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
@@ -261,9 +258,12 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public ILock getLock(Object obj) {
-//        final IMap<Object, Object> map = getMap(ObjectLockProxy.LOCK_MAP_NAME);
-//        return new ObjectLockProxy(obj, map);
-        return null;
+        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("List");
+        DistributedObject proxy = innerProxyMap.get(obj);
+        if (proxy == null) {
+            proxy = putAndReturnProxy(obj, innerProxyMap, new LockClientProxy(this, obj));
+        }
+        return (ILock) proxy;
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
@@ -308,40 +308,6 @@ public class HazelcastClient implements HazelcastInstance {
 
     public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         throw new UnsupportedOperationException();
-    }
-
-    public static void shutdownAll() {
-        for (HazelcastClient hazelcastClient : lsClients) {
-            try {
-                hazelcastClient.shutdown();
-            } catch (Exception ignored) {
-            }
-        }
-        lsClients.clear();
-    }
-
-    public static Collection<HazelcastClient> getAllHazelcastClients() {
-        return Collections.unmodifiableCollection(lsClients);
-    }
-
-    public void shutdown() {
-        lifecycleService.shutdown();
-    }
-
-    void doShutdown() {
-        if (active.compareAndSet(true, false)) {
-            logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
-            connectionManager.shutdown();
-//            out.shutdown();
-//            in.shutdown();
-//            listenerManager.shutdown();
-            lsClients.remove(this);
-            serializationService.destroy();
-        }
-    }
-
-    public boolean isActive() {
-        return active.get();
     }
 
     protected void destroy(String proxyName) {

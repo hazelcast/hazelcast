@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 
-
 @SuppressWarnings("VolatileLongOrDoubleField")
 public abstract class AbstractRecord implements DataSerializable {
 
@@ -32,10 +31,12 @@ public abstract class AbstractRecord implements DataSerializable {
     protected volatile RecordStatistics statistics;
     protected volatile Data key;
 
-    public AbstractRecord(Data key) {
+    public AbstractRecord(Data key, boolean statisticsEnabled) {
         this.key = key;
         state = new RecordState();
-        statistics = new RecordStatistics();
+        if (statisticsEnabled) {
+            statistics = new RecordStatistics();
+        }
     }
 
     public AbstractRecord() {
@@ -69,24 +70,22 @@ public abstract class AbstractRecord implements DataSerializable {
         return statistics == null ? -1 : statistics.getLastAccessTime();
     }
 
-    public long getCost() {
-        return 0;
-    }
+    public abstract long getCost();
 
     public void onAccess() {
-        if(statistics != null)
+        if (statistics != null)
             statistics.access();
     }
 
     public void onStore() {
-        if(statistics != null)
+        if (statistics != null)
             statistics.store();
-        if(state != null)
+        if (state != null)
             state.resetStoreTime();
     }
 
     public void onUpdate() {
-        if(statistics != null)
+        if (statistics != null)
             statistics.update();
     }
 
@@ -97,19 +96,17 @@ public abstract class AbstractRecord implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         key.writeData(out);
-        if(state != null) {
+        if (state != null) {
             out.writeBoolean(true);
             state.writeData(out);
-        }
-        else {
+        } else {
             out.writeBoolean(false);
         }
 
-        if(statistics != null) {
+        if (statistics != null) {
             out.writeBoolean(true);
             statistics.writeData(out);
-        }
-        else {
+        } else {
             out.writeBoolean(false);
         }
     }
@@ -118,12 +115,12 @@ public abstract class AbstractRecord implements DataSerializable {
         key = new Data();
         key.readData(in);
         boolean stateEnabled = in.readBoolean();
-        if(stateEnabled) {
+        if (stateEnabled) {
             state = new RecordState();
             state.readData(in);
         }
         boolean statsEnabled = in.readBoolean();
-        if(statsEnabled) {
+        if (statsEnabled) {
             statistics = new RecordStatistics();
             statistics.readData(in);
         }

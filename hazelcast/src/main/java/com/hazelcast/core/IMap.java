@@ -103,14 +103,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      * <p/>
-     * <p><b>Warning-3:</b></p>
-     * <p>
-     * If <tt>cache-value</tt> is true (default is true), this method returns a clone of original value
-     * but also caches that value for fast access in local. Modifications done to this cached value without
-     * putting it back to map will be visible to only local node, not entire cluster,
-     * successive <tt>get</tt> calls will return the same cached value.
-     * To reflect modifications to distributed map, one should put modified value back into map.
-     * </p>
      */
     V get(Object key);
 
@@ -159,6 +151,24 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
     boolean remove(Object key, Object value);
 
 
+    /**
+     * Removes the mapping for a key from this map if it is present
+     * (optional operation).
+     *
+     * <p>Differently from remove(Object key); this operation does not return
+     * removed value. So it does not have the serialization/deserialization of
+     * value to be returned. If the removed value will not be used, delete operation
+     * should be preferred over remove operation for a better performance.
+     *
+     * <p>The map will not contain a mapping for the specified key once the
+     * call returns.
+     *
+     * @param key key whose mapping is to be removed from the map
+     * @throws ClassCastException if the key is of an inappropriate type for
+     *         this map (optional)
+     * @throws NullPointerException if the specified key is null and this
+     *         map does not permit null keys (optional)
+     */
     void delete(Object key);
 
     /**
@@ -562,8 +572,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
      */
     void addLocalEntryListener(EntryListener<K, V> listener);
 
+    /**
+     * Adds an interceptor for this map. Added interceptor will intercept operations
+     * and execute user defined methods and will cancel operations if user defined method throw exception.
+     * <p/>
+     *
+     * @param interceptor map interceptor
+     */
     void addInterceptor(MapInterceptor interceptor);
 
+    /**
+     * Removes the given interceptor for this map. So it will not intercept operations anymore.
+     * <p/>
+     *
+     * @param interceptor map interceptor
+     */
     void removeInterceptor(MapInterceptor interceptor);
 
     /**
@@ -607,12 +630,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
 
     /**
      * Adds an continuous entry listener for this map. Listener will get notified
-     * for all map add/remove/update/evict events.
+     * for map add/remove/update/evict events filtered by given predicate.
      *
      * @param listener  entry listener
      * @param predicate predicate for filtering entries
      */
-    // TODO: @mm - Why do we need key here? Predicate has already access to the key.
     void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
@@ -826,6 +848,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
      */
     LocalMapStats getLocalMapStats();
 
+    /**
+     * Applies the user defined EntryProcessor to the entry mapped by the key.
+     * Returns the the object which is result of the process() method of EntryProcessor.
+     * <p/>
+     *
+     * @return result of entry process.
+     */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
 }

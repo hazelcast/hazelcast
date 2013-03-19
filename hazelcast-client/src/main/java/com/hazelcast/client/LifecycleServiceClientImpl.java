@@ -46,7 +46,6 @@ public class LifecycleServiceClientImpl implements LifecycleService {
 
     public LifecycleServiceClientImpl(HazelcastClient hazelcastClient) {
         this.hazelcastClient = hazelcastClient;
-
         if (hazelcastClient.getClientConfig() != null) {
             final List<LifecycleListener> listeners = new LinkedList<LifecycleListener>();
             for (Object listener : hazelcastClient.getClientConfig().getListeners()) {
@@ -128,8 +127,8 @@ public class LifecycleServiceClientImpl implements LifecycleService {
                 synchronized (lifecycleLock) {
                     long begin = Clock.currentTimeMillis();
                     fireLifecycleEvent(SHUTTING_DOWN);
-                    hazelcastClient.doShutdown();
                     running.set(false);
+                    hazelcastClient.doShutdown();
                     long time = Clock.currentTimeMillis() - begin;
                     logger.log(Level.FINE, "HazelcastClient shutdown completed in " + time + " ms.");
                     fireLifecycleEvent(SHUTDOWN);

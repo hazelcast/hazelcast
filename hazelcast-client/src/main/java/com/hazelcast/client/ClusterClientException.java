@@ -16,7 +16,9 @@
 
 package com.hazelcast.client;
 
-public class ClusterClientException extends RuntimeException {
+import com.hazelcast.core.HazelcastException;
+
+public class ClusterClientException extends HazelcastException {
     private static final long serialVersionUID = 1L;
 
     public ClusterClientException() {

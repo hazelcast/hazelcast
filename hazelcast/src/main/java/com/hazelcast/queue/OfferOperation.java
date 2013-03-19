@@ -38,6 +38,8 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
 
     private Data data;
 
+    private transient long itemId;
+
     public OfferOperation() {
     }
 
@@ -49,7 +51,8 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
     public void run() {
         QueueContainer container = getOrCreateContainer();
         if (container.hasEnoughCapacity()) {
-            response = container.offer(data);
+            itemId = container.offer(data);
+            response = true;
         } else {
             response = false;
         }
@@ -66,7 +69,7 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
     }
 
     public Operation getBackupOperation() {
-        return new OfferBackupOperation(name, data);
+        return new OfferBackupOperation(name, data, itemId);
     }
 
     public boolean shouldBackup() {

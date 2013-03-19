@@ -17,7 +17,6 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -29,6 +28,8 @@ import com.hazelcast.spi.WaitSupport;
  */
 public class PollOperation extends QueueBackupAwareOperation implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
+    private transient QueueItem item;
+
     public PollOperation() {
     }
 
@@ -37,13 +38,16 @@ public class PollOperation extends QueueBackupAwareOperation implements WaitSupp
     }
 
     public void run() {
-        response = getOrCreateContainer().poll();
+        item = getOrCreateContainer().poll();
+        if (item != null){
+            response = item.getData();
+        }
     }
 
     public void afterRun() throws Exception {
         if (response != null) {
             getQueueService().getOrCreateOperationsCounter(name).incrementPolls();
-            publishEvent(ItemEventType.REMOVED, (Data) response);
+            publishEvent(ItemEventType.REMOVED, item.getData());
         }
         else {
             getQueueService().getOrCreateOperationsCounter(name).incrementEmptyPolls();
@@ -55,7 +59,7 @@ public class PollOperation extends QueueBackupAwareOperation implements WaitSupp
     }
 
     public Operation getBackupOperation() {
-        return new PollBackupOperation(name);
+        return new PollBackupOperation(name, item.getItemId());
     }
 
     public boolean shouldNotify() {

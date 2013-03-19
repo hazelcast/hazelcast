@@ -19,12 +19,13 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.transaction.TransactionOptions;
 
 public class TransactionClientProxy implements Transaction {
     final ProxyHelper proxyHelper;
 
     public TransactionClientProxy(HazelcastClient client) {
-        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
     }
 
     public void begin() throws IllegalStateException {
@@ -71,6 +72,10 @@ public class TransactionClientProxy implements Transaction {
     @Override
     public long getTimeoutMillis() {
         return 0;
+    }
+
+    public TransactionOptions getOptions() {
+        return null;
     }
 
     public void rollback() throws IllegalStateException {

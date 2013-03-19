@@ -22,9 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -71,6 +71,75 @@ public class TransactionQueueTest {
         });
         assertTrue(b);
         assertEquals(0, getQueue(instances, name).size());
+    }
+
+    @Test
+    public void testTransactionalOfferPoll1() throws Exception {
+        Config config = new Config();
+        final int insCount = 4;
+        final String name0 = "defQueue0";
+        final String name1 = "defQueue1";
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        new Thread(){
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                getQueue(instances, name0).offer("item0");
+            }
+        }.start();
+
+//        boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
+//            public Boolean execute(TransactionContext context) throws TransactionException {
+//                TransactionalQueue<String> q0 = context.getQueue(name0);
+//                TransactionalQueue<String> q1 = context.getQueue(name1);
+//                String s = null;
+//                try {
+//                    s = q0.poll(6, TimeUnit.SECONDS);
+//                } catch (InterruptedException e) {
+//                    Assert.fail(e.getMessage());
+//                    e.printStackTrace();
+//                }
+//                assertEquals("item0", s);
+//                q1.offer(s);
+//                return true;
+//            }
+//        });
+//        assertTrue(b);
+        assertEquals(0, getQueue(instances, name0).size());
+        assertEquals("item0", getQueue(instances, name1).poll());
+    }
+
+    @Test
+    public void testQueueWithMap() throws Exception {
+        Config config = new Config();
+        final int insCount = 4;
+        final String queueName = "defQueue";
+        final String mapName = "defMap";
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        instances[0].getMap(mapName).lock("lock1");
+
+//        try {
+//            instances[1].executeTransaction(new TransactionalTask<Object>() {
+//                public Object execute(TransactionContext context) throws TransactionException {
+//                    boolean offered = context.getQueue(queueName).offer("item1");
+//                    assertTrue(offered);
+//                    context.getMap(mapName).put("lock1","value1");
+//                    return null;
+//                }
+//            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
+//        }
+//        catch (TransactionException ex){
+//            ex.printStackTrace();
+//        }
+
+
+        assertEquals(0, instances[0].getQueue(queueName).size());
+        assertNull(instances[0].getMap(mapName).get("lock1"));
+
+
     }
 
     private IQueue getQueue(HazelcastInstance[] instances, String name) {

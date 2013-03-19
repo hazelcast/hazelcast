@@ -90,7 +90,7 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    public void commit(String txId) {
+    public void commit(String txId){
         List<QueueItem> list = txOfferMap.remove(txId);
         if (list != null) {
             for (QueueItem item : list) {
@@ -107,13 +107,13 @@ public class QueueContainer implements DataSerializable {
         }
     }
 
-    public void rollback(String txId) {
+    public void rollback(String txId){
         List<QueueItem> list = txPollMap.remove(txId);
-        if (list != null) {
+        if (list != null){
             ListIterator<QueueItem> iter = list.listIterator(list.size());
-            while (iter.hasPrevious()) {
+            while (iter.hasPrevious()){
                 QueueItem item = iter.previous();
-                if (item.getItemId() != -1) {
+                if (item.getItemId() != -1){
                     itemQueue.offerFirst(item);
                 }
             }
@@ -130,7 +130,7 @@ public class QueueContainer implements DataSerializable {
         QueueItem item = itemQueue.poll();
         if (item == null) {
             List<QueueItem> list = getTxList(txId, txOfferMap);
-            if (list.size() > 0) {
+            if (list.size() > 0){
                 item = list.remove(0);
             }
         }
@@ -142,9 +142,9 @@ public class QueueContainer implements DataSerializable {
         return null;
     }
 
-    public Data txPeek(String txId) {
+    public Data txPeek(String txId){
         QueueItem item = itemQueue.peek();
-        if (item == null) {
+        if (item == null){
             List<QueueItem> list = getTxList(txId, txOfferMap);
             if (list.size() > 0) {
                 item = list.get(0);
@@ -153,9 +153,9 @@ public class QueueContainer implements DataSerializable {
         return item == null ? null : item.getData();
     }
 
-    private List<QueueItem> getTxList(String txId, Map<String, List<QueueItem>> map) {
+    private List<QueueItem> getTxList(String txId, Map<String, List<QueueItem>> map){
         List<QueueItem> list = map.get(txId);
-        if (list == null) {
+        if (list == null){
             list = new ArrayList<QueueItem>(3);
             map.put(txId, list);
         }
@@ -499,12 +499,12 @@ public class QueueContainer implements DataSerializable {
             item.writeData(out);
         }
         out.writeInt(txOfferMap.size());
-        for (Map.Entry<String, List<QueueItem>> entry : txOfferMap.entrySet()) {
+        for (Map.Entry<String, List<QueueItem>> entry: txOfferMap.entrySet()){
             String txId = entry.getKey();
             out.writeUTF(txId);
             List<QueueItem> list = entry.getValue();
             out.writeInt(list.size());
-            for (QueueItem item : list) {
+            for (QueueItem item: list){
                 item.writeData(out);
             }
         }
@@ -531,7 +531,7 @@ public class QueueContainer implements DataSerializable {
             idGen++;
         }
         int offerMapSize = in.readInt();
-        for (int i = 0; i < offerMapSize; i++) {
+        for (int i=0; i<offerMapSize; i++){
             String txId = in.readUTF();
             int listSize = in.readInt();
             List<QueueItem> list = new ArrayList<QueueItem>(listSize);

@@ -17,8 +17,8 @@
 package com.hazelcast.queue.tx;
 
 import com.hazelcast.core.ItemEventType;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.PollBackupOperation;
+import com.hazelcast.queue.QueueItem;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
@@ -28,7 +28,7 @@ import com.hazelcast.transaction.TransactionException;
  */
 public class TxPollOperation extends TransactionalQueueOperation {
 
-    private transient Data response;
+    private transient QueueItem item;
 
     public TxPollOperation() {
     }
@@ -38,7 +38,7 @@ public class TxPollOperation extends TransactionalQueueOperation {
     }
 
     protected void process() throws TransactionException {
-        response = getOrCreateContainer().txPoll(getTransactionId());
+        item = getOrCreateContainer().txPoll(getTransactionId());
     }
 
     protected void prepare() throws TransactionException {
@@ -53,25 +53,25 @@ public class TxPollOperation extends TransactionalQueueOperation {
     }
 
     public Object getResponse() {
-        return response;
+        return item;
     }
 
     public void innerAfterRun() throws Exception {
-        if (response != null) {
-            publishEvent(ItemEventType.REMOVED, response);
+        if (item != null) {
+            publishEvent(ItemEventType.REMOVED, item.getData());
         }
     }
 
     public boolean shouldBackup() {
-        return response != null && isCommitted();
+        return item != null && isCommitted();
     }
 
     public Operation getBackupOperation() {
-        return new PollBackupOperation(name);
+        return new PollBackupOperation(name, item.getItemId());
     }
 
     public boolean shouldNotify() {
-        return response != null && isCommitted();
+        return item != null && isCommitted();
     }
 
     public WaitNotifyKey getNotifiedKey() {

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
-    Set<Map.Entry<Data,Data>> entrySet;
+    Set<Map.Entry<Data, Data>> entrySet;
 
     public MapEntrySetOperation(String name) {
         super(name);
@@ -36,7 +36,9 @@ public class MapEntrySetOperation extends AbstractMapOperation implements Partit
     public void run() {
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         entrySet = recordStore.entrySetData();
-        mapContainer.getMapOperationCounter().incrementOtherOperations();
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapContainer.getMapOperationCounter().incrementOtherOperations();
+        }
     }
 
     @Override

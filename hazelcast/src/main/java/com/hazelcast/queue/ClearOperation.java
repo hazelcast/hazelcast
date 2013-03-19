@@ -22,14 +22,14 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * @ali 12/6/12
  */
 public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private transient List<Data> dataList;
+    private transient Map<Long, Data> dataMap;
 
     public ClearOperation() {
     }
@@ -39,27 +39,27 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     public void run() {
-        dataList = getOrCreateContainer().clear();
+        dataMap = getOrCreateContainer().clear();
         response = true;
     }
 
     public void afterRun() throws Exception {
         getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
-        for (Data data : dataList) {
+        for (Data data : dataMap.values()) {
             publishEvent(ItemEventType.REMOVED, data);
         }
     }
 
     public Operation getBackupOperation() {
-        return new ClearBackupOperation(name);
+        return new ClearBackupOperation(name, dataMap.keySet());
     }
 
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return Boolean.TRUE.equals(!dataMap.isEmpty());
     }
 
     public boolean shouldNotify() {
-        return Boolean.TRUE.equals(response);
+        return Boolean.TRUE.equals(!dataMap.isEmpty());
     }
 
     public WaitNotifyKey getNotifiedKey() {

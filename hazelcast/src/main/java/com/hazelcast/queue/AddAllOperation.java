@@ -28,6 +28,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * @ali 12/20/12
@@ -36,6 +37,8 @@ import java.util.Collection;
 public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;
+    private transient Map<Long, Data> dataMap;
+
 
     public AddAllOperation() {
     }
@@ -48,7 +51,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     public void run() {
         QueueContainer container = getOrCreateContainer();
         if (container.hasEnoughCapacity()) {
-            container.addAll(dataList);
+            dataMap = container.addAll(dataList);
             response = true;
         } else {
             response = false;
@@ -70,7 +73,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     }
 
     public Operation getBackupOperation() {
-        return new AddAllBackupOperation(name, dataList);
+        return new AddAllBackupOperation(name, dataMap);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

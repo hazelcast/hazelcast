@@ -26,12 +26,18 @@ public class ObjectRecord extends AbstractRecord implements Record<Object> {
 
     private volatile Object value;
 
-    public ObjectRecord(Data keyData, Object value) {
-        super(keyData);
+    public ObjectRecord(Data keyData, Object value, boolean statisticsEnabled) {
+        super(keyData, statisticsEnabled);
         this.value = value;
     }
 
     public ObjectRecord() {
+    }
+
+    // as there is no easy way to calculate the size of Object cost is not implemented for ObjectRecord
+    @Override
+    public long getCost() {
+        return 0;
     }
 
     public Object getValue() {

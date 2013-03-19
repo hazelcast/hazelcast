@@ -25,16 +25,16 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.Map;
 
 /**
  * @ali 12/19/12
  */
 public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 
-    int maxSize = -1;
+    int maxSize;
 
-    transient Collection<Data> dataList;
+    transient Map<Long, Data> dataMap;
 
     public DrainOperation() {
     }
@@ -46,23 +46,23 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
 
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
-        dataList = container.drain(maxSize);
-        response = new SerializableCollectionContainer(dataList);
+        dataMap = container.drain(maxSize);
+        response = new SerializableCollectionContainer(dataMap.values());
     }
 
     public void afterRun() throws Exception {
         getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
-        for (Data data : dataList) {
+        for (Data data : dataMap.values()) {
             publishEvent(ItemEventType.REMOVED, data);
         }
     }
 
     public boolean shouldBackup() {
-        return dataList.size() > 0;
+        return dataMap.size() > 0;
     }
 
     public Operation getBackupOperation() {
-        return new DrainBackupOperation(name, maxSize);
+        return new DrainBackupOperation(name, dataMap.keySet());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -76,7 +76,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     public boolean shouldNotify() {
-        return dataList.size() > 0;
+        return dataMap.size() > 0;
     }
 
     public WaitNotifyKey getNotifiedKey() {

@@ -81,6 +81,7 @@ public class MigrationServiceEvent extends EventObject {
         sb.append(", migrationType=").append(migrationType);
         sb.append(", partitionId=").append(partitionId);
         sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", copyBackReplicaIndex=").append(copyBackReplicaIndex);
         sb.append('}');
         return sb.toString();
     }

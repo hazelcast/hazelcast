@@ -54,7 +54,7 @@ public class ClientCommandService implements ConnectionListener {
         final String poolNamePrefix = node.getThreadPoolNamePrefix("client");
         executor = new FastExecutor(3, 100, 1 << 16, 250L, poolNamePrefix,
                 new PoolExecutorThreadFactory(node.threadGroup, poolNamePrefix, node.getConfig().getClassLoader()),
-                TimeUnit.MINUTES.toMillis(3), true, false);
+                TimeUnit.SECONDS.toMillis(30), true, false);
         node.getConnectionManager().addConnectionListener(this);
         services = new ConcurrentHashMap<Command, ClientCommandHandler>();
         unknownCommandHandler = new ClientCommandHandler() {

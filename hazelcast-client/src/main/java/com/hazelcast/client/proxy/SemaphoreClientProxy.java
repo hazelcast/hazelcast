@@ -32,9 +32,9 @@ public class SemaphoreClientProxy implements ISemaphore {
     private final String name;
     private final ProxyHelper proxyHelper;
 
-    public SemaphoreClientProxy(HazelcastClient hazelcastClient, String name) {
+    public SemaphoreClientProxy(HazelcastClient client, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(hazelcastClient.getSerializationService(), hazelcastClient.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
     }
 
     public void acquire() throws InterruptedException {

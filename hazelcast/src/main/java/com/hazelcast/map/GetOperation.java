@@ -57,8 +57,10 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
     }
 
     public void afterRun() {
-        mapService.interceptAfterProcess(name, MapOperationType.GET, dataKey, result, result);
-        mapContainer.getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - getStartTime());
+        mapService.interceptAfterGet(name, result);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapContainer.getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - getStartTime());
+        }
     }
 
     @Override

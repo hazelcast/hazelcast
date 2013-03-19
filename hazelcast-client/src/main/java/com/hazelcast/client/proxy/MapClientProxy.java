@@ -48,11 +48,11 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.client = client;
-        this.proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        this.proxyHelper = new ProxyHelper(client);
     }
 
     public void flush() {
-        proxyHelper.doCommand(Command.MFLUSH, new String[]{getName(), String.valueOf(false)});
+        proxyHelper.doCommand(Command.MFLUSH, new String[]{getName()});
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
@@ -75,7 +75,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, new Data[]{dKey});
+        Data[] datas = dKey == null ? null : new Data[]{dKey};
+        Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, datas);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.mapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
@@ -150,7 +151,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         Boolean evicted = Boolean.valueOf(protocol.args[0]);
         return evicted;
     }
-
 //    public EntryView<K, V> getMapEntry(final K key) {
 //        check(key);
 //        Data dKey = proxyHelper.toData(key);
@@ -249,7 +249,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     public Collection<V> values(Predicate predicate) {
         Map<K, V> map = getCopyOfTheMap(predicate);
         return map.values();
-//        return new ValueCollection<K, V>(this, set);
     }
 
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
@@ -270,7 +269,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         Protocol protocol = proxyHelper.doCommand(dKey, Command.MREMOVEIFSAME, new String[]{getName()}, dKey, proxyHelper.toData(value));
         return Boolean.valueOf(protocol.args[0]);
     }
-
 
     public void delete(Object key) {
     }
@@ -441,7 +439,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return (V) proxyHelper.doCommandAsObject(dKey, Command.MREMOVE, new String[]{getName()}, dKey);
     }
 
-    public boolean tryRemove(K key, long timeout, TimeUnit timeunit){
+    public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
         check(key);
         Data dKey = proxyHelper.toData(key);
         Protocol protocol = proxyHelper.doCommand(dKey, Command.MTRYREMOVE, new String[]{getName(), "" + timeunit.toMillis(timeout)}, dKey);

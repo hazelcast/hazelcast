@@ -39,8 +39,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data get(Object k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
+        Data key = getService().toData(k);
         return getInternal(key);
     }
 
@@ -93,21 +92,19 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Data remove(Object k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
+        Data key = getService().toData(k);
         return removeInternal(key);
     }
 
     public boolean remove(final Object k, final Object v) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
-        Data value = nodeEngine.toData(v);
+        Data key = getService().toData(k);
+        Data value = getService().toData(v);
         return removeInternal(key, value);
     }
 
     public void delete(Object k) {
         final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
+        final Data key = getService().toData(k);
         deleteInternal(key);
     }
 
@@ -121,13 +118,13 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     public boolean containsKey(Object k) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
+        Data key = getService().toData(k);
         return containsKeyInternal(key);
     }
 
     public boolean containsValue(final Object value) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Data v = nodeEngine.toData(value);
+        Data v = getService().toData(value);
         return containsValueInternal(v);
     }
 
@@ -209,7 +206,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     @Override
     public EntryView<Data,Data> getEntryView(Data key) {
-        return getEntryViewInternal(getNodeEngine().toData(key));
+        return getEntryViewInternal(getService().toData(key));
     }
 
     public boolean evict(final Data key) {

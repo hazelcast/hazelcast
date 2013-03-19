@@ -20,8 +20,16 @@ import java.io.Serializable;
 
 public interface MapInterceptor extends Serializable {
 
-    Object process(MapInterceptorContext interceptorContext);
+    Object interceptGet(Object value);
 
-    void afterProcess(MapInterceptorContext interceptorContext);
+    void afterGet(Object value);
+
+    Object interceptPut(Object oldValue, Object newValue);
+
+    void afterPut(Object value);
+
+    Object interceptRemove(Object removedValue);
+
+    void afterRemove(Object value);
 
 }

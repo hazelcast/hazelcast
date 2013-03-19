@@ -656,7 +656,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("record-type".equals(nodeName)) {
-                mapConfig.setRecordType(MapConfig.RecordType.valueOf(value));
+                mapConfig.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(value));
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
@@ -708,6 +708,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.getMergePolicyConfig().setClassName(value);
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                mapConfig.setStatisticsEnabled(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
                 WanReplicationRef wanReplicationRef = new WanReplicationRef();
                 final String wanName = getAttribute(n, "name");

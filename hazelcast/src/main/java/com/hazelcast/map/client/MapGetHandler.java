@@ -31,7 +31,6 @@ public class MapGetHandler extends MapCommandHandler {
     }
 
     public Protocol processCall(Node node, Protocol protocol) {
-        System.out.println("Here is the get");
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
         DataMapProxy dataMapProxy = getMapProxy(name);

@@ -17,7 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.concurrent.lock.LockNamespace;
-import com.hazelcast.concurrent.lock.LockStoreView;
+import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.monitor.impl.MapOperationsCounter;
@@ -47,7 +47,7 @@ public class CollectionContainer {
 
     final LockNamespace lockNamespace;
 
-    final LockStoreView lockStore;
+    final LockStore lockStore;
 
     final int partitionId;
 
@@ -70,7 +70,11 @@ public class CollectionContainer {
         creationTime = Clock.currentTimeMillis();
     }
 
-    public boolean isLocked(Data dataKey) {
+    public boolean canAcquireLock(Data dataKey, String caller, int threadId) {
+        return lockStore != null && lockStore.canAcquireLock(dataKey, caller, threadId);
+    }
+
+    public boolean isLocked(Data dataKey){
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 

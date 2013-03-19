@@ -40,9 +40,8 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V get(Object k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
-        return nodeEngine.toObject(getInternal(key));
+        Data key = getService().toData(k);
+        return (V) getService().toObject(getInternal(key));
     }
 
     public V put(final K k, final V v) {
@@ -50,17 +49,15 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V put(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data value = nodeEngine.toData(v);
+        final Data key = getService().toData(k);
+        final Data value = getService().toData(v);
         final Data result = putInternal(key, value, ttl, timeunit);
-        return nodeEngine.toObject(result);
+        return (V) getService().toObject(result);
     }
 
     public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data value = nodeEngine.toData(v);
+        final Data key = getService().toData(k);
+        final Data value = getService().toData(v);
         return tryPutInternal(key, value, timeout, timeunit);
     }
 
@@ -69,126 +66,112 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V putIfAbsent(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data value = nodeEngine.toData(v);
+        final Data key = getService().toData(k);
+        final Data value = getService().toData(v);
         final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
-        return nodeEngine.toObject(result);
+        return (V) getService().toObject(result);
     }
 
     public void putTransient(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data value = nodeEngine.toData(v);
+        final Data key = getService().toData(k);
+        final Data value = getService().toData(v);
         putTransientInternal(key, value, ttl, timeunit);
     }
 
     public boolean replace(final K k, final V o, final V v) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data oldValue = nodeEngine.toData(o);
-        final Data value = nodeEngine.toData(v);
+        final Data key = getService().toData(k);
+        final Data oldValue = getService().toData(o);
+        final Data value = getService().toData(v);
         return replaceInternal(key, oldValue, value);
     }
 
     public V replace(final K k, final V v) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data value = nodeEngine.toData(v);
-        return nodeEngine.toObject(replaceInternal(key, value));
+        final Data key = getService().toData(k);
+        final Data value = getService().toData(v);
+        return (V) getService().toObject(replaceInternal(key, value));
     }
 
     public void set(K key, V value) {
-        set(key, value, -1, null);
+        set(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data value = nodeEngine.toData(v);
+        final Data key = getService().toData(k);
+        final Data value = getService().toData(v);
         setInternal(key, value, ttl, timeunit);
     }
 
     public V remove(Object k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
+        final Data key = getService().toData(k);
         final Data result = removeInternal(key);
-        return nodeEngine.toObject(result);
+        return (V) getService().toObject(result);
     }
 
     public boolean remove(final Object k, final Object v) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
-        final Data value = nodeEngine.toData(v);
+        final Data key = getService().toData(k);
+        final Data value = getService().toData(v);
         return removeInternal(key, value);
     }
 
     public void delete(Object k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data key = nodeEngine.toData(k);
+        final Data key = getService().toData(k);
         deleteInternal(key);
     }
 
     public boolean containsKey(Object k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
+        Data key = getService().toData(k);
         return containsKeyInternal(key);
     }
 
     public boolean containsValue(final Object v) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data value = nodeEngine.toData(v);
+        Data value = getService().toData(v);
         return containsValueInternal(value);
     }
 
     public void lock(final K key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data k = nodeEngine.toData(key);
+        NodeEngine nodeEngine = getNodeEngine();
+        Data k = getService().toData(key);
         lockSupport.lock(nodeEngine, k);
     }
 
     public void unlock(final K key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data k = nodeEngine.toData(key);
+        NodeEngine nodeEngine = getNodeEngine();
+        Data k = getService().toData(key);
         lockSupport.unlock(nodeEngine, k);
     }
 
     public boolean tryRemove(final K key, final long timeout, final TimeUnit timeunit) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data k = nodeEngine.toData(key);
+        Data k = getService().toData(key);
         return tryRemoveInternal(k, timeout, timeunit);
     }
 
     public Future<V> getAsync(final K k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
+        Data key = getService().toData(k);
+        NodeEngine nodeEngine = getNodeEngine();
         return new ObjectFuture(getAsyncInternal(key), nodeEngine.getSerializationService());
     }
 
     public boolean isLocked(final K k) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data key = nodeEngine.toData(k);
+        Data key = getService().toData(k);
+        NodeEngine nodeEngine = getNodeEngine();
         return lockSupport.isLocked(nodeEngine, key);
     }
 
     public Future putAsync(final K key, final V value) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data k = nodeEngine.toData(key);
-        Data v = nodeEngine.toData(value);
-        return new ObjectFuture(putAsyncInternal(k, v), nodeEngine.getSerializationService());
+        Data k = getService().toData(key);
+        Data v = getService().toData(value);
+        return new ObjectFuture(putAsyncInternal(k, v), getNodeEngine().getSerializationService());
     }
 
     public Future removeAsync(final K key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data k = nodeEngine.toData(key);
-        return new ObjectFuture(removeAsyncInternal(k), nodeEngine.getSerializationService());
+        Data k = getService().toData(key);
+        return new ObjectFuture(removeAsyncInternal(k), getNodeEngine().getSerializationService());
     }
 
     public Map<K, V> getAll(final Set<K> keys) {
-        final NodeEngine nodeEngine = getNodeEngine();
         Set<Data> ks = new HashSet(keys.size());
         for (K key : keys) {
-            Data k = nodeEngine.toData(key);
+            Data k = getService().toData(key);
             ks.add(k);
         }
         return (Map<K, V>) getAllObjectInternal(ks);
@@ -200,17 +183,17 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public boolean tryLock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
-        return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key));
+        return lockSupport.tryLock(nodeEngine, getService().toData(key));
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
-        return lockSupport.tryLock(nodeEngine, nodeEngine.toData(key), time, timeunit);
+        return lockSupport.tryLock(nodeEngine, getService().toData(key), time, timeunit);
     }
 
     public void forceUnlock(final K key) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Data k = nodeEngine.toData(key);
+        Data k = getService().toData(key);
         lockSupport.forceUnlock(nodeEngine, k);
     }
 
@@ -227,13 +210,11 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        addEntryListenerInternal(listener, nodeEngine.toData(key), includeValue);
+        addEntryListenerInternal(listener, getService().toData(key), includeValue);
     }
 
     public void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        addEntryListenerInternal(listener, predicate, nodeEngine.toData(key), includeValue);
+        addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener) {
@@ -241,21 +222,19 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        removeEntryListenerInternal(listener, nodeEngine.toData(key));
+        removeEntryListenerInternal(listener, getService().toData(key));
     }
 
     public EntryView<K, V> getEntryView(K key) {
-        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getNodeEngine().toData(key));
+        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getService().toData(key));
         Data value = (Data) entryViewInternal.getValue();
         entryViewInternal.setKey(key);
-        entryViewInternal.setValue((V) getNodeEngine().toObject(value));
+        entryViewInternal.setValue((V) getService().toObject(value));
         return entryViewInternal;
     }
 
     public boolean evict(final Object key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        return evictInternal(nodeEngine.toData(key));
+        return evictInternal(getService().toData(key));
     }
 
     public void clear() {
@@ -267,7 +246,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         Set<Data> dataSet = keySetInternal();
         HashSet<K> keySet = new HashSet<K>();
         for (Data data : dataSet) {
-            keySet.add((K) nodeEngine.toObject(data));
+            keySet.add((K) getService().toObject(data));
         }
         return keySet;
     }
@@ -277,17 +256,16 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         Collection<Data> dataSet = valuesInternal();
         Collection<V> valueSet = new ArrayList<V>();
         for (Data data : dataSet) {
-            valueSet.add((V) nodeEngine.toObject(data));
+            valueSet.add((V) getService().toObject(data));
         }
         return valueSet;
     }
 
     public Set entrySet() {
-        final NodeEngine nodeEngine = getNodeEngine();
         Set<Entry<Data, Data>> entries = entrySetInternal();
         Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
         for (Entry<Data, Data> entry : entries) {
-            resultSet.add(new AbstractMap.SimpleImmutableEntry((K) nodeEngine.toObject(entry.getKey()), (V) nodeEngine.toObject(entry.getValue())));
+            resultSet.add(new AbstractMap.SimpleImmutableEntry((K) getService().toObject(entry.getKey()), (V) getService().toObject(entry.getValue())));
         }
         return resultSet;
     }
@@ -305,27 +283,25 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> localKeySet() {
-        final NodeEngine nodeEngine = getNodeEngine();
         final Set<Data> dataSet = localKeySetInternal();
         final Set<K> keySet = new HashSet<K>(dataSet.size());
         for (Data data : dataSet) {
-            keySet.add((K) nodeEngine.toObject(data));
+            keySet.add((K) getService().toObject(data));
         }
         return keySet;
     }
 
     public Set<K> localKeySet(final Predicate predicate) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        // todo implement
         return null;
     }
 
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        return nodeEngine.toObject(executeOnKeyInternal(nodeEngine.toData(key), entryProcessor));
+        return getService().toObject(executeOnKeyInternal(getService().toData(key), entryProcessor));
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();
@@ -334,7 +310,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
             Response r = (Response) response;
             returnObj = r.getResult();
         } else {
-            returnObj = nodeEngine.toObject(response);
+            returnObj = getService().toObject(response);
         }
         if (returnObj instanceof Throwable) {
             throw (Throwable) returnObj;

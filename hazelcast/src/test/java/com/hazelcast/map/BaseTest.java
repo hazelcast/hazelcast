@@ -51,7 +51,7 @@ public abstract class BaseTest {
         cfg = new Config();
 //        factory = new StaticNodeFactory(20);
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setMulticastGroup("224.5.5.5");
-        cfg.getMapConfig("testMapSize").setRecordType(MapConfig.RecordType.OBJECT);
+        cfg.getMapConfig("testMapSize").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         cfg.getMapConfig("testMapSize").setBackupCount(2);
         cfg.getMultiMapConfig("testMultiMapSize").setSyncBackupCount(2);
         startInstances();

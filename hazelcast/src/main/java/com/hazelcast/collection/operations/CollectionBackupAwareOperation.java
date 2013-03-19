@@ -63,7 +63,7 @@ public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedO
     }
 
     public boolean shouldWait() {
-        return getOrCreateContainer().isLocked(dataKey);
+        return !getOrCreateContainer().canAcquireLock(dataKey, getCallerUuid(), threadId);
     }
 
     public long getWaitTimeoutMillis() {

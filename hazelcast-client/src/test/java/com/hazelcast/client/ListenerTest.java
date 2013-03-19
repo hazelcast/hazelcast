@@ -115,7 +115,7 @@ public class ListenerTest {
         Assert.assertEquals(new LifecycleEvent(LifecycleState.CLIENT_CONNECTION_OPENING), q.poll(3, TimeUnit.SECONDS));
         Assert.assertEquals(new LifecycleEvent(LifecycleState.CLIENT_CONNECTION_OPENED), q.poll(3, TimeUnit.SECONDS));
         Assert.assertEquals(new LifecycleEvent(LifecycleState.STARTED), q.poll(3, TimeUnit.SECONDS));
-        client.shutdown();
+        client.getLifecycleService().shutdown();
 //        Assert.assertEquals(new LifecycleEvent(LifecycleState.CLIENT_CONNECTION_LOST), q.poll(3, TimeUnit.SECONDS));
         Assert.assertEquals(new LifecycleEvent(LifecycleState.SHUTTING_DOWN), q.poll(3, TimeUnit.SECONDS));
         Assert.assertEquals(new LifecycleEvent(LifecycleState.SHUTDOWN), q.poll(3, TimeUnit.SECONDS));

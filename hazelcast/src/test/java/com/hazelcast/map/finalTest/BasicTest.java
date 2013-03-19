@@ -45,7 +45,6 @@ public class BasicTest {
     static final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, instanceCount);
     static final Random rand = new Random(Clock.currentTimeMillis());
 
-
     private HazelcastInstance getInstance() {
         return instances[rand.nextInt(instanceCount)];
     }
@@ -393,7 +392,11 @@ public class BasicTest {
 
     @Test
     public void testEntryView() {
-        final IMap<Integer, Integer> map = getInstance().getMap("testEntryView");
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
+        Config config = new Config();
+        config.getMapConfig("default").setStatisticsEnabled(true);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
         map.put(2, 2);
@@ -628,77 +631,6 @@ public class BasicTest {
             if (val.startsWith(pref))
                 return true;
             return false;
-        }
-    }
-
-    @Test
-    public void testMapInterceptor() throws InterruptedException {
-        final IMap<Object, Object> map = getInstance().getMap("testMapInterceptor");
-        SimpleInterceptor interceptor = new SimpleInterceptor();
-        map.addInterceptor(interceptor);
-        map.put(1, "New York");
-        map.put(2, "Istanbul");
-        map.put(3, "Tokyo");
-        map.put(4, "London");
-        map.put(5, "Paris");
-        map.put(6, "Cairo");
-        map.put(7, "Hong Kong");
-
-        try {
-            map.remove(1);
-        } catch (Exception ignore) {
-        }
-        try {
-            map.remove(2);
-        } catch (Exception ignore) {
-        }
-
-        assertEquals(map.size(), 6);
-
-        assertEquals(map.get(1), null);
-        assertEquals(map.get(2), "ISTANBUL:");
-        assertEquals(map.get(3), "TOKYO:");
-        assertEquals(map.get(4), "LONDON:");
-        assertEquals(map.get(5), "PARIS:");
-        assertEquals(map.get(6), "CAIRO:");
-        assertEquals(map.get(7), "HONG KONG:");
-
-        map.removeInterceptor(interceptor);
-        map.put(8, "Moscow");
-
-        assertEquals(map.get(8), "Moscow");
-        assertEquals(map.get(1), null);
-        assertEquals(map.get(2), "ISTANBUL");
-        assertEquals(map.get(3), "TOKYO");
-        assertEquals(map.get(4), "LONDON");
-        assertEquals(map.get(5), "PARIS");
-        assertEquals(map.get(6), "CAIRO");
-        assertEquals(map.get(7), "HONG KONG");
-
-    }
-
-    static class SimpleInterceptor implements MapInterceptor, Serializable {
-        public Object process(MapInterceptorContext context) {
-            if (context.getOperationType().equals(MapOperationType.GET)) {
-                if (context.getNewValue() != null)
-                    return context.getNewValue() + ":";
-                else
-                    return null;
-
-            }
-
-            if (context.getOperationType().equals(MapOperationType.PUT))
-                return ((String) context.getNewValue()).toUpperCase();
-
-            if (context.getOperationType().equals(MapOperationType.REMOVE)) {
-                if (context.getExistingEntry().getValue().equals("ISTANBUL"))
-                    throw new RuntimeException("you can not remove this");
-                return context.getExistingEntry().getValue();
-            }
-            return context.getNewValue();
-        }
-
-        public void afterProcess(MapInterceptorContext context) {
         }
     }
 

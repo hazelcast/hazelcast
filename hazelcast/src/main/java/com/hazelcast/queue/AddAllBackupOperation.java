@@ -16,49 +16,54 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @ali 12/20/12
  */
 public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
 
-    Collection<Data> dataList;
+    Map<Long, Data> dataMap;
 
     public AddAllBackupOperation() {
     }
 
-    public AddAllBackupOperation(String name, Collection<Data> dataList) {
+    public AddAllBackupOperation(String name, Map<Long, Data> dataMap) {
         super(name);
-        this.dataList = dataList;
+        this.dataMap = dataMap;
     }
 
     public void run() throws Exception {
-        getOrCreateContainer().addAllBackup(dataList);
+        getOrCreateContainer().addAllBackup(dataMap);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(dataList.size());
-        for (Data data : dataList) {
-            IOUtil.writeNullableData(out, data);
+        out.writeInt(dataMap.size());
+        for (Map.Entry<Long, Data> entry: dataMap.entrySet()) {
+            long itemId = entry.getKey();
+            Data value = entry.getValue();
+            out.writeLong(itemId);
+            value.writeData(out);
         }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataList = new ArrayList<Data>(size);
+        dataMap = new HashMap<Long, Data>(size);
         for (int i = 0; i < size; i++) {
-            dataList.add(IOUtil.readNullableData(in));
+            long itemId = in.readLong();
+            Data value = new Data();
+            value.readData(in);
+            dataMap.put(itemId, value);
         }
     }
 }

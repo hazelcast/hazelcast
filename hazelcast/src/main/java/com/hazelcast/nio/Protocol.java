@@ -175,7 +175,8 @@ public class Protocol implements SocketWritable {
                 return current;
             }
 
-            current = new DataWriter(buffers[index++]);
+            Data data = buffers[index++];
+            current = new DataWriter(data);
             return current;
         }
     }

@@ -32,7 +32,6 @@ public class ListenerTest {
     IMap<String, String> map1;
     IMap<String, String> map2;
 
-
     AtomicInteger globalCount = new AtomicInteger();
     AtomicInteger localCount = new AtomicInteger();
     AtomicInteger valueCount = new AtomicInteger();

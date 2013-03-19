@@ -42,7 +42,7 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     public ExecutorServiceClientProxy(HazelcastClient client, String name) {
         this.client = client;
         this.name = name;
-        proxyHelper = new ProxyHelper(client.getSerializationService(), client.getConnectionPool());
+        proxyHelper = new ProxyHelper(client);
     }
 
     public void execute(Runnable command) {

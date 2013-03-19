@@ -26,12 +26,17 @@ public class DataRecord extends AbstractRecord implements Record<Data> {
 
     private volatile Data value;
 
-    public DataRecord(Data keyData, Data value) {
-        super(keyData);
+    public DataRecord(Data keyData, Data value, boolean statisticsEnabled) {
+        super(keyData, statisticsEnabled);
         this.value = value;
     }
 
     public DataRecord() {
+    }
+
+    @Override
+    public long getCost() {
+        return key.totalSize() + value.totalSize();
     }
 
     public Data getValue() {
@@ -44,8 +49,6 @@ public class DataRecord extends AbstractRecord implements Record<Data> {
         this.value = o;
         return old;
     }
-
-
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

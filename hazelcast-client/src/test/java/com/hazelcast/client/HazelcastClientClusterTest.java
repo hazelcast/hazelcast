@@ -71,7 +71,7 @@ public class HazelcastClientClusterTest {
             }
         }).start();
         Thread.sleep(1000); // make sure c1.lock("key") is called and blocked
-        client1.shutdown();
+        client1.getLifecycleService().shutdown();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
@@ -90,7 +90,7 @@ public class HazelcastClientClusterTest {
             }
         }).start();
         Thread.sleep(1000); // make sure c1.lock("key") is called and blocked
-        client1.shutdown();
+        client1.getLifecycleService().shutdown();
         Thread.sleep(1000);
         m1.unlock("key");
         assertTrue(c2.tryLock("key"));
@@ -176,7 +176,7 @@ public class HazelcastClientClusterTest {
         h2.getLifecycleService().shutdown();
         assertTrue(memberAddLatch.await(10, TimeUnit.SECONDS));
         assertTrue(memberRemoveLatch.await(10, TimeUnit.SECONDS));
-        client.shutdown();
+        client.getLifecycleService().shutdown();
     }
 
     @Test(expected = IllegalStateException.class, timeout = 50000L)
