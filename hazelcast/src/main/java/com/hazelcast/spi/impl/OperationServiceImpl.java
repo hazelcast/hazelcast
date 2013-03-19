@@ -532,36 +532,6 @@ final class OperationServiceImpl implements OperationService {
         return partitionResults;
     }
 
-//    // TODO: @mm - takeBackups not used!
-//    public void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
-//            throws ExecutionException, TimeoutException, InterruptedException {
-//        if (!(op instanceof BackupOperation)) {
-//            throw new IllegalArgumentException("Op should be BackupOperation!");
-//        }
-//        op.setServiceName(serviceName);
-//        final int retryCount = timeoutSeconds * 2;
-//        backupCount = Math.min(node.getClusterService().getSize() - 1, backupCount);
-//        if (backupCount > 0) {
-//            final List<BackupFuture> backupFutures = new ArrayList<BackupFuture>(backupCount);
-//            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
-//            for (int i = offset; i < backupCount; i++) {
-//                int replicaIndex = i + 1;
-//                Address replicaTarget = partitionInfo.getReplicaAddress(replicaIndex);
-//                if (replicaTarget != null) {
-//                    if (replicaTarget.equals(node.getThisAddress())) {
-//                        // Normally shouldn't happen!!
-//                        throw new IllegalStateException("Normally shouldn't happen!!");
-//                    } else {
-//                        final Future future = createInvocationBuilder(serviceName, op, partitionId).setReplicaIndex(replicaIndex)
-//                                .build().invoke();
-//                        backupFutures.add(new BackupFuture(future, partitionId, replicaIndex, retryCount));
-//                    }
-//                }
-//            }
-//            waitBackupResponses(backupFutures);
-//        }
-//    }
-
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
         Address target = nodeEngine.getPartitionService().getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {

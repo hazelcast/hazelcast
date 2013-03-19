@@ -254,7 +254,6 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void onMemberLeft(MemberImpl member) {
         waitNotifyService.onMemberLeft(member);
-        transactionManagerService.onMemberLeft(member);
         operationService.onMemberLeft(member);
         eventService.onMemberLeft(member);
     }
