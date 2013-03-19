@@ -20,8 +20,6 @@ import com.hazelcast.nio.Address;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 /**
  * @mdogan 12/14/12
@@ -72,7 +70,7 @@ public interface OperationService {
 
     boolean send(Operation op, Connection connection);
 
-    void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
-            throws ExecutionException, TimeoutException, InterruptedException;
+//    void takeBackups(String serviceName, Operation op, int partitionId, int offset, int backupCount, int timeoutSeconds)
+//            throws ExecutionException, TimeoutException, InterruptedException;
 
 }

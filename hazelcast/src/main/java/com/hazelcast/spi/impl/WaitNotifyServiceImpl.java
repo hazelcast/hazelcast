@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -126,32 +127,36 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         WaitNotifyKey key = notifier.getNotifiedKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
         if (q == null) return;
-        WaitingOp so = q.peek();
-        while (so != null) {
-            if (so.isValid()) {
-                if (so.isExpired()) {
+        WaitingOp waitingOp = q.peek();
+        while (waitingOp != null) {
+            if (notifier == waitingOp.getOperation()) {
+                throw new IllegalStateException("Found cyclic wait-notify! -> " + notifier);
+            }
+            if (waitingOp.isValid()) {
+                if (waitingOp.isExpired()) {
                     // expired
-                    so.onExpire();
+                    waitingOp.onExpire();
                 } else {
-                    if (so.shouldWait()) {
+                    if (waitingOp.shouldWait()) {
                         return;
                     }
-                    waitingOpProcessor.processUnderExistingLock(so.getOperation());
+                    waitingOpProcessor.processUnderExistingLock(waitingOp.getOperation());
                 }
-                so.setValid(false);
+                waitingOp.setValid(false);
             }
             q.poll(); // consume
-            so = q.peek();
+            waitingOp = q.peek();
         }
     }
 
     // invalidated waiting ops will removed from queue eventually by notifiers.
-    public void onMemberLeft(Address leftMember) {
+    public void onMemberLeft(MemberImpl leftMember) {
+        final Address leftAddress = leftMember.getAddress();
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
-                    if (leftMember.equals(op.getCallerAddress())) {
+                    if (leftAddress.equals(op.getCallerAddress())) {
                         waitingOp.setValid(false);
                     }
                 }

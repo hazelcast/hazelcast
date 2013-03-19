@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.concurrent.lock.LockNamespace;
-import com.hazelcast.concurrent.lock.LockStoreView;
+import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -38,7 +38,7 @@ public class PartitionRecordStore implements RecordStore {
     final Set<Data> toBeRemovedKeys = new HashSet<Data>();
     final MapContainer mapContainer;
     final MapService mapService;
-    final LockStoreView lockStore;
+    final LockStore lockStore;
 
     public PartitionRecordStore(String name, PartitionContainer partitionContainer) {
         this.name = name;

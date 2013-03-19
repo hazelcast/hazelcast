@@ -18,8 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -119,9 +118,9 @@ class LockInfo implements DataSerializable {
         return false;
     }
 
-    public boolean canAcquireLock(String owner, int threadId) {
+    public boolean canAcquireLock(String caller, int threadId) {
         checkTTL();
-        return lockCount == 0 || getThreadId() == threadId && getOwner().equals(owner);
+        return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
     boolean addAwait(String conditionId, String caller, int threadId) {
@@ -245,7 +244,6 @@ class LockInfo implements DataSerializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LockInfo that = (LockInfo) o;
-        if (lockCount != that.lockCount) return false;
         if (threadId != that.threadId) return false;
         if (owner != null ? !owner.equals(that.owner) : that.owner != null) return false;
         return true;
@@ -255,7 +253,6 @@ class LockInfo implements DataSerializable {
     public int hashCode() {
         int result = owner != null ? owner.hashCode() : 0;
         result = 31 * result + threadId;
-        result = 31 * result + lockCount;
         return result;
     }
 
