@@ -68,7 +68,7 @@ abstract class BaseLockOperation extends AbstractOperation implements KeyBasedOp
         return response;
     }
 
-    protected final LockStore getLockStore() {
+    protected final LockStoreImpl getLockStore() {
         final LockService service = getService();
         return service.getLockStore(getPartitionId(), namespace);
     }

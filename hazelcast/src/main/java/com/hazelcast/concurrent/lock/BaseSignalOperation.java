@@ -41,7 +41,7 @@ abstract class BaseSignalOperation extends BaseLockOperation {
     }
 
     public void run() throws Exception {
-        LockStore lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         awaitCount = lockStore.getAwaitCount(key, conditionId);
         final int signalCount = awaitCount > 0 ? (all ? awaitCount : 1) : 0;
         final ConditionKey notifiedKey = new ConditionKey(key, conditionId);

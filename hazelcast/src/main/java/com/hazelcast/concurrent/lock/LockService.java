@@ -51,7 +51,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     public void reset() {
         for (LockStoreContainer container : containers) {
-            for (LockStore lockStore : container.getLockStores()) {
+            for (LockStoreImpl lockStore : container.getLockStores()) {
                 lockStore.clear();
             }
         }
@@ -63,9 +63,10 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         }
     }
 
-    public LockStoreView createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount) {
+    public LockStore createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount) {
         final LockStoreContainer container = getLockContainer(partitionId);
-        return container.createLockStore(namespace, backupCount, asyncBackupCount);
+        container.createLockStore(namespace, backupCount, asyncBackupCount);
+        return new LockStoreProxy(container, namespace);
     }
 
     public void destroyLockStore(int partitionId, ILockNamespace namespace) {
@@ -77,7 +78,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return containers[partitionId];
     }
 
-    public LockStore getLockStore(int partitionId, ILockNamespace namespace) {
+    public LockStoreImpl getLockStore(int partitionId, ILockNamespace namespace) {
         return getLockContainer(partitionId).getLockStore(namespace);
     }
 
@@ -92,7 +93,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     private void releaseLocksOf(final String uuid) {
         for (LockStoreContainer container : containers) {
-            for (LockStore lockStore : container.getLockStores()) {
+            for (LockStoreImpl lockStore : container.getLockStores()) {
                 Map<Data, LockInfo> locks = lockStore.getLocks();
                 for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
@@ -101,6 +102,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
                         UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
                         op.setNodeEngine(nodeEngine);
                         op.setServiceName(SERVICE_NAME);
+                        op.setService(LockService.this);
                         op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                         op.setPartitionId(container.getPartitionId());
                         nodeEngine.getOperationService().runOperation(op);
@@ -125,7 +127,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
             if (event.getMigrationType() == MigrationType.MOVE) {
                 container.clear();
             } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
-                for (LockStore ls : container.getLockStores()) {
+                for (LockStoreImpl ls : container.getLockStores()) {
                     if (ls.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
                         ls.clear();
                     }
@@ -164,7 +166,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     public void destroyDistributedObject(Object objectId) {
         final Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {
-            final LockStore lockStore = container.getLockStore(new InternalLockNamespace());
+            final LockStoreImpl lockStore = container.getLockStore(new InternalLockNamespace());
             lockStore.forceUnlock(key);
         }
     }

@@ -40,12 +40,12 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
     }
 
     public void beforeRun() throws Exception {
-        final LockStore lockStore = getLockStore();
+        final LockStoreImpl lockStore = getLockStore();
         firstRun = lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
     }
 
     public void run() throws Exception {
-        final LockStore lockStore = getLockStore();
+        final LockStoreImpl lockStore = getLockStore();
         if (!lockStore.lock(key, getCallerUuid(), threadId)) {
             throw new IllegalMonitorStateException("Current thread can not acquire the lock!");
         }
@@ -82,7 +82,7 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
 
     public void onWaitExpire() {
         expired = true;
-        final LockStore lockStore = getLockStore();
+        final LockStoreImpl lockStore = getLockStore();
         lockStore.removeSignalKey(getWaitKey());
         lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
 

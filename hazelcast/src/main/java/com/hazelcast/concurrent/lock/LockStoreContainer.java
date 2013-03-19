@@ -31,12 +31,12 @@ public class LockStoreContainer {
 
     private final LockService lockService;
     private final int partitionId;
-    private final ConcurrentMap<ILockNamespace, LockStore> lockStores = new ConcurrentHashMap<ILockNamespace, LockStore>();
+    private final ConcurrentMap<ILockNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ILockNamespace, LockStoreImpl>();
 
-    private final ConstructorFunction<ILockNamespace, LockStore> lockStoreConstructor
-                = new ConstructorFunction<ILockNamespace, LockStore>() {
-        public LockStore createNew(ILockNamespace key) {
-            return new LockStore(key, 1, 0);
+    private final ConstructorFunction<ILockNamespace, LockStoreImpl> lockStoreConstructor
+                = new ConstructorFunction<ILockNamespace, LockStoreImpl>() {
+        public LockStoreImpl createNew(ILockNamespace key) {
+            return new LockStoreImpl(key, 1, 0);
         }
     };
 
@@ -45,9 +45,9 @@ public class LockStoreContainer {
         this.partitionId = partitionId;
     }
 
-    public LockStore createLockStore(ILockNamespace namespace, int backupCount, int asyncBackupCount) {
-        final LockStore ls = new LockStore(namespace, backupCount, asyncBackupCount);
-        final LockStore current;
+    public LockStoreImpl createLockStore(ILockNamespace namespace, int backupCount, int asyncBackupCount) {
+        final LockStoreImpl ls = new LockStoreImpl(namespace, backupCount, asyncBackupCount);
+        final LockStoreImpl current;
         if ((current = lockStores.putIfAbsent(namespace, ls)) != null) {
             if (current.getBackupCount() != ls.getBackupCount()
                     || current.getAsyncBackupCount() != ls.getAsyncBackupCount()) {
@@ -59,22 +59,22 @@ public class LockStoreContainer {
     }
 
     public void destroyLockStore(ILockNamespace namespace) {
-        final LockStore lockStore = lockStores.remove(namespace);
+        final LockStoreImpl lockStore = lockStores.remove(namespace);
         if (lockStore != null) {
             lockStore.clear();
         }
     }
 
-    public LockStore getLockStore(ILockNamespace namespace) {
+    public LockStoreImpl getLockStore(ILockNamespace namespace) {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 
-    Collection<LockStore> getLockStores() {
+    Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 
     void clear() {
-        for (LockStore lockStore : lockStores.values()) {
+        for (LockStoreImpl lockStore : lockStores.values()) {
             lockStore.clear();
         }
         lockStores.clear();
@@ -82,7 +82,7 @@ public class LockStoreContainer {
 
     int getMaxBackupCount() {
         int max = 0;
-        for (LockStore ls : lockStores.values()) {
+        for (LockStoreImpl ls : lockStores.values()) {
             max = Math.max(max, ls.getTotalBackupCount());
         }
         return max;
@@ -92,7 +92,7 @@ public class LockStoreContainer {
         return partitionId;
     }
 
-    void put(LockStore ls) {
+    void put(LockStoreImpl ls) {
         lockStores.put(ls.getNamespace(), ls);
     }
 }

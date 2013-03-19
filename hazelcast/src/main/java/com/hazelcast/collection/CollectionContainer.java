@@ -17,7 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.concurrent.lock.LockNamespace;
-import com.hazelcast.concurrent.lock.LockStoreView;
+import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.monitor.impl.MapOperationsCounter;
@@ -47,7 +47,7 @@ public class CollectionContainer {
 
     final LockNamespace lockNamespace;
 
-    final LockStoreView lockStore;
+    final LockStore lockStore;
 
     final int partitionId;
 
