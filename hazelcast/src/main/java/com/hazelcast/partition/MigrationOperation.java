@@ -57,11 +57,7 @@ public class MigrationOperation extends BaseMigrationOperation {
             int size = in.readInt();
             tasks = new ArrayList<Operation>(size);
             for (int i = 0; i < size; i++) {
-                Object o = serializationService.readObject(in);
-                if(!(o instanceof Operation)) {
-                    LockNamespace ln = (LockNamespace) o;
-                }
-                Operation task = (Operation) o;
+                Operation task = (Operation) serializationService.readObject(in);
                 tasks.add(task);
             }
             if (taskCount != tasks.size()) {
