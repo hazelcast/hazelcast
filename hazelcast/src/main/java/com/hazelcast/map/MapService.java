@@ -810,7 +810,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         MapContainer mapContainer = getMapContainer(eventData.getMapName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getMapOperationCounter().incrementReceivedEvents();
+//            mapContainer.getMapOperationCounter().incrementReceivedEvents();
         }
     }
 
@@ -1093,7 +1093,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
         localMapStats.setCreationTime(zeroOrPositive(clusterService.getClusterTimeFor(mapContainer.getCreationTime())));
-        localMapStats.setOperationStats(getMapContainer(mapName).getMapOperationCounter().getPublishedStats());
+//        localMapStats.setOperationStats(getMapContainer(mapName).getMapOperationCounter().getPublishedStats());
         return localMapStats;
     }
 

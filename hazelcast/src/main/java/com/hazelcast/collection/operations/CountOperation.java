@@ -37,7 +37,7 @@ public class CountOperation extends CollectionKeyBasedOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        container.getOperationsCounter().incrementOtherOperations();
+//        container.getOperationsCounter().incrementOtherOperations();
         Collection<CollectionRecord> coll = container.getCollection(dataKey);
         response = coll == null ? 0 : coll.size();
     }

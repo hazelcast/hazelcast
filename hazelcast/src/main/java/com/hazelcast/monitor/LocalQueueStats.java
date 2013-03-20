@@ -19,7 +19,7 @@ package com.hazelcast.monitor;
 /**
  * Local queue statistics.
  */
-public interface LocalQueueStats extends LocalInstanceStats<LocalQueueOperationStats> {
+public interface LocalQueueStats extends LocalInstanceStats {
     /**
      * Returns the number of owned items in this member.
      *
@@ -54,4 +54,40 @@ public interface LocalQueueStats extends LocalInstanceStats<LocalQueueOperationS
      * @return average age
      */
     long getAveAge();
+//    /**
+//     * Returns the number of offer/put/add operations.
+//     * Offers returning false will be included.
+//     * #getNumberOfRejectedOffers can be used
+//     * to get the rejected offers.
+//     *
+//     * @return number offer/put/add operations
+//     */
+//    public long getNumberOfOffers();
+//
+//    /**
+//     * Returns the number of rejected offers. Offer
+//     * can be rejected because of max-size limit
+//     * on the queue.
+//     *
+//     * @return number of rejected offers.
+//     */
+//    public long getNumberOfRejectedOffers();
+//
+//    /**
+//     * Returns the number of poll/take/remove operations.
+//     * Polls returning null (empty) will be included.
+//     * #getNumberOfEmptyPolls can be used to get the
+//     * number of polls returned null.
+//     *
+//     * @return number of poll/take/remove operations.
+//     */
+//    public long getNumberOfPolls();
+//
+//    /**
+//     * Returns number of null returning poll operations.
+//     * Poll operation might return null, if the queue is empty.
+//     *
+//     * @return number of null returning poll operations.
+//     */
+//    public long getNumberOfEmptyPolls();
 }

@@ -23,7 +23,6 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -57,7 +56,7 @@ public class MapContainer {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-    private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
+//    private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
     private volatile boolean mapReady = false;
     private final long creationTime;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
@@ -247,9 +246,9 @@ public class MapContainer {
         return indexService;
     }
 
-    public MapOperationsCounter getMapOperationCounter() {
-        return mapOperationCounter;
-    }
+//    public MapOperationsCounter getMapOperationCounter() {
+//        return mapOperationCounter;
+//    }
 
     public String addInterceptor(MapInterceptor interceptor) {
         String id = "interceptor" + UUID.randomUUID();

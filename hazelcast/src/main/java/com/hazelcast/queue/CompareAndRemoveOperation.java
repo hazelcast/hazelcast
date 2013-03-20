@@ -56,7 +56,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     }
 
     public void afterRun() throws Exception {
-        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
+//        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
         if (hasListener()) {
             for (Data data : dataMap.values()) {
                 publishEvent(ItemEventType.REMOVED, data);

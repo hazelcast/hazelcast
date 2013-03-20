@@ -16,14 +16,13 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.monitor.impl.ExecutorOperationsCounter;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ExecutorServiceStatsContainer {
     private final long creationTime;
-    private final ExecutorOperationsCounter operationsCounter = new ExecutorOperationsCounter(5000);
+//    private final ExecutorOperationsCounter operationsCounter = new ExecutorOperationsCounter(5000);
     private final AtomicLong totalStarted = new AtomicLong();
     private final AtomicLong totalFinished = new AtomicLong();
 
@@ -43,21 +42,21 @@ public class ExecutorServiceStatsContainer {
         return totalFinished.get();
     }
 
-    public ExecutorOperationsCounter getOperationsCounter() {
-        return operationsCounter;
-    }
+//    public ExecutorOperationsCounter getOperationsCounter() {
+//        return operationsCounter;
+//    }
 
     public void startExecution(long elapsed) {
         totalStarted.incrementAndGet();
-        operationsCounter.startExecution(elapsed);
+//        operationsCounter.startExecution(elapsed);
     }
 
     public void finishExecution(long elapsed) {
         totalFinished.incrementAndGet();
-        operationsCounter.finishExecution(elapsed);
+//        operationsCounter.finishExecution(elapsed);
     }
 
     public void startPending() {
-        operationsCounter.startPending();
+//        operationsCounter.startPending();
     }
 }

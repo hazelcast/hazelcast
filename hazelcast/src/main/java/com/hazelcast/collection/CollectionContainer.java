@@ -20,7 +20,6 @@ import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
@@ -217,7 +216,7 @@ public class CollectionContainer {
         return lockStore.getLockedKeys().size();
     }
 
-    public MapOperationsCounter getOperationsCounter() {
-        return service.getOrCreateOperationsCounter(proxyId);
-    }
+//    public MapOperationsCounter getOperationsCounter() {
+//        return service.getOrCreateOperationsCounter(proxyId);
+//    }
 }

@@ -16,6 +16,33 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalLockStats extends LocalInstanceStats<LocalLockOperationStats> {
+public interface LocalLockStats extends LocalInstanceStats {
 
+//    /**
+//     //     * Returns the number of lock operations.
+//     //     *
+//     //     * @return number of lock operations
+//     //     */
+//    public long getNumberOfLocks();
+//
+//    /**
+//     * Returns the number of unlock operations.
+//     *
+//     * @return number of unlock operations
+//     */
+//    public long getNumberOfUnlocks();
+//
+//    /**
+//     * Returns the number of failed lock operations.
+//     *
+//     * @return number of failed lock operations
+//     */
+//    public long getNumberOfFailedLocks();
+//
+//    /**
+//     * Returns the number of total operations.
+//     *
+//     * @return number of total operations
+//     */
+//    public long total();
 }

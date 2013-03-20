@@ -16,7 +16,6 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalMapOperationStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperationStats> implements LocalMapStats {
+public class LocalMapStatsImpl  implements LocalMapStats {
     private final AtomicLong lastAccessTime = new AtomicLong();
     private final AtomicLong hits = new AtomicLong();
     private long ownedEntryCount;
@@ -39,7 +38,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
     public LocalMapStatsImpl() {
     }
 
-    void writeDataInternal(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(lastAccessTime.get());
         out.writeLong(hits.get());
         out.writeLong(ownedEntryCount);
@@ -52,7 +51,7 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         out.writeLong(dirtyEntryCount);
     }
 
-    void readDataInternal(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         lastAccessTime.set(in.readLong());
         hits.set(in.readLong());
         ownedEntryCount = in.readLong();
@@ -65,10 +64,6 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
         dirtyEntryCount = in.readLong();
     }
 
-    @Override
-    LocalMapOperationStats newOperationStatsInstance() {
-        return new LocalMapOperationStatsImpl();
-    }
 
     public long getOwnedEntryCount() {
         return ownedEntryCount;
@@ -163,7 +158,134 @@ public class LocalMapStatsImpl extends LocalInstanceStatsSupport<LocalMapOperati
                 ", hits=" + hits.get() +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +
-                ", " + operationStats +
                 '}';
+    }
+//
+//    OperationStat gets = new OperationStat(0, 0);
+//    OperationStat puts = new OperationStat(0, 0);
+//    OperationStat removes = new OperationStat(0, 0);
+//    long numberOfOtherOperations;
+//    long numberOfEvents;
+//
+//    public void writeData(ObjectDataOutput out) throws IOException {
+//        puts.writeData(out);
+//        gets.writeData(out);
+//        removes.writeData(out);
+//        out.writeLong(numberOfOtherOperations);
+//        out.writeLong(numberOfEvents);
+//    }
+//
+//    public public void readData(ObjectDataInput in) throws IOException {
+//        puts = new OperationStat();
+//        puts.readData(in);
+//        gets = new OperationStat();
+//        gets.readData(in);
+//        removes = new OperationStat();
+//        removes.readData(in);
+//        numberOfOtherOperations = in.readLong();
+//        numberOfEvents = in.readLong();
+//    }
+//
+//    public long total() {
+//        return puts.count + gets.count + removes.count + numberOfOtherOperations;
+//    }
+//
+//    public long getNumberOfPuts() {
+//        return puts.count;
+//    }
+//
+//    public long getNumberOfGets() {
+//        return gets.count;
+//    }
+//
+//    public long getTotalPutLatency() {
+//        return puts.totalLatency;
+//    }
+//
+//    public long getTotalGetLatency() {
+//        return gets.totalLatency;
+//    }
+//
+//    public long getTotalRemoveLatency() {
+//        return removes.totalLatency;
+//    }
+//
+//    public long getNumberOfRemoves() {
+//        return removes.count;
+//    }
+//
+//    public long getNumberOfOtherOperations() {
+//        return numberOfOtherOperations;
+//    }
+//
+//    public long getNumberOfEvents() {
+//        return numberOfEvents;
+//    }
+//
+//    public String toString() {
+//        return "LocalMapOperationStats{" +
+//                "total= " + total() +
+//                "\n, puts:" + puts +
+//                "\n, gets:" + gets +
+//                "\n, removes:" + removes +
+//                "\n, others: " + numberOfOtherOperations +
+//                "\n, received events: " + numberOfEvents +
+//                "}";
+//    }
+
+
+    @Override
+    public long getNumberOfPuts() {
+        return 0;
+    }
+
+    @Override
+    public long getNumberOfGets() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalPutLatency() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalGetLatency() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalRemoveLatency() {
+        return 0;
+    }
+
+    @Override
+    public long getNumberOfRemoves() {
+        return 0;
+    }
+
+    @Override
+    public long getNumberOfEvents() {
+        return 0;
+    }
+
+    @Override
+    public long getNumberOfOtherOperations() {
+        return 0;
+    }
+
+    @Override
+    public long total() {
+        return 0;
+    }
+
+    @Override
+    public long getPeriodEnd() {
+        return 0;
+    }
+
+    @Override
+    public long getPeriodStart() {
+        return 0;
     }
 }

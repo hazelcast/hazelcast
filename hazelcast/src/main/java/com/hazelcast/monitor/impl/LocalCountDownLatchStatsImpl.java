@@ -16,14 +16,92 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalCountDownLatchOperationStats;
 import com.hazelcast.monitor.LocalCountDownLatchStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-public class LocalCountDownLatchStatsImpl extends LocalInstanceStatsSupport<LocalCountDownLatchOperationStats>
-        implements LocalCountDownLatchStats {
+import java.io.IOException;
+
+public class LocalCountDownLatchStatsImpl implements LocalCountDownLatchStats {
 
     @Override
-    LocalCountDownLatchOperationStats newOperationStatsInstance() {
-        return new LocalCountDownLatchOperationStatsImpl();
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+    }
+
+//    long numberOfAwaitsReleased;
+    //    long numberOfGatesOpened;
+//    OperationStat await = new OperationStat(0, 0);
+//    OperationStat countdown = new OperationStat(0, 0);
+//    OperationStat other = new OperationStat(0, 0);
+//
+//    public void writeData(ObjectDataOutput out) throws IOException {
+//        await.writeData(out);
+//        countdown.writeData(out);
+//        other.writeData(out);
+//    }
+//
+//    public public void readData(ObjectDataInput in) throws IOException {
+//        (await = new OperationStat()).readData(in);
+//        (countdown = new OperationStat()).readData(in);
+//        (other = new OperationStat()).readData(in);
+//    }
+//
+//    public long total() {
+//        return await.count + countdown.count + other.count;
+//    }
+//
+//    public long getNumberOfAwaits() {
+//        return await.count;
+//    }
+//
+//    public long getNumberOfCountDowns() {
+//        return countdown.count;
+//    }
+//
+//    public long getNumberOfOthers() {
+//        return other.count;
+//    }
+//
+//    public long getTotalAwaitLatency() {
+//        return await.totalLatency;
+//    }
+//
+//    public long getTotalCountDownLatency() {
+//        return countdown.totalLatency;
+//    }
+//
+//    public long getTotalOtherLatency() {
+//        return other.totalLatency;
+//    }
+//
+//    public long getNumberOfAwaitsReleased() {
+//        return numberOfAwaitsReleased;
+//    }
+//
+//    public long getNumberOfGatesOpened() {
+//        return numberOfGatesOpened;
+//    }
+//
+//    public String toString() {
+//        return "LocalCountDownLatchOperationStats{" +
+//                "total= " + total() +
+//                ", await:" + await +
+//                ", countdown:" + countdown +
+//                ", other:" + other + "}";
+//    }
+
+
+    @Override
+    public long getPeriodEnd() {
+        return 0;
+    }
+
+    @Override
+    public long getPeriodStart() {
+        return 0;
     }
 }

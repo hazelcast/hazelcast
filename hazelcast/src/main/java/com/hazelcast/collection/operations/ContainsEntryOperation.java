@@ -45,7 +45,7 @@ public class ContainsEntryOperation extends CollectionOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        container.getOperationsCounter().incrementOtherOperations();
+//        container.getOperationsCounter().incrementOtherOperations();
         if (key != null && value != null) {
             response = container.containsEntry(isBinary(), key, value);
         } else if (key != null) {

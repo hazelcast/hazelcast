@@ -16,7 +16,6 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,8 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOperationStats>
-        implements LocalQueueStats, DataSerializable {
+public class LocalQueueStatsImpl implements LocalQueueStats {
 
     private int ownedItemCount;
     private int backupItemCount;
@@ -44,7 +42,7 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         this.aveAge = aveAge;
     }
 
-    void writeDataInternal(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(ownedItemCount);
         out.writeInt(backupItemCount);
         out.writeLong(minAge);
@@ -52,7 +50,7 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         out.writeLong(aveAge);
     }
 
-    void readDataInternal(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         ownedItemCount = in.readInt();
         backupItemCount = in.readInt();
         minAge = in.readLong();
@@ -60,10 +58,6 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         aveAge = in.readLong();
     }
 
-    @Override
-    LocalQueueOperationStats newOperationStatsInstance() {
-        return new LocalQueueOperationStatsImpl();
-    }
 
     public int getOwnedItemCount() {
         return ownedItemCount;
@@ -113,7 +107,83 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
                 ", backupItemCount=" + backupItemCount +
                 ", minAge=" + minAge +
                 ", maxAge=" + maxAge +
-                ", queueOperationStats=" + operationStats +
                 '}';
+    }
+
+
+//    long numberOfOffers;
+//    long numberOfRejectedOffers;
+//    long numberOfPolls;
+//    long numberOfEmptyPolls;
+//    long numberOfOtherOperations;
+//    long numberOfEvents;
+//
+//    public void writeData(ObjectDataOutput out) throws IOException {
+//        out.writeLong(numberOfOffers);
+//        out.writeLong(numberOfPolls);
+//        out.writeLong(numberOfRejectedOffers);
+//        out.writeLong(numberOfEmptyPolls);
+//        out.writeLong(numberOfOtherOperations);
+//        out.writeLong(numberOfEvents);
+//    }
+//
+//    public void readData(ObjectDataInput in) throws IOException {
+//        numberOfOffers = in.readLong();
+//        numberOfPolls = in.readLong();
+//        numberOfRejectedOffers = in.readLong();
+//        numberOfEmptyPolls = in.readLong();
+//        numberOfOtherOperations = in.readLong();
+//        numberOfEvents = in.readLong();
+//    }
+//
+//    public long total() {
+//        return numberOfOffers + numberOfPolls + numberOfOtherOperations;
+//    }
+//
+//    public long getNumberOfOffers() {
+//        return numberOfOffers;
+//    }
+//
+//    public long getNumberOfRejectedOffers() {
+//        return numberOfRejectedOffers;
+//    }
+//
+//    public long getNumberOfPolls() {
+//        return numberOfPolls;
+//    }
+//
+//    public long getNumberOfEmptyPolls() {
+//        return numberOfEmptyPolls;
+//    }
+//
+//    public long getNumberOfOtherOperations() {
+//        return numberOfOtherOperations;
+//    }
+//
+//    public long getNumberOfEvents() {
+//        return numberOfEvents;
+//    }
+//
+//    public String toString() {
+//        return "LocalQueueOperationStats{" +
+//                "total= " + total() +
+//                ", offers:" + numberOfOffers +
+//                ", polls:" + numberOfPolls +
+//                ", rejectedOffers:" + numberOfRejectedOffers +
+//                ", emptyPolls:" + numberOfEmptyPolls +
+//                ", others: " + numberOfOtherOperations +
+//                ", received events: " + numberOfEvents +
+//                "}";
+//    }
+
+
+    @Override
+    public long getPeriodEnd() {
+        return 0;
+    }
+
+    @Override
+    public long getPeriodStart() {
+        return 0;
     }
 }

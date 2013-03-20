@@ -333,7 +333,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         localExecutorStats.setCreationTime(serviceStatsContainer.getCreationTime());
         localExecutorStats.setTotalFinished(serviceStatsContainer.getTotalFinished());
         localExecutorStats.setTotalStarted(serviceStatsContainer.getTotalStarted());
-        localExecutorStats.setOperationStats(serviceStatsContainer.getOperationsCounter().getPublishedStats());
+//        localExecutorStats.setOperationStats(serviceStatsContainer.getOperationsCounter().getPublishedStats());
         return localExecutorStats;
     }
 

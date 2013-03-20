@@ -50,6 +50,6 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        getOrCreateContainer().getOperationsCounter().incrementGets(elapsed);
+//        getOrCreateContainer().getOperationsCounter().incrementGets(elapsed);
     }
 }

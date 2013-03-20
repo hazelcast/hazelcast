@@ -16,14 +16,61 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalLockOperationStats;
 import com.hazelcast.monitor.LocalLockStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-public class LocalLockStatsImpl extends LocalInstanceStatsSupport<LocalLockOperationStats>
-        implements LocalLockStats {
+import java.io.IOException;
+
+public class LocalLockStatsImpl implements LocalLockStats {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
 
     @Override
-    LocalLockOperationStats newOperationStatsInstance() {
-        return new LocalLockOperationStatsImpl();
+    public void readData(ObjectDataInput in) throws IOException {
+    }
+
+//    long numberOfLocks;
+//    long numberOfUnlocks;
+//    long numberOfFailedLocks;
+//
+//    public long getNumberOfLocks() {
+//        return numberOfLocks;
+//    }
+//
+//    public long getNumberOfUnlocks() {
+//        return numberOfUnlocks;
+//    }
+//
+//    public long getNumberOfFailedLocks() {
+//        return numberOfFailedLocks;
+//    }
+//
+//    public long total() {
+//        return numberOfLocks + numberOfUnlocks + numberOfFailedLocks;
+//    }
+//
+//    public void writeData(ObjectDataOutput out) throws IOException {
+//        out.writeLong(numberOfLocks);
+//        out.writeLong(numberOfUnlocks);
+//        out.writeLong(numberOfFailedLocks);
+//    }
+//
+//    public public void readData(ObjectDataInput in) throws IOException {
+//        numberOfLocks = in.readLong();
+//        numberOfUnlocks = in.readLong();
+//        numberOfFailedLocks = in.readLong();
+//    }
+
+
+    @Override
+    public long getPeriodEnd() {
+        return 0;
+    }
+
+    @Override
+    public long getPeriodStart() {
+        return 0;
     }
 }

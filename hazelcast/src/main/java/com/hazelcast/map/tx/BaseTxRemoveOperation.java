@@ -44,7 +44,7 @@ public abstract class BaseTxRemoveOperation extends TransactionalMapOperation im
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
         invalidateNearCaches();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapContainer(name).getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - getStartTime());
+//            mapService.getMapContainer(name).getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - getStartTime());
         }
     }
 

@@ -56,7 +56,7 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
         localTopicStats.setTotalReceivedMessages(topicStatsContainer.getTotalReceivedMessages());
         localTopicStats.setTotalPublishes(topicStatsContainer.getTotalPublishes());
         localTopicStats.setLastPublishTime(topicStatsContainer.getLastAccessTime());
-        localTopicStats.setOperationStats(topicStatsContainer.getOperationsCounter().getPublishedStats());
+//        localTopicStats.setOperationStats(topicStatsContainer.getOperationsCounter().getPublishedStats());
         return localTopicStats;
     }
 

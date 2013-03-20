@@ -30,7 +30,6 @@ import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -58,7 +57,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
     private final NodeEngine nodeEngine;
     private final CollectionPartitionContainer[] partitionContainers;
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-    private final ConcurrentMap<CollectionProxyId, MapOperationsCounter> counterMap = new ConcurrentHashMap<CollectionProxyId, MapOperationsCounter>(1000);
+//    private final ConcurrentMap<CollectionProxyId, MapOperationsCounter> counterMap = new ConcurrentHashMap<CollectionProxyId, MapOperationsCounter>(1000);
 
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -150,7 +149,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 keySet.addAll(collectionContainer.keySet());
             }
         }
-        getOrCreateOperationsCounter(proxyId).incrementOtherOperations();
+//        getOrCreateOperationsCounter(proxyId).incrementOtherOperations();
         return keySet;
     }
 
@@ -197,7 +196,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
                 entryListener.entryRemoved(entryEvent);
             }
-            getOrCreateOperationsCounter(event.getProxyId()).incrementReceivedEvents();
+//            getOrCreateOperationsCounter(event.getProxyId()).incrementReceivedEvents();
         } else if (listener instanceof ItemListener) {
             ItemListener itemListener = (ItemListener) listener;
             ItemEvent itemEvent = new ItemEvent(event.getProxyId().getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
@@ -397,21 +396,21 @@ public class CollectionService implements ManagedService, RemoteService, Members
         stats.setBackupEntryCount(backupEntryCount);
         stats.setHits(hits);
         stats.setLockedEntryCount(lockedEntryCount);
-        stats.setOperationStats(getOrCreateOperationsCounter(proxyId).getPublishedStats());
+//        stats.setOperationStats(getOrCreateOperationsCounter(proxyId).getPublishedStats());
         return stats;
     }
 
-    public MapOperationsCounter getOrCreateOperationsCounter(CollectionProxyId proxyId){
-        MapOperationsCounter operationsCounter = counterMap.get(proxyId);
-        if (operationsCounter == null){
-            operationsCounter = new MapOperationsCounter();
-            MapOperationsCounter counter = counterMap.putIfAbsent(proxyId, operationsCounter);
-            if (counter != null){
-                operationsCounter = counter;
-            }
-        }
-        return operationsCounter;
-    }
+//    public MapOperationsCounter getOrCreateOperationsCounter(CollectionProxyId proxyId){
+//        MapOperationsCounter operationsCounter = counterMap.get(proxyId);
+//        if (operationsCounter == null){
+//            operationsCounter = new MapOperationsCounter();
+//            MapOperationsCounter counter = counterMap.putIfAbsent(proxyId, operationsCounter);
+//            if (counter != null){
+//                operationsCounter = counter;
+//            }
+//        }
+//        return operationsCounter;
+//    }
 
     public TransactionalMultimapProxySupport createTransactionalObject(Object id, Transaction transaction) {
         return new TransactionalMultimapProxy((CollectionProxyId)id, nodeEngine, this, transaction);

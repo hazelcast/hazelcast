@@ -16,15 +16,13 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalAtomicLongOperationStats;
 import com.hazelcast.monitor.LocalAtomicLongStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class LocalAtomicLongStatsImpl extends LocalInstanceStatsSupport<LocalAtomicLongOperationStats>
-        implements LocalAtomicLongStats {
+public class LocalAtomicLongStatsImpl implements LocalAtomicLongStats {
 
     private long creationTime;
     private long lastAccessTime;
@@ -33,12 +31,7 @@ public class LocalAtomicLongStatsImpl extends LocalInstanceStatsSupport<LocalAto
     private long totalNonModifiedOperations;
 
     @Override
-    LocalAtomicLongOperationStats newOperationStatsInstance() {
-        return new LocalAtomicLongOperationStatsImpl();
-    }
-
-    @Override
-    void writeDataInternal(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
@@ -48,7 +41,7 @@ public class LocalAtomicLongStatsImpl extends LocalInstanceStatsSupport<LocalAto
     }
 
     @Override
-    void readDataInternal(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
@@ -104,7 +97,57 @@ public class LocalAtomicLongStatsImpl extends LocalInstanceStatsSupport<LocalAto
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", totalModifiedOperations=" + totalModifiedOperations +
                 ", totalNonModifiedOperations=" + totalNonModifiedOperations +
-                ", localAtomicLongOperationStats=" + getOperationStats() +
                 '}';
+    }
+
+//    OperationStat modified = new OperationStat(0, 0);
+//    OperationStat nonModified = new OperationStat(0, 0);
+//
+//    public void writeData(ObjectDataOutput out) throws IOException {
+//        modified.writeData(out);
+//        nonModified.writeData(out);
+//    }
+//
+//    public public void readData(ObjectDataInput in) throws IOException {
+//        (modified = new OperationStat()).readData(in);
+//        (nonModified = new OperationStat()).readData(in);
+//    }
+//
+//    public long total() {
+//        return modified.count + nonModified.count;
+//    }
+//
+//    public long getNumberOfModifyOps() {
+//        return modified.count;
+//    }
+//
+//    public long getNumberOfNonModifyOps() {
+//        return nonModified.count;
+//    }
+//
+//    public long getTotalAcquireLatency() {
+//        return modified.totalLatency;
+//    }
+//
+//    public long getTotalNonAcquireLatency() {
+//        return nonModified.totalLatency;
+//    }
+//
+//    public String toString() {
+//        return "LocalSemaphoreOperationStats{" +
+//                "total= " + total() +
+//                ", modified:" + modified +
+//                ", nonModified:" + nonModified + "}";
+//    }
+
+
+    @Override
+    public long getPeriodEnd() {
+        return 0;
+    }
+
+    @Override
+    public long getPeriodStart() {
+        return 0;
     }
 }

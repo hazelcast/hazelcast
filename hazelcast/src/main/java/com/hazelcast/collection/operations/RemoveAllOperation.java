@@ -49,7 +49,7 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
+//        getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
         if (coll != null) {
             getOrCreateContainer().update();
             for (CollectionRecord record : coll) {

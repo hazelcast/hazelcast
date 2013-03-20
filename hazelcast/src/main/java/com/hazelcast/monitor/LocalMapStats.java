@@ -23,7 +23,7 @@ package com.hazelcast.monitor;
  * of another member. LocalMapStats tells you the count of owned and backup
  * entries besides their size in memory.
  */
-public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats> {
+public interface LocalMapStats extends LocalInstanceStats {
 
     /**
      * Returns the number of entries owned by this member.
@@ -95,4 +95,68 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
      * @return
      */
     long getDirtyEntryCount();
+    /**
+     //     * Returns the number of put operations
+     //     *
+     //     * @return number of put operations
+     //     */
+    public long getNumberOfPuts();
+
+    /**
+     * Returns the number of get operations
+     *
+     * @return number of get operations
+     */
+    public long getNumberOfGets();
+
+    /**
+     * Returns the total latency of put operations in this period. To get the average latency, divide to number of puts
+     *
+     * @return
+     */
+    public long getTotalPutLatency();
+
+    /**
+     * Returns the total latency of get operations in this period. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalGetLatency();
+
+    /**
+     * Returns the total latency of remove operations in this period. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalRemoveLatency();
+
+    /**
+     * Returns the number of Remove operations
+     *
+     * @return number of remove operations
+     */
+    public long getNumberOfRemoves();
+
+    /**
+     * Returns the number of Events Received
+     *
+     * @return number of events received
+     */
+    public long getNumberOfEvents();
+
+    /**
+     * Returns the total number of Other Operations
+     *
+     * @return number of other operations
+     */
+    public long getNumberOfOtherOperations();
+
+    /**
+     * Returns the total number of total operations
+     *
+     * @return number of total operations
+     */
+    public long total();
+
+
 }

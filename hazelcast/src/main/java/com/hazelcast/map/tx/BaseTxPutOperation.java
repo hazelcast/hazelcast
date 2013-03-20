@@ -41,7 +41,7 @@ public abstract class BaseTxPutOperation extends TransactionalMapOperation imple
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getMapOperationCounter().incrementPuts(Clock.currentTimeMillis() - getStartTime());
+//            mapContainer.getMapOperationCounter().incrementPuts(Clock.currentTimeMillis() - getStartTime());
         }
     }
 

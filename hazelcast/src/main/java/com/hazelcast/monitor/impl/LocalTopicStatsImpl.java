@@ -16,15 +16,13 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalTopicOperationStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class LocalTopicStatsImpl extends LocalInstanceStatsSupport<LocalTopicOperationStats>
-        implements LocalTopicStats {
+public class LocalTopicStatsImpl implements LocalTopicStats {
 
     private long creationTime;
     private long totalPublishes;
@@ -32,12 +30,7 @@ public class LocalTopicStatsImpl extends LocalInstanceStatsSupport<LocalTopicOpe
     private long lastPublishTime;
 
     @Override
-    LocalTopicOperationStats newOperationStatsInstance() {
-        return new LocalTopicOperationStatsImpl();
-    }
-
-    @Override
-    void writeDataInternal(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(totalPublishes);
         out.writeLong(totalReceivedMessages);
@@ -45,7 +38,7 @@ public class LocalTopicStatsImpl extends LocalInstanceStatsSupport<LocalTopicOpe
     }
 
     @Override
-    void readDataInternal(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
         totalPublishes = in.readLong();
         totalReceivedMessages = in.readLong();
@@ -91,7 +84,46 @@ public class LocalTopicStatsImpl extends LocalInstanceStatsSupport<LocalTopicOpe
                 ", totalPublishes=" + totalPublishes +
                 ", totalReceivedMessages=" + totalReceivedMessages +
                 ", lastPublishTime=" + lastPublishTime +
-                ", operationStats=" + getOperationStats() +
                 '}';
+    }
+
+//    long numberOfPublishes;
+//    long numberOfReceives;
+//
+//    public void writeData(ObjectDataOutput out) throws IOException {
+//        out.writeLong(numberOfPublishes);
+//        out.writeLong(numberOfReceives);
+//    }
+//
+//    public void readData(ObjectDataInput in) throws IOException {
+//        numberOfPublishes = in.readLong();
+//        numberOfReceives = in.readLong();
+//    }
+//
+//    public long getNumberOfPublishes() {
+//        return numberOfPublishes;
+//    }
+//
+//    public long getNumberOfReceivedMessages() {
+//        return numberOfReceives;
+//    }
+//
+//    @Override
+//    public String toString() {
+//        return "LocalTopicOperationStatsImpl{" +
+//                "numberOfPublishes=" + numberOfPublishes +
+//                ", numberOfReceives=" + numberOfReceives +
+//                '}';
+//    }
+
+
+    @Override
+    public long getPeriodEnd() {
+        return 0;
+    }
+
+    @Override
+    public long getPeriodStart() {
+        return 0;
     }
 }

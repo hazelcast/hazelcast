@@ -46,11 +46,11 @@ public class PollOperation extends QueueBackupAwareOperation implements WaitSupp
 
     public void afterRun() throws Exception {
         if (response != null) {
-            getQueueService().getOrCreateOperationsCounter(name).incrementPolls();
+//            getQueueService().getOrCreateOperationsCounter(name).incrementPolls();
             publishEvent(ItemEventType.REMOVED, item.getData());
         }
         else {
-            getQueueService().getOrCreateOperationsCounter(name).incrementEmptyPolls();
+//            getQueueService().getOrCreateOperationsCounter(name).incrementEmptyPolls();
         }
     }
 

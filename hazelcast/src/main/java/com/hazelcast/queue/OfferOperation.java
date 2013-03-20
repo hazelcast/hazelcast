@@ -60,11 +60,11 @@ public class OfferOperation extends QueueBackupAwareOperation implements WaitSup
 
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            getQueueService().getOrCreateOperationsCounter(name).incrementOffers();
+//            getQueueService().getOrCreateOperationsCounter(name).incrementOffers();
             publishEvent(ItemEventType.ADDED, data);
         }
         else{
-            getQueueService().getOrCreateOperationsCounter(name).incrementRejectedOffers();
+//            getQueueService().getOrCreateOperationsCounter(name).incrementRejectedOffers();
         }
     }
 

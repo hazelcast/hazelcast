@@ -44,7 +44,7 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     public void afterRun() throws Exception {
-        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
+//        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
         for (Data data : dataMap.values()) {
             publishEvent(ItemEventType.REMOVED, data);
         }

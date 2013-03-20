@@ -16,7 +16,7 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalExecutorStats extends LocalInstanceStats<LocalExecutorOperationStats> {
+public interface LocalExecutorStats extends LocalInstanceStats {
     /**
      * Returns the total number of started executions onf this executor service on this member.
      *
@@ -30,4 +30,54 @@ public interface LocalExecutorStats extends LocalInstanceStats<LocalExecutorOper
      * @return the total number of finished executions.
      */
     long getTotalFinished();
+
+    //    /**
+//     * Returns the number of pending operations of the executor service
+//     *
+//     * @return the number of pending operations
+//     */
+//    long getPending();
+//
+//    /**
+//     * Returns the number of started operations of the executor service
+//     *
+//     * @return the number of started operations
+//     */
+//    long getStarted();
+//
+//    /**
+//     * Returns the number of completed operations of the executor service
+//     *
+//     * @return the number of completed operations
+//     */
+//    long getCompleted();
+//
+//    /**
+//     * Returns the average start latency of operations started at last time interval
+//     *
+//     * @return the average start latency
+//     */
+//    long getAverageStartLatency();
+//
+//    /**
+//     * Returns the average execution time of operations finished at last time interval
+//     *
+//     * @return the average execution time
+//     */
+//    long getAverageExecutionTime();
+//
+//    /**
+//     * Returns the min execution time of operations finished at last time interval
+//     *
+//     * @return the min execution time
+//     */
+//    long getMinExecutionTime();
+//
+//    /**
+//     * Returns the max execution time of operations finished at last time interval
+//     *
+//     * @return the max execution time
+//     */
+//    long getMaxExecutionTime();
+
 }
