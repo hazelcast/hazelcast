@@ -24,7 +24,7 @@ public interface Joiner {
 
     void join(AtomicBoolean joined);
 
-    void searchForOtherClusters(SplitBrainHandler splitBrainHandler);
+    void searchForOtherClusters();
 
     long getStartTime();
 
