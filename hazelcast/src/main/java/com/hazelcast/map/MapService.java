@@ -201,7 +201,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         }
                     }
                 }
-                if(mergePolicy == null) {
+                if (mergePolicy == null) {
                     try {
                         mergePolicy = ClassLoaderUtil.newInstance(MapMergePolicyConfig.DEFAULT_POLICY);
                     } catch (Exception e) {
@@ -810,7 +810,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         MapContainer mapContainer = getMapContainer(eventData.getMapName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-//            mapContainer.getMapOperationCounter().incrementReceivedEvents();
+            mapContainer.getLocalMapStatsImpl().incrementReceivedEvents();//TODO @msk stats change
         }
     }
 
@@ -1016,9 +1016,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
-        LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+        LocalMapStatsImpl localMapStats = mapContainer.getLocalMapStatsImpl();
+        if (!mapContainer.getMapConfig().isStatisticsEnabled()) {
             return localMapStats;
         }
 
@@ -1092,8 +1092,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
-        localMapStats.setCreationTime(zeroOrPositive(clusterService.getClusterTimeFor(mapContainer.getCreationTime())));
-//        localMapStats.setOperationStats(getMapContainer(mapName).getMapOperationCounter().getPublishedStats());
         return localMapStats;
     }
 

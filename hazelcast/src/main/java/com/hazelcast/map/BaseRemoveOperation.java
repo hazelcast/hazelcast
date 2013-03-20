@@ -39,7 +39,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
         invalidateNearCaches();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-//            mapContainer.getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - getStartTime());
+            mapContainer.getLocalMapStatsImpl().incrementRemoves(Clock.currentTimeMillis() - getStartTime());//TODO @msk stats change
         }
     }
 

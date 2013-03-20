@@ -59,7 +59,7 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
     public void afterRun() {
         mapService.interceptAfterGet(name, result);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-//            mapContainer.getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - getStartTime());
+            mapContainer.getLocalMapStatsImpl().incrementGets(Clock.currentTimeMillis() - getStartTime());//TODO @msk stats change
         }
     }
 

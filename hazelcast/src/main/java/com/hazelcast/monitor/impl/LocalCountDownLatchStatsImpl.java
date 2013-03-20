@@ -32,6 +32,11 @@ public class LocalCountDownLatchStatsImpl implements LocalCountDownLatchStats {
     public void readData(ObjectDataInput in) throws IOException {
     }
 
+    @Override
+    public long getCreationTime() {
+        return 0;
+    }
+
 //    long numberOfAwaitsReleased;
     //    long numberOfGatesOpened;
 //    OperationStat await = new OperationStat(0, 0);
@@ -94,14 +99,4 @@ public class LocalCountDownLatchStatsImpl implements LocalCountDownLatchStats {
 //                ", other:" + other + "}";
 //    }
 
-
-    @Override
-    public long getPeriodEnd() {
-        return 0;
-    }
-
-    @Override
-    public long getPeriodStart() {
-        return 0;
-    }
 }

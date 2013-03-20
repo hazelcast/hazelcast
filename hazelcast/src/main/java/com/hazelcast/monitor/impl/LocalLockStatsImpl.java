@@ -31,6 +31,11 @@ public class LocalLockStatsImpl implements LocalLockStats {
     public void readData(ObjectDataInput in) throws IOException {
     }
 
+    @Override
+    public long getCreationTime() {
+        return 0;
+    }
+
 //    long numberOfLocks;
 //    long numberOfUnlocks;
 //    long numberOfFailedLocks;
@@ -63,14 +68,4 @@ public class LocalLockStatsImpl implements LocalLockStats {
 //        numberOfFailedLocks = in.readLong();
 //    }
 
-
-    @Override
-    public long getPeriodEnd() {
-        return 0;
-    }
-
-    @Override
-    public long getPeriodStart() {
-        return 0;
-    }
 }

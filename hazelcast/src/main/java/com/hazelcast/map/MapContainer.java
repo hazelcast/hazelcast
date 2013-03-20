@@ -23,6 +23,7 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -56,9 +57,8 @@ public class MapContainer {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-//    private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
+    private final LocalMapStatsImpl stats = new LocalMapStatsImpl();     //TODO @msk
     private volatile boolean mapReady = false;
-    private final long creationTime;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
 
     private final EntryTaskScheduler idleEvictionScheduler;
@@ -98,8 +98,8 @@ public class MapContainer {
         store = storeTemp;
 
         if (store != null) {
-            if(store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport)store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
+            if (store instanceof MapLoaderLifecycleSupport) {
+                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
             }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
@@ -122,11 +122,10 @@ public class MapContainer {
                 mapReady = true;
             }
 
-            if(mapStoreConfig.getWriteDelaySeconds() > 0) {
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService) , false);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService) , false);
-            }
-            else {
+            if (mapStoreConfig.getWriteDelaySeconds() > 0) {
+                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), false);
+                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService), false);
+            } else {
                 mapStoreDeleteScheduler = null;
                 mapStoreWriteScheduler = null;
             }
@@ -136,10 +135,9 @@ public class MapContainer {
             mapStoreWriteScheduler = null;
         }
         ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        if(mapConfig.getMaxIdleSeconds() > 0) {
+        if (mapConfig.getMaxIdleSeconds() > 0) {
             idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        }
-        else {
+        } else {
             idleEvictionScheduler = null;
         }
 
@@ -147,7 +145,6 @@ public class MapContainer {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
-        creationTime = Clock.currentTimeMillis();
     }
 
     public boolean isMapReady() {
@@ -246,9 +243,9 @@ public class MapContainer {
         return indexService;
     }
 
-//    public MapOperationsCounter getMapOperationCounter() {
-//        return mapOperationCounter;
-//    }
+    public LocalMapStatsImpl getLocalMapStatsImpl() {      //TODO @msk
+        return stats;
+    }
 
     public String addInterceptor(MapInterceptor interceptor) {
         String id = "interceptor" + UUID.randomUUID();
@@ -314,7 +311,4 @@ public class MapContainer {
         return store;
     }
 
-    public long getCreationTime() {
-        return creationTime;
-    }
 }

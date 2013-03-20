@@ -44,9 +44,7 @@ public class MemberStateImpl implements MemberState {
     //    Map<String, LocalAtomicLongStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicLongStatsImpl>();
 //    Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
 //    Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
-    List<Integer> lsPartitions = new ArrayList<Integer>(271);
-//    Map<String, LocalExecutorStatsImpl> internalThroughputStats = new HashMap<String, LocalExecutorStatsImpl>();
-//    Map<String, LocalExecutorStatsImpl> throughputStats = new HashMap<String, LocalExecutorStatsImpl>();
+    List<Integer> lsPartitions = new ArrayList<Integer>(271); //TODO @msk where to get this num from?
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
@@ -56,26 +54,26 @@ public class MemberStateImpl implements MemberState {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
-        out.writeInt(multiMapStats.size());
-        for (Map.Entry<String, LocalMapStatsImpl> entry : multiMapStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(queueStats.size());
-        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(topicStats.size());
-        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(executorStats.size());
-        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
+//        out.writeInt(multiMapStats.size());
+//        for (Map.Entry<String, LocalMapStatsImpl> entry : multiMapStats.entrySet()) {
+//            out.writeUTF(entry.getKey());
+//            entry.getValue().writeData(out);
+//        }
+//        out.writeInt(queueStats.size());
+//        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
+//            out.writeUTF(entry.getKey());
+//            entry.getValue().writeData(out);
+//        }
+//        out.writeInt(topicStats.size());
+//        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
+//            out.writeUTF(entry.getKey());
+//            entry.getValue().writeData(out);
+//        }
+//        out.writeInt(executorStats.size());
+//        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
+//            out.writeUTF(entry.getKey());
+//            entry.getValue().writeData(out);
+//        }
 
 //        out.writeInt(atomicNumberStats.size());
 //        for (Map.Entry<String, LocalAtomicLongStatsImpl> entry : atomicNumberStats.entrySet()) {
@@ -97,16 +95,6 @@ public class MemberStateImpl implements MemberState {
             out.writeUTF(entry.getKey());
             out.writeLong(entry.getValue());
         }
-//        out.writeInt(internalThroughputStats.size());
-//        for (Map.Entry<String, LocalExecutorStatsImpl> entry : internalThroughputStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
-//        out.writeInt(throughputStats.size());
-//        for (Map.Entry<String, LocalExecutorStatsImpl> entry : throughputStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
         out.writeInt(lsPartitions.size());
         for (Integer lsPartition : lsPartitions) {
             out.writeInt(lsPartition);
@@ -123,26 +111,26 @@ public class MemberStateImpl implements MemberState {
             (impl = new LocalMapStatsImpl()).readData(in);
             mapStats.put(name, (LocalMapStatsImpl) impl);
         }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalMapStatsImpl()).readData(in);
-            multiMapStats.put(name, (LocalMapStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalQueueStatsImpl()).readData(in);
-            queueStats.put(name, (LocalQueueStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalTopicStatsImpl()).readData(in);
-            topicStats.put(name, (LocalTopicStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalExecutorStatsImpl()).readData(in);
-            executorStats.put(name, (LocalExecutorStatsImpl) impl);
-        }
+//        for (int i = in.readInt(); i > 0; i--) {
+//            name = in.readUTF();
+//            (impl = new LocalMapStatsImpl()).readData(in);
+//            multiMapStats.put(name, (LocalMapStatsImpl) impl);
+//        }
+//        for (int i = in.readInt(); i > 0; i--) {
+//            name = in.readUTF();
+//            (impl = new LocalQueueStatsImpl()).readData(in);
+//            queueStats.put(name, (LocalQueueStatsImpl) impl);
+//        }
+//        for (int i = in.readInt(); i > 0; i--) {
+//            name = in.readUTF();
+//            (impl = new LocalTopicStatsImpl()).readData(in);
+//            topicStats.put(name, (LocalTopicStatsImpl) impl);
+//        }
+//        for (int i = in.readInt(); i > 0; i--) {
+//            name = in.readUTF();
+//            (impl = new LocalExecutorStatsImpl()).readData(in);
+//            executorStats.put(name, (LocalExecutorStatsImpl) impl);
+//        }
 //        for (int i = in.readInt(); i > 0; i--) {
 //            name = in.readUTF();
 //            (impl = new LocalAtomicLongStatsImpl()).readData(in);
@@ -162,16 +150,6 @@ public class MemberStateImpl implements MemberState {
             name = in.readUTF();
             runtimeProps.put(name, in.readLong());
         }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalExecutorStatsImpl()).readData(in);
-//            internalThroughputStats.put(name, (LocalExecutorStatsImpl) impl);
-//        }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalExecutorStatsImpl()).readData(in);
-//            throughputStats.put(name, (LocalExecutorStatsImpl) impl);
-//        }
         for (int i = in.readInt(); i > 0; i--) {
             lsPartitions.add(in.readInt());
         }
@@ -297,15 +275,6 @@ public class MemberStateImpl implements MemberState {
         executorStats.put(name, localExecutorStats);
     }
 
-//    public void putInternalThroughputStats(Map<String, LocalExecutorStatsImpl> internalThroughputStats) {
-//        this.internalThroughputStats.putAll(internalThroughputStats);
-//    }
-//
-//    public void putThroughputStats(Map<String, LocalExecutorStatsImpl> throughputStats) {
-//        this.throughputStats.putAll(throughputStats);
-//    }
-
-    @Override
     public String toString() {
         return "MemberStateImpl [" + address + "] " +
                 "\n{ " +

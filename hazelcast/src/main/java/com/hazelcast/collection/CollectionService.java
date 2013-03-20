@@ -142,7 +142,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
-            if (collectionContainer == null){
+            if (collectionContainer == null) {
                 continue;
             }
             if (partitionInfo.getOwner().equals(thisAddress)) {
@@ -335,7 +335,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public void clientDisconnected(String clientUuid) {
     }
 
-    public LocalMapStats createStats(CollectionProxyId proxyId){
+    public LocalMapStats createStats(CollectionProxyId proxyId) {
         LocalMapStatsImpl stats = new LocalMapStatsImpl();
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
@@ -353,7 +353,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
-            if (collectionContainer == null){
+            if (collectionContainer == null) {
                 continue;
             }
             if (partitionInfo.getOwner().equals(thisAddress)) {
@@ -361,12 +361,11 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 stats.setLastUpdateTime(collectionContainer.getLastUpdateTime());
                 creationTime = Math.min(creationTime, collectionContainer.getCreationTime());
                 lockedEntryCount += collectionContainer.getLockedCount();
-                for (CollectionWrapper wrapper: collectionContainer.collections.values()){
+                for (CollectionWrapper wrapper : collectionContainer.collections.values()) {
                     hits += wrapper.getHits();
                     ownedEntryCount += wrapper.getCollection().size();
                 }
-            }
-            else {
+            } else {
                 int backupCount = collectionContainer.config.getTotalBackupCount();
                 for (int j = 1; j <= backupCount; j++) {
                     Address replicaAddress = partitionInfo.getReplicaAddress(j);
@@ -384,19 +383,17 @@ public class CollectionService implements ManagedService, RemoteService, Members
                     }
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                        for (CollectionWrapper wrapper: collectionContainer.collections.values()){
+                        for (CollectionWrapper wrapper : collectionContainer.collections.values()) {
                             backupEntryCount += wrapper.getCollection().size();
                         }
                     }
                 }
             }
         }
-        stats.setCreationTime(creationTime == Long.MAX_VALUE ? -1 : creationTime);
         stats.setOwnedEntryCount(ownedEntryCount);
         stats.setBackupEntryCount(backupEntryCount);
         stats.setHits(hits);
         stats.setLockedEntryCount(lockedEntryCount);
-//        stats.setOperationStats(getOrCreateOperationsCounter(proxyId).getPublishedStats());
         return stats;
     }
 
@@ -413,6 +410,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
 //    }
 
     public TransactionalMultimapProxySupport createTransactionalObject(Object id, Transaction transaction) {
-        return new TransactionalMultimapProxy((CollectionProxyId)id, nodeEngine, this, transaction);
+        return new TransactionalMultimapProxy((CollectionProxyId) id, nodeEngine, this, transaction);
     }
 }

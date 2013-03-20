@@ -20,6 +20,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 public interface LocalInstanceStats extends DataSerializable {
 
-    public long getPeriodEnd();//TODO remove
-    public long getPeriodStart();//TODO remove
+    public long getCreationTime();
+
 }

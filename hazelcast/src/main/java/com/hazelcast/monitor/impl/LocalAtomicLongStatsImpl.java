@@ -139,15 +139,4 @@ public class LocalAtomicLongStatsImpl implements LocalAtomicLongStats {
 //                ", modified:" + modified +
 //                ", nonModified:" + nonModified + "}";
 //    }
-
-
-    @Override
-    public long getPeriodEnd() {
-        return 0;
-    }
-
-    @Override
-    public long getPeriodStart() {
-        return 0;
-    }
 }

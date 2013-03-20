@@ -95,19 +95,21 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return
      */
     long getDirtyEntryCount();
+
     /**
-     //     * Returns the number of put operations
-     //     *
-     //     * @return number of put operations
-     //     */
-    public long getNumberOfPuts();
+     * //     * Returns the number of put operations
+     * //     *
+     * //     * @return number of put operations
+     * //
+     */
+    public long getPutCount();
 
     /**
      * Returns the number of get operations
      *
      * @return number of get operations
      */
-    public long getNumberOfGets();
+    public long getGetCount();
 
     /**
      * Returns the total latency of put operations in this period. To get the average latency, divide to number of puts
@@ -131,11 +133,32 @@ public interface LocalMapStats extends LocalInstanceStats {
     public long getTotalRemoveLatency();
 
     /**
+     * Returns the max latency of put operations in this period.
+     *
+     * @return
+     */
+    public long getMaxPutLatency();
+
+    /**
+     * Returns the max latency of get operations in this period.
+     *
+     * @return
+     */
+    public long getMaxGetLatency();
+
+    /**
+     * Returns the max latency of remove operations in this period.
+     *
+     * @return
+     */
+    public long getMaxRemoveLatency();
+
+    /**
      * Returns the number of Remove operations
      *
      * @return number of remove operations
      */
-    public long getNumberOfRemoves();
+    public long getRemoveCount();
 
     /**
      * Returns the number of Events Received

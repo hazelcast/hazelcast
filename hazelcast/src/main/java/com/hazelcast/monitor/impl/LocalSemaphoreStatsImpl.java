@@ -121,14 +121,7 @@ public class LocalSemaphoreStatsImpl implements LocalSemaphoreStats {
 //                "}";
 //    }
 
-
-    @Override
-    public long getPeriodEnd() {
-        return 0;
-    }
-
-    @Override
-    public long getPeriodStart() {
+    public long getCreationTime() {
         return 0;
     }
 }

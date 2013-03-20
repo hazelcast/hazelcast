@@ -110,6 +110,11 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
                 '}';
     }
 
+    @Override
+    public long getCreationTime() {
+        return 0;
+    }
+
 
 //    long numberOfOffers;
 //    long numberOfRejectedOffers;
@@ -176,14 +181,4 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
 //                "}";
 //    }
 
-
-    @Override
-    public long getPeriodEnd() {
-        return 0;
-    }
-
-    @Override
-    public long getPeriodStart() {
-        return 0;
-    }
 }

@@ -155,14 +155,4 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
 //                '}';
 //    }
 
-
-    @Override
-    public long getPeriodEnd() {
-        return 0;
-    }
-
-    @Override
-    public long getPeriodStart() {
-        return 0;
-    }
 }
