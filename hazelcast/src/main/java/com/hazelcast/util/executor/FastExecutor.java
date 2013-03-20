@@ -150,6 +150,7 @@ public class FastExecutor implements Executor {
         public void run() {
             long currentBacklogInterval = backlogInterval;
             final Thread thread = Thread.currentThread();
+            int k = 0;
             while (!thread.isInterrupted() && live) {
                 long sleep = 100;
                 final WorkerTask task = queue.peek();
@@ -166,6 +167,9 @@ public class FastExecutor implements Executor {
                 }
                 try {
                     Thread.sleep(sleep);
+                    if (k++ % 1000 == 0) {
+                        System.err.println("DEBUG: Current operation thread count-> " + activeThreadCount);
+                    }
                 } catch (InterruptedException e) {
                     return;
                 }
