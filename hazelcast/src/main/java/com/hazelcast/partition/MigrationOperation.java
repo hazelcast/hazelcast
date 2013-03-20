@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -56,7 +57,13 @@ public class MigrationOperation extends BaseMigrationOperation {
             int size = in.readInt();
             tasks = new ArrayList<Operation>(size);
             for (int i = 0; i < size; i++) {
-                Operation task = (Operation) serializationService.readObject(in);
+                Object o = serializationService.readObject(in);
+                if(!(o instanceof Operation)) {
+                    System.out.println("not operation");
+                    LockNamespace ln = (LockNamespace) o;
+                    System.out.println(ln.getServiceName() + " oid:"+ ln.getObjectId());
+                }
+                Operation task = (Operation) o;
                 tasks.add(task);
             }
             if (taskCount != tasks.size()) {

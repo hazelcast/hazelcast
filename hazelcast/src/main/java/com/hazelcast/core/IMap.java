@@ -857,4 +857,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
      */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
+
+    /**
+     * Applies the user defined EntryProcessor to the all entries in the map.
+     * <p/>
+     *
+     */
+//    void executeOnAllKeys(EntryProcessor entryProcessor);
+
 }
