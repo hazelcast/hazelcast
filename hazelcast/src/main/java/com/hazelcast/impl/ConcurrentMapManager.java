@@ -3658,7 +3658,7 @@ public class ConcurrentMapManager extends BaseManager {
                                     mremove.remove(request.name, request.key);
                                 } else {
                                     ConcurrentMapManager.MPut mput = new MPut();
-                                    mput.put(request.name, request.key, winner, -1);                                    
+                                    mput.put(request.name, request.key, winner, -1);
                                 }
                             }
                             success = true;
@@ -3926,6 +3926,9 @@ public class ConcurrentMapManager extends BaseManager {
                     request.lockCount = record.getLockCount();
                     if (record.valueCount() == 0 && record.isEvictable()) {
                         cmap.markAsEvicted(record);
+                    }
+                    if(record.isRemoved()) {
+                        record.setActive(false);
                     }
                     cmap.fireScheduledActions(record);
                 }
@@ -4364,8 +4367,10 @@ public class ConcurrentMapManager extends BaseManager {
         Record record = cmap.getRecord(req);
         if (record == null || !record.isActive() || !record.isValid()) {
             final Map<Address, Boolean> listeners = record != null ? record.getListeners() : null;
+            final long removeTime = record != null ? record.getRemoveTime() : 0;
             record = cmap.createAndAddNewRecord(req.key, defaultValue);
             record.setMapListeners(listeners);
+            record.setRemoveTime(removeTime);
         }
         return record;
     }
