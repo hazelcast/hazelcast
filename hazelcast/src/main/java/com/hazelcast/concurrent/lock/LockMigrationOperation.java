@@ -71,6 +71,7 @@ public class LockMigrationOperation extends AbstractOperation {
     }
 
     protected void readInternal(final ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         int len = in.readInt();
         if (len > 0) {
             LockStoreImpl ls = new LockStoreImpl();
@@ -78,7 +79,6 @@ public class LockMigrationOperation extends AbstractOperation {
             locks.add(ls);
         }
     }
-
 
     public boolean isEmpty() {
         return locks.isEmpty();

@@ -244,7 +244,7 @@ public class StaticNodeRegistry {
                 }
             }
 
-            public void searchForOtherClusters(SplitBrainHandler splitBrainHandler) {
+            public void searchForOtherClusters() {
             }
         }
     }

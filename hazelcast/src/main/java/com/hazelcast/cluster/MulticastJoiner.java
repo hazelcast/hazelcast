@@ -91,7 +91,7 @@ public class MulticastJoiner extends AbstractJoiner {
         new TcpIpJoiner(node).join(joined);
     }
 
-    public void searchForOtherClusters(SplitBrainHandler splitBrainHandler) {
+    public void searchForOtherClusters() {
         final BlockingQueue<JoinMessage> q = new LinkedBlockingQueue<JoinMessage>();
         MulticastListener listener = new MulticastListener() {
             public void onMessage(Object msg) {

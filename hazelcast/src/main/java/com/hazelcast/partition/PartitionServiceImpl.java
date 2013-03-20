@@ -424,8 +424,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             final int partitionId = migrationInfo.getPartitionId();
                             final int replicaIndex = migrationInfo.getReplicaIndex();
                             final PartitionInfo migratingPartition = getPartition(partitionId);
-                            final Address address = migratingPartition.getReplicaAddress(replicaIndex);
-                            final boolean success = migrationInfo.getToAddress().equals(address);
+                            final Address replicaAddress = migratingPartition.getReplicaAddress(replicaIndex);
+                            final boolean success = migrationInfo.getToAddress().equals(replicaAddress);
                             final MigrationEndpoint endpoint = source ? MigrationEndpoint.SOURCE : MigrationEndpoint.DESTINATION;
                             final FinalizeMigrationOperation op = new FinalizeMigrationOperation(endpoint,
                                     migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex(), success);
@@ -1008,8 +1008,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         final MemberImpl current = getMember(migrationInfo.getFromAddress());
         final MemberImpl newOwner = getMember(migrationInfo.getToAddress());
         final MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
-        Collection<EventRegistration> registrations = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrations, event);
+        final EventService eventService = nodeEngine.getEventService();
+        final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        eventService.publishEvent(SERVICE_NAME, registrations, event);
     }
 
     public void addMigrationListener(MigrationListener migrationListener) {
@@ -1017,6 +1018,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public void removeMigrationListener(MigrationListener migrationListener) {
+        // TODO: @mm - implement migration listener removal.
     }
 
     public void dispatchEvent(MigrationEvent migrationEvent, MigrationListener migrationListener) {

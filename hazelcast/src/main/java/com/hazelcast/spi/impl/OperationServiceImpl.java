@@ -101,7 +101,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
-        if (partitionId < 0) throw new IllegalArgumentException("Partition id must be bigger than zero!");
+        if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
         return new InvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
@@ -110,7 +110,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     @PrivateApi
-    public void handleOperation(final Packet packet) {
+    void handleOperation(final Packet packet) {
         try {
             executor.execute(new RemoteOperationProcessor(packet));
         } catch (RejectedExecutionException e) {
@@ -293,7 +293,6 @@ final class OperationServiceImpl implements OperationService {
         Collection<BackupFuture> syncBackups = null;
         Collection<BackupFuture> asyncBackups = null;
         final Operation op = (Operation) backupAwareOp;
-        final boolean returnsResponse = op.returnsResponse();
         Operation backupResponse = null;
         if (syncBackupCount + asyncBackupCount > 0) {
             final String serviceName = op.getServiceName();
@@ -308,6 +307,7 @@ final class OperationServiceImpl implements OperationService {
                         if (backupOp == null) {
                             throw new IllegalArgumentException("Backup operation should not be null!");
                         }
+                        final boolean returnsResponse = backupOp.returnsResponse();
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
@@ -336,6 +336,7 @@ final class OperationServiceImpl implements OperationService {
                         if (backupOp == null) {
                             throw new IllegalArgumentException("Backup operation should not be null!");
                         }
+                        final boolean returnsResponse = backupOp.returnsResponse();
                         if (target.equals(node.getThisAddress())) {
                             throw new IllegalStateException("Normally shouldn't happen!!");
                         } else {
@@ -423,7 +424,7 @@ final class OperationServiceImpl implements OperationService {
             final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
             logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
         }
-        if (node.isActive()) {
+        if (node.isActive() && op.getResponseHandler() != null) {
             sendResponse(op, e);
         }
     }
@@ -651,7 +652,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private class RemoteOperationProcessor implements Runnable {
-        private final Packet packet;
+        final Packet packet;
 
         public RemoteOperationProcessor(Packet packet) {
             this.packet = packet;
@@ -673,11 +674,10 @@ final class OperationServiceImpl implements OperationService {
                 }
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-//                send(new ErrorResponse(node.getThisAddress(), e), conn);
             }
         }
 
-        private void processResponse(Operation op) {
+        void processResponse(Operation op) {
             try {
                 op.beforeRun();
                 op.run();
@@ -730,13 +730,5 @@ final class OperationServiceImpl implements OperationService {
     private static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation
                 && op.getClass().getClassLoader() == thisClassLoader;
-    }
-
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("nodeEngineImpl");
-        sb.append("{node=").append(node);
-        sb.append('}');
-        return sb.toString();
     }
 }
