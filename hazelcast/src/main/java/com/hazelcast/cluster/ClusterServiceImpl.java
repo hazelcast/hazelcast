@@ -333,7 +333,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (logger.isLoggable(Level.FINEST)) {
             logger.log(Level.FINEST, "Sending MasterConfirmation to " + masterMember);
         }
-        invokeClusterOperation(new MasterConfirmationOperation(), masterAddress);
+        nodeEngine.getOperationService().send(new MasterConfirmationOperation(), masterAddress);
     }
 
     // Will be called just before this node becomes the master
@@ -354,7 +354,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (member.equals(thisMember)) {
                 continue;
             }
-            invokeClusterOperation(op, member.getAddress());
+            nodeEngine.getOperationService().send(op, member.getAddress());
         }
     }
 
@@ -454,7 +454,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         String message = "Ignoring join request, member already exists.. => " + joinMessage;
                         logger.log(Level.FINEST, message);
                         // send members update back to node trying to join again...
-                        invokeClusterOperation(new FinalizeJoinOperation(createMemberInfos(getMemberList()), getClusterTime()),
+                        nodeEngine.getOperationService().send(new FinalizeJoinOperation(createMemberInfos(getMemberList()), getClusterTime(), false),
                                 member.getAddress());
                         return;
                     }
@@ -484,7 +484,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         if (cr == null) {
                             securityLogger.log(Level.SEVERE, "Expecting security credentials " +
                                     "but credentials could not be found in JoinRequest!");
-                            invokeClusterOperation(new AuthenticationFailureOperation(), joinMessage.getAddress());
+                            nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinMessage.getAddress());
                             return;
                         } else {
                             try {
@@ -495,7 +495,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                                         + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
                                         ")");
                                 securityLogger.log(Level.FINEST, e.getMessage(), e);
-                                invokeClusterOperation(new AuthenticationFailureOperation(), joinMessage.getAddress());
+                                nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinMessage.getAddress());
                                 return;
                             }
                         }
@@ -528,7 +528,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void sendMasterAnswer(final JoinRequest joinRequest) {
-        invokeClusterOperation(new SetMasterOperation(node.getMasterAddress()), joinRequest.getAddress());
+        nodeEngine.getOperationService().send(new SetMasterOperation(node.getMasterAddress()), joinRequest.getAddress());
     }
 
     void acceptMasterConfirmation(MemberImpl member) {
@@ -719,7 +719,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             toAddress = node.getMasterAddress();
         }
         JoinRequestOperation joinRequest = new JoinRequestOperation(node.createJoinRequest(withCredentials));
-        invokeClusterOperation(joinRequest, toAddress);
+        nodeEngine.getOperationService().send(joinRequest, toAddress);
         return true;
     }
 
@@ -740,8 +740,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    Future invokeClusterOperation(Operation op, Address target) {
-        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
+    private Future invokeClusterOperation(Operation op, Address target) {
+       return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(5).build().invoke();
     }
 
@@ -776,7 +776,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             setMembers(memberMap);
             for (MemberImpl member : newMembers) {
                 node.getPartitionService().memberAdded(member); // sync call
-                sendMembershipEventNotifications(member, true);
+                sendMembershipEventNotifications(member, true); // async events
             }
         } finally {
             lock.unlock();
@@ -794,7 +794,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 masterConfirmationTimes.remove(deadMember);
                 setMembers(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
-                nodeEngine.onMemberLeft(deadMember);
+                nodeEngine.onMemberLeft(deadMember);                  // sync call
                 sendMembershipEventNotifications(deadMember, false); // async events
                 if (node.isMaster()) {
                     logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");

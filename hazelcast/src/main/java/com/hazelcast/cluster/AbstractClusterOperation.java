@@ -28,4 +28,7 @@ abstract class AbstractClusterOperation extends AbstractOperation implements Joi
         return false;
     }
 
+    public final String getServiceName() {
+        return ClusterServiceImpl.SERVICE_NAME;
+    }
 }

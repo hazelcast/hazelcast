@@ -38,7 +38,7 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
     }
 
     public void run() throws Exception {
-        final LockStore lockStore = getLockStore();
+        final LockStoreImpl lockStore = getLockStore();
         if (force) {
             response = lockStore.forceUnlock(key);
         } else {

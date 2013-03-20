@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 import java.util.concurrent.Future;
 
 public interface Invocation {
+
     Future invoke();
 
     Address getTarget();

@@ -110,11 +110,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public void incrementPublishes(String topicName) {
-        topicContainers.get(topicName).incrementPublishes();
+        getTopicStatsContainer(topicName).incrementPublishes();
     }
 
     public void incrementReceivedMessages(String topicName) {
-        topicContainers.get(topicName).incrementReceivedMessages();
+        getTopicStatsContainer(topicName).incrementReceivedMessages();
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {

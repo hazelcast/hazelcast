@@ -19,17 +19,15 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.nio.Address;
 
 public class WrongTargetException extends RetryableHazelcastException {
-    public WrongTargetException(Address thisAddress, Address target) {
-        this(thisAddress, target, -1, null);
+
+    public WrongTargetException(Address thisAddress, Address target, int partitionId, int replicaIndex, String operationName) {
+        this(thisAddress, target, partitionId, replicaIndex, operationName, null);
     }
 
-    public WrongTargetException(Address thisAddress, Address target, int partitionId, String operationName) {
-        this(thisAddress, target, partitionId, operationName, null);
-    }
-
-    public WrongTargetException(Address thisAddress, Address target, int partitionId,
+    public WrongTargetException(Address thisAddress, Address target, int partitionId, int replicaIndex,
                                 String operationName, String serviceName) {
         super("WrongTarget! this:" + thisAddress + ", target:" + target
-                + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
+                + ", partitionId: " + partitionId + ", replicaIndex: " + replicaIndex
+                + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

@@ -17,19 +17,24 @@
 package com.hazelcast.management;
 
 import com.hazelcast.ascii.rest.HttpCommand;
+import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.executor.ExecutorServiceProxy;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.monitor.TimedMemberState;
-import com.hazelcast.monitor.impl.MemberStateImpl;
+import com.hazelcast.monitor.impl.*;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.queue.proxy.QueueProxy;
+import com.hazelcast.topic.proxy.TopicProxy;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -49,7 +54,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     public static final String MANAGEMENT_EXECUTOR = "hz:management";
     private final HazelcastInstanceImpl instance;
-    private AtomicBoolean running = new AtomicBoolean(false);
     private final TaskPoller taskPoller;
     private final StateSender stateSender;
     private final ILogger logger;
@@ -61,10 +65,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private final StatsInstanceFilter instanceFilterCountDownLatch;
     private final StatsInstanceFilter instanceFilterSemaphore;
     private final int maxVisibleInstanceCount;
-    private volatile String webServerUrl;
-    private volatile boolean urlChanged = false;
     private final int updateIntervalMs;
     private final ManagementCenterConfig managementCenterConfig;
+    private AtomicBoolean running = new AtomicBoolean(false);
+    private volatile String webServerUrl;
+    private volatile boolean urlChanged = false;
+    private boolean versionMismatch = false;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -133,7 +139,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(newUrl);
             callable.setHazelcastInstance(instance);
             Set<Member> members = instance.getCluster().getMembers();
-//            MultiTask<Void> task = new MultiTask<Void>(callable, members);
+//            MultiTask<Void> task = new MultiTask<Void>(callable, members); //TODO @msk multiTask ???
             ExecutorService executorService = instance.getExecutorService(MANAGEMENT_EXECUTOR);
 //            executorService.execute(task);
         } catch (Throwable throwable) {
@@ -148,7 +154,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             Member member = membershipEvent.getMember();
             if (member != null && instance.node.isMaster() && urlChanged) {
                 ManagementCenterConfigCallable callable = new ManagementCenterConfigCallable(webServerUrl);
-//                FutureTask<Void> task = new DistributedTask<Void>(callable, member);
+//                FutureTask<Void> task = new DistributedTask<Void>(callable, member);//TODO @msk  ???
                 ExecutorService executorService = instance.getExecutorService(MANAGEMENT_EXECUTOR);
 //                executorService.execute(task);
             }
@@ -178,7 +184,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
     }
 
-//    List<Edge> detectDeadlock() {
+//    List<Edge> detectDeadlock() {   //TODO @msk  ???
 //        Collection<Map<String, MapLockState>> collection =
 //                (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());
 //        List<Vertex> graph = new ArrayList<Vertex>();
@@ -220,126 +226,14 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 //        return list;
 //    }
 
-    class StateSender extends Thread {
-        StateSender() {
-            super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
-        }
-
-        public void run() {
-            if (webServerUrl == null) {
-                logger.log(Level.WARNING, "Web server url is null!");
-                return;
-            }
-            try {
-                while (running.get()) {
-                    try {
-                        URL url = new URL(webServerUrl + "collector.do");
-                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                        connection.setDoOutput(true);
-                        connection.setRequestMethod("POST");
-                        connection.setConnectTimeout(1000);
-                        connection.setReadTimeout(1000);
-                        final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-                        TimedMemberState ts = getTimedMemberState();
-//                        ts.writeData(out);
-                        out.flush();
-                        connection.getInputStream();
-                    } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
-                    }
-                    Thread.sleep(updateIntervalMs);
-                }
-            } catch (Throwable throwable) {
-                if (throwable instanceof OutOfMemoryError) {
-                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
-                }
-                logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
-                shutdown();
-            }
-        }
-    }
-
-    class TaskPoller extends Thread {
-        final ConsoleRequest[] consoleRequests = new ConsoleRequest[10];
-
-        TaskPoller() {
-            super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
-            register(new RuntimeStateRequest());
-            register(new ThreadDumpRequest());
-            register(new ExecuteScriptRequest());
-            register(new EvictLocalMapRequest());
-            register(new ConsoleCommandRequest());
-            register(new MapConfigRequest());
-//            register(new DetectDeadlockRequest());
-        }
-
-        public void register(ConsoleRequest consoleRequest) {
-            consoleRequests[consoleRequest.getType()] = consoleRequest;
-        }
-
-        public void sendResponse(int taskId, ConsoleRequest request) {
-            try {
-                URL url = new URL(webServerUrl + "putResponse.do");
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setDoOutput(true);
-                connection.setRequestMethod("POST");
-                connection.setConnectTimeout(2000);
-                connection.setReadTimeout(2000);
-                OutputStream outputStream = connection.getOutputStream();
-                DataOutputStream output = new DataOutputStream(outputStream);
-                output.writeInt(taskId);
-                output.writeInt(request.getType());
-//                request.writeResponse(ManagementCenterService.this, output);
-                connection.getInputStream();
-            } catch (Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
-            }
-        }
-
-        public void run() {
-            if (webServerUrl == null) {
-                logger.log(Level.WARNING, "Web server url is null!");
-                return;
-            }
-            try {
-                Random rand = new Random();
-                Address address = ((MemberImpl) instance.node.getClusterService().getLocalMember()).getAddress();
-                GroupConfig groupConfig = instance.getConfig().getGroupConfig();
-                while (running.get()) {
-                    try {
-                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
-                                + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
-                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                        connection.setRequestProperty("Connection", "keep-alive");
-                        InputStream inputStream = connection.getInputStream();
-                        DataInputStream input = new DataInputStream(inputStream);
-                        final int taskId = input.readInt();
-                        final int requestType = input.readInt();
-                        if (taskId > 0 && requestType < consoleRequests.length) {
-                            final ConsoleRequest request = consoleRequests[requestType];
-                            if (request != null) {
-//                                request.readData(input);
-                                sendResponse(taskId, request);
-                            }
-                        }
-                    } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
-                    }
-                    Thread.sleep(700 + rand.nextInt(300));
-                }
-            } catch (Throwable throwable) {
-                if (throwable instanceof OutOfMemoryError) {
-                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
-                }
-                logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
-            }
-        }
+    public void setVersionMismatch(boolean mismatch) {
+        versionMismatch = mismatch;
     }
 
     private void createMemberState(MemberStateImpl memberState) {
         final Node node = instance.node;
         memberState.setAddress(node.getThisAddress());
-//        memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());
+//        memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());//TODO @msk  ???
         memberState.getMemberHealthStats().setActive(node.isActive());
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
@@ -350,19 +244,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
         }
         Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
-//        ExecutorManager executorManager = factory.node.executorManager;
+//        ExecutorManager executorManager = factory.node.executorManager; //TODO @msk  ???
 //        ExecutorManager executorManager = instance.node.executorManager;
 //        memberState.putInternalThroughputStats(executorManager.getInternalThroughputMap());
 //        memberState.putThroughputStats(executorManager.getThroughputMap());
-//        createMemState(memberState, proxyObjects.iterator(), InstanceType.MAP);
-//        createMemState(memberState, proxyObjects.iterator(), InstanceType.MULTIMAP);
-//        createMemState(memberState, proxyObjects.iterator(), InstanceType.QUEUE);
-//        createMemState(memberState, proxyObjects.iterator(), InstanceType.TOPIC);
-        createRuntimeProps(memberState);
-        // uncomment when client changes are made
-        //createMemState(memberState, proxyObjects.iterator(), InstanceType.ATOMIC_LONG);
-        //createMemState(memberState, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
-        //createMemState(memberState, proxyObjects.iterator(), InstanceType.SEMAPHORE);
+
+        createMemState(memberState, proxyObjects);
     }
 
     private void createRuntimeProps(MemberStateImpl memberState) {
@@ -394,134 +281,76 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         memberState.setRuntimeProps(map);
     }
 
-//    private void createMemState(MemberStateImpl memberState,
+    //    private void createMemState(MemberStateImpl memberState,                //TODO @msk  ???
 //                                Iterator<DistributedObject> it,
 //                                DistributedObject.InstanceType type) {
-//        int count = 0;
-//        while (it.hasNext()) {
-//            DistributedObject proxyObject = it.next();
-//            if (proxyObject.getInstanceType() == type) {
-//                if (count < maxVisibleInstanceCount) {
-////                    if (type.isMap()) {
-////                        MProxy mapProxy = (MProxy) proxyObject;
-////                        if (instanceFilterMap.visible(mapProxy.getName())) {
-////                            memberState.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
-////                            count++;
-////                        }
-////                    } else if (type.isQueue()) {
-////                        QProxy qProxy = (QProxy) proxyObject;
-////                        if (instanceFilterQueue.visible(qProxy.getName())) {
-////                            memberState.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
-////                            count++;
-////                        }
-////                    } else if (type.isTopic()) {
-////                        TopicProxy topicProxy = (TopicProxy) proxyObject;
-////                        if (instanceFilterTopic.visible(topicProxy.getName())) {
-////                            memberState.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
-////                            count++;
-////                        }
-////                    } else if (type.isAtomicNumber()) {
-////                        AtomicLongProxy atomicLongProxy = (AtomicLongProxy) proxyObject;
-////                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
-////                            memberState.putLocalAtomicNumberStats(atomicLongProxy.getName(), (LocalAtomicLongStatsImpl) atomicLongProxy.getLocalAtomicNumberStats());
-////                            count++;
-////                        }
-////                    } else if (type.isCountDownLatch()) {
-////                        CountDownLatchProxy cdlProxy = (CountDownLatchProxy) proxyObject;
-////                        if (instanceFilterCountDownLatch.visible(cdlProxy.getName())) {
-////                            memberState.putLocalCountDownLatchStats(cdlProxy.getName(), (LocalCountDownLatchStatsImpl) cdlProxy.getLocalCountDownLatchStats());
-////                            count++;
-////                        }
-////                    } else if (type.isSemaphore()) {
-////                        SemaphoreProxy semaphoreProxy = (SemaphoreProxy) proxyObject;
-////                        if (instanceFilterSemaphore.visible(semaphoreProxy.getName())) {
-////                            memberState.putLocalSemaphoreStats(semaphoreProxy.getName(), (LocalSemaphoreStatsImpl) semaphoreProxy.getLocalSemaphoreStats());
-////                            count++;
-////                        }
-////                    }
+    private void createMemState(MemberStateImpl memberState,                //TODO @msk  ???
+                                Collection<DistributedObject> proxyObjects) {
+        int count = 0;
+        for (DistributedObject proxyObject : proxyObjects) {
+            if (count < maxVisibleInstanceCount) {
+                if (proxyObject instanceof MapProxy) {
+                    MapProxy mapProxy = (MapProxy) proxyObject;
+                    if (instanceFilterMap.visible(mapProxy.getName())) {
+                        memberState.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
+                        count++;
+                    }
+                } else if (proxyObject instanceof QueueProxy) {
+                    QueueProxy qProxy = (QueueProxy) proxyObject;
+                    if (instanceFilterQueue.visible(qProxy.getName())) {
+                        memberState.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
+                        count++;
+                    }
+                } else if (proxyObject instanceof TopicProxy) {
+                    TopicProxy topicProxy = (TopicProxy) proxyObject;
+                    if (instanceFilterTopic.visible(topicProxy.getName())) {
+                        memberState.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
+                        count++;
+                    }
+                } else if (proxyObject instanceof ObjectMultiMapProxy) {
+                    ObjectMultiMapProxy multiMapProxy = (ObjectMultiMapProxy) proxyObject;
+                    if (instanceFilterTopic.visible(multiMapProxy.getName())) {
+                        memberState.putLocalMultiMapStats(multiMapProxy.getName(), (LocalMapStatsImpl) multiMapProxy.getLocalMultiMapStats());
+                        count++;
+                    }
+                } else if (proxyObject instanceof ExecutorServiceProxy) {
+                    ExecutorServiceProxy executorServiceProxy = (ExecutorServiceProxy) proxyObject;
+//                    if (instanceFilterTopic.visible(multiMapProxy.getName())) {
+                    memberState.putLocalExecutorStats(executorServiceProxy.getName(), (LocalExecutorStatsImpl) executorServiceProxy.getLocalExecutorStats());
+                    count++;
+//                    }
+                }
+//                     else if (proxyObject instanceof  AtomicLongProxy) {
+//                        AtomicLongProxy atomicLongProxy = (AtomicLongProxy) proxyObject;
+//                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
+//                            memberState.putLocalAtomicNumberStats(atomicLongProxy.getName(), (LocalAtomicLongStatsImpl) atomicLongProxy.getLocalAtomicNumberStats());
+//                            count++;
+//                        }
+//                    }
+//                else if (proxyObject instanceof CountDownLatchProxy) {
+//                    CountDownLatchProxy cdlProxy = (CountDownLatchProxy) proxyObject;
+//                    if (instanceFilterCountDownLatch.visible(cdlProxy.getName())) {
+//                        memberState.putLocalCountDownLatchStats(cdlProxy.getName(), (LocalCountDownLatchStatsImpl) cdlProxy.getLocalCountDownLatchStats());
+//                        count++;
+//                    }
+//                    } else if (proxyObject instanceof SemaphoreProxy) {
+//                        SemaphoreProxy semaphoreProxy = (SemaphoreProxy) proxyObject;
+//                        if (instanceFilterSemaphore.visible(semaphoreProxy.getName())) {
+//                            memberState.putLocalSemaphoreStats(semaphoreProxy.getName(), (LocalSemaphoreStatsImpl) semaphoreProxy.getLocalSemaphoreStats());
+//                            count++;
+//                        }
+//                    }
 //                }
 //                it.remove();
-//            }
-//        }
-//    }
-//    private List<String> getExecutorNames() {
-//        ExecutorManager executorManager = factory.node.executorManager;
-//        ExecutorManager executorManager = instance.node.executorManager;
-//        List<String> executorNames = new ArrayList<String>(executorManager.getExecutorNames());
-//        Collections.sort(executorNames);
-//        return executorNames;
-//    }
-
-//    private Set<String> getLongInstanceNames() {
-//        Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
-//        Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
-//        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MAP);
-//        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.MULTIMAP);
-//        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.QUEUE);
-//        collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.TOPIC);
-//        // uncomment when client changes are made
-//        // collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.ATOMIC_NUMBER);
-//        // collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.COUNT_DOWN_LATCH);
-//        // collectInstanceNames(setLongInstanceNames, proxyObjects.iterator(), InstanceType.SEMAPHORE);
-//        return setLongInstanceNames;
-//    }
-//
-//    private void collectInstanceNames(Set<String> setLongInstanceNames,
-//                                      Iterator<DistributedObject> it,
-//                                      DistributedObject.InstanceType type) {
-//        int count = 0;
-//        while (it.hasNext()) {
-//            DistributedObject proxyObject = it.next();
-//            if (proxyObject.getInstanceType() == type) {
-//                if (count < maxVisibleInstanceCount) {
-////                    if (type.isMap()) {
-////                        MProxy mapProxy = (MProxy) proxyObject;
-////                        if (instanceFilterMap.visible(mapProxy.getName())) {
-////                            setLongInstanceNames.add(mapProxy.getLongName());
-////                            count++;
-////                        }
-////                    } else if (type.isQueue()) {
-////                        QProxy qProxy = (QProxy) proxyObject;
-////                        if (instanceFilterQueue.visible(qProxy.getName())) {
-////                            setLongInstanceNames.add(qProxy.getLongName());
-////                            count++;
-////                        }
-////                    } else if (type.isTopic()) {
-////                        TopicProxy topicProxy = (TopicProxy) proxyObject;
-////                        if (instanceFilterTopic.visible(topicProxy.getName())) {
-////                            setLongInstanceNames.add(topicProxy.getLongName());
-////                            count++;
-////                        }
-////                    } else if (type.isAtomicNumber()) {
-////                        AtomicLongProxy atomicLongProxy = (AtomicLongProxy) proxyObject;
-////                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
-////                            setLongInstanceNames.add(atomicLongProxy.getLongName());
-////                            count++;
-////                        }
-////                    } else if (type.isCountDownLatch()) {
-////                        CountDownLatchProxy cdlProxy = (CountDownLatchProxy) proxyObject;
-////                        if (instanceFilterCountDownLatch.visible(cdlProxy.getName())) {
-////                            setLongInstanceNames.add(cdlProxy.getLongName());
-////                            count++;
-////                        }
-////                    } else if (type.isSemaphore()) {
-////                        SemaphoreProxy semaphoreProxy = (SemaphoreProxy) proxyObject;
-////                        if (instanceFilterSemaphore.visible(semaphoreProxy.getName())) {
-////                            setLongInstanceNames.add(semaphoreProxy.getLongName());
-////                            count++;
-////                        }
-////                    }
-//                }
-//                it.remove();
-//            }
-//        }
-//    }
+            }
+        }
+    }
 
     Object call(Address address, Callable callable) {
         Set<Member> members = instance.getCluster().getMembers();
         for (Member member : members) {
             if (address.equals(((MemberImpl) member).getAddress())) {
-//                DistributedTask task = new DistributedTask(callable, member);
+//                DistributedTask task = new DistributedTask(callable, member);   //TODO @msk  ???
 //                return executeTaskAndGet(task);
             }
         }
@@ -529,9 +358,78 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     Object call(Callable callable) {
-//        DistributedTask task = new DistributedTask(callable);
+//        DistributedTask task = new DistributedTask(callable);     //TODO @msk  ???
 //        return executeTaskAndGet(task);
         return null;
+    }
+
+    private Set<String> getLongInstanceNames() {
+        Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
+        Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
+        collectInstanceNames(setLongInstanceNames, proxyObjects);
+        return setLongInstanceNames;
+    }
+
+    //
+    private void collectInstanceNames(Set<String> setLongInstanceNames,
+                                      Collection<DistributedObject> proxyObjects) {
+        int count = 0;
+        for (DistributedObject proxyObject : proxyObjects) {
+            if (count < maxVisibleInstanceCount) {
+                if (proxyObject instanceof ObjectMultiMapProxy) {
+                    ObjectMultiMapProxy multiMapProxy = (ObjectMultiMapProxy) proxyObject;
+                    if (instanceFilterMap.visible(multiMapProxy.getName())) {
+                        setLongInstanceNames.add("m:" + multiMapProxy.getName());
+                        count++;
+                    }
+                } else if (proxyObject instanceof MapProxy) {
+                    MapProxy mapProxy = (MapProxy) proxyObject;
+                    if (instanceFilterMap.visible(mapProxy.getName())) {
+                        setLongInstanceNames.add("c:" + mapProxy.getName());
+                        count++;
+                    }
+                } else if (proxyObject instanceof QueueProxy) {
+                    QueueProxy qProxy = (QueueProxy) proxyObject;
+                    if (instanceFilterQueue.visible(qProxy.getName())) {
+                        setLongInstanceNames.add("q:" + qProxy.getName());
+                        count++;
+                    }
+                } else if (proxyObject instanceof TopicProxy) {
+                    TopicProxy topicProxy = (TopicProxy) proxyObject;
+                    if (instanceFilterTopic.visible(topicProxy.getName())) {
+                        setLongInstanceNames.add("t:" + topicProxy.getName());
+                        count++;
+                    }
+                } else if (proxyObject instanceof ExecutorServiceProxy) {
+                    ExecutorServiceProxy executorServiceProxy = (ExecutorServiceProxy) proxyObject;
+//                    if (instanceFilterTopic.visible(topicProxy.getName())) {
+                    setLongInstanceNames.add("e:" + executorServiceProxy.getName());
+                    count++;
+//                    }
+                }
+//                    else if (type.isAtomicNumber()) {
+//                        AtomicLongProxy atomicLongProxy = (AtomicLongProxy) proxyObject;
+//                        if (instanceFilterAtomicNumber.visible(atomicLongProxy.getName())) {
+//                            setLongInstanceNames.add(atomicLongProxy.getLongName());
+//                            count++;
+//                        }
+//                    } else if (type.isCountDownLatch()) {
+//                        CountDownLatchProxy cdlProxy = (CountDownLatchProxy) proxyObject;
+//                        if (instanceFilterCountDownLatch.visible(cdlProxy.getName())) {
+//                            setLongInstanceNames.add(cdlProxy.getLongName());
+//                            count++;
+//                        }
+//                    } else if (type.isSemaphore()) {
+//                        SemaphoreProxy semaphoreProxy = (SemaphoreProxy) proxyObject;
+//                        if (instanceFilterSemaphore.visible(semaphoreProxy.getName())) {
+//                            setLongInstanceNames.add(semaphoreProxy.getLongName());
+//                            count++;
+//                        }
+//                    }
+//                    }
+//                it.remove();
+            }
+        }
     }
 
     Collection callOnMembers(Set<Address> addresses, Callable callable) {
@@ -551,27 +449,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     private Collection callOnMembers0(Set<Member> members, Callable callable) {
-//        MultiTask task = new MultiTask(callable, members);
+//        MultiTask task = new MultiTask(callable, members);             //TODO @msk  ???
 //        return (Collection) executeTaskAndGet(task);
         return null;
     }
-
-//    private Object executeTaskAndGet(final DistributedTask task) {
-//        try {
-//            instance.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
-//            try {
-//                return task.get(3, TimeUnit.SECONDS);
-//            } catch (Throwable e) {
-//                logger.log(Level.FINEST, e.getMessage(), e);
-//                return null;
-//            }
-//        } catch (Throwable e) {
-//            if (running.get() && instance.node.isActive()) {
-//                logger.log(Level.WARNING, e.getMessage(), e);
-//            }
-//            return null;
-//        }
-//    }
 
     private TimedMemberState getTimedMemberState() {
         if (running.get()) {
@@ -589,10 +470,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     timedMemberState.getMemberList().add(address.getHost() + ":" + address.getPort());
                 }
             }
-//            timedMemberState.setExecutorList(getExecutorNames());
             timedMemberState.setMemberState(memberState);
             timedMemberState.setClusterName(groupConfig.getName());
-//            timedMemberState.setInstanceNames(getLongInstanceNames());
+            timedMemberState.setInstanceNames(getLongInstanceNames());
             return timedMemberState;
         }
         return null;
@@ -602,8 +482,166 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         return instance;
     }
 
+//    private Object executeTaskAndGet(final DistributedTask task) {      //TODO @msk  ???
+//        try {
+//            instance.getExecutorService(MANAGEMENT_EXECUTOR).execute(task);
+//            try {
+//                return task.get(3, TimeUnit.SECONDS);
+//            } catch (Throwable e) {
+//                logger.log(Level.FINEST, e.getMessage(), e);
+//                return null;
+//            }
+//        } catch (Throwable e) {
+//            if (running.get() && instance.node.isActive()) {
+//                logger.log(Level.WARNING, e.getMessage(), e);
+//            }
+//            return null;
+//        }
+//    }
+
     ConsoleCommandHandler getCommandHandler() {
         return commandHandler;
+    }
+
+    class StateSender extends Thread {
+        StateSender() {
+            super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
+        }
+
+        public void run() {
+            if (webServerUrl == null) {
+                logger.log(Level.WARNING, "Web server url is null!");
+                return;
+            }
+            try {
+                while (running.get()) {
+                    if (versionMismatch) {
+                        Thread.sleep(1000 * 60);
+                        versionMismatch = false;
+                    }
+                    try {
+                        URL url = new URL(webServerUrl + "collector.do");
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setDoOutput(true);
+                        connection.setRequestMethod("POST");
+                        connection.setConnectTimeout(1000);
+                        connection.setReadTimeout(1000);
+                        final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                        final ObjectDataOutputWrapper wrappedOut = new ObjectDataOutputWrapper(out);
+                        TimedMemberState ts = getTimedMemberState();
+                        out.writeUTF(instance.node.initializer.getVersion());
+//                        factory.node.getThisAddress().writeData(out);    //TODO @msk  ???
+                        instance.node.address.writeData(wrappedOut);
+                        out.writeUTF(instance.getConfig().getGroupConfig().getName());
+//                        ts.writeData(out);//TODO @msk  ???
+                        ts.writeData(wrappedOut);
+                        out.flush();
+                        connection.getInputStream();
+
+                    } catch (Exception e) {
+                        logger.log(Level.FINEST, e.getMessage(), e);
+                    }
+                    Thread.sleep(updateIntervalMs);
+                }
+            } catch (Throwable throwable) {
+                if (throwable instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
+                }
+                logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
+                shutdown();
+            }
+        }
+    }
+
+    class TaskPoller extends Thread {
+        final ConsoleRequest[] consoleRequests = new ConsoleRequest[20];
+
+        TaskPoller() {
+            super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
+            register(new RuntimeStateRequest());
+            register(new ThreadDumpRequest());
+            register(new ExecuteScriptRequest());
+            register(new EvictLocalMapRequest());
+            register(new ConsoleCommandRequest());
+            register(new MapConfigRequest());
+//            register(new DetectDeadlockRequest());
+            register(new MemberConfigRequest());
+            register(new ClusterPropsRequest());
+            register(new SetLogLevelRequest());
+            register(new GetLogLevelRequest());
+            register(new GetVersionRequest());
+            register(new GetLogsRequest());
+            register(new RunGcRequest());
+            register(new GetMemberSystemPropertiesRequest());
+            register(new GetMapEntryRequest());
+            register(new VersionMismatchLogRequest());
+            register(new ShutdownMemberRequest());
+            register(new RestartMemberRequest());
+        }
+
+        public void register(ConsoleRequest consoleRequest) {
+            consoleRequests[consoleRequest.getType()] = consoleRequest;
+        }
+
+        public void sendResponse(int taskId, ConsoleRequest request) {
+            try {
+                URL url = new URL(webServerUrl + "putResponse.do");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoOutput(true);
+                connection.setRequestMethod("POST");
+                connection.setConnectTimeout(2000);
+                connection.setReadTimeout(2000);
+                OutputStream outputStream = connection.getOutputStream();
+                DataOutputStream output = new DataOutputStream(outputStream);
+                output.writeInt(taskId);
+                output.writeInt(request.getType());
+//                request.writeResponse(ManagementCenterService.this, output);  //TODO @msk  ???
+                request.writeResponse(ManagementCenterService.this, new ObjectDataOutputWrapper(output));
+                connection.getInputStream();
+            } catch (Exception e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
+            }
+        }
+
+        public void run() {
+            if (webServerUrl == null) {
+                logger.log(Level.WARNING, "Web server url is null!");
+                return;
+            }
+            try {
+                Random rand = new Random();
+                Address address = ((MemberImpl) instance.node.getClusterService().getLocalMember()).getAddress();
+                GroupConfig groupConfig = instance.getConfig().getGroupConfig();
+                while (running.get()) {
+                    try {
+                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
+                                + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setRequestProperty("Connection", "keep-alive");
+                        InputStream inputStream = connection.getInputStream();
+                        DataInputStream input = new DataInputStream(inputStream);
+                        final int taskId = input.readInt();
+                        final int requestType = input.readInt();
+                        if (taskId > 0 && requestType < consoleRequests.length) {
+                            final ConsoleRequest request = consoleRequests[requestType];
+                            if (request != null) {
+//                                request.readData(input); //TODO @msk  ???
+                                request.readData(new ObjectDataInputWrapper(input));
+                                sendResponse(taskId, request);
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.log(Level.FINEST, e.getMessage(), e);
+                    }
+                    Thread.sleep(700 + rand.nextInt(300));
+                }
+            } catch (Throwable throwable) {
+                if (throwable instanceof OutOfMemoryError) {
+                    OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
+                }
+                logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
+            }
+        }
     }
 
     class StatsInstanceFilter {

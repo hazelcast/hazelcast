@@ -38,13 +38,14 @@ public class FastExecutor implements Executor {
     private final long keepAliveMillis;
     private final boolean allowCoreThreadTimeout;
     private final Lock lock = new ReentrantLock();
-    private final NewThreadInterceptor interceptor = null; // TODO: for future use.
+
+    private volatile WorkerLifecycleInterceptor interceptor;
     private volatile int activeThreadCount;
     private volatile boolean live = true;
 
     public FastExecutor(int coreThreadSize, String namePrefix, ThreadFactory threadFactory) {
         this(coreThreadSize, coreThreadSize * 20, Math.max(Integer.MAX_VALUE, coreThreadSize * (1 << 16)),
-                500L, namePrefix, threadFactory, TimeUnit.MINUTES.toMillis(5), false, true);
+                500L, namePrefix, threadFactory, TimeUnit.SECONDS.toMillis(60), false, true);
     }
 
     public FastExecutor(int coreThreadSize, int maxThreadSize, int queueCapacity,
@@ -64,7 +65,7 @@ public class FastExecutor implements Executor {
             t.start();
         }
         for (int i = 0; i < coreThreadSize; i++) {
-            addThread(startCoreThreads);
+            addWorker(startCoreThreads);
         }
     }
 
@@ -96,7 +97,7 @@ public class FastExecutor implements Executor {
         threads.clear();
     }
 
-    private void addThread(boolean start) {
+    private void addWorker(boolean start) {
         lock.lock();
         try {
             final Worker worker = new Worker();
@@ -122,16 +123,19 @@ public class FastExecutor implements Executor {
                     if (task != null) {
                         task.run();
                     } else {
-                        final int activeCount = activeThreadCount;
-                        if (activeCount > coreThreadSize || allowCoreThreadTimeout) {
-                            lock.lockInterruptibly();
-                            try {
+                        lock.lockInterruptibly();
+                        try {
+                            if (activeThreadCount > coreThreadSize || allowCoreThreadTimeout) {
                                 threads.remove(currentThread);
                                 activeThreadCount--;
+                                final WorkerLifecycleInterceptor workerInterceptor = interceptor;
+                                if (workerInterceptor != null) {
+                                    workerInterceptor.afterWorkerTerminate();
+                                }
                                 return;
-                            } finally {
-                                lock.unlock();
                             }
+                        } finally {
+                            lock.unlock();
                         }
                     }
                 } catch (InterruptedException e) {
@@ -144,28 +148,28 @@ public class FastExecutor implements Executor {
     private class BacklogDetector implements Runnable {
 
         public void run() {
-            final NewThreadInterceptor threadInterceptor = interceptor;
             long currentBacklogInterval = backlogInterval;
             final Thread thread = Thread.currentThread();
+            int k = 0;
             while (!thread.isInterrupted() && live) {
                 long sleep = 100;
                 final WorkerTask task = queue.peek();
                 if (task != null) {
                     if (task.creationTime + currentBacklogInterval < Clock.currentTimeMillis()) {
                         if (activeThreadCount < maxThreadSize) {
-                            if (threadInterceptor != null) {
-                                threadInterceptor.beforeNewThread();
+                            final WorkerLifecycleInterceptor workerInterceptor = interceptor;
+                            if (workerInterceptor != null) {
+                                workerInterceptor.beforeWorkerStart();
                             }
-                            addThread(true);
-                            // increase backlog check interval on each thread creation
-                            currentBacklogInterval += 100;
-                        } else {
-                            sleep = 1000;
+                            addWorker(true);
                         }
                     }
                 }
                 try {
                     Thread.sleep(sleep);
+                    if (k++ % 1000 == 0) {
+                        System.err.println("DEBUG: Current operation thread count-> " + activeThreadCount);
+                    }
                 } catch (InterruptedException e) {
                     return;
                 }
@@ -186,7 +190,28 @@ public class FastExecutor implements Executor {
         }
     }
 
-    public interface NewThreadInterceptor {
-        boolean beforeNewThread();
+    public void setInterceptor(WorkerLifecycleInterceptor interceptor) {
+        this.interceptor = interceptor;
+    }
+
+    public int getCoreThreadSize() {
+        return coreThreadSize;
+    }
+
+    public int getMaxThreadSize() {
+        return maxThreadSize;
+    }
+
+    public long getKeepAliveMillis() {
+        return keepAliveMillis;
+    }
+
+    public int getActiveThreadCount() {
+        return activeThreadCount;
+    }
+
+    public interface WorkerLifecycleInterceptor {
+        void beforeWorkerStart();
+        void afterWorkerTerminate();
     }
 }

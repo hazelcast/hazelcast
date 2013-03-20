@@ -44,7 +44,6 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
 
     TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
-        service.getTopicStatsContainer(name);
         this.name = name;
         eventService = nodeEngine.getEventService();
 

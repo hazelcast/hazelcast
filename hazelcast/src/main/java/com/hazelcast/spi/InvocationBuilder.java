@@ -31,7 +31,7 @@ public class InvocationBuilder {
     private final Address target;
     private long callTimeout = -1L;
     private int replicaIndex = 0;
-    private int tryCount = 100;
+    private int tryCount = 250;
     private long tryPauseMillis = 500;
 
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {

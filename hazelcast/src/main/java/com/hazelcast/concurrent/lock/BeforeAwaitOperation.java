@@ -40,7 +40,7 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
     }
 
     public void beforeRun() throws Exception {
-        final LockStore lockStore = getLockStore();
+        final LockStoreImpl lockStore = getLockStore();
         boolean isLockOwner = lockStore.isLocked(key) && lockStore.canAcquireLock(key, getCallerUuid(), threadId);
         if (!isLockOwner) {
             throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
@@ -48,7 +48,7 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
     }
 
     public void run() throws Exception {
-        final LockStore lockStore = getLockStore();
+        final LockStoreImpl lockStore = getLockStore();
         lockStore.addAwait(key, conditionId, getCallerUuid(), threadId);
         lockStore.unlock(key, getCallerUuid(), threadId);
     }

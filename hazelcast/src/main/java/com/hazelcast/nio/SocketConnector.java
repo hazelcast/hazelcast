@@ -78,7 +78,7 @@ public class SocketConnector implements Runnable {
                         error = e;
                     }
                 }
-                if (!connected) {
+                if (!connected && error != null) {
                     // could not connect any of addresses
                     throw error;
                 }
@@ -97,7 +97,8 @@ public class SocketConnector implements Runnable {
         final String message = "Connecting to " + socketAddress
                                + ", timeout: " + timeout
                                + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
-        log(Level.INFO, message);
+        final Level level = silent ? Level.FINEST : Level.INFO;
+        log(level, message);
         try {
             socketChannel.configureBlocking(true);
             if (timeout > 0) {
@@ -119,7 +120,6 @@ public class SocketConnector implements Runnable {
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {
             closeSocket(socketChannel);
-            final Level level = silent ? Level.FINEST : Level.INFO;
             log(level, "Could not connect to: "
                                       + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                                       + "[" + e.getMessage() + "]");

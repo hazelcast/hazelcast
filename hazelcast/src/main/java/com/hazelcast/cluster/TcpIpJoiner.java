@@ -359,7 +359,6 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
-//        possibleAddresses.addAll(networkConfig.getJoin().getTcpIpConfig().getAddresses());
         return possibleAddresses;
     }
 
@@ -398,7 +397,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         return possibleMembers;
     }
 
-    public void searchForOtherClusters(SplitBrainHandler splitBrainHandler) {
+    public void searchForOtherClusters() {
         final Collection<Address> colPossibleAddresses;
         try {
             colPossibleAddresses = getPossibleAddresses();

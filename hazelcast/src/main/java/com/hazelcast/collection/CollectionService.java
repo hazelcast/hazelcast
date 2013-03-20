@@ -217,17 +217,17 @@ public class CollectionService implements ManagedService, RemoteService, Members
         int replicaIndex = event.getReplicaIndex();
         CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
         Map<CollectionProxyId, Map> map = new HashMap<CollectionProxyId, Map>(partitionContainer.containerMap.size());
-        for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
-            CollectionProxyId proxyId = entry.getKey();
-            CollectionContainer container = entry.getValue();
-            if (container.config.getTotalBackupCount() < replicaIndex) {
-                continue;
-            }
-            map.put(proxyId, container.collections);
-        }
-        if (map.isEmpty()) {
-            return null;
-        }
+//        for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
+//            CollectionProxyId proxyId = entry.getKey();
+//            CollectionContainer container = entry.getValue();
+//            if (container.config.getTotalBackupCount() < replicaIndex) {
+//                continue;
+//            }
+//            map.put(proxyId, container.collections);
+//        }
+//        if (map.isEmpty()) {
+//            return null;
+//        }
         return new CollectionMigrationOperation(map);
     }
 

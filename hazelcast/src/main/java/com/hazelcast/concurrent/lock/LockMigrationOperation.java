@@ -30,16 +30,16 @@ import java.util.LinkedList;
 
 public class LockMigrationOperation extends AbstractOperation {
 
-    private final Collection<LockStore> locks = new LinkedList<LockStore>();
+    private final Collection<LockStoreImpl> locks = new LinkedList<LockStoreImpl>();
 
     public LockMigrationOperation() {
     }
 
     public LockMigrationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        final Collection<LockStore> allLockStores = container.getLockStores();
+        final Collection<LockStoreImpl> allLockStores = container.getLockStores();
 
-        for (LockStore ls : allLockStores) {
+        for (LockStoreImpl ls : allLockStores) {
             if (ls.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
@@ -50,7 +50,7 @@ public class LockMigrationOperation extends AbstractOperation {
     public void run() {
         LockService lockService = getService();
         LockStoreContainer container = lockService.getLockContainer(getPartitionId());
-        for (LockStore ls : locks) {
+        for (LockStoreImpl ls : locks) {
             container.put(ls);
         }
     }
@@ -64,21 +64,21 @@ public class LockMigrationOperation extends AbstractOperation {
         int len = locks.size();
         out.writeInt(len);
         if (len > 0) {
-            for (LockStore ls : locks) {
+            for (LockStoreImpl ls : locks) {
                 ls.writeData(out);
             }
         }
     }
 
     protected void readInternal(final ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         int len = in.readInt();
         if (len > 0) {
-            LockStore ls = new LockStore();
+            LockStoreImpl ls = new LockStoreImpl();
             ls.readData(in);
             locks.add(ls);
         }
     }
-
 
     public boolean isEmpty() {
         return locks.isEmpty();

@@ -38,7 +38,6 @@ import java.util.*;
 public class ClusterRuntimeState extends PartitionRuntimeState implements DataSerializable {
 
     private static final int LOCK_MAX_SIZE = 100;
-
     private int localMemberIndex;
     private Collection<ConnectionInfo> connectionInfos = new LinkedList<ConnectionInfo>();
     private List<LockInfo> lockInfos = new ArrayList<LockInfo>();
@@ -79,7 +78,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     private void setLocks(final Collection<Record> lockedRecords, final Map<Address, Integer> addressIndexes) {
-//        final long now = Clock.currentTimeMillis();
+//        final long now = Clock.currentTimeMillis();  //TODO @msk ???
 //        for (Record record : lockedRecords) {
 //            if (record.isActive() && record.isValid(now) && record.isLocked()) {
 //                Address owner = record.getLockAddress();

@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
