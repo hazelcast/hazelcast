@@ -20,6 +20,9 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.EntryEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.client.util.EntryHolder;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
@@ -31,11 +34,13 @@ import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.Clock;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.valueOf;
 
@@ -44,11 +49,168 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     final private String name;
     final HazelcastClient client;
     final Map<EntryListener<K, V>, Map<Object, ListenerThread>> listenerMap = new IdentityHashMap<EntryListener<K, V>, Map<Object, ListenerThread>>();
+    final NearCache<K, V> nearCache;
 
     public MapClientProxy(HazelcastClient client, String name) {
         this.name = name;
         this.client = client;
         this.proxyHelper = new ProxyHelper(client);
+        NearCacheConfig nc = client.getClientConfig().getNearCacheConfig(name);
+        nearCache = (nc == null) ? null : new NearCache<K, V>(this, nc);
+    }
+
+    class NearCache<K, V> {
+
+        final int evictionPercentage = 20;
+        final int cleanupInterval = 5000;
+        volatile long lastCleanup;
+        final MapConfig.EvictionPolicy evictionPolicy;
+        final int maxSize;
+        final int timeToLiveMillis;
+        final int maxIdleMillis;
+        final boolean invalidateOnChange;
+        final ConcurrentMap<Object, CacheRecord> cache = new ConcurrentHashMap<Object, CacheRecord>();
+        final CacheRecord NULLOBJECT = new CacheRecord(null, null);
+        final AtomicBoolean canCleanUp = new AtomicBoolean(true);
+        final AtomicBoolean canEvict = new AtomicBoolean(true);
+        final ExecutorService ex = Executors.newFixedThreadPool(2);
+
+        public NearCache(MapClientProxy<K, V> proxy, NearCacheConfig nc) {
+            this.timeToLiveMillis = nc.getTimeToLiveSeconds() * 1000;
+            this.maxSize = nc.getMaxSize();
+            this.evictionPolicy = MapConfig.EvictionPolicy.valueOf(nc.getEvictionPolicy());
+            this.maxIdleMillis = nc.getMaxIdleSeconds() * 1000;
+            this.invalidateOnChange = nc.isInvalidateOnChange();
+            if (invalidateOnChange) {
+                proxy.addEntryListener(new EntryListener<K, V>() {
+                    @Override
+                    public void entryAdded(EntryEvent<K, V> kvEntryEvent) {
+                        invalidate(kvEntryEvent.getKey());
+                    }
+
+                    @Override
+                    public void entryRemoved(EntryEvent<K, V> kvEntryEvent) {
+                        invalidate(kvEntryEvent.getKey());
+                    }
+
+                    @Override
+                    public void entryUpdated(EntryEvent<K, V> kvEntryEvent) {
+                        invalidate(kvEntryEvent.getKey());
+                    }
+
+                    @Override
+                    public void entryEvicted(EntryEvent<K, V> kvEntryEvent) {
+                        invalidate(kvEntryEvent.getKey());
+                    }
+                }, false);
+            }
+        }
+
+        public V get(Object key) {
+            fireCleanup();
+            CacheRecord record = cache.get(key);
+            if (record != null) {
+                record.access();
+                if (record.expired()) {
+                    cache.remove(key);
+                    return null;
+                }
+                return (V) record.value;
+            } else {
+                return null;
+            }
+        }
+
+        public void put(Object key, V value) {
+            fireCleanup();
+            if (evictionPolicy == MapConfig.EvictionPolicy.NONE && cache.size() >= maxSize) {
+                return;
+            }
+            if (evictionPolicy != MapConfig.EvictionPolicy.NONE && cache.size() >= maxSize) {
+                fireEvictCache();
+            }
+            if (value == null) cache.put(key, NULLOBJECT);
+            else cache.put(key, new CacheRecord(key, value));
+        }
+
+        public void invalidate(K key) {
+            cache.remove(key);
+        }
+
+        void clear() {
+            cache.clear();
+        }
+
+        private void fireEvictCache() {
+            if (canEvict.compareAndSet(true, false)) {
+                ex.execute(new Runnable() {
+                    public void run() {
+                        List<CacheRecord> values = new ArrayList(cache.values());
+                        Collections.sort(values);
+                        int evictSize = Math.min(values.size(), cache.size() * evictionPercentage / 100);
+                        for (int i = 0; i < evictSize; i++) {
+                            cache.remove(values.get(i).key);
+                        }
+                        canEvict.set(true);
+                    }
+                });
+            }
+        }
+
+        private void fireCleanup() {
+            if (Clock.currentTimeMillis() < (lastCleanup + cleanupInterval))
+                return;
+            if (canCleanUp.compareAndSet(true, false)) {
+                ex.execute(new Runnable() {
+                    public void run() {
+                        lastCleanup = Clock.currentTimeMillis();
+                        Iterator<Map.Entry<Object, CacheRecord>> iterator = cache.entrySet().iterator();
+                        while (iterator.hasNext()) {
+                            Map.Entry<Object, CacheRecord> entry = iterator.next();
+                            if (entry.getValue().expired()) {
+                                cache.remove(entry.getKey());
+                            }
+                        }
+                        canCleanUp.set(true);
+                    }
+                });
+            }
+        }
+
+        class CacheRecord implements Comparable<CacheRecord> {
+            final Object key;
+            final Object value;
+            volatile long lastAccessTime;
+            final long creationTime;
+            final AtomicInteger hit;
+
+            CacheRecord(Object key, Object value) {
+                this.key = key;
+                this.value = value;
+                long time = Clock.currentTimeMillis();
+                this.lastAccessTime = time;
+                this.creationTime = time;
+                this.hit = new AtomicInteger(0);
+            }
+
+            void access() {
+                hit.incrementAndGet();
+                lastAccessTime = Clock.currentTimeMillis();
+            }
+
+            boolean expired() {
+                long time = Clock.currentTimeMillis();
+                return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis) || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
+            }
+
+            public int compareTo(CacheRecord o) {
+                if (evictionPolicy.equals("LRU"))
+                    return ((Long) this.lastAccessTime).compareTo((o.lastAccessTime));
+                else if (evictionPolicy.equals("LFU"))
+                    return ((Integer) this.hit.get()).compareTo((o.hit.get()));
+                return 0;
+            }
+        }
     }
 
     public void flush() {
@@ -315,8 +477,14 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
 
     public V get(Object key) {
         check(key);
+        if (nearCache != null) {
+            V cachedValue = nearCache.get(key);
+            if (cachedValue != null) return cachedValue;
+        }
         Data dKey = proxyHelper.toData(key);
-        return (V) proxyHelper.doCommandAsObject(dKey, Command.MGET, new String[]{getName()}, dKey);
+        V result = (V) proxyHelper.doCommandAsObject(dKey, Command.MGET, new String[]{getName()}, dKey);
+        if(nearCache!=null) nearCache.put(key, result);
+        return result;
     }
 
     public Map<K, V> getAll(Set<K> setKeys) {

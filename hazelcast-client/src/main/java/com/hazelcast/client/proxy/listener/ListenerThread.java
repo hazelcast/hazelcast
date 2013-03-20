@@ -17,15 +17,14 @@
 
 package com.hazelcast.client.proxy.listener;
 
-import com.hazelcast.client.Connection;
-import com.hazelcast.client.ProtocolReader;
-import com.hazelcast.client.ProtocolWriter;
+import com.hazelcast.client.connection.Connection;
+import com.hazelcast.client.connection.ProtocolReader;
+import com.hazelcast.client.connection.ProtocolWriter;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListenerThread extends Thread {

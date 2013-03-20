@@ -17,7 +17,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.Connection;
+import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.transaction.Transaction;
 

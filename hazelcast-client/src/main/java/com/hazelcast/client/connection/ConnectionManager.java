@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.connection;
 
+import com.hazelcast.client.Router;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.util.pool.ObjectPool;
 import com.hazelcast.client.util.pool.QueueBasedObjectPool;
@@ -36,6 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ConnectionManager {
     private final int poolSize;
+    private final int connectionTimeout;
     private final SerializationService serializationService;
     private final DefaultClientBinder binder;
     private final Router router;
@@ -44,6 +46,8 @@ public class ConnectionManager {
     private final Connection initialConnection;
     private final SocketInterceptor socketInterceptor;
     private final Lock lock = new ReentrantLock();
+    private HazelcastInstance hazelcastInstance;
+    private final HeartBeatChecker heartbeat;
 //    final AtomicLong waitCount = new AtomicLong(0l);
 
     public ConnectionManager(ClientConfig config, final SerializationService serializationService) {
@@ -53,10 +57,13 @@ public class ConnectionManager {
         router = config.getRouter();
         socketInterceptor = config.getSocketInterceptor();
         poolSize = config.getPoolSize();
+        connectionTimeout = config.getConnectionTimeout();
+        heartbeat = new HeartBeatChecker(config, serializationService);
     }
 
     public void init(HazelcastInstance hazelcast) {
         router.init(hazelcast);
+        this.hazelcastInstance = hazelcastInstance;
         initialized.set(true);
     }
 
@@ -106,6 +113,13 @@ public class ConnectionManager {
         //We will call it again, and hopefully at some time Router will give us the right target for the connection.
         if (connection == null) {
             Thread.sleep(1000);
+            return takeConnection(null);
+        }
+        if (!heartbeat.checkHeartBeat(connection)) {
+            try {
+                connection.close();
+            } catch (IOException e) {
+            }
             return takeConnection(null);
         }
         return connection;

@@ -17,7 +17,7 @@
 
 package com.hazelcast.client.proxy.listener;
 
-import com.hazelcast.client.Connection;
+import com.hazelcast.client.connection.Connection;
 import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.client.util.EntryHolder;
 import com.hazelcast.core.EntryEvent;

@@ -17,7 +17,7 @@
 
 package com.hazelcast.client.proxy.listener;
 
-import com.hazelcast.client.Connection;
+import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.proxy.PartitionClientProxy;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;

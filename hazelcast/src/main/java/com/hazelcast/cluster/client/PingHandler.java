@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package com.hazelcast.client;
+package com.hazelcast.cluster.client;
 
-public class NoMemberAvailableException extends ClusterClientException {
-    public NoMemberAvailableException() {
-        this("No cluster member available to connect");
-    }
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Protocol;
 
-    public NoMemberAvailableException(String message) {
-        super(message);
+public class PingHandler extends ClientCommandHandler{
+    @Override
+    public Protocol processCall(Node node, Protocol protocol) {
+        return protocol.success();
     }
 }

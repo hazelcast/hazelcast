@@ -16,14 +16,12 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.CollectionClientProxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.proxy.listener.ItemEventLRH;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.Member;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;

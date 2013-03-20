@@ -17,6 +17,10 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.*;
+import com.hazelcast.client.connection.Connection;
+import com.hazelcast.client.connection.ConnectionManager;
+import com.hazelcast.client.connection.ProtocolReader;
+import com.hazelcast.client.connection.ProtocolWriter;
 import com.hazelcast.client.proxy.listener.ListenerResponseHandler;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;

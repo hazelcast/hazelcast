@@ -184,7 +184,7 @@ public class Config implements DataSerializable {
         return config;
     }
 
-    private static <T> T lookupByPattern(Map<String, T> map, String name) {
+    public static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
             final Set<String> tNames = map.keySet();
