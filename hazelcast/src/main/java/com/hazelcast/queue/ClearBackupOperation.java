@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public class ClearBackupOperation extends QueueOperation implements BackupOperation {
 
-    private transient Set<Long> itemIdSet;
+    private Set<Long> itemIdSet;
 
     public ClearBackupOperation() {
     }

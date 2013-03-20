@@ -41,7 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 public class PartitionServiceImpl implements PartitionService, ManagedService,
-        EventPublishingService<MigrationEvent, MigrationListener> , ClientProtocolService {
+        EventPublishingService<MigrationEvent, MigrationListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:core:partitionService";
 
@@ -58,7 +58,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private final int partitionMigrationInterval;
     private final long partitionMigrationTimeout;
     private final int immediateBackupInterval;
-    private final PartitionServiceProxy proxy ;
+    private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
     private final AtomicInteger version = new AtomicInteger();
     private final BlockingQueue<Runnable> immediateTasksQueue = new LinkedBlockingQueue<Runnable>();
@@ -192,7 +192,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (node.isMaster() && node.isActive()) {
             if (sendingDiffs.get()) {
                 logger.log(Level.INFO, "MigrationService is already sending diffs for dead member, " +
-                                       "no need to initiate task!");
+                        "no need to initiate task!");
             } else {
                 // to avoid repartitioning during a migration process.
                 clearTaskQueues();
@@ -609,7 +609,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (node.isMaster() && node.isActive()) {
                 if ((!scheduledTasksQueue.isEmpty() || !immediateTasksQueue.isEmpty()) && migrationActive.get()) {
                     logger.log(Level.INFO, "Remaining migration tasks in queue => Immediate-Tasks: " + immediateTasksQueue.size()
-                                + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
+                            + ", Scheduled-Tasks: " + scheduledTasksQueue.size());
                 }
                 sendPartitionRuntimeState();
             }
@@ -998,6 +998,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private void clearTaskQueues() {
         immediateTasksQueue.clear();
         scheduledTasksQueue.clear();
+    }
+
+    public long getImmediateTasksCount() {
+        return immediateTasksQueue.size();
+    }
+
+    public long getScheduledTasksCount() {
+        return scheduledTasksQueue.size();
     }
 
     public PartitionServiceProxy getPartitionServiceProxy() {

@@ -34,19 +34,21 @@ public interface MemberState extends DataSerializable {
 
     LocalMapStats getLocalMultiMapStats(String mapName);
 
-    LocalExecutorStats getInternalExecutorStats(String name);
-
-    LocalExecutorStats getExternalExecutorStats(String name);
+//    LocalExecutorStats getInternalExecutorStats(String name);
+//
+//    LocalExecutorStats getExternalExecutorStats(String name);
 
     LocalQueueStats getLocalQueueStats(String queueName);
 
     LocalTopicStats getLocalTopicStats(String topicName);
 
+    LocalExecutorStats getLocalExecutorStats(String executorName);
+
     List<Integer> getPartitions();
 
-    LocalAtomicLongStats getLocalAtomicNumberStats(String queueName);
-
-    LocalCountDownLatchStats getLocalCountDownLatchStats(String queueName);
-
-    LocalSemaphoreStats getLocalSemaphoreStats(String queueName);
+//    LocalAtomicLongStats getLocalAtomicNumberStats(String queueName);
+//
+//    LocalCountDownLatchStats getLocalCountDownLatchStats(String queueName);
+//
+//    LocalSemaphoreStats getLocalSemaphoreStats(String queueName);
 }

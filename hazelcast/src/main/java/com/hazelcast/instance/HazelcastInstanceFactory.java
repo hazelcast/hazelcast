@@ -84,8 +84,8 @@ public class HazelcastInstanceFactory {
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
             INSTANCE_MAP.put(instanceName, proxy);
             final Node node = hazelcastInstance.node;
-            boolean firstMember = (node.getClusterService().getMembers().iterator().next().localMember());
-            int initialWaitSeconds = node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
+            final boolean firstMember = (node.getClusterService().getMembers().iterator().next().localMember());
+            final int initialWaitSeconds = node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
             if (initialWaitSeconds > 0) {
                 try {
                     Thread.sleep(initialWaitSeconds * 1000);
@@ -97,9 +97,11 @@ public class HazelcastInstanceFactory {
                 } catch (InterruptedException ignored) {
                 }
             }
-            int initialMinClusterSize = node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
-            while (node.getClusterService().getMembers().size() < initialMinClusterSize) {
+            final int initialMinClusterSize = node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
+            while (node.getClusterService().getSize() < initialMinClusterSize) {
                 try {
+                    hazelcastInstance.logger.log(Level.INFO, "HazelcastInstance waiting for cluster size of "
+                            + initialMinClusterSize);
                     //noinspection BusyWait
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
@@ -109,10 +111,10 @@ public class HazelcastInstanceFactory {
                 if (firstMember) {
                     node.partitionService.firstArrangement();
                 } else {
-                    Thread.sleep(4 * 1000);
+                    Thread.sleep(3 * 1000);
                 }
-                hazelcastInstance.logger.log(Level.INFO, "HazelcastInstance starting after waiting for cluster size of "
-                        + initialMinClusterSize);
+//                hazelcastInstance.logger.log(Level.INFO, "HazelcastInstance starting after waiting for cluster size of "
+//                        + initialMinClusterSize);
             }
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {

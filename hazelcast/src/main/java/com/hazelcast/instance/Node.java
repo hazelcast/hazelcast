@@ -112,7 +112,7 @@ public class Node {
 
     private final Joiner joiner;
 
-    final NodeInitializer initializer;
+    public final NodeInitializer initializer;
 
     private ManagementCenterService managementCenterService;
 

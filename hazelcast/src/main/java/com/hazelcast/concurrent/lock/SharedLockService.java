@@ -25,7 +25,7 @@ public interface SharedLockService extends SharedService {
 
     final static String SERVICE_NAME = "hz:impl:lockService";
 
-    LockStoreView createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount);
+    LockStore createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount);
 
     void destroyLockStore(int partitionId, ILockNamespace namespace);
 }

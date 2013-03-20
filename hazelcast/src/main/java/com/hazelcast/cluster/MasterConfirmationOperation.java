@@ -44,7 +44,7 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
         } else {
             logger.log(Level.WARNING, "MasterConfirmation has been received from " + endpoint
                                       + ", but it is not a member of this cluster!");
-            clusterService.invokeClusterOperation(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
+            getNodeEngine().getOperationService().send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
         }
     }
 

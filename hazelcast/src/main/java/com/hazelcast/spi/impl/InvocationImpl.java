@@ -64,7 +64,7 @@ abstract class InvocationImpl implements Future, Invocation {
     private volatile boolean done = false;
 
     private boolean remote = false;
-    private Callback<InvocationImpl> callback;  // TODO: @mm - do we need volatile?
+    private Callback<InvocationImpl> callback;
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout) {
@@ -107,16 +107,18 @@ abstract class InvocationImpl implements Future, Invocation {
         if (invokeCount > 0) {   // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
         }
-        final ThreadContext threadContext = ThreadContext.getOrCreate();
-        checkOperationType(op, threadContext);
         try {
+            final ThreadContext threadContext = ThreadContext.getOrCreate();
             OperationAccessor.setCallTimeout(op, callTimeout);
             op.setNodeEngine(nodeEngine).setServiceName(serviceName).setCallerAddress(nodeEngine.getThisAddress())
                     .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-            op.setCallerUuid(threadContext.getCallerUuid());
+            if (op.getCallerUuid() == null) {
+                op.setCallerUuid(threadContext.getCallerUuid());
+            }
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
+            checkOperationType(op, threadContext);
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
@@ -137,13 +139,23 @@ abstract class InvocationImpl implements Future, Invocation {
         final Address thisAddress = nodeEngine.getThisAddress();
         if (target == null) {
             if (isActive()) {
-                setResult(new WrongTargetException(thisAddress, target, partitionId, op.getClass().getName(), serviceName));
+                setResult(new WrongTargetException(thisAddress, target, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
                 setResult(new HazelcastInstanceNotActiveException());
             }
         } else if (!isJoinOperation(op) && nodeEngine.getClusterService().getMember(target) == null) {
             setResult(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
         } else {
+            if (op.getPartitionId() != partitionId) {
+                setResult(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+                        " is not equal to the partition id of invocation: " + partitionId));
+                return;
+            }
+            if (op.getReplicaIndex() != replicaIndex) {
+                setResult(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+                        " is not equal to the replica index of invocation: " + replicaIndex));
+                return;
+            }
             OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
             final OperationServiceImpl operationService = nodeEngine.operationService;
             if (thisAddress.equals(target)) {
@@ -227,7 +239,8 @@ abstract class InvocationImpl implements Future, Invocation {
                 if (interrupted != null) {
                     return interrupted;
                 }
-                final InvocationAction action = op.onException((Throwable) response);
+                final Throwable error = (Throwable) response;
+                final InvocationAction action = op.onException(error);
                 final int localInvokeCount = invokeCount;
                 if (action == InvocationAction.RETRY_INVOCATION && localInvokeCount < tryCount && timeout > 0) {
                     if (localInvokeCount > 3) {
@@ -240,14 +253,14 @@ abstract class InvocationImpl implements Future, Invocation {
                     timeout = decrementTimeout(timeout, tryPauseMillis);
                     // TODO: @mm - improve logging (see SystemLogService)
                     if (localInvokeCount > 5 && localInvokeCount % 10 == 0) {
-                        logger.log(Level.WARNING, "Retrying invocation: " + toString());
+                        logger.log(Level.WARNING, "Retrying invocation: " + toString() + ", Reason: " + error);
                     }
                     doInvoke();
                 } else if (action == InvocationAction.CONTINUE_WAIT) {
                     // continue;
                 } else {
                     if (remote) {
-                        ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+                        ExceptionUtil.fixRemoteStackTrace(error, Thread.currentThread().getStackTrace());
                     }
                     return response;
                 }

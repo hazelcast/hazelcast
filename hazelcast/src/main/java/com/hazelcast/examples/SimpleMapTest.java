@@ -17,7 +17,6 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -56,10 +55,7 @@ public class SimpleMapTest {
 
     static {
         System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.local.localAddress", "192.168.2.5");
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("hazelcast.lite.member", "false");
-//        System.setProperty("hazelcast.logging.type", "none");
     }
 
     public SimpleMapTest(final int threadCount, final int entryCount, final int valueSize,
@@ -74,7 +70,7 @@ public class SimpleMapTest {
 //        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        cfg.getNetworkConfig().getJoin().getTcpIpConfig().addMember("192.168.2.5");
+        cfg.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         cfg.getSerializationConfig().setPortableFactory(new PortableFactory() {
             public Portable create(int classId) {
                 return new PortableByteArray();
