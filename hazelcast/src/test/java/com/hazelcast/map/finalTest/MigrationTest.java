@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-public class MapMigrationTest {
+public class MigrationTest {
 
     final String mapName = "map";
 
@@ -49,7 +49,6 @@ public class MapMigrationTest {
 
     @Test
     public void testMapMigration() throws InterruptedException {
-
         StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
         Config cfg = new Config();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);

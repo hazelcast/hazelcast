@@ -473,6 +473,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
+    public void executeOnAllKeys(EntryProcessor entryProcessor) {
+        try {
+            PartitionWideEntryOperation operation = new PartitionWideEntryOperation(name, entryProcessor);
+            operation.setServiceName(SERVICE_NAME);
+            Map<Integer, Object> results = getNodeEngine().getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, operation);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
     protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();

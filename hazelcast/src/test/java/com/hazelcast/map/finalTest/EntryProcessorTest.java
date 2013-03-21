@@ -51,8 +51,6 @@ public class EntryProcessorTest {
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        instance1 = nodeFactory.newHazelcastInstance(cfg);
-        instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
         map.put(1, 1);
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
@@ -61,6 +59,58 @@ public class EntryProcessorTest {
         instance1.getLifecycleService().shutdown();
         instance2.getLifecycleService().shutdown();
     }
+
+
+    @Test
+    public void testMapEntryProcessorAllKeys() throws InterruptedException {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        int size = 100;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        map.executeOnAllKeys(entryProcessor);
+        for (int i = 0; i < size; i++) {
+            assertEquals(map.get(i), (Object) (i+1));
+        }
+        instance1.getLifecycleService().shutdown();
+        instance2.getLifecycleService().shutdown();
+    }
+
+
+    @Test
+    public void testBackupMapEntryProcessorAllKeys() throws InterruptedException {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        int size = 100;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        map.executeOnAllKeys(entryProcessor);
+        for (int i = 0; i < size; i++) {
+            assertEquals(map.get(i), (Object) (i+1));
+        }
+        instance1.getLifecycleService().shutdown();
+        Thread.sleep(1000);
+        IMap<Integer, Integer> map2 = instance2.getMap("testMapEntryProcessor");
+        for (int i = 0; i < size; i++) {
+            assertEquals(map2.get(i), (Object) (i+1));
+        }
+        instance2.getLifecycleService().shutdown();
+        instance3.getLifecycleService().shutdown();
+    }
+
 
 
     @Test

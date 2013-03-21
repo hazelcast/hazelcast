@@ -22,41 +22,46 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionLevelOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
-public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
+public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionLevelOperation {
 
     EntryProcessor entryProcessor;
 
-    transient Object response;
-    transient Map.Entry entry;
 
-    public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
-        super(name, dataKey);
+    public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
+        super(name);
         this.entryProcessor = entryProcessor;
     }
 
-    public EntryOperation() {
+    public PartitionWideEntryOperation() {
     }
 
     public void run() {
-        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
-        entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
-        response = mapService.toData(entryProcessor.process(entry));
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        Map.Entry entry;
+        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        ConcurrentMap<Data,Record> records = recordStore.getRecords();
+        for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
+            Data dataKey = recordEntry.getKey();
+            Record record = recordEntry.getValue();
+            entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
+            entryProcessor.process(entry);
+            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        }
     }
 
     public void afterRun() throws Exception {
         super.afterRun();
-        invalidateNearCaches();
     }
 
     @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
@@ -73,16 +78,12 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public Object getResponse() {
-        return response;
+        return true;
     }
 
     @Override
     public String toString() {
-        return "EntryOperation{}";
-    }
-
-    public Operation getBackupOperation() {
-        return new EntryBackupOperation(name, dataKey, entryProcessor.getBackupProcessor());
+        return "PartitionWideEntryOperation{}";
     }
 
     public boolean shouldBackup() {
@@ -91,6 +92,11 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     public int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new PartitionWideEntryBackupOperation(name, entryProcessor.getBackupProcessor());
     }
 
     public int getSyncBackupCount() {
