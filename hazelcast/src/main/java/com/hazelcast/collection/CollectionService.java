@@ -358,7 +358,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             }
             if (partitionInfo.getOwner().equals(thisAddress)) {
                 stats.setLastAccessTime(collectionContainer.getLastAccessTime());
-                stats.setLastUpdateTime(collectionContainer.getLastUpdateTime());
+//                stats.setLastUpdateTime(collectionContainer.getLastUpdateTime());//TODO @msk last update time
                 creationTime = Math.min(creationTime, collectionContainer.getCreationTime());
                 lockedEntryCount += collectionContainer.getLockedCount();
                 for (CollectionWrapper wrapper : collectionContainer.collections.values()) {

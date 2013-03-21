@@ -67,12 +67,12 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     long getLastAccessTime();
 
-    /**
-     * Returns the last update time of the locally owned entries.
-     *
-     * @return last update time.
-     */
-    long getLastUpdateTime();
+//    /**
+//     * Returns the last update time of the locally owned entries.
+//     *
+//     * @return last update time.
+//     */
+//    long getLastUpdateTime();
 
     /**
      * Returns the number of hits (reads) of the locally owned entries.
@@ -97,10 +97,9 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getDirtyEntryCount();
 
     /**
-     * //     * Returns the number of put operations
-     * //     *
-     * //     * @return number of put operations
-     * //
+     * Returns the number of put operations
+     *
+     * @return number of put operations
      */
     public long getPutCount();
 
@@ -131,27 +130,6 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return
      */
     public long getTotalRemoveLatency();
-
-    /**
-     * Returns the max latency of put operations in this period.
-     *
-     * @return
-     */
-    public long getMaxPutLatency();
-
-    /**
-     * Returns the max latency of get operations in this period.
-     *
-     * @return
-     */
-    public long getMaxGetLatency();
-
-    /**
-     * Returns the max latency of remove operations in this period.
-     *
-     * @return
-     */
-    public long getMaxRemoveLatency();
 
     /**
      * Returns the number of Remove operations

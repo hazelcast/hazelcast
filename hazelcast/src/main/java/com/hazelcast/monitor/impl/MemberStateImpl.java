@@ -54,26 +54,26 @@ public class MemberStateImpl implements MemberState {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
-//        out.writeInt(multiMapStats.size());
-//        for (Map.Entry<String, LocalMapStatsImpl> entry : multiMapStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
-//        out.writeInt(queueStats.size());
-//        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
-//        out.writeInt(topicStats.size());
-//        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
-//        out.writeInt(executorStats.size());
-//        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
+        out.writeInt(multiMapStats.size());
+        for (Map.Entry<String, LocalMapStatsImpl> entry : multiMapStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(queueStats.size());
+        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(topicStats.size());
+        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(executorStats.size());
+        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
 
 //        out.writeInt(atomicNumberStats.size());
 //        for (Map.Entry<String, LocalAtomicLongStatsImpl> entry : atomicNumberStats.entrySet()) {
@@ -111,26 +111,26 @@ public class MemberStateImpl implements MemberState {
             (impl = new LocalMapStatsImpl()).readData(in);
             mapStats.put(name, (LocalMapStatsImpl) impl);
         }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalMapStatsImpl()).readData(in);
-//            multiMapStats.put(name, (LocalMapStatsImpl) impl);
-//        }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalQueueStatsImpl()).readData(in);
-//            queueStats.put(name, (LocalQueueStatsImpl) impl);
-//        }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalTopicStatsImpl()).readData(in);
-//            topicStats.put(name, (LocalTopicStatsImpl) impl);
-//        }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalExecutorStatsImpl()).readData(in);
-//            executorStats.put(name, (LocalExecutorStatsImpl) impl);
-//        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalMapStatsImpl()).readData(in);
+            multiMapStats.put(name, (LocalMapStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalQueueStatsImpl()).readData(in);
+            queueStats.put(name, (LocalQueueStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalTopicStatsImpl()).readData(in);
+            topicStats.put(name, (LocalTopicStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalExecutorStatsImpl()).readData(in);
+            executorStats.put(name, (LocalExecutorStatsImpl) impl);
+        }
 //        for (int i = in.readInt(); i > 0; i--) {
 //            name = in.readUTF();
 //            (impl = new LocalAtomicLongStatsImpl()).readData(in);
@@ -276,13 +276,16 @@ public class MemberStateImpl implements MemberState {
     }
 
     public String toString() {
-        return "MemberStateImpl [" + address + "] " +
-                "\n{ " +
-                "\n\t" + memberHealthStats +
-                "\n\tmapStats=" + mapStats +
-                "\n\tqueueStats=" + queueStats +
-                "\n\texecutorStats=" + executorStats +
-                "\n\tpartitions=" + lsPartitions +
-                "\n}";
+        return "MemberStateImpl{" +
+                "address=" + address +
+                ", memberHealthStats=" + memberHealthStats +
+                ", runtimeProps=" + runtimeProps +
+                ", mapStats=" + mapStats +
+                ", multiMapStats=" + multiMapStats +
+                ", queueStats=" + queueStats +
+                ", topicStats=" + topicStats +
+                ", executorStats=" + executorStats +
+                ", lsPartitions=" + lsPartitions +
+                '}';
     }
 }
