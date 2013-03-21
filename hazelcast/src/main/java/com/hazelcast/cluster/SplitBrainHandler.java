@@ -20,7 +20,7 @@ import com.hazelcast.instance.Node;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SplitBrainHandler implements Runnable {
+final class SplitBrainHandler implements Runnable {
 
     final Node node;
     final AtomicBoolean inProgress = new AtomicBoolean(false);
@@ -43,7 +43,7 @@ public class SplitBrainHandler implements Runnable {
     private void searchForOtherClusters() {
         Joiner joiner = node.getJoiner();
         if (joiner != null) {
-            joiner.searchForOtherClusters(this);
+            joiner.searchForOtherClusters();
         }
     }
 }

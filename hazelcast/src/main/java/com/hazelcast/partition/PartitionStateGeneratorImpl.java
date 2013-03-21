@@ -100,7 +100,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 if (currentOwner != null && newOwner != null && !currentOwner.equals(newOwner)) {
                     // migration owner or backup
                     op = new MigrationInfo(partitionId, replicaIndex, MigrationType.MOVE, currentOwner, newOwner);
-//                    op = new MigrationRequestOperation(partitionId, currentOwner, newOwner, replicaIndex, true);
                 } else if (currentOwner == null && newOwner != null) {
                     // copy of a backup
                     currentOwner = currentPartition.getOwner();

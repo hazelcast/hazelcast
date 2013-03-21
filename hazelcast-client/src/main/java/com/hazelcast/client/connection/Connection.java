@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.connection;
 
+import com.hazelcast.client.exception.ClusterClientException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -23,10 +24,11 @@ import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 /**
  * Holds the socket to one of the members of Hazelcast Cluster.
@@ -44,7 +46,7 @@ public class Connection {
     private final ObjectDataInputStream dis;
     boolean headersWritten = false;
     boolean headerRead = false;
-
+    private long lastRead = System.currentTimeMillis();
 
     public Connection(Address address, int id, SerializationService serializationService) {
         this.id = id;
@@ -63,9 +65,8 @@ public class Connection {
                 socket.close();
                 throw e;
             }
-
             this.socket = socket;
-            this.dos =  serializationService.createObjectDataOutputStream(
+            this.dos = serializationService.createObjectDataOutputStream(
                     new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
             this.dis = serializationService.createObjectDataInputStream(
                     new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
@@ -95,7 +96,7 @@ public class Connection {
     @Override
     public String toString() {
         return "Connection [" + id + "]" + " [" + address + " -> " +
-               socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
+                socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
     }
 
     public ObjectDataOutputStream getOutputStream() {
@@ -108,5 +109,13 @@ public class Connection {
 
     public Member getMember() {
         return new MemberImpl(new Address(address), false);
+    }
+
+    public void setLastRead(long l) {
+        this.lastRead = l;
+    }
+
+    public long getLastRead() {
+        return lastRead;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.hazelcast.client.proxy.listener;
+package com.hazelcast.client.exception;
 
-import com.hazelcast.client.connection.Connection;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.client.exception.ClusterClientException;
 
-public interface ListenerResponseHandler {
-    abstract public void handleResponse(Protocol response, SerializationService ss) throws Exception;
-    void onError(Connection connection, Exception e);
+public class NoMemberAvailableException extends ClusterClientException {
+    public NoMemberAvailableException() {
+        this("No cluster member available to connect");
+    }
+
+    public NoMemberAvailableException(String message) {
+        super(message);
+    }
 }

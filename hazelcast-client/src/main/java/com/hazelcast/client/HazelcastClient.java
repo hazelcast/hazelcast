@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.ConnectionManager;
 import com.hazelcast.client.proxy.*;
 import com.hazelcast.client.proxy.listener.LockClientProxy;
 import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
@@ -112,7 +113,7 @@ public class HazelcastClient implements HazelcastInstance {
         return Collections.unmodifiableCollection(lsClients);
     }
 
-    void doShutdown() {
+    public void doShutdown() {
         if (active.compareAndSet(true, false)) {
             logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
             lsClients.remove(this);
@@ -326,7 +327,7 @@ public class HazelcastClient implements HazelcastInstance {
         return null;
     }
 
-    static <V> V callAsyncAndWait(final Callable<V> callable) {
+    public static <V> V callAsyncAndWait(final Callable<V> callable) {
         final ExecutorService es = Executors.newSingleThreadExecutor();
         try {
             Future<V> future = es.submit(callable);

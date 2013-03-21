@@ -20,13 +20,17 @@ import com.hazelcast.client.Router;
 import com.hazelcast.client.impl.RandomRouter;
 import com.hazelcast.client.impl.RoundRobinRouter;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientConfig {
 
@@ -51,6 +55,8 @@ public class ClientConfig {
 
     private SocketInterceptor socketInterceptor = null;
     private Credentials credentials;
+
+    private Map<String, NearCacheConfig> mapNearCacheConfigs = new ConcurrentHashMap<String, NearCacheConfig>();
 
     public boolean isSmart() {
         return smart;
@@ -196,5 +202,14 @@ public class ClientConfig {
 
     public void setRetryOperation(boolean retryOperation) {
         this.retryOperation = retryOperation;
+    }
+
+    public NearCacheConfig getNearCacheConfig(final String name) {
+        return mapNearCacheConfigs.get(name);
+    }
+
+    public ClientConfig addMapNearCacheConfig(String name, NearCacheConfig config) {
+        mapNearCacheConfigs.put(name, config);
+        return this;
     }
 }

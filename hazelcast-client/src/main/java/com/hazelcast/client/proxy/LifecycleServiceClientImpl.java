@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;

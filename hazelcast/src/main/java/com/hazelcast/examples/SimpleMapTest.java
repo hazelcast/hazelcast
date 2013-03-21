@@ -68,9 +68,6 @@ public class SimpleMapTest {
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
 //        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
-        cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        cfg.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        cfg.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
         cfg.getSerializationConfig().setPortableFactory(new PortableFactory() {
             public Portable create(int classId) {
                 return new PortableByteArray();

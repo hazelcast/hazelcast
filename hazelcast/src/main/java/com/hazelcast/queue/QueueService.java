@@ -103,7 +103,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 migrationData.put(name, container);
             }
         }
-        return new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+        return migrationData.isEmpty() ? null : new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 
     public void commitMigration(MigrationServiceEvent event) {

@@ -27,10 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.exception.RetryableIOException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -220,9 +217,11 @@ abstract class InvocationImpl implements Future, Invocation {
             final long pollTimeout = Math.min(maxCallTimeout, timeout);
             final long start = Clock.currentTimeMillis();
             final Object response;
+            final long lastPollTime;
             try {
                 response = responseQ.poll(pollTimeout, TimeUnit.MILLISECONDS);
-                timeout = decrementTimeout(timeout, Clock.currentTimeMillis() - start);
+                lastPollTime = Clock.currentTimeMillis() - start;
+                timeout = decrementTimeout(timeout, lastPollTime);
             } catch (InterruptedException e) {
                 // do not allow interruption while waiting for a response!
                 logger.log(Level.FINEST, Thread.currentThread().getName() + " is interrupted while waiting " +
@@ -243,16 +242,17 @@ abstract class InvocationImpl implements Future, Invocation {
                 final InvocationAction action = op.onException(error);
                 final int localInvokeCount = invokeCount;
                 if (action == InvocationAction.RETRY_INVOCATION && localInvokeCount < tryCount && timeout > 0) {
-                    if (localInvokeCount > 3) {
+                    if (localInvokeCount > 5) {
+                        final long sleepTime = tryPauseMillis;
                         try {
-                            Thread.sleep(tryPauseMillis);
+                            Thread.sleep(sleepTime);
+                            timeout = decrementTimeout(timeout, sleepTime);
                         } catch (InterruptedException e) {
                             return e;
                         }
                     }
-                    timeout = decrementTimeout(timeout, tryPauseMillis);
                     // TODO: @mm - improve logging (see SystemLogService)
-                    if (localInvokeCount > 5 && localInvokeCount % 10 == 0) {
+                    if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
                         logger.log(Level.WARNING, "Retrying invocation: " + toString() + ", Reason: " + error);
                     }
                     doInvoke();
@@ -274,7 +274,7 @@ abstract class InvocationImpl implements Future, Invocation {
                     continue;
                 }
                 // TODO: @mm - improve logging (see SystemLogService)
-                logger.log(Level.WARNING, "No response for " + pollTimeout + " ms. " + toString());
+                logger.log(Level.WARNING, "No response for " + lastPollTime + " ms. " + toString());
 
                 boolean executing = isOperationExecuting(target);
                 if (!executing) {
@@ -427,19 +427,6 @@ abstract class InvocationImpl implements Future, Invocation {
         this.callback = callback;
     }
 
-    @Override
-    public String toString() {
-        return "InvocationImpl{" +
-                "serviceName='" + serviceName + '\'' +
-                ", op=" + op +
-                ", partitionId=" + partitionId +
-                ", replicaIndex=" + replicaIndex +
-                ", invokeCount=" + invokeCount +
-                ", tryCount=" + tryCount +
-                ", callTimeout=" + callTimeout +
-                '}';
-    }
-
     public static class IsStillExecuting extends AbstractOperation {
 
         private long operationCallId;
@@ -481,5 +468,23 @@ abstract class InvocationImpl implements Future, Invocation {
     private static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation
                 && op.getClass().getClassLoader() == thisClassLoader;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("InvocationImpl");
+        sb.append("{ serviceName='").append(serviceName).append('\'');
+        sb.append(", op=").append(op);
+        sb.append(", partitionId=").append(partitionId);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", tryCount=").append(tryCount);
+        sb.append(", tryPauseMillis=").append(tryPauseMillis);
+        sb.append(", invokeCount=").append(invokeCount);
+        sb.append(", callTimeout=").append(callTimeout);
+        sb.append(", remote=").append(remote);
+        sb.append('}');
+        return sb.toString();
     }
 }

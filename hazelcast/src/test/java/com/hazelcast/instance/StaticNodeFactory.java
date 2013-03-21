@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.StaticNodeRegistry;
@@ -48,7 +49,7 @@ public class StaticNodeFactory {
             if (nodeIndex >= addresses.length) {
                 throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
             }
-            init(config);
+            config = init(config);
             NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex++]);
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         } else {
@@ -71,7 +72,7 @@ public class StaticNodeFactory {
     public static HazelcastInstance[] newInstances(Config config, int count) {
         final HazelcastInstance[] instances = new HazelcastInstance[count];
         if (MOCK_NETWORK) {
-            init(config);
+            config = init(config);
             Address[] addresses = createAddresses(count);
             StaticNodeRegistry staticNodeRegistry = new StaticNodeRegistry(addresses);
             for (int i = 0; i < count; i++) {
@@ -86,9 +87,13 @@ public class StaticNodeFactory {
         return instances;
     }
 
-    private static void init(Config config) {
+    private static Config init(Config config) {
+        if (config == null) {
+            config = new XmlConfigBuilder().build();
+        }
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "5");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        return config;
     }
 }

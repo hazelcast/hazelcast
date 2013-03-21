@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.connection;
 
+import com.hazelcast.client.connection.Connection;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.protocol.Command;
@@ -106,6 +107,7 @@ public class ProtocolReader {
             throw new RuntimeException("Unknown command: " + split[commandIndex] + ":: "+ Thread.currentThread().getName());
         }
         Protocol protocol = new Protocol(null, command, flag, threadId, false, args, datas);
+        connection.setLastRead(System.currentTimeMillis());
         return protocol;
     }
 

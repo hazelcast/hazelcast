@@ -14,16 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.exception;
 
-public class AuthenticationException extends ClusterClientException {
+import com.hazelcast.core.HazelcastException;
+
+public class ClusterClientException extends HazelcastException {
     private static final long serialVersionUID = 1L;
 
-    public AuthenticationException() {
-        super("Wrong group name and password.");
+    public ClusterClientException() {
+        super();
     }
 
-    public AuthenticationException(String message) {
+    public ClusterClientException(String message) {
         super(message);
+    }
+
+    public ClusterClientException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ClusterClientException(Throwable cause) {
+        super(cause);
     }
 }

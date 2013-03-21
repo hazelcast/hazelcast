@@ -71,11 +71,14 @@ public class LockMigrationOperation extends AbstractOperation {
     }
 
     protected void readInternal(final ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         int len = in.readInt();
         if (len > 0) {
-            LockStoreImpl ls = new LockStoreImpl();
-            ls.readData(in);
-            locks.add(ls);
+            for (int i = 0; i < len; i++) {
+                LockStoreImpl ls = new LockStoreImpl();
+                ls.readData(in);
+                locks.add(ls);
+            }
         }
     }
 
