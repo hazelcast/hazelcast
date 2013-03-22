@@ -26,6 +26,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -68,7 +69,10 @@ public class ConnectionManager {
     }
 
     private Connection initialConnection(ClientConfig config) {
+        final long next = Clock.currentTimeMillis() + config.getReConnectionTimeOut();
+        int attempt = 0;
         Connection initialConnection;
+        while()
         for (InetSocketAddress isa : config.getAddressList()) {
             try {
                 Address address = new Address(isa);
@@ -78,6 +82,10 @@ public class ConnectionManager {
                 continue;
             }
         }
+        if (attempt >= config.getInitialConnectionAttemptLimit()) {
+            break;
+        }
+
         throw new IllegalStateException("Unable to connect to any address in the config");
     }
 
