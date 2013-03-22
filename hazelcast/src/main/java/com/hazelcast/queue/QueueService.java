@@ -103,7 +103,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 migrationData.put(name, container);
             }
         }
-        return new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+        return migrationData.isEmpty() ? null : new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 
     public void commitMigration(MigrationServiceEvent event) {
@@ -118,15 +118,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearMigrationData(event.getPartitionId(), -1);
         }
-    }
-
-    public int getMaxBackupCount() {
-        int max = 0;
-        for (QueueContainer container : containerMap.values()) {
-            int c = container.getConfig().getTotalBackupCount();
-            max = Math.max(max, c);
-        }
-        return max;
     }
 
     private void clearMigrationData(int partitionId, int copyBack) {

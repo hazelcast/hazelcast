@@ -158,10 +158,6 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         }
     }
 
-    public int getMaxBackupCount() {
-        return 1;
-    }
-
     public CountDownLatchInfo getLatch(String name) {
         return latches.get(name);
     }

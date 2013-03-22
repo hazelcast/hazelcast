@@ -863,6 +863,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
      * <p/>
      *
      */
-//    void executeOnAllKeys(EntryProcessor entryProcessor);
+    void executeOnAllKeys(EntryProcessor entryProcessor);
 
 }

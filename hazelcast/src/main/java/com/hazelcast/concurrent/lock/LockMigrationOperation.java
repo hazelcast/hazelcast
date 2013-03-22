@@ -74,11 +74,14 @@ public class LockMigrationOperation extends AbstractOperation {
         super.readInternal(in);
         int len = in.readInt();
         if (len > 0) {
-            LockStoreImpl ls = new LockStoreImpl();
-            ls.readData(in);
-            locks.add(ls);
+            for (int i = 0; i < len; i++) {
+                LockStoreImpl ls = new LockStoreImpl();
+                ls.readData(in);
+                locks.add(ls);
+            }
         }
     }
+
 
     public boolean isEmpty() {
         return locks.isEmpty();

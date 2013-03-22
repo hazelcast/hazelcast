@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public class MigrationRequestOperation extends BaseMigrationOperation {
+public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     public MigrationRequestOperation() {
     }
@@ -54,41 +54,54 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         if (from == null) {
             getLogger().log(Level.FINEST, "From address is null => " + toString());
         }
-        final PartitionServiceImpl partitionService = getService();
-        try {
-            Member target = partitionService.getMember(to);
-            if (target == null) {
-                getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
-                success = false;
-                return;
-            }
-            partitionService.addActiveMigration(migrationInfo);
-            final NodeEngine nodeEngine = getNodeEngine();
-            final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
-            final Collection<Operation> tasks = prepareMigrationTasks();
-            if (tasks.size() > 0) {
-                final SerializationService serializationService = nodeEngine.getSerializationService();
-                final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
-                try {
-                    out.writeInt(tasks.size());
-                    for (Operation task : tasks) {
-                        serializationService.writeObject(out, task);
-                    }
-                    final byte[] data = IOUtil.compress(out.toByteArray());
-                    final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, data, tasks.size());
-                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
-                            migrationOperation, to)
-                            .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
-                    Future future = inv.invoke();
-                    success = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
-                } finally {
-                    IOUtil.closeResource(out);
+        if (migrationInfo.startProcessing()) {
+            try {
+                final PartitionServiceImpl partitionService = getService();
+                Member target = partitionService.getMember(to);
+                if (target == null) {
+                    getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
+                    success = false;
+                    return;
                 }
-            } else {
-                success = true;
+                partitionService.addActiveMigration(migrationInfo);
+                final NodeEngine nodeEngine = getNodeEngine();
+                final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
+                final Collection<Operation> tasks = prepareMigrationTasks();
+                if (tasks.size() > 0) {
+                    final SerializationService serializationService = nodeEngine.getSerializationService();
+                    final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+                    try {
+                        out.writeInt(tasks.size());
+                        for (Operation task : tasks) {
+                            serializationService.writeObject(out, task);
+                        }
+                        final byte[] data = IOUtil.compress(out.toByteArray());
+                        final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, data, tasks.size());
+                        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
+                                migrationOperation, to)
+                                .setTryCount(3).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
+                        Future future = inv.invoke();
+                        success = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
+                    } finally {
+                        IOUtil.closeResource(out);
+                    }
+                } else {
+                    success = true;
+                }
+            } catch (Throwable e) {
+                if (e instanceof ExecutionException) {
+                    e = e.getCause() != null ? e.getCause() : e;
+                }
+                Level level = (e instanceof MemberLeftException || e instanceof InterruptedException)
+                        || !getNodeEngine().isActive() ? Level.FINEST : Level.WARNING;
+                getLogger().log(level, e.getMessage(), e);
+                success = false;
+            } finally {
+                migrationInfo.doneProcessing();
             }
-        } catch (Throwable e) {
-            onError(e);
+        } else {
+            getLogger().log(Level.WARNING, "Migration is cancelled -> " + migrationInfo);
+            success = false;
         }
     }
 
@@ -115,17 +128,6 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             }
         }
         return tasks;
-    }
-
-    private void onError(Throwable e) {
-        if (e instanceof ExecutionException) {
-            e = e.getCause();
-        }
-        Level level = (e instanceof MemberLeftException || e instanceof InterruptedException)
-                    || !getNodeEngine().isActive()
-                ? Level.FINEST : Level.WARNING;
-        getLogger().log(level, e.getMessage(), e);
-        success = false;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

@@ -528,6 +528,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return null;
     }
 
+    public void executeOnAllKeys(EntryProcessor entryProcessor) {
+        // todo to be implemented
+    }
+
     public Set<K> keySet() {
         return keySet(null);
     }

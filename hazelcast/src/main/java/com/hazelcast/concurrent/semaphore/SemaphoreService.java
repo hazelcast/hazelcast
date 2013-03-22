@@ -156,15 +156,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         }
     }
 
-    public int getMaxBackupCount() {
-        int max = 0;
-        for (String name: permitMap.keySet()){
-            SemaphoreConfig config = nodeEngine.getConfig().getSemaphoreConfig(name);
-            max = Math.max(max,  config.getTotalBackupCount());
-        }
-        return max;
-    }
-
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         return null;
     }
