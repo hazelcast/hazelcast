@@ -16,12 +16,14 @@
 
 package com.hazelcast.core;
 
+import java.util.Collection;
+
 /**
  * Concurrent, distributed, partitioned, observable collection.
  *
  * @param <E> item
  */
-public interface ICollection<E> extends DistributedObject {
+public interface ICollection<E> extends DistributedObject, Collection<E> {
     /**
      * Returns the name of this collection
      *
