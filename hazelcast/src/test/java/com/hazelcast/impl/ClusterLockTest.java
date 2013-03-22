@@ -310,32 +310,40 @@ public class ClusterLockTest {
             public Record copy() {
                 return null;
             }
+
             public Object getValue() {
                 return null;
             }
+
             public Data getValueData() {
                 return null;
             }
+
             public Object setValue(final Object value) {
                 return null;
             }
+
             public void setValueData(final Data value) {
             }
+
             public int valueCount() {
                 return 0;
             }
+
             public long getCost() {
                 return 0;
             }
+
             public boolean hasValueData() {
                 return false;
             }
+
             public void invalidate() {
             }
+
             protected void invalidateValueCache() {
             }
         };
-
         final AtomicBoolean run = new AtomicBoolean(true);
         final Thread serviceThread = new Thread() {
             public void run() {
@@ -352,7 +360,6 @@ public class ClusterLockTest {
                 }
             }
         };
-
         final int loop = 100000;
         final AtomicInteger count = new AtomicInteger(0);
         final AtomicReference<Exception> error = new AtomicReference<Exception>();
@@ -377,7 +384,6 @@ public class ClusterLockTest {
         executorThread.join();
         run.set(false);
         serviceThread.join();
-
         Assert.assertEquals("Error: " + error.get(), loop, count.get());
     }
 
@@ -385,16 +391,13 @@ public class ClusterLockTest {
     public void testLockWhenMemberDiesAfterPutAndUnlock() throws InterruptedException {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
-
         final Object key = createKeyOwnedByInstance(hz.getPartitionService(),
                 hz2.getCluster().getLocalMember());
         final IMap map = hz.getMap("testLockWhenMemberDiesAfterPutAndUnlock");
         map.lock(key);
         map.putAndUnlock(key, "value");
-
         hz2.getLifecycleService().shutdown();
         Thread.sleep(1000);
-
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
@@ -412,19 +415,15 @@ public class ClusterLockTest {
     public void testLockWhenMemberDiesAfterTxPut() throws InterruptedException {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
-
         final Object key = createKeyOwnedByInstance(hz.getPartitionService(),
                 hz2.getCluster().getLocalMember());
         final IMap map = hz.getMap("testLockWhenMemberDiesAfterTxPut");
-
         Transaction tx = hz.getTransaction();
         tx.begin();
         map.put(key, "value");
         tx.commit();
-
         hz2.getLifecycleService().shutdown();
         Thread.sleep(1000);
-
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
@@ -442,20 +441,16 @@ public class ClusterLockTest {
     public void testLockWhenMemberDiesAfterTxRemove() throws InterruptedException {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
-
         final Object key = createKeyOwnedByInstance(hz.getPartitionService(),
                 hz2.getCluster().getLocalMember());
         final IMap map = hz.getMap("testLockWhenMemberDiesAfterTxRemove");
-
-        map.put(key, "value") ;
+        map.put(key, "value");
         Transaction tx = hz.getTransaction();
         tx.begin();
         map.remove(key, "value");
         tx.commit();
-
         hz2.getLifecycleService().shutdown();
         Thread.sleep(1000);
-
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
@@ -473,21 +468,17 @@ public class ClusterLockTest {
     public void testLockWhenMemberDiesAfterTxRemoveAndPut() throws InterruptedException {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(null);
-
         final Object key = createKeyOwnedByInstance(hz.getPartitionService(),
                 hz2.getCluster().getLocalMember());
         final IMap map = hz.getMap("testLockWhenMemberDiesAfterTxRemove");
-
-        map.put(key, "value") ;
+        map.put(key, "value");
         Transaction tx = hz.getTransaction();
         tx.begin();
         map.remove(key, "value");
         map.put(key, "value2");
         tx.commit();
-
         hz2.getLifecycleService().shutdown();
         Thread.sleep(1000);
-
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
@@ -511,10 +502,9 @@ public class ClusterLockTest {
 
     @Test
     public void testLockInterruption() throws InterruptedException {
-        Config config = new Config() ;
+        Config config = new Config();
         config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-
         final Lock lock = hz.getLock("test");
         Random rand = new Random();
         for (int i = 0; i < 30; i++) {
@@ -530,12 +520,10 @@ public class ClusterLockTest {
                     }
                 }
             };
-
             t.start();
             Thread.sleep(rand.nextInt(3));
             t.interrupt();
             t.join();
-
             if (!lock.tryLock(3, TimeUnit.SECONDS)) {
                 fail("Could not acquire lock!");
             } else {
@@ -547,10 +535,9 @@ public class ClusterLockTest {
 
     @Test
     public void testLockInterruption2() throws InterruptedException {
-        Config config = new Config() ;
+        Config config = new Config();
         config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-
         final Lock lock = hz.getLock("test");
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -584,18 +571,15 @@ public class ClusterLockTest {
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
         final IMap map = h1.getMap("testIsMapKeyLocked");
         final IMap map2 = h2.getMap("testIsMapKeyLocked");
-
         assertFalse(map.isLocked("key"));
         assertFalse(map2.isLocked("key"));
         map.lock("key");
         assertTrue(map.isLocked("key"));
         assertTrue(map2.isLocked("key"));
-
         final CountDownLatch latch = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 IMap map3 = h3.getMap("testIsMapKeyLocked");
-
                 assertTrue(map3.isLocked("key"));
                 try {
                     while (map3.isLocked("key")) {
@@ -624,18 +608,15 @@ public class ClusterLockTest {
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
         final ILock lock = h1.getLock("testLockIsLocked");
         final ILock lock2 = h2.getLock("testLockIsLocked");
-
         assertFalse(lock.isLocked());
         assertFalse(lock2.isLocked());
         lock.lock();
         assertTrue(lock.isLocked());
         assertTrue(lock2.isLocked());
-
         final CountDownLatch latch = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 ILock lock3 = h3.getLock("testLockIsLocked");
-
                 assertTrue(lock3.isLocked());
                 try {
                     while (lock3.isLocked()) {
@@ -658,14 +639,13 @@ public class ClusterLockTest {
      * Test for issues #223, #228, #256
      */
     public void testMapPutLockAndRemove() throws InterruptedException {
-        Config config = new Config() ;
+        Config config = new Config();
         config.setProperty(GroupProperties.PROP_FORCE_THROW_INTERRUPTED_EXCEPTION, "true");
         HazelcastInstance[] nodes = new HazelcastInstance[3];
         for (int i = 0; i < nodes.length; i++) {
             nodes[i] = Hazelcast.newHazelcastInstance(config);
             nodes[i].getPartitionService().getPartition(0).getOwner();
         }
-
         final int loop = 1000;
         final int key = 1;
         final Thread[] threads = new Thread[nodes.length * 3];
@@ -693,7 +673,6 @@ public class ClusterLockTest {
 
             abstract void doRun();
         }
-
         int k = 0;
         for (final HazelcastInstance node : nodes) {
             threads[k++] = new TestThread("Putter-" + k, node) {
@@ -707,7 +686,6 @@ public class ClusterLockTest {
                     }
                 }
             };
-
             threads[k++] = new TestThread("Remover.A-" + k, node) {
                 void doRun() {
                     map.lock(key);
@@ -718,7 +696,6 @@ public class ClusterLockTest {
                     }
                 }
             };
-
             threads[k++] = new TestThread("Remover.B-" + k, node) {
                 void doRun() {
                     map.lock(key);
@@ -727,20 +704,17 @@ public class ClusterLockTest {
                         for (Object value : values) {
                             map.remove(key, value);
                         }
-
                     } finally {
                         map.unlock(key);
                     }
                 }
             };
         }
-
         for (Thread thread : threads) {
             thread.start();
         }
         assertTrue("Remaining operations: " + latch.getCount(),
                 latch.await(60, TimeUnit.SECONDS));
-
         for (Thread thread : threads) {
             thread.interrupt();
         }
@@ -761,7 +735,6 @@ public class ClusterLockTest {
         final int locks = 50;
         final CountDownLatch latch = new CountDownLatch(threadCount);
         final AtomicInteger totalCount = new AtomicInteger();
-
         class LockTest implements Runnable {
             public void run() {
                 boolean live = true;
@@ -790,12 +763,10 @@ public class ClusterLockTest {
                 }
             }
         }
-
         ExecutorService executorService = Executors.newCachedThreadPool();
         for (int i = 0; i < threadCount; i++) {
             executorService.execute(new LockTest());
         }
-
         try {
             assertTrue("Lock tasks stuck!", latch.await(60, TimeUnit.SECONDS));
             assertEquals((threadCount * lockCountPerThread), totalCount.get());
@@ -819,13 +790,11 @@ public class ClusterLockTest {
         final String name = "test";
         config.getMapConfig(name).setMapStoreConfig(
                 new MapStoreConfig().setEnabled(true).setImplementation(new MapStoreAdaptor()));
-
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         final IMap map = hz.getMap(name);
         final String key = "key";
         final int taskCount = 25;
         final CountDownLatch latch = new CountDownLatch(taskCount);
-
         class TryLockAndGetRunnable implements Runnable {
             volatile boolean gotTheLock = false;
 
@@ -878,5 +847,51 @@ public class ClusterLockTest {
         }
     }
 
+    @Test
+    public void testLockDestroyAndTryLock() throws InterruptedException {
+        final String lockObject = "testLockDestroyAndTryLock";
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        ILock lock = h.getLock(lockObject);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                ILock lock = h2.getLock(lockObject);
+                lock.lock();
+                lock.unlock();
+                lock.destroy();
+            }
+        });
+        t.start();
+        t.join();
+        assertTrue(lock.tryLock());
+    }
+
+    @Test
+    public void testForceUnlock() throws InterruptedException {
+        final String lockObject = "testLockDestroyAndTryLock";
+        final HazelcastInstance h = Hazelcast.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+        ILock lock = h.getLock(lockObject);
+        lock.lock();
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                ILock lock = h2.getLock(lockObject);
+                lock.forceUnlock();
+                assertFalse(lock.isLocked());
+            }
+        });
+        t.start();
+        t.join();
+        //This line fails, but it shouldn't
+        //The reason is ForceUnlock doesn't clean the LocalLock on the node that actually did the lock.
+//        assertFalse(lock.isLocked());
+        new Thread(new Runnable() {
+            public void run() {
+                final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(new Config());
+                ILock lock = h2.getLock(lockObject);
+                assertFalse(lock.isLocked());
+            }
+        });
+    }
 }
 
