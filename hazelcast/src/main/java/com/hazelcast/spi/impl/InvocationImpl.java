@@ -129,12 +129,14 @@ abstract class InvocationImpl implements Future, Invocation {
 
     private void doInvoke() {
         if (!isActive()) {
+            remote = false;
             throw new HazelcastInstanceNotActiveException();
         }
         invokeCount++;
         final Address target = getTarget();
         final Address thisAddress = nodeEngine.getThisAddress();
         if (target == null) {
+            remote = false;
             if (isActive()) {
                 setResult(new WrongTargetException(thisAddress, target, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {

@@ -120,15 +120,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
     }
 
-    public int getMaxBackupCount() {
-        int max = 0;
-        for (QueueContainer container : containerMap.values()) {
-            int c = container.getConfig().getTotalBackupCount();
-            max = Math.max(max, c);
-        }
-        return max;
-    }
-
     private void clearMigrationData(int partitionId, int copyBack) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {

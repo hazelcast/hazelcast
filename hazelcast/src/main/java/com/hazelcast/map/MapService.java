@@ -421,14 +421,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
     }
 
-    public int getMaxBackupCount() {
-        int max = 1;
-        for (PartitionContainer container : partitionContainers) {
-            max = Math.max(max, container.getMaxBackupCount());
-        }
-        return max;
-    }
-
     private void clearPartitionData(final int partitionId) {
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];

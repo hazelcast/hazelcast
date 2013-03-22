@@ -135,8 +135,4 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
             }
         }
     }
-
-    public int getMaxBackupCount() {
-        return 1;
-    }
 }

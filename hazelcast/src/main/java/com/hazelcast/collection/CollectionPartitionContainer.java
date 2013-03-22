@@ -59,15 +59,6 @@ public class CollectionPartitionContainer {
         return container;
     }
 
-    public int getMaxBackupCount() {
-        int max = 0;
-        for (CollectionContainer container : containerMap.values()) {
-            int c = container.config.getTotalBackupCount();
-            max = Math.max(max, c);
-        }
-        return max;
-    }
-
     void destroyCollection(CollectionProxyId collectionProxyId) {
         final CollectionContainer container = containerMap.remove(collectionProxyId);
         if (container != null) {

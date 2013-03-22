@@ -217,17 +217,17 @@ public class CollectionService implements ManagedService, RemoteService, Members
         int replicaIndex = event.getReplicaIndex();
         CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
         Map<CollectionProxyId, Map> map = new HashMap<CollectionProxyId, Map>(partitionContainer.containerMap.size());
-//        for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
-//            CollectionProxyId proxyId = entry.getKey();
-//            CollectionContainer container = entry.getValue();
-//            if (container.config.getTotalBackupCount() < replicaIndex) {
-//                continue;
-//            }
-//            map.put(proxyId, container.collections);
-//        }
-//        if (map.isEmpty()) {
-//            return null;
-//        }
+        for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
+            CollectionProxyId proxyId = entry.getKey();
+            CollectionContainer container = entry.getValue();
+            if (container.config.getTotalBackupCount() < replicaIndex) {
+                continue;
+            }
+            map.put(proxyId, container.collections);
+        }
+        if (map.isEmpty()) {
+            return null;
+        }
         return new CollectionMigrationOperation(map);
     }
 
@@ -266,15 +266,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
 
     public void rollbackMigration(MigrationServiceEvent event) {
         clearMigrationData(event.getPartitionId(), -1);
-    }
-
-    public int getMaxBackupCount() {
-        int max = 0;
-        for (CollectionPartitionContainer partitionContainer : partitionContainers) {
-            int c = partitionContainer.getMaxBackupCount();
-            max = Math.max(max, c);
-        }
-        return max;
     }
 
     public void memberAdded(MembershipServiceEvent event) {

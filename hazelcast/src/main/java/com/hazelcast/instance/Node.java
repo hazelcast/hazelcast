@@ -471,7 +471,7 @@ public class Node {
                 if (isActive() && !completelyShutdown) {
                     completelyShutdown = true;
                     if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
-                        shutdown(false, true);
+                        shutdown(true, true);
                     }
                 } else {
                     logger.log(Level.FINEST, "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");

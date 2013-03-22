@@ -80,14 +80,6 @@ public class LockStoreContainer {
         lockStores.clear();
     }
 
-    int getMaxBackupCount() {
-        int max = 0;
-        for (LockStoreImpl ls : lockStores.values()) {
-            max = Math.max(max, ls.getTotalBackupCount());
-        }
-        return max;
-    }
-
     int getPartitionId() {
         return partitionId;
     }
