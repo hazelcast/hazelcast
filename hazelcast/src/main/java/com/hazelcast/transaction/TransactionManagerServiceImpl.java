@@ -343,10 +343,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public int getMaxBackupCount() {
-        return 0;
-    }
-
     private static class TransactionKey {
         private final String txnId;
         private final int partitionId;

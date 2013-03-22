@@ -22,30 +22,29 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MigrationInfo implements DataSerializable {
+
     private int partitionId;
     private Address from;
     private Address to;
     private int replicaIndex;
     private MigrationType migrationType;
     private int copyBackReplicaIndex = -1;
+    private Address master;
+
+    private transient final AtomicBoolean processing = new AtomicBoolean(false);
 
     public MigrationInfo() {
     }
 
     public MigrationInfo(int partitionId, int replicaIndex, MigrationType migrationType,
                          Address from, Address to) {
-        this(partitionId, replicaIndex, migrationType, from, to, -1);
-    }
-
-    public MigrationInfo(int partitionId, int replicaIndex, MigrationType migrationType,
-                         Address from, Address to, int copyBackReplicaIndex) {
         this.partitionId = partitionId;
         this.from = from;
         this.to = to;
         this.replicaIndex = replicaIndex;
-        this.copyBackReplicaIndex = copyBackReplicaIndex;
         this.migrationType = migrationType;
     }
 
@@ -85,6 +84,22 @@ public class MigrationInfo implements DataSerializable {
         this.migrationType = migrationType;
     }
 
+    void setMaster(Address address) {
+        master = address;
+    }
+
+    Address getMaster() {
+        return master;
+    }
+
+    boolean startProcessing() {
+        return processing.compareAndSet(false, true);
+    }
+
+    void doneProcessing() {
+        processing.set(false);
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
@@ -96,6 +111,7 @@ public class MigrationInfo implements DataSerializable {
             from.writeData(out);
         }
         to.writeData(out);
+        master.writeData(out);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -110,6 +126,8 @@ public class MigrationInfo implements DataSerializable {
         }
         to = new Address();
         to.readData(in);
+        master = new Address();
+        master.readData(in);
     }
 
     @Override
@@ -146,6 +164,7 @@ public class MigrationInfo implements DataSerializable {
         sb.append(", to=").append(to);
         sb.append(", replicaIndex=").append(replicaIndex);
         sb.append(", migrationType=").append(migrationType);
+        sb.append(", master=").append(master);
         sb.append('}');
         return sb.toString();
     }

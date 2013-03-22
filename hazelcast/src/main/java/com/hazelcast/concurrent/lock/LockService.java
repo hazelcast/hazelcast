@@ -143,14 +143,6 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         }
     }
 
-    public int getMaxBackupCount() {
-        int max = 0;
-        for (LockStoreContainer container : containers) {
-            max = Math.max(container.getMaxBackupCount(), max);
-        }
-        return 0;
-    }
-
     public String getServiceName() {
         return SERVICE_NAME;
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
 
-public class MigrationOperation extends BaseMigrationOperation {
+public final class MigrationOperation extends BaseMigrationOperation {
 
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ErrorResponseHandler();
 
@@ -51,31 +50,37 @@ public class MigrationOperation extends BaseMigrationOperation {
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
         ObjectDataInput in = null;
-        try {
-            final byte[] taskData = IOUtil.decompress(zippedTaskData);
-            in = serializationService.createObjectDataInput(taskData);
-            int size = in.readInt();
-            tasks = new ArrayList<Operation>(size);
-            for (int i = 0; i < size; i++) {
-                Operation task = (Operation) serializationService.readObject(in);
-                tasks.add(task);
+        if (migrationInfo.startProcessing()) {
+            try {
+                final byte[] taskData = IOUtil.decompress(zippedTaskData);
+                in = serializationService.createObjectDataInput(taskData);
+                int size = in.readInt();
+                tasks = new ArrayList<Operation>(size);
+                for (int i = 0; i < size; i++) {
+                    Operation task = (Operation) serializationService.readObject(in);
+                    tasks.add(task);
+                }
+                if (taskCount != tasks.size()) {
+                    getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
+                            "expected-count: " + size + ", actual-count: " + tasks.size() +
+                            "\nfrom: " + migrationInfo.getFromAddress() + ", partition: " + getPartitionId()
+                            + ", replica: " + getReplicaIndex());
+                }
+                success = runMigrationTasks();
+            } catch (Throwable e) {
+                Level level = Level.WARNING;
+                if (e instanceof IllegalStateException) {
+                    level = Level.FINEST;
+                }
+                getLogger().log(level, e.getMessage(), e);
+                success = false;
+            } finally {
+                migrationInfo.doneProcessing();
+                IOUtil.closeResource(in);
             }
-            if (taskCount != tasks.size()) {
-                getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
-                        "expected-count: " + size + ", actual-count: " + tasks.size() +
-                        "\nfrom: " + migrationInfo.getFromAddress() + ", partition: " + getPartitionId()
-                        + ", replica: " + getReplicaIndex());
-            }
-            success = runMigrationTasks();
-        } catch (Throwable e) {
-            Level level = Level.WARNING;
-            if (e instanceof IllegalStateException) {
-                level = Level.FINEST;
-            }
-            getLogger().log(level, e.getMessage(), e);
+        } else {
+            getLogger().log(Level.WARNING, "Migration is cancelled -> " + migrationInfo);
             success = false;
-        } finally {
-            IOUtil.closeResource(in);
         }
     }
 

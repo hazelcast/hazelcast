@@ -61,14 +61,6 @@ public class PartitionContainer {
         return transactionItems.remove(key);
     }
 
-    public int getMaxBackupCount() {
-        int max = 1;
-        for (PartitionRecordStore recordStore : maps.values()) {
-            max = Math.max(max, recordStore.getMapContainer().getTotalBackupCount());
-        }
-        return max;
-    }
-
     void destroyMap(String name) {
         PartitionRecordStore recordStore = maps.remove(name);
         if (recordStore != null)

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class PartitionStateOperation extends AbstractOperation implements Runnable {
+public final class PartitionStateOperation extends AbstractOperation {
 
     private PartitionRuntimeState partitionState;
 
@@ -51,12 +51,24 @@ public class PartitionStateOperation extends AbstractOperation implements Runnab
         partitionService.processPartitionRuntimeState(partitionState);
     }
 
+    @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
+    public String getServiceName() {
+        return PartitionServiceImpl.SERVICE_NAME;
+    }
+
     protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
         partitionState = new PartitionRuntimeState();
         partitionState.readData(in);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
         partitionState.writeData(out);
     }
 }
