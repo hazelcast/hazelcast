@@ -296,7 +296,6 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
     }
 
     public void setActive() {
-        setRemoveTime(0);
         setActive(true);
     }
 
@@ -446,8 +445,12 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
         return lastStoredTime;
     }
 
+    public boolean isEvicted() {
+        return !active && removeTime == 0;
+    }
+
     public boolean isRemoved() {
-        return !active && removeTime > 0;
+        return !active || removeTime > 0;
     }
 
     /**
@@ -455,7 +458,7 @@ public abstract class AbstractRecord extends AbstractSimpleRecord implements Rec
      * and either is not active or not valid or has not value (may because of locking)
      */
     public boolean isLoadable() {
-        return !isRemoved() && (!isActive() || !isValid() || !hasValueData());
+        return ((!isRemoved() || isEvicted()) && (!isActive() || !isValid() || !hasValueData()));
     }
 
     public int hashCode() {

@@ -921,6 +921,7 @@ public class CMap {
             record = createAndAddNewRecord(req.key, req.value);
         } else {
             markAsActive(record);
+            record.setRemoveTime(0);
             oldValue = (record.isValid(now)) ? record.getValueData() : null;
             record.setValueData(req.value);
             record.incrementVersion();

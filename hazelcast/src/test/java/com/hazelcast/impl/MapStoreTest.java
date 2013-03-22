@@ -683,7 +683,7 @@ public class MapStoreTest extends TestUtil {
         final AtomicInteger loadCount = new AtomicInteger(0);
         final AtomicInteger storeCount = new AtomicInteger(0);
         final AtomicInteger deleteCount = new AtomicInteger(0);
-        class SimpleMapStore2<K, V> extends SimpleMapStore<K, V>  {
+        class SimpleMapStore2<K, V> extends SimpleMapStore<K, V> {
 
             SimpleMapStore2(ConcurrentMap<K, V> store) {
                 super(store);
@@ -710,34 +710,34 @@ public class MapStoreTest extends TestUtil {
         config
                 .getMapConfig("myMap")
                 .setMapStoreConfig(new MapStoreConfig()
-                                           //.setWriteDelaySeconds(1)
-                                           .setImplementation(myMapStore));
+                        //.setWriteDelaySeconds(1)
+                        .setImplementation(myMapStore));
         HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
-            store.put("one", 1l);
-            store.put("two", 2l);
-            assertEquals(0, loadCount.get());
-            assertEquals(0, storeCount.get());
-            assertEquals(0, deleteCount.get());
-            IMap<String, Long> myMap = hc.getMap("myMap");
-            assertEquals(1l, myMap.get("one").longValue());
-            assertEquals(2l, myMap.get("two").longValue());
-            assertEquals(2, loadCount.get());
-            assertEquals(0, storeCount.get());
-            assertEquals(0, deleteCount.get());
-            assertNull(myMap.remove("ten"));
-            assertEquals(3, loadCount.get());
-            assertEquals(0, storeCount.get());
-            assertEquals(0, deleteCount.get());
-            myMap.put("three", 3L);
-            myMap.put("four", 4L);
-            assertEquals(5, loadCount.get());
-            assertEquals(2, storeCount.get());
-            assertEquals(0, deleteCount.get());
-            myMap.remove("one");
-            assertEquals(2, storeCount.get());
-            assertEquals(1, deleteCount.get());
-            assertEquals(5, loadCount.get());
-        }
+        store.put("one", 1l);
+        store.put("two", 2l);
+        assertEquals(0, loadCount.get());
+        assertEquals(0, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        IMap<String, Long> myMap = hc.getMap("myMap");
+        assertEquals(1l, myMap.get("one").longValue());
+        assertEquals(2l, myMap.get("two").longValue());
+        assertEquals(2, loadCount.get());
+        assertEquals(0, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        assertNull(myMap.remove("ten"));
+        assertEquals(3, loadCount.get());
+        assertEquals(0, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        myMap.put("three", 3L);
+        myMap.put("four", 4L);
+        assertEquals(5, loadCount.get());
+        assertEquals(2, storeCount.get());
+        assertEquals(0, deleteCount.get());
+        myMap.remove("one");
+        assertEquals(2, storeCount.get());
+        assertEquals(1, deleteCount.get());
+        assertEquals(5, loadCount.get());
+    }
 
     @Test
     public void storedQueueWithDelaySecondsActionPollAndTake() throws InterruptedException {
@@ -771,7 +771,7 @@ public class MapStoreTest extends TestUtil {
         config
                 .getMapConfig("myMap")
                 .setMapStoreConfig(new MapStoreConfig()
-                                           .setImplementation(myMapStore));
+                        .setImplementation(myMapStore));
         HazelcastInstance hc = Hazelcast.newHazelcastInstance(config);
         IMap<String, Long> myMap = hc.getMap("myMap");
         myMap.put("one", 1L);
@@ -819,8 +819,8 @@ public class MapStoreTest extends TestUtil {
         final int maxSize = 10;
         final ConcurrentMap<Integer, String> STORE =
                 new ConcurrentHashMap<Integer, String>();
-        for (int i = 0; i<30; i++) {
-            STORE.put(i, "value"+i);
+        for (int i = 0; i < 30; i++) {
+            STORE.put(i, "value" + i);
         }
         Config config = new Config();
         config
@@ -836,6 +836,28 @@ public class MapStoreTest extends TestUtil {
         assertTrue(map.size() <= maxSize);
     }
 
+    @Test
+    public void testIssue187RemoveDoesNotWorkWithLock() {
+        Config config = new Config();
+        SimpleMapStore mapStore = new SimpleMapStore();
+        config.getMapConfig("testIssue187RemoveDoesNotWorkWithLock").setMapStoreConfig(
+                new MapStoreConfig().setEnabled(true)
+                        .setWriteDelaySeconds(1).setImplementation(mapStore));
+
+
+        IMap<String, String> map = Hazelcast.newHazelcastInstance(config).getMap("testIssue187RemoveDoesNotWorkWithLock");
+        map.put("key", "value");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+        }
+        map.remove("key");
+        map.lock("key");
+
+        String value = map.get("key");
+        assertNull(value);
+        map.unlock("key");
+    }
 
     protected Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
@@ -892,7 +914,7 @@ public class MapStoreTest extends TestUtil {
     }
 
     public static class SimpleMapStore<K, V> extends MapStoreAdaptor<K, V> {
-        final Map<K, V> store ;
+        final Map<K, V> store;
         private boolean loadAllKeys = true;
 
         public SimpleMapStore() {
@@ -965,7 +987,7 @@ public class MapStoreTest extends TestUtil {
         public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
                             int expectedDeleteAll, int expectedLoad, int expectedLoadAll) {
             this(expectedStore, expectedStoreAll, expectedDelete, expectedDeleteAll,
-                 expectedLoad, expectedLoadAll, 0);
+                    expectedLoad, expectedLoadAll, 0);
         }
 
         public TestMapStore(int expectedStore, int expectedStoreAll, int expectedDelete,
@@ -1442,9 +1464,9 @@ public class MapStoreTest extends TestUtil {
         for (int i = 0; i < 30000; i++) {
             try {
                 long start = Clock.currentTimeMillis();
-                map.put(i,i);
+                map.put(i, i);
                 long end = Clock.currentTimeMillis();
-                assertTrue((end-start) < 1000);
+                assertTrue((end - start) < 1000);
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
