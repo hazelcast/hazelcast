@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static java.lang.String.format;
+
 public class ConnectionManager {
     private final int poolSize;
     private final int connectionTimeout;
@@ -47,9 +49,7 @@ public class ConnectionManager {
     private final Connection initialConnection;
     private final SocketInterceptor socketInterceptor;
     private final Lock lock = new ReentrantLock();
-    private HazelcastInstance hazelcastInstance;
     private final HeartBeatChecker heartbeat;
-//    final AtomicLong waitCount = new AtomicLong(0l);
 
     public ConnectionManager(ClientConfig config, final SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -64,28 +64,40 @@ public class ConnectionManager {
 
     public void init(HazelcastInstance hazelcast) {
         router.init(hazelcast);
-        this.hazelcastInstance = hazelcastInstance;
         initialized.set(true);
     }
 
     private Connection initialConnection(ClientConfig config) {
-        final long next = Clock.currentTimeMillis() + config.getReConnectionTimeOut();
+        final long timeoutTime = Clock.currentTimeMillis() + config.getReConnectionTimeOut();
         int attempt = 0;
-        Connection initialConnection;
-        while()
-        for (InetSocketAddress isa : config.getAddressList()) {
-            try {
-                Address address = new Address(isa);
-                initialConnection = newConnection(address);
-                return initialConnection;
-            } catch (IOException e) {
-                continue;
+        Connection initialConnection = null;
+        while (initialConnection == null) {
+            for (InetSocketAddress isa : config.getAddressList()) {
+                try {
+                    Address address = new Address(isa);
+                    initialConnection = newConnection(address);
+                    return initialConnection;
+                } catch (IOException e) {
+                    continue;
+                }
+            }
+            if (attempt >= config.getInitialConnectionAttemptLimit()) {
+                break;
+            }
+            attempt++;
+            final long remainingTimeout = timeoutTime - Clock.currentTimeMillis();
+            System.out.println(
+                    format("Unable to get alive cluster connection," +
+                            " try in {0} ms later, attempt {1} of {2}.",
+                            Math.max(0, remainingTimeout), attempt, config.getInitialConnectionAttemptLimit()));
+            
+            if( remainingTimeout > 0){
+                try {
+                    Thread.sleep(remainingTimeout);
+                } catch (InterruptedException e) {
+                }
             }
         }
-        if (attempt >= config.getInitialConnectionAttemptLimit()) {
-            break;
-        }
-
         throw new IllegalStateException("Unable to connect to any address in the config");
     }
 
