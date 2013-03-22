@@ -19,6 +19,7 @@ package com.hazelcast.collection.operations;
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -37,7 +38,7 @@ public class CountOperation extends CollectionKeyBasedOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-//        container.getOperationsCounter().incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementOtherOperations();
         Collection<CollectionRecord> coll = container.getCollection(dataKey);
         response = coll == null ? 0 : coll.size();
     }

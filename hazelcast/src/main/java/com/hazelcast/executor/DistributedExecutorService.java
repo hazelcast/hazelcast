@@ -17,6 +17,7 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -36,10 +37,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
     private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-    private final ConcurrentHashMap<String, ExecutorServiceStatsContainer> executorServiceStatsContainers = new ConcurrentHashMap<String, ExecutorServiceStatsContainer>();
-    private final ConcurrencyUtil.ConstructorFunction<String, ExecutorServiceStatsContainer> executorServiceContainerConstructor = new ConcurrencyUtil.ConstructorFunction<String, ExecutorServiceStatsContainer>() {
-        public ExecutorServiceStatsContainer createNew(String key) {
-            return new ExecutorServiceStatsContainer();
+    private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<String, LocalExecutorStatsImpl>();
+    private final ConcurrencyUtil.ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalExecutorStatsImpl>() {
+        public LocalExecutorStatsImpl createNew(String key) {
+            return new LocalExecutorStatsImpl();
         }
     };
     private NodeEngine nodeEngine;
@@ -91,20 +92,20 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         executionService.shutdownExecutor(name);
     }
 
-    ExecutorServiceStatsContainer getExecutorServiceStatsContainer(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(executorServiceStatsContainers, name, executorServiceContainerConstructor);
+    LocalExecutorStatsImpl getLocalExecutorStats(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localExecutorStatsConstructorFunction);
     }
 
     private void startExecution(String name, long elapsed) {
-        getExecutorServiceStatsContainer(name).startExecution(elapsed);
+        getLocalExecutorStats(name).startExecution(elapsed);
     }
 
     private void finishExecution(String name, long elapsed) {
-        getExecutorServiceStatsContainer(name).finishExecution(elapsed);
+        getLocalExecutorStats(name).finishExecution(elapsed);
     }
 
     private void startPending(String name) {
-        getExecutorServiceStatsContainer(name).startPending();
+        getLocalExecutorStats(name).startPending();
     }
 
     private class CallableProcessor implements Runnable {

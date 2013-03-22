@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 
 /**
  * @ali 1/8/13
@@ -33,7 +34,7 @@ public class ValuesOperation extends CollectionOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-//        container.getOperationsCounter().incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementOtherOperations();
         response = new CollectionResponse(container.values(), getNodeEngine());
     }
 }

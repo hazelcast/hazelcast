@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,7 +46,7 @@ public class ContainsEntryOperation extends CollectionOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-//        container.getOperationsCounter().incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementOtherOperations();
         if (key != null && value != null) {
             response = container.containsEntry(isBinary(), key, value);
         } else if (key != null) {

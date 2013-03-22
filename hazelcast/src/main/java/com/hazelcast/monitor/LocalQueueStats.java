@@ -54,40 +54,55 @@ public interface LocalQueueStats extends LocalInstanceStats {
      * @return average age
      */
     long getAveAge();
-//    /**
-//     * Returns the number of offer/put/add operations.
-//     * Offers returning false will be included.
-//     * #getNumberOfRejectedOffers can be used
-//     * to get the rejected offers.
-//     *
-//     * @return number offer/put/add operations
-//     */
-//    public long getNumberOfOffers();
-//
-//    /**
-//     * Returns the number of rejected offers. Offer
-//     * can be rejected because of max-size limit
-//     * on the queue.
-//     *
-//     * @return number of rejected offers.
-//     */
-//    public long getNumberOfRejectedOffers();
-//
-//    /**
-//     * Returns the number of poll/take/remove operations.
-//     * Polls returning null (empty) will be included.
-//     * #getNumberOfEmptyPolls can be used to get the
-//     * number of polls returned null.
-//     *
-//     * @return number of poll/take/remove operations.
-//     */
-//    public long getNumberOfPolls();
-//
-//    /**
-//     * Returns number of null returning poll operations.
-//     * Poll operation might return null, if the queue is empty.
-//     *
-//     * @return number of null returning poll operations.
-//     */
-//    public long getNumberOfEmptyPolls();
+
+    /**
+     * Returns the number of offer/put/add operations.
+     * Offers returning false will be included.
+     * #getNumberOfRejectedOffers can be used
+     * to get the rejected offers.
+     *
+     * @return number offer/put/add operations
+     */
+    public long getNumberOfOffers();
+
+    /**
+     * Returns the number of rejected offers. Offer
+     * can be rejected because of max-size limit
+     * on the queue.
+     *
+     * @return number of rejected offers.
+     */
+    public long getNumberOfRejectedOffers();
+
+    /**
+     * Returns the number of poll/take/remove operations.
+     * Polls returning null (empty) will be included.
+     * #getNumberOfEmptyPolls can be used to get the
+     * number of polls returned null.
+     *
+     * @return number of poll/take/remove operations.
+     */
+    public long getNumberOfPolls();
+
+    /**
+     * Returns number of null returning poll operations.
+     * Poll operation might return null, if the queue is empty.
+     *
+     * @return number of null returning poll operations.
+     */
+    public long getNumberOfEmptyPolls();
+
+    /**
+     * Returns number of //TODO operations.
+     *
+     * @return number of null returning poll operations.
+     */
+    public long getNumberOfOtherOperations();
+
+    /**
+     * Returns number of //TODO operations.
+     *
+     * @return number of null returning poll operations.
+     */
+    public long getNumberOfEvents();
 }

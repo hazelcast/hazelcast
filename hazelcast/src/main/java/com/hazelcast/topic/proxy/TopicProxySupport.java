@@ -18,13 +18,11 @@ package com.hazelcast.topic.proxy;
 
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.topic.TopicStatsContainer;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
 
@@ -50,18 +48,12 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
     }
 
     public LocalTopicStats getLocalTopicStatsInternal() {
-        LocalTopicStatsImpl localTopicStats = new LocalTopicStatsImpl();
-        TopicStatsContainer topicStatsContainer = getService().getTopicStatsContainer(name);
-        localTopicStats.setCreationTime(topicStatsContainer.getCreationTime());
-        localTopicStats.setTotalReceivedMessages(topicStatsContainer.getTotalReceivedMessages());
-        localTopicStats.setTotalPublishes(topicStatsContainer.getTotalPublishes());
-        localTopicStats.setLastPublishTime(topicStatsContainer.getLastAccessTime());
-//        localTopicStats.setOperationStats(topicStatsContainer.getOperationsCounter().getPublishedStats());
-        return localTopicStats;
+        return getService().getLocalTopicStats(name);
     }
 
     public void publishInternal(Data message) {
         TopicEvent topicEvent = new TopicEvent(name, message, getNodeEngine().getLocalMember());
+        getService().getLocalTopicStats(name).incrementPublishes();
         eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
     }
 
@@ -80,7 +72,6 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
         }
     }
 
-    @Override
     public String getServiceName() {
         return TopicService.SERVICE_NAME;
     }

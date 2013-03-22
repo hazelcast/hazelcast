@@ -51,7 +51,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     }
 
     public void afterRun() throws Exception {
-//        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
+        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
         for (Data data : dataMap.values()) {
             publishEvent(ItemEventType.REMOVED, data);
         }

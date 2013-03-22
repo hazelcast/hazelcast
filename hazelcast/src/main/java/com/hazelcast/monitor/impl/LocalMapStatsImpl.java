@@ -40,7 +40,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private long ownedEntryMemoryCost;
     private long backupEntryMemoryCost;
     private long creationTime;
-    //    private long lastUpdateTime;
     private long lockedEntryCount;
     private long dirtyEntryCount;
 
@@ -61,7 +60,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
         out.writeLong(ownedEntryMemoryCost);
         out.writeLong(backupEntryMemoryCost);
         out.writeLong(creationTime);
-//        out.writeLong(lastUpdateTime);
         out.writeLong(lockedEntryCount);
         out.writeLong(dirtyEntryCount);
         out.writeLong(totalGetLatencies.get());
@@ -133,14 +131,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
     public void setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime.set(Math.max(this.lastAccessTime.get(), lastAccessTime));
     }
-
-//    public long getLastUpdateTime() {
-//        return lastUpdateTime;
-//    }
-//
-//    public void setLastUpdateTime(long lastUpdateTime) {
-//        this.lastUpdateTime = Math.max(this.lastUpdateTime, lastUpdateTime);
-//    }
 
     public long getHits() {
         return hits.get();
@@ -242,7 +232,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 ", ownedEntryMemoryCost=" + ownedEntryMemoryCost +
                 ", backupEntryMemoryCost=" + backupEntryMemoryCost +
                 ", creationTime=" + creationTime +
-//                ", lastUpdateTime=" + lastUpdateTime +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +
                 '}';

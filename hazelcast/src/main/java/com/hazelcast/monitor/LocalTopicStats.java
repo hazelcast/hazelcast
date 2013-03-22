@@ -39,25 +39,5 @@ public interface LocalTopicStats extends LocalInstanceStats {
      */
     long getTotalReceivedMessages();
 
-    /**
-     * Returns the last publish time of this topic on this member
-     *
-     * @return last publish time
-     */
-    long getLastPublishTime();
-
-//    /**
-//     * Returns the number of publish operations of the topic on this member in a specific time interval.
-//     *
-//     * @return number of publish operations
-//     */
-//    public long getNumberOfPublishes();
-//
-//    /**
-//     * Returns the number of received messages of the topic on this member in a specific time interval
-//     *
-//     * @return number of received messages .
-//     */
-//    public long getNumberOfReceivedMessages();
 
 }

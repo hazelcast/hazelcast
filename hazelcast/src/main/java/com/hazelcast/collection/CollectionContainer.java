@@ -73,7 +73,7 @@ public class CollectionContainer {
         return lockStore != null && lockStore.canAcquireLock(dataKey, caller, threadId);
     }
 
-    public boolean isLocked(Data dataKey){
+    public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
@@ -192,19 +192,19 @@ public class CollectionContainer {
         collections.clear();
     }
 
-    public void access(){
+    public void access() {
         lastAccessTime.set(Clock.currentTimeMillis());
     }
 
-    public void update(){
+    public void update() {
         lastUpdateTime.set(Clock.currentTimeMillis());
     }
 
-    public long getLastAccessTime(){
+    public long getLastAccessTime() {
         return lastAccessTime.get();
     }
 
-    public long getLastUpdateTime(){
+    public long getLastUpdateTime() {
         return lastUpdateTime.get();
     }
 
@@ -212,11 +212,9 @@ public class CollectionContainer {
         return creationTime;
     }
 
-    public long getLockedCount(){
+    public long getLockedCount() {
         return lockStore.getLockedKeys().size();
     }
 
-//    public MapOperationsCounter getOperationsCounter() {
-//        return service.getOrCreateOperationsCounter(proxyId);
-//    }
+
 }

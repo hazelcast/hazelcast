@@ -19,9 +19,10 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalQueueStatsImpl implements LocalQueueStats {
 
@@ -30,16 +31,16 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     private long minAge;
     private long maxAge;
     private long aveAge;
+    private long creationTime;
+    private AtomicLong numberOfOffers = new AtomicLong(0);
+    private AtomicLong numberOfRejectedOffers = new AtomicLong(0);
+    private AtomicLong numberOfPolls = new AtomicLong(0);
+    private AtomicLong numberOfEmptyPolls = new AtomicLong(0);
+    private AtomicLong numberOfOtherOperations = new AtomicLong(0);
+    private AtomicLong numberOfEvents = new AtomicLong(0);
 
     public LocalQueueStatsImpl() {
-    }
-
-    public LocalQueueStatsImpl(int ownedItemCount, int backupItemCount, long minAge, long maxAge, long aveAge) {
-        this.ownedItemCount = ownedItemCount;
-        this.backupItemCount = backupItemCount;
-        this.minAge = minAge;
-        this.maxAge = maxAge;
-        this.aveAge = aveAge;
+        creationTime = Clock.currentTimeMillis();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -48,6 +49,13 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         out.writeLong(minAge);
         out.writeLong(maxAge);
         out.writeLong(aveAge);
+        out.writeLong(creationTime);
+        out.writeLong(numberOfOffers.get());
+        out.writeLong(numberOfPolls.get());
+        out.writeLong(numberOfRejectedOffers.get());
+        out.writeLong(numberOfEmptyPolls.get());
+        out.writeLong(numberOfOtherOperations.get());
+        out.writeLong(numberOfEvents.get());
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -56,8 +64,38 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         minAge = in.readLong();
         maxAge = in.readLong();
         aveAge = in.readLong();
+        creationTime = in.readLong();
+        numberOfOffers.set(in.readLong());
+        numberOfPolls.set(in.readLong());
+        numberOfRejectedOffers.set(in.readLong());
+        numberOfEmptyPolls.set(in.readLong());
+        numberOfOtherOperations.set(in.readLong());
+        numberOfEvents.set(in.readLong());
     }
 
+    public long getMinAge() {
+        return minAge;
+    }
+
+    public void setMinAge(long minAge) {
+        this.minAge = minAge;
+    }
+
+    public long getMaxAge() {
+        return maxAge;
+    }
+
+    public void setMaxAge(long maxAge) {
+        this.maxAge = maxAge;
+    }
+
+    public long getAveAge() {
+        return aveAge;
+    }
+
+    public void setAveAge(long aveAge) {
+        this.aveAge = aveAge;
+    }
 
     public int getOwnedItemCount() {
         return ownedItemCount;
@@ -67,118 +105,69 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.ownedItemCount = ownedItemCount;
     }
 
-    public void setBackupItemCount(int backupItemCount) {
-        this.backupItemCount = backupItemCount;
-    }
-
-    public void setMinAge(long minAge) {
-        this.minAge = minAge;
-    }
-
-    public void setMaxAge(long maxAge) {
-        this.maxAge = maxAge;
-    }
-
-    public void setAveAge(long aveAge) {
-        this.aveAge = aveAge;
-    }
-
     public int getBackupItemCount() {
         return backupItemCount;
     }
 
-    public long getMaxAge() {
-        return maxAge;
+    public void setBackupItemCount(int backupItemCount) {
+        this.backupItemCount = backupItemCount;
     }
 
-    public long getMinAge() {
-        return minAge;
-    }
-
-    public long getAveAge() {
-        return aveAge;
-    }
-
-    @Override
-    public String toString() {
-        return "LocalQueueStatsImpl{" +
-                "aveAge=" + aveAge +
-                ", ownedItemCount=" + ownedItemCount +
-                ", backupItemCount=" + backupItemCount +
-                ", minAge=" + minAge +
-                ", maxAge=" + maxAge +
-                '}';
-    }
-
-    @Override
     public long getCreationTime() {
-        return 0;
+        return creationTime;
     }
 
+    public long total() {
+        return numberOfOffers.get() + numberOfPolls.get() + numberOfOtherOperations.get();
+    }
 
-//    long numberOfOffers;
-//    long numberOfRejectedOffers;
-//    long numberOfPolls;
-//    long numberOfEmptyPolls;
-//    long numberOfOtherOperations;
-//    long numberOfEvents;
-//
-//    public void writeData(ObjectDataOutput out) throws IOException {
-//        out.writeLong(numberOfOffers);
-//        out.writeLong(numberOfPolls);
-//        out.writeLong(numberOfRejectedOffers);
-//        out.writeLong(numberOfEmptyPolls);
-//        out.writeLong(numberOfOtherOperations);
-//        out.writeLong(numberOfEvents);
-//    }
-//
-//    public void readData(ObjectDataInput in) throws IOException {
-//        numberOfOffers = in.readLong();
-//        numberOfPolls = in.readLong();
-//        numberOfRejectedOffers = in.readLong();
-//        numberOfEmptyPolls = in.readLong();
-//        numberOfOtherOperations = in.readLong();
-//        numberOfEvents = in.readLong();
-//    }
-//
-//    public long total() {
-//        return numberOfOffers + numberOfPolls + numberOfOtherOperations;
-//    }
-//
-//    public long getNumberOfOffers() {
-//        return numberOfOffers;
-//    }
-//
-//    public long getNumberOfRejectedOffers() {
-//        return numberOfRejectedOffers;
-//    }
-//
-//    public long getNumberOfPolls() {
-//        return numberOfPolls;
-//    }
-//
-//    public long getNumberOfEmptyPolls() {
-//        return numberOfEmptyPolls;
-//    }
-//
-//    public long getNumberOfOtherOperations() {
-//        return numberOfOtherOperations;
-//    }
-//
-//    public long getNumberOfEvents() {
-//        return numberOfEvents;
-//    }
-//
-//    public String toString() {
-//        return "LocalQueueOperationStats{" +
-//                "total= " + total() +
-//                ", offers:" + numberOfOffers +
-//                ", polls:" + numberOfPolls +
-//                ", rejectedOffers:" + numberOfRejectedOffers +
-//                ", emptyPolls:" + numberOfEmptyPolls +
-//                ", others: " + numberOfOtherOperations +
-//                ", received events: " + numberOfEvents +
-//                "}";
-//    }
+    public long getNumberOfOffers() {
+        return numberOfOffers.get();
+    }
+
+    public long getNumberOfRejectedOffers() {
+        return numberOfRejectedOffers.get();
+    }
+
+    public long getNumberOfPolls() {
+        return numberOfPolls.get();
+    }
+
+    public long getNumberOfEmptyPolls() {
+        return numberOfEmptyPolls.get();
+    }
+
+    public long getNumberOfOtherOperations() {
+        return numberOfOtherOperations.get();
+    }
+
+    public void incrementOtherOperations() {
+        numberOfOtherOperations.incrementAndGet();
+    }
+
+    public void incrementOffers() {
+        numberOfOffers.incrementAndGet();
+    }
+
+    public void incrementRejectedOffers() {
+        numberOfRejectedOffers.incrementAndGet();
+    }
+
+    public void incrementPolls() {
+        numberOfPolls.incrementAndGet();
+    }
+
+    public void incrementEmptyPolls() {
+        numberOfEmptyPolls.incrementAndGet();
+    }
+
+    public void incrementReceivedEvents() {
+        numberOfEvents.incrementAndGet();
+    }
+
+    public long getNumberOfEvents() {
+        return numberOfEvents.get();
+    }
+
 
 }

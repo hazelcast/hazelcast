@@ -67,13 +67,6 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     long getLastAccessTime();
 
-//    /**
-//     * Returns the last update time of the locally owned entries.
-//     *
-//     * @return last update time.
-//     */
-//    long getLastUpdateTime();
-
     /**
      * Returns the number of hits (reads) of the locally owned entries.
      *

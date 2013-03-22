@@ -19,101 +19,51 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalTopicStatsImpl implements LocalTopicStats {
 
     private long creationTime;
-    private long totalPublishes;
-    private long totalReceivedMessages;
-    private long lastPublishTime;
+    private AtomicLong totalPublishes = new AtomicLong(0);
+    private AtomicLong totalReceivedMessages = new AtomicLong(0);
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(creationTime);
-        out.writeLong(totalPublishes);
-        out.writeLong(totalReceivedMessages);
-        out.writeLong(lastPublishTime);
+    public LocalTopicStatsImpl() {
+        creationTime = Clock.currentTimeMillis();
     }
 
-    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(creationTime);
+        out.writeLong(totalPublishes.get());
+        out.writeLong(totalReceivedMessages.get());
+    }
+
     public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
-        totalPublishes = in.readLong();
-        totalReceivedMessages = in.readLong();
-        lastPublishTime = in.readLong();
+        totalPublishes.set(in.readLong());
+        totalReceivedMessages.set(in.readLong());
     }
 
     public long getCreationTime() {
         return creationTime;
     }
 
-    public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
-    }
-
     public long getTotalPublishes() {
-        return totalPublishes;
+        return totalPublishes.get();
     }
 
-    public void setTotalPublishes(long totalPublishes) {
-        this.totalPublishes = totalPublishes;
+    public void incrementPublishes() {
+        totalPublishes.incrementAndGet();
     }
 
     public long getTotalReceivedMessages() {
-        return totalReceivedMessages;
+        return totalReceivedMessages.get();
     }
 
-    public void setTotalReceivedMessages(long totalReceivedMessages) {
-        this.totalReceivedMessages = totalReceivedMessages;
+    public void incrementReceives() {
+        totalReceivedMessages.incrementAndGet();
     }
-
-    public long getLastPublishTime() {
-        return lastPublishTime;
-    }
-
-    public void setLastPublishTime(long lastPublishTime) {
-        this.lastPublishTime = lastPublishTime;
-    }
-
-    @Override
-    public String toString() {
-        return "LocalTopicStatsImpl{" +
-                "creationTime=" + creationTime +
-                ", totalPublishes=" + totalPublishes +
-                ", totalReceivedMessages=" + totalReceivedMessages +
-                ", lastPublishTime=" + lastPublishTime +
-                '}';
-    }
-
-//    long numberOfPublishes;
-//    long numberOfReceives;
-//
-//    public void writeData(ObjectDataOutput out) throws IOException {
-//        out.writeLong(numberOfPublishes);
-//        out.writeLong(numberOfReceives);
-//    }
-//
-//    public void readData(ObjectDataInput in) throws IOException {
-//        numberOfPublishes = in.readLong();
-//        numberOfReceives = in.readLong();
-//    }
-//
-//    public long getNumberOfPublishes() {
-//        return numberOfPublishes;
-//    }
-//
-//    public long getNumberOfReceivedMessages() {
-//        return numberOfReceives;
-//    }
-//
-//    @Override
-//    public String toString() {
-//        return "LocalTopicOperationStatsImpl{" +
-//                "numberOfPublishes=" + numberOfPublishes +
-//                ", numberOfReceives=" + numberOfReceives +
-//                '}';
-//    }
 
 }

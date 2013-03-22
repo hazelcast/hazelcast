@@ -33,6 +33,7 @@ import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,11 +52,15 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         RemoteService, EventPublishingService<QueueEvent, ItemListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
-
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
-//    private final ConcurrentMap<String, QueueOperationsCounter> counterMap = new ConcurrentHashMap<String, QueueOperationsCounter>(1000);
+    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
+    private final ConcurrencyUtil.ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalQueueStatsImpl>() {
+        public LocalQueueStatsImpl createNew(String key) {
+            return new LocalQueueStatsImpl();
+        }
+    };
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -146,7 +151,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         } else {
             listener.itemRemoved(itemEvent);
         }
-//        getOrCreateOperationsCounter(event.name).incrementReceivedEvents();
+        getLocalQueueStatsImpl(event.name).incrementReceivedEvents();
     }
 
     public String getServiceName() {
@@ -206,37 +211,27 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return nodeEngine;
     }
 
-    public LocalQueueStats createLocalQueueStats(String name, int partitionId){
-        LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
+    public LocalQueueStats createLocalQueueStats(String name, int partitionId) {
+        LocalQueueStatsImpl stats = getLocalQueueStatsImpl(name);
         QueueContainer container = containerMap.get(name);
-        if (container == null){
+        if (container == null) {
             return stats;
         }
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
         PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
-        if (thisAddress.equals(info.getOwner())){
+        if (thisAddress.equals(info.getOwner())) {
             stats.setOwnedItemCount(container.size());
-        }
-        else{
+        } else {
             stats.setBackupItemCount(container.size());
         }
         container.setStats(stats);
-//        stats.setOperationStats(getOrCreateOperationsCounter(name).getPublishedStats());
         return stats;
     }
 
-//    public QueueOperationsCounter getOrCreateOperationsCounter(String name){
-//        QueueOperationsCounter operationsCounter = counterMap.get(name);
-//        if (operationsCounter == null){
-//            operationsCounter = new QueueOperationsCounter();
-//            QueueOperationsCounter counter = counterMap.putIfAbsent(name, operationsCounter);
-//            if (counter != null){
-//                operationsCounter = counter;
-//            }
-//        }
-//        return operationsCounter;
-//    }
+    public LocalQueueStatsImpl getLocalQueueStatsImpl(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
+    }
 
     public TransactionalQueueProxy createTransactionalObject(Object id, Transaction transaction) {
         return new TransactionalQueueProxy(String.valueOf(id), nodeEngine, this, transaction);
