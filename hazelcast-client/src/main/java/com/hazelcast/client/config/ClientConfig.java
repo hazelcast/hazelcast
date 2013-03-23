@@ -16,13 +16,10 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.Router;
-import com.hazelcast.client.impl.RandomRouter;
-import com.hazelcast.client.impl.RoundRobinRouter;
+import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.impl.RoundRobinLB;
 import com.hazelcast.client.util.AddressHelper;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
@@ -36,22 +33,19 @@ public class ClientConfig {
 
     private GroupConfig groupConfig = new GroupConfig();
     private final List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
-    private Router router = new RoundRobinRouter();
-
+    private LoadBalancer loadBalancer = new RoundRobinLB();
 
     private final Collection<EventListener> listeners = new HashSet<EventListener>();
 
     private boolean smart = true;
-    
+
     private boolean retryOperation = true;
     private int poolSize = 500;
-
 
     private int connectionTimeout = 300000;
     private int initialConnectionAttemptLimit = 1;
     private int reConnectionTimeOut = 5000;
     private int reconnectionAttemptLimit = 1;
-
 
     private SocketInterceptor socketInterceptor = null;
     private Credentials credentials;
@@ -188,12 +182,12 @@ public class ClientConfig {
         return this;
     }
 
-    public Router getRouter() {
-        return router;
+    public LoadBalancer getLoadBalancer() {
+        return loadBalancer;
     }
 
-    public void setRouter(Router router) {
-        this.router = router;
+    public void setLoadBalancer(LoadBalancer loadBalancer) {
+        this.loadBalancer = loadBalancer;
     }
 
     public boolean isRetryOperation() {

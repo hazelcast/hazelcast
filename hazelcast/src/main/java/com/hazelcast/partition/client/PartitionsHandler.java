@@ -43,8 +43,11 @@ public class PartitionsHandler extends PartitionCommandHandler {
             Set<Partition> set = partitionService.getPartitionServiceProxy().getPartitions();
             for (Partition partition : set) {
                 args.add(String.valueOf(partition.getPartitionId()));
-                args.add(partition.getOwner().getInetSocketAddress().getHostName());
-                args.add(String.valueOf(partition.getOwner().getInetSocketAddress().getPort()));
+                String owner = partition.getOwner() == null ? null : partition.getOwner().getInetSocketAddress().getHostName();
+                args.add(owner);
+                int port = partition.getOwner() == null? -1 : partition.getOwner().getInetSocketAddress().getPort();
+                args.add(String.valueOf(port));
+
             }
         }
         return protocol.success(args.toArray(new String[0]));

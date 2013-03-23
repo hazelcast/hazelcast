@@ -17,7 +17,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.Router;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.core.*;
 
 import java.util.Arrays;
@@ -25,7 +25,7 @@ import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class RoundRobinRouter implements Router, MembershipListener {
+public class RoundRobinLB implements LoadBalancer, MembershipListener {
     final AtomicLong index = new AtomicLong(0);
     final AtomicReference<Member[]> memberRef = new AtomicReference(new Member[]{});
 

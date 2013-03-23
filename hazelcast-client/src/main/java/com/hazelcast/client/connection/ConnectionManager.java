@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.Router;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.exception.ClusterClientException;
 import com.hazelcast.client.util.pool.ObjectPool;
 import com.hazelcast.client.util.pool.QueueBasedObjectPool;
 import com.hazelcast.core.HazelcastInstance;
@@ -43,7 +44,7 @@ public class ConnectionManager {
     private final int connectionTimeout;
     private final SerializationService serializationService;
     private final DefaultClientBinder binder;
-    private final Router router;
+    private final LoadBalancer router;
     private final ConcurrentMap<Address, ObjectPool<Connection>> mPool = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final Connection initialConnection;
@@ -55,7 +56,7 @@ public class ConnectionManager {
         this.serializationService = serializationService;
         binder = new DefaultClientBinder(serializationService, config.getCredentials());
         initialConnection = initialConnection(config);
-        router = config.getRouter();
+        router = config.getLoadBalancer();
         socketInterceptor = config.getSocketInterceptor();
         poolSize = config.getPoolSize();
         connectionTimeout = config.getConnectionTimeout();
@@ -68,16 +69,19 @@ public class ConnectionManager {
     }
 
     private Connection initialConnection(ClientConfig config) {
-        final long timeoutTime = Clock.currentTimeMillis() + config.getReConnectionTimeOut();
+
         int attempt = 0;
         Connection initialConnection = null;
         while (initialConnection == null) {
+            final long timeoutTime = Clock.currentTimeMillis() + config.getReConnectionTimeOut();
             for (InetSocketAddress isa : config.getAddressList()) {
                 try {
                     Address address = new Address(isa);
                     initialConnection = newConnection(address);
                     return initialConnection;
                 } catch (IOException e) {
+                    continue;
+                } catch (ClusterClientException e) {
                     continue;
                 }
             }
@@ -88,10 +92,12 @@ public class ConnectionManager {
             final long remainingTimeout = timeoutTime - Clock.currentTimeMillis();
             System.out.println(
                     format("Unable to get alive cluster connection," +
-                            " try in {0} ms later, attempt {1} of {2}.",
+                            " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTimeout), attempt, config.getInitialConnectionAttemptLimit()));
             
             if( remainingTimeout > 0){
+
+
                 try {
                     Thread.sleep(remainingTimeout);
                 } catch (InterruptedException e) {
@@ -117,7 +123,7 @@ public class ConnectionManager {
         if (member == null) {
             member = router.next();
             if (member == null) {
-                throw new RuntimeException("Router '" + router + "' could not find a member to route to");
+                throw new RuntimeException("LoadBalancer '" + router + "' could not find a member to route to");
             }
         }
         ObjectPool<Connection> pool = mPool.get(member.getInetSocketAddress());
@@ -130,7 +136,7 @@ public class ConnectionManager {
         }
         Connection connection = pool.take();
         //Could be that this member is dead and that's why pool is not able to create and give a connection.
-        //We will call it again, and hopefully at some time Router will give us the right target for the connection.
+        //We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.
         if (connection == null) {
             Thread.sleep(1000);
             return takeConnection(null);
@@ -170,7 +176,7 @@ public class ConnectionManager {
             pool.release(connection);
     }
 
-    public Router getRouter() {
+    public LoadBalancer getRouter() {
         return router;
     }
 }

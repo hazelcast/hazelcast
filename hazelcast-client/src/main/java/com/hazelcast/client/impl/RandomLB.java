@@ -17,19 +17,18 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.Router;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.core.*;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * The RandomRouter randomly selects a member to route to.
+ * The RandomLB randomly selects a member to route to.
  */
-public class RandomRouter implements Router, MembershipListener {
+public class RandomLB implements LoadBalancer, MembershipListener {
     final AtomicReference<List<Member>> membersRef = new AtomicReference<List<Member>>();
     final Random random = new Random(System.currentTimeMillis());
 

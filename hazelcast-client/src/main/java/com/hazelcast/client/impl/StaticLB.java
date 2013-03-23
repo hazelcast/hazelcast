@@ -17,14 +17,14 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.Router;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 
-public class StaticRouter implements Router {
+public class StaticLB implements LoadBalancer {
     final Member member;
 
-    StaticRouter(Member member) {
+    StaticLB(Member member) {
         this.member = member;
     }
 

@@ -20,7 +20,7 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 
-public interface Router {
+public interface LoadBalancer {
     public void init(HazelcastInstance h);
 
     /**

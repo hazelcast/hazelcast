@@ -112,6 +112,7 @@ public class TestClientApp {
             pass = args[2];
         }
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setInitialConnectionAttemptLimit(5);
         clientConfig.setGroupConfig(new GroupConfig(groupName, pass));
         System.out.println("Connecting to " + ip);
         String[] ips = null;

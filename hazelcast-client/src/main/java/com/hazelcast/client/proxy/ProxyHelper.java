@@ -136,7 +136,7 @@ public class ProxyHelper {
 
     public ListenerThread createAListenerThread(String threadName, HazelcastClient client, Protocol request, ListenerResponseHandler lrh) {
         ConnectionManager cp = client.getConnectionPool();
-        Router rt = cp.getRouter();
+        LoadBalancer rt = cp.getRouter();
         Member member = rt.next();
         InetSocketAddress isa;
         if (member == null)
