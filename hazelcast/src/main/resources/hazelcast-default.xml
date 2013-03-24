@@ -122,7 +122,7 @@
            OBJECT : values will be stored in their object forms
            CACHED: object form of values will be cached
         -->
-        <record-type>DATA</record-type>
+        <memory-format>DATA</memory-format>
 
         <!--
             Number of backups. If 1 is set as the backup-count for example,
