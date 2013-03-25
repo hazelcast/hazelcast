@@ -62,7 +62,7 @@ public class TestUtility {
         clientConfig.setConnectionTimeout(properties.getInteger(ClientProperties.ClientPropertyName.CONNECTION_TIMEOUT));
         clientConfig.setInitialConnectionAttemptLimit(properties.getInteger(ClientProperties.ClientPropertyName.INIT_CONNECTION_ATTEMPTS_LIMIT));
         clientConfig.setReconnectionAttemptLimit(properties.getInteger(ClientProperties.ClientPropertyName.RECONNECTION_ATTEMPTS_LIMIT));
-        clientConfig.setReConnectionTimeOut(properties.getInteger(ClientProperties.ClientPropertyName.RECONNECTION_TIMEOUT));
+        clientConfig.setAttemptPeriod(properties.getInteger(ClientProperties.ClientPropertyName.RECONNECTION_TIMEOUT));
         return clientConfig;
     }
 

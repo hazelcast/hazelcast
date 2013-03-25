@@ -18,6 +18,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 
@@ -29,7 +30,7 @@ public class StaticLB implements LoadBalancer {
     }
 
     @Override
-    public void init(HazelcastInstance h) {
+    public void init(HazelcastInstance h, ClientConfig config) {
     }
 
     @Override

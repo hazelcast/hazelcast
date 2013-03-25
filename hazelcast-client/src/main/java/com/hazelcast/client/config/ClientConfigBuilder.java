@@ -100,7 +100,7 @@ public class ClientConfigBuilder {
             config.setInitialConnectionAttemptLimit(Integer.parseInt(props.getProperty(CONNECTION_ATTEMPT_LIMIT)));
         }
         if (props.containsKey(RECONNECTION_TIMEOUT)) {
-            config.setReConnectionTimeOut(Integer.parseInt(props.getProperty(RECONNECTION_TIMEOUT)));
+            config.setAttemptPeriod(Integer.parseInt(props.getProperty(RECONNECTION_TIMEOUT)));
         }
         if (props.containsKey(RECONNECTION_ATTEMPT_LIMIT)) {
             config.setReconnectionAttemptLimit(Integer.parseInt(props.getProperty(RECONNECTION_ATTEMPT_LIMIT)));

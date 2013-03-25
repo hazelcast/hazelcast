@@ -16,7 +16,8 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.connection.ConnectionManager;
 import com.hazelcast.client.connection.ProtocolReader;
@@ -55,7 +56,7 @@ public class ProxyHelper {
     final ConnectionManager cp;
     final PartitionClientProxy pp;
     final boolean smart;
-    final boolean retry;
+    final boolean redo;
     private final SerializationService ss;
 
     public ProxyHelper(HazelcastClient client) {
@@ -65,7 +66,7 @@ public class ProxyHelper {
         this.writer = new ProtocolWriter(ss);
         this.reader = new ProtocolReader(ss);
         smart = client.getClientConfig().isSmart();
-        retry = client.getClientConfig().isRetryOperation();
+        redo = client.getClientConfig().isRedoOperation();
     }
 
     public int getCurrentThreadId() {
@@ -248,12 +249,10 @@ public class ProxyHelper {
                 throw new RuntimeException(response.command + ": " + Arrays.asList(response.args));
             }
         } catch (HazelcastInstanceNotActiveException e) {
-            if (retry) {
-                sleep(1000);
-                return doCommand((Member) null, command, args, data);
-            } else throw e;
+            sleep(1000);
+            return doCommand((Member) null, command, args, data);
         } catch (IOException e) {
-            if (retry) {
+            if (redo) {
                 sleep(1000);
                 return doCommand((Member) null, command, args, data);
             } else throw new RuntimeException(e);
