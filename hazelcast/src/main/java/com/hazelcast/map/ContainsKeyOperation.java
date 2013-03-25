@@ -16,15 +16,10 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
-import java.io.IOException;
 
 public class ContainsKeyOperation extends KeyBasedMapOperation {
 
-    private String txnId;
     private transient boolean containsKey;
 
     public ContainsKeyOperation() {
@@ -34,19 +29,7 @@ public class ContainsKeyOperation extends KeyBasedMapOperation {
         super(name, dataKey);
     }
 
-    public ContainsKeyOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey);
-        this.txnId = txnId;
-    }
-
     public void run() {
-        if (txnId != null) {
-            final TransactionItem item = partitionContainer.getTransactionItem(new TransactionKey(txnId, name, dataKey));
-            if (item != null) {
-                containsKey = true;
-                return;
-            }
-        }
         containsKey = recordStore.getRecords().containsKey(dataKey);
     }
 
@@ -59,17 +42,5 @@ public class ContainsKeyOperation extends KeyBasedMapOperation {
     public String toString() {
         return "ContainsKeyOperation{" +
                 '}';
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
     }
 }

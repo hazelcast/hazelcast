@@ -28,6 +28,7 @@ import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.ConcurrentModificationException;
 import java.util.concurrent.Future;
 
 /**
@@ -48,7 +49,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (tx.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
-        ContainsKeyOperation operation = new ContainsKeyOperation(name, key, tx.getTxnId());
+        ContainsKeyOperation operation = new ContainsKeyOperation(name, key);
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
@@ -72,7 +73,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             if (cachedData != null)
                 return cachedData;
         }
-        GetOperation operation = new GetOperation(name, key, tx.getTxnId());
+        GetOperation operation = new GetOperation(name, key);
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
@@ -86,56 +87,23 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public Data putInternal(Data key, Data value) {
-        TxPutOperation op = new TxPutOperation(name, key, value);
-        return (Data) invokeOperation(key, op);
+        VersionedValue versionedValue = lockAndGet(key, -1, 10000);
+        if (versionedValue == null) {
+            throw new ConcurrentModificationException("Transaction couldn't obtain lock");
+        }
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnPutOperation(name, key, value, -1), versionedValue.version));
+        return versionedValue.value;
     }
 
-    public void setInternal(Data key, Data value) {
-        TxSetOperation op = new TxSetOperation(name, key, value);
-        invokeOperation(key, op);
-    }
-
-    public Data putIfAbsentInternal(Data key, Data value) {
-        TxPutIfAbsentOperation op = new TxPutIfAbsentOperation(name, key, value);
-        return (Data)invokeOperation(key, op);
-    }
-
-    public Data replaceInternal(Data key, Data value) {
-        TxReplaceOperation op = new TxReplaceOperation(name, key, value);
-        return (Data)invokeOperation(key, op);
-    }
-
-    public boolean replaceInternal(Data key, Data testValue, Data newValue) {
-        TxReplaceIfSameOperation op = new TxReplaceIfSameOperation(name, key, testValue, newValue);
-        return (Boolean)invokeOperation(key, op);
-    }
-
-    public Data removeInternal(Data key) {
-        TxRemoveOperation op = new TxRemoveOperation(name, key);
-        return (Data) invokeOperation(key, op);
-    }
-
-    public void deleteInternal(Data key) {
-        TxDeleteOperation op = new TxDeleteOperation(name, key);
-        invokeOperation(key, op);
-    }
-
-    public boolean removeInternal(Data key, Data value) {
-        TxRemoveIfSameOperation op = new TxRemoveIfSameOperation(name, key, value);
-        return (Boolean) invokeOperation(key, op);
-    }
-
-    private Object invokeOperation(Data key, TransactionalMapOperation operation) {
+    private VersionedValue lockAndGet(Data key, long ttl, long timeout) {
         final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        tx.addPartition(partitionId);
-        operation.setTransactionId(tx.getTxnId());
-        operation.setTimeout(tx.getTimeoutMillis());
+        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, ttl, timeout);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
                     .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            Future f = invocation.invoke();
+            Future<VersionedValue> f = invocation.invoke();
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

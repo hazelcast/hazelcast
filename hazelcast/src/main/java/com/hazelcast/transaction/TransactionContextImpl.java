@@ -31,9 +31,9 @@ class TransactionContextImpl implements TransactionContext {
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
 
-    public TransactionContextImpl(NodeEngineImpl nodeEngine, TransactionOptions options) {
+    public TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine, TransactionOptions options) {
         this.nodeEngine = nodeEngine;
-        this.transaction  = new TransactionImpl(this.nodeEngine, options.getTimeoutMillis());
+        this.transaction  = new TransactionImpl(transactionManagerService, nodeEngine, options);
     }
 
     public void beginTransaction() {

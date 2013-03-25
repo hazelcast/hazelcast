@@ -33,7 +33,6 @@ public class MapMigrationOperation extends AbstractOperation {
 
     // TODO: @mm - simplify please...
     private Map<String, Set<Record>> data;
-    private Collection<TransactionItem> transactionItems;
 
     public MapMigrationOperation() {
     }
@@ -54,7 +53,6 @@ public class MapMigrationOperation extends AbstractOperation {
             }
             data.put(name, recordSet);
         }
-        transactionItems = container.transactionItems.values();
     }
 
     public void run() {
@@ -70,12 +68,6 @@ public class MapMigrationOperation extends AbstractOperation {
                     record.setStatistics(recordEntry.getStatistics());
                     recordStore.getRecords().put(recordEntry.getKey(), record);
                 }
-            }
-        }
-        if (transactionItems != null && !transactionItems.isEmpty()) {
-            for (TransactionItem item : transactionItems) {
-                final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
-                partitionContainer.addTransactionItem(item);
             }
         }
     }
@@ -99,15 +91,6 @@ public class MapMigrationOperation extends AbstractOperation {
             }
             data.put(name, recordSet);
         }
-        int txSize = in.readInt();
-        if (txSize > 0) {
-            transactionItems = new ArrayList<TransactionItem>(txSize);
-            for (int i = 0; i < txSize; i++) {
-                TransactionItem item = new TransactionItem();
-                item.readData(in);
-                transactionItems.add(item);
-            }
-        }
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
@@ -119,13 +102,6 @@ public class MapMigrationOperation extends AbstractOperation {
             for (Record record : recordSet) {
                 record.getKey().writeData(out);
                 out.writeObject(record);
-            }
-        }
-        final int txSize = transactionItems.size();
-        out.writeInt(txSize);
-        if (txSize > 0) {
-            for (TransactionItem item : transactionItems) {
-                item.writeData(out);
             }
         }
     }

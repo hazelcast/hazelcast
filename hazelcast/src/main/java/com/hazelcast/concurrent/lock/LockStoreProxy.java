@@ -68,6 +68,11 @@ public final class LockStoreProxy implements LockStore {
         return getLockStore().getLockedKeys();
     }
 
+    @Override
+    public boolean forceUnlock(Data key) {
+        return getLockStore().forceUnlock(key);
+    }
+
     private LockStore getLockStore() {
         return container.getLockStore(namespace);
     }

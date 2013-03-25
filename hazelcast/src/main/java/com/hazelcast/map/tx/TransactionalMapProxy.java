@@ -45,34 +45,38 @@ public class TransactionalMapProxy<K,V> extends TransactionalMapProxySupport imp
         return (V) getService().toObject(result);
     }
 
+    @Override
     public void set(K key, V value) {
-        setInternal(getService().toData(key), getService().toData(value));
+
     }
 
+    @Override
     public V putIfAbsent(K key, V value) {
-        final Data result = putIfAbsentInternal(getService().toData(key), getService().toData(value));
-        return (V) getService().toObject(result);
+        return null;
     }
 
+    @Override
     public V replace(K key, V value) {
-        final Data result = replaceInternal(getService().toData(key), getService().toData(value));
-        return (V) getService().toObject(result);
+        return null;
     }
 
-    public boolean replace(K key, V testValue, V newValue) {
-        return replaceInternal(getService().toData(key), getService().toData(testValue), getService().toData(newValue));
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        return false;
     }
 
+    @Override
     public V remove(Object key) {
-        final Data result = removeInternal(getService().toData(key));
-        return (V) getService().toObject(result);
+        return null;
     }
 
+    @Override
     public void delete(Object key) {
-        deleteInternal(getService().toData(key));
+
     }
 
+    @Override
     public boolean remove(Object key, Object value) {
-        return removeInternal(getService().toData(key), getService().toData(value));
+        return false;
     }
 }

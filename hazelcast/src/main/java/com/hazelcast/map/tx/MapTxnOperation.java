@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.multimap.tx;
+package com.hazelcast.map.tx;
+
+import com.hazelcast.spi.Notifier;
 
 /**
- * @ali 3/13/13
+ * @mdogan 3/25/13
  */
-public class TransactionItem {
+public interface MapTxnOperation extends Notifier {
+
+    void setVersion(long version);
+
+    long getVersion();
+
+    void setThreadId(int threadId);
 }

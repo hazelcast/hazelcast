@@ -16,49 +16,66 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.InvocationAction;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 /**
- * @mdogan 2/26/13
+ * @mdogan 3/25/13
  */
-abstract class BaseTxOperation extends Operation implements PartitionAwareOperation {
+public final class PurgeTxBackupOperation extends Operation {
 
-    protected String txnId;
+    private String txnId;
 
-    protected BaseTxOperation() {
+    public PurgeTxBackupOperation() {
     }
 
-    protected BaseTxOperation(String txnId) {
+    public PurgeTxBackupOperation(String txnId) {
         this.txnId = txnId;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
+    public void run() throws Exception {
+        TransactionManagerServiceImpl txManagerService = getService();
+        txManagerService.purgeTxBackupLog(txnId);
+    }
+
+    @Override
     public void afterRun() throws Exception {
     }
 
-    public final boolean returnsResponse() {
+    @Override
+    public boolean returnsResponse() {
         return true;
     }
 
-    public final Object getResponse() {
+    @Override
+    public Object getResponse() {
         return Boolean.TRUE;
     }
 
-    public final String getServiceName() {
-        return TransactionManagerServiceImpl.SERVICE_NAME;
+    @Override
+    public InvocationAction onException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException) {
+            return InvocationAction.THROW_EXCEPTION;
+        }
+        return super.onException(throwable);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(txnId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         txnId = in.readUTF();
     }

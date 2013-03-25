@@ -16,47 +16,67 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.InvocationAction;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
- * @mdogan 2/27/13
+ * @mdogan 3/25/13
  */
-
-public class BroadcastCommitOperation extends AbstractOperation {
+public final class RollbackTxBackupOperation extends Operation {
 
     private String txnId;
 
-    public BroadcastCommitOperation() {
+    public RollbackTxBackupOperation() {
     }
 
-    public BroadcastCommitOperation(String txnId) {
+    public RollbackTxBackupOperation(String txnId) {
         this.txnId = txnId;
     }
 
-    public void run() throws Exception {
-        final NodeEngine nodeEngine = getNodeEngine();
-        nodeEngine.getLogger(getClass()).log(Level.INFO, "Committing transaction[" + txnId + "]!");
-        TransactionManagerServiceImpl service = getService();
-        try {
-            service.commitAll(txnId);
-        } catch (Exception e) {
-            nodeEngine.getLogger(getClass()).log(Level.WARNING, e.getMessage(), e);
-        }
+    @Override
+    public void beforeRun() throws Exception {
     }
 
+    @Override
+    public void run() throws Exception {
+        TransactionManagerServiceImpl txManagerService = getService();
+        txManagerService.rollbackTxBackupLog(txnId);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public InvocationAction onException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException) {
+            return InvocationAction.THROW_EXCEPTION;
+        }
+        return super.onException(throwable);
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
         out.writeUTF(txnId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
         txnId = in.readUTF();
     }
 }

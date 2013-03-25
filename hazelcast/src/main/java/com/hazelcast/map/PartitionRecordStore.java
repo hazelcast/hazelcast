@@ -112,6 +112,10 @@ public class PartitionRecordStore implements RecordStore {
         return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
 
+    public boolean forceUnlock(Data dataKey) {
+        return lockStore != null && lockStore.forceUnlock(dataKey);
+    }
+
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
@@ -215,6 +219,7 @@ public class PartitionRecordStore implements RecordStore {
     public void reset() {
         records.clear();
     }
+
 
     public Object remove(Data dataKey) {
         Record record = records.get(dataKey);

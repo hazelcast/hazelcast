@@ -16,126 +16,19 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.NodeEngine;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Future;
 
 /**
- * @mdogan 3/4/13
+ * @mdogan 3/25/13
  */
-class TransactionLog implements DataSerializable {
+public interface TransactionLog extends DataSerializable {
 
-    private String callerUuid;
-    private String txnId;
-    private int partitionId;
-    private TransactionImpl.State state = Transaction.State.ACTIVE;
-    private final List<TransactionalOperation> ops = new LinkedList<TransactionalOperation>();
+    Future prepare(NodeEngine nodeEngine);
 
-    private transient boolean scheduled = false;
-    private transient final AtomicBoolean control = new AtomicBoolean(false);
+    Future commit(NodeEngine nodeEngine);
 
-    TransactionLog() {
-    }
-
-    TransactionLog(String txnId, int partitionId) {
-        this.txnId = txnId;
-        this.partitionId = partitionId;
-    }
-
-    void addOperationRecord(TransactionalOperation operation) {
-        // Normally we do not need sync block, since a tx can be executed only by a single thread.
-        // But keeping sync block to prevent possible errors
-        // if services send async (or response-less) transactional operations which can be executed concurrently.
-        synchronized (this) {
-            ops.add(operation);
-        }
-    }
-
-    List<TransactionalOperation> getOperationRecords() {
-        // Normally we do not need sync block, since a tx can be executed only by a single thread.
-        // But keeping sync block to prevent possible errors
-        // if services send async (or response-less) transactional operations which can be executed concurrently.
-        synchronized (this) {
-            return new ArrayList<TransactionalOperation>(ops);
-        }
-    }
-
-    public String getCallerUuid() {
-        return callerUuid;
-    }
-
-    public String getTxnId() {
-        return txnId;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    public TransactionImpl.State getState() {
-        return state;
-    }
-
-    public boolean isScheduled() {
-        return scheduled;
-    }
-
-    void setScheduled(boolean scheduled) {
-        this.scheduled = scheduled;
-    }
-
-    void setCallerUuid(String callerUuid) {
-        this.callerUuid = callerUuid;
-    }
-
-    void setState(TransactionImpl.State state) {
-        this.state = state;
-    }
-
-    boolean beginProcess() {
-        return control.compareAndSet(false, true);
-    }
-
-    void endProcess() {
-        control.set(false);
-    }
-
-    boolean isBeingProcessed() {
-        return control.get();
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
-        out.writeUTF(txnId);
-        out.writeInt(partitionId);
-        out.writeUTF(state.toString());
-        int len = ops.size();
-        out.writeInt(len);
-        if (len > 0) {
-            for (TransactionalOperation op : ops) {
-                out.writeObject(op);
-            }
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
-        txnId = in.readUTF();
-        partitionId = in.readInt();
-        state = Transaction.State.valueOf(in.readUTF());
-        int len = in.readInt();
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                TransactionalOperation operation = in.readObject();
-                operation.setState(state);
-                addOperationRecord(operation);
-            }
-        }
-    }
+    Future rollback(NodeEngine nodeEngine);
 }
