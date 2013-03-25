@@ -217,7 +217,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleServices(final Node node) {
         final Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
         final boolean enableDefaults = attDefaults == null || checkTrue(getTextContent(attDefaults));
-        ServicesConfig servicesConfig = config.getServicesConfigConfig();
+        ServicesConfig servicesConfig = config.getServicesConfig();
         servicesConfig.setEnableDefaults(enableDefaults);
 
         for (Node child : new IterableNodeList(node.getChildNodes())) {

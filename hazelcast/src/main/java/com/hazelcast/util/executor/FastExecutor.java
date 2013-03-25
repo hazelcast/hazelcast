@@ -167,7 +167,7 @@ public class FastExecutor implements Executor {
                 }
                 try {
                     Thread.sleep(sleep);
-                    if (k++ % 1000 == 0) {
+                    if (k++ % 300 == 0) {
                         System.err.println("DEBUG: Current operation thread count-> " + activeThreadCount);
                     }
                 } catch (InterruptedException e) {

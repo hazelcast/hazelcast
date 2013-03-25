@@ -71,7 +71,7 @@ class ServiceManager {
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
 
-        final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfigConfig();
+        final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfig();
         if (servicesConfigConfig != null) {
             if (servicesConfigConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
