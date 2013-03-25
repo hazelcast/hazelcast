@@ -17,6 +17,7 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.RemoveBackupOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -44,7 +45,7 @@ public abstract class BaseTxRemoveOperation extends TransactionalMapOperation im
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
         invalidateNearCaches();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getLocalMapStatsImpl().incrementRemoves(Clock.currentTimeMillis() - getStartTime()); //TODO @msk stats change
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementRemoves(Clock.currentTimeMillis() - getStartTime()); //TODO @msk stats change
         }
     }
 

@@ -233,7 +233,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private void createMemberState(MemberStateImpl memberState) {
         final Node node = instance.node;
         memberState.setAddress(node.getThisAddress());
-//        memberState.getMemberHealthStats().setOutOfMemory(node.isOutOfMemory());//TODO @msk  ???
         memberState.getMemberHealthStats().setActive(node.isActive());
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
@@ -244,10 +243,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
         }
         Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
-//        ExecutorManager executorManager = factory.node.executorManager; //TODO @msk  ???
-//        ExecutorManager executorManager = instance.node.executorManager;
-//        memberState.putInternalThroughputStats(executorManager.getInternalThroughputMap());
-//        memberState.putThroughputStats(executorManager.getThroughputMap());
 
         createMemState(memberState, proxyObjects);
     }
@@ -576,7 +571,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new GetMapEntryRequest());
             register(new VersionMismatchLogRequest());
             register(new ShutdownMemberRequest());
-            register(new RestartMemberRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {

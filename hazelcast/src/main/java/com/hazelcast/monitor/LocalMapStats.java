@@ -94,42 +94,65 @@ public interface LocalMapStats extends LocalInstanceStats {
      *
      * @return number of put operations
      */
-    public long getPutCount();
+    public long getNumberOfPuts();
 
     /**
      * Returns the number of get operations
      *
      * @return number of get operations
      */
-    public long getGetCount();
+    public long getNumberOfGets();
 
-    /**
-     * Returns the total latency of put operations in this period. To get the average latency, divide to number of puts
-     *
-     * @return
-     */
-    public long getTotalPutLatency();
-
-    /**
-     * Returns the total latency of get operations in this period. To get the average latency, divide to number of gets
-     *
-     * @return
-     */
-    public long getTotalGetLatency();
-
-    /**
-     * Returns the total latency of remove operations in this period. To get the average latency, divide to number of gets
-     *
-     * @return
-     */
-    public long getTotalRemoveLatency();
 
     /**
      * Returns the number of Remove operations
      *
      * @return number of remove operations
      */
-    public long getRemoveCount();
+    public long getNumberOfRemoves();
+
+
+    /**
+     * Returns the total latency of put operations. To get the average latency, divide to number of puts
+     *
+     * @return
+     */
+    public long getTotalPutLatency();
+
+    /**
+     * Returns the total latency of get operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalGetLatency();
+
+    /**
+     * Returns the total latency of remove operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalRemoveLatency();
+
+    /**
+     * Returns the maximum latency of put operations. To get the average latency, divide to number of puts
+     *
+     * @return
+     */
+    public long getMaxPutLatency();
+
+    /**
+     * Returns the maximum latency of get operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getMaxGetLatency();
+
+    /**
+     * Returns the maximum latency of remove operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getMaxRemoveLatency();
 
     /**
      * Returns the number of Events Received

@@ -44,7 +44,8 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getLocalMapStatsImpl().incrementPuts(Clock.currentTimeMillis() - getStartTime());//TODO @msk stats change
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementPuts(Clock.currentTimeMillis() - getStartTime());//TODO @msk stats change
+
         }
     }
 

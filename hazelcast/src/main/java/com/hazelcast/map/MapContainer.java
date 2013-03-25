@@ -57,7 +57,6 @@ public class MapContainer {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-    private final LocalMapStatsImpl stats = new LocalMapStatsImpl();     //TODO @msk
     private volatile boolean mapReady = false;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
 
@@ -241,10 +240,6 @@ public class MapContainer {
 
     public IndexService getIndexService() {
         return indexService;
-    }
-
-    public LocalMapStatsImpl getLocalMapStatsImpl() {      //TODO @msk
-        return stats;
     }
 
     public String addInterceptor(MapInterceptor interceptor) {

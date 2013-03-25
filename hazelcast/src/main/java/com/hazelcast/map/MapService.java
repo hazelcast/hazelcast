@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
@@ -81,6 +82,17 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
+    }
+
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
+    private final ConcurrencyUtil.ConstructorFunction<String, LocalMapStatsImpl> localMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalMapStatsImpl>() {
+        public LocalMapStatsImpl createNew(String key) {
+            return new LocalMapStatsImpl();
+        }
+    };
+
+    public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMapStatsConstructorFunction);
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -810,7 +822,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         MapContainer mapContainer = getMapContainer(eventData.getMapName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getLocalMapStatsImpl().incrementReceivedEvents();//TODO @msk stats change
+            getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();//TODO @msk stats change
         }
     }
 
@@ -1017,7 +1029,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         MapContainer mapContainer = getMapContainer(mapName);
-        LocalMapStatsImpl localMapStats = mapContainer.getLocalMapStatsImpl();
+        LocalMapStatsImpl localMapStats = getLocalMapStatsImpl(mapName);
         if (!mapContainer.getMapConfig().isStatisticsEnabled()) {
             return localMapStats;
         }

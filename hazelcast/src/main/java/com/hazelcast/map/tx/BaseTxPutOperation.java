@@ -17,6 +17,7 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.PutBackupOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -41,7 +42,7 @@ public abstract class BaseTxPutOperation extends TransactionalMapOperation imple
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getLocalMapStatsImpl().incrementPuts(Clock.currentTimeMillis() - getStartTime());            //TODO @msk stats change
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementPuts(Clock.currentTimeMillis() - getStartTime());            //TODO @msk stats change
         }
     }
 

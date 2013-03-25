@@ -34,7 +34,7 @@ public class MapIsEmptyOperation extends AbstractMapOperation implements Partiti
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         empty = recordStore.getRecords().isEmpty();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getLocalMapStatsImpl().incrementOtherOperations();//TODO @msk stats change
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();//TODO @msk stats change
         }
     }
 

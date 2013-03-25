@@ -35,6 +35,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private final AtomicLong totalGetLatencies = new AtomicLong(0);
     private final AtomicLong totalPutLatencies = new AtomicLong(0);
     private final AtomicLong totalRemoveLatencies = new AtomicLong(0);
+    private final AtomicLong maxGetLatency = new AtomicLong(0);
+    private final AtomicLong maxPutLatency = new AtomicLong(0);
+    private final AtomicLong maxRemoveLatency = new AtomicLong(0);
     private long ownedEntryCount;
     private long backupEntryCount;
     private long ownedEntryMemoryCost;
@@ -65,6 +68,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
         out.writeLong(totalGetLatencies.get());
         out.writeLong(totalPutLatencies.get());
         out.writeLong(totalRemoveLatencies.get());
+        out.writeLong(maxGetLatency.get());
+        out.writeLong(maxPutLatency.get());
+        out.writeLong(maxRemoveLatency.get());
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -80,12 +86,14 @@ public class LocalMapStatsImpl implements LocalMapStats {
         ownedEntryMemoryCost = in.readLong();
         backupEntryMemoryCost = in.readLong();
         creationTime = in.readLong();
-//        lastUpdateTime = in.readLong();
         lockedEntryCount = in.readLong();
         dirtyEntryCount = in.readLong();
         totalGetLatencies.set(in.readLong());
         totalPutLatencies.set(in.readLong());
         totalRemoveLatencies.set(in.readLong());
+        maxGetLatency.set(in.readLong());
+        maxPutLatency.set(in.readLong());
+        maxRemoveLatency.set(in.readLong());
     }
 
     public long getOwnedEntryCount() {
@@ -160,31 +168,33 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return putCount.get() + getCount.get() + removeCount.get() + numberOfOtherOperations.get();
     }
 
-    public long getPutCount() {
+    public long getNumberOfPuts() {
         return putCount.get();
     }
 
     public void incrementPuts(long latency) {
         putCount.incrementAndGet();
         totalPutLatencies.addAndGet(latency);
+        maxPutLatency.set(Math.max(maxPutLatency.get(), latency));
     }
 
-    public long getGetCount() {
+    public long getNumberOfGets() {
         return getCount.get();
     }
 
     public void incrementGets(long latency) {
         getCount.incrementAndGet();
         totalGetLatencies.addAndGet(latency);
+        maxGetLatency.set(Math.max(maxGetLatency.get(), latency));
     }
 
-    public long getRemoveCount() {
+    public long getNumberOfRemoves() {
         return removeCount.get();
     }
 
     public void incrementRemoves(long latency) {
         removeCount.incrementAndGet();
-        totalRemoveLatencies.addAndGet(latency);
+        maxRemoveLatency.set(Math.max(maxRemoveLatency.get(), latency));
     }
 
     public long getTotalPutLatency() {
@@ -197,6 +207,18 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public long getTotalRemoveLatency() {
         return totalRemoveLatencies.get();
+    }
+
+    public long getMaxPutLatency() {
+        return maxPutLatency.get();
+    }
+
+    public long getMaxGetLatency() {
+        return maxGetLatency.get();
+    }
+
+    public long getMaxRemoveLatency() {
+        return maxRemoveLatency.get();
     }
 
     public long getNumberOfOtherOperations() {
