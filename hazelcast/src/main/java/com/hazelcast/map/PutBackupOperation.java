@@ -30,9 +30,6 @@ public class PutBackupOperation extends KeyBasedMapOperation implements BackupOp
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
-        int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Record record = recordStore.getRecords().get(dataKey);
         if (record == null) {
             record = mapService.createRecord(name, dataKey, dataValue, ttl, true);
@@ -43,6 +40,7 @@ public class PutBackupOperation extends KeyBasedMapOperation implements BackupOp
             else if (record instanceof ObjectRecord)
                 ((ObjectRecord) record).setValue(mapService.toObject(dataValue));
         }
+        recordStore.forceUnlock(dataKey);
     }
 
     @Override

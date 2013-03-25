@@ -102,4 +102,6 @@ public interface RecordStore {
     void removeAll();
 
     void reset();
+
+    boolean forceUnlock(Data dataKey);
 }

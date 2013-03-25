@@ -25,8 +25,6 @@ public class PartitionContainer {
     private final MapService mapService;
     final int partitionId;
     final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
-    // TODO: @mm - migrate transaction items!
-    final ConcurrentMap<TransactionKey, TransactionItem> transactionItems = new ConcurrentHashMap<TransactionKey, TransactionItem>();
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
@@ -48,19 +46,6 @@ public class PartitionContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);
     }
 
-    public TransactionItem addTransactionItem(TransactionItem item) {
-        final TransactionKey key = new TransactionKey(item.getTxnId(), item.getName(), item.getKey());
-        return transactionItems.put(key, item);
-    }
-
-    public TransactionItem getTransactionItem(TransactionKey key) {
-        return transactionItems.get(key);
-    }
-
-    public TransactionItem removeTransactionItem(TransactionKey key) {
-        return transactionItems.remove(key);
-    }
-
     void destroyMap(String name) {
         PartitionRecordStore recordStore = maps.remove(name);
         if (recordStore != null)
@@ -72,6 +57,5 @@ public class PartitionContainer {
             store.clear();
         }
         maps.clear();
-        transactionItems.clear();
     }
 }

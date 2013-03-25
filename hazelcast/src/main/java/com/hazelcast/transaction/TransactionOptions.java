@@ -16,11 +16,22 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-public class TransactionOptions {
+public final class TransactionOptions implements DataSerializable {
 
     private long timeoutMillis;
+
+    private int durability;
+
+    public TransactionOptions() {
+        setTimeout(2, TimeUnit.MINUTES).setDurability(1);
+    }
 
     public long getTimeoutMillis() {
         return timeoutMillis;
@@ -34,7 +45,40 @@ public class TransactionOptions {
         return this;
     }
 
+    public int getDurability() {
+        return durability;
+    }
+
+    public TransactionOptions setDurability(int durability) {
+        if (durability < 0) {
+            throw new IllegalArgumentException("Durability cannot be negative!");
+        }
+        this.durability = durability;
+        return this;
+    }
+
     public static TransactionOptions getDefault() {
-        return new TransactionOptions().setTimeout(2, TimeUnit.MINUTES);
+        return new TransactionOptions();
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(timeoutMillis);
+        out.writeInt(durability);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        timeoutMillis = in.readLong();
+        durability = in.readInt();
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("TransactionOptions");
+        sb.append("{timeoutMillis=").append(timeoutMillis);
+        sb.append(", durability=").append(durability);
+        sb.append('}');
+        return sb.toString();
     }
 }
