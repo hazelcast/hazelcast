@@ -47,7 +47,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     }
 
     boolean offerInternal(Data data, long timeout) throws InterruptedException {
-        checkNull(data);
+        throwExceptionIfNull(data);
         OfferOperation operation = new OfferOperation(name, timeout, data);
         final NodeEngine nodeEngine = getNodeEngine();
         try {
@@ -87,7 +87,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     }
 
     boolean removeInternal(Data data) {
-        checkNull(data);
+        throwExceptionIfNull(data);
         RemoveOperation operation = new RemoveOperation(name, data);
         return (Boolean) invoke(operation);
     }
@@ -124,9 +124,9 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         return partitionId;
     }
 
-    private void checkNull(Data data) {
-        if (data == null) {
-            throw new NullPointerException();
+    private void throwExceptionIfNull(Object o){
+        if (o == null){
+            throw new NullPointerException("Object is null");
         }
     }
 
