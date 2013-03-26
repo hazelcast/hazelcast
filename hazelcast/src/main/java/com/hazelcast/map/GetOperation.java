@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
-public class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
+public final class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
 
     private transient Data result;
 

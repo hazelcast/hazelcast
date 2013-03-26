@@ -25,7 +25,7 @@ import java.io.IOException;
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-public abstract class AbstractRecord implements DataSerializable {
+public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
 
     protected volatile RecordState state;
     protected volatile RecordStatistics statistics;

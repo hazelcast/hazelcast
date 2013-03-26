@@ -17,11 +17,11 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.util.Map;
 
-public interface Record<V> extends IdentifiedDataSerializable, Map.Entry<Data,V>, Cloneable {
+public interface Record<V> extends DataSerializable, Map.Entry<Data,V>, Cloneable {
 
     Data getKey();
 

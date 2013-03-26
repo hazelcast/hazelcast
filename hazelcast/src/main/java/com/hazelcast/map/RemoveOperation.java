@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
+public final class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
     transient boolean successful = false;
 

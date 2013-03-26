@@ -18,8 +18,8 @@ package com.hazelcast.map.tx;
 
 import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.map.BasePutOperation;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  * @mdogan 3/25/13
  */
-public class TxnPutOperation extends PutOperation implements MapTxnOperation {
+public class TxnPutOperation extends BasePutOperation implements MapTxnOperation {
 
     private long version;
 
