@@ -25,8 +25,8 @@ import java.io.IOException;
 
 public class RecordStatistics implements DataSerializable {
 
+    // todo is volatile needed? if yes then hits should be atomicnumber
     protected volatile int hits = 0;
-    protected volatile int version = 0;
     protected volatile long lastStoredTime = 0;
     protected volatile long lastUpdateTime = 0;
     protected volatile long lastAccessTime = 0;
@@ -71,7 +71,6 @@ public class RecordStatistics implements DataSerializable {
 
     public void update() {
         lastUpdateTime = Clock.currentTimeMillis();
-        version ++;
     }
 
     public void store() {
@@ -80,14 +79,6 @@ public class RecordStatistics implements DataSerializable {
 
     public Long getLastAccessTime() {
         return lastAccessTime;
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
     }
 
     public long getLastStoredTime() {
@@ -108,7 +99,6 @@ public class RecordStatistics implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(hits);
-        out.writeInt(version);
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(lastAccessTime);
@@ -117,7 +107,6 @@ public class RecordStatistics implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         hits = in.readInt();
-        version = in.readInt();
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         lastAccessTime = in.readLong();

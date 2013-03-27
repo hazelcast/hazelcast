@@ -247,6 +247,34 @@ public class MapTransactionTest {
     }
 
     @Test
+    public void testTxnReplace() throws TransactionException {
+        Config config = new Config();
+        StaticNodeFactory factory = new StaticNodeFactory(2);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap map2 = h2.getMap("default");
+
+        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap("default");
+                assertNull(txMap.replace("1", "value"));
+                txMap.put("1","value2");
+                assertEquals("value2", txMap.replace("1", "value3"));
+                assertEquals("value3", txMap.get("1"));
+                assertNull(map2.get("1"));
+                assertNull(map2.get("2"));
+                return true;
+            }
+        }, new TransactionOptions().setTimeout(1, TimeUnit.SECONDS));
+        assertTrue(b);
+
+        IMap map1 = h1.getMap("default");
+        assertEquals("value3", map1.get("1"));
+        assertEquals("value3", map2.get("1"));
+    }
+
+
+    @Test
     public void testTxnReplaceIfSame() throws TransactionException {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(2);
@@ -278,32 +306,6 @@ public class MapTransactionTest {
         assertEquals("2", map2.get("2"));
     }
 
-    @Test
-    public void testTxnReplace() throws TransactionException {
-        Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map2 = h2.getMap("default");
-
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                final TransactionalMap<Object, Object> txMap = context.getMap("default");
-                assertNull(txMap.replace("1", "value"));
-                txMap.put("1","value2");
-                assertEquals("value2", txMap.replace("1", "value3"));
-                assertEquals("value3", txMap.get("1"));
-                assertNull(map2.get("1"));
-                assertNull(map2.get("2"));
-                return true;
-            }
-        }, new TransactionOptions().setTimeout(1, TimeUnit.SECONDS));
-        assertTrue(b);
-
-        IMap map1 = h1.getMap("default");
-        assertEquals("value3", map1.get("1"));
-        assertEquals("value3", map2.get("1"));
-    }
 
     @Test
     public void testTxnReplace2() throws TransactionException {
