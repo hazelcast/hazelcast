@@ -17,6 +17,7 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.LockAwareOperation;
+import com.hazelcast.map.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,11 +42,11 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     @Override
     public void run() throws Exception {
         if (!recordStore.lock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
-            throw new TransactionException(getCallerUuid() + " Lock failed " + getThreadId());
+            throw new TransactionException("Lock failed.");
         }
-        Data value = mapService.toData(recordStore.get(dataKey));
-        // TODO: inc version!
-        response = new VersionedValue(value, 1);
+        Record record = recordStore.getRecords().get(dataKey);
+        Data value = record == null ? null : mapService.toData(record.getValue());
+        response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 
     @Override
@@ -74,5 +75,14 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         timeout = in.readLong();
+    }
+
+
+    @Override
+    public String toString() {
+        return "TxnLockAndGetOperation{" +
+                "timeout=" + timeout +
+                ", thread=" + getThreadId() +
+                '}';
     }
 }

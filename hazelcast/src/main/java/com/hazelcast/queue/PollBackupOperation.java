@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * @ali 12/11/12
  */
-public class PollBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
+public final class PollBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 
     long itemId;
 

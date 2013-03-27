@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * @ali 12/11/12
  */
-public class OfferBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
+public final class OfferBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 
     private Data data;
 

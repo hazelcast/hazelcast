@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 /**
  * @mdogan 7/25/12
  */
-public class HeartbeatOperation extends AbstractClusterOperation implements JoinOperation, IdentifiedDataSerializable {
+public final class HeartbeatOperation extends AbstractClusterOperation implements JoinOperation, IdentifiedDataSerializable {
 
     public void run() {
         // do nothing ...

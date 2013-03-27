@@ -22,6 +22,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,11 +36,11 @@ import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TY
  */
 public final class DataSerializer implements TypeSerializer<DataSerializable> {
 
-    private static final Map<Integer, DataSerializableFactory> factories;
-
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
-    static {
+    private final Map<Integer, DataSerializableFactory> factories;
+
+    public DataSerializer() {
         final Map<Integer, DataSerializableFactory> map = new HashMap<Integer, DataSerializableFactory>();
         try {
             final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID);
@@ -49,11 +50,19 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
                 if (f != null) {
                     for (Map.Entry<Integer, DataSerializableFactory> entry : f.entrySet()) {
                         final DataSerializableFactory current = map.get(entry.getKey());
-                        if (current != null) {
+                        final DataSerializableFactory factory = entry.getValue();
+                        if (current != null && current != factory) {
                             throw new IllegalArgumentException("DataSerializable ID[" + entry.getKey()
                                 + "] is already registered for " + current);
                         }
-                        map.put(entry.getKey(), entry.getValue());
+                        final IdentifiedDataSerializable s = factory.create();
+                        final Class<? extends IdentifiedDataSerializable> clazz = s.getClass();
+                        final int mod = clazz.getModifiers();
+                        if (!Modifier.isFinal(mod)) {
+                            throw new IllegalArgumentException("Classes implementing IdentifiedDataSerializable " +
+                                    "must be final -> " + clazz.getName());
+                        }
+                        map.put(entry.getKey(), factory);
                     }
                 }
             }
@@ -73,7 +82,7 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
     public final DataSerializable read(ObjectDataInput in) throws IOException {
         final DataSerializable ds;
         final boolean identified = in.readBoolean();
-        int id = -1;
+        int id = 0;
         String className = null;
         try {
             if (identified) {
@@ -89,7 +98,10 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
             }
             ds.readData(in);
             return ds;
-        } catch (final Exception e) {
+        } catch (Exception e) {
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            }
             throw new HazelcastSerializationException("Problem while reading DataSerializable " +
                     "id: " + id + ", class: " + className + ", exception: " + e.getMessage(), e);
         }
@@ -107,5 +119,6 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
     }
 
     public void destroy() {
+        factories.clear();
     }
 }

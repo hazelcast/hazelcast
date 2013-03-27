@@ -16,61 +16,20 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
  * @mdogan 1/18/13
  */
-public class CallableTaskOperation<V> extends AbstractNamedOperation implements IdentifiedDataSerializable {
-
-    private Callable<V> callable;
+public final class CallableTaskOperation<V> extends BaseCallableTaskOperation<V> implements IdentifiedDataSerializable {
 
     public CallableTaskOperation() {
     }
 
     public CallableTaskOperation(String name, Callable<V> callable) {
-        super(name);
-        this.callable = callable;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-        if (callable instanceof HazelcastInstanceAware && getCallId() < 0) {
-            ((HazelcastInstanceAware) callable).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-        }
-    }
-
-    public void run() throws Exception {
-        DistributedExecutorService service = getService();
-        service.execute(name, callable, getResponseHandler());
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public final boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(callable);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        callable = in.readObject();
+        super(name, callable);
     }
 
     public int getId() {

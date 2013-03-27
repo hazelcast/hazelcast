@@ -16,20 +16,31 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
-public class CachedDataRecord extends DataRecord {
+import java.io.IOException;
 
+public class CachedDataRecord extends AbstractRecord<Data> {
+
+    private volatile Data value;
     private volatile Object cachedValue;
 
     public CachedDataRecord(Data keyData, Data value, boolean statisticsEnabled) {
-        super(keyData, value, statisticsEnabled);
+        super(keyData, statisticsEnabled);
+        this.value = value;
     }
 
-    @Override
+    public Data getValue() {
+        return value;
+    }
+
     public Data setValue(Data o) {
         cachedValue = null;
-        return super.setValue(o);
+        Data old = null;
+        this.value = o;
+        return old;
     }
 
     public Object getCachedValue() {
@@ -38,5 +49,23 @@ public class CachedDataRecord extends DataRecord {
 
     public void setCachedValue(Object cachedValue) {
         this.cachedValue = cachedValue;
+    }
+
+    @Override
+    public long getCost() {
+        return key.totalSize() + value.totalSize();
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        value.writeData(out);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        value = new Data();
+        value.readData(in);
     }
 }

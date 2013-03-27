@@ -25,11 +25,13 @@ import java.io.IOException;
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-public abstract class AbstractRecord implements DataSerializable {
+public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
 
+    // todo ea volatile is needed? if yes then make version atomic
     protected volatile RecordState state;
     protected volatile RecordStatistics statistics;
     protected volatile Data key;
+    protected volatile long version;
 
     public AbstractRecord(Data key, boolean statisticsEnabled) {
         this.key = key;
@@ -37,6 +39,7 @@ public abstract class AbstractRecord implements DataSerializable {
         if (statisticsEnabled) {
             statistics = new RecordStatistics();
         }
+        version = 0;
     }
 
     public AbstractRecord() {
@@ -72,6 +75,10 @@ public abstract class AbstractRecord implements DataSerializable {
 
     public abstract long getCost();
 
+    public long getVersion() {
+        return version;
+    }
+
     public void onAccess() {
         if (statistics != null)
             statistics.access();
@@ -87,6 +94,7 @@ public abstract class AbstractRecord implements DataSerializable {
     public void onUpdate() {
         if (statistics != null)
             statistics.update();
+        version++;
     }
 
     public Record clone() {

@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>, HazelcastInstanceAware {
+public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>, HazelcastInstanceAware {
 
     private Runnable task;
 

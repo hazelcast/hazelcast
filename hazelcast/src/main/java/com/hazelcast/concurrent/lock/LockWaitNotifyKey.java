@@ -59,4 +59,12 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
         result = 31 * result + key.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "LockWaitNotifyKey{" +
+                "namespace=" + namespace +
+                ", key=" + key +
+                '}';
+    }
 }

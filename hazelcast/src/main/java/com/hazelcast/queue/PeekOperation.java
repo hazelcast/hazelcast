@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
  * Date: 11/23/12
  * Time: 3:56 AM
  */
-public class PeekOperation extends QueueOperation implements IdentifiedDataSerializable {
+public final class PeekOperation extends QueueOperation implements IdentifiedDataSerializable {
 
     public PeekOperation() {
     }
